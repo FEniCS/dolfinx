@@ -16,19 +16,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearVariationalSolver::NonlinearVariationalSolver()
-{
-  // Set default parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalSolver::~NonlinearVariationalSolver()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::solve(const VariationalProblem& problem,
-                                       Function& u)
+void NonlinearVariationalSolver::solve(Function& u,
+                                       const VariationalProblem& problem,
+                                       const Parameters& parameters)
 {
   begin("Solving nonlinear variational problem.");
 
@@ -43,38 +33,6 @@ void NonlinearVariationalSolver::solve(const VariationalProblem& problem,
   newton_solver.solve(nonlinear_problem, u.vector());
 
   end();
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::solve(const VariationalProblem& problem,
-                                       Function& u0,
-                                       Function& u1)
-{
-  // Create function
-  Function u(problem.trial_space());
-
-  // Solve variational problem
-  solve(problem, u);
-
-  // Extract subfunctions
-  u0 = u[0];
-  u1 = u[1];
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::solve(const VariationalProblem& problem,
-                                       Function& u0,
-                                       Function& u1,
-                                       Function& u2)
-{
-  // Create function
-  Function u(problem.trial_space());
-
-  // Solve variational problem
-  solve(problem, u);
-
-  // Extract subfunctions
-  u0 = u[0];
-  u1 = u[1];
-  u2 = u[2];
 }
 //-----------------------------------------------------------------------------
 // Implementation of _NonlinearProblem

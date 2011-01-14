@@ -35,7 +35,7 @@ void AdaptiveSolver::solve(Function& u,
 {
 
   // Extract error control view from goal functional
-  M.update_ec(problem.a, problem.L);
+  M.update_ec(problem.bilinear_form(), problem.linear_form());
   ErrorControl& ec(*(M._ec));
 
   AdaptiveSolver::solve(u, problem, tol, M, ec, parameters);

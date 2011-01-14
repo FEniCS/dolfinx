@@ -1,10 +1,10 @@
 // Copyright (C) 2010 Marie E. Rognes.
 // Licensed under the GNU LGPL Version 3.0 or any later version.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-12
+// Last changed: 2011-01-14
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -18,6 +18,7 @@ namespace dolfin
 {
 
   class Function;
+  class FunctionSpace;
   class VariationalProblem;
   class ErrorControl;
   class GoalFunctional;

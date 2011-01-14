@@ -13,36 +13,24 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
-#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
-  class VariationalProblem;
   class Function;
+  class VariationalProblem;
+  class Parameters;
 
   /// This class implements a solver for nonlinear variational problems.
 
-  class NonlinearVariationalSolver : public Variable
+  class NonlinearVariationalSolver
   {
   public:
 
-    /// Create nonlinear variational solver
-    NonlinearVariationalSolver();
-
-    /// Destructor
-    ~NonlinearVariationalSolver();
-
     /// Solve variational problem
-    void solve(const VariationalProblem& problem, Function& u);
-
-    /// Solve variational problem and extract sub functions
-    void solve(const VariationalProblem& problem,
-               Function& u0, Function& u1);
-
-    /// Solve variational problem and extract sub functions
-    void solve(const VariationalProblem& problem,
-               Function& u0, Function& u1, Function& u2);
+    static void solve(Function& u,
+                      const VariationalProblem& problem,
+                      const Parameters& parameters);
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -63,8 +51,6 @@ namespace dolfin
 
       return p;
     }
-
-    friend class AdaptiveSolver;
 
   private:
 

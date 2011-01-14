@@ -17,19 +17,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearVariationalSolver::LinearVariationalSolver()
-{
-  // Set default parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalSolver::~LinearVariationalSolver()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void LinearVariationalSolver::solve(const VariationalProblem& problem,
-                                    Function& u)
+void LinearVariationalSolver::solve(Function& u,
+                                    const VariationalProblem& problem,
+                                    const Parameters& parameters)
+
 {
   begin("Solving linear variational problem.");
 
@@ -116,37 +107,5 @@ void LinearVariationalSolver::solve(const VariationalProblem& problem,
   }
 
   end();
-}
-//-----------------------------------------------------------------------------
-void LinearVariationalSolver::solve(const VariationalProblem& problem,
-                                       Function& u0,
-                                       Function& u1)
-{
-  // Create function
-  Function u(problem.trial_space());
-
-  // Solve variational problem
-  solve(problem, u);
-
-  // Extract subfunctions
-  u0 = u[0];
-  u1 = u[1];
-}
-//-----------------------------------------------------------------------------
-void LinearVariationalSolver::solve(const VariationalProblem& problem,
-                                       Function& u0,
-                                       Function& u1,
-                                       Function& u2)
-{
-  // Create function
-  Function u(problem.trial_space());
-
-  // Solve variational problem
-  solve(problem, u);
-
-  // Extract subfunctions
-  u0 = u[0];
-  u1 = u[1];
-  u2 = u[2];
 }
 //-----------------------------------------------------------------------------

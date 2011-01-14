@@ -9,15 +9,11 @@
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
 
-#include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Variable.h>
-#include <dolfin/nls/NonlinearProblem.h>
-#include <dolfin/nls/NewtonSolver.h>
-#include <dolfin/la/KrylovSolver.h>
-#include <dolfin/la/LUSolver.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/adaptivity/AdaptiveSolver.h>
+#include "NonlinearVariationalSolver.h"
+#include "LinearVariationalSolver.h"
 
 namespace dolfin
 {
@@ -25,11 +21,9 @@ namespace dolfin
   class Form;
   class BoundaryCondition;
   class Function;
-  class NewtonSolver;
+  class FunctionSpace;
   class GoalFunctional;
   class ErrorControl;
-
-  class FunctionSpace;
 
   /// A _VariationalProblem_ represents a (system of) partial
   /// differential equation(s) in variational form:
@@ -70,20 +64,23 @@ namespace dolfin
   public:
 
     /// Define variational problem with natural boundary conditions
-    VariationalProblem(const Form& a, const Form& L);
+    VariationalProblem(const Form& form_0,
+                       const Form& form_1);
 
-    /// Define variational problem with a single Dirichlet boundary conditions
-    VariationalProblem(const Form& a, const Form& L,
+    /// Define variational problem with a single Dirichlet boundary condition
+    VariationalProblem(const Form& form_0,
+                       const Form& form_1,
                        const BoundaryCondition& bc);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
-    VariationalProblem(const Form& a, const Form& L,
+    VariationalProblem(const Form& form_0,
+                       const Form& form_1,
                        const std::vector<const BoundaryCondition*>& bcs);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
-    /// and subdomains
-    VariationalProblem(const Form& a,
-                       const Form& L,
+    /// and subdomains for cells, exterior and interior facets of the mesh
+    VariationalProblem(const Form& form_0,
+                       const Form& form_1,
                        const std::vector<const BoundaryCondition*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
@@ -92,18 +89,8 @@ namespace dolfin
     /// Destructor
     ~VariationalProblem();
 
-    /// Return true if problem is non-linear
-    const bool is_nonlinear() const;
-
     /// Solve variational problem
     void solve(Function& u);
-
-    /// Solve variational problem adaptively to given tolerance
-    void solve(Function& u, const double tol, GoalFunctional& M);
-
-    /// Solve variational problem adaptively to given tolerance with
-    /// given error controller
-    void solve(Function& u, const double tol, Form& M, ErrorControl& ec);
 
     /// Solve variational problem and extract sub functions
     void solve(Function& u0, Function& u1);
@@ -111,76 +98,76 @@ namespace dolfin
     /// Solve variational problem and extract sub functions
     void solve(Function& u0, Function& u1, Function& u2);
 
-    /// Compute F at current point x
-    void F(GenericVector& b, const GenericVector& x);
+    /// Solve variational problem adaptively to within given tolerance
+    void solve(Function& u, double tol, GoalFunctional& M);
 
-    /// Compute J = F' at current point x
-    void J(GenericMatrix& A, const GenericVector& x);
+    /// Solve variational problem adaptively to within given tolerance
+    void solve(Function& u, double tol, Form& M, ErrorControl& ec);
 
-    /// Optional callback called before calls to F() and J()
-    virtual void update(const GenericVector& x);
+    /// Return true if problem is non-linear
+    const bool is_nonlinear() const;
 
-    /// Return Newton solver (only useful when solving a nonlinear problem)
-    NewtonSolver& newton_solver();
+    /// Return trial space for variational problem
+    const FunctionSpace& trial_space() const;
+
+    /// Return test space for variational problem
+    const FunctionSpace& test_space() const;
+
+    /// Return the bilinear form
+    const Form& bilinear_form() const;
+
+    /// Return the linear form
+    const Form& linear_form() const;
+
+    /// Return the list of boundary conditions
+    const std::vector<const BoundaryCondition*> bcs() const;
+
+    /// Return the cell domains
+    const MeshFunction<uint>* cell_domains() const;
+
+    /// Return the exterior facet domains
+    const MeshFunction<uint>* exterior_facet_domains() const;
+
+    /// Return the interior facet domains
+    const MeshFunction<uint>* interior_facet_domains() const;
 
     /// Default parameter values
     static Parameters default_parameters()
     {
       Parameters p("variational_problem");
 
-      p.add("linear_solver",  "lu");
-      p.add("preconditioner", "default");
-      p.add("symmetric", false);
-      p.add("reset_jacobian", true);
-
-      p.add("print_rhs", false);
-      p.add("print_matrix", false);
-
-      p.add(NewtonSolver::default_parameters());
-      p.add(LUSolver::default_parameters());
-      p.add(KrylovSolver::default_parameters());
+      p.add(LinearVariationalSolver::default_parameters());
+      p.add(NonlinearVariationalSolver::default_parameters());
       p.add(AdaptiveSolver::default_parameters());
 
       return p;
     }
 
-    friend class AdaptiveSolver;
-
-    // FIXME: New functions below to be implemented
-    const FunctionSpace& trial_space() const;
-    const Form& bilinear_form() const;
-    const Form& linear_form() const;
-    const std::vector<const BoundaryCondition*> bcs() const;
-    const MeshFunction<uint>* cell_domains() const;
-    const MeshFunction<uint>* exterior_facet_domains() const;
-    const MeshFunction<uint>* interior_facet_domains() const;
-
   private:
 
-    // Solve linear variational problem
-    void solve_linear(Function& u);
+    // Extract whether the problem is nonlinear
+    static bool extract_is_nonlinear(const Form& form_0,
+                                     const Form& form_1);
 
-    // Solve nonlinear variational problem
-    void solve_nonlinear(Function& u);
+    // Extract which of the two forms is linear
+    static const Form& extract_linear_form(const Form& form_0,
+                                           const Form& form_1);
 
-    // Extract bilinear and linear forms
-    const Form& extract_bilinear(const Form& b, const Form& c) const;
-    const Form& extract_linear(const Form& b, const Form& c) const;
+    // Extract which of the two forms is bilinear
+    static const Form& extract_bilinear_form(const Form& form_0,
+                                             const Form& form_1);
 
-    // Detect whether problem is nonlinear
-    bool is_nonlinear(const Form &b, const Form& c) const;
+    // Print error message when form arguments are incorrect
+    static void form_error();
 
-    // Forms (old names, will be deleted)
-    const Form& a;
+    // True if problem is nonlinear
+    bool _is_nonlinear;
 
     // Linear form
-    const Form& L;
+    const Form& _linear_form;
 
     // Bilinear form
-    //const Form& _bilinear_form;
-
-    // Linear form
-    //const Form& _linear_form;
+    const Form& _bilinear_form;
 
     // Boundary conditions
     std::vector<const BoundaryCondition*> _bcs;
@@ -190,14 +177,6 @@ namespace dolfin
     const MeshFunction<uint>* _exterior_facet_domains;
     const MeshFunction<uint>* _interior_facet_domains;
 
-    // True if problem is nonlinear
-    bool nonlinear;
-
-    // Indicates whether the Jacobian matrix has been initialised
-    bool jacobian_initialised;
-
-    // Newton solver
-    boost::scoped_ptr<NewtonSolver> _newton_solver;
   };
 
 }
