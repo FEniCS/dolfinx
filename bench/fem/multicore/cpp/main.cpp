@@ -16,7 +16,7 @@
 #include "NavierStokes.h"
 
 #define MAX_NUM_THREADS 4
-#define SIZE 32
+#define SIZE 12
 #define NUM_REPS 20
 
 using namespace dolfin;

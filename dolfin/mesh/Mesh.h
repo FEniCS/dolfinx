@@ -627,8 +627,8 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
 
-    // Non-negative and equal to coloring dimension if mesh has been colored
-    mutable int _colored;
+    // Computed colorings (dim of colored entity, coloring type)
+    mutable std::set<std::pair<uint, uint> > _colored;
 
   };
 

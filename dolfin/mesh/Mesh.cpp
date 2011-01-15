@@ -36,7 +36,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0),
                unique_id(UniqueIdGenerator::id()),
-               _intersection_operator(*this), _ordered(false), _colored(-1)
+               _intersection_operator(*this), _ordered(false)
 {
   // Do nothing
 }
@@ -45,7 +45,7 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
                                _cell_type(0),
                                unique_id(UniqueIdGenerator::id()),
                                _intersection_operator(*this),
-                               _ordered(false), _colored(-1)
+                               _ordered(false)
 {
   *this = mesh;
 }
@@ -54,7 +54,7 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _data(*this), _cell_type(0),
                                    unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
-                                   _ordered(false), _colored(-1)
+                                   _ordered(false)
 {
   if (MPI::num_processes() > 1)
   {
@@ -245,8 +245,11 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
   // Check if mesh has already been colored
+  const uint colored_entity_dim   = topology().dim();
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
-  if (static_cast<int>(dim) == _colored)
+  const std::pair<uint, uint> coloring(colored_entity_dim, dim);
+
+  if (_colored.find(coloring) != _colored.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
     MeshFunction<uint>* colors = _data.mesh_function("cell colors");
@@ -258,14 +261,17 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
   // since we are not really changing the mesh, just attaching some
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
-  _colored = dim;
+  _colored.insert(coloring);
   return MeshColoring::color_cells(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
 {
   // Check if mesh has already been colored
-  if (static_cast<int>(dim) == _colored)
+  const uint colored_entity_dim = topology().dim();
+  const std::pair<uint, uint> coloring(colored_entity_dim, dim);
+
+  if (_colored.find(coloring) != _colored.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
     MeshFunction<uint>* colors = _data.mesh_function("cell colors");
@@ -277,7 +283,7 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
   // since we are not really changing the mesh, just attaching some
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
-  _colored = dim;
+  _colored.insert(coloring);
   return MeshColoring::color_cells(*_mesh, dim);
 }
 //-----------------------------------------------------------------------------

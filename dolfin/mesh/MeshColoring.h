@@ -21,8 +21,7 @@ namespace dolfin
   class Mesh;
 
   /// This class computes colorings for a local mesh. It supports
-  /// vertex, edge, and facet-based colorings. Zoltan (part of
-  /// Trilinos) is used to compute the colorings.
+  /// vertex, edge, and facet-based colorings.
 
   class MeshColoring
   {
@@ -44,8 +43,8 @@ namespace dolfin
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
-    static void compute_cell_colors(MeshFunction<uint>& colors,
-                                    uint dim);
+    static void compute_colors(MeshFunction<uint>& colors,
+                               uint colored_entity, uint dim);
 
     /// Convert coloring type to topological dimension
     static uint type_to_dim(std::string coloring_type, const Mesh& mesh);

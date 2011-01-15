@@ -36,6 +36,9 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
   // Get mesh data
   MeshData& data = mesh.data();
 
+  const uint colored_dim = mesh.topology().dim();
+
+
   // Clear old coloring data if any
   std::vector<uint>* num_colored_cells = data.array("num colored cells");
   if (num_colored_cells)
@@ -54,7 +57,7 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
   assert(colors);
 
   // Compute coloring
-  MeshColoring::compute_cell_colors(*colors, dim);
+  MeshColoring::compute_colors(*colors, colored_dim, dim);
 
   // Extract cells for each color
   std::vector<std::vector<uint>* > colored_cells;
@@ -102,13 +105,17 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
 void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors,
                                        std::string coloring_type)
 {
-  compute_cell_colors(colors, type_to_dim(coloring_type, colors.mesh()));
+  compute_colors(colors, colors.mesh().topology().dim(),
+                      type_to_dim(coloring_type, colors.mesh()));
 }
 //-----------------------------------------------------------------------------
-void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
+void MeshColoring::compute_colors(MeshFunction<uint>& colors,
+                                  uint colored_entity, uint dim)
 {
   // Get the mesh
   const Mesh& mesh(colors.mesh());
+
+  const uint colored_entity_dim = mesh.topology().dim();
 
   // Check mesh function
   if (colors.dim() != mesh.topology().dim())
@@ -119,20 +126,20 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
   BoostBidirectionalGraph graph(mesh.num_cells());
 
   // Build graph
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (MeshEntityIterator colored_entity(mesh, colored_entity_dim); !colored_entity.end(); ++colored_entity)
   {
-    const uint cell_index = cell->index();
-    for (MeshEntityIterator entity(*cell, dim); !entity.end(); ++entity)
+    const uint colored_entity_index = colored_entity->index();
+    for (MeshEntityIterator entity(*colored_entity, dim); !entity.end(); ++entity)
     {
-      for (CellIterator neighbor(*entity); !neighbor.end(); ++neighbor)
-        boost::add_edge(cell_index, neighbor->index(), graph);
+      for (MeshEntityIterator neighbor(*entity, colored_entity_dim); !neighbor.end(); ++neighbor)
+        boost::add_edge(colored_entity_index, neighbor->index(), graph);
     }
   }
 
   // Wrap MeshFunction values
   Array<uint> _colors(colors.size(), colors.values());
 
-  // Color cells
+  // Color graph
   BoostGraphInterface::compute_local_vertex_coloring(graph, _colors);
 }
 //-----------------------------------------------------------------------------
