@@ -252,7 +252,8 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
   if (_colored.find(coloring) != _colored.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
-    MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+    const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
+    MeshFunction<uint>* colors = _data.mesh_function(color_name);
     assert(colors);
     return *colors;
   }
@@ -274,7 +275,8 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
   if (_colored.find(coloring) != _colored.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
-    MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+    const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
+    MeshFunction<uint>* colors = _data.mesh_function(color_name);
     assert(colors);
     return *colors;
   }
@@ -284,7 +286,7 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
   _colored.insert(coloring);
-  return MeshColoring::color_cells(*_mesh, dim);
+  return MeshColoring::color(*_mesh, colored_entity_dim, dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point& point,

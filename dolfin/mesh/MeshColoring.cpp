@@ -25,22 +25,21 @@ using namespace dolfin;
 const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
-  return color_cells(mesh, type_to_dim(coloring_type, mesh));
+  return color(mesh, mesh.topology().dim(), type_to_dim(coloring_type, mesh));
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
-                                                                    uint dim)
+const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
+                                                              uint colored_entity_dim,
+                                                              uint dim)
 {
   info("Coloring mesh.");
 
   // Get mesh data
   MeshData& data = mesh.data();
 
-  const uint colored_dim = mesh.topology().dim();
-
-
   // Clear old coloring data if any
   std::vector<uint>* num_colored_cells = data.array("num colored cells");
+  //std::vector<uint>* num_colored_cells = data.array("num colored entities-" + to_string(colored_entity_dim) + "-" + + to_string(dim));
   if (num_colored_cells)
   {
     info("Clearing existing mesh coloring data.");
@@ -51,16 +50,18 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
   }
 
   // Create mesh function for cell colors (reuse if possible)
-  MeshFunction<uint>* colors = data.mesh_function("cell colors");
+  //MeshFunction<uint>* colors = data.mesh_function("cell colors");
+  const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
+  MeshFunction<uint>* colors = data.mesh_function(color_name);
   if (!colors)
-    colors = data.create_mesh_function("cell colors", mesh.topology().dim());
+    colors = data.create_mesh_function(color_name, mesh.topology().dim());
   assert(colors);
 
   // Compute coloring
-  MeshColoring::compute_colors(*colors, colored_dim, dim);
+  MeshColoring::compute_colors(*colors, colored_entity_dim, dim);
 
   // Extract cells for each color
-  std::vector<std::vector<uint>* > colored_cells;
+  std::vector<std::vector<uint>* > colored_entities;
   uint max_color = 0;
   for (uint i = 0; i < colors->size(); i++)
   {
@@ -69,53 +70,44 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
     max_color = std::max(max_color, color);
 
     // Extend list of colors if necessary
-    if (color >= colored_cells.size())
+    if (color >= colored_entities.size())
     {
       // Append empty lists for all colors up to current color
-      for (uint c = colored_cells.size(); c <= color; c++)
+      for (uint c = colored_entities.size(); c <= color; c++)
       {
         assert(data.array("colored cells", c) == 0);
-        colored_cells.push_back(data.create_array("colored cells " + to_string(c)));
+        colored_entities.push_back(data.create_array("colored cells " + to_string(c)));
       }
     }
 
     // Add color to list if color has been seen before
-    assert(color < colored_cells.size());
-    colored_cells[color]->push_back(i);
+    assert(color < colored_entities.size());
+    colored_entities[color]->push_back(i);
   }
 
   // Check for contiguous coloring
-  if (max_color != (colored_cells.size() - 1))
+  if (max_color != (colored_entities.size() - 1))
     error("Colors are not numbered contiguously.");
 
   // Count the number of cells of each color
   assert(data.array("num colored cells") == 0);
   num_colored_cells = data.create_array("num colored cells");
   assert(num_colored_cells);
-  for (uint c = 0; c < colored_cells.size(); c++)
+  for (uint c = 0; c < colored_entities.size(); c++)
   {
-    info("Color %d: %d cells", c, colored_cells[c]->size());
-    num_colored_cells->push_back(colored_cells[c]->size());
+    info("Color %d: %d cells", c, colored_entities[c]->size());
+    num_colored_cells->push_back(colored_entities[c]->size());
   }
   info("Mesh has %d colors.", num_colored_cells->size());
 
   return *colors;
 }
 //-----------------------------------------------------------------------------
-void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors,
-                                       std::string coloring_type)
-{
-  compute_colors(colors, colors.mesh().topology().dim(),
-                      type_to_dim(coloring_type, colors.mesh()));
-}
-//-----------------------------------------------------------------------------
 void MeshColoring::compute_colors(MeshFunction<uint>& colors,
-                                  uint colored_entity, uint dim)
+                                  uint colored_entity_dim, uint dim)
 {
   // Get the mesh
   const Mesh& mesh(colors.mesh());
-
-  const uint colored_entity_dim = mesh.topology().dim();
 
   // Check mesh function
   if (colors.dim() != mesh.topology().dim())

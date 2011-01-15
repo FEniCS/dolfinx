@@ -60,7 +60,7 @@ namespace dolfin
   ///
   /// Mesh coloring
   ///
-  ///   "cell colors"       - MeshFunction<uint> of dimension D with cell colors
+  ///   "colors-%D-%d-%1"   - MeshFunction<uint> of dimension D with colors based on connectivity %d
   ///   "num colored cells" - Array<uint> listing the number of cells of each color
   ///   "colored cells %d"  - Array<uint> of cell indices with colors 0, 1, 2, ...
 

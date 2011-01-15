@@ -9,6 +9,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
@@ -25,8 +26,14 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
 
   info(mesh);
 
+  const uint colored_entity_dim = mesh.topology().dim();
+
+  // FIXME
+  const uint dim = 0;
+
   // Check that mesh has been colored
-  MeshFunction<uint>* cell_colors = mesh.data().mesh_function("cell colors");
+  const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
+  MeshFunction<uint>* cell_colors = mesh.data().mesh_function(color_name);
   if (!cell_colors)
     error("Unable to renumber mesh by colors. Mesh has not been colored.");
 
