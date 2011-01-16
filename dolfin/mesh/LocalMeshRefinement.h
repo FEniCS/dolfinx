@@ -10,7 +10,8 @@
 #ifndef __LOCAL_MESH_REFINEMENT_H
 #define __LOCAL_MESH_REFINEMENT_H
 
-#include "MeshFunction.h"
+#include <vector>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
@@ -20,6 +21,7 @@ namespace dolfin
   class Edge;
   class Mesh;
   class MeshEditor;
+  template<class T> class MeshFunction;
 
   /// This class implements local mesh refinement for different mesh types.
 

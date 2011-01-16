@@ -9,15 +9,16 @@
 #ifndef __BOUNDARY_COMPUTATION_H
 #define __BOUNDARY_COMPUTATION_H
 
+#include <vector>
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
 
-  class Mesh;
-  class Facet;
   class BoundaryMesh;
+  class Facet;
+  class Mesh;
+  template <class T> class MeshFunction;
 
   /// This class implements provides a set of basic algorithms for
   /// the computation of boundaries.

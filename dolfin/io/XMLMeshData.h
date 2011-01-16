@@ -9,12 +9,12 @@
 
 #include <map>
 #include <vector>
-#include <dolfin/mesh/MeshFunction.h>
 #include "XMLHandler.h"
 
 namespace dolfin
 {
 
+  class MeshData;
   class XMLMeshFunction;
   class XMLArray;
   class XMLMap;

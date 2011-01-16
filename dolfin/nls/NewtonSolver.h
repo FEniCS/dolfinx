@@ -22,7 +22,6 @@ namespace dolfin
   class LinearAlgebraFactory;
   class GenericMatrix;
   class GenericVector;
-  class Mesh;
   class NonlinearProblem;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
@@ -91,4 +90,3 @@ namespace dolfin
 }
 
 #endif
-

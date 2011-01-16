@@ -4,6 +4,7 @@
 // First added:  2010-02-09
 // Last changed: 2010-03-05
 
+#include "Mesh.h"
 #include "MeshEntity.h"
 #include "Point.h"
 #include "PrimitiveIntersector.h"

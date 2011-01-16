@@ -4,7 +4,6 @@
 // First added:  2009-03-16
 // Last changed: 2009-11-11
 
-//#include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/Parameters.h>
 #include "XMLIndent.h"

@@ -7,6 +7,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "Point.h"
 #include "MeshEditor.h"

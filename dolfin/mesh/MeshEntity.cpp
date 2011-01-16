@@ -7,8 +7,9 @@
 // Last changed: 2010-02-11
 
 #include <dolfin/log/dolfin_log.h>
-#include "MeshEntity.h"
+#include "Mesh.h"
 #include "Vertex.h"
+#include "MeshEntity.h"
 
 using namespace dolfin;
 

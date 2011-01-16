@@ -10,22 +10,21 @@
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
+#include "BoundaryMesh.h"
+#include "Cell.h"
+#include "CellType.h"
+#include "Edge.h"
 #include "Mesh.h"
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "MeshData.h"
 #include "MeshConnectivity.h"
+#include "MeshData.h"
 #include "MeshEditor.h"
 #include "MeshFunction.h"
-#include "Vertex.h"
-#include "Edge.h"
-#include "Cell.h"
-#include "BoundaryMesh.h"
 #include "MeshGeometry.h"
-#include "LocalMeshCoarsening.h"
-#include "CellType.h"
-#include "TriangleCell.h"
+#include "MeshTopology.h"
 #include "TetrahedronCell.h"
+#include "TriangleCell.h"
+#include "Vertex.h"
+#include "LocalMeshCoarsening.h"
 
 using namespace dolfin;
 

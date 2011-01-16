@@ -7,8 +7,9 @@
 // Last changed: 2010-11-18
 
 #include <sstream>
-
 #include <dolfin/common/utils.h>
+#include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshData.h"
 

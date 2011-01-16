@@ -6,10 +6,10 @@
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
 // Last changed: 2011-01-14
 
+#include <dolfin/function/Function.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/function/Function.h>
 #include "assemble.h"
 #include "VariationalProblem.h"
 #include "LinearVariationalSolver.h"

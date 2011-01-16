@@ -10,7 +10,6 @@
 #define __VARIATIONAL_PROBLEM_H
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/adaptivity/AdaptiveSolver.h>
 #include "NonlinearVariationalSolver.h"
 #include "LinearVariationalSolver.h"
@@ -18,12 +17,13 @@
 namespace dolfin
 {
 
-  class Form;
   class BoundaryCondition;
+  class ErrorControl;
+  class Form;
   class Function;
   class FunctionSpace;
   class GoalFunctional;
-  class ErrorControl;
+  template<class T> class MeshFunction;
 
   /// A _VariationalProblem_ represents a (system of) partial
   /// differential equation(s) in variational form:

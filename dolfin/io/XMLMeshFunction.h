@@ -7,12 +7,16 @@
 #ifndef __XMLMESHFUNCTION_H
 #define __XMLMESHFUNCTION_H
 
-#include <dolfin/mesh/MeshFunction.h>
+#include <iostream>
+#include <map>
+#include "dolfin/common/types.h"
 #include "XMLHandler.h"
 
 namespace dolfin
 {
 
+  class Mesh;
+  template<class T> class MeshFunction;
   class XMLSkipper;
 
   class XMLMeshFunction : public XMLHandler

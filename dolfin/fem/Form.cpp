@@ -9,11 +9,15 @@
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/log/log.h>
-#include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include "Form.h"
 
 using namespace dolfin;

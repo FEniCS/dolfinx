@@ -9,19 +9,20 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Table.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/refine.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/plot/plot.h>
 #include <dolfin/fem/VariationalProblem.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/assemble.h>
-#include "marking.h"
-#include "GoalFunctional.h"
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/la/Vector.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/refine.h>
+#include <dolfin/plot/plot.h>
 #include "ErrorControl.h"
+#include "GoalFunctional.h"
+#include "marking.h"
 #include "AdaptiveSolver.h"
 
 using namespace dolfin;

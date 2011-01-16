@@ -20,8 +20,8 @@ namespace dolfin
   class Cell;
   class MeshEditor;
   class MeshEntity;
-  class Point;
   template <class T> class MeshFunction;
+  class Point;
 
   /// This class provides a common interface for different cell types.
   /// Each cell type implements mesh functionality that is specific to

@@ -7,10 +7,11 @@
 #ifndef __VERTEX_H
 #define __VERTEX_H
 
-#include "Point.h"
+#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "Point.h"
 
 namespace dolfin
 {

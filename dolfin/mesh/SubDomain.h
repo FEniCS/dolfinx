@@ -8,11 +8,11 @@
 #define __SUB_DOMAIN_H
 
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
 
+  template <class T> class MeshFunction;
   template<class T> class Array;
 
   /// This class defines the interface for definition of sub domains.

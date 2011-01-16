@@ -18,6 +18,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 

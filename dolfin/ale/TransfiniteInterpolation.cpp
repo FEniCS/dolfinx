@@ -8,6 +8,8 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "TransfiniteInterpolation.h"

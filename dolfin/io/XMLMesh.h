@@ -10,7 +10,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include "XMLVector.h"
 #include "XMLHandler.h"
 
@@ -18,6 +17,7 @@ namespace dolfin
 {
 
   class Mesh;
+  template<class T> class MeshFunction;
   class XMLMeshData;
 
   class XMLMesh : public XMLHandler

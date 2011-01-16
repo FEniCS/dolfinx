@@ -1,11 +1,13 @@
 // Copyright (C) 2009 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
-
+//
 // First added:  2009-09-25
 // Last changed: 2009-09-28
 
 // Template specializations of str for simple types
 
+#include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 
 namespace dolfin

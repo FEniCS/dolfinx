@@ -8,6 +8,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Point.h>
@@ -122,4 +123,3 @@ void LogStream::setprecision(uint n)
   buffer.precision(n);
 }
 //-----------------------------------------------------------------------------
-

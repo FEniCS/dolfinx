@@ -8,7 +8,6 @@
 #define __MESHHIERARCHY_H
 
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -74,5 +73,3 @@ namespace dolfin
 }
 
 #endif
-
-

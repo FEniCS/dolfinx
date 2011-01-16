@@ -14,7 +14,9 @@
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/ufcexp.h>
 

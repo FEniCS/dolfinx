@@ -10,10 +10,12 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include "XMLArray.h"
 #include "XMLMap.h"

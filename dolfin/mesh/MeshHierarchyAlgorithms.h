@@ -14,6 +14,7 @@ namespace dolfin
   class Cell;
   class Mesh;
   class MeshHierarchy;
+  template <class T> class MeshFunction;
 
   /// This class implements algorithms on a MeshHierarchy
 
@@ -41,8 +42,8 @@ namespace dolfin
     /// This function implements the "RefineGrid" subroutine by Bey
     void refine_mesh(MeshHierarchy& mesh, uint k);
 
-  MeshFunction<uint>* cell_marker;
-  MeshFunction<uint>* cell_state;
+    MeshFunction<uint>* cell_marker;
+    MeshFunction<uint>* cell_state;
 
   };
 

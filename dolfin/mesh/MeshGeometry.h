@@ -19,7 +19,6 @@ namespace dolfin
   /// the geometry is represented by the set of coordinates for the
   /// vertices of a mesh, but other representations are possible.
 
-  class Mesh;
   class Function;
 
   class MeshGeometry

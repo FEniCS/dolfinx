@@ -6,11 +6,14 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/fem/Assembler.h>
-#include <dolfin/log/log.h>
 #include <dolfin/la/Matrix.h>
-#include <dolfin/la/Vector.h>
 #include <dolfin/la/solve.h>
+#include <dolfin/la/Vector.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include "Poisson1D.h"
 #include "Poisson2D.h"
 #include "Poisson3D.h"

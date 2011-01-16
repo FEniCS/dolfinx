@@ -11,7 +11,6 @@
 
 #include <dolfin/common/types.h>
 #include "Mesh.h"
-#include "MeshFunction.h"
 
 namespace dolfin
 {

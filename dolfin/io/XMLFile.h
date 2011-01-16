@@ -19,6 +19,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/plot/FunctionPlotData.h>

@@ -6,7 +6,7 @@
 #ifndef __LOCAL_MESH_COARSENING_H
 #define __LOCAL_MESH_COARSENING_H
 
-#include "MeshFunction.h"
+#include <vector>
 
 namespace dolfin
 {
@@ -15,6 +15,7 @@ namespace dolfin
   class Edge;
   class Vertex;
   class MeshEditor;
+  template <class T> class MeshFunction;
 
   /// This class implements local mesh coarsening for different mesh types.
 

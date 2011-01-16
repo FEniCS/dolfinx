@@ -8,10 +8,12 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
+#include "Mesh.h"
 #include "MeshData.h"
+#include "MeshEntity.h"
 #include "MeshEntityIterator.h"
-#include "Vertex.h"
 #include "SubDomain.h"
+#include "Vertex.h"
 
 using namespace dolfin;
 

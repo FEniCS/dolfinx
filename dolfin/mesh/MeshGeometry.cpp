@@ -8,8 +8,8 @@
 // Last changed: 2010-04-29
 
 #include <dolfin/log/dolfin_log.h>
-#include "MeshGeometry.h"
 #include <dolfin/function/Function.h>
+#include "MeshGeometry.h"
 
 using namespace dolfin;
 

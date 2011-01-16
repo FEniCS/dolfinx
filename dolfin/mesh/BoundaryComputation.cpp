@@ -9,15 +9,17 @@
 // Last changed: 2010-03-02
 
 #include <dolfin/log/dolfin_log.h>
-#include "Mesh.h"
-#include "Facet.h"
-#include "Vertex.h"
-#include "Cell.h"
-#include "MeshEditor.h"
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "MeshData.h"
 #include "BoundaryMesh.h"
+#include "Cell.h"
+#include "Facet.h"
+#include "Mesh.h"
+#include "MeshData.h"
+#include "MeshEditor.h"
+#include "MeshEntity.h"
+#include "MeshFunction.h"
+#include "MeshGeometry.h"
+#include "MeshTopology.h"
+#include "Vertex.h"
 #include "BoundaryComputation.h"
 
 using namespace dolfin;

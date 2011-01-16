@@ -16,18 +16,19 @@
 #define __ASSEMBLE_H
 
 #include <vector>
-#include <dolfin/mesh/MeshFunction.h>
+//#include <dolfin/mesh/MeshFunction.h>
 #include "DirichletBC.h"
 
 namespace dolfin
 {
 
+  class DirichletBC;
+  class Form;
   class GenericTensor;
   class GenericMatrix;
   class GenericVector;
-  class Form;
+  template<class T> class MeshFunction;
   class SubDomain;
-  class DirichletBC;
 
   //--- Copies of assembly functions in Assembler.h ---
 

@@ -10,8 +10,13 @@
 #define __MESH_DATA_H
 
 #include <map>
-#include <dolfin/common/Variable.h>
+#include <string>
+#include <vector>
+#include <boost/tuple/tuple.hpp>
+
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
+//#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -135,6 +140,12 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    //--- Coloring data ---
+
+    /// First triplet is (colored entity dim, connection entity dim, distance)
+    std::map<boost::tuple<uint, uint, uint>,
+             boost::tuple<MeshFunction<uint>, std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
 
     /// Friends
     friend class XMLFile;

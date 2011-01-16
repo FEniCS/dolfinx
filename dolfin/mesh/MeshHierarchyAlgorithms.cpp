@@ -5,16 +5,16 @@
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
+#include "Cell.h"
+#include "Edge.h"
 #include "Mesh.h"
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshEditor.h"
-#include "MeshFunction.h"
-#include "Vertex.h"
-#include "Edge.h"
-#include "Cell.h"
 #include "MeshHierarchy.h"
+#include "MeshFunction.h"
+#include "MeshGeometry.h"
+#include "MeshTopology.h"
+#include "Vertex.h"
 #include "MeshHierarchyAlgorithms.h"
 
 using namespace dolfin;

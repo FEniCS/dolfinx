@@ -17,17 +17,18 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
-#include "IntersectionOperator.h"
-#include "TopologyComputation.h"
-#include "MeshSmoothing.h"
-#include "MeshOrdering.h"
-#include "MeshFunction.h"
-#include "LocalMeshData.h"
-#include "MeshPartitioning.h"
-#include "MeshColoring.h"
-#include "MeshRenumbering.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
+#include "IntersectionOperator.h"
+#include "LocalMeshData.h"
+#include "MeshColoring.h"
+#include "MeshData.h"
+#include "MeshFunction.h"
+#include "MeshOrdering.h"
+#include "MeshPartitioning.h"
+#include "MeshRenumbering.h"
+#include "MeshSmoothing.h"
+#include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
 
@@ -96,6 +97,16 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _ordered = mesh._ordered;
 
    return *this;
+}
+//-----------------------------------------------------------------------------
+MeshData& Mesh::data()
+{
+  return _data;
+}
+//-----------------------------------------------------------------------------
+const MeshData& Mesh::data() const
+{
+  return _data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const

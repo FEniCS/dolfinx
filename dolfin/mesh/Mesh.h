@@ -17,23 +17,25 @@
 #include <string>
 #include <utility>
 
+#include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/ale/ALEType.h>
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "MeshData.h"
-#include "IntersectionOperator.h"
 #include "CellType.h"
+#include "IntersectionOperator.h"
+//#include "MeshEntity.h"
+#include "MeshData.h"
+#include "MeshGeometry.h"
+#include "MeshTopology.h"
 
 namespace dolfin
 {
 
-  template <class T> class MeshFunction;
-  class Function;
   class BoundaryMesh;
-  class XMLMesh;
+  class Function;
+  class MeshEntity;
+  template <class T> class MeshFunction;
   class SubDomain;
+  class XMLMesh;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -261,20 +263,20 @@ namespace dolfin
     /// *Returns*
     ///     _MeshData_
     ///         The mesh data object associated with the mesh.
-    MeshData& data() { return _data; }
+    MeshData& data();
 
     /// Get mesh data (const version).
-    const MeshData& data() const { return _data; }
+    const MeshData& data() const;
 
     /// Get mesh cell type.
     ///
     /// *Returns*
     ///     _CellType_
     ///         The cell type object associated with the mesh.
-    inline CellType& type() { assert(_cell_type); return *_cell_type; }
+    CellType& type() { assert(_cell_type); return *_cell_type; }
 
     /// Get mesh cell type (const version).
-    inline const CellType& type() const { assert(_cell_type); return *_cell_type; }
+    const CellType& type() const { assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension.
     ///

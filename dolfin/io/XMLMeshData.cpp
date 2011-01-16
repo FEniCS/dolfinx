@@ -4,6 +4,7 @@
 // First added: 2009-03-09
 // Last changed: 2009-03-17
 
+#include "dolfin/mesh/MeshData.h"
 #include "XMLMeshFunction.h"
 #include "XMLIndent.h"
 #include "XMLArray.h"

@@ -17,22 +17,26 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
-#include "Point.h"
+//#include "MeshData.h"
 #include "Mesh.h"
+#include "MeshTopology.h"
+#include "Point.h"
 #include "PrimitiveIntersector.h"
 
 namespace dolfin
 {
 
+  //class Mesh;
 
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some mesh.
+
   class MeshEntity
   {
   public:
 
     /// Default Constructor
-    MeshEntity() :_mesh(0), _dim(0), _index(0) {}
+    MeshEntity() : _mesh(0), _dim(0), _index(0) {}
 
     /// Constructor
     MeshEntity(const Mesh& mesh, uint dim, uint index);

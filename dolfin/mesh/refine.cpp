@@ -8,6 +8,7 @@
 
 #include "LocalMeshRefinement.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "UniformMeshRefinement.h"
 #include "refine.h"
