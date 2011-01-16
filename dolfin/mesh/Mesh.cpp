@@ -2,13 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
-// Modified by Garth N. Wells 2007-2010.
+// Modified by Garth N. Wells 2007-2011.
 // Modified by Niclas Jansson 2008.
 // Modified by Kristoffer Selim 2008.
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-12-05
+// Last changed: 2011-01-16
+
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -220,7 +223,11 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 void Mesh::renumber_by_color()
 {
-  MeshRenumbering::renumber_by_color(*this);
+  // Create coloring type
+  const boost::tuple<uint, uint, uint> coloring_type(this->topology().dim(), 0, 1);
+
+  // Renumber by color
+  MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
@@ -255,49 +262,29 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
-  // Check if mesh has already been colored
-  const uint colored_entity_dim   = topology().dim();
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
-  const std::pair<uint, uint> coloring(colored_entity_dim, dim);
-
-  if (_colored.find(coloring) != _colored.end())
-  {
-    dolfin_debug("Mesh has already been colored, not coloring again.");
-    const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
-    MeshFunction<uint>* colors = _data.mesh_function(color_name);
-    assert(colors);
-    return *colors;
-  }
-
-  // We do the same const-cast trick here as in the init() functions
-  // since we are not really changing the mesh, just attaching some
-  // auxiliary data to it.
-  Mesh* _mesh = const_cast<Mesh*>(this);
-  _colored.insert(coloring);
-  return MeshColoring::color_cells(*_mesh, coloring_type);
+  boost::tuple<uint, uint, uint> _coloring_type(topology().dim(), dim, 1);
+  return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(boost::tuple<uint, uint, uint> coloring_type) const
 {
-  // Check if mesh has already been colored
-  const uint colored_entity_dim = topology().dim();
-  const std::pair<uint, uint> coloring(colored_entity_dim, dim);
+  // Find color data
+  std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
+           std::vector<std::vector<uint> > > >::const_iterator coloring_data;
+  coloring_data = this->data().coloring.find(coloring_type);
 
-  if (_colored.find(coloring) != _colored.end())
+  if (coloring_data != this->data().coloring.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
-    const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
-    MeshFunction<uint>* colors = _data.mesh_function(color_name);
-    assert(colors);
-    return *colors;
+    return coloring_data->second.first;
   }
 
   // We do the same const-cast trick here as in the init() functions
   // since we are not really changing the mesh, just attaching some
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
-  _colored.insert(coloring);
-  return MeshColoring::color(*_mesh, colored_entity_dim, dim);
+  return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point& point,

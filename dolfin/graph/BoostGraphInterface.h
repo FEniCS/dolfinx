@@ -7,10 +7,9 @@
 #ifndef __DOLFIN_BOOST_GRAPH_INTERFACE_H
 #define __DOLFIN_BOOST_GRAPH_INTERFACE_H
 
-#include <dolfin/graph/Graph.h>
 #include <boost/graph/sequential_vertex_coloring.hpp>
-
 #include <dolfin/common/types.h>
+#include <dolfin/graph/Graph.h>
 
 namespace dolfin
 {
@@ -30,7 +29,7 @@ namespace dolfin
 
     /// Compute vertex colors
     template<class T>
-    static void compute_local_vertex_coloring(const T& graph, Array<uint>& colors)
+    static uint compute_local_vertex_coloring(const T& graph, Array<uint>& colors)
     {
       // Number of vertices in graph
       const uint num_vertices = boost::num_vertices(graph);
@@ -56,6 +55,7 @@ namespace dolfin
         colors[i] = color_vec[i];
 
       std::cout << "Number of colors: " << num_colors << std::endl;
+      return num_colors;
     }
 
   };

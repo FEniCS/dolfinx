@@ -2,21 +2,22 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2010-11-27
+// Last changed: 2011-01-16
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include <boost/tuple/tuple.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-//#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -143,9 +144,12 @@ namespace dolfin
 
     //--- Coloring data ---
 
-    /// First triplet is (colored entity dim, connection entity dim, distance)
+    /// First triplet is (colored entity dim, connection entity dim, distance). MeshFunction
+    /// stores mesh entity colors and the vector<vector> a list of all mesh entity inddices
+    /// of the same color, e.g. vector<vector>[color][i] is the indec of the ith entity of
+    // color 'color'.
     std::map<boost::tuple<uint, uint, uint>,
-             boost::tuple<MeshFunction<uint>, std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
+             std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
     /// Friends
     friend class XMLFile;

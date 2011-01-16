@@ -1,12 +1,16 @@
-// Copyright (C) 2010 Garth N. Wells.
+// Copyright (C) 2010-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-15
-// Last changed: 2010-11-29
+// Last changed: 2011-01-16
 
-#include <boost/foreach.hpp>
+#include <map>
+#include <utility>
+#include <vector>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/utils.h>
@@ -25,97 +29,82 @@ using namespace dolfin;
 const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
-  return color(mesh, mesh.topology().dim(), type_to_dim(coloring_type, mesh));
+  const boost::tuple<uint, uint, uint> _coloring_type(mesh.topology().dim(),
+                                           type_to_dim(coloring_type, mesh), 1);
+
+  return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
-                                                              uint colored_entity_dim,
-                                                              uint dim)
+                                   boost::tuple<uint, uint, uint> coloring_type)
 {
+  // Convenience typedefs
+  //typedef boost::tuple<uint, uint, uint> ColorType;
+  typedef std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > ColorData;
+
   info("Coloring mesh.");
 
   // Get mesh data
   MeshData& data = mesh.data();
 
-  // Clear old coloring data if any
-  std::vector<uint>* num_colored_cells = data.array("num colored cells");
-  //std::vector<uint>* num_colored_cells = data.array("num colored entities-" + to_string(colored_entity_dim) + "-" + + to_string(dim));
-  if (num_colored_cells)
+  // Create empty coloring data
+  ColorData _color_data;
+
+  // Clear any old data
+  data.coloring.erase(coloring_type);
+
+  // Create coloring data
+  data.coloring.insert(std::make_pair(coloring_type, _color_data));
+
+  // Convenience references to data
+  assert(data.coloring.find(coloring_type) != data.coloring.end());
+  ColorData& color_data = data.coloring.find(coloring_type)->second;
+
+  MeshFunction<uint>& colors = color_data.first;
+  std::vector<std::vector<uint> >& entities_of_color = color_data.second;
+
+  // Initialise mesh function for colors and compute coloring
+  const uint colored_entity_dim = coloring_type.get<0>();
+  colors.init(mesh, colored_entity_dim);
+  const uint num_colors = MeshColoring::compute_colors(colors, coloring_type);
+
+  // Build lists of entities for each color
+  entities_of_color.resize(num_colors);
+  for (uint i = 0; i < colors.size(); i++)
   {
-    info("Clearing existing mesh coloring data.");
-    for (uint c = 0; c < num_colored_cells->size(); c++)
-      data.erase_array("colored cells " + to_string(c));
-    data.erase_array("num colored cells");
-    num_colored_cells = 0;
+    const uint color = colors[i];
+    assert(color < num_colors);
+    entities_of_color[color].push_back(i);
   }
 
-  // Create mesh function for cell colors (reuse if possible)
-  //MeshFunction<uint>* colors = data.mesh_function("cell colors");
-  const std::string color_name = "colors-" + to_string(colored_entity_dim) + "-" + to_string(dim) + "-1";
-  MeshFunction<uint>* colors = data.mesh_function(color_name);
-  if (!colors)
-    colors = data.create_mesh_function(color_name, mesh.topology().dim());
-  assert(colors);
-
-  // Compute coloring
-  MeshColoring::compute_colors(*colors, colored_entity_dim, dim);
-
-  // Extract cells for each color
-  std::vector<std::vector<uint>* > colored_entities;
-  uint max_color = 0;
-  for (uint i = 0; i < colors->size(); i++)
-  {
-    // Get current color
-    const uint color = (*colors)[i];
-    max_color = std::max(max_color, color);
-
-    // Extend list of colors if necessary
-    if (color >= colored_entities.size())
-    {
-      // Append empty lists for all colors up to current color
-      for (uint c = colored_entities.size(); c <= color; c++)
-      {
-        assert(data.array("colored cells", c) == 0);
-        colored_entities.push_back(data.create_array("colored cells " + to_string(c)));
-      }
-    }
-
-    // Add color to list if color has been seen before
-    assert(color < colored_entities.size());
-    colored_entities[color]->push_back(i);
-  }
-
-  // Check for contiguous coloring
-  if (max_color != (colored_entities.size() - 1))
-    error("Colors are not numbered contiguously.");
-
-  // Count the number of cells of each color
-  assert(data.array("num colored cells") == 0);
-  num_colored_cells = data.create_array("num colored cells");
-  assert(num_colored_cells);
-  for (uint c = 0; c < colored_entities.size(); c++)
-  {
-    info("Color %d: %d cells", c, colored_entities[c]->size());
-    num_colored_cells->push_back(colored_entities[c]->size());
-  }
-  info("Mesh has %d colors.", num_colored_cells->size());
-
-  return *colors;
+  return colors;
 }
 //-----------------------------------------------------------------------------
-void MeshColoring::compute_colors(MeshFunction<uint>& colors,
-                                  uint colored_entity_dim, uint dim)
+dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
+                                  boost::tuple<uint, uint, uint> coloring_type)
 {
   // Get the mesh
   const Mesh& mesh(colors.mesh());
 
-  // Check mesh function
-  if (colors.dim() != mesh.topology().dim())
-    error("Wrong dimension (%d) for MeshFunction for computation of cell colors.",
+  const uint colored_entity_dim = coloring_type.get<0>();
+  const uint dim = coloring_type.get<1>();
+  const uint distance = coloring_type.get<2>();
+
+  // Check that dimension match
+  if (colored_entity_dim != mesh.topology().dim())
+  {
+    error("Wrong dimension (%d) for MeshFunction for computation of mesh entity colors.",
           colors.dim());
+  }
+
+  if (distance != 1)
+    error("Only a 1-distance coloring for meshes is presently supported");
+
+  // Get number of graph vertices
+  const uint num_verticies = mesh.num_entities(colored_entity_dim);
 
   // Create graph
-  BoostBidirectionalGraph graph(mesh.num_cells());
+  BoostBidirectionalGraph graph(num_verticies);
 
   // Build graph
   for (MeshEntityIterator colored_entity(mesh, colored_entity_dim); !colored_entity.end(); ++colored_entity)
@@ -132,7 +121,7 @@ void MeshColoring::compute_colors(MeshFunction<uint>& colors,
   Array<uint> _colors(colors.size(), colors.values());
 
   // Color graph
-  BoostGraphInterface::compute_local_vertex_coloring(graph, _colors);
+  return BoostGraphInterface::compute_local_vertex_coloring(graph, _colors);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
@@ -140,9 +129,10 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
 {
   // Check that coloring type is valid
   if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
+  {
     error("Coloring type '%s' unkown. Options are \"vertex\", \"edge\" or \"facet\".",
-          coloring_type.c_str()
-);
+          coloring_type.c_str());
+  }
 
   // Select topological dimension
   if (coloring_type == "vertex")

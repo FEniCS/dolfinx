@@ -3,26 +3,26 @@
 //
 // Modified by Johan Hoffman, 2007.
 // Modified by Magnus Vikstrøm, 2007.
-// Modified by Garth N. Wells, 2007-2010.
+// Modified by Garth N. Wells, 2007-2011.
 // Modified by Niclas Jansson, 2008.
 // Modified by Kristoffer Selim, 2008.
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-29
+// Last changed: 2011-01-16
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
 #include <utility>
+#include <boost/tuple/tuple.hpp>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "CellType.h"
 #include "IntersectionOperator.h"
-//#include "MeshEntity.h"
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
@@ -425,7 +425,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<uint>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<uint>& color(uint dim) const;
+    const MeshFunction<uint>& color(boost::tuple<uint, uint, uint> coloring_type) const;
 
     /// Compute all ids of all cells which are intersected by the
     /// given point.
@@ -628,9 +628,6 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
-
-    // Computed colorings (dim of colored entity, coloring type)
-    mutable std::set<std::pair<uint, uint> > _colored;
 
   };
 

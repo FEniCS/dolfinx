@@ -14,16 +14,12 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLMeshFunction.h>
-//#include "MeshEntity.h"
 #include "Mesh.h"
 
 namespace dolfin
 {
 
-  //class Mesh;
   class MeshEntity;
-  //class File;
-  //class XMLMeshFunction;
 
   /// A MeshFunction is a function that can be evaluated at a set of
   /// mesh entities. A MeshFunction is discrete and is only defined
