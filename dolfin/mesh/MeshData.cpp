@@ -91,6 +91,9 @@ void MeshData::clear()
   for (mvec_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
     delete it->second;
   vector_mappings.clear();
+
+  // Remove coloring data
+  coloring.clear();
 }
 //-----------------------------------------------------------------------------
 MeshFunction<dolfin::uint>* MeshData::create_mesh_function(std::string name)

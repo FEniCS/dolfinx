@@ -28,6 +28,9 @@ using namespace dolfin;
 void MeshRenumbering::renumber_by_color(Mesh& mesh,
                                   boost::tuple<uint, uint, uint> coloring_type)
 {
+  typedef std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
+           std::vector<std::vector<uint> > > >::const_iterator MeshColoringIterator;
+
   info("Renumbering mesh by cell colors.");
   info(mesh);
 
@@ -36,17 +39,15 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
     error("MeshRenumbering::renumber_by_color supports cell colorings only.");
 
   // Get coloring
-  std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
-           std::vector<std::vector<uint> > > >::iterator mesh_coloring;
-  mesh_coloring = mesh.data().coloring.find(coloring_type);
+  MeshColoringIterator mesh_coloring = mesh.data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot renumber");
 
-  // Get coloring data
-  MeshFunction<uint>& colors = mesh_coloring->second.first;
-  std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  // Get coloring data (copies since the data will be deleted mesh.clear())
+  MeshFunction<uint> colors = mesh_coloring->second.first;
+  std::vector<std::vector<uint> > entities_of_color = mesh_coloring->second.second;
   assert(colors.size() == mesh.num_cells());
   assert(entities_of_color.size() > 0);
 
@@ -63,6 +64,9 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
 
   // Clean connectivity since it may be invalid after renumbering
   mesh.clean();
+
+  // Clear MeshData since it may be invalid after renumbering
+  mesh.data().clear();
 
   // Start timer
   Timer timer("Renumber mesh");
@@ -148,5 +152,12 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
       current_cell++;
     }
   }
+
+  // Set new coloring mesh data
+  std::pair<MeshColoringIterator, bool> insert
+    = mesh.data().coloring.insert(std::make_pair(coloring_type, std::make_pair(colors, entities_of_color)));
+
+  // Check that coloring was successfully inserted
+  assert(insert.second);
 }
 //-----------------------------------------------------------------------------
