@@ -44,9 +44,7 @@ MeshFunction<dolfin::uint>& ParallelData::entity_colors(uint D, uint d, uint rho
     return it->second;
 
   // Create if not found
-  MeshFunction<uint> empty(_mesh);
-  it = _entity_colors.begin();
-  _entity_colors.insert(it, std::pair<tuple_type, MeshFunction<uint> >(tuple, empty));
+  _entity_colors[tuple] = MeshFunction<uint>(_mesh);
   it = _entity_colors.find(tuple);
   assert(it != _entity_colors.end());
 
@@ -82,9 +80,7 @@ ParallelData::colored_entities(uint D, uint d, uint rho)
     return it->second;
 
   // Create if not found
-  std::vector<std::vector<uint> > empty;
-  it = _colored_entities.begin();
-  _colored_entities.insert(it, std::pair<tuple_type, std::vector<std::vector<uint> > >(tuple, empty));
+  _colored_entities[tuple] = std::vector<std::vector<uint> >();
   it = _colored_entities.find(tuple);
   assert(it != _colored_entities.end());
 
