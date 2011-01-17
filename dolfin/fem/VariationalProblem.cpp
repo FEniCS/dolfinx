@@ -235,12 +235,23 @@ void VariationalProblem::init_parameters()
 
   // Add solver parameters (linear or nonlinear)
   if (_is_nonlinear)
-    parameters.add(NonlinearVariationalSolver::default_parameters());
+  {
+    Parameters p = NonlinearVariationalSolver::default_parameters();
+    p.rename("solver");
+    parameters.add(p);
+
+  }
   else
-    parameters.add(LinearVariationalSolver::default_parameters());
+  {
+    Parameters p = LinearVariationalSolver::default_parameters();
+    p.rename("solver");
+    parameters.add(p);
+  }
 
   // Add adaptivity parameters (always)
-  parameters.add(AdaptiveSolver::default_parameters());
+  Parameters p = AdaptiveSolver::default_parameters();
+  p.rename("adaptivity");
+  parameters.add(p);
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::form_error()
