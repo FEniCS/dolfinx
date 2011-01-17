@@ -4,7 +4,6 @@
 // First added:  2011-01-17
 // Last changed: 2011-01-17
 
-#include <boost/tuple/tuple_comparison.hpp>
 #include "ParallelData.h"
 
 using namespace dolfin;
