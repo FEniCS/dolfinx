@@ -95,7 +95,7 @@ Supported formats:
   diffpack - Diffpack tetrahedral grid format
   abaqus   - Abaqus tetrahedral grid format
   ExodusII - Sandia Format (requires ncdump utility from NetCDF)
-  Star-CD  - Star-CD terahedral grid format
+  Star-CD  - Star-CD tetrahedral grid format
 
 If --input or --output are not specified, the format will
 be deduced from the suffix:
