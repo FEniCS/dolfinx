@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-15
+// Last changed: 2011-01-17
 
 #include <dolfin/function/Function.h>
 #include "Form.h"
@@ -24,8 +24,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
     _exterior_facet_domains(0),
     _interior_facet_domains(0)
 {
-  // Set default parameters
-  parameters = default_parameters();
+  // Initialize parameters
+  init_parameters();
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
@@ -38,8 +38,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
     _exterior_facet_domains(0),
     _interior_facet_domains(0)
 {
-  // Set default parameters
-  parameters = default_parameters();
+  // Initialize parameters
+  init_parameters();
 
   // Store boundary conditions
   _bcs.push_back(&bc);
@@ -55,8 +55,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
     _exterior_facet_domains(0),
     _interior_facet_domains(0)
 {
-  // Set default parameters
-  parameters = default_parameters();
+  // Initialize parameters
+  init_parameters();
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -76,8 +76,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
     _exterior_facet_domains(exterior_facet_domains),
     _interior_facet_domains(interior_facet_domains)
 {
-  // Set default parameters
-  parameters = default_parameters();
+  // Initialize parameters
+  init_parameters();
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -226,6 +226,21 @@ const Form& VariationalProblem::extract_bilinear_form(const Form& form_0,
 
   form_error();
   return form_0;
+}
+//-----------------------------------------------------------------------------
+void VariationalProblem::init_parameters()
+{
+  // Set default parameters
+  parameters = default_parameters();
+
+  // Add solver parameters (linear or nonlinear)
+  if (_is_nonlinear)
+    parameters.add(NonlinearVariationalSolver::default_parameters());
+  else
+    parameters.add(LinearVariationalSolver::default_parameters());
+
+  // Add adaptivity parameters (always)
+  parameters.add(AdaptiveSolver::default_parameters());
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::form_error()

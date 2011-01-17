@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-15
+// Last changed: 2011-01-17
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -135,11 +135,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("variational_problem");
-
-      p.add(LinearVariationalSolver::default_parameters());
-      p.add(NonlinearVariationalSolver::default_parameters());
-      p.add(AdaptiveSolver::default_parameters());
-
+      p.add("symmetric", false);
       return p;
     }
 
@@ -156,6 +152,9 @@ namespace dolfin
     // Extract which of the two forms is bilinear
     static const Form& extract_bilinear_form(const Form& form_0,
                                              const Form& form_1);
+
+    // Initialize parameters
+    void init_parameters();
 
     // Print error message when form arguments are incorrect
     static void form_error();
