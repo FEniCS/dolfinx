@@ -122,7 +122,7 @@ int main()
 
   // Solve PDE (using direct solver)
   Function u(V);
-  problem.parameters["linear_solver"] = "direct";
+  problem.parameters("solver")["linear_solver"] = "direct";
   problem.solve(u);
 
   Function ux = u[0];

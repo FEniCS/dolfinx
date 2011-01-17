@@ -83,7 +83,7 @@ int main()
 
   // Solve PDE
   Function w(W);
-  problem.parameters["solver"]["linear_solver"] = "direct";
+  problem.parameters("solver")["linear_solver"] = "direct";
   problem.solve(w);
   Function u = w[0];
   Function p = w[1];
