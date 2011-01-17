@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-01-14
+// Last changed: 2011-01-17
 
 #include <dolfin/function/Function.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
@@ -27,8 +27,8 @@ void LinearVariationalSolver::solve(Function& u,
   // Get parameters
   std::string solver_type   = parameters["linear_solver"];
   const std::string pc_type = parameters["preconditioner"];
-  const bool symmetric      = parameters["symmetric"];
   const bool print_rhs      = parameters["print_rhs"];
+  const bool symmetric      = problem.parameters["symmetric"];
   const bool print_matrix   = parameters["print_matrix"];
 
   // Create matrix and vector
