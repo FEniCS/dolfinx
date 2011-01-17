@@ -8,6 +8,7 @@
 #define __PARALLEL_DATA_H
 
 #include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -34,26 +35,26 @@ namespace dolfin
 
     /// Return the number of colors for entities of dimension D
     /// colored by entities of dimension d and coloring distance rho.
-    //uint num_colors(uint D, uint d, uint rho) const;
+    uint num_colors(uint D, uint d, uint rho) const;
 
     /// Return colors for entities of dimension D colored by entities
     /// of dimension d and coloring distance rho (const version).
-    //MeshFunction<uint>& entity_colors(uint D, uint d, uint rho);
+    MeshFunction<uint>& entity_colors(uint D, uint d, uint rho);
 
     /// Return colors for entities of dimension D colored by entities
     /// of dimension d and coloring distance rho (const version).
-    //const MeshFunction<uint>& entity_colors(uint D, uint d, uint rho) const;
+    const MeshFunction<uint>& entity_colors(uint D, uint d, uint rho) const;
 
     /// Return an array of colored entities for each color in the
     /// range 0, 1, ..., num_colors -1 for entities of dimension D
     /// colored by entities of dimension d and coloring distance rho.
-    //std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho);
+    std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho);
 
     /// Return an array of colored entities for each color in the
     /// range 0, 1, ..., num_colors for entities of dimension D
     /// colored by entities of dimension d and coloring distance rho
     /// (const version).
-    //const std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho) const;
+    const std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho) const;
 
   private:
 
