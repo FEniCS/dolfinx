@@ -55,5 +55,5 @@ problem.parameters["adaptivity"]["reference"] = 0.82174229794; # FIXME
 
 # Solve to given tolerance
 tol = 0.0
-pde.solve(w_h, tol, M)
+problem.solve(w_h, tol, M)
 
