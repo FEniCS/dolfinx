@@ -23,7 +23,6 @@
 #include "UFCMesh.h"
 #include "DofMap.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------

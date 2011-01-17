@@ -4,6 +4,7 @@
 // First added:  2011-01-17
 // Last changed: 2011-01-17
 
+#include <boost/tuple/tuple_comparison.hpp>
 #include "ParallelData.h"
 
 using namespace dolfin;
@@ -19,7 +20,6 @@ ParallelData::~ParallelData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-/*
 dolfin::uint ParallelData::num_colors(uint D, uint d, uint rho) const
 {
   // Try to find in map
@@ -68,6 +68,7 @@ ParallelData::entity_colors(uint D, uint d, uint rho) const
   // Not found
   error("Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d.",
         D, d, rho);
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::uint> >&
@@ -105,6 +106,7 @@ ParallelData::colored_entities(uint D, uint d, uint rho) const
   // Not found
   error("Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d.",
         D, d, rho);
+
+  return it->second;
 }
 //-----------------------------------------------------------------------------
-*/
