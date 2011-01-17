@@ -8,6 +8,7 @@
 #define __PARALLEL_DATA_H
 
 #include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include "MeshFunction.h"
 
 namespace dolfin
