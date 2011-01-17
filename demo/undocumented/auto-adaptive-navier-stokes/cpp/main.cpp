@@ -77,7 +77,7 @@ int main() {
   VariationalProblem pde(F, dF, bc);
 
   // Give reference
-  pde.parameters("adaptive_solver")["reference"] = 0.82174229794; // FIXME
+  pde.parameters("adaptivity")["reference"] = 0.82174229794; // FIXME
 
   // Solve problem with goal-oriented error control to given tolerance
   double tol = 0.0;

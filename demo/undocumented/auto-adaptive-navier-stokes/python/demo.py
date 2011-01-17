@@ -51,7 +51,7 @@ problem = VariationalProblem(F, dF, bc)
 
 # Define goal and reference
 M = u_h[0]*ds#(0) #FIXME
-problem.parameters["adaptivity"]["adaptive_solver"]["reference"] = 0.82174229794; # FIXME
+problem.parameters["adaptivity"]["reference"] = 0.82174229794; # FIXME
 
 # Solve to given tolerance
 tol = 0.0
