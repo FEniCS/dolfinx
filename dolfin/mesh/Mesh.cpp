@@ -31,6 +31,7 @@
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
 #include "MeshSmoothing.h"
+#include "ParallelData.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
@@ -110,6 +111,26 @@ MeshData& Mesh::data()
 const MeshData& Mesh::data() const
 {
   return _data;
+}
+//-----------------------------------------------------------------------------
+ParallelData& Mesh::parallel_data()
+{
+  // Create if not already created
+  if (!_parallel_data)
+    _parallel_data.reset(new ParallelData(*this));
+
+  // Return data
+  return *_parallel_data;
+}
+//-----------------------------------------------------------------------------
+const ParallelData& Mesh::parallel_data() const
+{
+  // Check that data exists
+  if (!_parallel_data)
+    error("Parallel data not available.");
+
+  // Return data
+  return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const

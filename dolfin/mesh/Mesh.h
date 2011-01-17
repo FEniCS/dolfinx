@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2011-01-16
+// Last changed: 2011-01-17
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <boost/tuple/tuple.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
@@ -36,6 +37,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class SubDomain;
   class XMLMesh;
+  class ParallelData;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -267,6 +269,16 @@ namespace dolfin
 
     /// Get mesh data (const version).
     const MeshData& data() const;
+
+    /// Get parallel mesh data.
+    ///
+    /// *Returns*
+    ///     _ParallelData_
+    ///         The parallel data object associated with the mesh.
+    ParallelData& parallel_data();
+
+    /// Get parallel mesh data (const version).
+    const ParallelData& parallel_data() const;
 
     /// Get mesh cell type.
     ///
@@ -616,6 +628,9 @@ namespace dolfin
 
     // Auxiliary mesh data
     MeshData _data;
+
+    // Auxiliary parallel mesh data
+    boost::scoped_ptr<ParallelData> _parallel_data;
 
     // Cell type
     CellType* _cell_type;
