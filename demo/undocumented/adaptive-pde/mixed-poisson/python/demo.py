@@ -38,32 +38,32 @@ L = - dot(tau, n)*u*ds + v*f*dx
 M = f*sigma_h[1]*dx
 
 # Define problem
-pde = AdaptiveVariationalProblem(a - L, goal_functional=M)
+problem = VariationalProblem(a - L, goal_functional=M)
 
 # Use a higher-order strategy for computing the dual (default is
 # "extrapolation")
-pde.parameters["error_estimation"]["dual_strategy"] = "higher_order"
+problem.paramters["adaptivity"]["error_estimation"]["dual_strategy"] = "higher_order"
 
 # Use a more robust error estimate (default is "error_representation")
-pde.parameters["error_estimation"]["estimator"] = "dual_weighted_residual"
+pde.parameters["adaptivity"]["error_estimation"]["estimator"] = "dual_weighted_residual"
 
 # Increase the number of max_iterations (default is 20)
-pde.parameters["max_iterations"] = 100
+pde.parameters["adaptivity"]["max_iterations"] = 100
 
 # Do not plot error indicators
-pde.parameters["plot_indicators"] = False
+pde.parameters["adaptivity"]["plot_indicators"] = False
 
 # Save error indicators, meshes and adaptive data to "tmp...". Default
 # is "indicators...". Do not use same name as script.
-pde.parameters["save_indicators"] = "mixed-poisson-data"
+pde.parameters["adaptivity"]["save_indicators"] = "mixed-poisson-data"
 
 # Linear solver for primal and dual can be adjusted with this
 # parameter
-pde.parameters["linear_solver"] = "direct"
+pde.parameters["solver"]["linear_solver"] = "direct"
 
 # Use different mesh marking and refinement fraction
-pde.parameters["marking"]["strategy"] = "fixed_fraction"
-pde.parameters["marking"]["fraction"] = 0.1
+pde.parameters["adaptivity"]["marking"]["strategy"] = "fixed_fraction"
+pde.parameters["adaptivity"]["marking"]["fraction"] = 0.1
 
 # Solve to given TOL
 TOL = 1.e-3

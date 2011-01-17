@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2010-09-02
+// Last changed: 2011-01-17
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -78,9 +78,6 @@ int main()
       return x[0] > 0.9;// && on_boundary;
     }
   };
-
-  //parameters["mesh_partitioner"] = "SCOTCH";
-  //parameters["linear_algebra_backend"] = "Epetra";
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");

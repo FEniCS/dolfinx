@@ -32,12 +32,12 @@ g = Expression("sin(5*x[0])")
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
-# Define adaptive variational problem based on energy norm error
-# estimator (no goal given)
-pde = AdaptiveVariationalProblem(a - L, bcs=bcs)
+# Define variational problem based on energy norm error
+# estimator (no goal functional given)
+problem = VariationalProblem(a - L, bcs=bcs)
 
 # Use Bank-Weiser style error estimator (just for fun)
-pde.parameters["error_estimation"]["estimator"] = "bank_weiser"
+problem.parameters["adaptivity"]["error_estimation"]["estimator"] = "bank_weiser"
 
 TOL = 0.06
 u = pde.solve(TOL)

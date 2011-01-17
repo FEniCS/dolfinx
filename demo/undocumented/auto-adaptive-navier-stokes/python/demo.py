@@ -47,11 +47,11 @@ dF = derivative(F, w_h, dw) # FIXME
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
 # Define variational problem (with new notation)
-pde = VariationalProblem(F, dF, bc)
+problem = VariationalProblem(F, dF, bc)
 
 # Define goal and reference
 M = u_h[0]*ds#(0) #FIXME
-pde.parameters["adaptive_solver"]["reference"] = 0.82174229794; # FIXME
+problem.parameters["adaptivity"]["adaptive_solver"]["reference"] = 0.82174229794; # FIXME
 
 # Solve to given tolerance
 tol = 0.0

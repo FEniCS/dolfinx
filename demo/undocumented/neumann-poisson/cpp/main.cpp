@@ -1,7 +1,7 @@
 // Copyright (C) 2010 Marie E. Rognes
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2010-06-03
+// Last changed: 2011-01-17
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -69,7 +69,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L);
-  problem.parameters["linear_solver"] = "iterative";
+  problem.parameters["solver"]["linear_solver"] = "iterative";
   Function w(V);
   problem.solve(w);
 

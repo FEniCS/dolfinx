@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-12-12
+// Last changed: 2011-01-17
 //
 // This demo solves the time-dependent advection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -18,10 +18,6 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
-  //parameters["linear_algebra_backend"] = "uBLAS";
-  parameters["linear_algebra_backend"] = "PETSc";
-  //parameters["linear_algebra_backend"] = "Epetra";
-
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
   mesh.init();

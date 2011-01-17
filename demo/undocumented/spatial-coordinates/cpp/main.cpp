@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-03-05
-// Last changed: 2010-03-05
+// Last changed: 2011-01-17
 //
 // This demo program solves Poisson's equation
 //
@@ -52,7 +52,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  problem.parameters["linear_solver"] = "iterative";
+  problem.parameters["solver"]["linear_solver"] = "iterative";
   Function u(V);
   problem.solve(u);
 
