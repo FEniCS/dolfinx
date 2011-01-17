@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-05-22
-// Last changed: 2010-01-06
+// Last changed: 2011-01-17
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -14,6 +14,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLMeshFunction.h>
+#include "MeshEntity.h"
 #include "Mesh.h"
 
 namespace dolfin

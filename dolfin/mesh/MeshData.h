@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2011-01-16
+// Last changed: 2011-01-17
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
