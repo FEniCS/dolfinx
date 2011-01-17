@@ -38,12 +38,12 @@ R = FunctionSpace(mesh, "R", 0)
 W = V * R
 
 # Define variational problem
-(v, d) = TestFunctions(W)
 (u, c) = TrialFunction(W)
+(v, d) = TestFunctions(W)
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 g = Expression("-sin(5*x[0])")
-a = (inner(grad(v), grad(u)) + v*c + d*u)*dx
-L = v*f*dx + v*g*ds
+a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
+L = f*v*dx + g*v*ds
 
 # Compute solution
 problem = VariationalProblem(a, L)

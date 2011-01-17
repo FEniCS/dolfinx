@@ -93,11 +93,11 @@ void VariationalProblem::solve(Function& u)
 {
   // Call nonlinear solver
   if (_is_nonlinear)
-    NonlinearVariationalSolver::solve(u, *this, parameters("nonlinear_variational_solver"));
+    NonlinearVariationalSolver::solve(u, *this, parameters("solver"));
 
   // Call linear solver
   else
-    LinearVariationalSolver::solve(u, *this, parameters("linear_variational_solver"));
+    LinearVariationalSolver::solve(u, *this, parameters("solver"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1)
@@ -132,7 +132,7 @@ void VariationalProblem::solve(Function& u,
                                GoalFunctional& M)
 {
   // Call adaptive solver
-  AdaptiveSolver::solve(u, *this, tolerance, M, parameters("adaptive_solver"));
+  AdaptiveSolver::solve(u, *this, tolerance, M, parameters("adaptivity"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u,
@@ -141,7 +141,7 @@ void VariationalProblem::solve(Function& u,
                                ErrorControl& ec)
 {
   // Call adaptive solver
-  AdaptiveSolver::solve(u, *this, tolerance, M, ec, parameters("adaptive_solver"));
+  AdaptiveSolver::solve(u, *this, tolerance, M, ec, parameters("adaptivity"));
 }
 //-----------------------------------------------------------------------------
 const bool VariationalProblem::is_nonlinear() const
