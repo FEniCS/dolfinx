@@ -198,6 +198,7 @@ include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 
 # Add CXX defintions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
+add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
