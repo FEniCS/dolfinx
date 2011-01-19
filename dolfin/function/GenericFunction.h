@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2009-12-11
+// Last changed: 2011-01-19
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -49,9 +49,12 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const = 0;
 
-    /// Evaluate function for given data
+    /// Evaluate at given point in given cell
     virtual void eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const = 0;
+                      const ufc::cell& cell) const;
+
+    /// Evaluate at given point
+    virtual void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -69,6 +72,32 @@ namespace dolfin
     virtual void gather() const {}
 
     //--- Convenience functions ---
+
+    /// Evaluation at given point (scalar function)
+    double operator() (double x);
+
+    /// Evaluation at given point (scalar function)
+    double operator() (double x, double y);
+
+    /// Evaluation at given point (scalar function)
+    double operator() (double x, double y, double z);
+
+    /// Evaluation at given point (scalar function)
+    double operator() (const Point& p);
+
+    /// Evaluation at given point (vector-valued function)
+    void operator() (Array<double>& value, double x);
+
+    /// Evaluation at given point (vector-valued function)
+    void operator() (Array<double>& value, double x, double y);
+
+    /// Evaluation at given point (vector-valued function)
+    void operator() (Array<double>& value, double x, double y, double z);
+
+    /// Evaluation at given point (vector-valued function)
+    void operator() (Array<double>& value, const Point& p);
+
+    /// Evaluation at given point
 
     /// Return value size (product of value dimensions)
     uint value_size() const;
