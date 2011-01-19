@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-01-13
+// Last changed: 2011-01-19
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -72,6 +72,26 @@
 
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
+
+%shared_ptr(dolfin::GenericTensor)
+%shared_ptr(dolfin::GenericVector)
+%shared_ptr(dolfin::GenericMatrix)
+%shared_ptr(dolfin::Scalar)
+
+%shared_ptr(dolfin::Matrix)
+%shared_ptr(dolfin::PETScMatrix)
+%shared_ptr(dolfin::MTL4Matrix)
+%shared_ptr(dolfin::EpetraMatrix)
+%shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
+%shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
+%shared_ptr(dolfin::STLMatrix)
+
+%shared_ptr(dolfin::Vector)
+%shared_ptr(dolfin::PETScVector)
+%shared_ptr(dolfin::MTL4Vector)
+%shared_ptr(dolfin::EpetraVector)
+%shared_ptr(dolfin::uBLASVector)
+
 #else
 
 SWIG_SHARED_PTR(GenericDofMap,dolfin::GenericDofMap)
