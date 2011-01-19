@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2010-10-19
+// Last changed: 2011-01-13
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -105,6 +105,26 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
 SWIG_SHARED_PTR(SubDomain,dolfin::SubDomain)
 SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
+
+
+SWIG_SHARED_PTR(GenericTensor,dolfin::GenericTensor)
+SWIG_SHARED_PTR_DERIVED(GenericVector,dolfin::GenericTensor,dolfin::GenericVector)
+SWIG_SHARED_PTR_DERIVED(GenericMatrix,dolfin::GenericTensor,dolfin::GenericMatrix)
+SWIG_SHARED_PTR_DERIVED(Scalar,dolfin::GenericTensor,dolfin::Scalar)
+
+SWIG_SHARED_PTR_DERIVED(Matrix,dolfin::GenericMatrix,dolfin::Matrix)
+SWIG_SHARED_PTR_DERIVED(PETScMatrix,dolfin::GenericMatrix,dolfin::PETScMatrix)
+SWIG_SHARED_PTR_DERIVED(MTL4Matrix,dolfin::GenericMatrix,dolfin::MTL4Matrix)
+SWIG_SHARED_PTR_DERIVED(EpetraMatrix,dolfin::GenericMatrix,dolfin::EpetraMatrix)
+SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
+SWIG_SHARED_PTR_DERIVED(uBLASSparseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
+SWIG_SHARED_PTR_DERIVED(STLMatrix,dolfin::GenericMatrix,dolfin::STLMatrix)
+
+SWIG_SHARED_PTR_DERIVED(Vector,dolfin::GenericVector,dolfin::Vector)
+SWIG_SHARED_PTR_DERIVED(PETScVector,dolfin::GenericVector,dolfin::PETScVector)
+SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
+SWIG_SHARED_PTR_DERIVED(EpetraVector,dolfin::GenericVector,dolfin::EpetraVector)
+SWIG_SHARED_PTR_DERIVED(uBLASVector,dolfin::GenericVector,dolfin::uBLASVector)
 #endif
 
 //-----------------------------------------------------------------------------
@@ -180,6 +200,7 @@ IMPLEMENT_VARIABLE_INTERFACE(GenericFunction)
 IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 IMPLEMENT_VARIABLE_INTERFACE(GenericDofMap)
+IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
 
 //-----------------------------------------------------------------------------
 // Macros for defining in and out typemaps for foreign types that DOLFIN
