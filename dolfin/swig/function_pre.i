@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2010-03-07
+// Last changed: 2011-01-19
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -47,6 +47,12 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
+
+//-----------------------------------------------------------------------------
+// Ingore operator() in GenericFunction, implemented separately in
+// the Python interface.
+//-----------------------------------------------------------------------------
+%ignore dolfin::GenericFunction::operator();
 
 //-----------------------------------------------------------------------------
 // Rename eval(val, data) method

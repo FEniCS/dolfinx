@@ -40,15 +40,15 @@ double GenericFunction::operator() (double x)
     error("Function is not scalar.");
 
   // Set up Array arguments
-  Array<double> value(1);
+  Array<double> values(1);
   Array<double> xx(1);
   xx[0] = x;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 
   // Return value
-  return value[0];
+  return values[0];
 }
 //-----------------------------------------------------------------------------
 double GenericFunction::operator() (double x, double y)
@@ -58,16 +58,16 @@ double GenericFunction::operator() (double x, double y)
     error("Function is not scalar.");
 
   // Set up Array arguments
-  Array<double> value(1);
+  Array<double> values(1);
   Array<double> xx(2);
   xx[0] = x;
   xx[1] = y;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 
   // Return value
-  return value[0];
+  return values[0];
 }
 //-----------------------------------------------------------------------------
 double GenericFunction::operator() (double x, double y, double z)
@@ -77,17 +77,17 @@ double GenericFunction::operator() (double x, double y, double z)
     error("Function is not scalar.");
 
   // Set up Array arguments
-  Array<double> value(1);
+  Array<double> values(1);
   Array<double> xx(3);
   xx[0] = x;
   xx[1] = y;
   xx[2] = z;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 
   // Return value
-  return value[0];
+  return values[0];
 }
 //-----------------------------------------------------------------------------
 double GenericFunction::operator() (const Point& p)
@@ -95,7 +95,7 @@ double GenericFunction::operator() (const Point& p)
   return (*this)(p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& value,
+void GenericFunction::operator() (Array<double>& values,
                                   double x)
 {
   // Set up Array argument
@@ -103,10 +103,10 @@ void GenericFunction::operator() (Array<double>& value,
   xx[0] = x;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& value,
+void GenericFunction::operator() (Array<double>& values,
                                   double x, double y)
 {
   // Set up Array argument
@@ -115,10 +115,10 @@ void GenericFunction::operator() (Array<double>& value,
   xx[1] = y;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& value,
+void GenericFunction::operator() (Array<double>& values,
                                   double x, double y, double z)
 {
   // Set up Array argument
@@ -128,12 +128,12 @@ void GenericFunction::operator() (Array<double>& value,
   xx[2] = z;
 
   // Call eval
-  eval(value, xx);
+  eval(values, xx);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& value, const Point& p)
+void GenericFunction::operator() (Array<double>& values, const Point& p)
 {
-  (*this)(value, p.x(), p.y(), p.z());
+  (*this)(values, p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint GenericFunction::value_size() const

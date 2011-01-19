@@ -86,16 +86,16 @@ namespace dolfin
     double operator() (const Point& p);
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& value, double x);
+    void operator() (Array<double>& values, double x);
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& value, double x, double y);
+    void operator() (Array<double>& values, double x, double y);
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& value, double x, double y, double z);
+    void operator() (Array<double>& values, double x, double y, double z);
 
     /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& value, const Point& p);
+    void operator() (Array<double>& values, const Point& p);
 
     /// Evaluation at given point
 
