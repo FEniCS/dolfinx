@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2010-01-26
+// Last changed: 2011-01-19
 //
 // Modified by Johan Hake, 2009.
 
@@ -65,13 +65,6 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const
-{
-  // Redirect to simple eval
-  eval(values, x);
-}
-//-----------------------------------------------------------------------------
 void Expression::restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
@@ -112,10 +105,5 @@ void Expression::compute_vertex_values(Array<double>& vertex_values,
       }
     }
   }
-}
-//-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<double>& x) const
-{
-  error("Missing eval() for Expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------

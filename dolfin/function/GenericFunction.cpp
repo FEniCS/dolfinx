@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2010-06-21
+// Last changed: 2011-01-19
 
 #include <string>
 #include <dolfin/fem/FiniteElement.h>
@@ -19,6 +19,121 @@ GenericFunction::GenericFunction() : Variable("u", "a function")
 GenericFunction::~GenericFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::eval(Array<double>& values, const Array<double>& x,
+                           const ufc::cell& cell) const
+{
+  // Redirect to simple eval
+  eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
+{
+  error("Missing eval() function (must be overloaded).");
+}
+//-----------------------------------------------------------------------------
+double GenericFunction::operator() (double x)
+{
+  // Check that function is scalar
+  if (value_rank() != 0)
+    error("Function is not scalar.");
+
+  // Set up Array arguments
+  Array<double> values(1);
+  Array<double> xx(1);
+  xx[0] = x;
+
+  // Call eval
+  eval(values, xx);
+
+  // Return value
+  return values[0];
+}
+//-----------------------------------------------------------------------------
+double GenericFunction::operator() (double x, double y)
+{
+  // Check that function is scalar
+  if (value_rank() != 0)
+    error("Function is not scalar.");
+
+  // Set up Array arguments
+  Array<double> values(1);
+  Array<double> xx(2);
+  xx[0] = x;
+  xx[1] = y;
+
+  // Call eval
+  eval(values, xx);
+
+  // Return value
+  return values[0];
+}
+//-----------------------------------------------------------------------------
+double GenericFunction::operator() (double x, double y, double z)
+{
+  // Check that function is scalar
+  if (value_rank() != 0)
+    error("Function is not scalar.");
+
+  // Set up Array arguments
+  Array<double> values(1);
+  Array<double> xx(3);
+  xx[0] = x;
+  xx[1] = y;
+  xx[2] = z;
+
+  // Call eval
+  eval(values, xx);
+
+  // Return value
+  return values[0];
+}
+//-----------------------------------------------------------------------------
+double GenericFunction::operator() (const Point& p)
+{
+  return (*this)(p.x(), p.y(), p.z());
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::operator() (Array<double>& values,
+                                  double x)
+{
+  // Set up Array argument
+  Array<double> xx(1);
+  xx[0] = x;
+
+  // Call eval
+  eval(values, xx);
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::operator() (Array<double>& values,
+                                  double x, double y)
+{
+  // Set up Array argument
+  Array<double> xx(2);
+  xx[0] = x;
+  xx[1] = y;
+
+  // Call eval
+  eval(values, xx);
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::operator() (Array<double>& values,
+                                  double x, double y, double z)
+{
+  // Set up Array argument
+  Array<double> xx(3);
+  xx[0] = x;
+  xx[1] = y;
+  xx[2] = z;
+
+  // Call eval
+  eval(values, xx);
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::operator() (Array<double>& values, const Point& p)
+{
+  (*this)(values, p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint GenericFunction::value_size() const
