@@ -79,18 +79,27 @@
 %shared_ptr(dolfin::Scalar)
 
 %shared_ptr(dolfin::Matrix)
-%shared_ptr(dolfin::PETScMatrix)
-%shared_ptr(dolfin::MTL4Matrix)
-%shared_ptr(dolfin::EpetraMatrix)
+%shared_ptr(dolfin::Vector)
+
+%shared_ptr(dolfin::STLMatrix)
 %shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
 %shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
-%shared_ptr(dolfin::STLMatrix)
-
-%shared_ptr(dolfin::Vector)
-%shared_ptr(dolfin::PETScVector)
-%shared_ptr(dolfin::MTL4Vector)
-%shared_ptr(dolfin::EpetraVector)
 %shared_ptr(dolfin::uBLASVector)
+
+#ifdef HAS_PETSC
+%shared_ptr(dolfin::PETScMatrix)
+%shared_ptr(dolfin::PETScVector)
+#endif
+
+#ifdef HAS_MTL4
+%shared_ptr(dolfin::MTL4Matrix)
+%shared_ptr(dolfin::MTL4Vector)
+#endif
+
+#ifdef HAS_TRILINOS
+%shared_ptr(dolfin::EpetraMatrix)
+%shared_ptr(dolfin::EpetraVector)
+#endif
 
 #else
 
@@ -131,20 +140,29 @@ SWIG_SHARED_PTR(GenericTensor,dolfin::GenericTensor)
 SWIG_SHARED_PTR_DERIVED(GenericVector,dolfin::GenericTensor,dolfin::GenericVector)
 SWIG_SHARED_PTR_DERIVED(GenericMatrix,dolfin::GenericTensor,dolfin::GenericMatrix)
 SWIG_SHARED_PTR_DERIVED(Scalar,dolfin::GenericTensor,dolfin::Scalar)
-
 SWIG_SHARED_PTR_DERIVED(Matrix,dolfin::GenericMatrix,dolfin::Matrix)
-SWIG_SHARED_PTR_DERIVED(PETScMatrix,dolfin::GenericMatrix,dolfin::PETScMatrix)
-SWIG_SHARED_PTR_DERIVED(MTL4Matrix,dolfin::GenericMatrix,dolfin::MTL4Matrix)
-SWIG_SHARED_PTR_DERIVED(EpetraMatrix,dolfin::GenericMatrix,dolfin::EpetraMatrix)
+SWIG_SHARED_PTR_DERIVED(Vector,dolfin::GenericVector,dolfin::Vector)
+
 SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
 SWIG_SHARED_PTR_DERIVED(uBLASSparseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
+SWIG_SHARED_PTR_DERIVED(uBLASVector,dolfin::GenericVector,dolfin::uBLASVector)
 SWIG_SHARED_PTR_DERIVED(STLMatrix,dolfin::GenericMatrix,dolfin::STLMatrix)
 
-SWIG_SHARED_PTR_DERIVED(Vector,dolfin::GenericVector,dolfin::Vector)
-SWIG_SHARED_PTR_DERIVED(PETScVector,dolfin::GenericVector,dolfin::PETScVector)
-SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
+#ifdef HAS_TRILINOS
+SWIG_SHARED_PTR_DERIVED(EpetraMatrix,dolfin::GenericMatrix,dolfin::EpetraMatrix)
 SWIG_SHARED_PTR_DERIVED(EpetraVector,dolfin::GenericVector,dolfin::EpetraVector)
-SWIG_SHARED_PTR_DERIVED(uBLASVector,dolfin::GenericVector,dolfin::uBLASVector)
+#endif
+
+#ifdef HAS_PETSC
+SWIG_SHARED_PTR_DERIVED(PETScMatrix,dolfin::GenericMatrix,dolfin::PETScMatrix)
+SWIG_SHARED_PTR_DERIVED(PETScVector,dolfin::GenericVector,dolfin::PETScVector)
+#endif
+
+#ifdef HAS_MTL4
+SWIG_SHARED_PTR_DERIVED(MTL4Matrix,dolfin::GenericMatrix,dolfin::MTL4Matrix)
+SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
+#endif
+
 #endif
 
 //-----------------------------------------------------------------------------
