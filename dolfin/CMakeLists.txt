@@ -248,7 +248,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
   # Check that UFC was built with the version of SWIG that is being used
   if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version #{UFC_SWIGVERSION} or recompile UFC with present SWIG.")
+    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
   endif()
 
   # If suitble UFC SWIG extension is found, add SWIG subdirectory
