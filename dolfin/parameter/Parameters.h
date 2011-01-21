@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-11-11
+// Last changed: 2011-01-20
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -46,11 +46,11 @@ namespace dolfin
   ///
   /// Parameters may be changed as follows:
   ///
-  ///   p("gmres_restart") = 50;
+  ///   p["gmres_restart"] = 50;
   ///
   /// Parameter values may be retrieved as follows:
   ///
-  ///   int gmres_restart = p("gmres_restart");
+  ///   int gmres_restart = p["gmres_restart"];
   ///
   /// Parameter sets may be nested as follows:
   ///
@@ -59,7 +59,7 @@ namespace dolfin
   ///
   /// Nested parameters may then be accessed by
   ///
-  ///   p["nested_parameters"]("...")
+  ///   p("nested_parameters")["..."]
   ///
   /// Parameters may be nested at arbitrary depths.
   ///
