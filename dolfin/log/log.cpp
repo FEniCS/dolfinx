@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2009 Anders Logg.
+// Copyright (C) 2003-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2010-09-01
+// Last changed: 2011-01-21
 
 #include <cstdarg>
 #include <cstdlib>
@@ -150,6 +150,11 @@ void dolfin::logging(bool active)
 void dolfin::set_log_level(int level)
 {
   LogManager::logger.set_log_level(level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::set_output_stream(std::ostream& out)
+{
+  LogManager::logger.set_output_stream(out);
 }
 //-----------------------------------------------------------------------------
 int dolfin::get_log_level()

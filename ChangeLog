@@ -1,3 +1,4 @@
+ - Add function set_output_stream
  - Add operator () for evaluation at points for Function/Expression in C++
  - Add abs() to GenericVector interface
  - Fix bug for local refinement of manifolds

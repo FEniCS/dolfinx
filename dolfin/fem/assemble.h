@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2009 Anders Logg.
+// Copyright (C) 2007-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008, 2009.
 // Modified by Johan Hake, 2009.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-02
+// Last changed: 2011-01-20
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
@@ -59,7 +59,7 @@ namespace dolfin
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
-                       bool reset_sparsitys=true,
+                       bool reset_sparsities=true,
                        bool add_values=false);
 
   /// Assemble system (A, b) and apply Dirichlet boundary condition
@@ -90,7 +90,7 @@ namespace dolfin
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,
                        const GenericVector* x0,
-                       bool reset_sparsitys=true,
+                       bool reset_sparsities=true,
                        bool add_values=false);
 
   //--- Specialized versions for scalars ---
