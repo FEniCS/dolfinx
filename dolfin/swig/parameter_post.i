@@ -134,6 +134,9 @@ def iterkeys(self):
     for key in self.keys():
         yield key
 
+def __iter__(self):
+    return self.iterkeys()
+
 def values(self):
     "Returns a list of the parameter values"
     return [self[key] for key in self.keys()]
@@ -180,11 +183,11 @@ def __setitem__(self, key, value):
 
 def update(self, other):
     "A recursive update that handles parameter subsets correctly."
-    if not isinstance(other,(type(self),dict)):
-        raise TypeError, "expected a 'dict' or a '%s'"%type(self).__name__
+    if not isinstance(other,(Parameters, dict)):
+        raise TypeError, "expected a 'dict' or a '%s'"%Parameters.__name__
     for key, other_value in other.iteritems():
         self_value  = self[key]
-        if isinstance(self_value, type(self)):
+        if isinstance(self_value, Parameters):
             self_value.update(other_value)
         else:
             setattr(self, key, other_value)
@@ -201,14 +204,14 @@ def to_dict(self):
 
 def copy(self):
     "Return a copy of it self"
-    return type(self)(self)
+    return Parameters(self)
 
 def option_string(self):
     "Return an option string representation of the Parameters"
     def option_list(parent,basename):
         ret_list = []
         for key, value in parent.iteritems():
-            if isinstance(value, type(parent)):
+            if isinstance(value, Parameters):
                 ret_list.extend(option_list(value,basename + key + '.'))
             else:
                 ret_list.append(basename + key + " " + str(value))
