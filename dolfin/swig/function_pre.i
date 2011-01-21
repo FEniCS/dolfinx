@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2011-01-19
+// Last changed: 2011-01-21
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)

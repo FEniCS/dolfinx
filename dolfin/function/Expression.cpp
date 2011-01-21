@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-19
+// Last changed: 2011-01-21
 //
 // Modified by Johan Hake, 2009.
 
@@ -50,6 +50,18 @@ Expression::Expression(const Expression& expression)
 Expression::~Expression()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void Expression::eval(Array<double>& values, const Array<double>& x,
+		      const ufc::cell& cell) const
+{
+  // Redirect to simple eval
+  eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void Expression::eval(Array<double>& values, const Array<double>& x) const
+{
+  error("Missing eval() function (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_rank() const

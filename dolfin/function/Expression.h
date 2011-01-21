@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-19
+// Last changed: 2011-01-21
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -54,6 +54,14 @@ namespace dolfin
     virtual ~Expression();
 
     //--- Implementation of GenericFunction interface ---
+    /// Note: The reimplementation of eval is needed for the Python interface
+
+    /// Evaluate at given point in given cell 
+    virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const;
+
+    /// Evaluate at given point
+    virtual void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Return value rank
     virtual uint value_rank() const;

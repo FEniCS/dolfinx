@@ -1,7 +1,7 @@
 """Unit tests for the function library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-24 -- 2010-09-05"
+__date__ = "2007-05-24 -- 2011-01-21"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -78,20 +78,22 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          #class F1(Expression):
-          #     def eval_data(self, values, data):
-          #          x = data.x()
-          #          values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+          class F1(Expression):
+               def __init__(self, mesh, *arg, **kwargs):
+                    self.mesh = mesh
+               def eval_cell(self, values, x, cell):
+                    c = Cell(self.mesh, cell.index)
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
           e0 = F0(degree=2)
-          #e1 = F1(degree=2)
+          e1 = F1(mesh, degree=2)
           e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
           s0 = norm(interpolate(e0, V))
-          #s1 = norm(interpolate(e1, V))
+          s1 = norm(interpolate(e1, V))
           s2 = norm(interpolate(e2, V))
 
-          #self.assertAlmostEqual(s0, s1)
+          self.assertAlmostEqual(s0, s1)
           self.assertAlmostEqual(s0, s2)
 
      def testWrongEval(self):
@@ -108,13 +110,9 @@ class Eval(unittest.TestCase):
           for f in [f0,f1,f2,f3]:
                self.assertRaises(TypeError, f, "s")
                self.assertRaises(TypeError, f, [])
-               #self.assertRaises(TypeError, f, zeros(2))
                self.assertRaises(TypeError, f, 0.5, 0.5, 0.5, values = zeros(3,'i'))
-               #self.assertRaises(TypeError, f, zeros(4))
                self.assertRaises(ValueError,f, [0.3, 0.2, []])
                self.assertRaises(TypeError, f, 0.3, 0.2, {})
-               #self.assertRaises(TypeError, f, 0.3, 0.2)
-               #self.assertRaises(TypeError, f, [0.5, 0.2, 0.1, 0.2])
                self.assertRaises(TypeError, f, zeros(3), values = zeros(4))
                self.assertRaises(TypeError, f, zeros(4), values = zeros(3))
 
@@ -130,10 +128,10 @@ class Instantiation(unittest.TestCase):
                     def eval(values, x):
                          pass
 
-          #def wrongEvalDataAttribute():
-          #     class WrongEvalDataAttribute(Expression):
-          #          def eval_data(values, data):
-          #               pass
+          def wrongEvalDataAttribute():
+               class WrongEvalDataAttribute(Expression):
+                    def eval_cell(values, data):
+                         pass
 
           def noEvalAttribute():
                class NoEvalAttribute(Expression):
@@ -165,7 +163,7 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
-          #self.assertRaises(TypeError, wrongEvalDataAttribute)
+          self.assertRaises(TypeError, wrongEvalDataAttribute)
           self.assertRaises(TypeError, wrongArgs)
           #self.assertRaises(ValueError, wrongElement)
           self.assertRaises(DeprecationWarning, deprecationWarning)
