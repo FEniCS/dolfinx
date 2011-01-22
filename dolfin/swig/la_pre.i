@@ -10,7 +10,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2010-11-20
+// Last changed: 2011-01-21
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -158,14 +158,32 @@
 //-----------------------------------------------------------------------------
 // Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
 //-----------------------------------------------------------------------------
+#if SWIG_VERSION >= 0x020000
+%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
+%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
+%newobject dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::copy;
+%newobject dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::copy;
+
+// NOTE: Silly SWIG complains when running the LA_PRE_FACTORY macro
+//LA_PRE_FACTORY(uBLASFactory<uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >)
+%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_matrix;
+%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_pattern;
+%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_vector;
+LA_PRE_FACTORY(uBLASFactory<boost::numeric::ublas::matrix<double> >)
+
+#else
+
 %rename(assign) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::operator=;
 %rename(assign) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::operator=;
 %newobject dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::copy;
 %newobject dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::copy;
 
-LA_PRE_FACTORY(DefaultFactory)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_dense_matrix>)
+
+#endif
+
+LA_PRE_FACTORY(DefaultFactory)
 
 //-----------------------------------------------------------------------------
 // Run macros for PETSc backend

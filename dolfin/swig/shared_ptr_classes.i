@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-01-19
+// Last changed: 2011-01-21
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -82,8 +82,8 @@
 %shared_ptr(dolfin::Vector)
 
 %shared_ptr(dolfin::STLMatrix)
-%shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
-%shared_ptr(dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
+%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
+%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
 
 #ifdef HAS_PETSC
@@ -143,7 +143,7 @@ SWIG_SHARED_PTR_DERIVED(Scalar,dolfin::GenericTensor,dolfin::Scalar)
 SWIG_SHARED_PTR_DERIVED(Matrix,dolfin::GenericMatrix,dolfin::Matrix)
 SWIG_SHARED_PTR_DERIVED(Vector,dolfin::GenericVector,dolfin::Vector)
 
-SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
+SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix, dolfin::GenericMatrix, dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
 SWIG_SHARED_PTR_DERIVED(uBLASSparseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
 SWIG_SHARED_PTR_DERIVED(uBLASVector,dolfin::GenericVector,dolfin::uBLASVector)
 SWIG_SHARED_PTR_DERIVED(STLMatrix,dolfin::GenericMatrix,dolfin::STLMatrix)
