@@ -34,29 +34,27 @@ BlockMatrix::~BlockMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::set_block(uint i, uint j, GenericMatrix& m)
+void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
 {
   assert(i < matrices.size());
   assert(j < matrices[i].size());
-
-  // FIXME: Resolve copy/view approach
-  matrices[i][j] = boost::shared_ptr<GenericMatrix>(reference_to_no_delete_pointer(m));
+  matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& BlockMatrix::get_block(uint i, uint j) const
+const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j) const
 {
   assert(i < matrices.size());
   assert(j < matrices[i].size());
 
-  return *(matrices[i][j]);
+  return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
-GenericMatrix& BlockMatrix::get_block(uint i, uint j)
+boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j)
 {
   assert(i < matrices.size());
   assert(j < matrices[i].size());
 
-  return *(matrices[i][j]);
+  return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const
@@ -113,29 +111,34 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   if (transposed)
     error("BlockMatrix::mult: transposed not implemented.");
 
-  DefaultFactory factory;
-  boost::scoped_ptr<GenericVector> vec(factory.create_vector());
-  for(uint i = 0; i < matrices.size(); i++)
-  {
-    y.get_block(i).resize(matrices[i][0]->size(0));
-    vec->resize(y.get_block(i).size());
+  // Create tempory vector
+  assert(matrices[0][0]);
+  boost::scoped_ptr<GenericVector> z_tmp(matrices[0][0]->factory().create_vector());
 
-    // FIXME: Do we need to zero the vector?
-    y.get_block(i).zero();
-    vec->zero();
-    for(uint j = 0; j < matrices.size(); j++)
+  // Loop of block rows
+  for(uint row = 0; row < matrices.size(); row++)
+  {
+    assert(matrices[row][0]);
+
+    // RHS sub-vector
+    GenericVector& _y = *(y.get_block(row));
+
+    // Resize y and zero
+    _y.resize(matrices[row][0]->size(0));
+    _y.zero();
+
+    // Resize z_tmp and zero
+    z_tmp->resize(_y.size());
+    z_tmp->zero();
+
+    // Loop over block columns
+    for(uint j = 0; j < matrices[row].size(); ++j)
     {
-      matrices[i][j]->mult(x.get_block(j), *vec);
-      y.get_block(i) += *vec;
+      const GenericVector& _x = *(x.get_block(j));
+      assert(matrices[row][j]);
+      matrices[row][j]->mult(_x, *z_tmp);
+      _y += *z_tmp;
     }
   }
-}
-//-----------------------------------------------------------------------------
-GenericMatrix& BlockMatrix::operator()(uint i, uint j)
-{
-  assert(i < matrices.size());
-  assert(j < matrices[i].size());
-
-  return *matrices[i][j];
 }
 //-----------------------------------------------------------------------------

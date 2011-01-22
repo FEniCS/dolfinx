@@ -33,20 +33,28 @@ BlockVector::~BlockVector()
 //-----------------------------------------------------------------------------
 BlockVector* BlockVector::copy() const
 {
-  error("BlockVector needs a cleanup.");
-
-  //BlockVector* x = new BlockVector(vectors.size());
-  //for (uint i = 0; i < vectors.size(); i++)
-  //  x->set(i, boost::shared_ptr<GenericVector>(vectors[i]->copy())));
-  //return x;
-  return 0;
+  BlockVector* x = new BlockVector(vectors.size());
+  for (uint i = 0; i < vectors.size(); i++)
+    x->set_block(i, boost::shared_ptr<GenericVector>(vectors[i]->copy()));
+  return x;
 }
 //-----------------------------------------------------------------------------
-GenericVector& BlockVector::operator()(uint i)
+void BlockVector::set_block(uint i, boost::shared_ptr<GenericVector> v)
 {
   assert(i < vectors.size());
-  assert(vectors[i]);
-  return *vectors[i];
+  vectors[i] = v;
+}
+//-----------------------------------------------------------------------------
+const boost::shared_ptr<GenericVector> BlockVector::get_block(uint i) const
+{
+  assert(i < vectors.size());
+  return vectors[i];
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericVector> BlockVector::get_block(uint i)
+{
+  assert(i < vectors.size());
+  return vectors[i];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const
@@ -57,14 +65,14 @@ dolfin::uint BlockVector::size() const
 void BlockVector::axpy(double a, const BlockVector& x)
 {
   for (uint i = 0; i < vectors.size(); i++)
-    vectors[i]->axpy(a, x.get_block(i));
+    vectors[i]->axpy(a, *x.get_block(i));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::inner(const BlockVector& x) const
 {
   double value = 0.0;
   for (uint i = 0; i < vectors.size(); i++)
-    value += vectors[i]->inner(x.get_block(i));
+    value += vectors[i]->inner(*x.get_block(i));
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +147,7 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    *vectors[i] = x.get_block(i);
+    *vectors[i] = *x.get_block(i);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -170,25 +178,5 @@ std::string BlockVector::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void BlockVector::set_block(uint i, GenericVector& v)
-{
-  assert(i < vectors.size());
-
-  // FIXME: Resolve copy/view approach
-  vectors[i] = boost::shared_ptr<GenericVector>(reference_to_no_delete_pointer(v));
-}
-//-----------------------------------------------------------------------------
-const GenericVector& BlockVector::get_block(uint i) const
-{
-  assert(i < vectors.size());
-  return *(vectors[i]);
-}
-//-----------------------------------------------------------------------------
-GenericVector& BlockVector::get_block(uint i)
-{
-  assert(i < vectors.size());
-  return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------

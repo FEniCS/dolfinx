@@ -15,9 +15,9 @@
 
 namespace dolfin
 {
-  // Forward declarations
+
+  /// Forward declarations
   class GenericMatrix;
-  //class SubMatrix;
 
   class BlockMatrix
   {
@@ -30,16 +30,13 @@ namespace dolfin
     ~BlockMatrix();
 
     /// Set block
-    void set_block(uint i, uint j, GenericMatrix& m);
+    void set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m);
 
     /// Get block (const version)
-    const GenericMatrix& get_block(uint i, uint j) const;
+    const boost::shared_ptr<GenericMatrix> get_block(uint i, uint j) const;
 
     /// Get block
-    GenericMatrix& get_block(uint i, uint j);
-
-    /// Return SubMatrix reference number (i,j)
-    GenericMatrix& operator() (uint i, uint j);
+    boost::shared_ptr<GenericMatrix> get_block(uint i, uint j);
 
     /// Return size of given dimension
     uint size(uint dim) const;

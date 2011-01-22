@@ -17,9 +17,8 @@
 namespace dolfin
 {
 
-  // Forward declarations
+  /// Forward declarations
   class GenericVector;
-  class SubVector;
 
   class BlockVector
   {
@@ -34,16 +33,14 @@ namespace dolfin
     /// Return copy of tensor
     virtual BlockVector* copy() const;
 
-    GenericVector& operator() (uint i);
-
     /// Set function
-    void set_block(uint i, GenericVector& v);
+    void set_block(uint i, boost::shared_ptr<GenericVector> v);
 
-    /// Get functions (const)
-    const GenericVector& get_block(uint i) const;
+    /// Get sub-vector (const)
+    const boost::shared_ptr<GenericVector> get_block(uint i) const;
 
-    /// Get functions (non-const)
-    GenericVector& get_block(uint);
+    /// Get sub-vector (non-const)
+    boost::shared_ptr<GenericVector> get_block(uint);
 
     /// Add multiple of given vector (AXPY operation)
     void axpy(double a, const BlockVector& x);
