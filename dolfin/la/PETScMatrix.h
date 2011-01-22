@@ -34,7 +34,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScMatrix : public PETScBaseMatrix, public GenericMatrix
+  class PETScMatrix : public GenericMatrix, public PETScBaseMatrix
   {
   public:
 

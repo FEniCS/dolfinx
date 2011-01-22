@@ -132,8 +132,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
       for (uint i = 0; i < a.rank(); i++)
       {
-        global_dimensions[i] = a.function_space(i)->dofmap().global_dimension();
-        //local_range[i]       = MPI::local_range(global_dimensions[i]);
+        assert(dof_maps[i]);
+        global_dimensions[i] = dof_maps[i]->global_dimension();
         local_range[i]       = dof_maps[i]->ownership_range();
         off_process_owner[i] = &(dof_maps[i]->off_process_owner());
       }
