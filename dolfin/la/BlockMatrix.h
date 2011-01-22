@@ -5,12 +5,12 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-08-25
-// Last changed: 2011-01-13
+// Last changed: 2011-01-22
 
 #ifndef __BLOCKMATRIX_H
 #define __BLOCKMATRIX_H
 
-#include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace dolfin
@@ -55,7 +55,7 @@ namespace dolfin
 
   private:
 
-    std::vector<std::vector<boost::shared_ptr<GenericMatrix> > > matrices;
+    boost::multi_array<boost::shared_ptr<GenericMatrix>, 2> matrices;
 
   };
 

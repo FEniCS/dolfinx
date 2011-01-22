@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-08-25
-// Last changed: 2011-01-13
+// Last changed: 2011-01-22
 
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
@@ -21,8 +21,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockMatrix::BlockMatrix(uint m, uint n)
-    : matrices(m, std::vector<boost::shared_ptr<GenericMatrix> >(n))
+BlockMatrix::BlockMatrix(uint m, uint n) : matrices(boost::extents[m][n])
 {
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
@@ -36,37 +35,29 @@ BlockMatrix::~BlockMatrix()
 //-----------------------------------------------------------------------------
 void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
 {
-  assert(i < matrices.size());
-  assert(j < matrices[i].size());
+  assert(i < matrices.shape()[0]);
+  assert(j < matrices.shape()[1]);
   matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
 const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j) const
 {
-  assert(i < matrices.size());
-  assert(j < matrices[i].size());
-
+  assert(i < matrices.shape()[0]);
+  assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j)
 {
-  assert(i < matrices.size());
-  assert(j < matrices[i].size());
-
+  assert(i < matrices.shape()[0]);
+  assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const
 {
-  if (dim == 0)
-    return matrices.size();
-  else if (dim == 1)
-    return matrices[0].size();
-  else
-    error("BlockMatrix has rank 2!");
-
-  return 0;
+  assert(dim < 1);
+  return matrices.shape()[dim];
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::zero()
@@ -78,8 +69,8 @@ void BlockMatrix::zero()
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
-  for(uint i = 0; i < matrices.size(); i++)
-    for(uint j = 0; j < matrices[i].size(); j++)
+  for(uint i = 0; i < matrices.shape()[0]; i++)
+    for(uint j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->apply(mode);
 }
 //-----------------------------------------------------------------------------
@@ -90,9 +81,9 @@ std::string BlockMatrix::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (uint i = 0; i < matrices.size(); i++)
+    for (uint i = 0; i < matrices.shape()[0]; i++)
     {
-      for (uint j = 0; i < matrices[0].size(); j++)
+      for (uint j = 0; i < matrices.shape()[1]; j++)
       {
         s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl << std::endl;
         s << indent(indent(matrices[i][j]->str(true))) << std::endl;
@@ -100,7 +91,7 @@ std::string BlockMatrix::str(bool verbose) const
     }
   }
   else
-    s << "<BlockMatrix containing " << matrices.size() << " x " << matrices[0].size() << " blocks>";
+    s << "<BlockMatrix containing " << matrices.shape()[0] << " x " << matrices.shape()[1] << " blocks>";
 
   return s.str();
 }
@@ -116,14 +107,13 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   boost::scoped_ptr<GenericVector> z_tmp(matrices[0][0]->factory().create_vector());
 
   // Loop of block rows
-  for(uint row = 0; row < matrices.size(); row++)
+  for(uint row = 0; row < matrices.shape()[0]; row++)
   {
-    assert(matrices[row][0]);
-
     // RHS sub-vector
     GenericVector& _y = *(y.get_block(row));
 
     // Resize y and zero
+    assert(matrices[row][0]);
     _y.resize(matrices[row][0]->size(0));
     _y.zero();
 
@@ -132,11 +122,11 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     z_tmp->zero();
 
     // Loop over block columns
-    for(uint j = 0; j < matrices[row].size(); ++j)
+    for(uint col = 0; col < matrices.shape()[1]; ++col)
     {
-      const GenericVector& _x = *(x.get_block(j));
-      assert(matrices[row][j]);
-      matrices[row][j]->mult(_x, *z_tmp);
+      const GenericVector& _x = *(x.get_block(col));
+      assert(matrices[row][col]);
+      matrices[row][col]->mult(_x, *z_tmp);
       _y += *z_tmp;
     }
   }

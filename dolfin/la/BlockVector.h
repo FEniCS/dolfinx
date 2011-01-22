@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-08-25
-// Last changed: 2011-01-13
+// Last changed: 2011-01-22
 //
 
 #ifndef __BLOCKVECTOR_H
