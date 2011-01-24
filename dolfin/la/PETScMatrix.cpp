@@ -17,7 +17,7 @@
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "PETScVector.h"
 #include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"

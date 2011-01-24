@@ -7,7 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <dolfin/log/log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>

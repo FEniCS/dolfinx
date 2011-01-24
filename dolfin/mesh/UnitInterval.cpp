@@ -4,7 +4,7 @@
 // First added:  2007-11-23
 // Last changed: 2008-11-13
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitInterval.h"

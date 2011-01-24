@@ -7,7 +7,7 @@
 // Last changed:
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
 

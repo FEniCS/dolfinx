@@ -19,7 +19,7 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "IntersectionOperator.h"

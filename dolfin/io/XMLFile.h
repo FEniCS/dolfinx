@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2011.
+//
 // First added:  2009-03-03
-// Last changed: 2010-01-04
+// Last changed: 2011-01-24
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
@@ -15,9 +17,9 @@
 
 #include <libxml/parser.h>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>

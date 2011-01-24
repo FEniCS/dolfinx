@@ -11,7 +11,7 @@
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "GraphBuilder.h"
 #include "SCOTCH.h"

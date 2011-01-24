@@ -19,7 +19,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/parameter/Parameters.h>
 #include "LogManager.h"
 #include "log.h"

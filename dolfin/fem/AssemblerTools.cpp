@@ -16,7 +16,7 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 

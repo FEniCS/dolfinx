@@ -12,7 +12,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "SparsityPattern.h"
 
 using namespace dolfin;

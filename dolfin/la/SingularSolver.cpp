@@ -7,7 +7,7 @@
 // Last changed: 2010-12-30
 
 #include <dolfin/common/Array.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"

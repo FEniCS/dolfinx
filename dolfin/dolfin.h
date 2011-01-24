@@ -13,7 +13,6 @@
 #include <dolfin/function/dolfin_function.h>
 #include <dolfin/graph/dolfin_graph.h>
 #include <dolfin/plot/dolfin_plot.h>
-#include <dolfin/main/dolfin_main.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/quadrature/dolfin_quadrature.h>
 #include <dolfin/ale/dolfin_ale.h>

@@ -9,7 +9,7 @@
 // Last changed: 2009-09-29
 
 #include <dolfin/common/constants.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "Rectangle.h"

@@ -10,7 +10,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
 #include "XMLLocalMeshData.h"
 

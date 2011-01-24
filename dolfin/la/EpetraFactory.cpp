@@ -9,7 +9,7 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "dolfin/main/MPI.h"
+#include "dolfin/common/MPI.h"
 #include "EpetraSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "EpetraLUSolver.h"

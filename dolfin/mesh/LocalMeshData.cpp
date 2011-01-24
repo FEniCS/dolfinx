@@ -7,7 +7,7 @@
 // Modified by Anders Logg, 2008-2009.
 
 #include <dolfin/log/log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "Mesh.h"
 #include "Vertex.h"
 #include "Cell.h"

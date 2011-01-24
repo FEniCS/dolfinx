@@ -9,7 +9,7 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>

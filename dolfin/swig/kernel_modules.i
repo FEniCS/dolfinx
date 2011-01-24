@@ -157,11 +157,6 @@
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"
 
-// DOLFIN headers included from main
-%include "dolfin/main/init.h"
-%include "dolfin/main/MPI.h"
-%include "dolfin/main/SubSystemsManager.h"
-
 // DOLFIN headers included from math
 %include "dolfin/math/basic.h"
 %include "dolfin/math/Lagrange.h"

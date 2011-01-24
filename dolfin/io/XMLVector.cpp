@@ -11,7 +11,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/Vector.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "XMLIndent.h"
 #include "XMLVector.h"
 

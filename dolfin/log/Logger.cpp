@@ -14,7 +14,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "Table.h"
 #include "Logger.h"
 

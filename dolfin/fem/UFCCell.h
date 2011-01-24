@@ -1,23 +1,23 @@
-// Copyright (C) 2007-2009 Anders Logg.
+// Copyright (C) 2007-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2009.
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2007-03-01
-// Last changed: 2010-11-09
+// Last changed: 2011-01-24
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/main/MPI.h>
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin

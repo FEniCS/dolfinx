@@ -4,7 +4,7 @@
 // First added:  2010-10-19
 // Last changed: 2010-10-19
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitTetrahedron.h"

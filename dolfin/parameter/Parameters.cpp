@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2010-04-05
+// Last changed: 2011-01-24
 
 #include <sstream>
 #include <stdio.h>
@@ -16,7 +16,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/main/SubSystemsManager.h>
+#include <dolfin/common/SubSystemsManager.h>
 #include "Parameter.h"
 #include "Parameters.h"
 

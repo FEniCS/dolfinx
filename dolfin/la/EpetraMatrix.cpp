@@ -28,7 +28,7 @@
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_MatrixMatrix.h>
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"

@@ -10,7 +10,7 @@
 
 #include <fstream>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "GenericFile.h"
 
 using namespace dolfin;

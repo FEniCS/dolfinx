@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sstream>
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>

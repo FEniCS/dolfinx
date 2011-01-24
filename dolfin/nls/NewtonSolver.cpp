@@ -17,7 +17,7 @@
 #include <dolfin/la/Vector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "NonlinearProblem.h"
 #include "NewtonSolver.h"
 

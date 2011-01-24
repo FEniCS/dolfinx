@@ -12,7 +12,7 @@
 #include <boost/unordered_map.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>

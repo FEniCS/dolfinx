@@ -7,7 +7,7 @@
 // First added:  2005-12-02
 // Last changed: 2008-11-13
 
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitSphere.h"

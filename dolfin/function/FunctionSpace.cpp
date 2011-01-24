@@ -15,7 +15,7 @@
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFCCell.h>
 #include <dolfin/log/log.h>

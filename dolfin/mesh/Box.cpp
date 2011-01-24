@@ -8,7 +8,7 @@
 // Last changed: 2008-11-13
 
 #include <dolfin/common/constants.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "Box.h"

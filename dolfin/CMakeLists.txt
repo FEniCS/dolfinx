@@ -17,7 +17,6 @@ set(DOLFIN_DIRS
   io
   la
   log
-  main
   math
   mesh
   mf

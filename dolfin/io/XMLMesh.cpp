@@ -6,7 +6,7 @@
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>

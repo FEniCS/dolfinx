@@ -12,7 +12,7 @@
 
 #include <slepcversion.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"

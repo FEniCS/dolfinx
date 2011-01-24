@@ -14,7 +14,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshPartitioning.h>

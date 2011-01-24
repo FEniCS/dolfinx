@@ -12,7 +12,7 @@
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"

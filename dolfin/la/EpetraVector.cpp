@@ -26,7 +26,7 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Set.h>
-#include <dolfin/main/MPI.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "uBLASVector.h"
