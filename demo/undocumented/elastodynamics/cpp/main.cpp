@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2010-09-02
+// Last changed: 2011-01-24
 //
 
 #include <dolfin.h>
@@ -97,7 +97,7 @@ void update_v(Function& v, const Function& a, const Function& a0,
 
 int main(int argc, char* argv[])
 {
-  dolfin_init(argc, argv);
+  init(argc, argv);
 
   // Create Mesh
   Mesh mesh("dolfin-2.xml.gz");
