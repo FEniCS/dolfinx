@@ -1,10 +1,11 @@
-// Copyright (C) 2008 Benjamin Kehlet
+// Copyright (C) 2008 Benjamin Kehlet.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2010.
+// Modified by Anders Logg, 2011.
 //
 // First added:  2009-01-25
-// Last changed: 2010-11-27
+// Last changed: 2011-01-24
 
 #include "real.h"
 #include "constants.h"
@@ -19,11 +20,11 @@ real dolfin::_real_epsilon = DOLFIN_EPS;
 bool dolfin::_real_initialized = false;
 
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_set_precision(uint decimal_prec)
+void dolfin::set_precision(uint decimal_prec)
 {
   #ifdef HAS_GMP
   if (_real_initialized)
-    error("dolfin_set_precision called twice");
+    error("dolfin::set_precision called twice.");
 
   // Compute the number of bits needed
   // set the GMP default precision

@@ -1,10 +1,10 @@
-// Copyright (C) 2008-2009 Anders Logg.
+// Copyright (C) 2008-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2008-10-02
-// Last changed: 2009-09-04
+// Last changed: 2011-01-24
 //
 // This file provides utilities for working with variable-precision
 // floating-point numbers. It defines a datatype "real" which defaults
@@ -37,7 +37,7 @@ namespace dolfin
   extern real _real_epsilon;
 
   // Set precision and initialize extended precision
-  void dolfin_set_precision(uint prec);
+  void set_precision(uint prec);
 
   //Store the epsilon value
   extern real _real_epsilon;
