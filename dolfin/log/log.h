@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-01-21
+// Last changed: 2011-01-24
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -89,6 +89,10 @@ namespace dolfin
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
 
 }
+
+// The following two macros are the only "functions" in DOLFIN
+// named dolfin_foo. Other functions can be placed inside the
+// DOLFIN namespace and therefore don't require a prefix.
 
 // Debug macros (with varying number of arguments)
 #define dolfin_debug(msg)              do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
