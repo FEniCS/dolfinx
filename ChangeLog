@@ -1,3 +1,4 @@
+ - dolfin_init --> init, dolfin_set_precision --> set_precision
  - Remove need for mesh argument to functional assembly when possible
  - Add function set_output_stream
  - Add operator () for evaluation at points for Function/Expression in C++
