@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-17
+// Last changed: 2011-01-24
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -42,7 +42,7 @@ int main() {
   // Create mesh and function space
   Mesh mesh("channel_with_flap.xml");
 
-  AdaptiveNavierStokes::TestSpace W(mesh); // FIXME: typedefs
+  AdaptiveNavierStokes::Form_8::TrialSpace W(mesh);
 
   // Unknown
   Function w(W);
@@ -55,21 +55,21 @@ int main() {
 
   // Define variational problem
   Constant nu(0.02);
-  AdaptiveNavierStokes::LinearForm F(W);
+  AdaptiveNavierStokes::Form_9 F(W);
   Pressure p0;
   F.p0 = p0;
   F.nu = nu;
   F.w = w;
 
   // Define goal functional
-  AdaptiveNavierStokes::GoalFunctional M(mesh);
+  AdaptiveNavierStokes::Form_10 M(mesh);
   M.w = w;
 
   // FIXME: The darned exterior_facet_domains must be tackled somewhere
   // Outflow outflow; M = u.ds(outflow);
 
   // Define variational problem
-  AdaptiveNavierStokes::BilinearForm dF(W, W);
+  AdaptiveNavierStokes::Form_8 dF(W, W);
   dF.nu = nu;
   dF.w = w;
 
