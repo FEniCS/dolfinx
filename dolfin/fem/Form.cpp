@@ -85,17 +85,22 @@ const Mesh& Form::mesh() const
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
 
-  // Extract meshes from coefficients
-  for (uint i = 0; i < _coefficients.size(); i++)
-  {
-    const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
-    if (function)
-      meshes.push_back(&function->function_space().mesh());
-  }
-
   // Add common mesh if any
   if (_mesh)
     meshes.push_back(&*_mesh);
+
+  // Extract meshes from coefficients. Note that this is only done
+  // when we don't already have a mesh sine it may otherwise conflict
+  // with existing meshes (if coefficient is defined on another mesh).
+  if (meshes.size() == 0)
+  {
+    for (uint i = 0; i < _coefficients.size(); i++)
+    {
+      const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
+      if (function)
+        meshes.push_back(&function->function_space().mesh());
+    }
+  }
 
   // Check that we have at least one mesh
   if (meshes.size() == 0)
