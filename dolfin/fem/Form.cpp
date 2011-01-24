@@ -1,15 +1,16 @@
 // Copyright (C) 2007-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2011.
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2010-02-01
+// Last changed: 2011-01-24
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/log/log.h>
@@ -78,11 +79,19 @@ const Mesh& Form::mesh() const
   // a functional) the (generated) subclass must set the mesh directly
   // by calling set_mesh().
 
-  // Extract all meshes
+  // Extract meshes from function spaces
   std::vector<const Mesh*> meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
+
+  // Extract meshes from coefficients
+  for (uint i = 0; i < _coefficients.size(); i++)
+  {
+    const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
+    if (function)
+      meshes.push_back(&function->function_space().mesh());
+  }
 
   // Add common mesh if any
   if (_mesh)
