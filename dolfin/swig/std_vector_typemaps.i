@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2010-02-13
+// Last changed: 2010-09-15
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -195,11 +195,11 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 //-----------------------------------------------------------------------------
 // NumPy to const std::vector<double>& typemap.
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& x {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& values {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
-%typemap(in) const std::vector<double>& x (std::vector<double> temp)
+%typemap(in) const std::vector<double>& values (std::vector<double> temp)
 {
   {
     if (PyArray_Check($input))
@@ -210,6 +210,34 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
         const unsigned int size = PyArray_DIM(xa, 0);
         temp.resize(size);
         double* array = static_cast<double*>(PyArray_DATA(xa));
+        std::copy(array, array + size, temp.begin());
+        $1 = &temp;
+      }
+     else
+       SWIG_exception(SWIG_TypeError, "NumPy array expected");
+    }
+    else
+      SWIG_exception(SWIG_TypeError, "NumPy array expected");
+  }
+}
+//-----------------------------------------------------------------------------
+// NumPy to const std::vector<uint>& typemap.
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::uint>& columns {
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+%typemap(in) const std::vector<dolfin::uint>& columns (std::vector<dolfin::uint> temp)
+{
+  {
+    if (PyArray_Check($input))
+    {
+      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+      if ( PyArray_TYPE(xa) == NPY_INT )
+      {
+        const unsigned int size = PyArray_DIM(xa, 0);
+        temp.resize(size);
+	dolfin::uint* array = static_cast<dolfin::uint*>(PyArray_DATA(xa));
         std::copy(array, array + size, temp.begin());
         $1 = &temp;
       }
