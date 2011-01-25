@@ -1,8 +1,8 @@
-// Copyright (C) 2010 Anders Logg and Marie E. Rognes
-// Licensed under the GNU LGPL Version 3 or any later version
+// Copyright (C) 2010 Anders Logg and Marie E. Rognes.
+// Licensed under the GNU LGPL Version 3 or any later version.
 
 // First added:  2010-08-19
-// Last changed: 2011-01-11
+// Last changed: 2011-01-24
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"

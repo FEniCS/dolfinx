@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-10-06
+// Last changed: 2011-01-25
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -138,6 +138,7 @@ namespace dolfin
 
       std::vector<double> Ae;
       std::vector<double> be;
+
     };
 
   };

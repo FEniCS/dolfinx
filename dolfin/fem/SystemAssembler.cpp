@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2010-12-21
+// Last changed: 2011-01-25
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -81,14 +81,15 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     error("SystemAssembler does not yet support subdomains.");
 
   // Check arguments
-  AssemblerTools::check(a); AssemblerTools::check(L);
+  AssemblerTools::check(a);
+  AssemblerTools::check(L);
 
   // Check that we have a bilinear and a linear form
-  assert(a.rank() == 2); assert(L.rank() == 1);
+  assert(a.rank() == 2);
+  assert(L.rank() == 1);
 
   // Check that forms share a function space
   assert(a.function_space(1).get() == L.function_space(0).get());
-
 
   // FIXME: This may gather coefficients twice. Checked for shared coefficients
 
@@ -103,7 +104,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     coefficients[i]->gather();
 
   // Create data structure for local assembly data
-  UFC A_ufc(a); UFC b_ufc(L);
+  UFC A_ufc(a);
+  UFC b_ufc(L);
 
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
@@ -183,11 +185,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
-                              const Form& a, const Form& L,
-                              UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                              const DirichletBC::Map& boundary_values,
-                              const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains)
+                                         const Form& a, const Form& L,
+                                         UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                         const DirichletBC::Map& boundary_values,
+                                         const MeshFunction<uint>* cell_domains,
+                                         const MeshFunction<uint>* exterior_facet_domains)
 {
   // FIXME: We can used some std::vectors or array pointers for the A and b
   // related terms to cut down on code repetition.
