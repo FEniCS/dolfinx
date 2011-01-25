@@ -9,7 +9,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005-10-24
-// Last changed: 2010-12-01
+// Last changed: 2011-01-25
 
 // The PyDOLFIN extension module
 %module(package="dolfin", directors="1") cpp
@@ -29,6 +29,7 @@ import_array();
 
 // Global typemaps
 %include "dolfin/swig/typemaps.i"
+%include "dolfin/swig/std_pair_typemaps.i"
 %include "dolfin/swig/numpy_typemaps.i"
 %include "dolfin/swig/array_typemaps.i"
 %include "dolfin/swig/std_vector_typemaps.i"
