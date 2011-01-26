@@ -100,13 +100,13 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   if (reset_sparsity && add_values)
     error("Can not add values when the sparsity pattern is reset");
 
-  if (reset_sparsity)
-  {
     // Get dof maps
     std::vector<const GenericDofMap*> dof_maps;
     for (uint i = 0; i < a.rank(); ++i)
       dof_maps.push_back(&(a.function_space(i)->dofmap()));
 
+  if (reset_sparsity)
+  {
     // Build sparsity pattern
     Timer t0("Build sparsity");
     boost::scoped_ptr<GenericSparsityPattern> sparsity_pattern(A.factory().create_pattern());
@@ -149,6 +149,15 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Delete sparsity pattern
     Timer t2("Delete sparsity");
     t2.stop();
+  }
+  else
+  {
+    // If tensor is not reset, check that dimensions are correct
+    for (uint i = 0; i < a.rank(); ++i)
+    {
+      if (A.size(i) != dof_maps[i]-> global_dimension())
+        error("Reset of tensor in assembly not requested, but dim %d of tesnor does not match form.", i);
+    }
   }
 
   if (!add_values)
