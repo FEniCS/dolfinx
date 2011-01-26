@@ -24,8 +24,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; } 
 
   // Check options
-  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "crossed")
-    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"right/left\" and \"crossed\".");
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
+    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\".");
 
   const double a = x0;
   const double b = x1;
@@ -103,7 +103,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       }
     }
   }
-  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left")
+  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
     for (uint iy = 0; iy < ny; iy++)
@@ -116,6 +116,14 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         else
           local_diagonal = "left";
       }
+      if (diagonal == "left/right")
+      {
+        if (iy % 2)
+          local_diagonal = "left";
+        else
+          local_diagonal = "right";
+      }
+      
       for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
@@ -127,14 +135,14 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         {
           editor.add_cell(cell++, v0, v1, v2);
           editor.add_cell(cell++, v1, v2, v3);
-          if (diagonal == "right/left")
+          if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
           editor.add_cell(cell++, v0, v1, v3);
           editor.add_cell(cell++, v0, v2, v3);
-          if (diagonal == "right/left")
+          if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
       }
