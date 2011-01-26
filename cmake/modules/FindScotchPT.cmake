@@ -203,18 +203,18 @@ int main() {
 	  )
 
         # Add zlib flags if required and set test run to 'true'
-        if (SCOTCH_TEST_LIB_COMPILED AND SCOTCH_TEST_LIB_EXITCODE EQUAL 0)
-          message(STATUS "Performing test SCOTCH_TEST_RUNS - Success")
+        if (SCOTCH_ZLIB_TEST_LIB_COMPILED AND SCOTCH_ZLIB_TEST_LIB_EXITCODE EQUAL 0)
+          message(STATUS "Performing test SCOTCH_ZLIB_TEST_RUNS - Success")
           set(SCOTCH_INCLUDE_DIRS ${SCOTCH_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
           set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${ZLIB_LIBRARIES})
           set(SCOTCH_TEST_RUNS TRUE)
         else()
-          message(STATUS "Performing test SCOTCH_TEST_RUNS - Failed")
+          message(STATUS "Performing test SCOTCH_ZLIB_TEST_RUNS - Failed")
 	  if (SCOTCH_DEBUG)
             message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-                           "SCOTCH_TEST_LIB_COMPILED = ${SCOTCH_TEST_LIB_COMPILED}")
+                           "SCOTCH_ZLIB_TEST_LIB_COMPILED = ${SCOTCH_ZLIB_TEST_LIB_COMPILED}")
             message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-                           "SCOTCH_TEST_LIB_COMPILE_OUTPUT = ${SCOTCH_TEST_LIB_COMPILE_OUTPUT}")
+                           "SCOTCH_ZLIB_TEST_LIB_COMPILE_OUTPUT = ${SCOTCH_ZLIB_TEST_LIB_COMPILE_OUTPUT}")
             message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
                            "SCOTCH_TEST_LIB_EXITCODE = ${SCOTCH_TEST_LIB_EXITCODE}")
             message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
