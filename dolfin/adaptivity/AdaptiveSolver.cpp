@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-14
+// Last changed: 2011-01-26
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -80,7 +80,6 @@ void AdaptiveSolver::solve(Function& u,
     // Evaluate functional value
     if (!problem.is_nonlinear())
       M.set_coefficient(M.num_coefficients()-1, u);
-    M.set_mesh(u.function_space().mesh()); // FIXME
     const double functional_value = assemble(M);
 
     // Initialize adaptive data

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-15
+// Last changed: 2011-01-26
 
 #include <armadillo>
 
@@ -82,7 +82,6 @@ double ErrorControl::estimate_error(const Function& u,
     _residual->set_coefficient(num_coeffs - 2, u);
 
   // Assemble error estimate
-  _residual->set_mesh(u.function_space().mesh());
   const double error_estimate = assemble(*_residual);
 
   // Return estimate
