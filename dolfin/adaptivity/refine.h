@@ -17,6 +17,7 @@ namespace dolfin
   // Forward declarations
   class Mesh;
   template <class T> class MeshFunction;
+  class FunctionSpace;
 
   /// Create uniformly refined mesh
   Mesh refine(const Mesh& mesh);
@@ -33,6 +34,10 @@ namespace dolfin
   void refine(Mesh& refined_mesh,
               const Mesh& mesh,
               const MeshFunction<bool>& cell_markers);
+
+  /// Create refined function space for refined mesh
+  FunctionSpace refine(const FunctionSpace& V,
+                       const Mesh& refined_mesh);
 
 }
 

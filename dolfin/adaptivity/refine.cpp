@@ -11,6 +11,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
+#include <dolfin/function/FunctionSpace.h>
 #include "refine.h"
 
 using namespace dolfin;
@@ -18,8 +19,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh)
 {
+  info("Refinining mesh: %x", &mesh);
   Mesh refined_mesh;
+  info("Created refined mesh, empty so far: %x", &refined_mesh);
   UniformMeshRefinement::refine(refined_mesh, mesh);
+  info("Returning refined mesh: %x", &refined_mesh);
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
@@ -58,5 +62,12 @@ void dolfin::refine(Mesh& refined_mesh,
   uint n1 = refined_mesh.num_cells();
   info("Number of cells increased from %d to %d (%.1f%% increase).",
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
+}
+//-----------------------------------------------------------------------------
+FunctionSpace dolfin::refine(const FunctionSpace& V, const Mesh& refined_mesh)
+{
+  info("Refining function space: %x", &V);
+
+  return V;
 }
 //-----------------------------------------------------------------------------
