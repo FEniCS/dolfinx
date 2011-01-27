@@ -1,10 +1,10 @@
 // Copyright (C) 2010 Marie E. Rognes.
 // Licensed under the GNU LGPL Version 3.0 or any later version.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-26
+// Last changed: 2011-01-27
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -18,8 +18,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/refine.h>
 #include <dolfin/plot/plot.h>
+#include "refine.h"
 #include "ErrorControl.h"
 #include "GoalFunctional.h"
 #include "marking.h"

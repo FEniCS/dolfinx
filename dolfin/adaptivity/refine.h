@@ -1,13 +1,12 @@
 // Copyright (C) 2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2010-02-26
+// Last changed: 2011-01-27
 //
-// This file defines free functions for mesh refinement.
-//
+// This file defines free functions for refinement.
 
 #ifndef __DOLFIN_REFINE_H
 #define __DOLFIN_REFINE_H

@@ -44,6 +44,5 @@
 #include <dolfin/mesh/Box.h>
 #include <dolfin/mesh/Rectangle.h>
 #include <dolfin/mesh/UnitSphere.h>
-#include <dolfin/mesh/refine.h>
 
 #endif
