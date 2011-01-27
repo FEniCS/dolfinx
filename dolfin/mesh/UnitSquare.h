@@ -17,7 +17,7 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
 
-  /// std::string diagonal ("left", "right", "right/left" or "crossed")
+  /// std::string diagonal ("left", "right", "right/left", "left/right", or "crossed")
   /// indicates the direction of the diagonals.
 
   class UnitSquare : public Mesh
