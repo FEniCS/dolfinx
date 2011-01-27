@@ -40,8 +40,8 @@ print ""
 import pprint
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove(os.path.join(demodir, 'undocumented', 'aliev-panfilov', 'python'))
-pydemos.remove(os.path.join(demodir, 'undocumented', 'lorenz', 'python'))
+#pydemos.remove(os.path.join(demodir, 'undocumented', 'aliev-panfilov', 'python'))
+#pydemos.remove(os.path.join(demodir, 'undocumented', 'lorenz', 'python'))
 
 # Push slow demos to the end
 pyslow = []
@@ -54,7 +54,7 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-cppdemos.remove(os.path.join(demodir, 'undocumented', 'elastodynamics', 'cpp'))
+#cppdemos.remove(os.path.join(demodir, 'undocumented', 'elastodynamics', 'cpp'))
 
 # Remove demos that need command-line arguments
 pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
