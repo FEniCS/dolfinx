@@ -140,7 +140,6 @@
 %include "dolfin/mesh/Box.h"
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
-%include "dolfin/mesh/refine.h"
 %include "dolfin/swig/mesh_post.i"
 
 // DOLFIN headers included from function
@@ -199,6 +198,7 @@
 // DOLFIN headers included from adaptivity
 %include "dolfin/adaptivity/ErrorControl.h"
 %include "dolfin/adaptivity/TimeSeries.h"
+%include "dolfin/adaptivity/refine.h"
 
 // DOLFIN headers included from ode
 %include "dolfin/swig/ode_pre.i"
