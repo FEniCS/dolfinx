@@ -56,12 +56,6 @@ for s in cppslow:
 # Remove overly slow demos
 cppdemos.remove(os.path.join(demodir, 'undocumented', 'elastodynamics', 'cpp'))
 
-# Remove broken demos
-pydemos.remove(os.path.join(demodir,  'undocumented', 'adaptive-pde', 'energy-norm-poisson', 'python'))
-pydemos.remove(os.path.join(demodir,  'undocumented', 'adaptive-pde', 'mixed-poisson',       'python'))
-pydemos.remove(os.path.join(demodir,  'undocumented', 'adaptive-pde', 'navier-stokes',       'python'))
-pydemos.remove(os.path.join(demodir,  'undocumented', 'adaptive-pde', 'poisson',             'python'))
-
 # Remove demos that need command-line arguments
 pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
 cppdemos.remove(os.path.join(demodir, 'undocumented', 'quadrature', 'cpp'))
