@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-01-01
+// Last changed: 2011-01-27
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -323,6 +323,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
 
   // Create UFC sub-system
   ufc::dof_map* sub_dof_map = ufc_dofmap.create_sub_dof_map(component[0]);
+  assert(sub_dof_map);
 
   // Return sub-system if sub-sub-system should not be extracted, otherwise
   // recursively extract the sub sub system

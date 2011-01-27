@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-14
-// Last changed: 2010-04-05
+// Last changed: 2011-01-27
 
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
@@ -45,6 +45,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
 
   // Create sub system
   boost::shared_ptr<const FiniteElement> sub_element = finite_element.create_sub_element(component[0]);
+  assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
   if (component.size() == 1)
