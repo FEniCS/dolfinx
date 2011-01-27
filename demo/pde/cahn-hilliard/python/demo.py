@@ -42,6 +42,7 @@ theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=
 # Form compiler options
 parameters["form_compiler"]["optimize"]     = True
 parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["representation"] = "quadrature"
 
 # Create mesh and define function spaces
 mesh = UnitSquare(96, 96)
