@@ -27,6 +27,21 @@ find_library(GMP_LIBRARIES
   DOC "The GMP libraries"
   )
 
+find_library(GMPXX_LIBRARIES
+  NAMES gmpxx
+  HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  DOC "The GMPXX libraries"
+  )
+
+find_library(MPFR_LIBRARIES
+  NAMES mpfr
+  HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  DOC "The NPFR libraries"
+  )
+
+set(GMP_LIBRARIES ${GMP_LIBRARIES} ${GMPXX_LIBRARIES} ${MPFR_LIBRARIES})
+message(STATUS "GMP_LIBRARIES = ${GMP_LIBRARIES}")
+
 mark_as_advanced(GMP_INCLUDE_DIRS GMP_LIBRARIES)
 
 include(FindPackageHandleStandardArgs)
