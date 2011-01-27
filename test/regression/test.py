@@ -54,8 +54,6 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-pydemos.remove(os.path.join(demodir,  'pde', 'cahn-hilliard', 'python'))
-cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
 cppdemos.remove(os.path.join(demodir, 'undocumented', 'elastodynamics', 'cpp'))
 
 # Remove broken demos

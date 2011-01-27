@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Garth N. Wells.
+// Copyright (C) 2008-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-01-07
-// Last changed: 2009-09-05
+// Last changed: 2011-01-23
 
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
@@ -31,6 +31,14 @@ namespace dolfin
     /// Finalize subsytems. This will be called by the destructor, but in
     /// special cases it may be necessary to call finalize() explicitly.
     static void finalize();
+
+    /// Return true if DOLFIN intialised MPI (and is therefore responsible
+    //  for finalization)
+    static bool responsible_mpi();
+
+    /// Return true if DOLFIN intialised PETSc (and is therefore responsible
+    //  for finalization)
+    static bool responsible_petsc();
 
   private:
 

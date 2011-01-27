@@ -120,13 +120,34 @@ void SubSystemsManager::finalize()
   xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
+bool SubSystemsManager::responsible_mpi()
+{
+  return sub_systems_manager.control_mpi;
+}
+//-----------------------------------------------------------------------------
+bool SubSystemsManager::responsible_petsc()
+{
+  return sub_systems_manager.petsc_initialized;
+}
+//-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
 #ifdef HAS_MPI
-  //Finalise MPI if required
+  // Finalise MPI if required
   if (MPI::Is_initialized() and sub_systems_manager.control_mpi)
   {
-    MPI::Finalize();
+    // Check in MPI has already been finalised (possibly incorrectly by a
+    // 3rd party libary). Is it hasn't, finalise as normal.
+    if (!MPI::Is_finalized())
+      MPI::Finalize();
+    else
+    {
+      // Use std::cout since log system may fail because MPI has been shut down.
+      std::cout << "DOLFIN is responsible for MPI, but it has been finalized elsewhere prematurely." << std::endl;
+      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour." << std::endl;
+      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module." << std::endl;
+    }
+
     sub_systems_manager.control_mpi = false;
   }
 #else
