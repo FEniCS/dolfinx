@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2010-12-29
+// Last changed: 2011-01-27
 
 #include <dolfin/common/timing.h>
 
@@ -70,8 +70,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
   t = time() -t;
-  cout << "Sparsity time: " << t << endl;
-
+  //cout << "Sparsity time: " << t << endl;
 
   // FIXME: The below note is not true when there are no cell integrals,
   //        e.g. finite volume method
