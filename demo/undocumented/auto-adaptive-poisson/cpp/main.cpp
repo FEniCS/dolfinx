@@ -42,7 +42,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquare mesh(8, 8);
-  AdaptivePoisson::TestSpace V(mesh);    // FIXME: Missing typedefs
+  AdaptivePoisson::Form_8::TrialSpace V(mesh);
 
   // Define boundary condition
   Constant u0(0.0);
@@ -50,8 +50,8 @@ int main()
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem
-  AdaptivePoisson::BilinearForm a(V, V);
-  AdaptivePoisson::LinearForm L(V);
+  AdaptivePoisson::Form_8 a(V, V);
+  AdaptivePoisson::Form_9 L(V);
   Source f;
   dUdN g;
   L.f = f;
@@ -62,7 +62,7 @@ int main()
   Function u(V);
 
   // Define goal (quantity of interest)
-  AdaptivePoisson::GoalFunctional M(mesh);
+  AdaptivePoisson::Form_10 M(mesh);
 
   // Compute solution (adaptively) with accuracy to within tol
   double tol = 1.e-5;

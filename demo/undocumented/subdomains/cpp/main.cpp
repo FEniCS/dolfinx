@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2010-09-02
+// Last changed: 2011-01-25
 //
 // This demo program demonstrates how to mark sub domains
 // of a mesh and store the sub domain markers as a mesh
@@ -49,25 +49,39 @@ int main()
   // Read mesh
   Mesh mesh("dolfin-2.xml.gz");
 
-  // Create mesh function over the cell facets
+  // Create mesh functions over the cell facets
   MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim() - 1);
+  MeshFunction<double> sub_domains_double(mesh, mesh.topology().dim() - 1);
+  MeshFunction<bool> sub_domains_bool(mesh, mesh.topology().dim() - 1);
 
   // Mark all facets as sub domain 3
   sub_domains = 3;
 
-  // Mark no-slip facets as sub domain 0
+  // Mark no-slip facets as sub domain 0, 0.0
   Noslip noslip;
   noslip.mark(sub_domains, 0);
+  noslip.mark(sub_domains_double, 0.0);
 
-  // Mark inflow as sub domain 1
+  // Mark inflow as sub domain 1, 0.1
   Inflow inflow;
   inflow.mark(sub_domains, 1);
+  inflow.mark(sub_domains_double, 0.1);
 
-  // Mark outflow as sub domain 2
+  // Mark outflow as sub domain 2, 0.2
   Outflow outflow;
   outflow.mark(sub_domains, 2);
+  outflow.mark(sub_domains_double, 2);
 
   // Save sub domains to file
   File file("subdomains.xml");
   file << sub_domains;
+
+  // Save sub domains to file
+  // FIXME: Not implemented
+  //File file_bool("subdomains_bool.xml");
+  //file_bool << sub_domains_bool;
+
+  // Save sub domains to file
+  File file_double("subdomains_double.xml");
+  file_double << sub_domains_double;
 }

@@ -57,7 +57,7 @@ void LinearVariationalSolver::solve(Function& u,
                     problem.exterior_facet_domains(),
                     problem.interior_facet_domains(),
                     0,
-                    false, true);
+                    true, false);
   }
   else
   {
