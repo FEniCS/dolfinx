@@ -469,7 +469,15 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
 void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
                           const std::vector<double>& values)
 {
-  dolfin_not_implemented();
+  static bool print_msg_once=true;
+  if (print_msg_once)
+  {
+    info("EpetraMatrix::setrow is implemented inefficiently");
+    print_msg_once = false;
+  }
+
+  for (uint i=0; i<columns.size(); i++)
+    set(&values[i], 1, &row, 1, &columns[i]);
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const

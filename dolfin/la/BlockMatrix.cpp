@@ -132,3 +132,34 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   }
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(double symmetry) const
+{
+  // Currently returns [diag(C * diag(A)^-1 * B) - D]
+  if (symmetry==0)
+  {
+    error("only implemented for symmetry != 0");
+  }
+  assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);
+
+  GenericMatrix &A = *matrices[0][0];
+  GenericMatrix &C = *matrices[1][0];
+  GenericMatrix &D = *matrices[1][1];
+
+  boost::shared_ptr<GenericMatrix> S(D.copy());
+
+  std::vector<uint> cols_i;
+  std::vector<double> vals_i;
+  for (uint i=0; i<D.size(0); i++)
+  {
+    C.getrow(i, cols_i, vals_i);
+    double diag_ii=0;
+    for (uint k=0; k<cols_i.size(); k++)
+    {
+      const uint j=cols_i[k];
+      const double val=vals_i[k];
+      diag_ii -= val*val/A(j,j);
+    }
+    S->add(&diag_ii, 1, &i, 1, &i);
+  }
+  return S;
+}

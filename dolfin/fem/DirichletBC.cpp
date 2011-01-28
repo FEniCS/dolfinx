@@ -209,6 +209,82 @@ void DirichletBC::zero(GenericMatrix& A) const
   A.apply("insert");
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::zero_columns(GenericMatrix& A, GenericVector& b, double diag_val) const
+{
+  Map bv_map;
+  get_boundary_values(bv_map, _method);
+
+  // Create lookup table of dofs
+  //const uint nrows = A.size(0); // should be equal to b.size()
+  const uint ncols = A.size(1); // should be equal to max possible dof+1
+
+  std::pair<uint,uint> rows = A.local_range(0);
+  //std::pair<uint,uint> cols = A.local_range(1);
+
+  std::vector<char> is_bc_dof(ncols);
+  std::vector<double> bc_dof_val(ncols);
+  for (Map::const_iterator bv = bv_map.begin();  bv != bv_map.end();  ++bv)
+  {
+    is_bc_dof[bv->first] = 1;
+    bc_dof_val[bv->first] = bv->second;
+  }
+
+  // Scan through all columns of all rows, setting to zero if is_bc_dof[column]
+  // At the same time, we collect corrections to the RHS
+
+  std::vector<uint>   cols;
+  std::vector<double> vals;
+  std::vector<double> b_vals;
+  std::vector<uint>   b_rows;
+
+  for (uint row=rows.first; row<rows.second; row++)
+  {
+    // If diag_val is nonzero, the matrix is a diagonal block (nrows==ncols),
+    // and we can set the whole BC row
+    if (diag_val != 0.0 && is_bc_dof[row])
+    {
+      A.getrow(row, cols, vals);
+      for (uint j=0; j<cols.size(); j++)
+        vals[j] = (cols[j]==row) * diag_val;
+      A.setrow(row, cols, vals);
+      A.apply("insert");
+      b.setitem(row, bc_dof_val[row]*diag_val);
+    }
+    else // Otherwise, we scan the row for BC columns
+    {
+      A.getrow(row, cols, vals);
+      bool row_changed=false;
+      for (uint j=0; j<cols.size(); j++)
+      {
+        const uint col = cols[j];
+
+        // Skip columns that aren't BC, and entries that are zero
+        if (!is_bc_dof[col] || vals[j] == 0.0)
+          continue;
+
+        // We're going to change the row, so make room for it
+        if (!row_changed)
+        {
+          row_changed = true;
+          b_rows.push_back(row);
+          b_vals.push_back(0.0);
+        }
+
+        b_vals.back() -= bc_dof_val[col]*vals[j];
+        vals[j] = 0.0;
+      }
+      if (row_changed)
+      {
+        A.setrow(row, cols, vals);
+        A.apply("insert");
+      }
+    }
+  }
+
+  b.add(&b_vals.front(), b_rows.size(), &b_rows.front());
+  b.apply("add");
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::pair<dolfin::uint, dolfin::uint> >& DirichletBC::markers()
 {
   return facets;

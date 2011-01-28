@@ -53,6 +53,10 @@ namespace dolfin
     /// Matrix-vector product, y = Ax
     void mult(const BlockVector& x, BlockVector& y, bool transposed=false) const;
 
+    /// Create a crude explicit Schur approximation of S = D - C A^-1 B of (A B; C D)
+    /// If symmetry != 0, then the caller promises that B = symmetry * transpose(C).
+    boost::shared_ptr<GenericMatrix> schur_approximation(double symmetry=1) const;
+
   private:
 
     boost::multi_array<boost::shared_ptr<GenericMatrix>, 2> matrices;
