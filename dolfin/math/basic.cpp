@@ -9,6 +9,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <cmath>
+#include <dolfin/common/constants.h>
 #include "basic.h"
 
 using namespace dolfin;
@@ -49,5 +50,10 @@ void dolfin::seed(unsigned int s)
 {
   std::srand(s);
   rand_seeded = true;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::near(double x, double x0)
+{
+  return dolfin::between(x0, x, x0);
 }
 //-----------------------------------------------------------------------------
