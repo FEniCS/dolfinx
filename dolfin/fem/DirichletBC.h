@@ -169,6 +169,11 @@ namespace dolfin
     /// non-diagonal matrices in a block matrix.
     void zero(GenericMatrix& A) const;
 
+    /// Make columns associated with boundary conditions zero, and
+    /// update the RHS to reflect the changes. Useful for non-diagonals.
+    /// The diag_val parameter would normally be -1, 0 or 1.
+    void zero_columns(GenericMatrix& A, GenericVector& b, double diag_val=0) const;
+
     /// Return boundary markers (facets stored as pairs of cells and local
     /// facet numbers)
     const std::vector<std::pair<uint, uint> >& markers();
