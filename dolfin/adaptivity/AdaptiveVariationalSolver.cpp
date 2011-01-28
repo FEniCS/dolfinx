@@ -57,8 +57,8 @@ void AdaptiveVariationalSolver::solve(Function& u,
   std::vector<AdaptiveDatum> data;
 
   // Start adaptive loop
-  const uint N = parameters["max_iterations"];
-  for (uint i = 0; i < N; i++)
+  const uint maxiter = parameters["max_iterations"];
+  for (uint i = 0; i < maxiter; i++)
   {
     //--- Stage 0: Solve primal problem ---
     info("");
@@ -70,39 +70,39 @@ void AdaptiveVariationalSolver::solve(Function& u,
     const Mesh& mesh(V.mesh());
 
     // FIXME: Init mesh (should only initialize required stuff.)
+    // FIXME: Remove this, should not be needed!
     mesh.init();
     end();
 
     //--- Stage 1: Estimate error ---
-    begin("Stage %d.1: Estimating error...", i);
+    begin("Stage %d.1: Computing error estimate...", i);
     const double error_estimate = ec.estimate_error(u, problem.bcs());
 
     // Evaluate functional value
     if (!problem.is_nonlinear())
-      M.set_coefficient(M.num_coefficients()-1, u);
+      M.set_coefficient(M.num_coefficients() - 1, u);
     const double functional_value = assemble(M);
 
     // Initialize adaptive data
     AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
-                        parameters["tolerance"],
-                        functional_value);
+                        parameters["tolerance"], functional_value);
     if (parameters["reference"].change_count() > 0)
       datum.set_reference_value(parameters["reference"]);
     data.push_back(datum);
 
-    // Stop if stopping criterion is satisfied
+    // Check stopping criterion
     if (stop(V, error_estimate, parameters))
     {
       end();
       summary(data, parameters);
       return;
     }
-    info(INFO, "Estimated error (%0.5g) does not satisfy tolerance (%0.5g).",
+    info("Estimated error (%0.5g) does not satisfy tolerance (%0.5g).",
          error_estimate, tol);
     end();
 
     //--- Stage 2: Compute error indicators ---
-    begin("Stage %d.2: Computing indicators...", i);
+    begin("Stage %d.2: Computing error indicators...", i);
 
     Vector indicators(mesh.num_cells());
     ec.compute_indicators(indicators, u);
@@ -122,9 +122,9 @@ void AdaptiveVariationalSolver::solve(Function& u,
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
 
-    Mesh new_mesh = refine(mesh, markers);
+    Mesh refined_mesh = refine(mesh, markers);
     if (parameters["plot_mesh"])
-      plot(new_mesh, "Refined mesh");
+      plot(refined_mesh, "Refined mesh");
 
     end();
 
@@ -137,8 +137,7 @@ void AdaptiveVariationalSolver::solve(Function& u,
   }
 
   summary(data, parameters);
-  info(WARNING,
-       "Maximal number of iterations (%d) exceeded! Returning anyhow.", N);
+  warning("Maximal number of iterations (%d) exceeded! Returning anyhow.", maxiter);
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
