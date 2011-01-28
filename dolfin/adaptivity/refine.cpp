@@ -8,12 +8,15 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/LocalMeshRefinement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/DofMap.h>
 #include "refine.h"
 
 using namespace dolfin;
@@ -74,9 +77,26 @@ FunctionSpace dolfin::refine(const FunctionSpace& V, const Mesh& refined_mesh)
   return V;
 #else
 
-  // Create new copies of finite element and dofmap
-  //V.element()
-  //boost::shared_ptr<ufc::finite_element> element(_element->extract_sub_element(component));
+  // Get DofMap (GenericDofMap does not know about ufc::dof_map)
+  const DofMap* dofmap = dynamic_cast<const DofMap*>(&V.dofmap());
+  if (!dofmap)
+  {
+    info("FunctionSpace is defined by a non-stand dofmap.");
+    error("Unable to refine function space.");
+  }
+
+  // Create new copies of UFC finite element and dofmap
+  boost::shared_ptr<ufc::finite_element> ufc_element(V.element().ufc_element()->create());
+  boost::shared_ptr<ufc::dof_map> ufc_dofmap(dofmap->ufc_dofmap()->create());
+
+  // Create DOLFIN finite element and dofmap
+  boost::shared_ptr<FiniteElement> refined_element(new FiniteElement(ufc_element));
+  boost::shared_ptr<DofMap> refined_dofmap(new DofMap(ufc_dofmap, refined_mesh));
+
+  // Create new function space
+  FunctionSpace refined_V(reference_to_no_delete_pointer(refined_mesh),
+                          refined_element,
+                          refined_dofmap);
 
   return V;
 

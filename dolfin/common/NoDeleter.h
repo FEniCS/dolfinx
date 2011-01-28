@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-04
+// Last changed: 2011-01-28
 
 #ifndef __NO_DELETER_H
 #define __NO_DELETER_H

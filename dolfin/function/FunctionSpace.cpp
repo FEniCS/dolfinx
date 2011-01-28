@@ -14,7 +14,6 @@
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/utils.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFCCell.h>

@@ -54,12 +54,14 @@ namespace dolfin
 
   protected:
 
-    /// Create an empty function space for later intialisation. This
-    /// constructor is intended for use by any sub-classes which need to
-    /// construct objects before the initialisation of the base class. Data can
-    /// be attached to the base class using FunctionSpace::attach(...)
+    /// Create empty function space for later initialization. This
+    /// constructor is intended for use by any sub-classes which need
+    /// to construct objects before the initialisation of the base
+    /// class. Data can be attached to the base class using
+    /// FunctionSpace::attach(...).
     FunctionSpace(boost::shared_ptr<Mesh> mesh);
 
+    /// Create empty function space for later initialization (const version)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
