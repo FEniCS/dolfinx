@@ -299,7 +299,7 @@ std::vector<std::vector<dolfin::uint> > SparsityPattern::diagonal_pattern(Type t
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::uint> > SparsityPattern::off_diagonal_pattern(Type type) const
 {
-  std::vector<std::vector<uint> > v(diagonal.size());
+  std::vector<std::vector<uint> > v(off_diagonal.size());
   for (uint i = 0; i < off_diagonal.size(); ++i)
     v[i] = std::vector<uint>(off_diagonal[i].begin(), off_diagonal[i].end());
 

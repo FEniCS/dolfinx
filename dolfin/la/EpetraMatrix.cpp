@@ -92,6 +92,14 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   Epetra_MpiComm comm = f.get_mpi_comm();
   Epetra_Map row_map(sparsity_pattern.size(0), num_local_rows, 0, comm);
 
+  // For rectangular matrices with more columns than rows, the columns which are
+  // larger than those in row_map are marked as nonlocal (and assembly fails).
+  // The domain_map fixes that problem, at least in the serial case.
+  // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
+  const std::pair<uint,uint> colrange = sparsity_pattern.local_range(1);
+  const int num_local_cols = colrange.second - colrange.first;
+  Epetra_Map domain_map(sparsity_pattern.size(1), num_local_cols, 0, comm);
+
   // Create Epetra_FECrsGraph
   Epetra_FECrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&dnum_nonzeros[0]));
 
@@ -105,18 +113,32 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
   }
 
-  // Add off-diagonal block indices
-  for (row_set = o_pattern.begin(); row_set != o_pattern.end(); ++row_set)
+  for (uint local_row = 0; local_row < d_pattern.size(); local_row++)
   {
-    const uint global_row = row_set - o_pattern.begin() + n0;
-    const std::vector<dolfin::uint>& nz_entries = *row_set;
-    std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
-    matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
+    const uint global_row = local_row + n0;
+    std::vector<uint> &entries = const_cast<std::vector<uint>&>(d_pattern[local_row]);
+    matrix_map.InsertGlobalIndices(global_row, entries.size(), reinterpret_cast<int*>(&entries[0]));
   }
 
-  // Finalise map
-  matrix_map.GlobalAssemble();
-  matrix_map.OptimizeStorage();
+  // Add off-diagonal block indices (parallel only)
+  for (uint local_row = 0; local_row < o_pattern.size(); local_row++)
+  {
+    const uint global_row = local_row + n0;
+    std::vector<uint> &entries = const_cast<std::vector<uint>&>(o_pattern[local_row]);
+    matrix_map.InsertGlobalIndices(global_row, entries.size(), reinterpret_cast<int*>(&entries[0]));
+  }
+
+  try
+  {
+    // Finalise map. Here, row_map is standing in for RangeMap, which is
+    // probably ok but should be double-checked.
+    matrix_map.GlobalAssemble(domain_map, row_map);
+    matrix_map.OptimizeStorage();
+  }
+  catch (int err)
+  {
+    error("Epetra threw error %d in assemble", err);
+  }
 
   // Create matrix
   A.reset( new Epetra_FECrsMatrix(Copy, matrix_map) );
