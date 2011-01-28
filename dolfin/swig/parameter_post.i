@@ -274,17 +274,17 @@ def __new_Parameter_init__(self,*args,**kwargs):
     if len(kwargs) == 0:
         return
 
+    from numpy import isscalar
     for key, value in kwargs.iteritems():
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
-            if len(value) > 0 and ((isinstance(value[0],str) and len(value) == 2) or \
-                                   (isinstance(value[0],(int,float)) and len(value) == 3)):
-                if isinstance(value[0],(float,int)) or \
-                    (isinstance(value[0],str) and isinstance(value[1],list)):
-                    self.add(key,*value)
-                else:
+            if isscalar(value[0]) and len(value) == 3:
+                self.add(key, *value)
+            elif instanceof(value[0], str) and len(value) == 2:
+                if not isinstance(value[1], list):
                     raise TypeError, "expected a list as second item of tuple, when first is a 'str'"
+                self.add(key, *value)
             else:
                 raise TypeError,"expected a range tuple of size 2 for 'str' values and 3 for scalars"
         else:
