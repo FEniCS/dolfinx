@@ -139,14 +139,16 @@ void PETScVector::resize(std::pair<uint, uint> range)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<uint, uint> range,
-            const std::vector<uint>& ghost_indices)
+                         const std::vector<uint>& ghost_indices)
 {
   // Get local size
   assert(range.second - range.first >= 0);
 
+  // FIXME: Can this check be made robust? Need to avoid parallel lock-up.
+  //        Cannot just check size because range may change.
   // Check if resizing is required
-  if (x && (this->local_range().first == range.first && this->local_range().second == range.second))
-    return;
+  //if (x && (this->local_range().first == range.first && this->local_range().second == range.second))
+  //  return;
 
   // Save type
   bool _distributed = distributed();
