@@ -94,11 +94,11 @@ FunctionSpace dolfin::refine(const FunctionSpace& V, const Mesh& refined_mesh)
   boost::shared_ptr<DofMap> refined_dofmap(new DofMap(ufc_dofmap, refined_mesh));
 
   // Create new function space
-  FunctionSpace refined_V(reference_to_no_delete_pointer(refined_mesh),
-                          refined_element,
-                          refined_dofmap);
+  FunctionSpace W(reference_to_no_delete_pointer(refined_mesh),
+                  refined_element,
+                  refined_dofmap);
 
-  return V;
+  return W;
 
 #endif
 }
