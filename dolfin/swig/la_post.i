@@ -180,47 +180,54 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return v
 
     def __contains__(self, value):
-        if not isinstance(value, (int, float)):
+        from numpy import isscalar
+        if not isscalar(value):
             raise TypeError, "expected scalar"
         return _contains(self,value)
 
     def __gt__(self, value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if not isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_gt)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_gt)
         return NotImplemented
 
     def __ge__(self,value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_ge)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_ge)
         return NotImplemented
 
     def __lt__(self,value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_lt)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_lt)
         return NotImplemented
 
     def __le__(self,value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_le)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_le)
         return NotImplemented
 
     def __eq__(self,value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_eq)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_eq)
         return NotImplemented
 
     def __neq__(self,value):
-        if isinstance(value, (int, float)):
+        from numpy import isscalar
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_neq)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_neq)
@@ -238,12 +245,13 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         raise ValueError, "cannot delete Vector elements"
 
     def __setslice__(self, i, j, values):
-        if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
-            if isinstance(values, (float, int)) or len(values) == len(self):
+        if i == 0 and (j >= len(self) or j == -1): # slice == whole
+            if isinstance(values, GenericVector) and len(values) != len(self):
+                    raise ValueError, "dimension error"
+            from numpy import isscalar
+            if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
                 return
-            else:
-                raise ValueError, "dimension error"
         self.__setitem__(slice(i, j, 1), values)
 
     def __getslice__(self, i, j):
@@ -262,15 +270,15 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             raise TypeError, "expected an int, slice, list or numpy array of integers"
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray, integer
+        from numpy import ndarray, integer, isscalar
         from types import SliceType
         if isinstance(indices, (int, integer)):
-            if isinstance(values,(float, int, integer)):
+            if numpy.isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
         elif isinstance(indices, (SliceType, ndarray, list)):
-            if isinstance(values, (float, int)):
+            if isscalar(values):
                 _set_vector_items_value(self, indices, values)
             elif isinstance(values, GenericVector):
                 _set_vector_items_vector(self, indices, values)
@@ -306,7 +314,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
-        if isinstance(other, (int, float)):
+        from numpy import isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -318,7 +327,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
-        if isinstance(other, (int, float)):
+        from numpy import isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(1.0 / other)
             return ret
@@ -334,7 +344,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __rmul__(self, other):
         """x.__rmul__(y) <==> y*x"""
-        if isinstance(other,(int,float)):
+        from numpy import isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -360,7 +371,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __imul__(self, other):
         """x.__imul__(y) <==> x*y"""
-        if isinstance(other, (float, int)):
+        from numpy import isscalar
+        if isscalar(other):
             self._scale(other)
             return self
         if isinstance(other, GenericVector):
@@ -370,7 +382,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __idiv__(self, other):
         """x.__idiv__(y) <==> x/y"""
-        if isinstance(other, (float, int)):
+        from numpy import isscalar
+        if isscalar(other):
             self._scale(1.0 / other)
             return self
         return NotImplemented
@@ -467,7 +480,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 return down_cast(_get_matrix_sub_matrix(self, indices[0], indices[1]))
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray
+        from numpy import ndarray, isscalar
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
             raise TypeError, "expected two indices"
@@ -476,7 +489,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
-                if not isinstance(values, (float, int)):
+                if not isscalar(values):
                     raise TypeError, "expected scalar for single value assigment"
                 _set_matrix_single_item(self, indices[0], indices[1], values)
             else:
@@ -540,8 +553,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
-        from numpy import ndarray
-        if isinstance(other,(int,float)):
+        from numpy import ndarray, isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -574,7 +587,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
-        if isinstance(other,(int,float)):
+        from numpy import isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(1.0/other)
             return ret
@@ -590,7 +604,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
-        if isinstance(other, (int, float)):
+        from numpy import isscalar
+        if isscalar(other):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -616,14 +631,16 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
-        if isinstance(other, (float, int)):
+        from numpy import isscalar
+        if isscalar(other):
             self._scale(other)
             return self
         return NotImplemented
 
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
-        if isinstance(other, (float, int)):
+        from numpy import isscalar
+        if isscalar(other):
             self._scale(1.0 / other)
             return self
         return NotImplemented
