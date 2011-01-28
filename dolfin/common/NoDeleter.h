@@ -16,11 +16,10 @@ namespace dolfin
 
   /// NoDeleter is a customised deleter intended for use with smart pointers.
 
-  template <class T>
   class NoDeleter
   {
   public:
-      void operator() (T* p) {}
+    void operator() (const void *p) {}
   };
 
   /// Helper function to construct shared pointer with NoDeleter with cleaner syntax
@@ -28,7 +27,7 @@ namespace dolfin
   template<class T>
   boost::shared_ptr<T> reference_to_no_delete_pointer(T& r)
   {
-    return boost::shared_ptr<T>(&r, NoDeleter<T>());
+    return boost::shared_ptr<T>(&r, NoDeleter());
   }
 
 }

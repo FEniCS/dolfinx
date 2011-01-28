@@ -25,6 +25,11 @@ namespace dolfin
   /// Seed random number generator
   void seed(unsigned int s);
 
+  /// Return true if x is within DOLFIN_EPS of x0
+  bool near(double x, double x0);
+
+  /// Return true if x is between x0 and x1 (inclusive)
+  bool between(double x0, double x, double x1);
 }
 
 #endif

@@ -28,8 +28,8 @@ namespace dolfin
   int usermult(Mat A, Vec x, Vec y)
   {
     // Wrap x and y in a shared_ptr
-    boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
-    boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+    boost::shared_ptr<Vec> _x(&x, NoDeleter());
+    boost::shared_ptr<Vec> _y(&y, NoDeleter());
 
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
