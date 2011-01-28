@@ -24,11 +24,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh)
 {
-  info("Refinining mesh: %x", &mesh);
   Mesh refined_mesh;
-  info("Created refined mesh, empty so far: %x", &refined_mesh);
-  UniformMeshRefinement::refine(refined_mesh, mesh);
-  info("Returning refined mesh: %x", &refined_mesh);
+  refine(refined_mesh, mesh);
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
@@ -69,7 +66,35 @@ void dolfin::refine(Mesh& refined_mesh,
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 }
 //-----------------------------------------------------------------------------
-FunctionSpace dolfin::refine(const FunctionSpace& V, const Mesh& refined_mesh)
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V)
+{
+  // Refine mesh
+  const Mesh& mesh = V.mesh();
+  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
+  refine(*refined_mesh, mesh);
+
+  // Refine space
+  FunctionSpace W = refine(V, *refined_mesh);
+
+  return W;
+}
+//-----------------------------------------------------------------------------
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
+                                     const MeshFunction<bool>& cell_markers)
+{
+  // Refine mesh
+  const Mesh& mesh = V.mesh();
+  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
+  refine(*refined_mesh, mesh, cell_markers);
+
+  // Refine space
+  FunctionSpace W = refine(V, *refined_mesh);
+
+  return W;
+}
+//-----------------------------------------------------------------------------
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
+                                     const Mesh& refined_mesh)
 {
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
