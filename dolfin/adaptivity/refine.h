@@ -18,6 +18,7 @@ namespace dolfin
   class Mesh;
   template <class T> class MeshFunction;
   class FunctionSpace;
+  class Function;
 
   //--- Refinement of meshes ---
 
@@ -40,15 +41,21 @@ namespace dolfin
   //--- Refinement of function spaces ---
 
   /// Create uniformly refined function space
-  FunctionSpace refine(const FunctionSpace& V);
+  FunctionSpace refine(const FunctionSpace& space);
 
   /// Create locally refined function space
-  FunctionSpace refine(const FunctionSpace& V,
+  FunctionSpace refine(const FunctionSpace& space,
                        const MeshFunction<bool>& cell_markers);
 
   /// Create refined function space for refined mesh
-  FunctionSpace refine(const FunctionSpace& V,
+  FunctionSpace refine(const FunctionSpace& space,
                        const Mesh& refined_mesh);
+
+  //--- Refinement of functions ---
+
+  /// Create refined function for refined function space (interpolated)
+  Function refine(const Function& function,
+                  const FunctionSpace& refined_space);
 
 }
 

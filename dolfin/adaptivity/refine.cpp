@@ -15,6 +15,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "refine.h"
@@ -66,44 +67,44 @@ void dolfin::refine(Mesh& refined_mesh,
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V)
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space)
 {
   // Refine mesh
-  const Mesh& mesh = V.mesh();
+  const Mesh& mesh = space.mesh();
   boost::shared_ptr<Mesh> refined_mesh(new Mesh());
   refine(*refined_mesh, mesh);
 
   // Refine space
-  FunctionSpace W = refine(V, *refined_mesh);
+  FunctionSpace refined_space = refine(space, *refined_mesh);
 
-  return W;
+  return refined_space;
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space,
                                      const MeshFunction<bool>& cell_markers)
 {
   // Refine mesh
-  const Mesh& mesh = V.mesh();
+  const Mesh& mesh = space.mesh();
   boost::shared_ptr<Mesh> refined_mesh(new Mesh());
   refine(*refined_mesh, mesh, cell_markers);
 
   // Refine space
-  FunctionSpace W = refine(V, *refined_mesh);
+  FunctionSpace refined_space = refine(space, *refined_mesh);
 
-  return W;
+  return refined_space;
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
+dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space,
                                      const Mesh& refined_mesh)
 {
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
   error("Refinement of function spaces relies on the development version of UFC.");
-  return V;
+  return space;
 #else
 
   // Get DofMap (GenericDofMap does not know about ufc::dof_map)
-  const DofMap* dofmap = dynamic_cast<const DofMap*>(&V.dofmap());
+  const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
   if (!dofmap)
   {
     info("FunctionSpace is defined by a non-stand dofmap.");
@@ -111,7 +112,7 @@ dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
   }
 
   // Create new copies of UFC finite element and dofmap
-  boost::shared_ptr<ufc::finite_element> ufc_element(V.element().ufc_element()->create());
+  boost::shared_ptr<ufc::finite_element> ufc_element(space.element().ufc_element()->create());
   boost::shared_ptr<ufc::dof_map> ufc_dofmap(dofmap->ufc_dofmap()->create());
 
   // Create DOLFIN finite element and dofmap
@@ -119,12 +120,24 @@ dolfin::FunctionSpace dolfin::refine(const FunctionSpace& V,
   boost::shared_ptr<DofMap> refined_dofmap(new DofMap(ufc_dofmap, refined_mesh));
 
   // Create new function space
-  FunctionSpace W(reference_to_no_delete_pointer(refined_mesh),
+  FunctionSpace refined_space(reference_to_no_delete_pointer(refined_mesh),
                   refined_element,
                   refined_dofmap);
 
-  return W;
+  return refined_space;
 
 #endif
+}
+//-----------------------------------------------------------------------------
+dolfin::Function dolfin::refine(const Function& function,
+                                const FunctionSpace& refined_space)
+{
+  // Create function
+  Function refined_function(refined_space);
+
+  // Interpolate function on coarse mesh
+  refined_function.interpolate(function);
+
+  return refined_function;
 }
 //-----------------------------------------------------------------------------
