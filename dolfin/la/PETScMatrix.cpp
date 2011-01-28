@@ -288,10 +288,17 @@ void PETScMatrix::zero(uint m, const uint* rows)
   assert(A);
 
   IS is = 0;
+  PetscScalar null = 0.0;
+#if (PETSC_VERSION_RELEASE == 0)
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
+                  reinterpret_cast<const int*>(rows), 
+                  PETSC_COPY_VALUES, &is);
+  MatZeroRowsIS(*A, is, null, NULL, NULL);
+#else
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
                   reinterpret_cast<const int*>(rows), &is);
-  PetscScalar null = 0.0;
   MatZeroRowsIS(*A, is, null);
+#endif
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
@@ -300,10 +307,17 @@ void PETScMatrix::ident(uint m, const uint* rows)
   assert(A);
 
   IS is = 0;
+  PetscScalar one = 1.0;
+#if (PETSC_VERSION_RELEASE == 0)
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
+                  reinterpret_cast<const int*>(rows),
+                  PETSC_COPY_VALUES, &is);
+  MatZeroRowsIS(*A, is, one, NULL, NULL);
+#else
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
                   reinterpret_cast<const int*>(rows), &is);
-  PetscScalar one = 1.0;
   MatZeroRowsIS(*A, is, one);
+#endif
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------

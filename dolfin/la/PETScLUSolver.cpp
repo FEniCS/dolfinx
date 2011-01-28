@@ -38,6 +38,18 @@ namespace dolfin
     }
   };
 }
+
+// Forward compatibility with petsc-dev
+#if (PETSC_VERSION_RELEASE == 0)
+#define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
+#define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
+#define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
+#define MAT_SOLVER_PETSC        MATSOLVERPETSC
+#define MAT_SOLVER_SPOOLES      MATSOLVERSPOOLES
+#define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
+#define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
+#endif
+
 //-----------------------------------------------------------------------------
 // Available LU solver
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages

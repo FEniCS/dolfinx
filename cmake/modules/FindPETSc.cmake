@@ -111,7 +111,9 @@ show :
   endmacro()
 
   # Call macro to get the PETSc variables
-  petsc_get_variable(PETSC_INCLUDE PETSC_INCLUDE)
+  petsc_get_variable(PETSC_INCLUDE PETSC_INCLUDE)          # 3.1
+  petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)  # dev
+  set(PETSC_INCLUDE ${PETSC_INCLUDE} ${PETSC_CC_INCLUDES})
   petsc_get_variable(PETSC_LIB PETSC_LIB)
 
   # Remove temporary Makefile
