@@ -1,10 +1,10 @@
 // Copyright (C) 2010 Marie E. Rognes.
 // Licensed under the GNU LGPL Version 3.0 or any later version.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-11-01
-// Last changed: 2011-01-07
+// Last changed: 2011-01-28
 
 #ifndef __ADAPTIVE_DATUM_H
 #define __ADAPTIVE_DATUM_H
@@ -68,8 +68,8 @@ namespace dolfin
 
     void set_reference_value(const double reference);
 
-    // AdaptiveSolver is AdaptiveDatum's BFF.
-    friend class AdaptiveSolver;
+    // AdaptiveVariationalSolver is AdaptiveDatum's BFF.
+    friend class AdaptiveVariationalSolver;
 
   private:
 

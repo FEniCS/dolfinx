@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-14
+// Last changed: 2011-01-28
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -24,11 +24,11 @@ namespace dolfin
   class GoalFunctional;
   class Form;
 
-  /// An _AdaptiveSolver_ solves a _VariationalProblem_ adaptively to
+  /// An _AdaptiveVariationalSolver_ solves a _VariationalProblem_ adaptively to
   /// within a given error tolerance with respect to the error in a
   /// given _GoalFunctional_.
 
-  class AdaptiveSolver
+  class AdaptiveVariationalSolver
   {
   public:
 

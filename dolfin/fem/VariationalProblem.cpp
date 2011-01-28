@@ -4,9 +4,10 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-17
+// Last changed: 2011-01-28
 
 #include <dolfin/function/Function.h>
+#include <dolfin/adaptivity/AdaptiveVariationalSolver.h>
 #include "Form.h"
 #include "LinearVariationalSolver.h"
 #include "NonlinearVariationalSolver.h"
@@ -132,7 +133,7 @@ void VariationalProblem::solve(Function& u,
                                GoalFunctional& M)
 {
   // Call adaptive solver
-  AdaptiveSolver::solve(u, *this, tolerance, M, parameters("adaptivity"));
+  AdaptiveVariationalSolver::solve(u, *this, tolerance, M, parameters("adaptivity"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u,
@@ -141,7 +142,7 @@ void VariationalProblem::solve(Function& u,
                                ErrorControl& ec)
 {
   // Call adaptive solver
-  AdaptiveSolver::solve(u, *this, tolerance, M, ec, parameters("adaptivity"));
+  AdaptiveVariationalSolver::solve(u, *this, tolerance, M, ec, parameters("adaptivity"));
 }
 //-----------------------------------------------------------------------------
 const bool VariationalProblem::is_nonlinear() const
@@ -249,7 +250,7 @@ void VariationalProblem::init_parameters()
   }
 
   // Add adaptivity parameters (always)
-  Parameters p = AdaptiveSolver::default_parameters();
+  Parameters p = AdaptiveVariationalSolver::default_parameters();
   p.rename("adaptivity");
   parameters.add(p);
 }

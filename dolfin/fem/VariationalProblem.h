@@ -4,15 +4,12 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-17
+// Last changed: 2011-01-28
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/adaptivity/AdaptiveSolver.h>
-#include "NonlinearVariationalSolver.h"
-#include "LinearVariationalSolver.h"
 
 namespace dolfin
 {

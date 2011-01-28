@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-27
+// Last changed: 2011-01-28
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -23,31 +23,31 @@
 #include "ErrorControl.h"
 #include "GoalFunctional.h"
 #include "marking.h"
-#include "AdaptiveSolver.h"
+#include "AdaptiveVariationalSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void AdaptiveSolver::solve(Function& u,
-                           VariationalProblem& problem,
-                           double tol,
-                           GoalFunctional& M,
-                           Parameters& parameters)
+void AdaptiveVariationalSolver::solve(Function& u,
+                                      VariationalProblem& problem,
+                                      double tol,
+                                      GoalFunctional& M,
+                                      Parameters& parameters)
 {
 
   // Extract error control view from goal functional
   M.update_ec(problem.bilinear_form(), problem.linear_form());
   ErrorControl& ec(*(M._ec));
 
-  AdaptiveSolver::solve(u, problem, tol, M, ec, parameters);
+  AdaptiveVariationalSolver::solve(u, problem, tol, M, ec, parameters);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveSolver::solve(Function& u,
-                           VariationalProblem& problem,
-                           double tol,
-                           Form& M,
-                           ErrorControl& ec,
-                           Parameters& parameters)
+void AdaptiveVariationalSolver::solve(Function& u,
+                                      VariationalProblem& problem,
+                                      double tol,
+                                      Form& M,
+                                      ErrorControl& ec,
+                                      Parameters& parameters)
 {
   // Set tolerance parameter if not set
   if (parameters["tolerance"].change_count() == 0)
@@ -141,9 +141,9 @@ void AdaptiveSolver::solve(Function& u,
        "Maximal number of iterations (%d) exceeded! Returning anyhow.", N);
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveSolver::stop(const FunctionSpace& V,
-                          const double error_estimate,
-                          const Parameters& parameters)
+bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
+                                     const double error_estimate,
+                                     const Parameters& parameters)
 {
   // Done if error is less than tolerance
   const double tolerance = parameters["tolerance"];
@@ -161,8 +161,8 @@ bool AdaptiveSolver::stop(const FunctionSpace& V,
   return false;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveSolver::summary(const std::vector<AdaptiveDatum>& data,
-                             const Parameters& parameters)
+void AdaptiveVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
+                                        const Parameters& parameters)
 {
   // Show parameters used
   info("");
