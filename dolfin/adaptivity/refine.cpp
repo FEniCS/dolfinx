@@ -4,7 +4,9 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-27
+// Last changed: 2011-01-28
+
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/mesh/LocalMeshRefinement.h>
 #include <dolfin/mesh/Mesh.h>
@@ -66,8 +68,18 @@ void dolfin::refine(Mesh& refined_mesh,
 //-----------------------------------------------------------------------------
 FunctionSpace dolfin::refine(const FunctionSpace& V, const Mesh& refined_mesh)
 {
-  info("Refining function space: %x", &V);
+#ifndef UFC_DEV
+  info("UFC_DEV compiler flag is not set.");
+  error("Refinement of function spaces relies on the development version of UFC.");
+  return V;
+#else
+
+  // Create new copies of finite element and dofmap
+  //V.element()
+  //boost::shared_ptr<ufc::finite_element> element(_element->extract_sub_element(component));
 
   return V;
+
+#endif
 }
 //-----------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-01-11
+// Last changed: 2011-01-28
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -141,6 +141,10 @@ namespace dolfin
                                             const std::vector<uint>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh);
+
+    /// Return ufc::dof_map
+    boost::shared_ptr<const ufc::dof_map> ufc_dofmap() const
+    { return _ufc_dofmap; }
 
   private:
 

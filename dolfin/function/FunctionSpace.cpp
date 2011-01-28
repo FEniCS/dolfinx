@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-05-20
+// Last changed: 2011-01-28
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
