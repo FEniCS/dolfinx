@@ -57,3 +57,7 @@ bool dolfin::near(double x, double x0)
   return dolfin::between(x0, x, x0);
 }
 //-----------------------------------------------------------------------------
+bool dolfin::between(double x0, double x, double x1)
+{
+  return (x0-DOLFIN_EPS < x && x < x1+DOLFIN_EPS);
+}
