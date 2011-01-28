@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-28
+// Last changed: 2011-01-29
 
 #include <boost/shared_ptr.hpp>
 
@@ -18,6 +18,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/Form.h>
 #include "refine.h"
 
 using namespace dolfin;
@@ -139,5 +140,45 @@ dolfin::Function dolfin::refine(const Function& function,
   refined_function.interpolate(function);
 
   return refined_function;
+}
+//-----------------------------------------------------------------------------
+dolfin::Form dolfin::refine(const Form& form,
+                            const Mesh& refined_mesh)
+{
+  // Get form data
+  std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces = form.function_spaces();
+  std::vector<const GenericFunction*> coefficients = form.coefficients();
+
+
+
+  Form refined_form(2, 0);
+
+
+  return refined_form;
+
+
+  /*
+    /// Create form (constructor used from Python interface)
+    Form(const ufc::form& ufc_form,
+         const std::vector<const FunctionSpace*>& function_spaces,
+         const std::vector<const GenericFunction*>& coefficients);
+
+
+
+
+
+    // The mesh (needed for functionals when we don't have any spaces)
+    boost::shared_ptr<const Mesh> _mesh;
+
+    // Function spaces (one for each argument)
+    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
+
+    // Coefficients
+    std::vector<boost::shared_ptr<const GenericFunction> > _coefficients;
+
+    // The UFC form
+    boost::shared_ptr<const ufc::form> _ufc_form;
+
+  */
 }
 //-----------------------------------------------------------------------------

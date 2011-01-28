@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2009-12-15
+// Last changed: 2011-01-28
 
 #ifndef __FORM_H
 #define __FORM_H

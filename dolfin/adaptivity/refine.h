@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-28
+// Last changed: 2011-01-29
 //
 // This file defines free functions for refinement.
 
@@ -19,6 +19,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class FunctionSpace;
   class Function;
+  class Form;
 
   //--- Refinement of meshes ---
 
@@ -56,6 +57,12 @@ namespace dolfin
   /// Create refined function for refined function space (interpolated)
   Function refine(const Function& function,
                   const FunctionSpace& refined_space);
+
+  //--- Refinement of forms ---
+
+  /// Create refined function for refined mesh
+  Form refine(const Form& form,
+              const Mesh& refined_mesh);
 
 }
 
