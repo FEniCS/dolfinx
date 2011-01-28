@@ -44,7 +44,7 @@ namespace dolfin
     Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
 
     /// Construct array from a pointer. Array will not take ownership.
-    Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter<T>())) {}
+    Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter())) {}
 
     /// Destructor
     ~Array() {}
@@ -61,7 +61,7 @@ namespace dolfin
     void update(uint N, T* _x)
     {
       _size = N;
-      x.reset(_x, NoDeleter<T>());
+      x.reset(_x, NoDeleter());
     }
 
     /// Return informal string representation (pretty-print).

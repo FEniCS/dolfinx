@@ -48,8 +48,8 @@ int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
-  boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
-  boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+  boost::shared_ptr<Vec> _x(&x, NoDeleter());
+  boost::shared_ptr<Vec> _y(&y, NoDeleter());
   PETScVector dolfinx(_x), dolfiny(_y);
 
   newpc->solve(dolfiny, dolfinx);
