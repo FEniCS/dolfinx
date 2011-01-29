@@ -149,7 +149,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 
     MAKE_ARRAY(1, m, n, (*self)(), NPY_UINT)
 
-      return reinterpret_cast<PyObject*>(array);
+    return reinterpret_cast<PyObject*>(array);
   }
 
   PyObject* __call__(dolfin::uint entity) {
@@ -158,7 +158,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 
     MAKE_ARRAY(1, m, n, (*self)(entity), NPY_UINT)
 
-      return reinterpret_cast<PyObject*>(array);
+    return reinterpret_cast<PyObject*>(array);
   }
 }
 
@@ -175,4 +175,3 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::SubDomain;
-

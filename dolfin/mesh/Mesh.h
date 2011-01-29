@@ -426,15 +426,13 @@ namespace dolfin
     /// holds the colors of the mesh.
     ///
     /// *Arguments*
-    ///     dim (uint)
-    ///         Coloring type given as topological dimension,
-    ///         specifying what relation makes two cells neighbors.
-    ///         Two cells are neighbors if they are both adjacent to a
-    ///         mesh entity of the given dimension.
+    ///     coloring_type (std::vector<uint>)
+    ///         Coloring type given as list of topological dimensions,
+    ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
     ///     MeshFunction<uint>
-    ///         The colors as a mesh function over the cells of the mesh.
+    ///         The colors as a mesh function over entities of the mesh.
     const MeshFunction<uint>& color(std::vector<uint> coloring_type) const;
 
     /// Compute all ids of all cells which are intersected by the

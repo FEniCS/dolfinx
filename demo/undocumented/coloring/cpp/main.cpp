@@ -31,5 +31,15 @@ int main()
   const MeshFunction<dolfin::uint>& colors_facet = mesh.color("facet");
   plot(colors_facet, "Facet-based cell coloring");
 
+  // Compute facet-based coloring with distance 2
+  std::vector<dolfin::uint> coloring_type;
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(mesh.topology().dim()-1);
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(mesh.topology().dim()-1);
+  coloring_type.push_back(mesh.topology().dim());
+  const MeshFunction<dolfin::uint>& colors_vertex_2 = mesh.color(coloring_type);
+  plot(colors_vertex_2, "Facet-based cell coloring with distance 2");
+
   return 0;
 }

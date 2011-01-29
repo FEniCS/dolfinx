@@ -17,7 +17,6 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
-//#include "MeshData.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Point.h"
