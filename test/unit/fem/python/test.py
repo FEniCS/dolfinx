@@ -95,6 +95,31 @@ class Assembly(unittest.TestCase):
         A_frobenius_norm = 9.6420303878382718e-01
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
 
+    def test_multithreaded_cell_assembly(self):
+        """Multi-threaded test assembly over cells"""
+
+        mesh = UnitCube(12, 12, 12)
+        V = VectorFunctionSpace(mesh, "CG", 1)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant((10, 20, 30))
+
+        def epsilon(v):
+            return 0.5*(grad(v) + grad(v).T)
+
+        a = inner(epsilon(v), epsilon(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm = 25.07510708592753090
+        b_l2_norm = 0.84470259017558968
+
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+        parameters["num_threads"] = 2
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
 class DofMap(unittest.TestCase):
 
