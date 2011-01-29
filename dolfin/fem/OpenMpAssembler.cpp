@@ -260,16 +260,34 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // Vector to hold dof maps for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
+  // FIXME: Pass or determine coloring type
+  // Define graph type
+  std::vector<uint> coloring_type;
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(0);
+  coloring_type.push_back(mesh.topology().dim());
+
+  // Get coloring data
+  std::map<const std::vector<uint>,
+           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.data().coloring.find(coloring_type);
+
+  // Check that requested coloring has been computed
+  if (mesh_coloring == mesh.data().coloring.end())
+    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+
+  // Get coloring data
+  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+
   // Assemble over cells (loop over colours, then cells of same color)
-  const uint num_colors = mesh.data().array("num colored cells")->size();
+  const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
-    const std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
-    assert(colored_cells);
+    const std::vector<uint>& colored_cells = entities_of_color[color];
 
     // Number of cells of current color
-    const uint num_cells = colored_cells->size();
+    const uint num_cells = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
@@ -277,7 +295,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Cell index
-      const uint index = (*colored_cells)[cell_index];
+      const uint index = colored_cells[cell_index];
 
       // Create cell
       const Cell cell(mesh, index);
@@ -335,7 +353,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         // Tabulate tensor
         facet_integral->tabulate_tensor(ufc.A_facet.get(), ufc.w, ufc.cell, local_facet);
 
-        // Add Tabulate tensor
+        // Add facet contribution
         for (uint i = 0; i < dim; ++i)
           ufc.A[i] += ufc.A_facet[i];
       }
