@@ -201,11 +201,12 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     // Get solver residual norm
     double rnorm = 0.0;
     KSPGetResidualNorm(*_ksp, &rnorm);
+    const char *reason_str = KSPConvergedReasons[reason];
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
+      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
     else
-      warning("Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
+      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
   }
 
   // Report results

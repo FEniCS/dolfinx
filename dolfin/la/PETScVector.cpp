@@ -614,7 +614,11 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 
   // Create local index sets
   IS from, to;
+#if (PETSC_VERSION_RELEASE == 0)
+  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, PETSC_COPY_VALUES, &from);
+#else
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
+#endif
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
