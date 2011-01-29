@@ -216,6 +216,8 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
+  warning("OpenMpAssembler::assemble_exterior_facets is untested.");
+
   // Get integral for sub domain (if any)
   if (domains && domains->size() > 0)
     error("Sub-domains not yet handled by OpenMpAssembler.");
@@ -352,21 +354,50 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
                                          const Form& a,
-                                         UFC& ufc,
+                                         UFC& _ufc,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
-  error("OpenMpAssembler::assemble_interior_facets is not implemented.");
-  /*
+  warning("OpenMpAssembler::assemble_interior_facets is untested.");
 
   // Skip assembly if there are no interior facet integrals
-  if (ufc.form.num_interior_facet_integrals() == 0)
+  if (_ufc.form.num_interior_facet_integrals() == 0)
     return;
 
   Timer timer("Assemble interior facets");
 
-  // Extract mesh and coefficients
+  // Set number of OpenMP threads (from parameter systems)
+  omp_set_num_threads(parameters["num_threads"]);
+
+  // Get integral for sub domain (if any)
+  if (domains && domains->size() > 0)
+    error("Sub-domains not yet handled by OpenMpAssembler.");
+
+  // Extract mesh
   const Mesh& mesh = a.mesh();
+
+  // Color mesh
+  std::vector<dolfin::uint> coloring_type;
+  coloring_type.push_back(mesh.topology().dim() - 1);
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(0);
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(mesh.topology().dim()-1);
+  mesh.color(coloring_type);
+
+  // Dummy UFC object since each thread needs to created its own UFC object
+  UFC ufc(_ufc);
+
+  // Form rank
+  const uint form_rank = ufc.form.rank();
+
+  // Collect pointers to dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
+
+  // Vector to hold dofs for cells
+  std::vector<std::vector<uint> > macro_dofs(form_rank);
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
@@ -377,66 +408,104 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  const MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
+  MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+  {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
           facet_orientation);
-
-  // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-    // Only consider interior facets
-    if (!facet->interior())
-    {
-      p++;
-      continue;
-    }
-
-    // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
-    {
-      const uint domain = (*domains)[*facet];
-      if (domain < ufc.form.num_interior_facet_integrals())
-        integral = ufc.interior_facet_integrals[domain].get();
-      else
-        continue;
-    }
-
-    // Skip integral if zero
-    if (!integral)
-      continue;
-
-    // Get cells incident with facet
-    const std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);
-    const Cell& cell0 = cells.first;
-    const Cell& cell1 = cells.second;
-
-    // Get local index of facet with respect to each cell
-    const uint local_facet0 = cell0.index(*facet);
-    const uint local_facet1 = cell1.index(*facet);
-
-    // Update to current pair of cells
-    ufc.update(cell0, local_facet0, cell1, local_facet1);
-
-    // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < ufc.form.rank(); i++)
-    {
-      const uint offset = a.function_space(i)->dofmap().local_dimension(ufc.cell0);
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
-    }
-
-    // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w, ufc.cell0, ufc.cell1,
-                              local_facet0, local_facet1);
-
-    // Add entries to global tensor
-    A.add(ufc.macro_A.get(), ufc.macro_local_dimensions.get(), ufc.macro_dofs);
-
-    p++;
   }
-  */
+
+  // Get coloring data
+  std::map<const std::vector<uint>,
+           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.data().coloring.find(coloring_type);
+
+  // Check that requested coloring has been computed
+  if (mesh_coloring == mesh.data().coloring.end())
+    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+
+  // Get coloring data
+  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+
+  // Assemble over interior facets (loop over colours, then cells of same color)
+  const uint num_colors = entities_of_color.size();
+  for (uint color = 0; color < num_colors; ++color)
+  {
+    // Get the array of facet indices of current color
+    const std::vector<uint>& colored_facets = entities_of_color[color];
+
+    // Number of facets of current color
+    const uint num_facets = colored_facets.size();
+
+    // OpenMP test loop over cells of the same color
+    Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
+    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, macro_dofs, integral)
+    for (uint facet_index = 0; facet_index < num_facets; ++facet_index)
+    {
+      // Facet index
+      const uint index = colored_facets[facet_index];
+
+      // Create cell
+      const Facet facet(mesh, index);
+
+      // Only consider interior facets
+      if (!facet.interior())
+      {
+        p++;
+        continue;
+      }
+
+      // Get integral for sub domain (if any)
+      if (domains && domains->size() > 0)
+      {
+        const uint domain = (*domains)[facet];
+        if (domain < ufc.form.num_interior_facet_integrals())
+          integral = ufc.interior_facet_integrals[domain].get();
+        else
+          continue;
+      }
+
+      // Skip integral if zero
+      if (!integral)
+        continue;
+
+      // Get cells incident with facet
+      std::pair<const Cell, const Cell> cells = facet.adjacent_cells(facet_orientation);
+      const Cell& cell0 = cells.first;
+      const Cell& cell1 = cells.second;
+
+      // Get local index of facet with respect to each cell
+      uint local_facet0 = cell0.index(facet);
+      uint local_facet1 = cell1.index(facet);
+
+      // Update to current pair of cells
+      ufc.update(cell0, local_facet0, cell1, local_facet1);
+
+      // Tabulate dofs for each dimension on macro element
+      for (uint i = 0; i < form_rank; i++)
+      {
+        // Get dofs for each cell
+        const std::vector<uint>& cell_dofs0 = dof_maps[i]->cell_dofs(cell0.index());
+        const std::vector<uint>& cell_dofs1 = dof_maps[i]->cell_dofs(cell1.index());
+
+        // Create space in macro dof vector
+        macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+
+        // Copy cell dofs into macro dof vector
+        std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
+        std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
+      }
+
+      // Tabulate exterior interior facet tensor on macro element
+      integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w, ufc.cell0, ufc.cell1,
+                                local_facet0, local_facet1);
+
+      // Add entries to global tensor
+      A.add(ufc.macro_A.get(), macro_dofs);
+
+      p++;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 #endif
