@@ -81,6 +81,8 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
+  // FIXME: The below selections should be made robust
+
   if (a.ufc_form().num_interior_facet_integrals() != 0)
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 

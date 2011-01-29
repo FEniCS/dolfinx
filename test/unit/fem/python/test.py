@@ -47,6 +47,7 @@ class Assembly(unittest.TestCase):
         b_l2_norm = 1.48087142738768
 
         # Assemble A and b separately
+        parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
@@ -54,6 +55,11 @@ class Assembly(unittest.TestCase):
         A, b = assemble_system(a, L)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b separately (multi-threaded)
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     def test_cell_assembly(self):
 
@@ -72,12 +78,21 @@ class Assembly(unittest.TestCase):
 
         A_frobenius_norm =  4.3969686527582512
         b_l2_norm = 0.95470326978246278
+
+        # Assemble A and b separately
+        parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
+        # Assemble system
         A, b = assemble_system(a, L)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b separately (multi-threaded)
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     def test_nonsquare_assembly(self):
         """Test assembly of a rectangular matrix"""
@@ -93,60 +108,13 @@ class Assembly(unittest.TestCase):
 
         a = div(v)*p*dx
         A_frobenius_norm = 9.6420303878382718e-01
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-
-    def test_multithreaded_cell_assembly(self):
-        """Multi-threaded test assembly over cells"""
-
-        mesh = UnitCube(12, 12, 12)
-        V = VectorFunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        u = TrialFunction(V)
-        f = Constant((10, 20, 30))
-
-        def epsilon(v):
-            return 0.5*(grad(v) + grad(v).T)
-
-        a = inner(epsilon(v), epsilon(u))*dx
-        L = inner(v, f)*dx
-
-        A_frobenius_norm = 25.07510708592753090
-        b_l2_norm = 0.84470259017558968
 
         parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
-        parameters["num_threads"] = 2
+        parameters["num_threads"] = 4
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
-
-    def test_multithreaded_cell_and_exterior_facet_assembly(self):
-        """Multi-threaded test assembly over cells"""
-
-        mesh = UnitCube(12, 12, 12)
-        V = VectorFunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        u = TrialFunction(V)
-        f = Constant((10, 20, 30))
-
-        def epsilon(v):
-            return 0.5*(grad(v) + grad(v).T)
-
-        a = inner(epsilon(v), epsilon(u))*dx + inner(v, u)*ds
-        L = inner(v, f)*dx + inner(v, f)*ds
-
-        A_frobenius_norm = 25.12435794739872108
-        b_l2_norm = 7.96380756202191264
-
-        parameters["num_threads"] = 0
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
-
-        parameters["num_threads"] = 2
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
 class DofMap(unittest.TestCase):
 
