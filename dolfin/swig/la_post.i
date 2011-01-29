@@ -187,7 +187,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __gt__(self, value):
         from numpy import isscalar
-        if not isscalar(value):
+        if isscalar(value):
             return _compare_vector_with_value(self, value, dolfin_gt)
         if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_gt)

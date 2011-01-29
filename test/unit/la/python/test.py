@@ -220,7 +220,6 @@ class AbstractBaseTest(object):
             G1 = A[ind1]
             G2 = A2[ind]
 
-            # FIXME: Should return a vector, now returns a scalar...
             G3 = A[A > 1]
             G4 = A2[A2 > 1]
 
