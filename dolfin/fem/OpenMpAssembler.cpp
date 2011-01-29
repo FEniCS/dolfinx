@@ -14,8 +14,6 @@
 #include <utility>
 #include <vector>
 #include <omp.h>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -139,11 +137,15 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // FIXME: Pass or determine coloring type
-  boost::tuple<uint, uint, uint> coloring_type(mesh.topology().dim(), 0, 1);
+  // Define graph type
+  std::vector<uint> coloring_type;
+  coloring_type.push_back(mesh.topology().dim());
+  coloring_type.push_back(0);
+  coloring_type.push_back(mesh.topology().dim());
 
   // Get coloring data
-  std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
-           std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  std::map<const std::vector<uint>,
+           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed

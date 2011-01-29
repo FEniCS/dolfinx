@@ -9,7 +9,7 @@
 #ifndef __MESH_RENUMBERING_H
 #define __MESH_RENUMBERING_H
 
-#include <boost/tuple/tuple.hpp>
+#include <vector>
 #include "dolfin/common/types.h"
 
 namespace dolfin
@@ -33,8 +33,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         Mesh to be renumbered.
-    static void renumber_by_color(Mesh& mesh,
-                                  boost::tuple<uint, uint, uint> coloring);
+    static void renumber_by_color(Mesh& mesh, std::vector<uint> coloring);
 
   };
 

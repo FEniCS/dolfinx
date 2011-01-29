@@ -14,7 +14,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/tuple/tuple.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -148,7 +147,7 @@ namespace dolfin
     /// stores mesh entity colors and the vector<vector> a list of all mesh entity inddices
     /// of the same color, e.g. vector<vector>[color][i] is the indec of the ith entity of
     // color 'color'.
-    std::map<boost::tuple<uint, uint, uint>,
+    std::map<const std::vector<uint>,
              std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
     /// Friends

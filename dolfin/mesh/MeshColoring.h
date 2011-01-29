@@ -10,7 +10,7 @@
 #define __MESH_COLORING_H
 
 #include <string>
-#include <boost/tuple/tuple.hpp>
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
@@ -37,12 +37,12 @@ namespace dolfin
     /// Color the cells of a mesh for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
     static const MeshFunction<uint>& color(Mesh& mesh,
-                                           boost::tuple<uint, uint, uint> coloring_type);
+                                           std::vector<uint> coloring_type);
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
     static uint compute_colors(MeshFunction<uint>& colors,
-                               boost::tuple<uint, uint, uint> coloring_type);
+                               std::vector<uint> coloring_type);
 
     /// Convert coloring type to topological dimension
     static uint type_to_dim(std::string coloring_type, const Mesh& mesh);

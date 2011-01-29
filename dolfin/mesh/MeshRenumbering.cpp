@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <vector>
 #include <boost/scoped_array.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
@@ -26,16 +24,16 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void MeshRenumbering::renumber_by_color(Mesh& mesh,
-                                  boost::tuple<uint, uint, uint> coloring_type)
+                                        std::vector<uint> coloring_type)
 {
-  typedef std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
+  typedef std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
            std::vector<std::vector<uint> > > >::const_iterator MeshColoringIterator;
 
   info("Renumbering mesh by cell colors.");
   info(mesh);
 
   // Check that requested coloring is a cell coloring
-  if (coloring_type.get<0>() != mesh.topology().dim())
+  if (coloring_type[0] != mesh.topology().dim())
     error("MeshRenumbering::renumber_by_color supports cell colorings only.");
 
   // Get coloring

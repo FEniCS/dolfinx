@@ -10,9 +10,6 @@
 // First added:  2006-05-09
 // Last changed: 2011-01-17
 
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/UniqueIdGenerator.h>
@@ -244,8 +241,11 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 void Mesh::renumber_by_color()
 {
-  // Create coloring type
-  const boost::tuple<uint, uint, uint> coloring_type(this->topology().dim(), 0, 1);
+  // Define graph type
+  std::vector<uint> coloring_type;
+  coloring_type.push_back(topology().dim());
+  coloring_type.push_back(0);
+  coloring_type.push_back(topology().dim());
 
   // Renumber by color
   MeshRenumbering::renumber_by_color(*this, coloring_type);
@@ -283,15 +283,20 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
+  // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
-  boost::tuple<uint, uint, uint> _coloring_type(topology().dim(), dim, 1);
+  std::vector<uint> _coloring_type;
+  _coloring_type.push_back(topology().dim());
+  _coloring_type.push_back(dim);
+  _coloring_type.push_back(topology().dim());
+
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(boost::tuple<uint, uint, uint> coloring_type) const
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
-  std::map<boost::tuple<uint, uint, uint>, std::pair<MeshFunction<uint>,
+  std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
            std::vector<std::vector<uint> > > >::const_iterator coloring_data;
   coloring_data = this->data().coloring.find(coloring_type);
 

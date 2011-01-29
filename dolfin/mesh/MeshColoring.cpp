@@ -8,9 +8,6 @@
 
 #include <map>
 #include <utility>
-#include <vector>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/utils.h>
@@ -29,14 +26,17 @@ using namespace dolfin;
 const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
-  const boost::tuple<uint, uint, uint> _coloring_type(mesh.topology().dim(),
-                                           type_to_dim(coloring_type, mesh), 1);
+  // Define graph type
+  std::vector<uint> _coloring_type;
+  _coloring_type.push_back(mesh.topology().dim());
+  _coloring_type.push_back(type_to_dim(coloring_type, mesh));
+  _coloring_type.push_back(mesh.topology().dim());
 
   return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
-                                   boost::tuple<uint, uint, uint> coloring_type)
+                                               std::vector<uint> coloring_type)
 {
   // Convenience typedefs
   //typedef boost::tuple<uint, uint, uint> ColorType;
@@ -64,7 +64,7 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
   std::vector<std::vector<uint> >& entities_of_color = color_data.second;
 
   // Initialise mesh function for colors and compute coloring
-  const uint colored_entity_dim = coloring_type.get<0>();
+  const uint colored_entity_dim = coloring_type[0];
   colors.init(mesh, colored_entity_dim);
   const uint num_colors = MeshColoring::compute_colors(colors, coloring_type);
 
@@ -81,14 +81,14 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
-                                  boost::tuple<uint, uint, uint> coloring_type)
+                                          std::vector<uint> coloring_type)
 {
   // Get the mesh
   const Mesh& mesh(colors.mesh());
 
-  const uint colored_entity_dim = coloring_type.get<0>();
-  const uint dim = coloring_type.get<1>();
-  const uint distance = coloring_type.get<2>();
+  assert(coloring_type.size() == 3);
+  const uint colored_entity_dim = coloring_type[0];
+  const uint dim = coloring_type[1];
 
   // Check that dimension match
   if (colored_entity_dim != mesh.topology().dim())
@@ -96,9 +96,6 @@ dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
     error("Wrong dimension (%d) for MeshFunction for computation of mesh entity colors.",
           colors.dim());
   }
-
-  if (distance != 1)
-    error("Only a 1-distance coloring for meshes is presently supported");
 
   // Get number of graph vertices
   const uint num_verticies = mesh.num_entities(colored_entity_dim);
@@ -116,6 +113,26 @@ dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
         boost::add_edge(colored_entity_index, neighbor->index(), graph);
     }
   }
+
+
+  /*
+  // Build graph
+  for (MeshEntityIterator colored_entity(mesh, colored_entity_dim); !colored_entity.end(); ++colored_entity)
+  {
+    const uint colored_entity_index = colored_entity->index();
+    for (uint level = 1; level < coloring_type.size; ++i)
+    {
+
+    }
+
+
+    for (MeshEntityIterator entity(*colored_entity, dim); !entity.end(); ++entity)
+    {
+      for (MeshEntityIterator neighbor(*entity, colored_entity_dim); !neighbor.end(); ++neighbor)
+        boost::add_edge(colored_entity_index, neighbor->index(), graph);
+    }
+  }
+  */
 
   // Wrap MeshFunction values
   Array<uint> _colors(colors.size(), colors.values());

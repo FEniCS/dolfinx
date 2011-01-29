@@ -16,8 +16,6 @@
 
 #include <string>
 #include <utility>
-#include <boost/tuple/tuple.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
@@ -437,7 +435,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<uint>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<uint>& color(boost::tuple<uint, uint, uint> coloring_type) const;
+    const MeshFunction<uint>& color(std::vector<uint> coloring_type) const;
 
     /// Compute all ids of all cells which are intersected by the
     /// given point.
