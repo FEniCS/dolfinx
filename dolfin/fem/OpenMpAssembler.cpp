@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2010-11-10
-// Last changed: 2011-01-16
+// Last changed: 2011-01-29
 
 #ifdef HAS_OPENMP
 
@@ -82,12 +82,10 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
   if (a.ufc_form().num_interior_facet_integrals() != 0)
-  {
-    error("OpenMP assembly for DG not yet supported.");
-    //assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
-  }
-  else if (a.ufc_form().num_exterior_facet_integrals() != 0)
-    assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
+    assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+
+  if (a.ufc_form().num_exterior_facet_integrals() != 0)
+    assemble_cells_and_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
 
@@ -210,13 +208,13 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
+void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& _ufc,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
-  warning("OpenMpAssembler::assemble_exterior_facets is untested.");
+  warning("OpenMpAssembler::assemble_cells_and_exterior_facets is untested.");
 
   // Get integral for sub domain (if any)
   if (domains && domains->size() > 0)
