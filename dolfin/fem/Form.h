@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-01-28
+// Last changed: 2011-01-29
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -101,6 +101,9 @@ namespace dolfin
 
     /// Return UFC form
     const ufc::form& ufc_form() const;
+
+    /// Return UFC form shared pointer
+    boost::shared_ptr<const ufc::form> ufc_form_shared_ptr() const;
 
     /// Check function spaces and coefficients
     void check() const;

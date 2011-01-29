@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-01-24
+// Last changed: 2011-01-29
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -207,6 +207,11 @@ const ufc::form& Form::ufc_form() const
 {
   assert(_ufc_form);
   return *_ufc_form;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const ufc::form> Form::ufc_form_shared_ptr() const
+{
+  return _ufc_form;
 }
 //-----------------------------------------------------------------------------
 void Form::check() const

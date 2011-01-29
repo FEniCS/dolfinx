@@ -139,28 +139,53 @@ dolfin::Function dolfin::refine(const Function& function,
   // Interpolate function on coarse mesh
   refined_function.interpolate(function);
 
-  return refined_function;
-}
-//-----------------------------------------------------------------------------
-dolfin::Form dolfin::refine(const Form& form,
-                            const Mesh& refined_mesh)
-{
-  // Get form data
-  std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces = form.function_spaces();
-  std::vector<const GenericFunction*> coefficients = form.coefficients();
+   return refined_function;
+ }
+ //-----------------------------------------------------------------------------
+ dolfin::Form dolfin::refine(const Form& form,
+                             const Mesh& refined_mesh)
+ {
+   cout << "Refining form" << endl;
+
+   // Get form data
+   std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
+   std::vector<const GenericFunction*> coefficients = form.coefficients();
+   boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
+
+   // Refine function spaces and keep track of function spaces that may
+   // appear multiple times in the definition of a form.
+   typedef std::map<boost::shared_ptr<const FunctionSpace>, boost::shared_ptr<FunctionSpace> > space_map_type;
+   space_map_type space_map;
+   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
+   for (uint i = 0; i < spaces.size(); i++)
+   {
+     cout << "Checking function space " << i << endl;
+     boost::shared_ptr<const FunctionSpace> space = spaces[i];
+     space_map_type::iterator it = space_map.find(space);
+     if (it == space_map.end())
+     {
+       cout << "Function space not seen before, refining" << endl;
+       boost::shared_ptr<FunctionSpace> refined_space(new FunctionSpace(refine(*space, refined_mesh)));
+       space_map[space] = refined_space;
+       refined_spaces.push_back(refined_space);
+     }
+     else
+     {
+       cout << "Seen before, reusing" << endl;
+       refined_spaces.push_back(it->second);
+     }
+   }
 
 
 
-  Form refined_form(2, 0);
-
-
-  return refined_form;
+   Form refined_form(2, 0);
+   return refined_form;
 
 
   /*
     /// Create form (constructor used from Python interface)
     Form(const ufc::form& ufc_form,
-         const std::vector<const FunctionSpace*>& function_spaces,
+         const std::vector<const FunctionSpace*>& function_spaces,;
          const std::vector<const GenericFunction*>& coefficients);
 
 
