@@ -1,7 +1,7 @@
 """Unit tests for the linear algebra interface"""
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2008-09-30 -- 2011-01-21"
+__date__ = "2008-09-30 -- 2011-01-28"
 __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -220,6 +220,7 @@ class AbstractBaseTest(object):
             G1 = A[ind1]
             G2 = A2[ind]
 
+            # FIXME: Should return a vector, now returns a scalar...
             G3 = A[A > 1]
             G4 = A2[A2 > 1]
 

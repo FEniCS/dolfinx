@@ -273,7 +273,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from numpy import ndarray, integer, isscalar
         from types import SliceType
         if isinstance(indices, (int, integer)):
-            if numpy.isscalar(values):
+            if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
