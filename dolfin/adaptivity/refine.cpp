@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 
 #include <boost/shared_ptr.hpp>
 
@@ -23,31 +23,48 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-dolfin::Mesh dolfin::refine(const Mesh& mesh)
+// Common function for setting parent/child
+template <class T>
+void set_parent_child(const T& parent, boost::shared_ptr<T> child)
 {
-  Mesh refined_mesh;
-  refine(refined_mesh, mesh);
-  return refined_mesh;
+  // Use a const_cast so we can set the parent/child
+  T& _parent = const_cast<T&>(parent);
+
+  // Set parent/child
+  _parent.set_child(child);
+  child->set_parent(reference_to_no_delete_pointer(_parent));
+}
+
+//-----------------------------------------------------------------------------
+dolfin::Mesh& dolfin::refine(const Mesh& mesh)
+{
+  // Skip refinement if already refined
+  if (mesh.has_child())
+  {
+    info("Mesh has already been refined, returning child mesh.");
+    return mesh.child();
+  }
+
+  // Refine uniformly
+  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
+  UniformMeshRefinement::refine(*refined_mesh, mesh);
+
+  // Set parent / child
+  set_parent_child(mesh, refined_mesh);
+
+  return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh)
+dolfin::Mesh& dolfin::refine(const Mesh& mesh,
+                             const MeshFunction<bool>& cell_markers)
 {
-  UniformMeshRefinement::refine(refined_mesh, mesh);
-}
-//-----------------------------------------------------------------------------
-dolfin::Mesh dolfin::refine(const Mesh& mesh,
-                            const MeshFunction<bool>& cell_markers)
-{
-  Mesh refined_mesh;
-  refine(refined_mesh, mesh, cell_markers);
-  return refined_mesh;
-}
-//-----------------------------------------------------------------------------
-void dolfin::refine(Mesh& refined_mesh,
-                    const Mesh& mesh,
-                    const MeshFunction<bool>& cell_markers)
-{
+  // Skip refinement if already refined
+  if (mesh.has_child())
+  {
+    info("Mesh has already been refined, returning child mesh.");
+    return mesh.child();
+  }
+
   // Count the number of marked cells
   uint n0 = mesh.num_cells();
   uint n = 0;
@@ -58,51 +75,60 @@ void dolfin::refine(Mesh& refined_mesh,
        n, n0, 100.0 * static_cast<double>(n) / static_cast<double>(n0));
 
   // Call refinement algorithm
-  LocalMeshRefinement::refineRecursivelyByEdgeBisection(refined_mesh,
+  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
+  LocalMeshRefinement::refineRecursivelyByEdgeBisection(*refined_mesh,
                                                         mesh,
                                                         cell_markers);
 
   // Report the number of refined cells
-  uint n1 = refined_mesh.num_cells();
+  uint n1 = refined_mesh->num_cells();
   info("Number of cells increased from %d to %d (%.1f%% increase).",
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
+
+  // Set parent / child
+  set_parent_child(mesh, refined_mesh);
+
+  return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space)
+dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)
 {
   // Refine mesh
-  const Mesh& mesh = space.mesh();
-  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
-  refine(*refined_mesh, mesh);
+  refine(space.mesh());
 
   // Refine space
-  FunctionSpace refined_space = refine(space, *refined_mesh);
+  refine(space, space.mesh().child_shared_ptr());
 
-  return refined_space;
+  return space.child();
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space,
-                                     const MeshFunction<bool>& cell_markers)
+dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
+                                      const MeshFunction<bool>& cell_markers)
 {
   // Refine mesh
-  const Mesh& mesh = space.mesh();
-  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
-  refine(*refined_mesh, mesh, cell_markers);
+  refine(space.mesh(), cell_markers);
 
   // Refine space
-  FunctionSpace refined_space = refine(space, *refined_mesh);
+  refine(space, space.mesh().child_shared_ptr());
 
-  return refined_space;
+  return space.child();
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space,
-                                     const Mesh& refined_mesh)
+dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
+                                      boost::shared_ptr<const Mesh> refined_mesh)
 {
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
   error("Refinement of function spaces relies on the development version of UFC.");
-  return space;
+  return const_cast<FunctionSpace&>(space);
 #else
+
+  // Skip refinement if already refined
+  if (space.has_child())
+  {
+    info("Function space has already been refined, returning child space.");
+    return space.child();
+  }
 
   // Get DofMap (GenericDofMap does not know about ufc::dof_map)
   const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
@@ -117,70 +143,44 @@ dolfin::FunctionSpace dolfin::refine(const FunctionSpace& space,
   boost::shared_ptr<ufc::dof_map> ufc_dofmap(dofmap->ufc_dofmap()->create());
 
   // Create DOLFIN finite element and dofmap
-  boost::shared_ptr<FiniteElement> refined_element(new FiniteElement(ufc_element));
-  boost::shared_ptr<DofMap> refined_dofmap(new DofMap(ufc_dofmap, refined_mesh));
+  boost::shared_ptr<const FiniteElement> refined_element(new FiniteElement(ufc_element));
+  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(ufc_dofmap, *refined_mesh));
 
   // Create new function space
-  FunctionSpace refined_space(reference_to_no_delete_pointer(refined_mesh),
-                  refined_element,
-                  refined_dofmap);
+  boost::shared_ptr<FunctionSpace> refined_space(new FunctionSpace(refined_mesh,
+                                                                   refined_element,
+                                                                   refined_dofmap));
 
-  return refined_space;
+  // Set parent / child
+  set_parent_child(space, refined_space);
+
+  return *refined_space;
 
 #endif
 }
 //-----------------------------------------------------------------------------
-dolfin::Function dolfin::refine(const Function& function,
-                                const FunctionSpace& refined_space)
-{
-  // Create function
-  Function refined_function(refined_space);
-
-  // Interpolate function on coarse mesh
-  refined_function.interpolate(function);
-
-   return refined_function;
- }
- //-----------------------------------------------------------------------------
- dolfin::Form dolfin::refine(const Form& form,
+dolfin::Form& dolfin::refine(const Form& form,
                              const Mesh& refined_mesh)
- {
-   cout << "Refining form" << endl;
+{
+  cout << "Refining form" << endl;
 
-   // Get form data
-   std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
-   std::vector<const GenericFunction*> coefficients = form.coefficients();
-   boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
+  // Get form data
+  std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
+  std::vector<const GenericFunction*> coefficients = form.coefficients();
+  boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
 
-   // Refine function spaces and keep track of function spaces that may
-   // appear multiple times in the definition of a form.
-   typedef std::map<boost::shared_ptr<const FunctionSpace>, boost::shared_ptr<FunctionSpace> > space_map_type;
-   space_map_type space_map;
-   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
-   for (uint i = 0; i < spaces.size(); i++)
-   {
-     cout << "Checking function space " << i << endl;
-     boost::shared_ptr<const FunctionSpace> space = spaces[i];
-     space_map_type::iterator it = space_map.find(space);
-     if (it == space_map.end())
-     {
-       cout << "Function space not seen before, refining" << endl;
-       boost::shared_ptr<FunctionSpace> refined_space(new FunctionSpace(refine(*space, refined_mesh)));
-       space_map[space] = refined_space;
-       refined_spaces.push_back(refined_space);
-     }
-     else
-     {
-       cout << "Seen before, reusing" << endl;
-       refined_spaces.push_back(it->second);
-     }
-   }
+  // Refine function spaces
+  std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
+  for (uint i = 0; i < spaces.size(); i++)
+  {
+    const FunctionSpace& space = *spaces[i];
+    refine(space);
+    refined_spaces.push_back(space.child_shared_ptr());
+  }
 
-
-
-   Form refined_form(2, 0);
-   return refined_form;
-
+  // FIXME: Just to get things to compile, memory leak
+  Form* refined_form = new Form(2, 0);
+  return *refined_form;
 
   /*
     /// Create form (constructor used from Python interface)

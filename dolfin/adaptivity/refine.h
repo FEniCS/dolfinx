@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 //
 // This file defines free functions for refinement.
 
@@ -23,46 +23,37 @@ namespace dolfin
 
   //--- Refinement of meshes ---
 
-  /// Create uniformly refined mesh
-  Mesh refine(const Mesh& mesh);
+  /// Refine mesh uniformly
+  Mesh& refine(const Mesh& mesh);
 
-  /// Create uniformly refined mesh
-  void refine(Mesh& refined_mesh,
-              const Mesh& mesh);
-
-  /// Create locally refined mesh
-  Mesh refine(const Mesh& mesh,
-              const MeshFunction<bool>& cell_markers);
-
-  /// Create locally refined mesh
-  void refine(Mesh& refined_mesh,
-              const Mesh& mesh,
-              const MeshFunction<bool>& cell_markers);
+  /// Refine mesh based on cell markers
+  Mesh& refine(const Mesh& mesh,
+               const MeshFunction<bool>& cell_markers);
 
   //--- Refinement of function spaces ---
 
-  /// Create uniformly refined function space
-  FunctionSpace refine(const FunctionSpace& space);
+  /// Refine function space uniformly
+  FunctionSpace& refine(const FunctionSpace& space);
 
-  /// Create locally refined function space
-  FunctionSpace refine(const FunctionSpace& space,
-                       const MeshFunction<bool>& cell_markers);
+  /// Refine function space based on cell markers
+  FunctionSpace& refine(const FunctionSpace& space,
+                        const MeshFunction<bool>& cell_markers);
 
-  /// Create refined function space for refined mesh
-  FunctionSpace refine(const FunctionSpace& space,
-                       const Mesh& refined_mesh);
+  /// Refine function space based on refined mesh
+  FunctionSpace& refine(const FunctionSpace& space,
+                       boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of functions ---
 
-  /// Create refined function for refined function space (interpolated)
-  Function refine(const Function& function,
-                  const FunctionSpace& refined_space);
+  /// Refine function to refined function space
+  //Function& refine(const Function& function,
+  //                 const FunctionSpace& refined_space);
 
   //--- Refinement of forms ---
 
-  /// Create refined function for refined mesh
-  Form refine(const Form& form,
-              const Mesh& refined_mesh);
+  /// Refine form based on refined mesh
+  Form& refine(const Form& form,
+               const Mesh& refined_mesh);
 
 }
 

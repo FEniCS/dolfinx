@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-01-30
-// Last changed: 2011-01-30
+// Last changed: 2011-01-31
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
@@ -43,15 +43,7 @@ namespace dolfin
     /// *Returns*
     ///     _Object_
     ///         The parent object.
-    T& parent()
-    {
-      if (!has_parent())
-        error("Object has no parent in hierarchy.");
-      return *_parent;
-    }
-
-    /// Return parent in hierarchy (const version).
-    const T& parent() const
+    T& parent() const
     {
       if (!has_parent())
         error("Object has no parent in hierarchy.");
@@ -64,11 +56,7 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The parent object.
-    boost::shared_ptr<T> parent_shared_ptr()
-    { return _parent; }
-
-    /// Return shared pointer to parent (const version).
-    boost::shared_ptr<const T> parent_shared_ptr() const
+    boost::shared_ptr<T> parent_shared_ptr() const
     { return _parent; }
 
     /// Return child in hierarchy. An error is thrown if the object
@@ -77,15 +65,7 @@ namespace dolfin
     /// *Returns*
     ///     _T_
     ///         The child object.
-    T& child()
-    {
-      if (!has_child())
-        error("Object has no child in hierarchy.");
-      return *_child;
-    }
-
-    /// Return child in hierarchy (const version).
-    const T& child() const
+    T& child() const
     {
       if (!has_child())
         error("Object has no child in hierarchy.");
@@ -98,18 +78,22 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The child object.
-    boost::shared_ptr<T> child_shared_ptr()
+    boost::shared_ptr<T> child_shared_ptr() const
     { return _child; }
 
-    /// Return shared pointer to child (const version).
-    boost::shared_ptr<const T> child_shared_ptr() const
-    { return _child; }
+    /// Set parent
+    void set_parent(boost::shared_ptr<T> parent)
+    { _parent = parent; }
+
+    /// Set child
+    void set_child(boost::shared_ptr<T> child)
+    { _child = child; }
 
   private:
 
     // Parent and child in hierarchy
-    boost::shared_ptr<T> _parent;
-    boost::shared_ptr<T> _child;
+    mutable boost::shared_ptr<T> _parent;
+    mutable boost::shared_ptr<T> _child;
 
   };
 
