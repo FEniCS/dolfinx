@@ -1,14 +1,14 @@
-// Copyright (C) 2010 Garth N. Wells.
+// Copyright (C) 2010-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-16
-// Last changed: 2010-11-17
+// Last changed: 2011-01-30
 //
-// This demo colors the cells of a mesh such that cells with the same
-// color are not neighbors. 'Neighbors' can be in the sense of shared
-// vertices, edges or facets.
+// This demo colors a given mesh entities such that entities with the
+// same color are not neighbors. 'Neighbors' can be in the sense of shared
+// vertices, edges or facets, or a user-provided tuple defintion.
 
 #include <dolfin.h>
 
