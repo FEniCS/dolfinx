@@ -8,6 +8,7 @@
 #define __DOLFIN_BOOST_GRAPH_INTERFACE_H
 
 #include <boost/graph/sequential_vertex_coloring.hpp>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 #include <dolfin/graph/Graph.h>
 

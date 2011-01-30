@@ -1,7 +1,7 @@
 """Unit tests for the function library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-24 -- 2011-01-21"
+__date__ = "2007-05-24 -- 2011-01-28"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -111,7 +111,7 @@ class Eval(unittest.TestCase):
                self.assertRaises(TypeError, f, "s")
                self.assertRaises(TypeError, f, [])
                self.assertRaises(TypeError, f, 0.5, 0.5, 0.5, values = zeros(3,'i'))
-               self.assertRaises(ValueError,f, [0.3, 0.2, []])
+               self.assertRaises(TypeError, f, [0.3, 0.2, []])
                self.assertRaises(TypeError, f, 0.3, 0.2, {})
                self.assertRaises(TypeError, f, zeros(3), values = zeros(4))
                self.assertRaises(TypeError, f, zeros(4), values = zeros(3))

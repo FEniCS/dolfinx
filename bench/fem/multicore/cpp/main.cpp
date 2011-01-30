@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
   UnitCube mesh(SIZE, SIZE, SIZE);
   mesh.color("vertex");
   mesh.renumber_by_color();
-  //mesh.init(1);
 
   // Test cases
   std::vector<std::string> forms;

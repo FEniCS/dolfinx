@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-01-25
+// Last changed: 2011-01-29
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -25,6 +25,25 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 }
 %}
 
+%wrapper%{
+// A check for float and converter for double
+SWIGINTERNINLINE bool Py_float_convert(PyObject* in, double& value)
+{
+  return SWIG_AsVal_double(in, &value);
+}
+
+// A check for int and converter for int
+SWIGINTERNINLINE bool Py_int_convert(PyObject* in, int& value)
+{
+  return SWIG_AsVal_int(in, &value);
+}
+
+// A check for int and converter for uint
+SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
+{
+  return SWIG_AsVal_unsigned_SS_int(in, &value);
+}
+%}
 //-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
@@ -71,15 +90,7 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 //-----------------------------------------------------------------------------
 %typemap(in) dolfin::uint
 {
-  if (PyInteger_Check($input))
-  {
-    long tmp = static_cast<long>(PyInt_AsLong($input));
-    if (tmp>=0)
-      $1 = static_cast<dolfin::uint>(tmp);
-    else
-      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
-  }
-  else
+  if(!SWIG_IsOK(Py_uint_convert($input, $1)))
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
 }
 
@@ -96,12 +107,7 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 //-----------------------------------------------------------------------------
 %typemap(in) int
 {
-  if (PyInteger_Check($input))
-  {
-    long tmp = static_cast<long>(PyInt_AsLong($input));
-    $1 = static_cast<int>(tmp);
-  }
-  else
+  if(!SWIG_IsOK(Py_int_convert($input, $1)))
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
 

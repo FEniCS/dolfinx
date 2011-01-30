@@ -66,7 +66,7 @@ namespace dolfin
                                std::vector<double>* values);
 
     // Assemble over exterior facets
-    static void assemble_exterior_facets(GenericTensor& A,
+    static void assemble_cells_and_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
                                          const MeshFunction<uint>* domains,

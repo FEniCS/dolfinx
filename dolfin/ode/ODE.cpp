@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2011 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2003-10-21
-// Last changed: 2010-03-02
+// Last changed: 2011-01-30
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -32,7 +32,7 @@ ODE::ODE(uint N, real T)
 
   #ifdef HAS_GMP
   if (!_real_initialized)
-      warning("Extended precision not initialized. Use dolfin_set_precision(uint decimal_prec) before declaring any real variables and instansiating ODE");
+      warning("Extended precision not initialized. Use set_precision(uint decimal_prec) before declaring any real variables and instansiating ODE.");
   #endif
 }
 //-----------------------------------------------------------------------------

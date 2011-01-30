@@ -281,7 +281,7 @@ def __new_Parameter_init__(self,*args,**kwargs):
         elif isinstance(value,tuple):
             if isscalar(value[0]) and len(value) == 3:
                 self.add(key, *value)
-            elif instanceof(value[0], str) and len(value) == 2:
+            elif isinstance(value[0], str) and len(value) == 2:
                 if not isinstance(value[1], list):
                     raise TypeError, "expected a list as second item of tuple, when first is a 'str'"
                 self.add(key, *value)
