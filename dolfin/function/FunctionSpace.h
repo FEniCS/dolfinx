@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg.
+// Copyright (C) 2008-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008-2009.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2011-01-28
+// Last changed: 2011-01-30
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -18,6 +18,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/Hierarchical.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -38,7 +39,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable
+  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>
   {
   public:
 
