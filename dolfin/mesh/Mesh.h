@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg.
+// Copyright (C) 2006-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -9,13 +9,15 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2011-01-17
+// Last changed: 2011-01-30
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
 #include <utility>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
@@ -335,12 +337,11 @@ namespace dolfin
     /// cell-vertex connectivity exists as part of the mesh.
     void renumber_by_color();
 
-    /// Check if mesh is ordered.
+    /// Check if mesh is ordered according to the UFC numbering convention.
     ///
     /// *Returns*
     ///     bool
-    ///         Return true iff topology is ordered according to the UFC
-    ///         numbering.
+    ///         The return values is true iff the mesh is ordered.
     bool ordered() const;
 
     /// Move coordinates of mesh according to new boundary coordinates.
@@ -588,6 +589,64 @@ namespace dolfin
     ///         No example code available for this function.
     double hmax() const;
 
+    /// Check if the mesh has a parent mesh.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         The return value is true iff the mesh has a parent.
+    bool has_parent() const;
+
+    /// Check if the mesh has a child mesh.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         The return value is true iff the mesh has a child.
+    bool has_child() const;
+
+    /// Return parent mesh in mesh hierarchy. An error is thrown if
+    /// the mesh has no parent.
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The parent mesh.
+    Mesh& parent();
+
+    /// Return parent mesh in mesh hierarchy (const version).
+    const Mesh& parent() const;
+
+    /// Return shared pointer to parent mesh. A zero pointer is
+    /// returned if the mesh has no parent.
+    ///
+    /// *Returns*
+    ///     shared_ptr<Mesh>
+    ///         The parent mesh.
+    boost::shared_ptr<Mesh> parent_shared_ptr();
+
+    /// Return shared pointer to parent mesh (const version).
+    boost::shared_ptr<const Mesh> parent_shared_ptr() const;
+
+    /// Return child mesh in mesh hierarchy. An error is thrown if
+    /// the mesh has no child.
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The child mesh.
+    Mesh& child();
+
+    /// Return child mesh in mesh hierarchy (const version).
+    const Mesh& child() const;
+
+    /// Return shared pointer to child mesh. A zero pointer is
+    /// returned if the mesh has no child.
+    ///
+    /// *Returns*
+    ///     shared_ptr<Mesh>
+    ///         The child mesh.
+    boost::shared_ptr<Mesh> child_shared_ptr();
+
+    /// Return shared pointer to child mesh (const version).
+    boost::shared_ptr<const Mesh> child_shared_ptr() const;
+
     /// Informal string representation.
     ///
     /// *Arguments*
@@ -639,6 +698,10 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
+
+    // Parent and child in mesh hierarchy
+    boost::shared_ptr<Mesh> _parent;
+    boost::shared_ptr<Mesh> _child;
 
   };
 

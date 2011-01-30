@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg.
+// Copyright (C) 2006-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-01-17
+// Last changed: 2011-01-30
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -391,6 +391,64 @@ double Mesh::hmax() const
     h = std::max(h, cell->diameter());
 
   return h;
+}
+//-----------------------------------------------------------------------------
+bool Mesh::has_parent() const
+{
+  return _parent != 0;
+}
+//-----------------------------------------------------------------------------
+bool Mesh::has_child() const
+{
+  return _child != 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::Mesh& Mesh::parent()
+{
+  if (!has_parent())
+    error("Mesh has no parent in mesh hierarchy.");
+  return *_parent;
+}
+//-----------------------------------------------------------------------------
+const dolfin::Mesh& Mesh::parent() const
+{
+  if (!has_parent())
+    error("Mesh has no parent in mesh hierarchy.");
+  return *_parent;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<dolfin::Mesh> Mesh::parent_shared_ptr()
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Mesh> Mesh::parent_shared_ptr() const
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+dolfin::Mesh& Mesh::child()
+{
+  if (!has_child())
+    error("Mesh has no child in mesh hierarchy.");
+  return *_child;
+}
+//-----------------------------------------------------------------------------
+const dolfin::Mesh& Mesh::child() const
+{
+  if (!has_child())
+    error("Mesh has no child in mesh hierarchy.");
+  return *_child;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<dolfin::Mesh> Mesh::child_shared_ptr()
+{
+  return _child;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Mesh> Mesh::child_shared_ptr() const
+{
+  return _child;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
