@@ -393,64 +393,6 @@ double Mesh::hmax() const
   return h;
 }
 //-----------------------------------------------------------------------------
-bool Mesh::has_parent() const
-{
-  return _parent != 0;
-}
-//-----------------------------------------------------------------------------
-bool Mesh::has_child() const
-{
-  return _child != 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::Mesh& Mesh::parent()
-{
-  if (!has_parent())
-    error("Mesh has no parent in mesh hierarchy.");
-  return *_parent;
-}
-//-----------------------------------------------------------------------------
-const dolfin::Mesh& Mesh::parent() const
-{
-  if (!has_parent())
-    error("Mesh has no parent in mesh hierarchy.");
-  return *_parent;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<dolfin::Mesh> Mesh::parent_shared_ptr()
-{
-  return _parent;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Mesh> Mesh::parent_shared_ptr() const
-{
-  return _parent;
-}
-//-----------------------------------------------------------------------------
-dolfin::Mesh& Mesh::child()
-{
-  if (!has_child())
-    error("Mesh has no child in mesh hierarchy.");
-  return *_child;
-}
-//-----------------------------------------------------------------------------
-const dolfin::Mesh& Mesh::child() const
-{
-  if (!has_child())
-    error("Mesh has no child in mesh hierarchy.");
-  return *_child;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<dolfin::Mesh> Mesh::child_shared_ptr()
-{
-  return _child;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Mesh> Mesh::child_shared_ptr() const
-{
-  return _child;
-}
-//-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
 {
   std::stringstream s;

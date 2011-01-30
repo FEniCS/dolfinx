@@ -17,11 +17,11 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/Hierarchical.h>
 #include "CellType.h"
 #include "IntersectionOperator.h"
 #include "MeshData.h"
@@ -73,7 +73,7 @@ namespace dolfin
   /// such as all edges connected to a given vertex must also be
   /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-  class Mesh : public Variable
+  class Mesh : public Variable, public Hierarchical<Mesh>
   {
   public:
 
@@ -589,64 +589,6 @@ namespace dolfin
     ///         No example code available for this function.
     double hmax() const;
 
-    /// Check if the mesh has a parent mesh.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         The return value is true iff the mesh has a parent.
-    bool has_parent() const;
-
-    /// Check if the mesh has a child mesh.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         The return value is true iff the mesh has a child.
-    bool has_child() const;
-
-    /// Return parent mesh in mesh hierarchy. An error is thrown if
-    /// the mesh has no parent.
-    ///
-    /// *Returns*
-    ///     _Mesh_
-    ///         The parent mesh.
-    Mesh& parent();
-
-    /// Return parent mesh in mesh hierarchy (const version).
-    const Mesh& parent() const;
-
-    /// Return shared pointer to parent mesh. A zero pointer is
-    /// returned if the mesh has no parent.
-    ///
-    /// *Returns*
-    ///     shared_ptr<Mesh>
-    ///         The parent mesh.
-    boost::shared_ptr<Mesh> parent_shared_ptr();
-
-    /// Return shared pointer to parent mesh (const version).
-    boost::shared_ptr<const Mesh> parent_shared_ptr() const;
-
-    /// Return child mesh in mesh hierarchy. An error is thrown if
-    /// the mesh has no child.
-    ///
-    /// *Returns*
-    ///     _Mesh_
-    ///         The child mesh.
-    Mesh& child();
-
-    /// Return child mesh in mesh hierarchy (const version).
-    const Mesh& child() const;
-
-    /// Return shared pointer to child mesh. A zero pointer is
-    /// returned if the mesh has no child.
-    ///
-    /// *Returns*
-    ///     shared_ptr<Mesh>
-    ///         The child mesh.
-    boost::shared_ptr<Mesh> child_shared_ptr();
-
-    /// Return shared pointer to child mesh (const version).
-    boost::shared_ptr<const Mesh> child_shared_ptr() const;
-
     /// Informal string representation.
     ///
     /// *Arguments*
@@ -698,10 +640,6 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
-
-    // Parent and child in mesh hierarchy
-    boost::shared_ptr<Mesh> _parent;
-    boost::shared_ptr<Mesh> _child;
 
   };
 
