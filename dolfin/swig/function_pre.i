@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2011-01-21
+// Last changed: 2011-01-29
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -68,72 +68,6 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %rename (__float__) dolfin::Constant::operator double() const;
 %rename(assign) dolfin::Constant::operator=;
-
-//-----------------------------------------------------------------------------
-// Typemap for std::vector<dolfin::uint> value_shape
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_INT32_ARRAY) std::vector<dolfin::uint> value_shape
-{
-  $1 = PyList_Check($input) ? 1 : 0;
-}
-
-%typemap (in) std::vector<dolfin::uint> value_shape (std::vector<dolfin::uint> tmp_vec)
-{
-  if (PyList_Check($input))
-  {
-    PyObject * py_item = 0;
-    int size = PyList_Size($input);
-    int item = 0;
-    tmp_vec.reserve(size);
-    for (int i = 0; i < size; i++)
-    {
-      py_item = PyList_GetItem($input,i);
-      if (!PyInteger_Check(py_item))
-        SWIG_exception(SWIG_TypeError, "expected list of positive int");
-      item = static_cast<int>(PyInt_AsLong(py_item));
-      if (item < 0)
-        SWIG_exception(SWIG_TypeError, "expected list of positive int");
-      tmp_vec.push_back(item);
-    }
-  }
-  else
-  {
-    SWIG_exception(SWIG_TypeError, "expected list of positive int");
-  }
-  $1 = tmp_vec;
-}
-
-//-----------------------------------------------------------------------------
-// Typemap for std::vector<TYPE> values
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
-{
-  $1 = PyList_Check($input) ? 1 : 0;
-}
-
-%typemap (in) std::vector<double> values (std::vector<double> tmp_vec)
-{
-  if (PyList_Check($input))
-  {
-    PyObject * py_item = 0;
-    int size = PyList_Size($input);
-    double item = 0;
-    tmp_vec.reserve(size);
-    for (int i = 0; i < size; i++)
-    {
-      py_item = PyList_GetItem($input,i);
-      if (!PyFloat_Check(py_item))
-        SWIG_exception(SWIG_TypeError, "expected list of floats");
-      item = static_cast<double>(PyFloat_AsDouble(py_item));
-      tmp_vec.push_back(item);
-    }
-  }
-  else
-  {
-    SWIG_exception(SWIG_TypeError, "expected list of floats");
-  }
-  $1 = tmp_vec;
-}
 
 //-----------------------------------------------------------------------------
 // Add director classes

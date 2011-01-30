@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2010-09-15
+// Last changed: 2011-01-29
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -74,6 +74,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 %typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &(std::vector<CONST dolfin::TYPE *> tmp_vec, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
 {
+  // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR)
   if (PyList_Check($input))
   {
     int size = PyList_Size($input);
@@ -121,8 +122,60 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 %enddef
 
 //-----------------------------------------------------------------------------
+// Macro for defining an in typemap for a const std::vector& of primitives
+// The typemaps takes a NumPy array of that primitive
+//
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// NUMPY_TYPE : The type of the NumPy array that will be returned
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
+// DESCR      : The char descriptor of the NumPy type
+//-----------------------------------------------------------------------------
+%define IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, \
+					    NUMPY_TYPE, TYPE_NAME, DESCR)
+
+// The typecheck
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY)  \
+const std::vector<TYPE>&  ARG_NAME
+{
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+// The typemap
+%typemap(in) const std::vector<TYPE>& ARG_NAME (std::vector<TYPE> temp)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, 
+  //                                     NUMPY_TYPE, TYPE_NAME, DESCR)
+  {
+    if (PyArray_Check($input))
+    {
+      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+      if ( PyArray_TYPE(xa) == NUMPY_TYPE )
+      {
+        const unsigned int size = PyArray_DIM(xa, 0);
+        temp.resize(size);
+        TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
+        std::copy(array, array + size, temp.begin());
+        $1 = &temp;
+      }
+     else
+       SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected."\
+		      " Make sure that the numpy array use dtype='DESCR'.");
+    }
+    else
+      SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected. "\
+		     "Make sure that the numpy array use dtype='DESCR'.");
+  }
+}
+
+%enddef
+
+//-----------------------------------------------------------------------------
 // Macro for defining an argout typemap for a std::vector of primitives
-// The typemaps makes a function returning a NumPy array of that primitive
+// The typemap returns a NumPy array of the primitive
 //
 // TYPE       : The primitive type
 // TYPE_UPPER : The SWIG specific name of the type used in the array type checks
@@ -137,6 +190,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 %typemap (in,numinputs=0) std::vector<TYPE>& ARG_NAME (std::vector<TYPE> vec_temp)
 {
+  // ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, NUMPY_TYPE)
   $1 = &vec_temp;
 }
 
@@ -181,6 +235,56 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 %enddef
 
 //-----------------------------------------------------------------------------
+// Macro for defining an in typemap for a std::vector of primitives passed by value
+//
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
+// SEQ_LENGTH : An optional sequence length argument. If set to a negative number
+//              will no length check be made
+//-----------------------------------------------------------------------------
+%define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
+						       TYPE_NAME, SEQ_LENGTH)
+
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) std::vector<TYPE> ARG_NAME
+{
+  $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+%typemap (in) std::vector<TYPE> ARG_NAME (std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
+{
+  // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, 
+  //                                    ARG_NAME, TYPE_NAME, SEQ_LENGTH)
+
+  // A first sequence test
+  if (!PySequence_Check($input))
+    SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
+  
+  // Get sequence length
+  Py_ssize_t pyseq_length = PySequence_Size($input);
+  if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
+    SWIG_exception(SWIG_TypeError, "expected a sequence with length "	\
+		   "SEQ_LENGTH for argument $argnum");
+  
+  tmp_vec.reserve(pyseq_length);
+  for (i = 0; i < pyseq_length; i++) {
+    item = PySequence_GetItem($input, i);
+    
+    if(!SWIG_IsOK(Py_ ## TYPE_NAME ## _convert(item, value)))
+      SWIG_exception(SWIG_TypeError, "expected items of sequence to be of type "\
+		     "\"TYPE_NAME\" in argument $argnum");
+    tmp_vec.push_back(value);
+    Py_DECREF(item);
+  }
+  $1 = tmp_vec;
+}
+%enddef
+
+
+//-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
@@ -192,75 +296,11 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
-//-----------------------------------------------------------------------------
-// NumPy to const std::vector<double>& typemap.
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& values {
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE, double, d)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_UINT, uint, I)
 
-%typemap(in) const std::vector<double>& values (std::vector<double> temp)
-{
-  {
-    if (PyArray_Check($input))
-    {
-      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
-      {
-        const unsigned int size = PyArray_DIM(xa, 0);
-        temp.resize(size);
-        double* array = static_cast<double*>(PyArray_DATA(xa));
-        std::copy(array, array + size, temp.begin());
-        $1 = &temp;
-      }
-     else
-       SWIG_exception(SWIG_TypeError, "NumPy array expected");
-    }
-    else
-      SWIG_exception(SWIG_TypeError, "NumPy array expected");
-  }
-}
-//-----------------------------------------------------------------------------
-// NumPy to const std::vector<uint>& typemap.
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_INT32_ARRAY) const std::vector<dolfin::uint>& columns {
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-%typemap(in) const std::vector<dolfin::uint>& columns (std::vector<dolfin::uint> temp)
-{
-  {
-    if (PyArray_Check($input))
-    {
-      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-      if ( PyArray_TYPE(xa) == NPY_INT )
-      {
-        const unsigned int size = PyArray_DIM(xa, 0);
-        temp.resize(size);
-	dolfin::uint* array = static_cast<dolfin::uint*>(PyArray_DATA(xa));
-        std::copy(array, array + size, temp.begin());
-        $1 = &temp;
-      }
-     else
-       SWIG_exception(SWIG_TypeError, "NumPy array expected");
-    }
-    else
-      SWIG_exception(SWIG_TypeError, "NumPy array expected");
-  }
-}
-//-----------------------------------------------------------------------------
-// const std::vector<double>& to NumPy typemap.
-//-----------------------------------------------------------------------------
-%typemap(argout) const std::vector<double>& x
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-// std::vector<double>& to NumPy typemap.
-//-----------------------------------------------------------------------------
-%typemap(argout) std::vector<double>& x
-{
-  SWIG_exception(SWIG_TypeError, "std::vector<double> to NumPy (argout) not implemented");
-}
-//-----------------------------------------------------------------------------
-
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type,
+					       uint, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape,
+					       uint, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, float, -1)
