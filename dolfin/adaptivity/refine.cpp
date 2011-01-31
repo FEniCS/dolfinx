@@ -19,6 +19,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/VariationalProblem.h>
 #include "refine.h"
 
 using namespace dolfin;
@@ -117,6 +118,8 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
                                       boost::shared_ptr<const Mesh> refined_mesh)
 {
+  cout << "Refining function space." << endl;
+
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
   error("Refinement of function spaces relies on the development version of UFC.");
@@ -162,6 +165,8 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 dolfin::Function& dolfin::refine(const Function& function,
                                  boost::shared_ptr<const Mesh> refined_mesh)
 {
+  cout << "Refining function." << endl;
+
   // Skip refinement if already refined
   if (function.has_child())
   {
@@ -174,7 +179,7 @@ dolfin::Function& dolfin::refine(const Function& function,
   refine(*space, refined_mesh);
   boost::shared_ptr<const FunctionSpace> refined_space = space->child_shared_ptr();
 
-  // Create function on refined space and interpolate
+  // Create new function on refined space and interpolate
   boost::shared_ptr<Function> refined_function(new Function(refined_space));
   refined_function->interpolate(function);
 
@@ -187,23 +192,19 @@ dolfin::Function& dolfin::refine(const Function& function,
 dolfin::Form& dolfin::refine(const Form& form,
                              boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining form" << endl;
+  cout << "Refining form." << endl;
 
-  // Get form data
-  boost::shared_ptr<const Mesh> mesh = form.mesh_shared_ptr();
+  // Skip refinement if already refined
+  if (form.has_child())
+  {
+    info("Form has already been refined, returning child form.");
+    return form.child();
+  }
+
+  // Get data
   std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
   std::vector<boost::shared_ptr<const GenericFunction> > coefficients = form.coefficients();
   boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
-
-  // FIXME: Figure out how to handle refinement of mesh
-
-  // Refine mesh
-  //boost::shared_ptr<const Mesh> refined_mesh;
-  //if (mesh != 0)
-  //{
-  //  refine(mesh);
-  //  refined_mesh = mesh.child_shared_ptr();
-  //}
 
   // Refine function spaces
   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
@@ -235,14 +236,56 @@ dolfin::Form& dolfin::refine(const Form& form,
     }
   }
 
-  /// Create form (constructor used from Python interface)
+  /// Create new form (constructor used from Python interface)
   boost::shared_ptr<Form> refined_form(new Form(ufc_form,
                                                 refined_spaces,
                                                 refined_coefficients));
+
+  /// Attach mesh
+  refined_form->set_mesh(refined_mesh);
 
   // Set parent / child
   set_parent_child(form, refined_form);
 
   return *refined_form;
+}
+//-----------------------------------------------------------------------------
+dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& problem,
+                                           boost::shared_ptr<const Mesh> refined_mesh)
+{
+  cout << "Refining variational problem." << endl;
+
+  // Skip refinement if already refined
+  if (problem.has_child())
+  {
+    info("Variational problem has already been refined, returning child problem.");
+    return problem.child();
+  }
+
+  // Get data
+  boost::shared_ptr<const Form> form_0 = problem.form_0_shared_ptr();
+  boost::shared_ptr<const Form> form_1 = problem.form_1_shared_ptr();
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs_shared_ptr();
+
+  // Refine data
+  refine(*form_0, refined_mesh);
+  refine(*form_1, refined_mesh);
+
+  // FIXME: Refine bcs
+  std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs = bcs;
+
+  // FIXME: Skipping mesh functions
+
+  // Create new problem
+  boost::shared_ptr<VariationalProblem>
+    refined_problem(new VariationalProblem(form_0->child_shared_ptr(),
+                                           form_1->child_shared_ptr(),
+                                           refined_bcs,
+                                           0, 0, 0));
+
+  // Set parent / child
+  set_parent_child(problem, refined_problem);
+
+  return *refined_problem;
 }
 //-----------------------------------------------------------------------------

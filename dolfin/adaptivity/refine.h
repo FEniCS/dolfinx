@@ -20,6 +20,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericFunction;
   class Form;
+  class VariationalProblem;
 
   //--- Refinement of meshes ---
 
@@ -54,6 +55,12 @@ namespace dolfin
   /// Refine form based on refined mesh
   Form& refine(const Form& form,
                boost::shared_ptr<const Mesh> refined_mesh);
+
+  //--- Refinement of variational problems ---
+
+  /// Refine variational problem based on mesh
+  VariationalProblem& refine(const VariationalProblem& problem,
+                             boost::shared_ptr<const Mesh> refined_mesh);
 
 }
 

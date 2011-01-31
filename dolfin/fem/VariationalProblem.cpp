@@ -85,6 +85,24 @@ VariationalProblem::VariationalProblem(const Form& form_0,
     _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 }
 //-----------------------------------------------------------------------------
+VariationalProblem::VariationalProblem(boost::shared_ptr<const Form> form_0,
+                                       boost::shared_ptr<const Form> form_1,
+                                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
+                                       const MeshFunction<uint>* cell_domains,
+                                       const MeshFunction<uint>* exterior_facet_domains,
+                                       const MeshFunction<uint>* interior_facet_domains)
+  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+    _linear_form(extract_linear_form(form_0, form_1)),
+    _bilinear_form(extract_bilinear_form(form_0, form_1)),
+    _bcs(bcs),
+    _cell_domains(cell_domains),
+    _exterior_facet_domains(exterior_facet_domains),
+    _interior_facet_domains(interior_facet_domains)
+{
+  // Initialize parameters
+  init_parameters();
+}
+//-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
 {
   // Do nothing
@@ -168,10 +186,34 @@ const Form& VariationalProblem::bilinear_form() const
   return *_bilinear_form;
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Form>
+VariationalProblem::bilinear_form_shared_ptr() const
+{
+  return _bilinear_form;
+}
+//-----------------------------------------------------------------------------
 const Form& VariationalProblem::linear_form() const
 {
   assert(_linear_form);
   return *_linear_form;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Form>
+VariationalProblem::linear_form_shared_ptr() const
+{
+  return _linear_form;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Form>
+VariationalProblem::form_0_shared_ptr() const
+{
+  return (_is_nonlinear ? _linear_form : _bilinear_form);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Form>
+VariationalProblem::form_1_shared_ptr() const
+{
+  return (_is_nonlinear ? _bilinear_form : _linear_form);
 }
 //-----------------------------------------------------------------------------
 const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const

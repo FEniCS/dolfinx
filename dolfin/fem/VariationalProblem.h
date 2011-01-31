@@ -11,6 +11,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -58,7 +59,7 @@ namespace dolfin
   /// problem or a linear problem depending on the ranks of the given
   /// forms.
 
-  class VariationalProblem : public Variable
+  class VariationalProblem : public Variable, public Hierarchical<VariationalProblem>
   {
   public:
 
@@ -81,6 +82,15 @@ namespace dolfin
     VariationalProblem(const Form& form_0,
                        const Form& form_1,
                        const std::vector<const BoundaryCondition*>& bcs,
+                       const MeshFunction<uint>* cell_domains,
+                       const MeshFunction<uint>* exterior_facet_domains,
+                       const MeshFunction<uint>* interior_facet_domains);
+
+    /// Define variational problem with a list of Dirichlet boundary conditions
+    /// and subdomains for cells, exterior and interior facets of the mesh
+    VariationalProblem(boost::shared_ptr<const Form> form_0,
+                       boost::shared_ptr<const Form> form_1,
+                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains);
@@ -115,8 +125,20 @@ namespace dolfin
     /// Return the bilinear form
     const Form& bilinear_form() const;
 
+    /// Return the bilinear form (shared_ptr version)
+    boost::shared_ptr<const Form> bilinear_form_shared_ptr() const;
+
+    /// Return form_0 (shared_ptr version)
+    boost::shared_ptr<const Form> form_0_shared_ptr() const;
+
+    /// Return form_1 (shared_ptr version)
+    boost::shared_ptr<const Form> form_1_shared_ptr() const;
+
     /// Return the linear form
     const Form& linear_form() const;
+
+    /// Return the linear form (shared_ptr version)
+    boost::shared_ptr<const Form> linear_form_shared_ptr() const;
 
     /// Return the list of boundary conditions
     const std::vector<const BoundaryCondition*> bcs() const;
