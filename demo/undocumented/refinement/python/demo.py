@@ -8,18 +8,25 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh of unit square
-mesh = UnitSquare(32, 32)
+mesh = UnitSquare(8, 8)
 plot(mesh)
+
+info(mesh)
+print
 
 # Uniform refinement
 mesh = refine(mesh)
 plot(mesh)
 
+info(mesh)
+print
+
 # Uniform refinement
 mesh = refine(mesh)
 plot(mesh)
 
-print "check"
+info(mesh)
+print
 
 # Refine mesh close to x = (0.5, 0.5)
 p = Point(0.5, 0.5)

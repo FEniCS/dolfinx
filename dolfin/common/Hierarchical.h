@@ -156,6 +156,16 @@ namespace dolfin
     void set_child(boost::shared_ptr<T> child)
     { _child = child; }
 
+    /// Assignment operator
+    const Hierarchical& operator= (const Hierarchical& hierarchical)
+    {
+      // Clear parent/child data
+      info("Calling assignment operator for class Hierarchical, clearing parent/child data.");
+      _parent = boost::shared_ptr<T>();
+      _child = boost::shared_ptr<T>();
+      return *this;
+    }
+
   private:
 
     // Parent and child in hierarchy

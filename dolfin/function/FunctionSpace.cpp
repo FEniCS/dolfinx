@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2011-01-28
+// Last changed: 2011-01-31
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -78,6 +78,9 @@ void FunctionSpace::attach(boost::shared_ptr<const FiniteElement> element,
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 {
+  // Call assignment operator for base class
+  Hierarchical<FunctionSpace>::operator=(V);
+
   // Assign data (will be shared)
   _mesh      = V._mesh;
   _element   = V._element;

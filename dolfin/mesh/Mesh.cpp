@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-01-30
+// Last changed: 2011-01-31
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -84,20 +84,23 @@ Mesh::~Mesh()
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
+  // Call assignment operator for base class
+  Hierarchical<Mesh>::operator=(mesh);
+
+  // Clear all data
   clear();
 
+  // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _data = mesh._data;
-
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
 
+  // Rename
   rename(mesh.name(), mesh.label());
 
-  _ordered = mesh._ordered;
-
-   return *this;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 MeshData& Mesh::data()
