@@ -8,6 +8,7 @@
 #define __HIERARCHICAL_H
 
 #include <boost/shared_ptr.hpp>
+#include "NoDeleter.h"
 
 namespace dolfin
 {
@@ -80,6 +81,72 @@ namespace dolfin
     ///         The child object.
     boost::shared_ptr<T> child_shared_ptr() const
     { return _child; }
+
+    /// Return coarsest object in hierarchy.
+    ///
+    /// *Returns*
+    ///     _T_
+    ///         The coarse object.
+    T& coarse()
+    {
+      return *coarse_shared_ptr();
+    }
+
+    /// Return shared pointer to coarsest object in hierarchy.
+    ///
+    /// *Returns*
+    ///     _T_
+    ///         The coarse object.
+    boost::shared_ptr<T> coarse_shared_ptr()
+    {
+      // Some trixing to handle the case when <this> is the itself the
+      // coarse object (can't be converted to type T).
+      if (!has_parent() && !has_child())
+      {
+        error("Hierarchy is empty (only one object in hierarchy).");
+        return boost::shared_ptr<T>();
+      }
+      else if (!has_parent())
+        return child().coarse_shared_ptr();
+
+      // Find parent of parent of parent of...
+      boost::shared_ptr<T> object = parent_shared_ptr();
+      for (; object->has_parent(); object = object->parent_shared_ptr());
+      return object;
+    }
+
+    /// Return finest object in hierarchy.
+    ///
+    /// *Returns*
+    ///     _T_
+    ///         The fine object.
+    T& fine()
+    {
+      return *fine_shared_ptr();
+    }
+
+    /// Return shared pointer to finest object in hierarchy.
+    ///
+    /// *Returns*
+    ///     _T_
+    ///         The fine object.
+    boost::shared_ptr<T> fine_shared_ptr()
+    {
+      // Some trixing to handle the case when <this> is the itself the
+      // fine object (can't be converted to type T).
+      if (!has_parent() && !has_child())
+      {
+        error("Hierarchy is empty (only one object in hierarchy).");
+        return boost::shared_ptr<T>();
+      }
+      else if (!has_child())
+        return parent().fine_shared_ptr();
+
+      // Find child of child of child of...
+      boost::shared_ptr<T> object = child_shared_ptr();
+      for (; object->has_child(); object = object->child_shared_ptr());
+      return object;
+    }
 
     /// Set parent
     void set_parent(boost::shared_ptr<T> parent)

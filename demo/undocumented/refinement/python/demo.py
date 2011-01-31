@@ -15,9 +15,17 @@ plot(mesh)
 mesh = refine(mesh)
 plot(mesh)
 
+# Uniform refinement
+mesh = refine(mesh)
+plot(mesh)
+
+print "check"
+
 # Refine mesh close to x = (0.5, 0.5)
 p = Point(0.5, 0.5)
 for i in range(5):
+
+    print "marking for refinement"
 
     # Mark cells for refinement
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
