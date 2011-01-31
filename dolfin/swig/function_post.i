@@ -1,3 +1,10 @@
+/* -*- C -*- */
+// Copyright (C) 2007-2009 Johan Hake
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2008-11-02
+// Last changed: 2011-01-31
+
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
 //-----------------------------------------------------------------------------
@@ -21,3 +28,4 @@ def function_space(self):
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
+

@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-01-21
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -46,6 +46,7 @@
 
 %shared_ptr(dolfin::FiniteElement)
 
+%shared_ptr(dolfin::Hierarchical<dolfin::FunctionSpace>)
 %shared_ptr(dolfin::FunctionSpace)
 %shared_ptr(dolfin::SubSpace)
 
@@ -56,6 +57,7 @@
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
 
+%shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::SubMesh)

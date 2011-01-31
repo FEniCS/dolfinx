@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2010-12-08
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -187,3 +187,4 @@ CellFunction = type("CellFunction", (),\
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
+

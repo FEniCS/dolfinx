@@ -94,3 +94,12 @@ ARRAY_CONSTRUCTOR_TYPEMAP(int, INT32, NPY_INT, int, i)
 // Ignores for Hierarchical
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::operator=;
+
+//-----------------------------------------------------------------------------
+// Forward declare Hierarchical template class
+//-----------------------------------------------------------------------------
+namespace dolfin {
+  template<class T>
+    class Hierarchical;
+}
+
