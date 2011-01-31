@@ -1,10 +1,10 @@
-// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-28
+// Last changed: 2011-01-31
 
 #include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveVariationalSolver.h>
@@ -152,22 +152,26 @@ const bool VariationalProblem::is_nonlinear() const
 //-----------------------------------------------------------------------------
 const FunctionSpace& VariationalProblem::trial_space() const
 {
-  return *_bilinear_form.function_space(1);
+  assert(_bilinear_form);
+  return *_bilinear_form->function_space(1);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& VariationalProblem::test_space() const
 {
-  return *_bilinear_form.function_space(0);
+  assert(_bilinear_form);
+  return *_bilinear_form->function_space(0);
 }
 //-----------------------------------------------------------------------------
 const Form& VariationalProblem::bilinear_form() const
 {
-  return _bilinear_form;
+  assert(_bilinear_form);
+  return *_bilinear_form;
 }
 //-----------------------------------------------------------------------------
 const Form& VariationalProblem::linear_form() const
 {
-  return _linear_form;
+  assert(_linear_form);
+  return *_linear_form;
 }
 //-----------------------------------------------------------------------------
 const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const
@@ -193,36 +197,61 @@ const MeshFunction<dolfin::uint>* VariationalProblem::interior_facet_domains() c
 bool VariationalProblem::extract_is_nonlinear(const Form& form_0,
                                               const Form& form_1)
 {
-  if (form_0.rank() == 1 && form_1.rank() == 2)
+  return extract_is_nonlinear(reference_to_no_delete_pointer(form_0),
+                              reference_to_no_delete_pointer(form_1));
+}
+//-----------------------------------------------------------------------------
+bool VariationalProblem::extract_is_nonlinear(boost::shared_ptr<const Form> form_0,
+                                              boost::shared_ptr<const Form> form_1)
+{
+  if (form_0->rank() == 1 && form_1->rank() == 2)
     return true;
 
-  if (form_0.rank() == 2 && form_1.rank() == 1)
+  if (form_0->rank() == 2 && form_1->rank() == 1)
     return false;
 
   form_error();
   return true;
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::extract_linear_form(const Form& form_0,
-                                                    const Form& form_1)
+boost::shared_ptr<const Form>
+VariationalProblem::extract_linear_form(const Form& form_0,
+                                        const Form& form_1)
 {
-  if (form_0.rank() == 1 && form_1.rank() == 2)
+  return extract_linear_form(reference_to_no_delete_pointer(form_0),
+                             reference_to_no_delete_pointer(form_1));
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const Form>
+VariationalProblem::extract_linear_form(boost::shared_ptr<const Form> form_0,
+                                        boost::shared_ptr<const Form> form_1)
+{
+  if (form_0->rank() == 1 && form_1->rank() == 2)
     return form_0;
 
-  if (form_0.rank() == 2 && form_1.rank() == 1)
+  if (form_0->rank() == 2 && form_1->rank() == 1)
     return form_1;
 
   form_error();
   return form_0;
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::extract_bilinear_form(const Form& form_0,
-                                                      const Form& form_1)
+boost::shared_ptr<const Form>
+VariationalProblem::extract_bilinear_form(const Form& form_0,
+                                          const Form& form_1)
 {
-  if (form_0.rank() == 2 && form_1.rank() == 1)
+  return extract_bilinear_form(reference_to_no_delete_pointer(form_0),
+                               reference_to_no_delete_pointer(form_1));
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const Form>
+VariationalProblem::extract_bilinear_form(boost::shared_ptr<const Form> form_0,
+                                          boost::shared_ptr<const Form> form_1)
+{
+  if (form_0->rank() == 2 && form_1->rank() == 1)
     return form_0;
 
-  if (form_0.rank() == 1 && form_1.rank() == 2)
+  if (form_0->rank() == 1 && form_1->rank() == 2)
     return form_1;
 
   form_error();

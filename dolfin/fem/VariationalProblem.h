@@ -1,13 +1,15 @@
-// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-28
+// Last changed: 2011-01-31
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
+
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
 
@@ -142,13 +144,29 @@ namespace dolfin
     static bool extract_is_nonlinear(const Form& form_0,
                                      const Form& form_1);
 
+    // Extract whether the problem is nonlinear (shared_ptr version)
+    static bool extract_is_nonlinear(boost::shared_ptr<const Form> form_0,
+                                     boost::shared_ptr<const Form> form_1);
+
     // Extract which of the two forms is linear
-    static const Form& extract_linear_form(const Form& form_0,
-                                           const Form& form_1);
+    static boost::shared_ptr<const Form>
+    extract_linear_form(const Form& form_0,
+                        const Form& form_1);
+
+    // Extract which of the two forms is linear (shared_ptr version)
+    static boost::shared_ptr<const Form>
+    extract_linear_form(boost::shared_ptr<const Form> form_0,
+                        boost::shared_ptr<const Form> form_1);
 
     // Extract which of the two forms is bilinear
-    static const Form& extract_bilinear_form(const Form& form_0,
-                                             const Form& form_1);
+    static boost::shared_ptr<const Form>
+    extract_bilinear_form(const Form& form_0,
+                          const Form& form_1);
+
+    // Extract which of the two forms is bilinear (shared_ptr version)
+    static boost::shared_ptr<const Form>
+    extract_bilinear_form(boost::shared_ptr<const Form> form_0,
+                          boost::shared_ptr<const Form> form_1);
 
     // Initialize parameters
     void init_parameters();
@@ -160,10 +178,10 @@ namespace dolfin
     bool _is_nonlinear;
 
     // Linear form
-    const Form& _linear_form;
+    boost::shared_ptr<const Form> _linear_form;
 
     // Bilinear form
-    const Form& _bilinear_form;
+    boost::shared_ptr<const Form> _bilinear_form;
 
     // Boundary conditions
     std::vector<const BoundaryCondition*> _bcs;
