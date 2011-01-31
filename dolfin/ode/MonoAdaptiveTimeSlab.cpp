@@ -48,8 +48,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   if (method->type() == Method::cG)
   {
     ode.f(u0, 0.0, f);
-    //copy(f, fq, 0);
-    real_copy(f, fq, 0);
+    copy(f, fq, 0);
     //copy(f, 0, fq, 0, N);
   }
 }
@@ -142,13 +141,12 @@ bool MonoAdaptiveTimeSlab::shift(bool end)
   // Write solution at final time if we should
   if (save_final && end)
   {
-    //copy(x, xoffset, u);
-    real_copy(x, xoffset, u);
+    copy(x, xoffset, u);
     write(u);
   }
 
   // Let user update ODE
-  real_copy(x, xoffset, u);
+  copy(x, xoffset, u);
   if (!ode.update(u, _b, end))
     return false;
 
@@ -269,9 +267,9 @@ void MonoAdaptiveTimeSlab::feval(uint m)
       }
 
       const real t = _a + method->qpoint(m) * (_b - _a);
-      real_copy(x, (m - 1)*N, u);
+      copy(x, (m - 1)*N, u);
       ode.f(u, t, f);
-      real_copy(f, fq, m*N);
+      copy(f, fq, m*N);
     }
     else
     {

@@ -75,8 +75,7 @@ real MonoAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
 
   // Save old values
   const uint xoffset = (method.nsize() - 1) * ts.N;
-  real_set( ts.N, xold, &ts.x[xoffset]);
-  //ts.copy(ts.x, xoffset, xold, 0, ts.N);
+  ts.copy(ts.x, xoffset, xold, 0, ts.N);
 
   // Save norm of old solution
   xnorm = 0.0;
