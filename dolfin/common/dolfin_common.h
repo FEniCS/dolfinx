@@ -12,6 +12,7 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 

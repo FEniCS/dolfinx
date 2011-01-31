@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2010-11-24
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -109,7 +109,6 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
 
-
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
 //-----------------------------------------------------------------------------
@@ -118,7 +117,6 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %rename(_dereference) dolfin::MeshEntityIterator::operator*;
 %rename(_increment) dolfin::SubsetIterator::operator++;
 %rename(_dereference) dolfin::SubsetIterator::operator*;
-
 
 //-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
@@ -175,3 +173,8 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::SubDomain;
+
+//-----------------------------------------------------------------------------
+// Handle Hierarchical template
+//-----------------------------------------------------------------------------
+%template () dolfin::Hierarchical<dolfin::Mesh>;

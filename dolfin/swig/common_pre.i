@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-22
-// Last changed: 2010-03-07
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the DOLFIN real kernel module (pre)
@@ -49,9 +49,9 @@ namespace dolfin
 %ignore dolfin::Set::operator[];
 
 //-----------------------------------------------------------------------------
-// Macro for defining an in-typemap for NumPy array -> dolfin::Array for the 
+// Macro for defining an in-typemap for NumPy array -> dolfin::Array for the
 // Array constructor
-// 
+//
 // TYPE       : The pointer type
 // TYPECHECK  : The SWIG specific name of the type used in the array type checks values
 //              SWIG use: INT32 for integer, DOUBLE for double aso.
@@ -71,11 +71,11 @@ namespace dolfin
   // Check input object
   if (!PyArray_Check($input))
     SWIG_exception(SWIG_TypeError, "numpy array of 'TYPENAME' expected. Make sure that the numpy array use dtype='DESCR'.");
-    
+
   PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
   if (PyArray_TYPE(xa) != NUMPYTYPE )
     SWIG_exception(SWIG_TypeError, "numpy array of 'TYPENAME' expected. Make sure that the numpy array use dtype='DESCR'.");
-    
+
   $1 = PyArray_DIM(xa, 0);
   $2 = static_cast<TYPE*>(PyArray_DATA(xa));
 }
@@ -89,3 +89,8 @@ ARRAY_CONSTRUCTOR_TYPEMAP(double, DOUBLE, NPY_DOUBLE, double, d)
 // We nust use unsigned int here and not dolfin::uint, don't know why
 ARRAY_CONSTRUCTOR_TYPEMAP(unsigned int, INT32, NPY_UINT, uint, I)
 ARRAY_CONSTRUCTOR_TYPEMAP(int, INT32, NPY_INT, int, i)
+
+//-----------------------------------------------------------------------------
+// Ignores for Hierarchical
+//-----------------------------------------------------------------------------
+%ignore dolfin::Hierarchical::operator=;

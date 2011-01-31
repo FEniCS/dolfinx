@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -80,3 +80,8 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("nodirector") dolfin::Expression::str;
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
+
+//-----------------------------------------------------------------------------
+// Handle Hierarchical template
+//-----------------------------------------------------------------------------
+%template () dolfin::Hierarchical<dolfin::FunctionSpace>;

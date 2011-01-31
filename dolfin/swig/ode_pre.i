@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-07
-// Last changed: 2009-10-07
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the DOLFIN ode kernel module (pre)
