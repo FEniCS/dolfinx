@@ -8,6 +8,8 @@
 #define __HIERARCHICAL_H
 
 #include <boost/shared_ptr.hpp>
+
+#include <dolfin/log/log.h>
 #include "NoDeleter.h"
 
 namespace dolfin

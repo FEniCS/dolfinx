@@ -31,6 +31,16 @@ Form::Form(uint rank, uint num_coefficients)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
+           std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
+           std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
+  : _ufc_form(ufc_form),
+    _function_spaces(function_spaces),
+    _coefficients(coefficients)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 Form::Form(const ufc::form& ufc_form,
            const std::vector<const FunctionSpace*>& function_spaces,
            const std::vector<const GenericFunction*>& coefficients)
@@ -184,13 +194,14 @@ const GenericFunction& Form::coefficient(std::string name) const
   return coefficient(coefficient_number(name));
 }
 //-----------------------------------------------------------------------------
-std::vector<const GenericFunction*> Form::coefficients() const
+std::vector<boost::shared_ptr<const GenericFunction> > Form::coefficients() const
 {
-  std::vector<const GenericFunction*> V;
-  for (uint i = 0; i < _coefficients.size(); ++i)
-    V.push_back(_coefficients[i].get());
+  //std::vector<const GenericFunction*> V;
+  //for (uint i = 0; i < _coefficients.size(); ++i)
+  //V.push_back(_coefficients[i].get());
+  //return V;
 
-  return V;
+  return _coefficients;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Form::coefficient_number(const std::string & name) const

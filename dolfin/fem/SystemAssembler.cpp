@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2011-01-25
+// Last changed: 2011-01-31
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -94,7 +94,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // FIXME: This may gather coefficients twice. Checked for shared coefficients
 
   // Gather off-process coefficients for a
-  std::vector<const GenericFunction*> coefficients = a.coefficients();
+  std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
@@ -305,8 +305,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
 {
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const GenericFunction*> A_coefficients = a.coefficients();
-  const std::vector<const GenericFunction*> b_coefficients = L.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > A_coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > b_coefficients = L.coefficients();
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -394,7 +394,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
             UFC& ufc, const Cell& cell0, const Cell& cell1, const Facet& facet,
             const MeshFunction<uint>* interior_facet_domains)
 {
-  const std::vector<const GenericFunction*> coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
 
   // Facet integral
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0].get();

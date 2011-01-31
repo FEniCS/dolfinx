@@ -159,51 +159,90 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 #endif
 }
 //-----------------------------------------------------------------------------
+dolfin::Function& dolfin::refine(const Function& function,
+                                 boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Skip refinement if already refined
+  if (function.has_child())
+  {
+    info("Function has already been refined, returning child function.");
+    return function.child();
+  }
+
+  // Refine function space
+  boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
+  refine(*space, refined_mesh);
+  boost::shared_ptr<const FunctionSpace> refined_space = space->child_shared_ptr();
+
+  // Create function on refined space and interpolate
+  boost::shared_ptr<Function> refined_function(new Function(refined_space));
+  refined_function->interpolate(function);
+
+  // Set parent / child
+  set_parent_child(function, refined_function);
+
+  return *refined_function;
+}
+//-----------------------------------------------------------------------------
 dolfin::Form& dolfin::refine(const Form& form,
-                             const Mesh& refined_mesh)
+                             boost::shared_ptr<const Mesh> refined_mesh)
 {
   cout << "Refining form" << endl;
 
   // Get form data
+  boost::shared_ptr<const Mesh> mesh = form.mesh_shared_ptr();
   std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
-  std::vector<const GenericFunction*> coefficients = form.coefficients();
+  std::vector<boost::shared_ptr<const GenericFunction> > coefficients = form.coefficients();
   boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
+
+  // FIXME: Figure out how to handle refinement of mesh
+
+  // Refine mesh
+  //boost::shared_ptr<const Mesh> refined_mesh;
+  //if (mesh != 0)
+  //{
+  //  refine(mesh);
+  //  refined_mesh = mesh.child_shared_ptr();
+  //}
 
   // Refine function spaces
   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
   for (uint i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
-    refine(space);
+    refine(space, refined_mesh);
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
-  // FIXME: Just to get things to compile, memory leak
-  Form* refined_form = new Form(2, 0);
+  // Refine coefficients
+  std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
+  for (uint i = 0; i < coefficients.size(); i++)
+  {
+    // Try casting to Function
+    const Function* function = dynamic_cast<const Function*>(coefficients[i].get());
+
+    // If we have a Function, refine
+    if (function != 0)
+    {
+      refine(*function, refined_mesh);
+      refined_coefficients.push_back(function->child_shared_ptr());
+    }
+
+    // If not, just reuse the same coefficient
+    else
+    {
+      refined_coefficients.push_back(coefficients[i]);
+    }
+  }
+
+  /// Create form (constructor used from Python interface)
+  boost::shared_ptr<Form> refined_form(new Form(ufc_form,
+                                                refined_spaces,
+                                                refined_coefficients));
+
+  // Set parent / child
+  set_parent_child(form, refined_form);
+
   return *refined_form;
-
-  /*
-    /// Create form (constructor used from Python interface)
-    Form(const ufc::form& ufc_form,
-         const std::vector<const FunctionSpace*>& function_spaces,;
-         const std::vector<const GenericFunction*>& coefficients);
-
-
-
-
-
-    // The mesh (needed for functionals when we don't have any spaces)
-    boost::shared_ptr<const Mesh> _mesh;
-
-    // Function spaces (one for each argument)
-    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
-
-    // Coefficients
-    std::vector<boost::shared_ptr<const GenericFunction> > _coefficients;
-
-    // The UFC form
-    boost::shared_ptr<const ufc::form> _ufc_form;
-
-  */
 }
 //-----------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-02-13
+// Last changed: 2011-01-31
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -36,7 +36,7 @@ void AssemblerTools::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const GenericFunction*> coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())

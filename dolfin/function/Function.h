@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-12-28
+// Last changed: 2011-01-31
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -17,6 +17,8 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include <dolfin/common/Hierarchical.h>
 #include "GenericFunction.h"
 
 namespace ufc
@@ -44,7 +46,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public GenericFunction
+  class Function : public GenericFunction, public Hierarchical<Function>
 
   {
   public:

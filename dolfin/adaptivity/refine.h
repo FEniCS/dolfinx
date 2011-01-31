@@ -18,7 +18,7 @@ namespace dolfin
   class Mesh;
   template <class T> class MeshFunction;
   class FunctionSpace;
-  class Function;
+  class GenericFunction;
   class Form;
 
   //--- Refinement of meshes ---
@@ -45,15 +45,15 @@ namespace dolfin
 
   //--- Refinement of functions ---
 
-  /// Refine function to refined function space
-  //Function& refine(const Function& function,
-  //                 const FunctionSpace& refined_space);
+  /// Refine coefficient based on refined mesh
+  Function& refine(const Function& function,
+                   boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of forms ---
 
   /// Refine form based on refined mesh
   Form& refine(const Form& form,
-               const Mesh& refined_mesh);
+               boost::shared_ptr<const Mesh> refined_mesh);
 
 }
 

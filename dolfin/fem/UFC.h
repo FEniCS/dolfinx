@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-03
+// Last changed: 2011-01-31
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -107,7 +107,7 @@ namespace dolfin
   private:
 
     // Coefficients
-    const std::vector<const GenericFunction*> coefficients;
+    const std::vector<boost::shared_ptr<const GenericFunction> > coefficients;
 
     // The form
     const Form& dolfin_form;

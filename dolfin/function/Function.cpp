@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-12-28
+// Last changed: 2011-01-31
 
 #include <algorithm>
 #include <map>
@@ -141,6 +141,9 @@ Function::~Function()
 const Function& Function::operator= (const Function& v)
 {
   assert(v._vector);
+
+  // Call assignment operator for base class
+  Hierarchical<Function>::operator=(v);
 
   // Make a copy of all the data, or if v is a sub-function, then we collapse
   // the dof map and copy only the relevant entries from the vector of v.

@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2010-11-10
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 
 #ifdef HAS_OPENMP
 
@@ -74,7 +74,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   UFC ufc(a);
 
   // Gather off-process coefficients
-  const std::vector<const GenericFunction*> coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 

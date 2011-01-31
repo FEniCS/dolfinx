@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-12-13
+// Last changed: 2011-01-31
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -119,7 +119,7 @@ void Assembler::assemble(GenericTensor& A,
   UFC ufc(a);
 
   // Gather off-process coefficients
-  const std::vector<const GenericFunction*> coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
