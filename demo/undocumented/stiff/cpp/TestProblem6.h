@@ -20,13 +20,13 @@ public:
     mu = 10.0;
   }
 
-  void u0(real* u)
+  void u0(RealArray& u)
   {
     u[0] = 2.0;
     u[1] = 0.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const RealArray& u, real t, RealArray& y)
   {
     y[0] = u[1];
     y[1] = mu*(1.0 - u[0]*u[0])*u[1] - u[0];

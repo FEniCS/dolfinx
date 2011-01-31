@@ -24,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), f0(0), u(0), emax(0), kmin(0)
+  elast(0), f0(N), u(ode.size()), emax(0), kmin(0)
 {
   // Choose solver
   solver = choose_solver();
@@ -35,12 +35,13 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
     elast[i] = -1;
 
   // Initialize f at left end-point for cG
-  if ( method->type() == Method::cG )
-    f0 = new real[N];
+  //if ( method->type() == Method::cG )
+  //  f0 = new real[N];
 
   // Initialize vector for u
-  u = new real[N];
-  real_zero(N, u);
+  //u = new real[N];
+  //real_zero(N, u);
+  u.zero();
 
   // Initialize transpose of dependencies if necessary
   info(TRACE, "Computing transpose (inverse) of dependency pattern.");
@@ -62,8 +63,6 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   delete solver;
 
   delete [] elast;
-  delete [] f0;
-  delete [] u;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
@@ -153,7 +152,7 @@ bool MultiAdaptiveTimeSlab::shift(bool end)
 
   // Write solution at final time if we should
   if ( save_final && end )
-    write(N, u);
+    write(u);
 
   // Let user update ODE
   if ( !ode.update(u, _b, end) )

@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <boost/scoped_array.hpp>
 
 using namespace dolfin;
 
@@ -74,7 +75,9 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
       // doing the same as the command tail
       char buf[1001];
       file.seekg (0, std::ios::end);
-      int pos = file.tellg();
+
+      // Note: Use long to be able to handle (fairly) big files.
+      unsigned long pos = file.tellg();
       pos -= 1001;
       file.seekg(pos, std::ios::beg);
 
@@ -188,7 +191,7 @@ void ODESolution::flush()
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real& t, real* y)
+void ODESolution::eval(const real& t, RealArray& y)
 {
   if (!read_mode)
     error("Can not evaluate solution");
@@ -205,7 +208,7 @@ void ODESolution::eval(const real& t, real* y)
     // Copy values
     if (cache[i].first == t)
     {
-      real_set(N, y, cache[i].second);
+      real_set(N, y.data().get(), cache[i].second);
       return;
     }
   }
@@ -220,7 +223,9 @@ void ODESolution::eval(const real& t, real* y)
   ODESolutionData& a = data[get_buffer_index(t)];
   real tau = (t-a.a)/a.k;
 
-  assert(tau <= 1.0+real_epsilon());
+
+  assert(tau <= 1.0+2*real_epsilon());
+  assert(tau >= -2*real_epsilon());
 
   for (uint i = 0; i < N; ++i)
   {
@@ -229,9 +234,9 @@ void ODESolution::eval(const real& t, real* y)
       y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
   }
 
-  //store in cache
+  // store in cache
   cache[ringbufcounter].first = t;
-  real_set(N, cache[ringbufcounter].second, y);
+  real_set(N, cache[ringbufcounter].second, y.data().get());
   ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //-----------------------------------------------------------------------------
@@ -242,7 +247,7 @@ ODESolutionData& ODESolution::get_timeslab(uint index)
 
   if ( data_on_disk && (index > b_index_in_memory() || index < a_index_in_memory()))
   {
-    //Scan the cache
+    // Scan the cache
     uint file_no = file_table.size()-1;
     while (file_table[file_no].second > index) file_no--;
 
@@ -330,6 +335,10 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   uint timeslabs;
   file >> timeslabs;
 
+  // Inform the data vector about the number of elements
+  // to avoid unnecessary copying
+  data.reserve(timeslabs);
+
   uint tmp;
   real tmp_real;
 
@@ -343,7 +352,7 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
       error("Wrong nodal size in file: %s", f.str().c_str());
     file >> tmp;
 
-    //skip nodal points and quadrature weights
+    // skip nodal points and quadrature weights
     for (uint i=0; i < nodal_size*2; ++i)
       file >> tmp_real;
   }
@@ -354,7 +363,7 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
     file >> nodal_size;
     file >> tmp;
 
-    //read nodal points
+    // read nodal points
     Lagrange l(nodal_size-1);
     for (uint i=0; i < nodal_size; ++i)
     {
@@ -362,11 +371,13 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
       l.set(i, tmp_real);
     }
 
-    real q_weights[nodal_size];
+    boost::scoped_array<real> q_weights(new real[nodal_size]);
     for (uint i=0; i < nodal_size; ++i)
+    {
       file >> q_weights[i];
+    }
 
-    init(_N, l, q_weights);
+    init(_N, l, q_weights.get());
   }
 
   std::string marker;
@@ -411,17 +422,20 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 
   while( range_end != range_start)
   {
-    if (t < data[buffer_index_cache].a)
-      range_end = std::min(buffer_index_cache, range_end-1);
-    else
+    if (t > data[buffer_index_cache].a+data[buffer_index_cache].k ) 
+    {
       range_start = std::max(buffer_index_cache, range_start+1);
+    } else
+    {
+      range_end = std::min(buffer_index_cache, range_end-1);
+    }
 
     buffer_index_cache = (range_end + range_start)/2;
 
     count++;
 
-    // FIXME: How should the maximum number of iterations
-    // be determined?
+    // NOTE: Is 100 a reasonable number? 
+    // How should the maximum number of iterationsbe determined?
     assert(count < 100);
   }
 
@@ -441,10 +455,19 @@ void ODESolution::read_file(uint file_number)
 
   real a;
   real k;
-  real values[nodal_size*N];
+  
+  boost::scoped_array<real> values(new real[nodal_size*N]);
 
   uint count = 0;
-  while (true) {
+  std::stringstream ss("Reading ODESolution file", std::ios_base::app | std::ios_base::out);
+  if (file_table.size() > 1)
+  {
+    ss << " " << file_number;
+  }
+  Progress p(ss.str(), timeslabs);
+
+  while (true) 
+  {
     file >> a;
     file >> k;
 
@@ -454,8 +477,9 @@ void ODESolution::read_file(uint file_number)
     for (uint i = 0; i < N*nodal_size; ++i)
       file >> values[i];
 
-    add_data(a, a+k, values);
+    add_data(a, a+k, values.get());
     count++;
+    p++;
   }
 
   file.close();

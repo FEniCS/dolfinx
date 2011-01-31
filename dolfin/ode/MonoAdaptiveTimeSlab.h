@@ -88,8 +88,8 @@ namespace dolfin
     real rmax;               // Previously computed maximum norm of residual
 
     real* x; // Degrees of freedom for the solution on the time slab
-    real* u; // The solution at a given stage
-    real* f; // The right-hand side at a given stage
+    RealArray u; // The solution at a given stage
+    RealArray f; // The right-hand side at a given stage
 
   };
 

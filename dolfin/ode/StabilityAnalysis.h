@@ -9,6 +9,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -39,7 +40,7 @@ namespace dolfin
 
   private:
 
-    void get_JT(real* JT, const real* u, real& t);
+    void get_JT(real* JT, const RealArray& u, real& t);
 
     ODE& ode;
     ODESolution& u;

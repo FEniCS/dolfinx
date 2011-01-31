@@ -3,16 +3,12 @@
 #
 # Original implementation: ../cpp/main.cpp by Anders Logg.
 #
-__author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-11-28"
+__author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
+__date__      = "2007-11-15 -- 2007-11-28"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
-__license__  = "GNU LGPL Version 2.1"
+__license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
-
-import sys
-print "Sorry, this demo is currently broken."
-sys.exit(0)
 
 class AlievPanfilov(ODE):
     def __init__(self, N, T):

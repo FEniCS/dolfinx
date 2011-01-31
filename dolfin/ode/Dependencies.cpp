@@ -135,7 +135,8 @@ void Dependencies::detect(ODE& ode)
   make_sparse();
 
   // Randomize solution vector
-  real* u = new real[N];
+  //real* u = new real[N];
+  RealArray u(N);
   for (uint i = 0; i < N; i++)
     u[i] = rand();
 
@@ -167,7 +168,7 @@ void Dependencies::detect(ODE& ode)
   }
 
   // Clean up
-  delete [] u;
+  //delete [] u;
 
   info("Automatically detected %d dependencies.", sum);
 }
@@ -206,7 +207,7 @@ std::string Dependencies::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::check_dependency(ODE& ode, real* u, real f0,
+bool Dependencies::check_dependency(ODE& ode, RealArray& u, real f0,
                                     uint i, uint j)
 {
   // Save original value

@@ -168,8 +168,8 @@ namespace dolfin
     MultiAdaptivity adaptivity; // Adaptive time step regulation (size 3N)
     Partition partition;        // Time step partitioning (size N)
     int* elast;                 // Last element for each component (size N)
-    real* f0;                 // Right-hand side at left end-point for cG (size N)
-    real* u;                  // The interpolated solution at a given time
+    RealArray f0;                 // Right-hand side at left end-point for cG (size N)
+    RealArray u;                  // The interpolated solution at a given time
 
     //--- Auxiliary data ---
     uint emax;                  // Last covered element for sample

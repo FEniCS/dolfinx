@@ -17,7 +17,10 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/real.h>
+
 #include "NoDeleter.h"
+
 
 namespace dolfin
 {
@@ -173,6 +176,8 @@ namespace dolfin
         x[i] = 0.0;
     }
   }
+
+  typedef Array<real> RealArray;
 
 }
 

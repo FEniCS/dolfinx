@@ -20,7 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) :
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(N),
   save_final(ode.parameters["save_final_solution"])
 {
   // Choose method
@@ -42,15 +42,15 @@ TimeSlab::TimeSlab(ODE& ode) :
     error("Unknown ODE method: %s", m.c_str());
 
   // Get iinitial data
-  u0 = new real[ode.size()];
-  real_zero(ode.size(), u0);
+  //u0 = new real[ode.size()];
+  //real_zero(ode.size(), u0);
   ode.u0(u0);
 }
 //-----------------------------------------------------------------------------
 TimeSlab::~TimeSlab()
 {
   delete method;
-  delete [] u0;
+  //delete [] u0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TimeSlab::size() const
@@ -93,7 +93,7 @@ const real* TimeSlab::get_quadrature_weights() const {
   return method->get_quadrature_weights();
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(uint N, const real* u)
+void TimeSlab::write(RealArray& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -106,7 +106,7 @@ void TimeSlab::write(uint N, const real* u)
 
   fp << std::setprecision(real_decimal_prec());
 
-  for (uint i = 0; i < N; i++)
+  for (uint i = 0; i < u.size(); i++)
   {
     fp << u[i] << " ";
   }
@@ -142,4 +142,35 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yof
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, RealArray& y)
+{
+  for (uint i = 0; i < y.size(); i++)
+    y[i] = x[xoffset + i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const real* x, uint xoffset, RealArray& y)
+{
+  for (uint i = 0; i < y.size(); i++)
+    y[i] = x[xoffset + i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const RealArray& x, uBLASVector& y , uint yoffset)
+{
+  for (uint i = 0; i < x.size(); i++)
+    y[yoffset + i] = to_double(x[i]);
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const RealArray& x, real* y, uint yoffset)
+{
+  for (uint i = 0; i < x.size(); i++)
+    y[yoffset + i] = to_double(x[i]);
+}
+
+/*
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, RealArray& y)
+{
+  for (uint i = 0; i < y.size(); i++)
+    y[i] = x[xoffset + i];
+}
+*/
 
