@@ -43,7 +43,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
   init_parameters();
 
   // Store boundary conditions
-  _bcs.push_back(&bc);
+  _bcs.push_back(reference_to_no_delete_pointer(bc));
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
@@ -61,7 +61,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    _bcs.push_back(bcs[i]);
+    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
@@ -82,7 +82,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    _bcs.push_back(bcs[i]);
+    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
@@ -175,6 +175,15 @@ const Form& VariationalProblem::linear_form() const
 }
 //-----------------------------------------------------------------------------
 const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const
+{
+  std::vector<const BoundaryCondition*> bcs;
+  for (uint i = 0; i < _bcs.size(); i++)
+    bcs.push_back(_bcs[i].get());
+  return bcs;
+}
+//-----------------------------------------------------------------------------
+const std::vector<boost::shared_ptr<const BoundaryCondition> >
+VariationalProblem::bcs_shared_ptr() const
 {
   return _bcs;
 }

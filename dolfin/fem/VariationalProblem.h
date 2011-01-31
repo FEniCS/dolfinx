@@ -121,6 +121,9 @@ namespace dolfin
     /// Return the list of boundary conditions
     const std::vector<const BoundaryCondition*> bcs() const;
 
+    /// Return the list of boundary conditions (shared_ptr version)
+    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs_shared_ptr() const;
+
     /// Return the cell domains
     const MeshFunction<uint>* cell_domains() const;
 
@@ -184,7 +187,7 @@ namespace dolfin
     boost::shared_ptr<const Form> _bilinear_form;
 
     // Boundary conditions
-    std::vector<const BoundaryCondition*> _bcs;
+    std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs;
 
     // Mesh functions for assembly
     const MeshFunction<uint>* _cell_domains;
