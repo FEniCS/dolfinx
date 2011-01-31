@@ -181,6 +181,12 @@ endif()
 # FIXME: Should we move the OpenMP check to the compiler section?
 if (DOLFIN_ENABLE_OPENMP)
   find_package(OpenMP)
+
+  include(CheckOpenMP)
+  check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
+  if (NOT OPENMP_UINT_TEST_RUNS)
+    set(OPENMP_FOUND FALSE)
+  endif()
 endif()
 
 # FIXME: Should we move the MPI check to the compiler section?

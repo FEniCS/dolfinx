@@ -175,6 +175,11 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %feature("director") dolfin::SubDomain;
 
 //-----------------------------------------------------------------------------
-// Handle Hierarchical template
+// Instantiate Hierarchical Mesh template class
 //-----------------------------------------------------------------------------
-%template () dolfin::Hierarchical<dolfin::Mesh>;
+namespace dolfin {
+  class Mesh;
+}
+
+%template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
+

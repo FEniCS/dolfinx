@@ -82,6 +82,10 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
 
 //-----------------------------------------------------------------------------
-// Handle Hierarchical template
+// Instantiate Hierarchical FunctionSpace template class
 //-----------------------------------------------------------------------------
-%template () dolfin::Hierarchical<dolfin::FunctionSpace>;
+namespace dolfin {
+  class FunctionSpace;
+}
+
+%template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;

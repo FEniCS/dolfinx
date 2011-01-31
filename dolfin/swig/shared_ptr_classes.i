@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-01-21
+// Last changed: 2011-01-31
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -46,6 +46,7 @@
 
 %shared_ptr(dolfin::FiniteElement)
 
+%shared_ptr(dolfin::Hierarchical<dolfin::FunctionSpace>)
 %shared_ptr(dolfin::FunctionSpace)
 %shared_ptr(dolfin::SubSpace)
 
@@ -56,6 +57,7 @@
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
 
+%shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::SubMesh)
@@ -83,7 +85,8 @@
 
 %shared_ptr(dolfin::STLMatrix)
 %shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
-%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >)
+%shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,\
+	    boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
 
 #ifdef HAS_PETSC
@@ -103,64 +106,69 @@
 
 #else
 
-SWIG_SHARED_PTR(GenericDofMap,dolfin::GenericDofMap)
-SWIG_SHARED_PTR_DERIVED(DofMap,dolfin::GenericDofMap,dolfin::DofMap)
-SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
-SWIG_SHARED_PTR(Form,dolfin::Form)
+SWIG_SHARED_PTR(GenericDofMap, dolfin::GenericDofMap)
+SWIG_SHARED_PTR_DERIVED(DofMap, dolfin::GenericDofMap, dolfin::DofMap)
+SWIG_SHARED_PTR(FiniteElement, dolfin::FiniteElement)
+SWIG_SHARED_PTR(Form, dolfin::Form)
 
-SWIG_SHARED_PTR(FunctionSpace,dolfin::FunctionSpace)
-SWIG_SHARED_PTR_DERIVED(SubSpace,dolfin::FunctionSpace,dolfin::SubSpace)
+SWIG_SHARED_PTR(HierarchicalFunctionSpace, dolfin::Hierarchical<dolfin::FunctionSpace>)
+SWIG_SHARED_PTR_DERIVED(FunctionSpace, dolfin::Hierarchical<dolfin::FunctionSpace>,\
+			dolfin::FunctionSpace)
+SWIG_SHARED_PTR_DERIVED(SubSpace, dolfin::FunctionSpace, dolfin::SubSpace)
 
-SWIG_SHARED_PTR(GenericFunction,dolfin::GenericFunction)
-SWIG_SHARED_PTR_DERIVED(Function,dolfin::GenericFunction,dolfin::Function)
-SWIG_SHARED_PTR_DERIVED(Expression,dolfin::GenericFunction,dolfin::Expression)
-SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Expression,dolfin::FacetArea)
-SWIG_SHARED_PTR_DERIVED(Constant,dolfin::Expression,dolfin::Constant)
-SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Expression,dolfin::MeshCoordinates)
+SWIG_SHARED_PTR(GenericFunction, dolfin::GenericFunction)
+SWIG_SHARED_PTR_DERIVED(Function, dolfin::GenericFunction, dolfin::Function)
+SWIG_SHARED_PTR_DERIVED(Expression, dolfin::GenericFunction, dolfin::Expression)
+SWIG_SHARED_PTR_DERIVED(FacetArea, dolfin::Expression, dolfin::FacetArea)
+SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)
+SWIG_SHARED_PTR_DERIVED(MeshCoordinates, dolfin::Expression, dolfin::MeshCoordinates)
 
-SWIG_SHARED_PTR(Mesh,dolfin::Mesh)
-SWIG_SHARED_PTR_DERIVED(BoundaryMesh,dolfin::Mesh,dolfin::BoundaryMesh)
-SWIG_SHARED_PTR_DERIVED(SubMesh,dolfin::Mesh,dolfin::SubMesh)
-SWIG_SHARED_PTR_DERIVED(UnitTetrahedron,dolfin::Mesh,dolfin::UnitTetrahedron)
-SWIG_SHARED_PTR_DERIVED(UnitCube,dolfin::Mesh,dolfin::UnitCube)
-SWIG_SHARED_PTR_DERIVED(UnitInterval,dolfin::Mesh,dolfin::UnitInterval)
-SWIG_SHARED_PTR_DERIVED(Interval,dolfin::Mesh,dolfin::Interval)
-SWIG_SHARED_PTR_DERIVED(UnitTriangle,dolfin::Mesh,dolfin::UnitTriangle)
-SWIG_SHARED_PTR_DERIVED(UnitSquare,dolfin::Mesh,dolfin::UnitSquare)
-SWIG_SHARED_PTR_DERIVED(UnitCircle,dolfin::Mesh,dolfin::UnitCircle)
-SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
-SWIG_SHARED_PTR_DERIVED(Rectangle,dolfin::Mesh,dolfin::Rectangle)
-SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
+SWIG_SHARED_PTR(HierarchicalMesh, dolfin::Hierarchical<dolfin::Mesh>)
+SWIG_SHARED_PTR_DERIVED(Mesh, dolfin::Hierarchical<dolfin::Mesh>, dolfin::Mesh)
+SWIG_SHARED_PTR_DERIVED(BoundaryMesh, dolfin::Mesh, dolfin::BoundaryMesh)
+SWIG_SHARED_PTR_DERIVED(SubMesh, dolfin::Mesh, dolfin::SubMesh)
+SWIG_SHARED_PTR_DERIVED(UnitTetrahedron, dolfin::Mesh, dolfin::UnitTetrahedron)
+SWIG_SHARED_PTR_DERIVED(UnitCube, dolfin::Mesh, dolfin::UnitCube)
+SWIG_SHARED_PTR_DERIVED(UnitInterval, dolfin::Mesh, dolfin::UnitInterval)
+SWIG_SHARED_PTR_DERIVED(Interval, dolfin::Mesh, dolfin::Interval)
+SWIG_SHARED_PTR_DERIVED(UnitTriangle, dolfin::Mesh, dolfin::UnitTriangle)
+SWIG_SHARED_PTR_DERIVED(UnitSquare, dolfin::Mesh, dolfin::UnitSquare)
+SWIG_SHARED_PTR_DERIVED(UnitCircle, dolfin::Mesh, dolfin::UnitCircle)
+SWIG_SHARED_PTR_DERIVED(Box, dolfin::Mesh, dolfin::Box)
+SWIG_SHARED_PTR_DERIVED(Rectangle, dolfin::Mesh, dolfin::Rectangle)
+SWIG_SHARED_PTR_DERIVED(UnitSphere, dolfin::Mesh, dolfin::UnitSphere)
 
-SWIG_SHARED_PTR(SubDomain,dolfin::SubDomain)
-SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
+SWIG_SHARED_PTR(SubDomain, dolfin::SubDomain)
+SWIG_SHARED_PTR_DERIVED(DomainBoundary, dolfin::SubDomain, dolfin::DomainBoundary)
 
 
-SWIG_SHARED_PTR(GenericTensor,dolfin::GenericTensor)
-SWIG_SHARED_PTR_DERIVED(GenericVector,dolfin::GenericTensor,dolfin::GenericVector)
-SWIG_SHARED_PTR_DERIVED(GenericMatrix,dolfin::GenericTensor,dolfin::GenericMatrix)
-SWIG_SHARED_PTR_DERIVED(Scalar,dolfin::GenericTensor,dolfin::Scalar)
-SWIG_SHARED_PTR_DERIVED(Matrix,dolfin::GenericMatrix,dolfin::Matrix)
-SWIG_SHARED_PTR_DERIVED(Vector,dolfin::GenericVector,dolfin::Vector)
+SWIG_SHARED_PTR(GenericTensor, dolfin::GenericTensor)
+SWIG_SHARED_PTR_DERIVED(GenericVector, dolfin::GenericTensor, dolfin::GenericVector)
+SWIG_SHARED_PTR_DERIVED(GenericMatrix, dolfin::GenericTensor, dolfin::GenericMatrix)
+SWIG_SHARED_PTR_DERIVED(Scalar, dolfin::GenericTensor, dolfin::Scalar)
+SWIG_SHARED_PTR_DERIVED(Matrix, dolfin::GenericMatrix, dolfin::Matrix)
+SWIG_SHARED_PTR_DERIVED(Vector, dolfin::GenericVector, dolfin::Vector)
 
-SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix, dolfin::GenericMatrix, dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
-SWIG_SHARED_PTR_DERIVED(uBLASSparseMatrix,dolfin::GenericMatrix,dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
-SWIG_SHARED_PTR_DERIVED(uBLASVector,dolfin::GenericVector,dolfin::uBLASVector)
-SWIG_SHARED_PTR_DERIVED(STLMatrix,dolfin::GenericMatrix,dolfin::STLMatrix)
+SWIG_SHARED_PTR_DERIVED(uBLASDenseMatrix, dolfin::GenericMatrix, \
+			dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>)
+SWIG_SHARED_PTR_DERIVED(uBLASSparseMatrix, dolfin::GenericMatrix, \
+			dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>)
+SWIG_SHARED_PTR_DERIVED(uBLASVector, dolfin::GenericVector, dolfin::uBLASVector)
+SWIG_SHARED_PTR_DERIVED(STLMatrix, dolfin::GenericMatrix, dolfin::STLMatrix)
 
 #ifdef HAS_TRILINOS
-SWIG_SHARED_PTR_DERIVED(EpetraMatrix,dolfin::GenericMatrix,dolfin::EpetraMatrix)
-SWIG_SHARED_PTR_DERIVED(EpetraVector,dolfin::GenericVector,dolfin::EpetraVector)
+SWIG_SHARED_PTR_DERIVED(EpetraMatrix, dolfin::GenericMatrix, dolfin::EpetraMatrix)
+SWIG_SHARED_PTR_DERIVED(EpetraVector, dolfin::GenericVector, dolfin::EpetraVector)
 #endif
 
 #ifdef HAS_PETSC
-SWIG_SHARED_PTR_DERIVED(PETScMatrix,dolfin::GenericMatrix,dolfin::PETScMatrix)
-SWIG_SHARED_PTR_DERIVED(PETScVector,dolfin::GenericVector,dolfin::PETScVector)
+SWIG_SHARED_PTR_DERIVED(PETScMatrix, dolfin::GenericMatrix, dolfin::PETScMatrix)
+SWIG_SHARED_PTR_DERIVED(PETScVector, dolfin::GenericVector, dolfin::PETScVector)
 #endif
 
 #ifdef HAS_MTL4
-SWIG_SHARED_PTR_DERIVED(MTL4Matrix,dolfin::GenericMatrix,dolfin::MTL4Matrix)
-SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
+SWIG_SHARED_PTR_DERIVED(MTL4Matrix, dolfin::GenericMatrix, dolfin::MTL4Matrix)
+SWIG_SHARED_PTR_DERIVED(MTL4Vector, dolfin::GenericVector, dolfin::MTL4Vector)
 #endif
 
 #endif
@@ -181,7 +189,7 @@ SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
 {
   void rename(const std::string name, const std::string label)
   {
-    self->rename(name,label);
+    self->rename(name, label);
   }
 
   const std::string& name() const
@@ -210,7 +218,7 @@ SWIG_SHARED_PTR_DERIVED(MTL4Vector,dolfin::GenericVector,dolfin::MTL4Vector)
   }
 
 %pythoncode %{
-    def str(self,verbose):
+    def str(self, verbose):
         "Return a string representation of it self"
         return self._str(verbose)
 
@@ -256,7 +264,7 @@ IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
 // Typecheck
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE,0);
+  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE, 0);
   $1 = SWIG_CheckState(res);
 }
 
