@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -118,7 +118,12 @@ const Mesh& Form::mesh() const
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<const FunctionSpace> Form::function_space(uint i) const
+boost::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
+{
+  return _mesh;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const FunctionSpace> Form::function_space(uint i) const
 {
   assert(i < _function_spaces.size());
   return _function_spaces[i];

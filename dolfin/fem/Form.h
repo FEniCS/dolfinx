@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-01-29
+// Last changed: 2011-01-31
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -57,11 +57,14 @@ namespace dolfin
     /// Set mesh, necessary for functionals when there are no function spaces
     void set_mesh(boost::shared_ptr<const Mesh> mesh);
 
-    /// Return mesh
+    /// Extract common mesh from form
     const Mesh& mesh() const;
 
+    /// Return mesh shared pointer (if any)
+    boost::shared_ptr<const Mesh> mesh_shared_ptr() const;
+
     /// Return function space for given argument
-    const boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
+    boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
 
     /// Return function spaces for arguments
     std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces() const;
