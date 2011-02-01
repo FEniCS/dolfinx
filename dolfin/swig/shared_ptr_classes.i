@@ -40,17 +40,22 @@
 // Declare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
 #if SWIG_VERSION >= 0x020000
+%shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
 %shared_ptr(dolfin::Form)
 
 %shared_ptr(dolfin::FiniteElement)
 
+%shared_ptr(dolfin::Hierarchical<dolfin::VariationalProblem>)
+%shared_ptr(dolfin::VariationalProblem)
+
 %shared_ptr(dolfin::Hierarchical<dolfin::FunctionSpace>)
 %shared_ptr(dolfin::FunctionSpace)
 %shared_ptr(dolfin::SubSpace)
 
 %shared_ptr(dolfin::GenericFunction)
+%shared_ptr(dolfin::Hierarchical<dolfin::Function>)
 %shared_ptr(dolfin::Function)
 %shared_ptr(dolfin::Expression)
 %shared_ptr(dolfin::FacetArea)
@@ -106,18 +111,28 @@
 
 #else
 
+SWIG_SHARED_PTR(HierarchicalForm, dolfin::Hierarchical<dolfin::Form>)
 SWIG_SHARED_PTR(GenericDofMap, dolfin::GenericDofMap)
 SWIG_SHARED_PTR_DERIVED(DofMap, dolfin::GenericDofMap, dolfin::DofMap)
 SWIG_SHARED_PTR(FiniteElement, dolfin::FiniteElement)
 SWIG_SHARED_PTR(Form, dolfin::Form)
+
+SWIG_SHARED_PTR(HierarchicalVariationalProblem, \
+		dolfin::Hierarchical<dolfin::VariationalProblem>)
+SWIG_SHARED_PTR_DERIVED(VariationalProblem, \
+			dolfin::Hierarchical<dolfin::VariationalProblem>, \
+			dolfin::VariationalProblem)
 
 SWIG_SHARED_PTR(HierarchicalFunctionSpace, dolfin::Hierarchical<dolfin::FunctionSpace>)
 SWIG_SHARED_PTR_DERIVED(FunctionSpace, dolfin::Hierarchical<dolfin::FunctionSpace>,\
 			dolfin::FunctionSpace)
 SWIG_SHARED_PTR_DERIVED(SubSpace, dolfin::FunctionSpace, dolfin::SubSpace)
 
+SWIG_SHARED_PTR(HierarchicalFunction, dolfin::Hierarchical<dolfin::Function>)
 SWIG_SHARED_PTR(GenericFunction, dolfin::GenericFunction)
 SWIG_SHARED_PTR_DERIVED(Function, dolfin::GenericFunction, dolfin::Function)
+SWIG_SHARED_PTR_DERIVED(Function, dolfin::Hierarchical<dolfin::Function>,\
+			dolfin::Function)
 SWIG_SHARED_PTR_DERIVED(Expression, dolfin::GenericFunction, dolfin::Expression)
 SWIG_SHARED_PTR_DERIVED(FacetArea, dolfin::Expression, dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)

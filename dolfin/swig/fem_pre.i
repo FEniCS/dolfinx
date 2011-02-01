@@ -67,3 +67,15 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::BoundaryCondition::function_space;
 %rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
+
+//-----------------------------------------------------------------------------
+// Instantiate Hierarchical Form
+//-----------------------------------------------------------------------------
+namespace dolfin {
+  class Form;
+  class VariationalProblem;
+}
+
+%template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
+%template (HierarchicalVariationalProblem) \
+          dolfin::Hierarchical<dolfin::VariationalProblem>;

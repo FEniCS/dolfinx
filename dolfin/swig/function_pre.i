@@ -4,7 +4,7 @@
 //
 // Modified by Ola Skavhaug, 2008
 // Modified by Martin Sandve Alnaes, 2008
-// Modified by Johan Hake, 2008-2009
+// Modified by Johan Hake, 2008-2011
 // Modified by Garth Wells, 2008-2010
 // Modified by Kent-Andre Mardal, 2009
 //
@@ -82,10 +82,12 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
 
 //-----------------------------------------------------------------------------
-// Instantiate Hierarchical FunctionSpace template class
+// Instantiate Hierarchical FunctionSpace, Function template class
 //-----------------------------------------------------------------------------
 namespace dolfin {
   class FunctionSpace;
+  class Function;
 }
 
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
+%template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;
