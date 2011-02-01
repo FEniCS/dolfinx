@@ -62,7 +62,7 @@ namespace dolfin
     /// Return the ownership range (dofs in this range are owned by this process)
     virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;
 
-    /// Return map from nonlocal-dofs that appear in local dof map to owning process
+    /// Return map from nonlocal-dofs (that appear in local dof map) to owning process
     virtual const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell

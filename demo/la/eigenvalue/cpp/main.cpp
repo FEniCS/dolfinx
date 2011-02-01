@@ -18,31 +18,25 @@ int main()
 {
   #ifdef HAS_SLEPC
 
-  // Make sure we use the PETSc backend
-  parameters["linear_algebra_backend"] = "PETSc";
-
   // Create mesh
   Mesh mesh("box_with_dent.xml.gz");
 
   // Build stiffness matrix
-  Matrix A;
+  PETScMatrix A;
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
   assemble(A, a);
-
-  // Get PETSc matrix
-  PETScMatrix& AA(A.down_cast<PETScMatrix>());
 
   // Create eigensolver
   SLEPcEigenSolver esolver;
 
   // Compute all eigenvalues of A x = \lambda x
-  esolver.solve(AA);
+  esolver.solve(A);
 
-  // Extract largest (first) eigenpair
+  // Extract largest (first, n =0) eigenpair
   double r, c;
-  PETScVector rx(A.size(1));
-  PETScVector cx(A.size(1));
+  PETScVector rx;
+  PETScVector cx;
   esolver.get_eigenpair(r, c, rx, cx, 0);
 
   std::cout << "Largest eigenvalue: " << r << std::endl;

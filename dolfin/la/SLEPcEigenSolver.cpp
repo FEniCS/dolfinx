@@ -109,6 +109,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
     if (system_size != c.size())
       c.resize(system_size);
 
+    assert(r.vec());
+    assert(c.vec());
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   }
   else
