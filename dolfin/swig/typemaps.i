@@ -35,13 +35,25 @@ SWIGINTERNINLINE bool Py_float_convert(PyObject* in, double& value)
 // A check for int and converter for int
 SWIGINTERNINLINE bool Py_int_convert(PyObject* in, int& value)
 {
-  return SWIG_AsVal_int(in, &value);
+  if (!PyInteger_Check(in))
+    return false;
+  long tmp = static_cast<long>(PyInt_AsLong(in));
+  value = static_cast<dolfin::uint>(tmp);
+  return true;
+  //return SWIG_AsVal_int(in, &value);
 }
 
 // A check for int and converter for uint
 SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 {
-  return SWIG_AsVal_unsigned_SS_int(in, &value);
+  if (!PyInteger_Check(in))
+    return false;
+  long tmp = static_cast<long>(PyInt_AsLong(in));
+  if (tmp<=0)
+    return false;
+  value = static_cast<dolfin::uint>(tmp);
+  return true;
+  //return SWIG_AsVal_unsigned_SS_int(in, &value);
 }
 %}
 //-----------------------------------------------------------------------------
