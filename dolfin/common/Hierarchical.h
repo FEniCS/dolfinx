@@ -2,14 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-01-30
-// Last changed: 2011-01-31
+// Last changed: 2011-02-02
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
 
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/log/log.h>
+#include <dolfin/log/dolfin_log.h>
 #include "NoDeleter.h"
 
 namespace dolfin
@@ -24,13 +24,18 @@ namespace dolfin
   {
   public:
 
+    Hierarchical()
+    {
+      _debug();
+    }
+
     /// Check if the object has a parent.
     ///
     /// *Returns*
     ///     bool
     ///         The return value is true iff the object has a parent.
     bool has_parent() const
-    { return _parent != 0; }
+    { return _parent; }
 
     /// Check if the object has a child.
     ///
@@ -38,7 +43,7 @@ namespace dolfin
     ///     bool
     ///         The return value is true iff the object has a child.
     bool has_child() const
-    { return _child != 0; }
+    { return _child; }
 
     /// Return parent in hierarchy. An error is thrown if the object
     /// has no parent.
@@ -161,11 +166,20 @@ namespace dolfin
     /// Assignment operator
     const Hierarchical& operator= (const Hierarchical& hierarchical)
     {
-      // Clear parent/child data
-      info("Calling assignment operator for class Hierarchical, clearing parent/child data.");
-      _parent = boost::shared_ptr<T>();
-      _child = boost::shared_ptr<T>();
+      // Do nothing, in particular don't assign child/parent
       return *this;
+    }
+
+    /// Function useful for debugging the hierarchy
+    void _debug() const
+    {
+      info("Debugging hierarchical object.");
+      cout << "  has_parent()    = " << has_parent() << endl;
+      info("  _parent.get()   = %x", _parent.get());
+      info("  _parent.count() = %d", _parent.use_count());
+      cout << "  has_child()     = " << has_parent() << endl;
+      info("  _child.get()    = %x", _parent.get());
+      info("  _child.count()  = %d", _parent.use_count());
     }
 
   private:
