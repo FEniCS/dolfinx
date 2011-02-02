@@ -48,10 +48,10 @@ int main()
   assemble(T, t);
 
   // Solve the eigen system
-  SLEPcEigenSolver esolver;
+  SLEPcEigenSolver esolver(S, T);
   esolver.parameters["spectrum"] = "smallest real";
   esolver.parameters["solver"] = "lapack";
-  esolver.solve(S, T);
+  esolver.solve();
 
   // The result should have real eigenvalues but due to rounding errors, some of
   // the resultant eigenvalues may be small complex values.

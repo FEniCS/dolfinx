@@ -61,10 +61,10 @@ assemble(s, tensor=S)
 assemble(t, tensor=T)
 
 # Solve the eigensystem
-esolver = SLEPcEigenSolver()
+esolver = SLEPcEigenSolver(S, T)
 esolver.parameters["spectrum"] = "smallest real"
 esolver.parameters["solver"] = "lapack"
-esolver.solve(S, T)
+esolver.solve()
 
 # The result should have real eigenvalues but due to rounding errors, some of
 # the resultant eigenvalues may be small complex values.
