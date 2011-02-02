@@ -199,7 +199,15 @@ namespace dolfin
     /// Assignment operator
     const Hierarchical& operator= (const Hierarchical& hierarchical)
     {
-      // Do nothing, in particular don't assign child/parent
+      // Assignment to object part of a hierarchy not allowed as it
+      // would either require a very exhaustive logic to handle or
+      // completely mess up child-parent relations and data ownership.
+      const uint d = depth();
+      if (d > 1)
+      {
+        error("Unable to assign, object is part of a hierarchy (depth = %d).", d);
+      }
+
       return *this;
     }
 
