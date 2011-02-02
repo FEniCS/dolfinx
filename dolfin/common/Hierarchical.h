@@ -18,6 +18,11 @@ namespace dolfin
   /// This class provides storage and data access for hierarchical
   /// classes; that is, classes where an object may have a child
   /// and a parent.
+  ///
+  /// Note to developers: each subclass of Hierarchical that
+  /// implements an assignment operator must call the base class
+  /// assignment operator (Hierarchical<Foo>::operator=(foo);) at the
+  /// beginning of operator=.
 
   template<class T>
   class Hierarchical
@@ -214,7 +219,7 @@ namespace dolfin
     /// Function useful for debugging the hierarchy
     void _debug() const
     {
-      info("Debugging hierarchical object.");
+      info("Debugging hierarchical object:");
       cout << "  depth           = " << depth() << endl;
       cout << "  has_parent()    = " << has_parent() << endl;
       info("  _parent.get()   = %x", _parent.get());
