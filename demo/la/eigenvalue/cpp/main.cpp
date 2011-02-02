@@ -28,10 +28,10 @@ int main()
   assemble(A, a);
 
   // Create eigensolver
-  SLEPcEigenSolver esolver;
+  SLEPcEigenSolver esolver(A);
 
   // Compute all eigenvalues of A x = \lambda x
-  esolver.solve(A);
+  esolver.solve();
 
   // Extract largest (first, n =0) eigenpair
   double r, c;

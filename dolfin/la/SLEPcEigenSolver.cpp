@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2010 Garth N. Wells.
+// Copyright (C) 2005-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -6,13 +6,14 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-12-28
+// Last changed: 2011-02-02
 
 #ifdef HAS_SLEPC
 
 #include <slepcversion.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
@@ -20,8 +21,62 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver() : system_size(0)
+SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
+      : A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
 {
+  assert(A.size(0) == A.size(1));
+
+  // Set default parameter values
+  parameters = default_parameters();
+
+  // Set up solver environment
+  if (dolfin::MPI::num_processes() > 1)
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+  else
+    EPSCreate(PETSC_COMM_SELF, &eps);
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
+   : A(reference_to_no_delete_pointer(A)),
+     B(reference_to_no_delete_pointer(B))
+
+{
+  assert(A.size(0) == A.size(1));
+  assert(B.size(0) == A.size(0));
+  assert(B.size(1) == A.size(1));
+
+  // Set default parameter values
+  parameters = default_parameters();
+
+  // Set up solver environment
+  if (dolfin::MPI::num_processes() > 1)
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+  else
+    EPSCreate(PETSC_COMM_SELF, &eps);
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : A(A)
+{
+  assert(A->size(0) == A->size(1));
+
+  // Set default parameter values
+  parameters = default_parameters();
+
+  // Set up solver environment
+  if (dolfin::MPI::num_processes() > 1)
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+  else
+    EPSCreate(PETSC_COMM_SELF, &eps);
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
+                           boost::shared_ptr<const PETScMatrix> B) : A(A), B(B)
+
+{
+  assert(A->size(0) == A->size(1));
+  assert(B->size(0) == A->size(0));
+  assert(B->size(1) == A->size(1));
+
   // Set default parameter values
   parameters = default_parameters();
 
@@ -39,24 +94,53 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
     EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix& A)
+void SLEPcEigenSolver::solve()
 {
-  solve(A, 0, A.size(0));
+  solve(A->size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix& A, uint n)
+void SLEPcEigenSolver::solve(uint n)
 {
-  solve(A, 0, n);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
-{
-  solve(A, &B, A.size(0));
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
-{
-  solve(A, &B, n);
+  assert(A);
+
+  // Associate matrix (matrices) with eigenvalue solver
+  assert(A->size(0) == A->size(1));
+  if (B)
+  {
+    assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
+    EPSSetOperators(eps, *A->mat(), *B->mat());
+  }
+  else
+    EPSSetOperators(eps, *A->mat(), PETSC_NULL);
+
+  // Set number of eigenpairs to compute
+  assert(n <= A->size(0));
+  const uint nn = static_cast<int>(n);
+  EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
+
+  // Set parameters from local parameters
+  read_parameters();
+
+  // Set parameters from PETSc parameter database
+  EPSSetFromOptions(eps);
+
+  // Solve
+  EPSSolve(eps);
+
+  // Check for convergence
+  EPSConvergedReason reason;
+  EPSGetConvergedReason(eps, &reason);
+  if (reason < 0)
+    warning("Eigenvalue solver did not converge");
+
+  // Report solver status
+  int num_iterations = 0;
+  EPSGetIterationNumber(eps, &num_iterations);
+
+  const EPSType eps_type = 0;
+  EPSGetType(eps, &eps_type);
+  info(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
+       eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
@@ -102,18 +186,14 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    //MatGetVecs(A, PETSC_NULL, &xr);
-    //MatGetVecs(A, PETSC_NULL, &xi);
-
-    // Check size of passed vectors
-    if (system_size != r.size())
-      r.resize(system_size);
-
-    if (system_size != c.size())
-      c.resize(system_size);
-
+    assert(A);
+    assert(A->mat());
     assert(r.vec());
     assert(c.vec());
+    MatGetVecs(*A->mat(), PETSC_NULL, r.vec().get());
+    MatGetVecs(*A->mat(), PETSC_NULL, c.vec().get());
+
+
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   }
   else
@@ -134,55 +214,6 @@ void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
   #else
   error("Setting a deflation space requires SLEPc 3.1 or newer version");
   #endif
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix* B,
-                             uint n)
-{
-  // Associate matrix (matrices) with eigenvalue solver
-  assert(A.size(0) == A.size(1));
-  if (B)
-  {
-    assert(B->size(0) == B->size(1) && B->size(0) == A.size(0));
-    EPSSetOperators(eps, *A.mat(), *B->mat());
-  }
-  else
-    EPSSetOperators(eps, *A.mat(), PETSC_NULL);
-
-  // Store the size of the eigenvalue system
-  system_size = A.size(0);
-
-  // Set number of eigenpairs to compute
-  assert(n <= system_size);
-  const uint nn = static_cast<int>(n);
-  EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
-
-  // Set parameters from local parameters
-  read_parameters();
-
-  // Set parameters from PETSc parameter database
-  EPSSetFromOptions(eps);
-
-  // Solve
-  EPSSolve(eps);
-
-  // Check for convergence
-  EPSConvergedReason reason;
-  EPSGetConvergedReason(eps, &reason);
-  if (reason < 0)
-  {
-    warning("Eigenvalue solver did not converge");
-    return;
-  }
-
-  // Report solver status
-  int num_iterations = 0;
-  EPSGetIterationNumber(eps, &num_iterations);
-
-  const EPSType eps_type = 0;
-  EPSGetType(eps, &eps_type);
-  info(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
-       eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

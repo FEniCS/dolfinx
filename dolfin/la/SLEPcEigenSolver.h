@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2010 Garth N. Wells.
+// Copyright (C) 2005-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -6,14 +6,17 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-12-28
+// Last changed: 2011-02-02
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
 
 #ifdef HAS_SLEPC
 
+#include <string>
+#include <boost/shared_ptr.hpp>
 #include <slepceps.h>
+#include "dolfin/common/types.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -113,23 +116,27 @@ namespace dolfin
   {
   public:
 
-    /// Create eigenvalue solver
-    SLEPcEigenSolver();
+    /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(const PETScMatrix& A);
+
+    /// Create eigenvalue solver Ax = \lambda Bx
+    SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B);
+
+    /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A);
+
+    /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
+                     boost::shared_ptr<const PETScMatrix> B);
 
     /// Destructor
     ~SLEPcEigenSolver();
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const PETScMatrix& A);
+    void solve();
 
     /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const PETScMatrix& A, uint n);
-
-    /// Compute all eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const PETScMatrix& A, const PETScMatrix& B);
-
-    /// Compute the n first eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
+    void solve(uint n);
 
     /// Get the first eigenvalue
     void get_eigenvalue(double& lr, double& lc) const;
@@ -171,9 +178,6 @@ namespace dolfin
 
   private:
 
-    /// Compute eigenpairs
-    void solve(const PETScMatrix& A, const PETScMatrix* B, uint n);
-
     /// Callback for changes in parameter values
     void read_parameters();
 
@@ -192,11 +196,12 @@ namespace dolfin
     // Set tolerance
     void set_tolerance(double tolerance, uint maxiter);
 
+    // Operators (A x = \lambda x or Ax = \lambda B x)
+    boost::shared_ptr<const PETScMatrix> A;
+    boost::shared_ptr<const PETScMatrix> B;
+
     // SLEPc solver pointer
     EPS eps;
-
-    // System size
-    unsigned int system_size;
 
   };
 

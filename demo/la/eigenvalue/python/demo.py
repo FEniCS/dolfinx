@@ -38,11 +38,11 @@ A = PETScMatrix()
 assemble(a, tensor=A)
 
 # Create eigensolver
-eigensolver = SLEPcEigenSolver()
+eigensolver = SLEPcEigenSolver(A)
 
 # Compute all eigenvalues of A x = \lambda x
 print "Computing eigenvalues. This can take a minute."
-eigensolver.solve(A)
+eigensolver.solve()
 
 # Extract largest (first) eigenpair
 r, c, rx, cx = eigensolver.get_eigenpair(0)
