@@ -35,8 +35,7 @@ int main()
 
   // Extract largest (first, n =0) eigenpair
   double r, c;
-  PETScVector rx;
-  PETScVector cx;
+  PETScVector rx, cx;
   esolver.get_eigenpair(r, c, rx, cx, 0);
 
   std::cout << "Largest eigenvalue: " << r << std::endl;

@@ -40,6 +40,14 @@ namespace dolfin
     //  for finalization)
     static bool responsible_petsc();
 
+    // Check if MPI has been initialised (returns true if MPI has been
+    // initialised, even if it is later finalised)
+    static bool mpi_initialized();
+
+    // Check if MPI has been finalized (returns true if MPI has been
+    // finalised)
+    static bool mpi_finalized();
+
   private:
 
     // Constructor (private)
@@ -56,10 +64,6 @@ namespace dolfin
 
     // Finalize PETSc
     static void finalize_petsc();
-
-    // Check if MPI has been initialised (returns true if MPI has been
-    // initialised, even if it is later finalised)
-    static bool mpi_initialized();
 
     // Singleton instance
     static SubSystemsManager sub_systems_manager;

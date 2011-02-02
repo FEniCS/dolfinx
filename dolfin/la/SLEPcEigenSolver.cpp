@@ -102,6 +102,9 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
+    //MatGetVecs(A, PETSC_NULL, &xr);
+    //MatGetVecs(A, PETSC_NULL, &xi);
+
     // Check size of passed vectors
     if (system_size != r.size())
       r.resize(system_size);

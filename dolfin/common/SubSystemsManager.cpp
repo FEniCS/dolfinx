@@ -163,9 +163,9 @@ void SubSystemsManager::finalize_petsc()
     PetscFinalize();
     sub_systems_manager.petsc_initialized = false;
 
-#ifdef HAS_SLEPC
+    #ifdef HAS_SLEPC
     SlepcFinalize();
-#endif
+    #endif
   }
 #else
   // Do nothing
@@ -180,6 +180,16 @@ bool SubSystemsManager::mpi_initialized()
 
 #ifdef HAS_MPI
   return MPI::Is_initialized();
+#else
+  // DOLFIN is not configured for MPI (it might be through PETSc)
+  return false;
+#endif
+}
+//-----------------------------------------------------------------------------
+bool SubSystemsManager::mpi_finalized()
+{
+#ifdef HAS_MPI
+  return MPI::Is_finalized();
 #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
