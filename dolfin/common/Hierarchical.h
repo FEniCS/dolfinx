@@ -29,6 +29,43 @@ namespace dolfin
       _debug();
     }
 
+    /// Return depth of the hierarchy; that is, the total number of
+    /// objects in the hierarchy linked to the current object via
+    /// child-parent relationships, including the object itself.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The depth of the hierarchy.
+    uint depth() const
+    {
+      // Depth is 1 if there is no parent nor child
+      if (!_parent && !_child)
+        return 1;
+
+      // If we have a parent, step back to coarse and then to fine
+      if (_parent)
+      {
+        boost::shared_ptr<T> it = _parent;
+        for (; it->_parent; it = it->_parent);
+        uint d = 1;
+        for (; it->_child; it = it->_child) d++;
+        return d;
+      }
+
+      // If we have a child, step to fine and then to coarse
+      if (_child)
+      {
+        boost::shared_ptr<T> it = _child;
+        for (; it->_child; it = it->_child);
+        uint d = 1;
+        for (; it->_parent; it = it->_parent) d++;
+        return d;
+      }
+
+      // Please compiler
+      return 0;
+    }
+
     /// Check if the object has a parent.
     ///
     /// *Returns*
@@ -53,7 +90,7 @@ namespace dolfin
     ///         The parent object.
     T& parent() const
     {
-      if (!has_parent())
+      if (!_parent)
         error("Object has no parent in hierarchy.");
       return *_parent;
     }
@@ -75,7 +112,7 @@ namespace dolfin
     ///         The child object.
     T& child() const
     {
-      if (!has_child())
+      if (!_child)
         error("Object has no child in hierarchy.");
       return *_child;
     }
@@ -95,9 +132,7 @@ namespace dolfin
     ///     _T_
     ///         The coarse object.
     T& coarse()
-    {
-      return *coarse_shared_ptr();
-    }
+    { return *coarse_shared_ptr(); }
 
     /// Return shared pointer to coarsest object in hierarchy.
     ///
@@ -108,18 +143,18 @@ namespace dolfin
     {
       // Some trixing to handle the case when <this> is the itself the
       // coarse object (can't be converted to type T).
-      if (!has_parent() && !has_child())
+      if (!_parent && !_child)
       {
-        error("Hierarchy is empty (only one object in hierarchy).");
+        error("Unable to return coarse object, hierarchy is empty (only one object in hierarchy).");
         return boost::shared_ptr<T>();
       }
-      else if (!has_parent())
-        return child().coarse_shared_ptr();
+      else if (!_parent)
+        return _child->coarse_shared_ptr();
 
       // Find parent of parent of parent of...
-      boost::shared_ptr<T> object = parent_shared_ptr();
-      for (; object->has_parent(); object = object->parent_shared_ptr());
-      return object;
+      boost::shared_ptr<T> it = _parent;
+      for (; it->_parent; it = it->_parent);
+      return it;
     }
 
     /// Return finest object in hierarchy.
@@ -128,9 +163,7 @@ namespace dolfin
     ///     _T_
     ///         The fine object.
     T& fine()
-    {
-      return *fine_shared_ptr();
-    }
+    { return *fine_shared_ptr(); }
 
     /// Return shared pointer to finest object in hierarchy.
     ///
@@ -141,18 +174,18 @@ namespace dolfin
     {
       // Some trixing to handle the case when <this> is the itself the
       // fine object (can't be converted to type T).
-      if (!has_parent() && !has_child())
+      if (!_parent && !_child)
       {
-        error("Hierarchy is empty (only one object in hierarchy).");
+        error("Unable to return fine object, hierarchy is empty (only one object in hierarchy).");
         return boost::shared_ptr<T>();
       }
-      else if (!has_child())
-        return parent().fine_shared_ptr();
+      else if (!_child)
+        return _parent->fine_shared_ptr();
 
       // Find child of child of child of...
-      boost::shared_ptr<T> object = child_shared_ptr();
-      for (; object->has_child(); object = object->child_shared_ptr());
-      return object;
+      boost::shared_ptr<T> it = _child;
+      for (; it->_child; it = it->_child);
+      return it;
     }
 
     /// Set parent
@@ -174,6 +207,7 @@ namespace dolfin
     void _debug() const
     {
       info("Debugging hierarchical object.");
+      cout << "  depth           = " << depth() << endl;
       cout << "  has_parent()    = " << has_parent() << endl;
       info("  _parent.get()   = %x", _parent.get());
       info("  _parent.count() = %d", _parent.use_count());
