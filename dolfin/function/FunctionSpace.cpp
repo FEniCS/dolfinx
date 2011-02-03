@@ -82,14 +82,14 @@ void FunctionSpace::attach(boost::shared_ptr<const FiniteElement> element,
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 {
-  // Call assignment operator for base class
-  Hierarchical<FunctionSpace>::operator=(V);
-
   // Assign data (will be shared)
   _mesh      = V._mesh;
   _element   = V._element;
   _dofmap    = V._dofmap;
   _component = V._component;
+
+  // Call assignment operator for base class
+  Hierarchical<FunctionSpace>::operator=(V);
 
   return *this;
 }
