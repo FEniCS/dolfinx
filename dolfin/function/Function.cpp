@@ -151,8 +151,6 @@ const Function& Function::operator= (const Function& v)
 {
   assert(v._vector);
 
-  // Call assignment operator for base class
-  Hierarchical<Function>::operator=(v);
 
   // Make a copy of all the data, or if v is a sub-function, then we collapse
   // the dof map and copy only the relevant entries from the vector of v.
@@ -200,6 +198,9 @@ const Function& Function::operator= (const Function& v)
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
     this->_vector->apply("insert");
   }
+
+  // Call assignment operator for base class
+  Hierarchical<Function>::operator=(v);
 
   return *this;
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-02
+// Last changed: 2011-02-03
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -27,7 +27,7 @@ int main()
   while (t < 1.0)
   {
     // Refine mesh and resize vector
-    Mesh new_mesh = refine(mesh);
+    mesh = refine(mesh);
     x.resize(new_mesh.num_vertices());
 
     // Set some vector values

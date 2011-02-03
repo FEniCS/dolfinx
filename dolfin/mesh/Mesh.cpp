@@ -90,9 +90,6 @@ Mesh::~Mesh()
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  // Call assignment operator for base class
-  Hierarchical<Mesh>::operator=(mesh);
-
   // Clear all data
   clear();
 
@@ -105,6 +102,9 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 
   // Rename
   rename(mesh.name(), mesh.label());
+
+  // Call assignment operator for base class
+  Hierarchical<Mesh>::operator=(mesh);
 
   return *this;
 }
