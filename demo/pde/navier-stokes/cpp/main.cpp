@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-08-30
-// Last changed: 2010-08-31
+// Last changed: 2011-02-03
 //
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
@@ -65,10 +65,11 @@ public:
 int main()
 {
   // Load mesh from file
-  Mesh mesh("lshape.xml.gz");
+  Mesh lshape("lshape.xml.gz");
 
   // Refine mesh
-  mesh = refine(mesh);
+  refine(lshape);
+  Mesh& mesh = lshape.child();
 
   // Create function spaces
   VelocityUpdate::FunctionSpace V(mesh);
