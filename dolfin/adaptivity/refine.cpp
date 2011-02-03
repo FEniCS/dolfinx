@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-01-31
+// Last changed: 2011-02-03
 
 #include <boost/shared_ptr.hpp>
 
@@ -37,7 +37,7 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
 }
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh& dolfin::refine(const Mesh& mesh)
+const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
@@ -56,8 +56,8 @@ dolfin::Mesh& dolfin::refine(const Mesh& mesh)
   return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-dolfin::Mesh& dolfin::refine(const Mesh& mesh,
-                             const MeshFunction<bool>& cell_markers)
+const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
+                                   const MeshFunction<bool>& cell_markers)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
@@ -92,7 +92,7 @@ dolfin::Mesh& dolfin::refine(const Mesh& mesh,
   return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)
+const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)
 {
   // Refine mesh
   refine(space.mesh());
@@ -103,8 +103,8 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)
   return space.child();
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
-                                      const MeshFunction<bool>& cell_markers)
+const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
+                                            const MeshFunction<bool>& cell_markers)
 {
   // Refine mesh
   refine(space.mesh(), cell_markers);
@@ -115,8 +115,8 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   return space.child();
 }
 //-----------------------------------------------------------------------------
-dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
-                                      boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
+                                            boost::shared_ptr<const Mesh> refined_mesh)
 {
   cout << "Refining function space." << endl;
 
@@ -162,8 +162,8 @@ dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 #endif
 }
 //-----------------------------------------------------------------------------
-dolfin::Function& dolfin::refine(const Function& function,
-                                 boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::Function& dolfin::refine(const Function& function,
+                                       boost::shared_ptr<const Mesh> refined_mesh)
 {
   cout << "Refining function." << endl;
 
@@ -189,8 +189,8 @@ dolfin::Function& dolfin::refine(const Function& function,
   return *refined_function;
 }
 //-----------------------------------------------------------------------------
-dolfin::Form& dolfin::refine(const Form& form,
-                             boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::Form& dolfin::refine(const Form& form,
+                                   boost::shared_ptr<const Mesh> refined_mesh)
 {
   cout << "Refining form." << endl;
 
@@ -250,8 +250,8 @@ dolfin::Form& dolfin::refine(const Form& form,
   return *refined_form;
 }
 //-----------------------------------------------------------------------------
-dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& problem,
-                                           boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& problem,
+                                                 boost::shared_ptr<const Mesh> refined_mesh)
 {
   cout << "Refining variational problem." << endl;
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-01-30
-// Last changed: 2011-02-02
+// Last changed: 2011-02-03
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
@@ -29,10 +29,11 @@ namespace dolfin
   {
   public:
 
-    Hierarchical()
-    {
-      _debug();
-    }
+    /// Constructor
+    Hierarchical(T& self) : _self(reference_to_no_delete_pointer(self)) {}
+
+    /// Destructor
+    ~Hierarchical() {}
 
     /// Return depth of the hierarchy; that is, the total number of
     /// objects in the hierarchy linked to the current object via
@@ -43,32 +44,10 @@ namespace dolfin
     ///         The depth of the hierarchy.
     uint depth() const
     {
-      // Depth is 1 if there is no parent nor child
-      if (!_parent && !_child)
-        return 1;
-
-      // If we have a parent, step back to coarse and then to fine
-      if (_parent)
-      {
-        boost::shared_ptr<T> it = _parent;
-        for (; it->_parent; it = it->_parent);
-        uint d = 1;
-        for (; it->_child; it = it->_child) d++;
-        return d;
-      }
-
-      // If we have a child, step to fine and then to coarse
-      if (_child)
-      {
-        boost::shared_ptr<T> it = _child;
-        for (; it->_child; it = it->_child);
-        uint d = 1;
-        for (; it->_parent; it = it->_parent) d++;
-        return d;
-      }
-
-      // Please compiler
-      return 0;
+      uint d = 1;
+      for (boost::shared_ptr<const T> it = coarse_shared_ptr(); it->_child; it = it->_child)
+        d++;
+      return d;
     }
 
     /// Check if the object has a parent.
@@ -93,7 +72,15 @@ namespace dolfin
     /// *Returns*
     ///     _Object_
     ///         The parent object.
-    T& parent() const
+    T& parent()
+    {
+      if (!_parent)
+        error("Object has no parent in hierarchy.");
+      return *_parent;
+    }
+
+    /// Return parent in hierarchy (const version).
+    const T& parent() const
     {
       if (!_parent)
         error("Object has no parent in hierarchy.");
@@ -106,7 +93,11 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The parent object.
-    boost::shared_ptr<T> parent_shared_ptr() const
+    boost::shared_ptr<T> parent_shared_ptr()
+    { return _parent; }
+
+    /// Return shared pointer to parent (const version).
+    boost::shared_ptr<const T> parent_shared_ptr() const
     { return _parent; }
 
     /// Return child in hierarchy. An error is thrown if the object
@@ -115,7 +106,15 @@ namespace dolfin
     /// *Returns*
     ///     _T_
     ///         The child object.
-    T& child() const
+    T& child()
+    {
+      if (!_child)
+        error("Object has no child in hierarchy.");
+      return *_child;
+    }
+
+    /// Return child in hierarchy (const version).
+    const T& child() const
     {
       if (!_child)
         error("Object has no child in hierarchy.");
@@ -128,7 +127,11 @@ namespace dolfin
     /// *Returns*
     ///     shared_ptr<T>
     ///         The child object.
-    boost::shared_ptr<T> child_shared_ptr() const
+    boost::shared_ptr<T> child_shared_ptr()
+    { return _child; }
+
+    /// Return shared pointer to child (const version).
+    boost::shared_ptr<const T> child_shared_ptr() const
     { return _child; }
 
     /// Return coarsest object in hierarchy.
@@ -137,7 +140,15 @@ namespace dolfin
     ///     _T_
     ///         The coarse object.
     T& coarse()
-    { return *coarse_shared_ptr(); }
+    {
+      return *coarse_shared_ptr();
+    }
+
+    /// Return coarsest object in hierarchy (const version).
+    const T& coarse() const
+    {
+      return *coarse_shared_ptr();
+    }
 
     /// Return shared pointer to coarsest object in hierarchy.
     ///
@@ -146,18 +157,15 @@ namespace dolfin
     ///         The coarse object.
     boost::shared_ptr<T> coarse_shared_ptr()
     {
-      // Some trixing to handle the case when <this> is the itself the
-      // coarse object (can't be converted to type T).
-      if (!_parent && !_child)
-      {
-        error("Unable to return coarse object, hierarchy is empty (only one object in hierarchy).");
-        return boost::shared_ptr<T>();
-      }
-      else if (!_parent)
-        return _child->coarse_shared_ptr();
+      boost::shared_ptr<T> it = _self;
+      for (; it->_parent; it = it->_parent);
+      return it;
+    }
 
-      // Find parent of parent of parent of...
-      boost::shared_ptr<T> it = _parent;
+    /// Return shared pointer to coarsest object in hierarchy (const version).
+    boost::shared_ptr<const T> coarse_shared_ptr() const
+    {
+      boost::shared_ptr<const T> it = _self;
       for (; it->_parent; it = it->_parent);
       return it;
     }
@@ -168,7 +176,15 @@ namespace dolfin
     ///     _T_
     ///         The fine object.
     T& fine()
-    { return *fine_shared_ptr(); }
+    {
+      return *fine_shared_ptr();
+    }
+
+    /// Return finest object in hierarchy (const version).
+    const T& fine() const
+    {
+      return *fine_shared_ptr();
+    }
 
     /// Return shared pointer to finest object in hierarchy.
     ///
@@ -177,18 +193,15 @@ namespace dolfin
     ///         The fine object.
     boost::shared_ptr<T> fine_shared_ptr()
     {
-      // Some trixing to handle the case when <this> is the itself the
-      // fine object (can't be converted to type T).
-      if (!_parent && !_child)
-      {
-        error("Unable to return fine object, hierarchy is empty (only one object in hierarchy).");
-        return boost::shared_ptr<T>();
-      }
-      else if (!_child)
-        return _parent->fine_shared_ptr();
+      boost::shared_ptr<T> it = _self;
+      for (; it->_child; it = it->_child);
+      return it;
+    }
 
-      // Find child of child of child of...
-      boost::shared_ptr<T> it = _child;
+    /// Return shared pointer to finest object in hierarchy (const version).
+    boost::shared_ptr<const T> fine_shared_ptr() const
+    {
+      boost::shared_ptr<const T> it = _self;
       for (; it->_child; it = it->_child);
       return it;
     }
@@ -231,9 +244,12 @@ namespace dolfin
 
   private:
 
+    // The object itself
+    boost::shared_ptr<T> _self;
+
     // Parent and child in hierarchy
-    mutable boost::shared_ptr<T> _parent;
-    mutable boost::shared_ptr<T> _child;
+    boost::shared_ptr<T> _parent;
+    boost::shared_ptr<T> _child;
 
   };
 

@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-02-01
+// Last changed: 2011-02-02
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -317,6 +317,9 @@ IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
 %define IMPLEMENT_HIERARCHICAL_INTERFACE(DERIVED_TYPE)
 %extend dolfin::DERIVED_TYPE
 {
+    unsigned int depth() const
+    { return self->depth(); }
+
     bool has_parent() const
     { return self->has_parent();}
 
@@ -326,24 +329,24 @@ IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
     boost::shared_ptr<DERIVED_TYPE> parent()
     { return self->parent_shared_ptr(); }
 
-    boost::shared_ptr<DERIVED_TYPE> child() 
+    boost::shared_ptr<DERIVED_TYPE> child()
     { return self->child_shared_ptr(); }
 
-    boost::shared_ptr<DERIVED_TYPE> coarse() 
+    boost::shared_ptr<DERIVED_TYPE> coarse()
     { return self->coarse_shared_ptr(); }
 
-    boost::shared_ptr<DERIVED_TYPE> fine() 
+    boost::shared_ptr<DERIVED_TYPE> fine()
     { return self->fine_shared_ptr(); }
 
     void set_parent(boost::shared_ptr<DERIVED_TYPE> parent)
     { self->set_parent(parent); }
-    
+
     void set_child(boost::shared_ptr<DERIVED_TYPE> child)
     { self->set_child(child); }
 
-    void _debug() const 
+    void _debug() const
     { self->_debug(); }
-    
+
     //const Hierarchical& assignoperator= (const Hierarchical& hierarchical)
     //{
     //}

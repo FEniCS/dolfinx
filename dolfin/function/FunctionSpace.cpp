@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2011-01-31
+// Last changed: 2011-02-03
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -35,7 +35,8 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const GenericDofMap> dofmap)
-  : _mesh(mesh), _element(element), _dofmap(dofmap)
+  : Hierarchical<FunctionSpace>(*this),
+    _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
 }
@@ -43,22 +44,25 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const GenericDofMap> dofmap)
-  : _mesh(mesh), _element(element), _dofmap(dofmap)
+  : Hierarchical<FunctionSpace>(*this),
+    _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh) : _mesh(mesh)
+FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh)
+  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh) : _mesh(mesh)
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh)
+  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
+FunctionSpace::FunctionSpace(const FunctionSpace& V) : Hierarchical<FunctionSpace>(*this)
 {
   // Assign data (will be shared)
   *this = V;
