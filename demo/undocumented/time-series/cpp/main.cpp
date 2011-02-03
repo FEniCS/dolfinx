@@ -27,7 +27,7 @@ int main()
   while (t < 1.0)
   {
     // Refine mesh and resize vector
-    Mesh new_mesh = refine(mesh);
+    Mesh& new_mesh = refine(mesh);
     x.resize(new_mesh.num_vertices());
 
     // Set some vector values
