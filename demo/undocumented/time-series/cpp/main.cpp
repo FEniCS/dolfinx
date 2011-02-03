@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-03
+// Last changed: 2011-02-04
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -19,7 +19,8 @@ int main()
   TimeSeries series("primal");
 
   // Create a mesh and a vector
-  UnitSquare mesh(2, 2);
+  UnitSquare unit_square(2, 2);
+  Mesh mesh(unit_square);
   Vector x;
 
   // Add a bunch of meshes and vectors to the series
@@ -28,7 +29,7 @@ int main()
   {
     // Refine mesh and resize vector
     mesh = refine(mesh);
-    x.resize(new_mesh.num_vertices());
+    x.resize(mesh.num_vertices());
 
     // Set some vector values
     Array<double> values(x.local_size());
@@ -39,10 +40,9 @@ int main()
     x.apply("insert");
 
     // Append to series
-    series.store(new_mesh, t);
+    series.store(mesh, t);
     series.store(x, t);
 
-    mesh = new_mesh;
     t += 0.2;
   }
 
