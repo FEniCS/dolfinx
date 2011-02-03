@@ -98,8 +98,8 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     // Compute Jacobian
     nonlinear_problem.J(*A, x);
 
-    // FIXME: This reset ss a hack to handle a deficiency in the Trilinos wrappers
-    //solver->set_operator(*A);
+    // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
+    solver->set_operator(*A);
 
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
