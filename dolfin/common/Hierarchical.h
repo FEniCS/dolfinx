@@ -244,14 +244,12 @@ namespace dolfin
 
   private:
 
-    // FIXME: Check if we need mutable
-
     // The object itself
-    mutable boost::shared_ptr<T> _self;
+    boost::shared_ptr<T> _self;
 
     // Parent and child in hierarchy
-    mutable boost::shared_ptr<T> _parent;
-    mutable boost::shared_ptr<T> _child;
+    boost::shared_ptr<T> _parent;
+    boost::shared_ptr<T> _child;
 
   };
 
