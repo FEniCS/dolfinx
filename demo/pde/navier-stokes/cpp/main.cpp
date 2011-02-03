@@ -65,10 +65,10 @@ public:
 int main()
 {
   // Load mesh from file
-  Mesh mesh("lshape.xml.gz");
+  Mesh mesh0("lshape.xml.gz");
 
   // Refine mesh
-  mesh = refine(mesh);
+  Mesh& mesh = refine(mesh0);
 
   // Create function spaces
   VelocityUpdate::FunctionSpace V(mesh);
