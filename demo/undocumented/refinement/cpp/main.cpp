@@ -37,7 +37,7 @@ int main()
     }
 
     // Refine mesh
-    Mesh& refined_mesh = refine(mesh, cell_markers);
+    const Mesh& refined_mesh = refine(mesh, cell_markers);
 
     file << refined_mesh;
     plot(refined_mesh);
