@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-09-01
+// Last changed: 2011-02-02
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -19,8 +19,7 @@ int main()
   TimeSeries series("primal");
 
   // Create a mesh and a vector
-  UnitSquare unitsquare_mesh(2, 2);
-  Mesh mesh(unitsquare_mesh);
+  UnitSquare mesh(2, 2);
   Vector x;
 
   // Add a bunch of meshes and vectors to the series

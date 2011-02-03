@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2011-01-31
+// Last changed: 2011-02-03
 
 #include <algorithm>
 #include <map>
@@ -35,7 +35,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
-  : _function_space(reference_to_no_delete_pointer(V)),
+  : Hierarchical<Function>(*this),
+    _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
@@ -43,7 +44,8 @@ Function::Function(const FunctionSpace& V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
-  : _function_space(V),
+  : Hierarchical<Function>(*this),
+    _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
@@ -51,7 +53,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
-  : _function_space(reference_to_no_delete_pointer(V)),
+  : Hierarchical<Function>(*this),
+    _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -61,7 +64,8 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
-  : _function_space(V),
+  : Hierarchical<Function>(*this),
+    _function_space(V),
     _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -71,7 +75,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
-  : _function_space(V),
+  : Hierarchical<Function>(*this),
+    _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -80,7 +85,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
-  : _function_space(reference_to_no_delete_pointer(V)),
+  : Hierarchical<Function>(*this),
+    _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
@@ -97,7 +103,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
-  : _function_space(V),
+  : Hierarchical<Function>(*this),
+    _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Create vector
@@ -117,14 +124,16 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
-  : allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  : Hierarchical<Function>(*this),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assign data
   *this = v;
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
-  : allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  : Hierarchical<Function>(*this),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;

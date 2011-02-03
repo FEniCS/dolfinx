@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-31
+// Last changed: 2011-02-03
 
 #include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveVariationalSolver.h>
@@ -18,7 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1)
-  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+  : Hierarchical<VariationalProblem>(*this),
+    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
     _cell_domains(0),
@@ -32,7 +33,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1,
                                        const BoundaryCondition& bc)
-  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+  : Hierarchical<VariationalProblem>(*this),
+    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
     _cell_domains(0),
@@ -49,7 +51,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1,
                                        const std::vector<const BoundaryCondition*>& bcs)
-  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+  : Hierarchical<VariationalProblem>(*this),
+    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
     _cell_domains(0),
@@ -70,7 +73,8 @@ VariationalProblem::VariationalProblem(const Form& form_0,
                                        const MeshFunction<uint>* cell_domains,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains)
-  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+  : Hierarchical<VariationalProblem>(*this),
+    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
     _cell_domains(cell_domains),
@@ -91,7 +95,8 @@ VariationalProblem::VariationalProblem(boost::shared_ptr<const Form> form_0,
                                        const MeshFunction<uint>* cell_domains,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains)
-  : _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
+  : Hierarchical<VariationalProblem>(*this),
+    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
     _bcs(bcs),

@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-02-02
+// Last changed: 2011-02-03
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -36,14 +36,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0),
+Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
+               Hierarchical<Mesh>(*this),
+               _data(*this),
+               _cell_type(0),
                unique_id(UniqueIdGenerator::id()),
                _intersection_operator(*this), _ordered(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
+Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
+                               Hierarchical<Mesh>(*this),
+                               _data(*this),
                                _cell_type(0),
                                unique_id(UniqueIdGenerator::id()),
                                _intersection_operator(*this),
@@ -53,6 +58,7 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
+                                   Hierarchical<Mesh>(*this),
                                    _data(*this), _cell_type(0),
                                    unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
