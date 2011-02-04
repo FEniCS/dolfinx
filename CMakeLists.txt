@@ -523,6 +523,11 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
+  # Add target "run_quicktest" for running only Python unit tests
+  add_custom_target(run_quicktest
+    COMMAND ${PYTHON_EXECUTABLE} test.py --only-python
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
+
   # Add target "runtests" for running all tests
   add_custom_target(runtests
     ${PYTHON_EXECUTABLE} "test.py"
