@@ -94,6 +94,11 @@ namespace dolfin
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
 
+    /// Resize vector y such that is it compatible with matrix for
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// case, size and layout are important.
+    virtual void resize(GenericVector& y, uint dim) const;
+
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
@@ -287,6 +292,12 @@ namespace dolfin
     row *= 0;
     for(uint i = 0; i < columns.size(); i++)
       row(columns[i])=values[i];
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBLASMatrix<Mat>::resize(GenericVector& y, uint dim) const
+  {
+    y.resize(size(dim));
   }
   //-----------------------------------------------------------------------------
   template <class Mat>

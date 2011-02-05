@@ -24,8 +24,21 @@
 #include "PETScObject.h"
 #include "GenericVector.h"
 
+#include <dolfin/log/dolfin_log.h>
+
 namespace dolfin
 {
+
+  class PETScVectorDeleter
+  {
+  public:
+    void operator() (Vec* x)
+    {
+      if (*x)
+        VecDestroy(*x);
+      delete x;
+    }
+  };
 
   class GenericSparsityPattern;
   template<class T> class Array;
@@ -165,6 +178,9 @@ namespace dolfin
 
     //--- Special functions ---
 
+    /// Reset data and PETSc vector object
+    void reset();
+
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 
@@ -185,6 +201,7 @@ namespace dolfin
     // Test vector type (distributed/local)
     bool distributed() const;
 
+    friend class PETScBaseMatrix;
     friend class PETScMatrix;
 
   private:

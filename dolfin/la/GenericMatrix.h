@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Garth N. Wells.
+// Copyright (C) 2006-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson, 2006.
@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2010-02-24
+// Last changed: 2011-02-05
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -37,7 +37,6 @@ namespace dolfin
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
     { error("Generic matrices must be re-sized using a GenericSparsityPattern"); }
-    //{ assert(rank == 2); resize(dims[0], dims[1]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -88,6 +87,11 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Matrix interface ---
+
+    /// Resize vector y such that is it compatible with matrix for
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// case, size and layout are important.
+    virtual void resize(GenericVector& y, uint dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n,

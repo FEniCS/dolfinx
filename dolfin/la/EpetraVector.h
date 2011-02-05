@@ -172,6 +172,9 @@ namespace dolfin
 
     //--- Special functions ---
 
+    /// Reset data and Epetra vector object
+    void reset();
+
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 

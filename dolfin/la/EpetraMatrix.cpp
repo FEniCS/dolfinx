@@ -169,6 +169,25 @@ std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
   return std::make_pair(row_map.MinMyGID(), row_map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
+void EpetraMatrix::resize(GenericVector& y, uint dim) const
+{
+  assert(A);
+
+  // Get map appropriate map
+  const Epetra_Map* map = 0;
+  if (dim == 0)
+    map = &(A->RangeMap());
+  else if (dim == 1)
+    map = &(A->DomainMap());
+  else
+    error("dim must be <= 1 to resize vector.");
+
+  // Reset vector and create new map
+  EpetraVector& _y = y.down_cast<EpetraVector>();
+  _y.reset();
+  _y.vec().reset(new Epetra_FEVector(*map));
+}
+//-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
 		                   uint n, const uint* cols) const
 {

@@ -187,13 +187,11 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   if (ii < num_computed_eigenvalues)
   {
     assert(A);
-    assert(A->mat());
+    A->resize(r, 0);
+    A->resize(c, 0);
+
     assert(r.vec());
     assert(c.vec());
-    MatGetVecs(*A->mat(), PETSC_NULL, r.vec().get());
-    MatGetVecs(*A->mat(), PETSC_NULL, c.vec().get());
-
-
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   }
   else

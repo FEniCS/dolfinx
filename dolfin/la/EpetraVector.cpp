@@ -463,6 +463,14 @@ void EpetraVector::abs()
   x->Abs(*x);
 }
 //-----------------------------------------------------------------------------
+void EpetraVector::reset()
+{
+  x.reset();
+  x_ghost.reset();
+  ghost_global_to_local.clear();
+  off_process_set_values.clear();
+}
+//-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
 {
   return EpetraFactory::instance();

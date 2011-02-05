@@ -291,7 +291,7 @@ void PETScMatrix::zero(uint m, const uint* rows)
   PetscScalar null = 0.0;
 #if (PETSC_VERSION_RELEASE == 0)
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
-                  reinterpret_cast<const int*>(rows), 
+                  reinterpret_cast<const int*>(rows),
                   PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, null, NULL, NULL);
 #else

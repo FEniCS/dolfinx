@@ -62,7 +62,8 @@ namespace dolfin
     uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<uint, uint> local_range(uint dim) const { return PETScBaseMatrix::local_range(dim); };
+    std::pair<uint, uint> local_range(uint dim) const
+    { return PETScBaseMatrix::local_range(dim); };
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -77,6 +78,12 @@ namespace dolfin
 
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
+
+    /// Resize vector y such that is it compatible with matrix for
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// case, size and layout are important.
+    void resize(GenericVector& y, uint dim) const
+    { PETScBaseMatrix::resize(y, dim); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;

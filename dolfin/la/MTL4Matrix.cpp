@@ -70,11 +70,15 @@ dolfin::uint MTL4Matrix::size(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+void MTL4Matrix::resize(GenericVector& y, uint dim) const
+{
+  y.resize(size(dim));
+}
+//-----------------------------------------------------------------------------
 void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n,
                      const uint* cols) const
 {
   assert_no_inserter();
-
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       block[i*n+j] = A[rows[i]][cols[j]];
@@ -152,11 +156,9 @@ std::string MTL4Matrix::str(bool verbose) const
   assert_no_inserter();
 
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
     s << A;
   }
   else
@@ -331,5 +333,4 @@ inline void MTL4Matrix::assert_no_inserter() const
     error("MTL4: Disallowed matrix operation attempted while inserter active. Did you forget to apply()?");
 }
 //-----------------------------------------------------------------------------
-
 #endif

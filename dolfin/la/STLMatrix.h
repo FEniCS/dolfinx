@@ -20,6 +20,7 @@
 #include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
+#include "GenericVector.h"
 
 namespace dolfin
 {
@@ -94,9 +95,13 @@ namespace dolfin
       vals.resize(M);
       dims[0] = M;
       dims[1] = N;
-
-      //matrix.resize(M);
     }
+
+    /// Resize vector y such that is it compatible with matrix for
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// case, size and layout are important.
+    virtual void resize(GenericVector& y, uint dim) const
+    { y.resize(dim); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const

@@ -21,6 +21,7 @@
 #include "PETScFactory.h"
 #include <dolfin/common/MPI.h>
 
+/*
 namespace dolfin
 {
   class PETScVectorDeleter
@@ -28,13 +29,13 @@ namespace dolfin
   public:
     void operator() (Vec* x)
     {
-      if (x)
+      if (*x)
         VecDestroy(*x);
       delete x;
     }
   };
 }
-
+*/
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScVector::norm_types
@@ -58,6 +59,8 @@ PETScVector::PETScVector(std::string type)
     init(range, ghost_indices, true);
   else
     init(range, ghost_indices, false);
+
+  cout << "Leaving constructor" << endl;
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
@@ -345,7 +348,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
-    x.reset(new Vec, PETScVectorDeleter());
+    x.reset(new Vec(0), PETScVectorDeleter());
 
     // Create new vector
     VecDuplicate(*(v.x), x.get());
@@ -354,7 +357,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
     VecCopy(*(v.x), *x);
 
     // Create ghost view
-    this->x_ghosted.reset(new Vec, PETScVectorDeleter());
+    this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
     VecGhostGetLocalForm(*x, x_ghosted.get());
 
     // Copy ghost data
@@ -676,7 +679,7 @@ void PETScVector::init(std::pair<uint, uint> range,
   // Create vector
   if (x && !x.unique())
     error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
-  x.reset(new Vec, PETScVectorDeleter());
+  x.reset(new Vec(0), PETScVectorDeleter());
 
   const uint local_size = range.second - range.first;
   assert(range.second - range.first >= 0);
@@ -700,7 +703,7 @@ void PETScVector::init(std::pair<uint, uint> range,
       ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
 
     // Create ghost view
-    x_ghosted.reset(new Vec, PETScVectorDeleter());
+    x_ghosted.reset(new Vec(0), PETScVectorDeleter());
     VecGhostGetLocalForm(*x, x_ghosted.get());
   }
 }
@@ -708,6 +711,13 @@ void PETScVector::init(std::pair<uint, uint> range,
 boost::shared_ptr<Vec> PETScVector::vec() const
 {
   return x;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::reset()
+{
+  x.reset();
+  x_ghosted.reset();
+  ghost_global_to_local.clear();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const
