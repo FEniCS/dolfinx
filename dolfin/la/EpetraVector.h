@@ -189,6 +189,8 @@ namespace dolfin
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
 
+    friend class EpetraMatrix;
+
   private:
 
     // Epetra_FEVector pointer

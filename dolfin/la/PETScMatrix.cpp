@@ -330,7 +330,8 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   if (size(1) != xx.size())
     error("Matrix and vector dimensions don't match for matrix-vector product.");
-  yy.resize(size(0));
+
+  resize(yy, 0);
   MatMult(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
@@ -343,7 +344,8 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   if (size(0) != xx.size())
     error("Matrix and vector dimensions don't match for matrix-vector product.");
-  yy.resize(size(1));
+
+  resize(yy, 1);
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------

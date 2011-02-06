@@ -185,7 +185,7 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   // Reset vector and create new map
   EpetraVector& _y = y.down_cast<EpetraVector>();
   _y.reset();
-  _y.vec().reset(new Epetra_FEVector(*map));
+  _y.x.reset(new Epetra_FEVector(*map));
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,

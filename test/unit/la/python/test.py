@@ -36,9 +36,13 @@ class AbstractBaseTest(object):
         else:
             return assemble(dot(grad(u),grad(v))*dx)
 
-    def get_Vector(self):
+    def get_Vector(self, A=None):
         from numpy import random, linspace
-        vec = Vector(16)
+        if A == None:
+            vec = Vector(16)
+        else:
+            vec = Vector()
+            A.resize(vec, 1)
         vec.set_local(random.rand(vec.local_size()))
         return vec
 
@@ -289,8 +293,8 @@ class AbstractBaseTest(object):
 
     def test_matrix_vector(self):
         from numpy import dot, absolute
-        v = self.get_Vector()
         A = self.assemble_matrix()
+        v = self.get_Vector(A=A)
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -299,14 +303,14 @@ class AbstractBaseTest(object):
             distributed = False
 
         u = A*v
-        self.assertTrue(isinstance(u,type(v)))
+        self.assertTrue(isinstance(u, type(v)))
         self.assertEqual(len(u), len(v))
 
         u2 = 2*u - A*v
         if u2.owns_index(4): self.assertAlmostEqual(u2[4], u[4])
 
         u3 = 2*u + -1.0*(A*v)
-        if u3.owns_index(4): self.assertAlmostEqual(u3[4],u[4])
+        if u3.owns_index(4): self.assertAlmostEqual(u3[4], u[4])
 
         if not distributed:
             v_numpy = v.array()
