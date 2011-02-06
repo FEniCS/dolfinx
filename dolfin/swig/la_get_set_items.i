@@ -405,7 +405,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
 
   // Create the return vector and set the values
   dolfin::GenericVector* return_vec = self->factory().create_vector();
-  return_vec->resize(inds->size());
+  self->resize(*return_vec, 1);
   return_vec->set_local(*values);
   return_vec->apply("insert");
 

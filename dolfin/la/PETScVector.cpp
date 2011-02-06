@@ -59,8 +59,6 @@ PETScVector::PETScVector(std::string type)
     init(range, ghost_indices, true);
   else
     init(range, ghost_indices, false);
-
-  cout << "Leaving constructor" << endl;
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
@@ -80,7 +78,6 @@ PETScVector::PETScVector(uint N, std::string type)
   }
   else if (type == "local")
   {
-    cout << "Calling PETSc init:  " << N << endl;
     const std::pair<uint, uint> range(0, N);
     init(range, ghost_indices, false);
   }
@@ -356,12 +353,13 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
     // Copy data
     VecCopy(*(v.x), *x);
 
-    // Create ghost view
-    this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-    VecGhostGetLocalForm(*x, x_ghosted.get());
-
     // Copy ghost data
     this->ghost_global_to_local = v.ghost_global_to_local;
+
+    // Create ghost view
+    this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
+    if (ghost_global_to_local.size() > 0)
+      VecGhostGetLocalForm(*x, x_ghosted.get());
   }
   return *this;
 }
@@ -375,8 +373,11 @@ const PETScVector& PETScVector::operator= (double a)
 //-----------------------------------------------------------------------------
 void PETScVector::update_ghost_values()
 {
-  VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
+  if (ghost_global_to_local.size() > 0)
+  {
+    VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
+  }
 
   /*
   std::vector<uint> gdof;
@@ -617,11 +618,11 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 
   // Create local index sets
   IS from, to;
-#if (PETSC_VERSION_RELEASE == 0)
+  #if (PETSC_VERSION_RELEASE == 0)
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, PETSC_COPY_VALUES, &from);
-#else
+  #else
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-#endif
+  #endif
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
@@ -692,19 +693,24 @@ void PETScVector::init(std::pair<uint, uint> range,
   }
   else
   {
-    VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
-                   reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
-
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
-    // Build global-to-local map for ghost indices
-    for (uint i = 0; i < ghost_indices.size(); ++i)
-      ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
+    if (ghost_indices.size() > 0)
+    {
+      VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
+                     reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
 
-    // Create ghost view
-    x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-    VecGhostGetLocalForm(*x, x_ghosted.get());
+      // Build global-to-local map for ghost indices
+      for (uint i = 0; i < ghost_indices.size(); ++i)
+        ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
+
+      // Create ghost view
+      x_ghosted.reset(new Vec(0), PETScVectorDeleter());
+      VecGhostGetLocalForm(*x, x_ghosted.get());
+    }
+    else
+      VecCreateMPI(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, x.get());
   }
 }
 //-----------------------------------------------------------------------------
