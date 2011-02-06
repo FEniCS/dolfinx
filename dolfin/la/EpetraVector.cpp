@@ -417,6 +417,11 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
 //-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_Map& map)
 {
+  // Clear ghost data
+  x_ghost.reset();
+  ghost_global_to_local.clear();
+  off_process_set_values.clear();
+
   x.reset(new Epetra_FEVector(map));
 }
 //-----------------------------------------------------------------------------
@@ -463,14 +468,6 @@ void EpetraVector::abs()
   x->Abs(*x);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::reset()
-{
-  x.reset();
-  x_ghost.reset();
-  ghost_global_to_local.clear();
-  off_process_set_values.clear();
-}
-//-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
 {
   return EpetraFactory::instance();
@@ -514,7 +511,8 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
     x.reset(new Epetra_FEVector(*(v.x)));
 
     // Copy ghost data
-    x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
+    if (v.x_ghost)
+      x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
     ghost_global_to_local = v.ghost_global_to_local;
   }
   return *this;

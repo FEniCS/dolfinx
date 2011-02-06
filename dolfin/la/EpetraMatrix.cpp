@@ -182,10 +182,9 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   else
     error("dim must be <= 1 to resize vector.");
 
-  // Reset vector and create new map
+  // Reset vector with new map
   EpetraVector& _y = y.down_cast<EpetraVector>();
-  _y.reset();
-  _y.x.reset(new Epetra_FEVector(*map));
+  _y.reset(*map);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
@@ -260,7 +259,6 @@ void EpetraMatrix::add(const double* block,
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
-
   if (!AA->mat()->Filled())
     error("Epetramatrix is not in the correct state for addition.");
 
@@ -431,20 +429,18 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-  const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
-  if (!x)
-    error("EpetraMatrix::mult: The vector x should be of type EpetraVector.");
+  const EpetraVector& x = x_.down_cast<EpetraVector>();
+  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
-  EpetraVector* Ax = dynamic_cast<EpetraVector*>(Ax_.instance());
-  if (!Ax)
-    error("EpetraMatrix::mult: The vector Ax should be of type EpetraVector.");
-
-  if (size(1) != x->size())
+  if (x.size() != size(1))
     error("EpetraMatrix::mult: Matrix and vector dimensions don't match for matrix-vector product.");
 
-  Ax->resize(size(0));
+  // Resize RHS
+  this->resize(Ax, 0);
 
-  const int err = A->Multiply(false, *(x->vec()), *(Ax->vec()));
+  assert(x.vec());
+  assert(Ax.vec());
+  const int err = A->Multiply(false, *(x.vec()), *(Ax.vec()));
   if (err != 0)
     error("EpetraMatrix::mult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 }
@@ -452,20 +448,16 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-  const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
-  if (!x)
-    error("EpetraMatrix::transpmult: The vector x should be of type EpetraVector.");
+  const EpetraVector& x = x_.down_cast<EpetraVector>();
+  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
-  EpetraVector* Ax = dynamic_cast<EpetraVector*>(Ax_.instance());
-  if (!Ax)
-    error("EpetraMatrix::transpmult: The vector Ax should be of type EpetraVector.");
-
-  if (size(0) != x->size())
+  if (x.size() != size(0))
     error("EpetraMatrix::transpmult: Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
 
-  Ax->resize(size(1));
+  // Resize RHS
+  this->resize(Ax, 1);
 
-  const int err = A->Multiply(true, *(x->vec()), *(Ax->vec()));
+  const int err = A->Multiply(true, *(x.vec()), *(Ax.vec()));
   if (err != 0)
     error("EpetraMatrix::transpmult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 }

@@ -172,9 +172,6 @@ namespace dolfin
 
     //--- Special functions ---
 
-    /// Reset data and Epetra vector object
-    void reset();
-
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 
@@ -188,8 +185,6 @@ namespace dolfin
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
-
-    friend class EpetraMatrix;
 
   private:
 
