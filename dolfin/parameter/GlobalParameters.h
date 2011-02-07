@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-11-09
+// Last changed: 2011-02-07
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -49,6 +49,16 @@ namespace dolfin
       // Graph partitioner
       p.add("mesh_partitioner", "ParMETIS");
 
+      // Mesh refinement
+      std::set<std::string> allowed_refinement_algorithms;
+      std::string default_refinement_algorithm("recursive_bisection");
+      allowed_refinement_algorithms.insert("bisection");
+      allowed_refinement_algorithms.insert("iterative_bisection");
+      allowed_refinement_algorithms.insert("recursive_bisection");
+      p.add("refinement_algorithm",
+            default_refinement_algorithm,
+            allowed_refinement_algorithms);
+
       // Linear algebra
       std::set<std::string> allowed_backends;
       std::string default_backend("uBLAS");
@@ -67,7 +77,9 @@ namespace dolfin
 #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
 #endif
-      p.add("linear_algebra_backend", default_backend, allowed_backends);
+      p.add("linear_algebra_backend",
+            default_backend,
+            allowed_backends);
 
       // Floating-point precision (only relevant when using GMP)
       #ifdef HAS_GMP

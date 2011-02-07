@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-11-01
-// Last changed: 2011-01-11
+// Last changed: 2011-02-07
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -20,7 +20,7 @@
 #include "MeshTopology.h"
 #include "RivaraRefinement.h"
 #include "Vertex.h"
-#include "LocalMeshRefinement.h"
+#include "BisectionRefinement.h"
 
 using namespace dolfin;
 
@@ -35,10 +35,10 @@ struct cmp2
 };
 
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
-                                                    const Mesh& mesh,
-                                                    const MeshFunction<bool>& cell_marker,
-                                                    bool refine_boundary)
+void BisectionRefinement::refine_by_bisection(Mesh& refined_mesh,
+                                              const Mesh& mesh,
+                                              const MeshFunction<bool>& cell_marker,
+                                              bool refine_boundary)
 {
   info(TRACE, "Refining simplicial mesh by edge bisection.");
 
@@ -82,6 +82,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
   if (!refine_boundary)
   {
     BoundaryMesh boundary(mesh);
+    boundary.init(1);
     for (EdgeIterator e(boundary); !e.end(); ++e)
       edge_forbidden[*e] = true;
   }
@@ -94,6 +95,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
   double lmax = 0.0;
 
   // Compute number of vertices and cells
+  mesh.init(1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     if (old_cell_marker[*c] && !cell_forbidden[*c])
@@ -167,6 +169,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
   if (!refine_boundary)
   {
     BoundaryMesh boundary(mesh);
+    boundary.init(1);
     for (EdgeIterator e(boundary); !e.end(); ++e)
       edge_forbidden[*e] = true;
   }
@@ -222,9 +225,9 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineIterativelyByEdgeBisection(Mesh& refined_mesh,
-                                                           const Mesh& mesh,
-                                                           const MeshFunction<bool>& cell_marker)
+void BisectionRefinement::refine_by_iterative_bisection(Mesh& refined_mesh,
+                                                        const Mesh& mesh,
+                                                        const MeshFunction<bool>& cell_marker)
 {
   MeshFunction<uint> edges(mesh, 1, 0);
 
@@ -239,20 +242,20 @@ void LocalMeshRefinement::refineIterativelyByEdgeBisection(Mesh& refined_mesh,
   end();
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineRecursivelyByEdgeBisection(Mesh& refined_mesh,
-                                                           const Mesh& mesh,
-                                                           const MeshFunction<bool>& cell_marker)
+void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
+                                                        const Mesh& mesh,
+                                                        const MeshFunction<bool>& cell_marker)
 {
   // Transformation maps
   MeshFunction<dolfin::uint> cell_map;
   std::vector<int> facet_map;
 
-  // Create new mesh
+  // Call Rivara refinement
   RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map, facet_map);
   transform_data(refined_mesh, mesh, cell_map, facet_map);
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::bisect_simplex_edge(const Cell& cell, const Edge& edge,
+void BisectionRefinement::bisect_simplex_edge(const Cell& cell, const Edge& edge,
                                               uint new_vertex,
                                               MeshEditor& editor,
                                               uint& current_cell)
@@ -286,7 +289,7 @@ void LocalMeshRefinement::bisect_simplex_edge(const Cell& cell, const Edge& edge
   editor.add_cell(current_cell++, cell2_vertices);
 }
 //-----------------------------------------------------------------------------
-bool LocalMeshRefinement::iteration_of_refinement(Mesh& mesh,
+bool BisectionRefinement::iteration_of_refinement(Mesh& mesh,
                                          const MeshFunction<bool>& cell_marker,
                                          MeshFunction<bool>& new_cell_marker,
                                          MeshFunction<uint>& bisected_edges)
@@ -303,6 +306,9 @@ bool LocalMeshRefinement::iteration_of_refinement(Mesh& mesh,
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
               mesh.topology().dim(), mesh.geometry().dim());
+
+  // Initialize edges
+  mesh.init(1);
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -462,7 +468,7 @@ bool LocalMeshRefinement::iteration_of_refinement(Mesh& mesh,
   return next_iteration;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
+void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
                                          const MeshFunction<uint>& cell_map,
                                          const std::vector<int>& facet_map)
 {
