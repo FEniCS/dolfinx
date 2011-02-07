@@ -12,6 +12,8 @@
 namespace dolfin
 {
 
+  // FIXME: Make a base class that classes can inherit from
+
   /// This is a singleton class that return IDs that are unique in the
   /// lifetime of a program.
 
