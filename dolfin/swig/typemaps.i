@@ -102,7 +102,15 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 %typemap(in) dolfin::uint
 {
-  if(!SWIG_IsOK(Py_uint_convert($input, $1)))
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    if (tmp>=0)
+      $1 = static_cast<dolfin::uint>(tmp);
+    else
+      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+  }
+  else
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
 }
 
@@ -119,8 +127,11 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 %typemap(in) int
 {
-  if(!SWIG_IsOK(Py_int_convert($input, $1)))
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    $1 = static_cast<int>(tmp);
+  }
+  else
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
-
-
