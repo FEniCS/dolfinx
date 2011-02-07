@@ -59,6 +59,12 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
 const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
                                    const MeshFunction<bool>& cell_markers)
 {
+  Mesh refined_mesh;
+  LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
+
+  return mesh;
+
+  /*
   // Skip refinement if already refined
   if (mesh.has_child())
   {
@@ -74,6 +80,7 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
   set_parent_child(mesh, refined_mesh);
 
   return *refined_mesh;
+  */
 }
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)

@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-02-03
+// Last changed: 2011-02-07
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -41,7 +41,8 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _data(*this),
                _cell_type(0),
                unique_id(UniqueIdGenerator::id()),
-               _intersection_operator(*this), _ordered(false)
+               _intersection_operator(*this),
+               _ordered(false)
 {
   // Do nothing
 }

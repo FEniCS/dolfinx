@@ -55,6 +55,7 @@ namespace dolfin
       allowed_refinement_algorithms.insert("bisection");
       allowed_refinement_algorithms.insert("iterative_bisection");
       allowed_refinement_algorithms.insert("recursive_bisection");
+      allowed_refinement_algorithms.insert("regular_cut");
       p.add("refinement_algorithm",
             default_refinement_algorithm,
             allowed_refinement_algorithms);

@@ -28,6 +28,9 @@ namespace dolfin
       clear();
     }
 
+    /// Destructor
+    ~IndexSet() {}
+
     /// Return size of set
     uint size() const
     { return _indices.size(); }
@@ -51,6 +54,15 @@ namespace dolfin
         return;
       _indices.push_back(index);
       _has_index[index] = true;
+    }
+
+    /// Fill index set with indices 0, 1, 2, ..., size - 1
+    void fill()
+    {
+      _indices.clear();
+      for (uint i = 0; i < _has_index.size(); i++)
+        _indices.push_back(i);
+      std::fill(_has_index.begin(), _has_index.end(), true);
     }
 
     /// Clear set
