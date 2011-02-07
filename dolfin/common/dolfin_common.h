@@ -9,6 +9,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/IndexSet.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
