@@ -146,6 +146,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
 endif()
 
+# Add flags for generating code coverage reports
+if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+endif()
+
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 

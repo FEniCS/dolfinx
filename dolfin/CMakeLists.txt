@@ -300,7 +300,9 @@ list(REMOVE_DUPLICATES PKG_LINKFLAGS)
 string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
 
 # Add additional link flags
-set(PKG_LINK_FLAGS "${PKG_LINKFLAGS} ${DOLFIN_LINK_FLAGS}")
+foreach(_linkflag ${DOLFIN_LINK_FLAGS})
+  set(PKG_LINK_FLAGS "${PKG_LINKFLAGS} ${_linkflag}")
+endforeach()
 
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
