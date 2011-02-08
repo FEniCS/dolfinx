@@ -5,11 +5,12 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-05-22
-// Last changed: 2011-01-17
+// Last changed: 2011-02-08
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/io/File.h>
@@ -103,6 +104,9 @@ namespace dolfin
 
     /// Set all values to given value
     void set_all(const T& value);
+
+    /// Set values
+    void set(const std::vector<T>& values);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -312,6 +316,15 @@ namespace dolfin
     assert(_values);
     for (uint i = 0; i < _size; i++)
       _values[i] = value;
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshFunction<T>::set(const std::vector<T>& values)
+  {
+    assert(_values);
+    assert(_size == values.size());
+    for (uint i = 0; i < _size; i++)
+      _values[i] = values[i];
   }
   //---------------------------------------------------------------------------
   template <class T>
