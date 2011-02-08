@@ -443,9 +443,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 # Add demo but do not add to default target
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
+# Set make program
+if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
+  set(MAKE_PROGRAM "$(MAKE)")
+else()
+  set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
+endif()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
-  COMMAND ${CMAKE_MAKE_PROGRAM}
+  COMMAND ${MAKE_PROGRAM}
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -471,7 +478,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    COMMAND ${CMAKE_MAKE_PROGRAM}
+    COMMAND ${MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
@@ -493,7 +500,7 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    COMMAND ${CMAKE_MAKE_PROGRAM}
+    COMMAND ${MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
