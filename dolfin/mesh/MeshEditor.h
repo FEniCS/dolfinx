@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2010-10-21
+// Last changed: 2011-02-09
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -117,6 +117,9 @@ namespace dolfin
 
     // Clear all data
     void clear();
+
+    // Check that vertex is in range
+    void check_vertex(uint v);
 
     // The mesh
     Mesh* mesh;
