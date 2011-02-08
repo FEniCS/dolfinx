@@ -32,7 +32,7 @@ double Edge::length() const
   return length;
 }
 //-----------------------------------------------------------------------------
-double Edge::inner(const Edge& edge) const
+double Edge::dot(const Edge& edge) const
 {
   const uint* v0 = entities(0);
   const uint* v1 = edge.entities(0);

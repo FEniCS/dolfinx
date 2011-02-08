@@ -37,8 +37,8 @@ namespace dolfin
     /// Compute Euclidean length of edge
     double length() const;
 
-    /// Compute inner product between edge and other edge
-    double inner(const Edge& edge) const;
+    /// Compute dot product between edge and other edge
+    double dot(const Edge& edge) const;
 
   };
 
