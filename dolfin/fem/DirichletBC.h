@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-12-21
+// Last changed: 2011-02-08
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -22,6 +22,7 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/Hierarchical.h>
 #include "BoundaryCondition.h"
 
 namespace dolfin
@@ -78,7 +79,7 @@ namespace dolfin
 
   /// This class specifies the interface for setting (strong)
 
-  class DirichletBC : public BoundaryCondition
+  class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
   {
 
   public:
@@ -179,11 +180,14 @@ namespace dolfin
     const std::vector<std::pair<uint, uint> >& markers();
 
     /// Return boundary value g
-    const GenericFunction& value();
+    const GenericFunction& value() const;
 
     /// Return shared pointer to boundary value g
     /// Testing multiline comment
-    boost::shared_ptr<const GenericFunction> value_ptr();
+    boost::shared_ptr<const GenericFunction> value_ptr() const;
+
+    //// Return shared pointer to sub-domain
+    boost::shared_ptr<const SubDomain> user_sub_domain_ptr() const;
 
     /// Check if given function is compatible with boundary condition
     /// (checking only vertex values)
@@ -208,9 +212,6 @@ namespace dolfin
     }
 
   private:
-
-    // Friends
-    friend class AdaptiveObjects;
 
     // FIXME: Make this function pure virtual in BoundaryCondition and reuse code
     // for different apply methods
