@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-02-07
-// Last changed: 2011-02-07
+// Last changed: 2011-02-08
 
 #ifndef __REGULAR_CUT_REFINEMENT_H
 #define __REGULAR_CUT_REFINEMENT_H
@@ -14,6 +14,7 @@ namespace dolfin
 
   class Mesh;
   template<class T> class MeshFunction;
+  class IndexSet;
 
   /// This class implements local mesh refinement by a regular cut of
   /// each cell marked for refinement in combination with propagation
@@ -31,22 +32,29 @@ namespace dolfin
 
   private:
 
+    // Refinement markers
+    enum { regular_refinement=-2, no_refinement=-1 };
+
     // Compute refinement markers based on initial markers
-    static void compute_markers(const Mesh& mesh,
+    static void compute_markers(std::vector<int>& refinement_markers,
+                                IndexSet& marked_edges,
+                                const Mesh& mesh,
                                 const MeshFunction<bool>& cell_markers);
+
+    // Refine mesh based on computed markers
+    static void refine_marked(Mesh& refined_mesh,
+                              const Mesh& mesh,
+                              const std::vector<int>& refinement_markers,
+                              const IndexSet& marked_edges);
 
     // Count the number of marked entries
     static uint count_markers(const std::vector<bool>& markers);
 
-    // Mark edge for refinement and add cell to list of marked cells
-    // if edge has not been marked before
-    static void mark(std::vector<bool>& edge_markers,
-                     uint cell_index,
-                     uint local_edge_index,
-                     std::vector<uint>& marked_cells);
+    // Extract index of first marked entry
+    static uint extract_edge(const std::vector<bool>& markers);
+
   };
 
 }
 
 #endif
-

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-07
+// Last changed: 2011-02-08
 
 #include <boost/shared_ptr.hpp>
 
@@ -59,12 +59,6 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
 const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
                                    const MeshFunction<bool>& cell_markers)
 {
-  Mesh refined_mesh;
-  LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
-
-  return mesh;
-
-  /*
   // Skip refinement if already refined
   if (mesh.has_child())
   {
@@ -80,7 +74,6 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
   set_parent_child(mesh, refined_mesh);
 
   return *refined_mesh;
-  */
 }
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)

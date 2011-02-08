@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2010-10-19
+// Last changed: 2011-02-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>

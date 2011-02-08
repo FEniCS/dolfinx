@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-02-07
-// Last changed: 2011-02-07
+// Last changed: 2011-02-08
 
 #ifndef __INDEX_SET_H
 #define __INDEX_SET_H
@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     /// Create index set of given size
-    IndexSet(uint size) : _has_index(size)
+    IndexSet(uint size) : _has_index(size), _positions(size)
     {
       _indices.reserve(size);
       clear();
@@ -39,6 +39,14 @@ namespace dolfin
     bool has_index(uint index) const
     { return _has_index[index]; }
 
+    /// Return position (if any) for given index
+    uint find(uint index) const
+    {
+      if (!_has_index[index])
+        error("No such index: %d.", index);
+      return _positions[index];
+    }
+
     /// Return given index
     uint& operator[] (uint i)
     { return _indices[i]; }
@@ -54,6 +62,7 @@ namespace dolfin
         return;
       _indices.push_back(index);
       _has_index[index] = true;
+      _positions[index] = _indices.size() - 1;
     }
 
     /// Fill index set with indices 0, 1, 2, ..., size - 1
@@ -70,6 +79,7 @@ namespace dolfin
     {
       _indices.clear();
       std::fill(_has_index.begin(), _has_index.end(), false);
+      std::fill(_positions.begin(), _positions.end(), 0);
     }
 
   private:
@@ -79,6 +89,9 @@ namespace dolfin
 
     // Indicators for which indices are in the set
     std::vector<uint> _has_index;
+
+    // Mapping from indices to positions
+    std::vector<uint> _positions;
 
   };
 
