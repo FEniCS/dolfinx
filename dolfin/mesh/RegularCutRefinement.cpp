@@ -196,7 +196,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
 
   // New cells
-  std::vector<std::vector<uint> > cells;
+  //std::vector<std::vector<uint> > cells;
+
+
+  // Markers for bisected cells pointing to their bisection twins
+  std::vector<uint> bisection_twins(num_cells);
+  for (uint i = 0; i < num_cells; i++)
+    bisection_twins[i] = i;
 
   // Iterate over all cells and add new cells
   uint current_cell = 0;
@@ -213,6 +219,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
       editor.add_cell(current_cell++, vertices);
+
     }
 
     // Regular refinement: divide into subsimplicies
@@ -250,7 +257,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // One edge marked for refinement: do bisection
     else
     {
-      cout << "Refining edge " << endl;
+      cout << "Bisection " << endl;
 
       // Get vertices and edges
       const uint* v = cell->entities(0);
@@ -280,11 +287,21 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         editor.add_cell(current_cell++, v[2], ee, v[0]);
         editor.add_cell(current_cell++, v[2], ee, v[1]);
       }
+
+      // Set bisection twins
+      bisection_twins[current_cell - 2] = current_cell - 1;
+      bisection_twins[current_cell - 1] = current_cell - 2;
     }
   }
 
   editor.close();
 
+  // Attach data for bisection twins
+  MeshFunction<uint>* _bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
+  assert(_bisection_twins);
+  _bisection_twins->init(refined_mesh.topology().dim());
+  _bisection_twins->set(bisection_twins);
+  info(refined_mesh.data(), true);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint RegularCutRefinement::count_markers(const std::vector<bool>& markers)
