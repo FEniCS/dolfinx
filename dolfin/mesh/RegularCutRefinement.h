@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-02-07
-// Last changed: 2011-02-08
+// Last changed: 2011-02-09
 
 #ifndef __REGULAR_CUT_REFINEMENT_H
 #define __REGULAR_CUT_REFINEMENT_H
@@ -32,7 +32,7 @@ namespace dolfin
   private:
 
     // Refinement markers
-    enum { regular_refinement=-2, no_refinement=-1 };
+    enum { no_refinement=-1, regular_refinement=-2, backtrack_bisection=-3 };
 
     // Compute refinement markers based on initial markers
     static void compute_markers(std::vector<int>& refinement_markers,
@@ -55,6 +55,22 @@ namespace dolfin
     // Check whether suggested refinement will produce too thin cells
     static bool too_thin(const Cell& cell,
                          const std::vector<bool>& edge_markers);
+
+    // Find local indices for common edge relative to cell and twin
+    static std::pair<uint, uint> find_common_edges(const Cell& cell,
+                                                   const Mesh& mesh,
+                                                   uint bisection_twin);
+
+    // Find local indices for bisection edge relative to cell and twin
+    static std::pair<uint, uint> find_bisection_edges(const Cell& cell,
+                                                      const Mesh& mesh,
+                                                      uint bisection_twin);
+
+    // Find local indices for bisection vertex relative to cell and twin
+    static std::pair<uint, uint> find_bisection_vertices(const Cell& cell,
+                                                         const Mesh& mesh,
+                                                         uint bisection_twin,
+                                                         const std::pair<uint, uint>& bisection_edges);
 
   };
 
