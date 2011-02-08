@@ -18,8 +18,7 @@ namespace dolfin
 
   /// This class implements local mesh refinement by a regular cut of
   /// each cell marked for refinement in combination with propagation
-  /// of cut edges to neighboring cells. Losely based on the paper
-  /// "Tetrahedral grid refinement" by Jurgen Bey (1992).
+  /// of cut edges to neighboring cells.
 
   class RegularCutRefinement
   {
