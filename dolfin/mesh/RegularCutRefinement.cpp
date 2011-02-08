@@ -70,15 +70,21 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
     // Iterate over all cells in list
     for (uint i = 0; i < cells.size(); i++)
     {
-      // Get cell index
+      // Get cell index and create cell
       const uint cell_index = cells[i];
+      const Cell cell(mesh, cell_index);
 
-      // Mark edges if cell marked for refinement or more than one edge marked
-      if (!cell_markers[cell_index] && count_markers(edge_markers[cell_index]) <= 1)
+      // Decide if cell should be refined regularly
+      bool refine_regularly = false;
+      refine_regularly = refine_regularly || cell_markers[cell_index];
+      refine_regularly = refine_regularly || count_markers(edge_markers[cell_index]) > 1;
+      refine_regularly = refine_regularly || too_thin(cell, edge_markers[cell_index]);
+
+      // Skip cell if it should not be marked
+      if (!refine_regularly)
         continue;
 
       // Iterate over edges
-      Cell cell(mesh, cell_index);
       for (EdgeIterator edge(cell); !edge.end(); ++edge)
       {
         // Mark edge in current cell
@@ -297,5 +303,33 @@ dolfin::uint RegularCutRefinement::extract_edge(const std::vector<bool>& markers
       return i;
   error("Internal error in mesh refinement, unable to extract edge.");
   return 0;
+}
+//-----------------------------------------------------------------------------
+bool RegularCutRefinement::too_thin(const Cell& cell,
+                                    const std::vector<bool>& edge_markers)
+{
+  const uint num_markers = count_markers(edge_markers);
+
+  // Only care about the case when one edge is marked
+  if (num_markers != 1)
+    return false;
+
+  // Compute lengths of all edges
+  std::vector<double> lengths;
+  double L = 0.0;
+  for (EdgeIterator edge(cell); !edge.end(); ++edge)
+  {
+    const double l = edge->length();
+    L = std::max(L, l);
+    lengths.push_back(l);
+  }
+
+  // Get length of marked edge
+  const double l = lengths[extract_edge(edge_markers)];
+
+  // Check condition
+  const bool too_thin = l < 0.5*L;
+
+  return too_thin;
 }
 //-----------------------------------------------------------------------------

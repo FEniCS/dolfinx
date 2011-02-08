@@ -53,6 +53,10 @@ namespace dolfin
     // Extract index of first marked entry
     static uint extract_edge(const std::vector<bool>& markers);
 
+    // Check whether suggested refinement will produce too thin cells
+    static bool too_thin(const Cell& cell,
+                         const std::vector<bool>& edge_markers);
+
   };
 
 }
