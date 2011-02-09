@@ -256,8 +256,8 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
   // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
+  //check_vertex(v0);
+  //check_vertex(v1);
 
   // Add cell
   add_cell_common(c, 1);
@@ -509,7 +509,7 @@ void MeshEditor::clear()
 //-----------------------------------------------------------------------------
 void MeshEditor::check_vertex(uint v)
 {
-  if (v >= num_vertices)
+  if (num_vertices > 0 && v >= num_vertices)
     error("Vertex index (%d) out of range [0, %d].", v, num_vertices - 1);
 }
 //-----------------------------------------------------------------------------

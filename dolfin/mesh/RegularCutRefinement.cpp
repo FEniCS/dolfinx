@@ -16,9 +16,6 @@
 #include "MeshEditor.h"
 #include "RegularCutRefinement.h"
 
-// FIXME: Temporary while testing
-#include "UnitSquare.h"
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -44,9 +41,6 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
 
   // Refine mesh based on computed markers
   refine_marked(refined_mesh, mesh, refinement_markers, marked_edges);
-
-  // UnitSquare unit_square(3, 3);
-  //refined_mesh = unit_square;
 }
 //-----------------------------------------------------------------------------
 void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
@@ -286,19 +280,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
           refined_bisection_twins[j] = i;
         }
       }
-
-      // FIXME: Debugging
-      for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-        used_vertices.insert(vertex->index());
-
     }
 
     // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
       assert(unrefined_cells[cell->index()] == -1);
-
-      // FIXME: Move this part to TriangleCell
 
       // Get vertices and edges
       const uint* v = cell->entities(0);
@@ -322,16 +309,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       editor.add_cell(current_cell++, v1, e0, e2);
       editor.add_cell(current_cell++, v2, e1, e0);
       editor.add_cell(current_cell++, e0, e1, e2);
-
-
-      // FIXME: Debugging
-      used_vertices.insert(v0);
-      used_vertices.insert(v1);
-      used_vertices.insert(v2);
-      used_vertices.insert(e0);
-      used_vertices.insert(e1);
-      used_vertices.insert(e2);
-
     }
 
     // Special case: backtrack bisected cells
@@ -357,8 +334,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const std::pair<uint, uint> bisection_vertices = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
 
       // Get list of vertices and edges for both cells
-      //const uint num_vertices = cell->num_entities(0);
-      //const uint num_edges = cell->num_entities(1);
       const Cell twin(mesh, bisection_twin);
       const uint* vertices_0 = cell->entities(0);
       const uint* vertices_1 = twin.entities(0);
@@ -393,33 +368,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       editor.add_cell(current_cell++, e0, e1, e2);
       editor.add_cell(current_cell++, v2, e1, e0);
 
-      used_vertices.insert(e0);
-      used_vertices.insert(e1);
-      used_vertices.insert(e2);
-      used_vertices.insert(v2);
-
       // Add one or two remaining cells in current cell (left)
       if (marker == backtrack_bisection)
       {
         editor.add_cell(current_cell++, v0, e2, e1);
-
-        used_vertices.insert(v0);
-        used_vertices.insert(e1);
-        used_vertices.insert(e2);
       }
       else
       {
         // Add the two cells
         editor.add_cell(current_cell++, v0, E0, e1);
         editor.add_cell(current_cell++, E0, e2, e1);
-
-
-        used_vertices.insert(v0);
-        used_vertices.insert(E0);
-        used_vertices.insert(e1);
-        used_vertices.insert(E0);
-        used_vertices.insert(e2);
-        used_vertices.insert(e1);
 
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
@@ -430,10 +388,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       if (twin_marker == backtrack_bisection)
       {
         editor.add_cell(current_cell++, v1, e0, e2);
-
-        used_vertices.insert(v1);
-        used_vertices.insert(e0);
-        used_vertices.insert(e2);
       }
       else
       {
@@ -444,13 +398,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
         refined_bisection_twins[current_cell - 1] = current_cell - 2;
-
-        used_vertices.insert(v1);
-        used_vertices.insert(e0);
-        used_vertices.insert(E1);
-        used_vertices.insert(e0);
-        used_vertices.insert(e2);
-        used_vertices.insert(E1);
       }
     }
 
@@ -476,35 +423,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       {
         editor.add_cell(current_cell++, v[0], ee, v[1]);
         editor.add_cell(current_cell++, v[0], ee, v[2]);
-
-        used_vertices.insert(v[0]);
-        used_vertices.insert(ee);
-        used_vertices.insert(v[1]);
-        used_vertices.insert(v[2]);
-
       }
       else if (local_edge_index == 1)
       {
         editor.add_cell(current_cell++, v[1], ee, v[0]);
         editor.add_cell(current_cell++, v[1], ee, v[2]);
-
-        used_vertices.insert(v[0]);
-        used_vertices.insert(ee);
-        used_vertices.insert(v[1]);
-        used_vertices.insert(v[2]);
-
       }
       else
       {
         editor.add_cell(current_cell++, v[2], ee, v[0]);
         editor.add_cell(current_cell++, v[2], ee, v[1]);
-
-
-        used_vertices.insert(v[0]);
-        used_vertices.insert(ee);
-        used_vertices.insert(v[1]);
-        used_vertices.insert(v[2]);
-
       }
 
       // Set bisection twins
@@ -513,10 +441,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     }
   }
 
+  // Close mesh editor
   assert(num_cells == current_cell);
-  assert(num_vertices == used_vertices.size());
-
-
   editor.close();
 
   // Attach data for bisection twins
@@ -524,7 +450,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
   _refined_bisection_twins->set(refined_bisection_twins);
-
 }
 //-----------------------------------------------------------------------------
 dolfin::uint RegularCutRefinement::count_markers(const std::vector<bool>& markers)
@@ -578,8 +503,6 @@ RegularCutRefinement::find_common_edges(const Cell& cell,
                                         const Mesh& mesh,
                                         uint bisection_twin)
 {
-  // FIXME: Remove this function if it is not used
-
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
   const uint* e0 = cell.entities(1);
@@ -611,7 +534,6 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   const uint* e1 = twin.entities(1);
   assert(e0);
   assert(e1);
-
 
   // Iterate over all combinations of edges
   const uint num_edges = cell.num_entities(1);
