@@ -59,6 +59,9 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
                                            const Mesh& mesh,
                                            const MeshFunction<bool>& cell_markers)
 {
+  cout << "--- COMPUTE MARKERS ---" << endl;
+
+
   // Create edge markers and initialize to false
   const uint edges_per_cell = mesh.topology().dim() + 1;
   std::vector<std::vector<bool> > edge_markers(mesh.num_cells());
@@ -75,6 +78,18 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
   // Get bisection data
   MeshFunction<uint>* bisection_twins = mesh.data().mesh_function("bisection_twins");
+
+
+  // FIXME: Debug
+  if (bisection_twins)
+  {
+    for (uint i = 0; i < bisection_twins->size(); i++)
+    {
+      const uint twin = (*bisection_twins)[i];
+      if (twin != i)
+        cout << "TWIN OLD: " << i << " " << twin << endl;
+    }
+  }
 
   // Iterate until no more cells are marked
   cells.fill();
@@ -98,7 +113,6 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
         bisection_twin = (*bisection_twins)[cell_index];
         is_bisected = bisection_twin != cell_index;
       }
-      cout << is_bisected << endl;
 
       // Get bisection edge
       uint common_edge = 0;
@@ -168,13 +182,15 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
   }
 
   // Debug
-  for (uint i = 0; i < edge_markers.size(); i++)
-  {
-    cout << i << ":";
-    for (uint j = 0; j < edge_markers[i].size(); j++)
-      cout << " " << edge_markers[i][j];
-    cout << endl;
-  }
+  //for (uint i = 0; i < edge_markers.size(); i++)
+  // {
+  // cout << i << ":";
+  //  for (uint j = 0; j < edge_markers[i].size(); j++)
+  //    cout << " " << edge_markers[i][j];
+  //  cout << endl;
+  // }
+
+  cout << "--- EXTRACT MARKERS ---" << endl;
 
   // Extract which cells to refine and indices which edges to bisect
   refinement_markers.resize(mesh.num_cells());
@@ -217,8 +233,11 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
                                          const std::vector<int>& refinement_markers,
                                          const IndexSet& marked_edges)
 {
+  cout << "--- REFINE MARKED ---" << endl;
+
   // Count the number of cells in refined mesh
   uint num_cells = 0;
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const int marker = refinement_markers[cell->index()];
@@ -232,8 +251,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       break;
     case backtrack_bisection:
       num_cells += 2;
+      break;
     case backtrack_bisection_refine:
       num_cells += 3;
+      break;
     default:
       num_cells += 2;
     }
@@ -249,6 +270,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // FIXME: Use for debugging
   IndexSet used_vertices(num_vertices);
+  const MeshGeometry& g = mesh.geometry();
 
   // Set vertex coordinates
   uint current_vertex = 0;
@@ -262,6 +284,9 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // Get bisection data for old mesh
   MeshFunction<uint>* bisection_twins = mesh.data().mesh_function("bisection_twins");
+
+
+
 
   // Markers for bisected cells pointing to their bisection twins in refined mesh
   std::vector<uint> refined_bisection_twins(num_cells);
@@ -439,6 +464,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         used_vertices.insert(e1);
 
 
+        cout << "TWINS " << current_cell - 2 << " " << current_cell - 1 << endl;
+        cout << v0 << " " << E0 << " " << e1 << endl;
+        cout << E0 << " " << e2 << " " << e1 << endl;
+
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
         refined_bisection_twins[current_cell - 1] = current_cell - 2;
@@ -461,6 +490,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         editor.add_cell(current_cell++, v1, e0, E1);
         editor.add_cell(current_cell++, e0, e2, E1);
 
+        cout << "TWINS " << current_cell - 2 << " " << current_cell - 1 << endl;
+        cout << v1 << " " << e0 << " " << E1 << endl;
+        cout << e0 << " " << e2 << " " << E1 << endl;
+
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
         refined_bisection_twins[current_cell - 1] = current_cell - 2;
@@ -479,11 +512,15 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     {
       cout << "M: bisection" << endl;
 
+      cout << *cell << endl;
+
       // Get vertices and edges
       const uint* v = cell->entities(0);
       const uint* e = cell->entities(1);
       assert(v);
       assert(e);
+
+      cout << v[0] << " " << v[1] << " " << v[2] << endl;
 
       // Get edge number (equal to marker)
       assert(marker >= 0);
@@ -530,10 +567,19 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Set bisection twins
       refined_bisection_twins[current_cell - 2] = current_cell - 1;
       refined_bisection_twins[current_cell - 1] = current_cell - 2;
+
+      cout << "TWINS " << current_cell - 2 << " " << current_cell - 1 << endl;
+
+      if (current_cell - 2 == 480 && current_cell - 1 == 481)
+      {
+        cout << "THIS IS WHERE IT HAPPENS" << endl;
+        cout << v[0] << " " << v[1] << " " << v[2] << endl;
+        cout << g.point(v[0]) << " " << g.point(v[1]) << " " << g.point(v[2]) << endl;
+      }
     }
   }
 
-
+  assert(num_cells == current_cell);
   assert(num_vertices == used_vertices.size());
 
 
@@ -544,6 +590,18 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
   _refined_bisection_twins->set(refined_bisection_twins);
+
+
+  // FIXME: Debug
+  for (uint i = 0; i < _refined_bisection_twins->size(); i++)
+  {
+    const uint twin = (*_refined_bisection_twins)[i];
+    if (twin != i)
+      cout << "TWIN NEW: " << i << " " << twin << endl;
+  }
+
+
+
 }
 //-----------------------------------------------------------------------------
 dolfin::uint RegularCutRefinement::count_markers(const std::vector<bool>& markers)
@@ -633,6 +691,9 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   assert(e0);
   assert(e1);
 
+
+  const MeshGeometry& g = mesh.geometry();
+
   // Iterate over all combinations of edges
   const uint num_edges = cell.num_entities(1);
   for (uint i = 0; i < num_edges; i++)
@@ -642,8 +703,12 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
     const uint* v0 = edge_0.entities(0);
     assert(v0);
 
+    cout << "Checking edge: " << i << " " << e0[i] << " " << g.point(v0[0]) << " - " << g.point(v0[1]) << endl;
+
     for (uint j = 0; j < num_edges; j++)
     {
+      cout << "  Checking edge: " << j << " " << e1[j] << endl;
+
       // Don't test against the edge itself
       if (e0[i] == e1[j])
         continue;
@@ -652,6 +717,8 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
       const Edge edge_1(mesh, e1[j]);
       const uint* v1 = edge_1.entities(0);
       assert(v1);
+
+      cout << "  Checking edge: " << j << " " << e1[j] << " " << g.point(v1[0]) << " - " << g.point(v1[1]) << endl;
 
       // Check that we have a common vertex
       if (v0[0] != v1[0] && v0[0] != v1[1] && v0[1] != v1[0] && v0[1] != v1[1])
@@ -665,7 +732,6 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
       if (std::abs(std::abs(dot_product) - 1.0) < 100.0 * DOLFIN_EPS)
       {
         cout << "Found bisection edges" << endl;
-        const MeshGeometry& g = mesh.geometry();
         cout << "e0 = " << e0[j] << ": " << g.point(v0[0]) << " - " << g.point(v0[1]) << endl;
         cout << "e1 = " << e1[j] << ": " << g.point(v1[0]) << " - " << g.point(v1[1]) << endl;
 
@@ -673,6 +739,11 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
       }
     }
   }
+
+
+  // FIXME: Testing
+  cout << "NOTFOUND!" << endl;
+  return std::make_pair(0, 0);
 
   // Not found
   error("Internal error in mesh refinement; unable to find bisection edge.");
