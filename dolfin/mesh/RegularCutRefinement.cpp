@@ -115,9 +115,10 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
       if (is_bisected)
         refine = refine || num_marked > 0;
       else
+      {
         refine = refine || num_marked > 1;
-
-      //refine_regularly = refine_regularly || too_thin(cell, edge_markers[cell_index]);
+        refine = refine || too_thin(cell, edge_markers[cell_index]);
+      }
 
       // Skip cell if it should not be marked
       if (!refine)
