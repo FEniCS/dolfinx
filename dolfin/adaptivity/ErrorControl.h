@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-14
+// Last changed: 2011-02-09
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
+
+#include <dolfin/common/Hierarchical.h>
 
 namespace dolfin
 {
@@ -26,7 +28,7 @@ namespace dolfin
   /// goal-oriented error control I: stationary variational problems",
   /// ME Rognes and A Logg, 2010-2011.
 
-  class ErrorControl
+  class ErrorControl : public Hierarchical<ErrorControl>
   {
   public:
 
@@ -139,6 +141,10 @@ namespace dolfin
     void compute_extrapolation(const Function& z,
                                std::vector<const BoundaryCondition*> bcs);
 
+    friend dolfin::ErrorControl& dolfin::refine(ErrorControl& ec,
+                                                boost::shared_ptr<const Mesh> refined_mesh);
+
+
   private:
 
     // Bilinear and linear form for dual problem
@@ -163,6 +169,8 @@ namespace dolfin
     // motivated)
     boost::shared_ptr<const FunctionSpace> _E;
     boost::shared_ptr<const FunctionSpace> _C;
+    boost::shared_ptr<Function> _cell_cone;
+    boost::shared_ptr<Function> _R_T;
 
     // Computed extrapolation
     boost::shared_ptr<Function> _Ez_h;
