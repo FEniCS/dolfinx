@@ -159,29 +159,28 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   for (uint i = 0; i <= _R_T->geometric_dimension(); i++)
     f_e.push_back(Function(_a_R_dT->function_space(1)));
 
-  boost::shared_ptr<SpecialFacetFunction> R_dT;
   if (f_e[0].value_rank() == 0)
-    R_dT.reset(new SpecialFacetFunction(f_e));
+    _R_dT.reset(new SpecialFacetFunction(f_e));
   else if (f_e[0].value_rank() == 1)
-    R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
+    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
   else
   {
-    R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
+    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
     error("Not implemented for tensor-valued functions");
   }
 
   // Compute residual representation
-  residual_representation(*_R_T, *R_dT, u);
+  residual_representation(*_R_T, *_R_dT, u);
 
   // Interpolate dual extrapolation into primal test (dual trial space)
-  Function Pi_E_z_h(_a_star->function_space(1));
-  Pi_E_z_h.interpolate(*_Ez_h);
+  _Pi_E_z_h.reset(new Function(_a_star->function_space(1)));
+  _Pi_E_z_h->interpolate(*_Ez_h);
 
   // Attach coefficients to error indicator form
   _eta_T->set_coefficient(0, *_Ez_h);
   _eta_T->set_coefficient(1, *_R_T);
-  _eta_T->set_coefficient(2, *R_dT);
-  _eta_T->set_coefficient(3, Pi_E_z_h);
+  _eta_T->set_coefficient(2, *_R_dT);
+  _eta_T->set_coefficient(3, *_Pi_E_z_h);
 
   // Assemble error indicator form
   assemble(indicators, *_eta_T);

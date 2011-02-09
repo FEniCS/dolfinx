@@ -165,17 +165,22 @@ namespace dolfin
     // Linear form for computing error indicators
     boost::shared_ptr<Form> _eta_T;
 
-    // Pointers to other function spaces (FIXME: Only out-of-scope
-    // motivated)
-    boost::shared_ptr<const FunctionSpace> _E;
-    boost::shared_ptr<const FunctionSpace> _C;
-    boost::shared_ptr<Function> _cell_cone;
-    boost::shared_ptr<Function> _R_T;
-
     // Computed extrapolation
     boost::shared_ptr<Function> _Ez_h;
 
     bool _is_linear;
+
+    // Pointers to other function spaces (FIXME: Only out-of-scope
+    // motivated)
+    boost::shared_ptr<const FunctionSpace> _E;
+    boost::shared_ptr<const FunctionSpace> _C;
+
+    // Pointers to other functions (FIXME: Only out-of-scope
+    // motivated)
+    boost::shared_ptr<Function> _cell_cone;
+    boost::shared_ptr<Function> _R_T;
+    boost::shared_ptr<SpecialFacetFunction> _R_dT;
+    boost::shared_ptr<Function> _Pi_E_z_h;
 
   };
 

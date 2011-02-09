@@ -126,7 +126,7 @@ void AdaptiveVariationalSolver::solve(Function& w,
     begin("Stage %d.4: Refining mesh...", i);
     refine(mesh, markers);
     if (parameters["plot_mesh"])
-      plot(mesh.fine(), "Refined mesh");
+      plot(mesh.child(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---

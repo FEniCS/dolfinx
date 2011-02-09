@@ -353,7 +353,7 @@ dolfin::ErrorControl& dolfin::refine(ErrorControl& ec,
   refine(*ec._L_R_T, refined_mesh);
   refine(*ec._a_R_dT, refined_mesh);
   refine(*ec._L_R_dT, refined_mesh);
-  // Don't need to refine *ec._eta_T
+  refine(*ec._eta_T, refined_mesh);
 
   // Create refined error control
   boost::shared_ptr<ErrorControl>
@@ -364,7 +364,7 @@ dolfin::ErrorControl& dolfin::refine(ErrorControl& ec,
                                 ec._L_R_T->child_shared_ptr(),
                                 ec._a_R_dT->child_shared_ptr(),
                                 ec._L_R_dT->child_shared_ptr(),
-                                ec._eta_T,
+                                ec._eta_T->child_shared_ptr(),
                                 ec._is_linear));
 
   // Set parent / child
