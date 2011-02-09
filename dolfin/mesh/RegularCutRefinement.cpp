@@ -276,6 +276,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   for (uint i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 
+  // Mapping from old to new unrefined cells (-1 means refined or not yet processed)
+  std::vector<int> unrefined_cells(mesh.num_cells());
+  std::fill(unrefined_cells.begin(), unrefined_cells.end(), -1);
+
   // Iterate over all cells and add new cells
   uint current_cell = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -291,6 +295,23 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         vertices.push_back(vertex->index());
       editor.add_cell(current_cell++, vertices);
 
+      // Store mapping to new cell index
+      unrefined_cells[cell->index()] = current_cell - 1;
+
+      // Remember unrefined bisection twins
+      if (bisection_twins)
+      {
+        const uint bisection_twin = (*bisection_twins)[cell->index()];
+        const int twin_marker = refinement_markers[bisection_twin];
+        assert(twin_marker == no_refinement);
+        if (unrefined_cells[bisection_twin] >= 0)
+        {
+          const uint i = current_cell - 1;
+          const uint j = unrefined_cells[bisection_twin];
+          refined_bisection_twins[i] = j;
+          refined_bisection_twins[j] = i;
+        }
+      }
 
       // FIXME: Debugging
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -301,6 +322,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
+      assert(unrefined_cells[cell->index()] == -1);
 
       // FIXME: Move this part to TriangleCell
 
@@ -341,6 +363,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Special case: backtrack bisected cells
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
+      assert(unrefined_cells[cell->index()] == -1);
+
       // Get index for bisection twin
       assert(bisection_twins);
       const uint bisection_twin = (*bisection_twins)[cell->index()];
@@ -459,6 +483,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // One edge marked for refinement: do bisection
     else
     {
+      assert(unrefined_cells[cell->index()] == -1);
+
       // Get vertices and edges
       const uint* v = cell->entities(0);
       const uint* e = cell->entities(1);
