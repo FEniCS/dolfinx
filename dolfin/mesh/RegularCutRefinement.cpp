@@ -30,7 +30,6 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
   cout << "---------------------------------------------------------------" << endl;
   cout << "Starting new refinement, depth = " << mesh.depth() << endl;
 
-
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
     error("Regular-cut mesh refinement is currently only implemented in 2D.");
@@ -287,7 +286,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // No refinement: just copy cell to new mesh
     if (marker == no_refinement)
     {
-      cout << "M: no_refinement" << endl;
       std::vector<uint> vertices;
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
@@ -303,7 +301,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
-      cout << "M: regular_refinement" << endl;
 
       // FIXME: Move this part to TriangleCell
 
@@ -344,11 +341,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Special case: backtrack bisected cells
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
-      if (marker == backtrack_bisection)
-        cout << "M = backtrack_bisection" << endl;
-      else
-        cout << "M = backtrack_bisection_refine" << endl;
-
       // Get index for bisection twin
       assert(bisection_twins);
       const uint bisection_twin = (*bisection_twins)[cell->index()];
@@ -467,8 +459,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // One edge marked for refinement: do bisection
     else
     {
-      cout << "M: bisection" << endl;
-
       // Get vertices and edges
       const uint* v = cell->entities(0);
       const uint* e = cell->entities(1);
@@ -615,8 +605,6 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
                                            const Mesh& mesh,
                                            uint bisection_twin)
 {
-  cout << "find_bisection_edges for cells: " << cell.index() << " " << bisection_twin << endl;
-
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
   const uint* e0 = cell.entities(1);
