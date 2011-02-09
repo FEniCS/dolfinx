@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010-2011.
+// Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-08
+// Last changed: 2011-02-09
 //
 // This file defines free functions for refinement.
 
@@ -22,6 +23,7 @@ namespace dolfin
   class DirichletBC;
   class Form;
   class VariationalProblem;
+  class ErrorControl;
 
   //--- Refinement of meshes ---
 
@@ -68,6 +70,10 @@ namespace dolfin
   /// Refine variational problem based on mesh
   const VariationalProblem& refine(const VariationalProblem& problem,
                                    boost::shared_ptr<const Mesh> refined_mesh);
+
+  /// Refine error control object based on mesh
+  ErrorControl& refine(ErrorControl& ec,
+                       boost::shared_ptr<const Mesh> refined_mesh);
 
 }
 

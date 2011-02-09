@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-08
+// Last changed: 2011-02-09
 
 #include <boost/shared_ptr.hpp>
 
@@ -23,6 +23,8 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/VariationalProblem.h>
+#include "ErrorControl.h"
+#include "SpecialFacetFunction.h"
 #include "refine.h"
 
 using namespace dolfin;
@@ -218,6 +220,7 @@ const dolfin::Form& dolfin::refine(const Form& form,
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
+
   // Refine coefficients
   std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
   for (uint i = 0; i < coefficients.size(); i++)
@@ -230,13 +233,11 @@ const dolfin::Form& dolfin::refine(const Form& form,
     {
       refine(*function, refined_mesh);
       refined_coefficients.push_back(function->child_shared_ptr());
+      continue;
     }
 
-    // If not, just reuse the same coefficient
-    else
-    {
-      refined_coefficients.push_back(coefficients[i]);
-    }
+    // If not function, just reuse the same coefficient
+    refined_coefficients.push_back(coefficients[i]);
   }
 
   /// Create new form (constructor used from Python interface)
@@ -332,5 +333,43 @@ const dolfin::DirichletBC& dolfin::refine(const DirichletBC& bc,
   set_parent_child(bc, refined_bc);
 
   return *refined_bc;
+}
+//-----------------------------------------------------------------------------
+dolfin::ErrorControl& dolfin::refine(ErrorControl& ec,
+                                     boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Skip refinement if already refined
+  if (ec.has_child())
+  {
+    info("ErrorControl has already been refined, returning child problem.");
+    return ec.child();
+  }
+
+  // Refine data
+  refine(*ec._a_star, refined_mesh);
+  refine(*ec._L_star, refined_mesh);
+  refine(*ec._residual, refined_mesh);
+  refine(*ec._a_R_T, refined_mesh);
+  refine(*ec._L_R_T, refined_mesh);
+  refine(*ec._a_R_dT, refined_mesh);
+  refine(*ec._L_R_dT, refined_mesh);
+  // Don't need to refine *ec._eta_T
+
+  // Create refined error control
+  boost::shared_ptr<ErrorControl>
+    refined_ec(new ErrorControl(ec._a_star->child_shared_ptr(),
+                                ec._L_star->child_shared_ptr(),
+                                ec._residual->child_shared_ptr(),
+                                ec._a_R_T->child_shared_ptr(),
+                                ec._L_R_T->child_shared_ptr(),
+                                ec._a_R_dT->child_shared_ptr(),
+                                ec._L_R_dT->child_shared_ptr(),
+                                ec._eta_T,
+                                ec._is_linear));
+
+  // Set parent / child
+  set_parent_child(ec, refined_ec);
+
+  return *refined_ec;
 }
 //-----------------------------------------------------------------------------
