@@ -70,7 +70,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   compute_connectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
 
   // Start timer
-  info("Creating mesh entities of dimension %d.", dim);
+  //info("Creating mesh entities of dimension %d.", dim);
   Timer timer("compute entities dim = " + to_string(dim));
 
   // Get cell type
