@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-03
+// Last changed: 2011-02-08
 //
 // This file defines free functions for refinement.
 
@@ -19,6 +19,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class FunctionSpace;
   class GenericFunction;
+  class DirichletBC;
   class Form;
   class VariationalProblem;
 
@@ -49,6 +50,12 @@ namespace dolfin
   /// Refine coefficient based on refined mesh
   const Function& refine(const Function& function,
                          boost::shared_ptr<const Mesh> refined_mesh);
+
+  //--- Refinement of boundary conditions ---
+
+  /// Refine Dirichlet bc based on refined mesh
+  const DirichletBC& refine(const DirichletBC& bc,
+                            boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of forms ---
 

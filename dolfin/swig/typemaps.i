@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-01-29
+// Last changed: 2011-02-09
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -59,7 +59,10 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
-%typemap(out) dolfin::uint = int;
+%typemap(out) dolfin::uint
+{
+  $result = SWIG_From_unsigned_SS_int($1);
+}
 
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::real
@@ -102,7 +105,15 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 %typemap(in) dolfin::uint
 {
-  if(!SWIG_IsOK(Py_uint_convert($input, $1)))
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    if (tmp>=0)
+      $1 = static_cast<dolfin::uint>(tmp);
+    else
+      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+  }
+  else
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
 }
 
@@ -119,8 +130,11 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 %typemap(in) int
 {
-  if(!SWIG_IsOK(Py_int_convert($input, $1)))
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    $1 = static_cast<int>(tmp);
+  }
+  else
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
-
-

@@ -146,6 +146,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
 endif()
 
+# Add flags for generating code coverage reports
+if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+endif()
+
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
@@ -437,9 +443,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 # Add demo but do not add to default target
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
+# Set make program
+if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
+  set(MAKE_PROGRAM "$(MAKE)")
+else()
+  set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
+endif()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
-  COMMAND ${CMAKE_MAKE_PROGRAM}
+  COMMAND ${MAKE_PROGRAM}
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -465,7 +478,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    COMMAND ${CMAKE_MAKE_PROGRAM}
+    COMMAND ${MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
@@ -487,7 +500,7 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    COMMAND ${CMAKE_MAKE_PROGRAM}
+    COMMAND ${MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 

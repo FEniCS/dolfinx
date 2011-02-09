@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010-2011.
+// Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
 // Last changed: 2011-02-08
@@ -15,10 +16,12 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/VariationalProblem.h>
 #include "refine.h"
 
@@ -251,12 +254,22 @@ const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& probl
   boost::shared_ptr<const Form> form_1 = problem.form_1_shared_ptr();
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs_shared_ptr();
 
-  // Refine data
+  // Refine forms
   refine(*form_0, refined_mesh);
   refine(*form_1, refined_mesh);
 
-  // FIXME: Refine bcs
-  std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs = bcs;
+  // Refine bcs
+  std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
+  for (uint i = 0; i < bcs.size(); i++)
+  {
+    const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
+    if (bc != 0)
+    {
+      refine(*bc, refined_mesh);
+      refined_bcs.push_back(bc->child_shared_ptr());
+    } else
+      error("Refinement of bcs only implemented for DirichletBCs!");
+  }
 
   // FIXME: Skipping mesh functions
 
@@ -271,5 +284,37 @@ const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& probl
   set_parent_child(problem, refined_problem);
 
   return *refined_problem;
+}
+//-----------------------------------------------------------------------------
+const dolfin::DirichletBC& dolfin::refine(const DirichletBC& bc,
+                                          boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Skip refinement if already refined
+  if (bc.has_child())
+  {
+    info("DirichletBC has already been refined, returning child problem.");
+    return bc.child();
+  }
+
+  // Refine function space
+  boost::shared_ptr<const FunctionSpace> V = bc.function_space_ptr();
+  refine(*V, refined_mesh);
+
+  // Refine value
+  const Function& g(dynamic_cast<const Function&>(bc.value()));
+  refine(g, refined_mesh);
+
+  // Extract but keep sub-domain
+  boost::shared_ptr<const SubDomain> domain = bc.user_sub_domain_ptr();
+
+  // Create refined boundary condition
+  boost::shared_ptr<DirichletBC>
+    refined_bc(new DirichletBC(V->child_shared_ptr(), g.child_shared_ptr(),
+                               domain));
+
+  // Set parent / child
+  set_parent_child(bc, refined_bc);
+
+  return *refined_bc;
 }
 //-----------------------------------------------------------------------------

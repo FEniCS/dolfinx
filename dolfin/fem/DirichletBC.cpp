@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-12-21
+// Last changed: 2011-02-08
 
 #include <boost/assign/list_of.hpp>
 
@@ -41,7 +41,9 @@ const std::set<std::string> DirichletBC::methods
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const SubDomain& sub_domain, std::string method)
-  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)),
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(reference_to_no_delete_pointer(g)),
     _method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
@@ -53,7 +55,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
-  : BoundaryCondition(V), g(g), _method(method), user_sub_domain(sub_domain)
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(g), _method(method), user_sub_domain(sub_domain)
 {
   check();
   parameters = default_parameters();
@@ -63,7 +67,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain, std::string method)
-  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)),
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(reference_to_no_delete_pointer(g)),
     _method(method)
 {
   check();
@@ -76,7 +82,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
-  : BoundaryCondition(V), g(g), _method(method)
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(g), _method(method)
 {
   check();
   parameters = default_parameters();
@@ -85,7 +93,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          uint sub_domain, std::string method)
-  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)), _method(method)
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(reference_to_no_delete_pointer(g)), _method(method)
 {
   check();
   parameters = default_parameters();
@@ -95,7 +105,9 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          uint sub_domain, std::string method)
-  : BoundaryCondition(V), g(g), _method(method)
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(g), _method(method)
 {
   check();
   parameters = default_parameters();
@@ -105,7 +117,9 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
-  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)), _method(method),
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(reference_to_no_delete_pointer(g)), _method(method),
     facets(markers)
 {
   check();
@@ -116,14 +130,17 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
-  : BoundaryCondition(V), g(g), _method(method), facets(markers)
+  : BoundaryCondition(V),
+    Hierarchical<DirichletBC>(*this),
+    g(g), _method(method), facets(markers)
 {
   check();
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
-  : BoundaryCondition(bc._function_space)
+  : BoundaryCondition(bc._function_space),
+    Hierarchical<DirichletBC>(*this)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -143,6 +160,9 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _method = bc._method;
   user_sub_domain = bc.user_sub_domain;
   facets = bc.facets;
+
+  // Call assignment operator for base class
+  Hierarchical<DirichletBC>::operator=(bc);
 
   return *this;
 }
@@ -290,14 +310,21 @@ const std::vector<std::pair<dolfin::uint, dolfin::uint> >& DirichletBC::markers(
   return facets;
 }
 //-----------------------------------------------------------------------------
-const GenericFunction& DirichletBC::value()
+const GenericFunction& DirichletBC::value() const
 {
   return *g;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> DirichletBC::value_ptr()
+boost::shared_ptr<const GenericFunction> DirichletBC::value_ptr() const
 {
   return g;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain_ptr() const
+{
+  if (!user_sub_domain)
+    error("No user subdomain defined");
+  return user_sub_domain;
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::is_compatible(GenericFunction& v) const
