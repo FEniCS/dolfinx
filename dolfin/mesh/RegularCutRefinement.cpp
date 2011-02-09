@@ -26,10 +26,6 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
                                   const Mesh& mesh,
                                   const MeshFunction<bool>& cell_markers)
 {
-  cout << endl;
-  cout << "---------------------------------------------------------------" << endl;
-  cout << "Starting new refinement, depth = " << mesh.depth() << endl;
-
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
     error("Regular-cut mesh refinement is currently only implemented in 2D.");
@@ -58,8 +54,6 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
                                            const Mesh& mesh,
                                            const MeshFunction<bool>& cell_markers)
 {
-  cout << "--- COMPUTE MARKERS ---" << endl;
-
   // Create edge markers and initialize to false
   const uint edges_per_cell = mesh.topology().dim() + 1;
   std::vector<std::vector<bool> > edge_markers(mesh.num_cells());
@@ -165,17 +159,6 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
     marked_cells.clear();
   }
 
-  // Debug
-  //for (uint i = 0; i < edge_markers.size(); i++)
-  // {
-  // cout << i << ":";
-  //  for (uint j = 0; j < edge_markers[i].size(); j++)
-  //    cout << " " << edge_markers[i][j];
-  //  cout << endl;
-  // }
-
-  cout << "--- EXTRACT MARKERS ---" << endl;
-
   // Extract which cells to refine and indices which edges to bisect
   refinement_markers.resize(mesh.num_cells());
   for (uint i = 0; i < edge_markers.size(); i++)
@@ -217,8 +200,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
                                          const std::vector<int>& refinement_markers,
                                          const IndexSet& marked_edges)
 {
-  cout << "--- REFINE MARKED ---" << endl;
-
   // Count the number of cells in refined mesh
   uint num_cells = 0;
 
