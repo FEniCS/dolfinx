@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version.
 
 // First added:  2010-08-19
-// Last changed: 2011-01-24
+// Last changed: 2011-02-09
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -45,7 +45,7 @@ int main()
   AdaptivePoisson::Form_8::TrialSpace V(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
+  Function u0(V);
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 
@@ -69,6 +69,5 @@ int main()
   pde.solve(u, tol, M);
 
   summary();
-
   return 0;
 }
