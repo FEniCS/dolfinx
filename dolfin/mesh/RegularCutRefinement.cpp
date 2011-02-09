@@ -232,10 +232,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   editor.init_vertices(num_vertices);
   editor.init_cells(num_cells);
 
-
-  // FIXME: Use for debugging
-  IndexSet used_vertices(num_vertices);
-
   // Set vertex coordinates
   uint current_vertex = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
@@ -248,9 +244,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // Get bisection data for old mesh
   MeshFunction<uint>* bisection_twins = mesh.data().mesh_function("bisection_twins");
-
-
-
 
   // Markers for bisected cells pointing to their bisection twins in refined mesh
   std::vector<uint> refined_bisection_twins(num_cells);
