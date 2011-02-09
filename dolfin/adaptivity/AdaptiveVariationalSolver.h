@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-28
+// Last changed: 2011-02-09
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -49,15 +49,15 @@ namespace dolfin
     ///         the prescribed tolerance
     static void solve(Function& u,
                       VariationalProblem& problem,
-                      double tol,
+                      const double tol,
                       GoalFunctional& M,
                       Parameters& parameters);
 
-    static void solve(Function& u,
-                      VariationalProblem& problem,
-                      double tol,
-                      Form& M,
-                      ErrorControl& ec,
+    static void solve(Function& w,
+                      VariationalProblem& pde,
+                      const double tol,
+                      Form& goal,
+                      ErrorControl& control,
                       Parameters& parameters);
 
     /// Default parameter values
@@ -68,7 +68,7 @@ namespace dolfin
       // Set default adaptive parameters associated with stopping
       // criteria
       p.add("tolerance", 0.0);
-      p.add("max_iterations", 1);
+      p.add("max_iterations", 20);
       p.add("max_dimension", 0);
 
       // Set generic adaptive parameters

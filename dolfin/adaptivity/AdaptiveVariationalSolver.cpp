@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-28
+// Last changed: 2011-02-09
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -30,7 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void AdaptiveVariationalSolver::solve(Function& u,
                                       VariationalProblem& problem,
-                                      double tol,
+                                      const double tol,
                                       GoalFunctional& M,
                                       Parameters& parameters)
 {
@@ -42,11 +42,11 @@ void AdaptiveVariationalSolver::solve(Function& u,
   AdaptiveVariationalSolver::solve(u, problem, tol, M, ec, parameters);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveVariationalSolver::solve(Function& u,
-                                      VariationalProblem& problem,
-                                      double tol,
-                                      Form& M,
-                                      ErrorControl& ec,
+void AdaptiveVariationalSolver::solve(Function& w,
+                                      VariationalProblem& pde,
+                                      const double tol,
+                                      Form& goal,
+                                      ErrorControl& control,
                                       Parameters& parameters)
 {
   // Set tolerance parameter if not set
@@ -58,8 +58,15 @@ void AdaptiveVariationalSolver::solve(Function& u,
 
   // Start adaptive loop
   const uint maxiter = parameters["max_iterations"];
+
   for (uint i = 0; i < maxiter; i++)
   {
+    // Update references to current
+    VariationalProblem& problem = pde.fine();
+    Function& u = w.fine();
+    Form& M = goal.fine();
+    ErrorControl& ec = control.fine();
+
     //--- Stage 0: Solve primal problem ---
     info("");
     begin("Stage %d.0: Solving primal problem...", i);
@@ -103,36 +110,33 @@ void AdaptiveVariationalSolver::solve(Function& u,
 
     //--- Stage 2: Compute error indicators ---
     begin("Stage %d.2: Computing error indicators...", i);
-
     Vector indicators(mesh.num_cells());
     ec.compute_indicators(indicators, u);
-
     end();
 
     //--- Stage 3: Mark mesh for refinement ---
     begin("Stage %d.3: Marking mesh for refinement...", i);
-
     MeshFunction<bool> markers(mesh, mesh.topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
     mark(markers, indicators, strategy, fraction);
-
     end();
 
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
-
-    Mesh refined_mesh = refine(mesh, markers);
+    refine(mesh, markers);
     if (parameters["plot_mesh"])
-      plot(refined_mesh, "Refined mesh");
-
+      plot(mesh.fine(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
-
-    info("Updating forms to new mesh. Dc. Logg will fix...");
-
+    // FIXME: const issues...
+    refine(const_cast<const VariationalProblem&>(problem),
+           mesh.fine_shared_ptr());
+    refine(const_cast<const Function&>(u), mesh.fine_shared_ptr());
+    refine(const_cast<const Form&>(M), mesh.fine_shared_ptr());
+    refine(ec, mesh.fine_shared_ptr());
     end();
   }
 
