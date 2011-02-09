@@ -263,6 +263,10 @@ IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 IMPLEMENT_VARIABLE_INTERFACE(GenericDofMap)
 IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
+#if SWIG_VERSION >= 0x020000
+IMPLEMENT_VARIABLE_INTERFACE(VariationalProblem)
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Macros for defining in and out typemaps for foreign types that DOLFIN
