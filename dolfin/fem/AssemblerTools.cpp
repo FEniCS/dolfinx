@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-01-31
+// Last changed: 2011-02-10
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -100,10 +100,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   if (reset_sparsity && add_values)
     error("Can not add values when the sparsity pattern is reset");
 
-    // Get dof maps
-    std::vector<const GenericDofMap*> dof_maps;
-    for (uint i = 0; i < a.rank(); ++i)
-      dof_maps.push_back(&(a.function_space(i)->dofmap()));
+  // Get dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < a.rank(); ++i)
+    dof_maps.push_back(&(a.function_space(i)->dofmap()));
 
   if (reset_sparsity)
   {
