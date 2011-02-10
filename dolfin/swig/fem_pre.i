@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2009-11-10
+// Last changed: 2011-02-09
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -74,8 +74,10 @@
 namespace dolfin {
   class Form;
   class VariationalProblem;
+  class DirichletBC;
 }
 
 %template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
 %template (HierarchicalVariationalProblem) \
           dolfin::Hierarchical<dolfin::VariationalProblem>;
+%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
