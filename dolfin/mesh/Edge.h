@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2010-08-16
+// Last changed: 2011-02-08
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -35,7 +35,10 @@ namespace dolfin
     ~Edge() {}
 
     /// Compute Euclidean length of edge
-    double length();
+    double length() const;
+
+    /// Compute dot product between edge and other edge
+    double dot(const Edge& edge) const;
 
   };
 

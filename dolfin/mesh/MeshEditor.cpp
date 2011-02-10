@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2011-01-11
+// Last changed: 2011-02-09
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -242,6 +242,10 @@ void MeshEditor::add_higher_order_vertex(uint v, double x, double y, double z)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 {
+  // Check vertices
+  for (uint i = 0; i < v.size(); i++)
+    check_vertex(v[i]);
+
   // Add cell
   add_cell_common(c, tdim);
 
@@ -251,6 +255,10 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
+  // Check vertices
+  //check_vertex(v0);
+  //check_vertex(v1);
+
   // Add cell
   add_cell_common(c, 1);
 
@@ -262,6 +270,11 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 {
+  // Check vertices
+  check_vertex(v0);
+  check_vertex(v1);
+  check_vertex(v2);
+
   // Add cell
   add_cell_common(c, 2);
 
@@ -274,6 +287,12 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 {
+  // Check vertices
+  check_vertex(v0);
+  check_vertex(v1);
+  check_vertex(v2);
+  check_vertex(v3);
+
   // Add cell
   add_cell_common(c, 3);
 
@@ -285,9 +304,18 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
   mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_cell_data(uint c, uint v0, uint v1, uint v2,
+void MeshEditor::add_higher_order_cell_data(uint c,
+                                            uint v0, uint v1, uint v2,
                                             uint v3, uint v4, uint v5)
 {
+  // Check vertices
+  check_vertex(v0);
+  check_vertex(v1);
+  check_vertex(v2);
+  check_vertex(v3);
+  check_vertex(v4);
+  check_vertex(v5);
+
   // Add cell
   add_higher_order_cell_common(c, 6);
 
@@ -477,5 +505,11 @@ void MeshEditor::clear()
   mesh = 0;
   vertices.clear();
   higher_order_cell_data.clear();
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::check_vertex(uint v)
+{
+  if (num_vertices > 0 && v >= num_vertices)
+    error("Vertex index (%d) out of range [0, %d].", v, num_vertices - 1);
 }
 //-----------------------------------------------------------------------------

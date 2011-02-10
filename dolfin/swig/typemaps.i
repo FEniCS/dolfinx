@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-01-29
+// Last changed: 2011-02-09
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -59,7 +59,10 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
-%typemap(out) dolfin::uint = int;
+%typemap(out) dolfin::uint
+{
+  $result = SWIG_From_unsigned_SS_int($1);
+}
 
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::real

@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-02
-// Last changed: 2010-02-11
+// Last changed: 2011-02-08
 
 #include <cmath>
 #include <dolfin/common/types.h>
@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-double Edge::length()
+double Edge::length() const
 {
   const uint* vertices = entities(0);
   assert(vertices);
@@ -30,5 +30,26 @@ double Edge::length()
                + (p1.z()-p0.z())*(p1.z()-p0.z())));
 
   return length;
+}
+//-----------------------------------------------------------------------------
+double Edge::dot(const Edge& edge) const
+{
+  const uint* v0 = entities(0);
+  const uint* v1 = edge.entities(0);
+  assert(v0);
+  assert(v1);
+
+  const MeshGeometry& g = _mesh->geometry();
+  const double* x00 = g.x(v0[0]);
+  const double* x01 = g.x(v0[1]);
+  const double* x10 = g.x(v1[0]);
+  const double* x11 = g.x(v1[1]);
+
+  double sum = 0.0;
+  const uint gdim = g.dim();
+  for (uint i = 0; i < gdim; i++)
+    sum += (x01[i] - x00[i]) * (x11[i] - x10[i]);
+
+  return sum;
 }
 //-----------------------------------------------------------------------------

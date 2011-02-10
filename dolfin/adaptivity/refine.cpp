@@ -71,25 +71,9 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
     return mesh.child();
   }
 
-  // Count the number of marked cells
-  uint n0 = mesh.num_cells();
-  uint n = 0;
-  for (uint i = 0; i < cell_markers.size(); i++)
-    if (cell_markers[i])
-      n++;
-  info("%d cells out of %d marked for refinement (%.1f%%).",
-       n, n0, 100.0 * static_cast<double>(n) / static_cast<double>(n0));
-
   // Call refinement algorithm
   boost::shared_ptr<Mesh> refined_mesh(new Mesh());
-  LocalMeshRefinement::refineRecursivelyByEdgeBisection(*refined_mesh,
-                                                        mesh,
-                                                        cell_markers);
-
-  // Report the number of refined cells
-  uint n1 = refined_mesh->num_cells();
-  info("Number of cells increased from %d to %d (%.1f%% increase).",
-       n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
+  LocalMeshRefinement::refine(*refined_mesh, mesh, cell_markers);
 
   // Set parent / child
   set_parent_child(mesh, refined_mesh);
