@@ -78,10 +78,11 @@ int main() {
   VariationalProblem pde(F, dF, bc);
 
   // Give reference
-  pde.parameters("adaptivity")["reference"] = 0.82174229794; // FIXME
+  pde.parameters("adaptivity")["reference"] = 0.40863917*2; // FIXME
+  pde.parameters("adaptivity")["plot_mesh"] = false; // FIXME
 
   // Solve problem with goal-oriented error control to given tolerance
-  double tol = 1.e-4;
+  double tol = 1.e-5;
   pde.solve(w, tol, M);
 
   summary();
