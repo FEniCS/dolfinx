@@ -301,18 +301,28 @@ const dolfin::DirichletBC& dolfin::refine(const DirichletBC& bc,
   boost::shared_ptr<const FunctionSpace> V = bc.function_space_ptr();
   refine(*V, refined_mesh);
 
-  // Refine value
-  const Function& g(dynamic_cast<const Function&>(bc.value()));
-  refine(g, refined_mesh);
-
   // Extract but keep sub-domain
   boost::shared_ptr<const SubDomain> domain = bc.user_sub_domain_ptr();
 
-  // Create refined boundary condition
-  boost::shared_ptr<DirichletBC>
-    refined_bc(new DirichletBC(V->child_shared_ptr(), g.child_shared_ptr(),
-                               domain));
 
+  // Refine value
+  const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());
+
+  boost::shared_ptr<DirichletBC> refined_bc;
+
+  // Create refined boundary condition
+  if (g != 0)
+  {
+    refine(*g, refined_mesh);
+    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
+                                     g->child_shared_ptr(),
+                                     domain));
+  } else
+  {
+    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
+                                     bc.value_ptr(),
+                                     domain));
+  }
   // Set parent / child
   set_parent_child(bc, refined_bc);
 

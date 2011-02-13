@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-09
+// Last changed: 2011-02-13
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -75,10 +75,6 @@ void AdaptiveVariationalSolver::solve(Function& w,
     // Extract function space and mesh
     const FunctionSpace& V(u.function_space());
     const Mesh& mesh(V.mesh());
-
-    // FIXME: Init mesh (should only initialize required stuff.)
-    // FIXME: Remove this, should not be needed!
-    mesh.init();
     end();
 
     //--- Stage 1: Estimate error ---
@@ -125,6 +121,7 @@ void AdaptiveVariationalSolver::solve(Function& w,
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
     refine(mesh, markers);
+    mesh.child().init();
     if (parameters["plot_mesh"])
       plot(mesh.child(), "Refined mesh");
     end();
