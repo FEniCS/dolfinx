@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-09
+// Last changed: 2011-02-13
 
 #include <boost/shared_ptr.hpp>
 
@@ -126,7 +126,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
   if (!dofmap)
   {
-    info("FunctionSpace is defined by a non-stand dofmap.");
+    info("FunctionSpace is defined by a non-standard dofmap.");
     error("Unable to refine function space.");
   }
 

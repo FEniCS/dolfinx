@@ -11,7 +11,7 @@ mesh = UnitSquare(8, 8)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define boundary condition
-u0 = Constant(0.0)
+u0 = Function(V)
 bc = DirichletBC(V, u0, "x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS")
 
 # Define variational problem
