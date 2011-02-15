@@ -67,6 +67,17 @@
 %define ALL_VALUES(name, TYPE)
 %extend name {
     PyObject* values() {
+        dolfin::warning("MeshFunction.values() is depricated and will be removed."\
+			" Use MeshFunction.array() instead.");
+        int m = self->size();
+        int n = 0;
+
+        MAKE_ARRAY(1, m, n, self->values(), TYPE)
+
+        return reinterpret_cast<PyObject*>(array);
+    }
+    
+    PyObject* array() {
         int m = self->size();
         int n = 0;
 
