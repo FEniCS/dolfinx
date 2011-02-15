@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2011-01-31
+// Last changed: 2011-02-14
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -166,6 +166,10 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
     def entities(self, dim):
         """ Return number of incident mesh entities of given topological dimension"""
         return self.mesh().topology()(self.dim(), dim)(self.index())
+    
+    def __str__(self):
+        """Pretty print of MeshEntity"""
+        return self.str(0)
 %}
 }
 
