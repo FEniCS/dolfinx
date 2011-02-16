@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-06-11
-// Last changed: 2010-06-23
+// Last changed: 2011-02-16
 
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
@@ -36,6 +36,8 @@ ODESolution::ODESolution() :
   filename("odesolution"),
   buffer_index_cache(0)
 {
+  parameters = default_parameters();
+  use_exact_interpolation = parameters["exact_interpolation"];
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) :
@@ -50,6 +52,15 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   filename(filename),
   buffer_index_cache(0)
 {
+  parameters = default_parameters();
+
+  //Read here to avoid accessing the parameter system on each eval()
+  // Note: This is pretty useless with the current
+  // parameter system as parameters can not be changed
+  // before instantiation of a class. (So this parameter will 
+  // always have the default value
+  use_exact_interpolation = parameters["exact_interpolation"];  
+
   std::ifstream file;
   uint timeslabs_in_file = open_and_read_header(file, 0u);
   file.close();
@@ -72,7 +83,7 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
       // seek backwards from the end of the file to find the last
       // newline
       // FIXME: Is there a better way to do this? Some library function
-      // doing the same as the command tail
+      // doing the same as the command `tail`
       char buf[1001];
       file.seekg (0, std::ios::end);
 
@@ -220,24 +231,69 @@ void ODESolution::eval(const real& t, RealArray& y)
   }
 
   // Find the right timeslab in buffer
-  ODESolutionData& a = data[get_buffer_index(t)];
-  real tau = (t-a.a)/a.k;
+  uint timeslab_index = get_buffer_index(t);
+  ODESolutionData& timeslab = data[timeslab_index];
 
+  assert(t >= timeslab.a - real_epsilon());
+  assert(t <= timeslab.a + timeslab.k + real_epsilon());
 
-  assert(tau <= 1.0+2*real_epsilon());
-  assert(tau >= -2*real_epsilon());
+  real tau = (t-timeslab.a)/timeslab.k;
 
-  for (uint i = 0; i < N; ++i)
-  {
-    y[i] = 0.0;
-    for (uint j = 0; j < nodal_size; j++)
-      y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
-  }
+  if (use_exact_interpolation)
+    interpolate_exact(y, timeslab, tau);
+  else
+    interpolate_linear(y, timeslab, tau);
+
 
   // store in cache
   cache[ringbufcounter].first = t;
   real_set(N, cache[ringbufcounter].second, y.data().get());
   ringbufcounter = (ringbufcounter + 1) % cache_size;
+}
+//-----------------------------------------------------------------------------
+void ODESolution::interpolate_exact(Array<real>& y, ODESolutionData& timeslab, real tau)
+{
+  for (uint i = 0; i < N; ++i)
+  {
+    y[i] = 0.0;
+
+    // Evaluate each Lagrange polynomial
+    for (uint j = 0; j < nodal_size; j++)
+    {
+      y[i] += timeslab.nv[i*nodal_size + j] * trial->eval(j, tau);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void ODESolution::interpolate_linear(Array<real>& y, ODESolutionData& timeslab, real tau)
+{
+  // Make a guess of the nodal point
+  uint index_a = std::min(trial->size()-2, (uint) to_double(tau*timeslab.nodal_size));
+
+  // Search for the right nodal points
+  while (tau < trial->point(index_a)-real_epsilon() || 
+         index_a >= trial->size()-1 || 
+         tau > trial->point(index_a + 1)+real_epsilon())
+  {
+    if (tau < trial->point(index_a)-real_epsilon())
+      index_a--;
+    else
+      index_a++;
+
+  }
+
+  //Do the linear interpolation
+  const real a = trial->point(index_a);
+  const real b = trial->point(index_a+1);
+
+  for (uint i = 0; i < N; ++i)
+  {
+    const real y_a = timeslab.nv[i*nodal_size + index_a];
+    const real y_b = timeslab.nv[i*nodal_size + index_a+1];
+    const real slobe = (y_b-y_a)/(b-a);
+
+    y[i] = y_a + (tau-a)*slobe;
+  }
 }
 //-----------------------------------------------------------------------------
 ODESolutionData& ODESolution::get_timeslab(uint index)
@@ -416,13 +472,13 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
   }
 
   // Do binary search in interval
-  int range_start = std::max(buffer_index_cache-width, 0);
-  int range_end   = std::min(buffer_index_cache+width, (int) data.size()-1);
+  int range_start = std::max(buffer_index_cache - width, 0);
+  int range_end   = std::min(buffer_index_cache + width, (int) data.size()-1);
   buffer_index_cache = (range_start+range_end)/2;
 
   while( range_end != range_start)
   {
-    if (t > data[buffer_index_cache].a+data[buffer_index_cache].k ) 
+    if (t > data[buffer_index_cache].a + data[buffer_index_cache].k) 
     {
       range_start = std::max(buffer_index_cache, range_start+1);
     } else
@@ -435,7 +491,7 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
     count++;
 
     // NOTE: Is 100 a reasonable number? 
-    // How should the maximum number of iterationsbe determined?
+    // How should the maximum number of iterations be determined?
     assert(count < 100);
   }
 
