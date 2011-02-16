@@ -1,3 +1,4 @@
+ - Handle TimeSeries stored backward in time (automatic reversal)
  - Automatic storage of hierarchy during refinement
  - Remove directory/library 'main', merged into 'common'
  - dolfin_init --> init, dolfin_set_precision --> set_precision

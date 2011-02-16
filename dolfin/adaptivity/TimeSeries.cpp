@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-09-01
+// Last changed: 2011-02-16
 
 #include <algorithm>
 #include <sstream>
@@ -80,9 +80,16 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
   filename = TimeSeries::filename_times(_name, "vector");
   if (File::exists(filename))
   {
+    // Read from file
     File file(filename);
     file >> _vector_times;
     info("Found %d vector sample(s) in time series.", _vector_times.size());
+
+    // Reverse values if necessary
+    if (!increasing(_vector_times))
+      std::reverse(_vector_times.begin(), _vector_times.end());
+    if (!increasing(_vector_times))
+      error("Sample times for vector time series are not strictly increasing or decreasing.");
   }
   else
     info("No vector samples found in time series.");
@@ -91,9 +98,16 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
   filename = TimeSeries::filename_times(_name, "mesh");
   if (File::exists(filename))
   {
+    // Read from file
     File file(filename);
     file >> _mesh_times;
     info("Found %d mesh sample(s) in time series.", _vector_times.size());
+
+    // Reverse values if necessary
+    if (!increasing(_mesh_times))
+      std::reverse(_mesh_times.begin(), _mesh_times.end());
+    if (!increasing(_mesh_times))
+      error("Sample times for mesh time series are not strictly increasing or decreasing.");
   }
   else
     info("No mesh samples found in time series.");
@@ -202,5 +216,13 @@ std::string TimeSeries::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+bool TimeSeries::increasing(const std::vector<double>& times)
+{
+  for (uint i = 0; i < times.size() - 1; i++)
+    if (!(times[i + 1] > times[i]))
+      return false;
+  return true;
 }
 //-----------------------------------------------------------------------------
