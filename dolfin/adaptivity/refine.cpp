@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-13
+// Last changed: 2011-02-16
 
 #include <boost/shared_ptr.hpp>
 
@@ -47,7 +47,7 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
   // Skip refinement if already refined
   if (mesh.has_child())
   {
-    info("Mesh has already been refined, returning child mesh.");
+    dolfin_debug("Mesh has already been refined, returning child mesh.");
     return mesh.child();
   }
 
@@ -67,7 +67,7 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
   // Skip refinement if already refined
   if (mesh.has_child())
   {
-    info("Mesh has already been refined, returning child mesh.");
+    dolfin_debug("Mesh has already been refined, returning child mesh.");
     return mesh.child();
   }
 
@@ -107,7 +107,6 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
                                             boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining function space." << endl;
 
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
@@ -118,7 +117,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   // Skip refinement if already refined
   if (space.has_child())
   {
-    info("Function space has already been refined, returning child space.");
+    dolfin_debug("Function space has already been refined, returning child space.");
     return space.child();
   }
 
@@ -126,7 +125,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
   if (!dofmap)
   {
-    info("FunctionSpace is defined by a non-standard dofmap.");
+    dolfin_debug("FunctionSpace is defined by a non-standard dofmap.");
     error("Unable to refine function space.");
   }
 
@@ -154,12 +153,10 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 const dolfin::Function& dolfin::refine(const Function& function,
                                        boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining function." << endl;
-
   // Skip refinement if already refined
   if (function.has_child())
   {
-    info("Function has already been refined, returning child function.");
+    dolfin_debug("Function has already been refined, returning child function.");
     return function.child();
   }
 
@@ -181,12 +178,10 @@ const dolfin::Function& dolfin::refine(const Function& function,
 const dolfin::Form& dolfin::refine(const Form& form,
                                    boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining form." << endl;
-
   // Skip refinement if already refined
   if (form.has_child())
   {
-    info("Form has already been refined, returning child form.");
+    dolfin_debug("Form has already been refined, returning child form.");
     return form.child();
   }
 
@@ -241,12 +236,10 @@ const dolfin::Form& dolfin::refine(const Form& form,
 const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& problem,
                                                  boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining variational problem." << endl;
-
   // Skip refinement if already refined
   if (problem.has_child())
   {
-    info("Variational problem has already been refined, returning child problem.");
+    dolfin_debug("Variational problem has already been refined, returning child problem.");
     return problem.child();
   }
 
@@ -293,7 +286,7 @@ const dolfin::DirichletBC& dolfin::refine(const DirichletBC& bc,
   // Skip refinement if already refined
   if (bc.has_child())
   {
-    info("DirichletBC has already been refined, returning child problem.");
+    dolfin_debug("DirichletBC has already been refined, returning child problem.");
     return bc.child();
   }
 
@@ -335,7 +328,7 @@ dolfin::ErrorControl& dolfin::refine(ErrorControl& ec,
   // Skip refinement if already refined
   if (ec.has_child())
   {
-    info("ErrorControl has already been refined, returning child problem.");
+    dolfin_debug("ErrorControl has already been refined, returning child problem.");
     return ec.child();
   }
 
