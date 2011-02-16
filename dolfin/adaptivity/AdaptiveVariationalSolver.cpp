@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-13
+// Last changed: 2011-02-16
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -19,7 +19,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/plot.h>
-#include "refine.h"
+#include "adapt.h"
 #include "ErrorControl.h"
 #include "GoalFunctional.h"
 #include "marking.h"
@@ -120,7 +120,7 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
-    refine(mesh, markers);
+    adapt(mesh, markers);
     mesh.child().init();
     if (parameters["plot_mesh"])
       plot(mesh.child(), "Refined mesh");
@@ -129,11 +129,11 @@ void AdaptiveVariationalSolver::solve(Function& w,
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
     // FIXME: const issues...
-    refine(const_cast<const VariationalProblem&>(problem),
+    adapt(const_cast<const VariationalProblem&>(problem),
            mesh.fine_shared_ptr());
-    refine(const_cast<const Function&>(u), mesh.fine_shared_ptr());
-    refine(const_cast<const Form&>(M), mesh.fine_shared_ptr());
-    refine(ec, mesh.fine_shared_ptr());
+    adapt(const_cast<const Function&>(u), mesh.fine_shared_ptr());
+    adapt(const_cast<const Form&>(M), mesh.fine_shared_ptr());
+    adapt(ec, mesh.fine_shared_ptr());
     end();
   }
 
