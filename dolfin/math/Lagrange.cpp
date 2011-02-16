@@ -174,7 +174,7 @@ void Lagrange::init()
   // since we don't have to check each time that the constants have been
   // computed.
 
-  if ( constants == 0 )
+  if (constants == 0)
     constants = new real[n];
 
   // Compute constants
@@ -183,7 +183,7 @@ void Lagrange::init()
     real product = 1.0;
     for (unsigned int j = 0; j < n; j++)
       if (j != i)
-	product *= points[i] - points[j];
+        product *= points[i] - points[j];
     if (real_abs(product) > real_epsilon())
       constants[i] = 1.0 / product;
   }
