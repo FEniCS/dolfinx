@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-09
+// Last changed: 2011-02-16
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -48,17 +48,17 @@ namespace dolfin
     ///     tol (double)
     ///         the prescribed tolerance
     static void solve(Function& u,
-                      VariationalProblem& problem,
+                      const VariationalProblem& problem,
                       const double tol,
                       GoalFunctional& M,
-                      Parameters& parameters);
+                      const Parameters& parameters);
 
     static void solve(Function& w,
-                      VariationalProblem& pde,
+                      const VariationalProblem& pde,
                       const double tol,
                       Form& goal,
                       ErrorControl& control,
-                      Parameters& parameters);
+                      const Parameters& parameters);
 
     /// Default parameter values
     static Parameters default_parameters()

@@ -29,10 +29,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AdaptiveVariationalSolver::solve(Function& u,
-                                      VariationalProblem& problem,
+                                      const VariationalProblem& problem,
                                       const double tol,
                                       GoalFunctional& M,
-                                      Parameters& parameters)
+                                      const Parameters& parameters)
 {
 
   // Extract error control view from goal functional
@@ -43,15 +43,15 @@ void AdaptiveVariationalSolver::solve(Function& u,
 }
 //-----------------------------------------------------------------------------
 void AdaptiveVariationalSolver::solve(Function& w,
-                                      VariationalProblem& pde,
+                                      const VariationalProblem& pde,
                                       const double tol,
                                       Form& goal,
                                       ErrorControl& control,
-                                      Parameters& parameters)
+                                      const Parameters& parameters)
 {
   // Set tolerance parameter if not set
-  if (parameters["tolerance"].change_count() == 0)
-    parameters["tolerance"] = tol;
+  //if (parameters["tolerance"].change_count() == 0)
+  //  parameters["tolerance"] = tol;
 
   // A list of adaptive data
   std::vector<AdaptiveDatum> data;
@@ -62,7 +62,7 @@ void AdaptiveVariationalSolver::solve(Function& w,
   for (uint i = 0; i < maxiter; i++)
   {
     // Update references to current
-    VariationalProblem& problem = pde.fine();
+    const VariationalProblem& problem = pde.fine();
     Function& u = w.fine();
     Form& M = goal.fine();
     ErrorControl& ec = control.fine();
@@ -128,11 +128,9 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
-    // FIXME: const issues...
-    adapt(const_cast<const VariationalProblem&>(problem),
-           mesh.fine_shared_ptr());
-    adapt(const_cast<const Function&>(u), mesh.fine_shared_ptr());
-    adapt(const_cast<const Form&>(M), mesh.fine_shared_ptr());
+    adapt(problem, mesh.fine_shared_ptr());
+    adapt(u, mesh.fine_shared_ptr());
+    adapt(M, mesh.fine_shared_ptr());
     adapt(ec, mesh.fine_shared_ptr());
     end();
   }

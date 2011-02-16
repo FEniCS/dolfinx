@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-31
+// Last changed: 2011-02-16
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -99,19 +99,19 @@ namespace dolfin
     ~VariationalProblem();
 
     /// Solve variational problem
-    void solve(Function& u);
+    void solve(Function& u) const;
 
     /// Solve variational problem and extract sub functions
-    void solve(Function& u0, Function& u1);
+    void solve(Function& u0, Function& u1) const;
 
     /// Solve variational problem and extract sub functions
-    void solve(Function& u0, Function& u1, Function& u2);
+    void solve(Function& u0, Function& u1, Function& u2) const;
 
     /// Solve variational problem adaptively to within given tolerance
-    void solve(Function& u, double tol, GoalFunctional& M);
+    void solve(Function& u, const double tol, GoalFunctional& M) const;
 
     /// Solve variational problem adaptively to within given tolerance
-    void solve(Function& u, double tol, Form& M, ErrorControl& ec);
+    void solve(Function& u, const double tol, Form& M, ErrorControl& ec) const;
 
     /// Return true if problem is non-linear
     const bool is_nonlinear() const;
