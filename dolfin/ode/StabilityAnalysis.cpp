@@ -12,6 +12,7 @@
 #include <dolfin/io/PythonFile.h>
 #include <dolfin/common/real.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/la/HighPrecision.h>
 #include <vector>
 #include <boost/scoped_array.hpp>
 

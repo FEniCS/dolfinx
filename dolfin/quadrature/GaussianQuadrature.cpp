@@ -10,8 +10,8 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/la/HighPrecision.h>
 #include <dolfin/math/Legendre.h>
-#include <dolfin/ode/SORSolver.h>
 #include "GaussianQuadrature.h"
 
 using namespace dolfin;
@@ -86,13 +86,13 @@ void GaussianQuadrature::compute_weights()
 
 #else 
   //With extended precision: Use the double precision result as initial guess for the
-  //extended precision SOR solver.
+  //extended precision linear solver.
 
   uBLASDenseMatrix A_inv(A);
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  SORSolver::SOR_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
+  real_solve_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
 
 #endif
 }

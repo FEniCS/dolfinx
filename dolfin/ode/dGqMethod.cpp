@@ -11,8 +11,8 @@
 #include <dolfin/quadrature/RadauQuadrature.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/la/HighPrecision.h>
 #include <dolfin/ode/ODE.h>
-#include <dolfin/ode/SORSolver.h>
 #include "dGqMethod.h"
 
 using namespace dolfin;
