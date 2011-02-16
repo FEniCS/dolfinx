@@ -7,7 +7,7 @@ background mesh.
 """
 
 __author__ = "Kristoffer Selim (selim@simula.no), Andre Massing (massing@simula,no)"
-__date__ = "2008-10-14 -- 2010"
+__date__ = "2008-10-14 -- 2011-02-14"
 __copyright__ = "Copyright (C) 2008 Kristoffer Selim"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -49,8 +49,8 @@ while theta < 2*DOLFIN_PI + dtheta:
     cells = omega0.all_intersected_entities(boundary)
 
     # Mark intersected values
-    intersection.values()[:] = 0
-    intersection.values()[cells] = 1
+    intersection.array()[:] = 0
+    intersection.array()[cells] = 1
 
     # Plot intersection
     if _first:
@@ -104,8 +104,8 @@ while theta < 2*DOLFIN_PI + dtheta:
   cells = background_mesh.all_intersected_entities(structure_mesh)
 
   # Mark intersected values
-  intersection.values()[:] = 0
-  intersection.values()[cells] = 1
+  intersection.array()[:] = 0
+  intersection.array()[cells] = 1
 
   if _first :
     q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)

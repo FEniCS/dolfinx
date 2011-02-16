@@ -21,8 +21,8 @@ mesh_function = MeshFunction("bool", mesh, mesh.topology().dim())
 subdomain = LeftSide()
 for cell in cells(mesh):
     p = cell.midpoint()
-    mesh_function.values()[cell.index()] = int(subdomain.inside(p, False))
-    print "c ", cell.index(), " v ",  mesh_function.values()[cell.index()]
+    mesh_function.array()[cell.index()] = int(subdomain.inside(p, False))
+    print "c ", cell.index(), " v ",  mesh_function.array()[cell.index()]
 
 V  = FunctionSpace(mesh, "Lagrange", 1)
 fv = Function(V, cppexpr='1.0')

@@ -93,7 +93,7 @@ class NamedMeshFunctions(unittest.TestCase):
     def test_numpy_access(self):
         for tp in self.tps:
             for name in self.names:
-                values = self.funcs[(tp, name)].values()
+                values = self.funcs[(tp, name)].array()
                 values[:] = numpy.random.rand(len(values))
                 self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
                                     for i in xrange(len(values))))
@@ -180,7 +180,7 @@ if MPI.num_processes()==1:
             file = File("saved_mesh_function.xml")
             file << self.f
             f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
-            assert all(f.values() == self.f.values())
+            assert all(f.array() == self.f.array())
     
         def testSubsetIterators(self):
             def inside1(x):

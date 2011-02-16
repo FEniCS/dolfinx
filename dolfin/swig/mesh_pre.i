@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2011-01-31
+// Last changed: 2011-02-14
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -67,6 +67,17 @@
 %define ALL_VALUES(name, TYPE)
 %extend name {
     PyObject* values() {
+        dolfin::warning("MeshFunction.values() is depricated and will be removed."\
+			" Use MeshFunction.array() instead.");
+        int m = self->size();
+        int n = 0;
+
+        MAKE_ARRAY(1, m, n, self->values(), TYPE)
+
+        return reinterpret_cast<PyObject*>(array);
+    }
+    
+    PyObject* array() {
         int m = self->size();
         int n = 0;
 
@@ -166,6 +177,10 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
     def entities(self, dim):
         """ Return number of incident mesh entities of given topological dimension"""
         return self.mesh().topology()(self.dim(), dim)(self.index())
+    
+    def __str__(self):
+        """Pretty print of MeshEntity"""
+        return self.str(0)
 %}
 }
 
