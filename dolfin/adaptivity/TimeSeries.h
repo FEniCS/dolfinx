@@ -85,6 +85,9 @@ namespace dolfin
     // True if series has been cleared
     bool _cleared;
 
+    // True if series is reversed
+    bool _reversed;
+
   };
 
 }

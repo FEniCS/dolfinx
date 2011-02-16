@@ -15,7 +15,8 @@ using namespace dolfin;
 // Template function for storing objects
 template <class T> void store_object(const T& object, double t,
                                      std::vector<double>& times,
-                                     std::string series_name, std::string type_name)
+                                     std::string series_name,
+                                     std::string type_name)
 {
   // Write object
   File file_data(TimeSeries::filename_data(series_name, type_name, times.size()));
@@ -32,7 +33,9 @@ template <class T> void store_object(const T& object, double t,
 // Template function for retrieving objects
 template <class T> void retrieve_object(T& object, double t,
                                         const std::vector<double>& times,
-                                        std::string series_name, std::string type_name)
+                                        std::string series_name,
+                                        std::string type_name,
+                                        bool reversed)
 {
   // Must have at least one value stored
   if (times.size() == 0)
@@ -64,13 +67,21 @@ template <class T> void retrieve_object(T& object, double t,
   dolfin_debug2("Neighboring values are %g and %g", *lower, *upper);
   dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
 
+  // Check if series is reversed
+  if (reversed)
+  {
+    index = times.size() - 1 - index;
+    dolfin_debug1("Series is reversed so I'm using index = %d instead.", index);
+  }
+
   // Read object
   File file(TimeSeries::filename_data(series_name, type_name, index));
   file >> object;
 }
 
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
+TimeSeries::TimeSeries(std::string name)
+  : _name(name), _cleared(false), _reversed(false)
 {
   not_working_in_parallel("Storing of data to time series");
 
@@ -87,7 +98,10 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
 
     // Reverse values if necessary
     if (!increasing(_vector_times))
+    {
       std::reverse(_vector_times.begin(), _vector_times.end());
+      _reversed = true;
+    }
     if (!increasing(_vector_times))
       error("Sample times for vector time series are not strictly increasing or decreasing.");
   }
@@ -105,7 +119,10 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
 
     // Reverse values if necessary
     if (!increasing(_mesh_times))
+    {
       std::reverse(_mesh_times.begin(), _mesh_times.end());
+      _reversed = true;
+    }
     if (!increasing(_mesh_times))
       error("Sample times for mesh time series are not strictly increasing or decreasing.");
   }
@@ -140,12 +157,12 @@ void TimeSeries::store(const Mesh& mesh, double t)
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t) const
 {
-  retrieve_object(vector, t, _vector_times, _name, "vector");
+  retrieve_object(vector, t, _vector_times, _name, "vector", _reversed);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
-  retrieve_object(mesh, t, _vector_times, _name, "mesh");
+  retrieve_object(mesh, t, _vector_times, _name, "mesh", _reversed);
 }
 //-----------------------------------------------------------------------------
 Array<double> TimeSeries::vector_times() const
