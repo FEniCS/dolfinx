@@ -69,12 +69,8 @@ namespace dolfin
 #endif
       p.add("linear_algebra_backend", default_backend, allowed_backends);
 
-      // Floating-point precision (only relevant when using GMP)
-      #ifdef HAS_GMP
-      p.add("floating_point_precision", 30);                 // Use higher precision for GMP (can be changed)
-      #else
-      p.add("floating_point_precision", 16);                 // Use double precision when GMP is not available
-      #endif
+      // ODESolution
+      p.add("exact_interpolation", true);
 
       return p;
     }

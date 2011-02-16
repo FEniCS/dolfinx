@@ -88,7 +88,7 @@ namespace dolfin
 //-------------------------------- ODESolution---------------------------------
 //-----------------------------------------------------------------------------
 
-  class ODESolution : public Variable
+  class ODESolution
   {
   public:
 
@@ -130,16 +130,6 @@ namespace dolfin
     typedef ODESolutionIterator iterator;
     iterator begin();
     iterator end();
-
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("ode_solution");
-      p.add("exact_interpolation", false);
-
-      return p;
-    }
-
 
   private:
     Lagrange* trial;

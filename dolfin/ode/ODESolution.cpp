@@ -10,6 +10,7 @@
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
 #include <dolfin/log/Logger.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <algorithm>
 #include <iostream>
 #include <ios>
@@ -36,7 +37,6 @@ ODESolution::ODESolution() :
   filename("odesolution"),
   buffer_index_cache(0)
 {
-  parameters = default_parameters();
   use_exact_interpolation = parameters["exact_interpolation"];
 }
 //-----------------------------------------------------------------------------
@@ -52,13 +52,6 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   filename(filename),
   buffer_index_cache(0)
 {
-  parameters = default_parameters();
-
-  //Read here to avoid accessing the parameter system on each eval()
-  // Note: This is pretty useless with the current
-  // parameter system as parameters can not be changed
-  // before instantiation of a class. (So this parameter will 
-  // always have the default value
   use_exact_interpolation = parameters["exact_interpolation"];  
 
   std::ifstream file;
