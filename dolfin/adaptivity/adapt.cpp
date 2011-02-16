@@ -151,7 +151,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Function& dolfin::adapt(const Function& function,
-                                boost::shared_ptr<const Mesh> refined_mesh)
+                                      boost::shared_ptr<const Mesh> refined_mesh)
 {
   // Skip refinement if already refined
   if (function.has_child())
@@ -176,7 +176,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Form& dolfin::adapt(const Form& form,
-                            boost::shared_ptr<const Mesh> refined_mesh)
+                                  boost::shared_ptr<const Mesh> refined_mesh)
 {
   // Skip refinement if already refined
   if (form.has_child())
@@ -234,7 +234,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 }
 //-----------------------------------------------------------------------------
 const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& problem,
-                                          boost::shared_ptr<const Mesh> refined_mesh)
+                                                boost::shared_ptr<const Mesh> refined_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
@@ -281,7 +281,7 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
 }
 //-----------------------------------------------------------------------------
 const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                   boost::shared_ptr<const Mesh> refined_mesh)
+                                         boost::shared_ptr<const Mesh> refined_mesh)
 {
   // Skip refinement if already refined
   if (bc.has_child())

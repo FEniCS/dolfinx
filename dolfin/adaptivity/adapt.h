@@ -41,35 +41,35 @@ namespace dolfin
 
   /// Refine function space based on cell markers
   const FunctionSpace& adapt(const FunctionSpace& space,
-                       const MeshFunction<bool>& cell_markers);
+                             const MeshFunction<bool>& cell_markers);
 
   /// Refine function space based on refined mesh
   const FunctionSpace& adapt(const FunctionSpace& space,
-                       boost::shared_ptr<const Mesh> refined_mesh);
+                             boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of functions ---
 
   /// Refine coefficient based on refined mesh
   const Function& adapt(const Function& function,
-                  boost::shared_ptr<const Mesh> refined_mesh);
+                        boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of boundary conditions ---
 
   /// Refine Dirichlet bc based on refined mesh
   const DirichletBC& adapt(const DirichletBC& bc,
-                     boost::shared_ptr<const Mesh> refined_mesh);
+                           boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of forms ---
 
   /// Refine form based on refined mesh
   const Form& adapt(const Form& form,
-              boost::shared_ptr<const Mesh> refined_mesh);
+                    boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of variational problems ---
 
   /// Refine variational problem based on mesh
   const VariationalProblem& adapt(const VariationalProblem& problem,
-                            boost::shared_ptr<const Mesh> refined_mesh);
+                                  boost::shared_ptr<const Mesh> refined_mesh);
 
   /// Refine error control object based on mesh
   const ErrorControl& adapt(const ErrorControl& ec,
