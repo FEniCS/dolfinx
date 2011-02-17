@@ -20,6 +20,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/solve.h>
@@ -139,11 +140,9 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
     {
-      // Define constant 0.0 on this space
-      const Function u0(V);
-
       // Create corresponding boundary condition for extrapolation
-      DirichletBC e_bc(V, u0, bc.markers());
+      DirichletBC e_bc(V, bc.value(), bc.markers());
+      e_bc.homogenize();
 
       // Apply boundary condition to extrapolation
       e_bc.apply(_Ez_h->vector());
@@ -153,11 +152,9 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // Create Subspace of _Ez_h
     SubSpace S(*_E, component[0]); // FIXME: Only one level allowed so far...
 
-    // Define constant 0.0 on this space
-    const Function u0(S);
-
     // Create corresponding boundary condition for extrapolation
-    DirichletBC e_bc(S, u0, bc.markers());
+    DirichletBC e_bc(S, bc.value(), bc.markers());
+    e_bc.homogenize();
 
     // Apply boundary condition to extrapolation
     //e_bc.apply(_Ez_h->vector()); // FIXME!! Awaits BUG #698229
