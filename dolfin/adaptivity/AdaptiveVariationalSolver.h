@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-16
+// Last changed: 2011-02-17
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -67,7 +67,7 @@ namespace dolfin
 
       // Set default adaptive parameters associated with stopping
       // criteria
-      p.add("tolerance", 0.0);
+      //p.add("tolerance", 0.0);
       p.add("max_iterations", 20);
       p.add("max_dimension", 0);
 
@@ -92,12 +92,16 @@ namespace dolfin
 
     // Check if stopping criterion is satisfied
     static bool stop(const FunctionSpace& V,
-                     double error_estimate,
+                     const double error_estimate,
+                     const double tolerance,
                      const Parameters& parameters);
 
     // Present summary of adaptive data
     static void summary(const std::vector<AdaptiveDatum>& data,
                         const Parameters& parameters);
+
+    // Present summary of adaptive data
+    static void summary(const AdaptiveDatum& data);
 
   };
 

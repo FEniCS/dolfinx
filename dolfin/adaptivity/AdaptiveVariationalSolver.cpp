@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-16
+// Last changed: 2011-02-17
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -88,13 +88,13 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     // Initialize adaptive data
     AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
-                        parameters["tolerance"], functional_value);
+                        tol, functional_value);
     if (parameters["reference"].change_count() > 0)
       datum.set_reference_value(parameters["reference"]);
     data.push_back(datum);
 
     // Check stopping criterion
-    if (stop(V, error_estimate, parameters))
+    if (stop(V, error_estimate, tol, parameters))
     {
       end();
       summary(data, parameters);
@@ -103,6 +103,8 @@ void AdaptiveVariationalSolver::solve(Function& w,
     info("Estimated error (%0.5g) does not satisfy tolerance (%0.5g).",
          error_estimate, tol);
     end();
+    summary(datum);
+
 
     //--- Stage 2: Compute error indicators ---
     begin("Stage %d.2: Computing error indicators...", i);
@@ -141,10 +143,10 @@ void AdaptiveVariationalSolver::solve(Function& w,
 //-----------------------------------------------------------------------------
 bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
                                      const double error_estimate,
+                                     const double tolerance,
                                      const Parameters& parameters)
 {
   // Done if error is less than tolerance
-  const double tolerance = parameters["tolerance"];
   if (std::abs(error_estimate) < tolerance)
     return true;
 
@@ -179,3 +181,14 @@ void AdaptiveVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
   info("");
 }
 //-----------------------------------------------------------------------------
+void AdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
+{
+  // Show summary for all iterations
+  info("");
+  info("Current adaptive data");
+  info("");
+  Table table("Level");
+  datum.store(table);
+  info(indent(table.str(true)));
+  info("");
+}
