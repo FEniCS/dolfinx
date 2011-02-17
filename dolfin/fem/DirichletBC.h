@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-02-08
+// Last changed: 2011-02-17
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -198,6 +198,9 @@ namespace dolfin
 
     /// Set value g for boundary condition, domain remains unchanged
     void set_value(boost::shared_ptr<const GenericFunction> g);
+
+    /// Set value to 0.0
+    void homogenize();
 
     /// Return method used for computing Dirichet dofs ("topological",
     /// "geometric" or "pointwise")

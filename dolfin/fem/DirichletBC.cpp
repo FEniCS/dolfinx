@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-02-08
+// Last changed: 2011-02-17
 
 #include <boost/assign/list_of.hpp>
 
@@ -15,6 +15,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
@@ -395,6 +396,24 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
 void DirichletBC::set_value(const GenericFunction& g)
 {
   this->g = reference_to_no_delete_pointer(g);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::homogenize()
+{
+  const uint value_rank = g->value_rank();
+  if (!value_rank)
+  {
+    boost::shared_ptr<Constant> zero(new Constant(0.0));
+    set_value(zero);
+    return;
+  }
+
+  const uint value_dim = g->value_dimension(0);
+  std::vector<double> values;
+  for (uint i = 0; i < value_dim; i ++)
+    values.push_back(0.0);
+  boost::shared_ptr<Constant> zero(new Constant(values));
+  set_value(zero);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
