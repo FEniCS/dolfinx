@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-02-09
+// Last changed: 2011-02-17
 
 #include <armadillo>
 
@@ -20,7 +20,9 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
+#include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/solve.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 
@@ -94,13 +96,26 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
                                 std::vector<const BoundaryCondition*> bcs)
 {
-  // FIXME: Create dual (homogenized) boundary conditions
-  std::vector<const BoundaryCondition*> dual_bcs;
-  for (uint i = 0; i < bcs.size(); i++)
-    dual_bcs.push_back(bcs[i]);   // push_back(bcs[i].homogenize());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
 
-  // Create and solve dual variational problem
-  VariationalProblem dual(*_a_star, *_L_star, dual_bcs);
+  for (uint i = 0; i < bcs.size(); i++)
+  {
+    // Only handle DirichletBCs
+    const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i]);
+    if (!bc_ptr)
+      continue;
+
+    // Create shared_ptr to boundary condition
+    const boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
+
+    // Run homogenize
+    dual_bc_ptr->homogenize();
+
+    // Plug pointer into into vector
+    dual_bcs.push_back(dual_bc_ptr);
+  }
+
+  VariationalProblem dual(_a_star, _L_star, dual_bcs, 0, 0, 0);
   dual.solve(z);
 }
 //-----------------------------------------------------------------------------

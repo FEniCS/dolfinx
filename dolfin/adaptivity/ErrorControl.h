@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-16
+// Last changed: 2011-02-17
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -16,6 +16,7 @@ namespace dolfin
 {
 
   class BoundaryCondition;
+  class DirichletBC;
   class Form;
   class Function;
   class FunctionSpace;
