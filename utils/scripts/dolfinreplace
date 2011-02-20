@@ -2,7 +2,7 @@
 #
 # Replace string in dolfin files
 #
-#     dolfinreplace s0 s1 [-s]
+#     dolfinreplace s0 s1 [-sv]
 #
 # Example:
 #
@@ -13,18 +13,20 @@
 # Modified by Anders Logg, 2008.
 
 from os import path
+import glob
 
 # File post fixes to look in
 post_fixes = ['.h','.cpp','.i','.tex','.py']
 
 # Directories to explude
-exclude_dir = [".hg"]
+exclude_dir = [".bzr", "build", "local"]
 
 # Global variables
 count         = 0
-changed_files = []
+changed_files = 0
+report_lines = []
 dolfin_root   = path.abspath(path.join(path.dirname(path.abspath(__file__)),
-                                       path.pardir))
+                                       path.pardir, path.pardir))
 
 # Output strings
 post_fix_string = ", ".join( "'%s'"%s for s in post_fixes)
@@ -42,76 +44,96 @@ def replace(args, dirname, filenames):
 
     In all fnames with post fixes in 'post_fixes' replace replaces[0] with replaces[1]
     """
-    global count, changed_files
-    s0, s1, simulate = args
+    global count, report_lines, changed_files
+    (s0, s1), options = args
     for exclude in exclude_dir:
-        if exclude in filenames: filenames.remove(exclude)
-    
-    for filename in filenames:
+        if exclude in filenames:
+            filenames.remove(exclude)
+
+    #print dirname
+
+    for filename in glob.glob(path.join(dirname, options.pattern)):
         if path.splitext(filename)[1] in post_fixes:
             fullpath_filename = path.join(dirname,filename)
-            if path.isfile(fullpath_filename):
-                file = open(fullpath_filename, "r")
-                input = file.read()
+            f = open(fullpath_filename, "r")
+            if options.verbose:
+                changed_lines = []
+                lines = f.readlines()
+                num_changed = 0
+                for i, line in enumerate(lines):
+                    num = line.count(s0)
+                    if num>0:
+                        num_changed += num
+                        changed_lines.append(" "*8+line.replace(s0,\
+                                             "\033[4m%s\033[0;0m"%s0).strip())
+                        lines[i] = line.replace(s0, s1)
+                count += num_changed
+                output = "".join(lines)
+            else:
+                input = f.read()
                 num_changed = input.count(s0)
                 count += num_changed
                 output = input.replace(s0, s1)
-                file.close()
-                
-                if not simulate:
-                    file = open(fullpath_filename, "w")
-                    file.write(output)
-                    file.close()
-                
-                if num_changed > 0:
-                    changed_files.append(path.basename(fullpath_filename))
 
-def usage():
-    print """Usage: dolfinreplace s0 s1 [-s]
+            f.close()
+            
+            if not options.simulate:
+                f = open(fullpath_filename, "w")
+                f.write(output)
+                f.close()
+            
+            if num_changed > 0:
+                changed_files += 1
+                report_lines.append(" "*4+fullpath_filename)
+                if options.verbose:
+                    report_lines.extend(changed_lines)
+                    report_lines.append("")
 
-Replaces string 's0' with 's1' in all
+def options_parser():
+    import optparse
+    usage ="""Usage: %prog [options] arg1 arg2
 
-   %s
+Replaces string 'arg1' with 'arg2' in files in the present directory tree.
+"""
 
-files in the dolfin directory tree.
-
-  -s : Simulate
-"""%post_fix_string
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-s", "--simulate", help="simulate the replacement",
+                      action="store_true", dest="simulate", default=False)
+    parser.add_option("-p", "--pattern", help="a glob compatible pattern "
+                      "for which files should be looked into. "\
+                      "[default: '%default']", action="store",\
+                      dest="pattern", default="*")
+    parser.add_option("-v", "--verbose", help="verbosely print each line that"\
+                      " includes the searched pattern.", action="store_true", \
+                      dest="verbose", default=False)
+    return parser
 
 def main():
-    import sys
-    num_arg = len(sys.argv) -1
-    if  num_arg < 2 or num_arg > 3:
-        usage()
-        sys.exit(1)
+    parser = options_parser()
+    options, args = parser.parse_args()
 
-    # The replace info
-    s0 = sys.argv[1]
-    s1 = sys.argv[2]
+    if len(args) != 2:
+        parser.error("incorrect number of arguments")
 
-    # If a third argument
-    if num_arg == 3:
-        if '-s' in sys.argv[3]:
-            simulate = True
-        else:
-            usage()
-            sys.exit(1)
-    else:
-        simulate = False
-    
+    s0, s1 = args[0].replace("\\", ""), args[1].replace("\\", "")
+
     print start_str%(s0,s1,post_fix_string)
 
     # Do it!
-    path.walk(dolfin_root,replace,(s0,s1,simulate))
+    path.walk(dolfin_root, replace, ((s0, s1), options))
     if count > 0:
-        if simulate:
+        if options.simulate:
             simulate_str = "\nSimulating, no replacement done..."
         else:
             simulate_str = ""
-            
-        print report_str % (count, len(changed_files), ", ".join(changed_files), simulate_str)
+
+        if report_lines[-1]:
+            report_lines.pop(-1)
+        
+        print report_str % (count, changed_files, "\n".\
+                            join(report_lines), simulate_str)
     else:
-        print "\nDone\nNo occurens of %s found"%sys.argv[1]
+        print "Done\n\nNo occurens of '%s' found"%args[0]
     
 if __name__ == "__main__":
     main()

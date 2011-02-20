@@ -23,7 +23,7 @@ class RestrictionTest(unittest.TestCase):
         subdomain = LeftSide()
         for cell in cells(mesh): 
             p = cell.midpoint()
-            mesh_function.values()[cell.index()] = int(subdomain.inside(p, False))
+            mesh_function.array()[cell.index()] = int(subdomain.inside(p, False))
 
         V = FunctionSpace(mesh, "Lagrange", 1)
         fv = Function(V, cppexpr='1.0')

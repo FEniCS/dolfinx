@@ -45,8 +45,8 @@ while t < 1.4 :
     cells = cube.all_intersected_entities(boundary)
 
     # Mark intersected values
-    intersection.values()[:] = 0
-    intersection.values()[cells] = 1
+    intersection.array()[:] = 0
+    intersection.array()[cells] = 1
 
     counter +=1
 
