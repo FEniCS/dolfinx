@@ -127,8 +127,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 
-    // Set column indices
     /*
+    // Set column indices
     std::vector<std::vector<uint> > _column_indices = sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
     std::vector<int> column_indices(sparsity_pattern.num_nonzeros());
     uint k = 0;
@@ -137,11 +137,11 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
       for (uint j = 0; j < _column_indices[i].size(); ++j)
         column_indices[k++] = _column_indices[i][j];
     }
-    //MatSeqAIJSetColumnIndices(*A, reinterpret_cast<int*>(&column_indices[0]));
+    MatSeqAIJSetColumnIndices(*A, reinterpret_cast<int*>(&column_indices[0]));
+    */
 
     // Do not allow new nonzero entries
     //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-    */
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
