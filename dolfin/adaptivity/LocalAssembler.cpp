@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2011-01-04
-// Last changed: 2011-01-14
+// Last changed: 2011-02-21
 
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
@@ -43,7 +43,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
                                    const MeshFunction<uint>* domains)
 {
   // Skip if there are no cell integrals
-  if (ufc.form.num_cell_integrals() == 0)
+  if (ufc.form.num_cell_domains() == 0)
     return;
 
   // Extract default cell integral
@@ -53,7 +53,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   if (domains && domains->size() > 0)
   {
     const uint domain = (*domains)[cell];
-    if (domain < ufc.form.num_cell_integrals())
+    if (domain < ufc.form.num_cell_domains())
       integral = ufc.cell_integrals[domain].get();
     else
       return;
@@ -86,7 +86,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
                                              const MeshFunction<uint>* domains)
 {
   // Skip if there are no exterior facet integrals
-  if (ufc.form.num_exterior_facet_integrals() == 0)
+  if (ufc.form.num_exterior_facet_domains() == 0)
     return;
 
   // Extract default exterior facet integral
@@ -96,7 +96,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   if (domains && domains->size() > 0)
   {
     const uint domain = (*domains)[facet];
-    if (domain < ufc.form.num_exterior_facet_integrals())
+    if (domain < ufc.form.num_exterior_facet_domains())
       integral = ufc.exterior_facet_integrals[domain].get();
     else
       return;
@@ -130,7 +130,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
                                              const MeshFunction<uint>* domains)
 {
   // Skip if there are no interior facet integrals
-  if (ufc.form.num_interior_facet_integrals() == 0)
+  if (ufc.form.num_interior_facet_domains() == 0)
     return;
 
   // Extract default interior facet integral
@@ -140,7 +140,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
   if (domains && domains->size() > 0)
   {
     const uint domain = (*domains)[facet];
-    if (domain < ufc.form.num_interior_facet_integrals())
+    if (domain < ufc.form.num_interior_facet_domains())
       integral = ufc.interior_facet_integrals[domain].get();
     else
       return;

@@ -55,7 +55,7 @@ void Assembler::assemble(GenericTensor& A,
 
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
-  if (a.ufc_form().num_cell_integrals() > 0)
+  if (a.ufc_form().num_cell_domains() > 0)
   {
     cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim(), 1);
     sub_domain.mark(*cell_domains, 0);
@@ -63,8 +63,8 @@ void Assembler::assemble(GenericTensor& A,
 
   // Extract facet domains
   MeshFunction<uint>* facet_domains = 0;
-  if (a.ufc_form().num_exterior_facet_integrals() > 0 ||
-      a.ufc_form().num_interior_facet_integrals() > 0)
+  if (a.ufc_form().num_exterior_facet_domains() > 0 ||
+      a.ufc_form().num_interior_facet_domains() > 0)
   {
     facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1);
     sub_domain.mark(*facet_domains, 0);
@@ -146,7 +146,7 @@ void Assembler::assemble_cells(GenericTensor& A,
                                std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (ufc.form.num_cell_integrals() == 0)
+  if (ufc.form.num_cell_domains() == 0)
     return;
   Timer timer("Assemble cells");
 
@@ -175,7 +175,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (domains && domains->size() > 0)
     {
       const uint domain = (*domains)[*cell];
-      if (domain < ufc.form.num_cell_integrals())
+      if (domain < ufc.form.num_cell_domains())
         integral = ufc.cell_integrals[domain].get();
       else
         continue;
@@ -213,7 +213,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
                                          std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
-  if (ufc.form.num_exterior_facet_integrals() == 0)
+  if (ufc.form.num_exterior_facet_domains() == 0)
     return;
   Timer timer("Assemble exterior facets");
 
@@ -258,7 +258,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     if (domains && domains->size() > 0)
     {
       const uint domain = (*domains)[*facet];
-      if (domain < ufc.form.num_exterior_facet_integrals())
+      if (domain < ufc.form.num_exterior_facet_domains())
         integral = ufc.exterior_facet_integrals[domain].get();
       else
         continue;
@@ -299,7 +299,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                                          std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
-  if (ufc.form.num_interior_facet_integrals() == 0)
+  if (ufc.form.num_interior_facet_domains() == 0)
     return;
 
   Timer timer("Assemble interior facets");
@@ -349,7 +349,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     if (domains && domains->size() > 0)
     {
       const uint domain = (*domains)[*facet];
-      if (domain < ufc.form.num_interior_facet_integrals())
+      if (domain < ufc.form.num_interior_facet_domains())
         integral = ufc.interior_facet_integrals[domain].get();
       else
         continue;

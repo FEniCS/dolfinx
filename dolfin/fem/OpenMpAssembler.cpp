@@ -83,10 +83,10 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 
   // FIXME: The below selections should be made robust
 
-  if (a.ufc_form().num_interior_facet_integrals() != 0)
+  if (a.ufc_form().num_interior_facet_domains() != 0)
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
-  if (a.ufc_form().num_exterior_facet_integrals() != 0)
+  if (a.ufc_form().num_exterior_facet_domains() != 0)
     assemble_cells_and_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
@@ -102,7 +102,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
                                      std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (_ufc.form.num_cell_integrals() == 0)
+  if (_ufc.form.num_cell_domains() == 0)
     return;
 
   Timer timer("Assemble cells");
@@ -180,7 +180,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[cell];
-        if (domain < ufc.form.num_cell_integrals())
+        if (domain < ufc.form.num_cell_domains())
           integral = ufc.cell_integrals[domain].get();
         else
           continue;
@@ -223,7 +223,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     error("Sub-domains not yet handled by OpenMpAssembler.");
 
   // Skip assembly if there are no exterior facet integrals
-  if (_ufc.form.num_cell_integrals() == 0 || _ufc.form.num_exterior_facet_integrals() == 0)
+  if (_ufc.form.num_cell_domains() == 0 || _ufc.form.num_exterior_facet_domains() == 0)
     return;
 
   Timer timer("Assemble exterior facets");
@@ -306,7 +306,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[cell];
-        if (domain < ufc.form.num_cell_integrals())
+        if (domain < ufc.form.num_cell_domains())
           cell_integral = ufc.cell_integrals[domain].get();
         else
           continue;
@@ -379,7 +379,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
 
   // Skip assembly if there are no interior facet integrals
-  if (_ufc.form.num_interior_facet_integrals() == 0)
+  if (_ufc.form.num_interior_facet_domains() == 0)
     return;
 
   Timer timer("Assemble interior facets");
@@ -477,7 +477,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[facet];
-        if (domain < ufc.form.num_interior_facet_integrals())
+        if (domain < ufc.form.num_interior_facet_domains())
           integral = ufc.interior_facet_integrals[domain].get();
         else
           continue;
