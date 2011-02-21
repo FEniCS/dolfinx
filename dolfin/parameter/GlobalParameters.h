@@ -49,6 +49,9 @@ namespace dolfin
       // Graph partitioner
       p.add("mesh_partitioner", "ParMETIS");
 
+      // Graph coloring
+      p.add("graph_coloring_library", "Boost");
+
       // Mesh refinement
       std::set<std::string> allowed_refinement_algorithms;
       std::string default_refinement_algorithm("recursive_bisection");
@@ -65,19 +68,19 @@ namespace dolfin
       std::string default_backend("uBLAS");
       allowed_backends.insert("uBLAS");
       allowed_backends.insert("STL");
-#ifdef HAS_PETSC
+      #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
-#endif
-#ifdef HAS_TRILINOS
+      #endif
+      #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
-#endif
-#ifdef HAS_MTL4
+      #endif
+      #ifdef HAS_MTL4
       allowed_backends.insert("MTL4");
-#endif
-#ifdef HAS_TRILINOS
+      #endif
+      #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
-#endif
+      #endif
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

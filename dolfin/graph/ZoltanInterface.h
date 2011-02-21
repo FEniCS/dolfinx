@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     /// Compute vertex colors
-    static void compute_local_vertex_coloring(const Graph& graph, Array<uint>& colors);
+    static uint compute_local_vertex_coloring(const Graph& graph, Array<uint>& colors);
 
   private:
 

@@ -18,14 +18,14 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
 
-  /// This class builds a Graph corresponding for various objects
+  /// This class builds a Graph corresponding to various objects
 
   class GraphBuilder
   {
 
   public:
 
-    /// Build distribted dual graph for mesh
+    /// Build distributed dual graph for mesh
     static void compute_dual_graph(const LocalMeshData& mesh_data,
                                    std::vector<std::set<uint> >& local_graph,
                                    std::set<uint>& ghost_vertices);

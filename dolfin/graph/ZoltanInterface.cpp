@@ -4,7 +4,6 @@
 // First added:  2010-11-16
 // Last changed:
 
-
 #include <boost/foreach.hpp>
 #include "dolfin/log/log.h"
 #include "dolfin/common/Timer.h"
@@ -14,8 +13,8 @@ using namespace dolfin;
 
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
-void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                    Array<uint>& colors)
+dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+                                                            Array<uint>& colors)
 {
   if (colors.size() != graph.size())
     error("ZoltanGraphColoring::compute_local_cell_coloring: colors array is of wrong length.");
@@ -58,13 +57,24 @@ void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 
   // Clean up
   delete global_ids;
+
+  // Compute number of colors
+  boost::unordered_set<uint> colors_set;
+  for (uint i = 0; i < colors.size(); ++i)
+  {
+    colors[i] = colors[i] - 1;
+    colors_set.insert(colors[i]);
+  }
+
+  return colors_set.size();
 }
 //-----------------------------------------------------------------------------
 #else
-void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                                                     Array<uint>& colors)
 {
   error("Trilinos (with Zoltan) must be enabled to use ZoltanInterface::compute_local_vertex_coloring.");
+  return 0;
 }
 #endif
 //-----------------------------------------------------------------------------
