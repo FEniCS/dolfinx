@@ -46,7 +46,7 @@
 
 %ignore dolfin::Form::set_mesh(const Mesh& mesh);
 
-%ignore dolfin::Form::set_coefficient(std::string name, 
+%ignore dolfin::Form::set_coefficient(std::string name,
 				      const GenericFunction& coefficient);
 
 %ignore dolfin::Form::set_coefficients(std::map<std::string,
@@ -60,7 +60,7 @@
 //-----------------------------------------------------------------------------
 // Ignore one of the constructors for DofMap to avoid warning
 //-----------------------------------------------------------------------------
-%ignore dolfin::DofMap::DofMap(boost::shared_ptr<ufc::dof_map>, const Mesh&);
+%ignore dolfin::DofMap::DofMap(boost::shared_ptr<ufc::dofmap>, const Mesh&);
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
