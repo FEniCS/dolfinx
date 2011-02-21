@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-01-31
+// Last changed: 2011-02-21
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -157,9 +157,9 @@ void Assembler::assemble_cells(GenericTensor& A,
   const uint form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -190,7 +190,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Get local-to-global dof maps for cell
     for (uint i = 0; i < form_rank; ++i)
-      dofs[i] = &(dof_maps[i]->cell_dofs(cell->index()));
+      dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
@@ -224,9 +224,9 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   const uint form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -280,7 +280,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Get local-to-global dof maps for cell
     for (uint i = 0; i < form_rank; ++i)
-      dofs[i] = &(dof_maps[i]->cell_dofs(mesh_cell.index()));
+      dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
@@ -311,9 +311,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   const uint form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dofs for cells
   std::vector<std::vector<uint> > macro_dofs(form_rank);
@@ -375,8 +375,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     for (uint i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const std::vector<uint>& cell_dofs0 = dof_maps[i]->cell_dofs(cell0.index());
-      const std::vector<uint>& cell_dofs1 = dof_maps[i]->cell_dofs(cell1.index());
+      const std::vector<uint>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      const std::vector<uint>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

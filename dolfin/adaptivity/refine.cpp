@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-08
+// Last changed: 2011-02-21
 
 #include <boost/shared_ptr.hpp>
 
@@ -120,7 +120,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
     return space.child();
   }
 
-  // Get DofMap (GenericDofMap does not know about ufc::dof_map)
+  // Get DofMap (GenericDofMap does not know about ufc::dofmap)
   const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
   if (!dofmap)
   {
@@ -130,7 +130,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 
   // Create new copies of UFC finite element and dofmap
   boost::shared_ptr<ufc::finite_element> ufc_element(space.element().ufc_element()->create());
-  boost::shared_ptr<ufc::dof_map> ufc_dofmap(dofmap->ufc_dofmap()->create());
+  boost::shared_ptr<ufc::dofmap> ufc_dofmap(dofmap->ufc_dofmap()->create());
 
   // Create DOLFIN finite element and dofmap
   boost::shared_ptr<const FiniteElement> refined_element(new FiniteElement(ufc_element));

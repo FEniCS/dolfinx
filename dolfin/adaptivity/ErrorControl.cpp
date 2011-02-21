@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-26
+// Last changed: 2011-02-21
 
 #include <armadillo>
 
@@ -233,7 +233,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Extract common space, mesh and dofmap
   const FunctionSpace& V(R_T.function_space());
   const Mesh& mesh(V.mesh());
-  const GenericDofMap& dof_map = V.dofmap();
+  const GenericDofMap& dofmap = V.dofmap();
 
   // Define matrices for cell-residual problems
   const uint N = V.element().space_dimension();
@@ -254,7 +254,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
-    const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
+    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     R_T.vector().set(x.memptr(), N, &dofs[0]);
@@ -299,7 +299,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, R_T);
 
   // Extract (common) dof map
-  const GenericDofMap& dof_map = V.dofmap();
+  const GenericDofMap& dofmap = V.dofmap();
 
   // Define matrices for facet-residual problems
   arma::mat A(N, N);
@@ -355,7 +355,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
-      const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
+      const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       R_dT[local_facet].vector().set(x.memptr(), N, &dofs[0]);

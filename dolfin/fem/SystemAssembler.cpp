@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2011-01-31
+// Last changed: 2011-02-21
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -210,13 +210,13 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   const uint L_rank = L.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> a_dof_maps;
+  std::vector<const GenericDofMap*> a_dofmaps;
   for (uint i = 0; i < a_rank; ++i)
-    a_dof_maps.push_back(&a.function_space(i)->dofmap());
+    a_dofmaps.push_back(&a.function_space(i)->dofmap());
 
-  std::vector<const GenericDofMap*> L_dof_maps;
+  std::vector<const GenericDofMap*> L_dofmaps;
   for (uint i = 0; i < L_rank; ++i)
-    L_dof_maps.push_back(&L.function_space(i)->dofmap());
+    L_dofmaps.push_back(&L.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > a_dofs(a_rank);
@@ -278,9 +278,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     }
 
     // Get local-to-global dof maps for cell
-    a_dofs[0] = &(a_dof_maps[0]->cell_dofs(cell->index()));
-    a_dofs[1] = &(a_dof_maps[1]->cell_dofs(cell->index()));
-    L_dofs[0] = &(L_dof_maps[0]->cell_dofs(cell->index()));
+    a_dofs[0] = &(a_dofmaps[0]->cell_dofs(cell->index()));
+    a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
+    L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
 
     assert(L_dofs[0] == a_dofs[1]);
 
@@ -313,13 +313,13 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
   const uint L_rank = L.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> a_dof_maps;
+  std::vector<const GenericDofMap*> a_dofmaps;
   for (uint i = 0; i < a_rank; ++i)
-    a_dof_maps.push_back(&a.function_space(i)->dofmap());
+    a_dofmaps.push_back(&a.function_space(i)->dofmap());
 
-  std::vector<const GenericDofMap*> L_dof_maps;
+  std::vector<const GenericDofMap*> L_dofmaps;
   for (uint i = 0; i < L_rank; ++i)
-    L_dof_maps.push_back(&L.function_space(i)->dofmap());
+    L_dofmaps.push_back(&L.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > a_dofs(a_rank);
@@ -344,15 +344,15 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(cell0, local_facet0, cell1, local_facet1);
 
       // Reset some temp data
-      const uint a_macro_dim = (a_dof_maps[0]->cell_dofs(cell0.index()).size()
-                               + a_dof_maps[0]->cell_dofs(cell1.index()).size())
-                              *(a_dof_maps[1]->cell_dofs(cell0.index()).size()
-                               + a_dof_maps[1]->cell_dofs(cell1.index()).size());
+      const uint a_macro_dim = (a_dofmaps[0]->cell_dofs(cell0.index()).size()
+                               + a_dofmaps[0]->cell_dofs(cell1.index()).size())
+                              *(a_dofmaps[1]->cell_dofs(cell0.index()).size()
+                               + a_dofmaps[1]->cell_dofs(cell1.index()).size());
       for (uint i = 0; i < a_macro_dim; ++i)
         A_ufc.macro_A[i] = 0.0;
 
-      const uint L_macro_dim = L_dof_maps[0]->cell_dofs(cell0.index()).size()
-                             + L_dof_maps[0]->cell_dofs(cell1.index()).size();
+      const uint L_macro_dim = L_dofmaps[0]->cell_dofs(cell0.index()).size()
+                             + L_dofmaps[0]->cell_dofs(cell1.index()).size();
       for (uint i = 0; i < L_macro_dim; ++i)
         b_ufc.macro_A[i] = 0.0;
 
@@ -371,12 +371,12 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(cell, local_facet);
 
       // Reset some temp data
-      const uint a_local_dim = (a_dof_maps[0]->cell_dofs(cell.index()).size())
-                              *(a_dof_maps[1]->cell_dofs(cell.index()).size());
+      const uint a_local_dim = (a_dofmaps[0]->cell_dofs(cell.index()).size())
+                              *(a_dofmaps[1]->cell_dofs(cell.index()).size());
       for (uint i = 0; i < a_local_dim; i++)
         A_ufc.A[i] = 0.0;
 
-      const uint L_local_dim = L_dof_maps[0]->cell_dofs(cell.index()).size();
+      const uint L_local_dim = L_dofmaps[0]->cell_dofs(cell.index()).size();
       for (uint i = 0; i < L_local_dim; ++i)
         b_ufc.A[i] = 0.0;
 

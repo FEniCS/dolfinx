@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2011-02-07
+// Last changed: 2011-02-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -39,7 +39,7 @@ namespace dolfin
 
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
-      p.add("optimize_use_dof_map_cache", false);            // Store dof maps in cache for reuse
+      p.add("optimize_use_dofmap_cache", false);             // Store dof maps in cache for reuse
       p.add("optimize_use_tensor_cache", false);             // Store tensors in cache for reuse
       p.add("optimize", false);                              // All of the above
 

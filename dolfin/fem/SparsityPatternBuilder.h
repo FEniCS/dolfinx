@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2009-05-19
+// Last changed: 2011-02-21
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -28,7 +28,7 @@ namespace dolfin
     /// Build sparsity pattern for assembly of given form
     static void build(GenericSparsityPattern& sparsity_pattern,
                       const Mesh& mesh,
-                      std::vector<const GenericDofMap*>& dof_maps,
+                      std::vector<const GenericDofMap*>& dofmaps,
                       bool cells, bool interior_facets);
 
   };
