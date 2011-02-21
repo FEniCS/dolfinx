@@ -83,7 +83,7 @@ void XMLFile::validate(const std::string filename)
   xmlDocPtr document;
   document = xmlParseFile(filename.c_str());
   int ret = 1;
-  parser = xmlRelaxNGNewParserCtxt("http://fenics.org/pub/misc/dolfin.rng");
+  parser = xmlRelaxNGNewParserCtxt("http://fenicsproject.org/pub/misc/dolfin.rng");
   xmlRelaxNGSetParserStructuredErrors(parser,
                                       (xmlStructuredErrorFunc)rng_parser_error,
                                       stderr);
