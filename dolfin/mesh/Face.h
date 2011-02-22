@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2011
+//
 // First added:  2006-06-02
-// Last changed: 2010-09-15
+// Last changed: 2011-02-22
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -33,10 +35,10 @@ namespace dolfin
     /// Calculate the area of the face (triangle)
     double area() const;
 
-    /// Compute component i of normal of given face with respect to the cell
+    /// Compute component i of the normal to the face
     double normal(uint i) const;
 
-    /// Compute normal of given face with respect to the cell
+    /// Compute normal to the face
     Point normal() const;
 
   };

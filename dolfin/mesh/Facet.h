@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2011.
 //
 // First added:  2006-06-02
-// Last changed: 2010-08-16
+// Last changed: 2011-02-22
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -28,6 +28,12 @@ namespace dolfin
 
     /// Destructor
     ~Facet() {}
+
+    /// Compute component i of the normal to the facet
+    double normal(uint i) const;
+
+    /// Compute normal to the facet
+    Point normal() const;
 
     // FIXME: This function should take care of facet 'ownership' when a mesh
     //        is distributed across processes

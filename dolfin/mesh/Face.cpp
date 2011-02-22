@@ -35,13 +35,12 @@ double Face::area() const
 //-----------------------------------------------------------------------------
 double Face::normal(uint i) const
 {
-  const uint D = _mesh->topology().dim();
-  _mesh->init(D - 1);
-  _mesh->init(D - 1, D);
+  _mesh->init(2);
+  _mesh->init(2, 3);
   assert(_mesh->ordered());
 
   // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(D)[0]);
+  const Cell cell(*_mesh, this->entities(3)[0]);
 
   // Get local index of facet with respect to the cell
   const uint local_facet = cell.index(*this);
@@ -51,13 +50,12 @@ double Face::normal(uint i) const
 //-----------------------------------------------------------------------------
 Point Face::normal() const
 {
-  const uint D = _mesh->topology().dim();
-  _mesh->init(D - 1);
-  _mesh->init(D - 1, D);
+  _mesh->init(2);
+  _mesh->init(2, 3);
   assert(_mesh->ordered());
 
   // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(D)[0]);
+  const Cell cell(*_mesh, this->entities(3)[0]);
 
   // Get local index of facet with respect to the cell
   const uint local_facet = cell.index(*this);

@@ -61,15 +61,15 @@ dolfin::uint TriangleCell::num_vertices(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::orientation(const Cell& cell) const
 {
-  Vertex v0(cell.mesh(), cell.entities(0)[0]);
-  Vertex v1(cell.mesh(), cell.entities(0)[1]);
-  Vertex v2(cell.mesh(), cell.entities(0)[2]);
+  const Vertex v0(cell.mesh(), cell.entities(0)[0]);
+  const Vertex v1(cell.mesh(), cell.entities(0)[1]);
+  const Vertex v2(cell.mesh(), cell.entities(0)[2]);
 
-  Point p01 = v1.point() - v0.point();
-  Point p02 = v2.point() - v0.point();
-  Point n(-p01.y(), p01.x());
+  const Point p01 = v1.point() - v0.point();
+  const Point p02 = v2.point() - v0.point();
+  const Point n(-p01.y(), p01.x());
 
-  return ( n.dot(p02) < 0.0 ? 1 : 0 );
+  return (n.dot(p02) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::create_entities(uint** e, uint dim, const uint* v) const
@@ -137,12 +137,12 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   else if ( geometry.dim() == 3 )
   {
     // Compute area of triangle embedded in R^3
-    double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-    double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+    const double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+    const double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+    const double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
     // Formula for volume from http://mathworld.wolfram.com
-    return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+    return  0.5*sqrt(v0*v0 + v1*v1 + v2*v2);
   }
   else
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
@@ -165,20 +165,20 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
 
   // Get the coordinates of the three vertices
   const uint* vertices = triangle.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
-  Point p2 = geometry.point(vertices[2]);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+  const Point p2 = geometry.point(vertices[2]);
 
   // FIXME: Assuming 3D coordinates, could be more efficient if
   // FIXME: if we assumed 2D coordinates in 2D
 
   // Compute side lengths
-  double a  = p1.distance(p2);
-  double b  = p0.distance(p2);
-  double c  = p0.distance(p1);
+  const double a  = p1.distance(p2);
+  const double b  = p0.distance(p2);
+  const double c  = p0.distance(p1);
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return 0.5 * a*b*c / volume(triangle);
+  return 0.5*a*b*c/volume(triangle);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::normal(const Cell& cell, uint facet, uint i) const
@@ -217,7 +217,7 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   Point t = p2 - p1;
   t /= t.norm();
   Point n = p2 - p0;
-  n -= n.dot(t) * t;
+  n -= n.dot(t)*t;
 
   // Normalize
   n /= n.norm();
@@ -228,7 +228,7 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
 double TriangleCell::facet_area(const Cell& cell, uint facet) const
 {
   // Create facet from the mesh and local facet number
-  Facet f(cell.mesh(), cell.entities(1)[facet]);
+  const Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   // Get global index of vertices on the facet
   const uint v0 = f.entities(0)[0];
