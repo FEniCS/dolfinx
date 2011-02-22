@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andre Massing 
+// Copyright (C) 2009 Andre Massing
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
@@ -13,26 +13,27 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace CGALi
+{
 
 template <class K>
-inline 
+inline
 bool
 do_intersect(const typename K::Point_3 &pt,
 	     const typename K::Iso_cuboid_3 &iso,
 	     const K&)
 {
-    return !iso.has_on_unbounded_side(pt);
+  return !iso.has_on_unbounded_side(pt);
 }
 
 template <class K>
-inline 
+inline
 bool
 do_intersect(const typename K::Iso_cuboid_3 &iso,
 	     const typename K::Point_3 &pt,
 	     const K&)
 {
-    return !iso.has_on_unbounded_side(pt);
+  return !iso.has_on_unbounded_side(pt);
 }
 
 template <class K>
@@ -41,10 +42,11 @@ intersection(const typename K::Point_3 &pt,
 	     const typename K::Iso_cuboid_3 &iso,
 	     const K& k)
 {
-  if (CGALi::do_intersect(pt,iso,k)) {
+  if (CGALi::do_intersect(pt, iso, k))
+  {
     return make_object(pt);
-    }
-    return Object();
+  }
+  return Object();
 }
 
 
@@ -54,17 +56,18 @@ intersection(const typename K::Iso_cuboid_3 &iso,
 	     const typename K::Point_3 &pt,
 	     const K& k)
 {
-  if (CGALi::do_intersect(pt,iso,k)) {
+  if (CGALi::do_intersect(pt, iso, k))
+  {
     return make_object(pt);
-    }
-    return Object();
+  }
+  return Object();
 }
 
 } // namespace CGALi
 
 
 template <class K>
-inline 
+inline
 bool
 do_intersect(const Iso_cuboid_3<K> &iso,
 	     const Point_3<K> &pt)
@@ -74,7 +77,7 @@ do_intersect(const Iso_cuboid_3<K> &iso,
 }
 
 template <class K>
-inline 
+inline
 bool
 do_intersect(const Point_3<K> &pt,
 	     const Iso_cuboid_3<K> &iso)
@@ -84,7 +87,7 @@ do_intersect(const Point_3<K> &pt,
 }
 
 template <class K>
-inline 
+inline
 Object
 intersection(const Iso_cuboid_3<K> &iso,
 	     const Point_3<K> &pt)
@@ -94,7 +97,7 @@ intersection(const Iso_cuboid_3<K> &iso,
 }
 
 template <class K>
-inline 
+inline
 Object
 intersection(const Point_3<K> &pt,
 	     const Iso_cuboid_3<K> &iso)

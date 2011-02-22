@@ -11,12 +11,8 @@
 
 #include <string>
 #include <vector>
-
 #include <dolfin/common/types.h>
-#include <dolfin/graph/BoostGraphInterface.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/graph/Graph.h>
 
 namespace dolfin
 {
@@ -47,22 +43,6 @@ namespace dolfin
 
     /// Convert coloring type to topological dimension
     static uint type_to_dim(std::string coloring_type, const Mesh& mesh);
-
-  private:
-
-    // Build graph (general version)
-    static const Graph graph(const Mesh& mesh,
-                                   const std::vector<uint>& coloring_type);
-
-    // Build graph (specialized version)
-    static const Graph graph(const Mesh& mesh, uint dim0, uint dim1);
-
-    // Build Boost graph (general version)
-    static const BoostBidirectionalGraph boost_graph(const Mesh& mesh,
-                                           const std::vector<uint>& coloring_type);
-
-    // Build Boost graph (specialized version)
-    static const BoostBidirectionalGraph boost_graph(const Mesh& mesh, uint dim0, uint dim1);
 
   };
 
