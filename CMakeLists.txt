@@ -354,6 +354,14 @@ if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
   install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
     DESTINATION ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
     USE_SOURCE_PERMISSIONS)
+
+  # Add target "install_dolfin_utils" for installing dolfin_utils
+  # without building and install the rest of DOLFIN
+  add_custom_target(install_dolfin_utils
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils"
+      "${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin_utils"
+    COMMENT "Installing dolfin_utils in ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin_utils")
 endif()
 
 #------------------------------------------------------------------------------
