@@ -16,6 +16,8 @@
 namespace dolfin
 {
 
+  class Point;
+
   /// A Face is a MeshEntity of topological dimension 2.
 
   class Face : public MeshEntity
@@ -30,6 +32,12 @@ namespace dolfin
 
     /// Calculate the area of the face (triangle)
     double area() const;
+
+    /// Compute component i of normal of given face with respect to the cell
+    double normal(uint i) const;
+
+    /// Compute normal of given face with respect to the cell
+    Point normal() const;
 
   };
 
