@@ -12,8 +12,8 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Form compiler options
-parameters["form_compiler"]["cpp_optimize"] = True
-parameters["form_compiler"]["optimize"] = True
+#parameters["form_compiler"]["cpp_optimize"] = True
+#parameters["form_compiler"]["optimize"] = True
 
 set_log_level(0)
 

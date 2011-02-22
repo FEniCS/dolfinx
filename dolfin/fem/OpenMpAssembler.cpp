@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2010-11-10
-// Last changed: 2011-01-31
+// Last changed: 2011-02-21
 
 #ifdef HAS_OPENMP
 
@@ -83,10 +83,10 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 
   // FIXME: The below selections should be made robust
 
-  if (a.ufc_form().num_interior_facet_integrals() != 0)
+  if (a.ufc_form().num_interior_facet_domains() != 0)
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
-  if (a.ufc_form().num_exterior_facet_integrals() != 0)
+  if (a.ufc_form().num_exterior_facet_domains() != 0)
     assemble_cells_and_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
@@ -102,7 +102,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
                                      std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (_ufc.form.num_cell_integrals() == 0)
+  if (_ufc.form.num_cell_domains() == 0)
     return;
 
   Timer timer("Assemble cells");
@@ -129,9 +129,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -180,7 +180,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[cell];
-        if (domain < ufc.form.num_cell_integrals())
+        if (domain < ufc.form.num_cell_domains())
           integral = ufc.cell_integrals[domain].get();
         else
           continue;
@@ -195,7 +195,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
       // Get local-to-global dof maps for cell
       for (uint i = 0; i < form_rank; ++i)
-        dofs[i] = &(dof_maps[i]->cell_dofs(index));
+        dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
@@ -223,7 +223,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     error("Sub-domains not yet handled by OpenMpAssembler.");
 
   // Skip assembly if there are no exterior facet integrals
-  if (_ufc.form.num_cell_integrals() == 0 || _ufc.form.num_exterior_facet_integrals() == 0)
+  if (_ufc.form.num_cell_domains() == 0 || _ufc.form.num_exterior_facet_domains() == 0)
     return;
 
   Timer timer("Assemble exterior facets");
@@ -255,9 +255,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dof maps for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -306,7 +306,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[cell];
-        if (domain < ufc.form.num_cell_integrals())
+        if (domain < ufc.form.num_cell_domains())
           cell_integral = ufc.cell_integrals[domain].get();
         else
           continue;
@@ -324,7 +324,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Get local-to-global dof maps for cell
       for (uint i = 0; i < form_rank; ++i)
-        dofs[i] = &(dof_maps[i]->cell_dofs(index));
+        dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
       cell_integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
@@ -379,7 +379,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
 
   // Skip assembly if there are no interior facet integrals
-  if (_ufc.form.num_interior_facet_integrals() == 0)
+  if (_ufc.form.num_interior_facet_domains() == 0)
     return;
 
   Timer timer("Assemble interior facets");
@@ -410,9 +410,9 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   const uint form_rank = ufc.form.rank();
 
   // Collect pointers to dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dof_maps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(&a.function_space(i)->dofmap());
 
   // Vector to hold dofs for cells
   std::vector<std::vector<uint> > macro_dofs(form_rank);
@@ -477,7 +477,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       if (domains && domains->size() > 0)
       {
         const uint domain = (*domains)[facet];
-        if (domain < ufc.form.num_interior_facet_integrals())
+        if (domain < ufc.form.num_interior_facet_domains())
           integral = ufc.interior_facet_integrals[domain].get();
         else
           continue;
@@ -503,8 +503,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       for (uint i = 0; i < form_rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<uint>& cell_dofs0 = dof_maps[i]->cell_dofs(cell0.index());
-        const std::vector<uint>& cell_dofs1 = dof_maps[i]->cell_dofs(cell1.index());
+        const std::vector<uint>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+        const std::vector<uint>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
         macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

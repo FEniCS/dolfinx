@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-01-27
+// Last changed: 2011-02-21
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -26,7 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
+DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap, Mesh& dolfin_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
                _distributed(MPI::num_processes() > 1)
 {
@@ -58,7 +58,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
   build(dolfin_mesh, ufc_mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
                _distributed(MPI::num_processes() > 1)
@@ -79,7 +79,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   build(dolfin_mesh, ufc_mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
                const UFCMesh& ufc_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
                _distributed(MPI::num_processes() > 1)
@@ -178,14 +178,14 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   uint offset = ufc_offset;
 
   // Recursively extract UFC sub-dofmap
-  boost::shared_ptr<ufc::dof_map>
-    ufc_sub_dof_map(extract_sub_dofmap(*_ufc_dofmap, offset, component, ufc_mesh, dolfin_mesh));
+  boost::shared_ptr<ufc::dofmap>
+    ufc_sub_dofmap(extract_sub_dofmap(*_ufc_dofmap, offset, component, ufc_mesh, dolfin_mesh));
 
   // Initialise ufc sub-dofmap
-  init_ufc_dofmap(*ufc_sub_dof_map, ufc_mesh, dolfin_mesh);
+  init_ufc_dofmap(*ufc_sub_dofmap, ufc_mesh, dolfin_mesh);
 
   // Create new dof map
-  DofMap* sub_dofmap = new DofMap(ufc_sub_dof_map, ufc_mesh);
+  DofMap* sub_dofmap = new DofMap(ufc_sub_dofmap, ufc_mesh);
 
    // Create new dof map
   std::vector<std::vector<uint> >& sub_map = sub_dofmap->dofmap;
@@ -201,10 +201,10 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     ufc_cell.update(*cell);
 
     // Resize for list for cell
-    sub_map[index].resize( ufc_sub_dof_map->local_dimension(ufc_cell) );
+    sub_map[index].resize( ufc_sub_dofmap->local_dimension(ufc_cell) );
 
     // Tabulate sub-dofs on cell (UFC map)
-    ufc_sub_dof_map->tabulate_dofs(&sub_map[index][0], ufc_mesh, ufc_cell);
+    ufc_sub_dofmap->tabulate_dofs(&sub_map[index][0], ufc_mesh, ufc_cell);
 
     // Add UFC offset
     for (uint i = 0; i < sub_map[index].size(); ++i)
@@ -241,11 +241,11 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
 
   // Create new dof map (this set ufc_offset = 0 and it will renumber the map
   // if runnning in parallel)
-  DofMap* collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
+  DofMap* collapsed_dofmap = new DofMap(_ufc_dofmap, dolfin_mesh);
 
   // Dimension checks
-  assert(collapsed_dof_map->global_dimension() == global_dimension());
-  assert(collapsed_dof_map->dofmap.size() == dolfin_mesh.num_cells());
+  assert(collapsed_dofmap->global_dimension() == global_dimension());
+  assert(collapsed_dofmap->dofmap.size() == dolfin_mesh.num_cells());
   assert(dofmap.size() == dolfin_mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map of the collapsed
@@ -256,7 +256,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   for (uint i = 0; i < dolfin_mesh.num_cells(); ++i)
   {
     const std::vector<uint> dofs = this->dofmap[i];
-    const std::vector<uint> collapsed_dofs = collapsed_dof_map->dofmap[i];
+    const std::vector<uint> collapsed_dofs = collapsed_dofmap->dofmap[i];
     assert(dofs.size() == collapsed_dofs.size());
 
     for (uint j = 0; j < dofs.size(); ++j)
@@ -268,34 +268,34 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   UFCCell ufc_cell(dolfin_mesh);
 
   // Build UFC-to-actual-dofs map
-  std::vector<uint> ufc_dofs(collapsed_dof_map->max_local_dimension());
+  std::vector<uint> ufc_dofs(collapsed_dofmap->max_local_dimension());
   for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
 
     // Tabulate UFC dofs (UFC map)
-    collapsed_dof_map->_ufc_dofmap->tabulate_dofs(&ufc_dofs[0], ufc_mesh, ufc_cell);
+    collapsed_dofmap->_ufc_dofmap->tabulate_dofs(&ufc_dofs[0], ufc_mesh, ufc_cell);
 
     // Build UFC-to-actual-dofs map
-    std::vector<uint>& collapsed_dofs = collapsed_dof_map->dofmap[cell->index()];
+    std::vector<uint>& collapsed_dofs = collapsed_dofmap->dofmap[cell->index()];
     for (uint j = 0; j < collapsed_dofs.size(); ++j)
-      collapsed_dof_map->ufc_map_to_dofmap[ufc_dofs[j]] = collapsed_dofs[j];
+      collapsed_dofmap->ufc_map_to_dofmap[ufc_dofs[j]] = collapsed_dofs[j];
   }
 
   // Reset offset of collapsed map
-  collapsed_dof_map->ufc_offset = 0;
+  collapsed_dofmap->ufc_offset = 0;
 
-  return collapsed_dof_map;
+  return collapsed_dofmap;
 }
 //-----------------------------------------------------------------------------
-ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
-                                         uint& offset,
-                                         const std::vector<uint>& component,
-                                         const ufc::mesh ufc_mesh,
-                                         const Mesh& dolfin_mesh)
+ufc::dofmap* DofMap::extract_sub_dofmap(const ufc::dofmap& ufc_dofmap,
+                                        uint& offset,
+                                        const std::vector<uint>& component,
+                                        const ufc::mesh ufc_mesh,
+                                        const Mesh& dolfin_mesh)
 {
   // Check if there are any sub systems
-  if (ufc_dofmap.num_sub_dof_maps() == 0)
+  if (ufc_dofmap.num_sub_dofmaps() == 0)
     error("Unable to extract sub system (there are no sub systems).");
 
   // Check that a sub system has been specified
@@ -303,15 +303,15 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
     error("Unable to extract sub system (no sub system specified).");
 
   // Check the number of available sub systems
-  if (component[0] >= ufc_dofmap.num_sub_dof_maps())
+  if (component[0] >= ufc_dofmap.num_sub_dofmaps())
     error("Unable to extract sub system %d (only %d sub systems defined).",
-                  component[0], ufc_dofmap.num_sub_dof_maps());
+                  component[0], ufc_dofmap.num_sub_dofmaps());
 
   // Add to offset if necessary
   for (uint i = 0; i < component[0]; i++)
   {
     // Extract sub dofmap
-    boost::scoped_ptr<ufc::dof_map> ufc_tmp_dofmap(ufc_dofmap.create_sub_dof_map(i));
+    boost::scoped_ptr<ufc::dofmap> ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
     assert(ufc_tmp_dofmap);
 
     // Initialise
@@ -322,24 +322,24 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   }
 
   // Create UFC sub-system
-  ufc::dof_map* sub_dof_map = ufc_dofmap.create_sub_dof_map(component[0]);
-  assert(sub_dof_map);
+  ufc::dofmap* sub_dofmap = ufc_dofmap.create_sub_dofmap(component[0]);
+  assert(sub_dofmap);
 
   // Return sub-system if sub-sub-system should not be extracted, otherwise
   // recursively extract the sub sub system
   if (component.size() == 1)
-    return sub_dof_map;
+    return sub_dofmap;
   else
   {
     std::vector<uint> sub_component;
     for (uint i = 1; i < component.size(); i++)
       sub_component.push_back(component[i]);
 
-    ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
-                                                       sub_component, ufc_mesh,
-                                                       dolfin_mesh);
-    delete sub_dof_map;
-    return sub_sub_dof_map;
+    ufc::dofmap* sub_sub_dofmap = extract_sub_dofmap(*sub_dofmap, offset,
+                                                     sub_component, ufc_mesh,
+                                                     dolfin_mesh);
+    delete sub_dofmap;
+    return sub_sub_dofmap;
   }
 }
 //-----------------------------------------------------------------------------
@@ -371,7 +371,7 @@ void DofMap::build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
     _ownership_range = std::make_pair(0, global_dimension());
 }
 //-----------------------------------------------------------------------------
-void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
+void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
                              const ufc::mesh ufc_mesh,
                              const Mesh& dolfin_mesh)
 {

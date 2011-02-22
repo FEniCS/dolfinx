@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2011-01-27
+// Last changed: 2011-02-21
 
 #include <dolfin/common/timing.h>
 
@@ -23,10 +23,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    const Mesh& mesh,
-                                   std::vector<const GenericDofMap*>& dof_maps,
+                                   std::vector<const GenericDofMap*>& dofmaps,
                                    bool cells, bool interior_facets)
 {
-  const uint rank = dof_maps.size();
+  const uint rank = dofmaps.size();
 
   // Get global dimensions and local range
   std::vector<uint> global_dimensions(rank);
@@ -35,9 +35,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   for (uint i = 0; i < rank; ++i)
   {
-    global_dimensions[i] = dof_maps[i]->global_dimension();
-    local_range[i]       = dof_maps[i]->ownership_range();
-    off_process_owner[i] = &(dof_maps[i]->off_process_owner());
+    global_dimensions[i] = dofmaps[i]->global_dimension();
+    local_range[i]       = dofmaps[i]->ownership_range();
+    off_process_owner[i] = &(dofmaps[i]->off_process_owner());
   }
 
   // Initialise sparsity pattern
@@ -62,7 +62,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (uint i = 0; i < rank; ++i)
-        dofs[i] = &dof_maps[i]->cell_dofs(cell->index());
+        dofs[i] = &dofmaps[i]->cell_dofs(cell->index());
 
       // Insert non-zeroes in sparsity pattern
       sparsity_pattern.insert(dofs);
@@ -107,8 +107,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       for (uint i = 0; i < rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<uint>& cell_dofs0 = dof_maps[i]->cell_dofs(cell0.index());
-        const std::vector<uint>& cell_dofs1 = dof_maps[i]->cell_dofs(cell1.index());
+        const std::vector<uint>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+        const std::vector<uint>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
         macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

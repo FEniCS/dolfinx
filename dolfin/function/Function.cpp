@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2011-02-03
+// Last changed: 2011-02-21
 
 #include <algorithm>
 #include <map>
@@ -166,10 +166,10 @@ const Function& Function::operator= (const Function& v)
   {
     // Create collapsed dof map
     std::map<uint, uint> collapsed_map;
-    boost::shared_ptr<GenericDofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
+    boost::shared_ptr<GenericDofMap> collapsed_dofmap(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
 
     // Create new FunctionsSpapce
-    _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
+    _function_space = v._function_space->collapse_sub_space(collapsed_dofmap);
 
     // FIXME: This assertion doesn't work in parallel
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
@@ -192,7 +192,7 @@ const Function& Function::operator= (const Function& v)
 
     // Initial new vector (global)
     init_vector();
-    assert(_vector->size() == collapsed_dof_map->global_dimension());
+    assert(_vector->size() == collapsed_dofmap->global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);

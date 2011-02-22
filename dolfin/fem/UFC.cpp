@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-15
+// Last changed: 2011-02-21
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -65,15 +65,15 @@ void UFC::init(const Form& form)
   }
 
   // Create cell integrals
-  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
+  for (uint i = 0; i < this->form.num_cell_domains(); i++)
     cell_integrals.push_back( boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)) );
 
   // Create exterior facet integrals
-  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
+  for (uint i = 0; i < this->form.num_exterior_facet_domains(); i++)
     exterior_facet_integrals.push_back( boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)) );
 
   // Create interior facet integrals
-  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
+  for (uint i = 0; i < this->form.num_interior_facet_domains(); i++)
     interior_facet_integrals.push_back( boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)) );
 
   // Get maximum local dimensions

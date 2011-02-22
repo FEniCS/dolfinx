@@ -50,6 +50,13 @@ namespace dolfin
 
   private:
 
+    // Build graph (general version)
+    static const Graph graph(const Mesh& mesh,
+                                   const std::vector<uint>& coloring_type);
+
+    // Build graph (specialized version)
+    static const Graph graph(const Mesh& mesh, uint dim0, uint dim1);
+
     // Build Boost graph (general version)
     static const BoostBidirectionalGraph boost_graph(const Mesh& mesh,
                                            const std::vector<uint>& coloring_type);

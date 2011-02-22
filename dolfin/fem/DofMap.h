@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-01-28
+// Last changed: 2011-02-21
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -30,7 +30,7 @@ namespace dolfin
   class UFCMesh;
 
   /// This class handles the mapping of degrees of freedom. It builds
-  /// a dof map based on a ufc::dof_map on a specific mesh. It will
+  /// a dof map based on a ufc::dofmap on a specific mesh. It will
   /// reorder the dofs when running in parallel.
   ///
   /// If ufc_offset != 0, then the dof map provides a view into a
@@ -42,17 +42,17 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
            Mesh& dolfin_mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
            const Mesh& dolfin_mesh);
 
   private:
 
     /// Create dof map on mesh with a std::vector dof map
-    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, const UFCMesh& ufc_mesh);
+    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap, const UFCMesh& ufc_mesh);
 
   public:
 
@@ -136,14 +136,14 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     // Recursively extract UFC sub-dofmap and compute offset
-    static ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
+    static ufc::dofmap* extract_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             uint& offset,
                                             const std::vector<uint>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh);
 
-    /// Return ufc::dof_map
-    boost::shared_ptr<const ufc::dof_map> ufc_dofmap() const
+    /// Return ufc::dofmap
+    boost::shared_ptr<const ufc::dofmap> ufc_dofmap() const
     { return _ufc_dofmap; }
 
   private:
@@ -155,7 +155,7 @@ namespace dolfin
     void build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 
     /// Initialize the UFC dofmap
-    static void init_ufc_dofmap(ufc::dof_map& dofmap,
+    static void init_ufc_dofmap(ufc::dofmap& dofmap,
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
@@ -166,7 +166,7 @@ namespace dolfin
     std::map<dolfin::uint, uint> ufc_map_to_dofmap;
 
     // UFC dof map
-    boost::shared_ptr<ufc::dof_map> _ufc_dofmap;
+    boost::shared_ptr<ufc::dofmap> _ufc_dofmap;
 
     // Ownership range (dofs in this range are owned by this process)
     std::pair<uint, uint> _ownership_range;

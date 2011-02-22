@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-02-10
+// Last changed: 2011-02-21
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -101,9 +101,9 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     error("Can not add values when the sparsity pattern is reset");
 
   // Get dof maps
-  std::vector<const GenericDofMap*> dof_maps;
+  std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < a.rank(); ++i)
-    dof_maps.push_back(&(a.function_space(i)->dofmap()));
+    dofmaps.push_back(&(a.function_space(i)->dofmap()));
 
   if (reset_sparsity)
   {
@@ -114,9 +114,9 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     {
 
       // Build sparsity pattern
-      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
-                                    a.ufc_form().num_cell_integrals(),
-                                    a.ufc_form().num_interior_facet_integrals());
+      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
+                                    a.ufc_form().num_cell_domains(),
+                                    a.ufc_form().num_interior_facet_domains());
     }
     t0.stop();
 
@@ -132,10 +132,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
       for (uint i = 0; i < a.rank(); i++)
       {
-        assert(dof_maps[i]);
-        global_dimensions[i] = dof_maps[i]->global_dimension();
-        local_range[i]       = dof_maps[i]->ownership_range();
-        off_process_owner[i] = &(dof_maps[i]->off_process_owner());
+        assert(dofmaps[i]);
+        global_dimensions[i] = dofmaps[i]->global_dimension();
+        local_range[i]       = dofmaps[i]->ownership_range();
+        off_process_owner[i] = &(dofmaps[i]->off_process_owner());
       }
 
       // Create and build sparsity pattern
@@ -155,7 +155,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // If tensor is not reset, check that dimensions are correct
     for (uint i = 0; i < a.rank(); ++i)
     {
-      if (A.size(i) != dof_maps[i]-> global_dimension())
+      if (A.size(i) != dofmaps[i]-> global_dimension())
         error("Reset of tensor in assembly not requested, but dim %d of tesnor does not match form.", i);
     }
   }

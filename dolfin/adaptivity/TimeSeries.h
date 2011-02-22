@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-03-04
+// Last changed: 2011-02-16
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -72,6 +72,9 @@ namespace dolfin
 
   private:
 
+    // Check if values are strictly increasing
+    static bool increasing(const std::vector<double>& times);
+
     // Name of series
     std::string _name;
 
@@ -81,6 +84,9 @@ namespace dolfin
 
     // True if series has been cleared
     bool _cleared;
+
+    // True if series is reversed
+    bool _reversed;
 
   };
 

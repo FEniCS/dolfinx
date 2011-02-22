@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2011-02-07
+// Last changed: 2011-02-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -39,7 +39,7 @@ namespace dolfin
 
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
-      p.add("optimize_use_dof_map_cache", false);            // Store dof maps in cache for reuse
+      p.add("optimize_use_dofmap_cache", false);             // Store dof maps in cache for reuse
       p.add("optimize_use_tensor_cache", false);             // Store tensors in cache for reuse
       p.add("optimize", false);                              // All of the above
 
@@ -48,6 +48,9 @@ namespace dolfin
 
       // Graph partitioner
       p.add("mesh_partitioner", "ParMETIS");
+
+      // Graph coloring
+      p.add("graph_coloring_library", "Boost");
 
       // Mesh refinement
       std::set<std::string> allowed_refinement_algorithms;
@@ -65,19 +68,19 @@ namespace dolfin
       std::string default_backend("uBLAS");
       allowed_backends.insert("uBLAS");
       allowed_backends.insert("STL");
-#ifdef HAS_PETSC
+      #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
-#endif
-#ifdef HAS_TRILINOS
+      #endif
+      #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
-#endif
-#ifdef HAS_MTL4
+      #endif
+      #ifdef HAS_MTL4
       allowed_backends.insert("MTL4");
-#endif
-#ifdef HAS_TRILINOS
+      #endif
+      #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
-#endif
+      #endif
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

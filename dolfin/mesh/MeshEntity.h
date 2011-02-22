@@ -99,10 +99,10 @@ namespace dolfin
     /// Compute midpoint of cell
     Point midpoint() const;
 
-#ifdef HAS_CGAL
+    #ifdef HAS_CGAL
     ///Returns a 3D bounding box of the mesh entity. For lower dimension it may be a degenerated box.
     template <typename K> CGAL::Bbox_3 bbox() const;
-#endif
+    #endif
 
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)

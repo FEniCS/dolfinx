@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2011.
 //
 // First added:  2006-06-02
-// Last changed: 2010-08-16
+// Last changed: 2011-02-22
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -28,6 +28,12 @@ namespace dolfin
 
     /// Destructor
     ~Facet() {}
+
+    /// Compute component i of the normal to the facet
+    double normal(uint i) const;
+
+    /// Compute normal to the facet
+    Point normal() const;
 
     // FIXME: This function should take care of facet 'ownership' when a mesh
     //        is distributed across processes
@@ -53,26 +59,26 @@ namespace dolfin
     /// connectivity.
     std::pair<const Cell, const Cell> adjacent_cells(const MeshFunction<uint>* facet_orientation=0) const
     {
-       assert(num_entities(dim() + 1) == 2);
+      assert(num_entities(dim() + 1) == 2);
 
-       // Get cell indices
-       const uint D = dim() + 1;
-       const uint c0 = entities(D)[0];
-       const uint c1 = entities(D)[1];
+      // Get cell indices
+      const uint D = dim() + 1;
+      const uint c0 = entities(D)[0];
+      const uint c1 = entities(D)[1];
 
-       // Normal ordering
-       if (!facet_orientation || (*facet_orientation)[*this] == c0)
-         return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
+      // Normal ordering
+      if (!facet_orientation || (*facet_orientation)[*this] == c0)
+        return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
 
-       // Sanity check
-       if ((*facet_orientation)[*this] != c1)
-       {
+      // Sanity check
+      if ((*facet_orientation)[*this] != c1)
+      {
         error("Illegal facet orientation specified, cell %d is not a neighbor of facet %d.",
-               (*facet_orientation)[*this], index());
-        }
+             (*facet_orientation)[*this], index());
+      }
 
-       // Opposite ordering
-       return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
+      // Opposite ordering
+      return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
     }
 
   };

@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
+dolfin::uint BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
                                                         Array<uint>& colors)
 {
   // Number of vertices in graph
@@ -42,6 +42,6 @@ void BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
   }
 
   // Perform coloring
-  compute_local_vertex_coloring(g, colors);
+  return compute_local_vertex_coloring(g, colors);
 }
 //----------------------------------------------------------------------------

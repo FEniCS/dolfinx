@@ -66,16 +66,16 @@ dolfin::uint TetrahedronCell::num_vertices(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint TetrahedronCell::orientation(const Cell& cell) const
 {
-  Vertex v0(cell.mesh(), cell.entities(0)[0]);
-  Vertex v1(cell.mesh(), cell.entities(0)[1]);
-  Vertex v2(cell.mesh(), cell.entities(0)[2]);
-  Vertex v3(cell.mesh(), cell.entities(0)[3]);
+  const Vertex v0(cell.mesh(), cell.entities(0)[0]);
+  const Vertex v1(cell.mesh(), cell.entities(0)[1]);
+  const Vertex v2(cell.mesh(), cell.entities(0)[2]);
+  const Vertex v3(cell.mesh(), cell.entities(0)[3]);
 
-  Point p01 = v1.point() - v0.point();
-  Point p02 = v2.point() - v0.point();
-  Point p03 = v3.point() - v0.point();
+  const Point p01 = v1.point() - v0.point();
+  const Point p02 = v2.point() - v0.point();
+  const Point p03 = v3.point() - v0.point();
 
-  Point n = p01.cross(p02);
+  const Point n = p01.cross(p02);
 
   return (n.dot(p03) < 0.0 ? 1 : 0);
 }
@@ -141,9 +141,9 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   const Point p3 = editor.mesh->geometry().point(e3);
   const Point p4 = editor.mesh->geometry().point(e4);
   const Point p5 = editor.mesh->geometry().point(e5);
-  double d05 = p0.distance(p5);
-  double d14 = p1.distance(p4);
-  double d23 = p2.distance(p3);
+  const double d05 = p0.distance(p5);
+  const double d14 = p1.distance(p4);
+  const double d23 = p2.distance(p3);
 
   // First create the 4 congruent tetrahedra at the corners
   editor.add_cell(current_cell++, v0, e3, e4, e5);
@@ -259,12 +259,12 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const double* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  double v = (x0[0] * (x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2]) -
-             x1[0] * (x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2]) +
-             x2[0] * (x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2]) -
-             x3[0] * (x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
+  const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2]) -
+                    x1[0]*(x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2]) +
+                    x2[0]*(x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2]) -
+                    x3[0]*(x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
 
-  return std::abs(v) / 6.0;
+  return std::abs(v)/6.0;
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
@@ -278,28 +278,28 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
-  Point p2 = geometry.point(vertices[2]);
-  Point p3 = geometry.point(vertices[3]);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+  const Point p2 = geometry.point(vertices[2]);
+  const Point p3 = geometry.point(vertices[3]);
 
   // Compute side lengths
-  double a  = p1.distance(p2);
-  double b  = p0.distance(p2);
-  double c  = p0.distance(p1);
-  double aa = p0.distance(p3);
-  double bb = p1.distance(p3);
-  double cc = p2.distance(p3);
+  const double a  = p1.distance(p2);
+  const double b  = p0.distance(p2);
+  const double c  = p0.distance(p1);
+  const double aa = p0.distance(p3);
+  const double bb = p1.distance(p3);
+  const double cc = p2.distance(p3);
 
   // Compute "area" of triangle with strange side lengths
-  double la   = a*aa;
-  double lb   = b*bb;
-  double lc   = c*cc;
-  double s    = 0.5*(la+lb+lc);
-  double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
+  const double la   = a*aa;
+  const double lb   = b*bb;
+  const double lc   = c*cc;
+  const double s    = 0.5*(la+lb+lc);
+  const double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return area / (3.0*volume(tetrahedron));
+  return area/(3.0*volume(tetrahedron));
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
@@ -379,7 +379,7 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
   double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
   // Formula for area from http://mathworld.wolfram.com
-  return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+  return  0.5*sqrt(v0*v0 + v1*v1 + v2*v2);
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::order(Cell& cell,
@@ -452,7 +452,7 @@ void TetrahedronCell::order(Cell& cell,
           const uint* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the jth vertex of facet i is non-incident on edge k
-          if (!std::count(edge_vertices, edge_vertices+2, facet_vertices[j]))
+          if (!std::count(edge_vertices, edge_vertices + 2, facet_vertices[j]))
           {
             // Swap facet numbers
             uint tmp = cell_edges[m];

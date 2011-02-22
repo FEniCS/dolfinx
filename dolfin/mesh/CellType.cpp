@@ -28,11 +28,13 @@ namespace dolfin
   class GlobalSort
   {
   public:
-    
+
     GlobalSort(const MeshFunction<uint>* global_vertex_indices) : g(global_vertex_indices) {}
+
     bool operator() (const uint& l, const uint& r) { return (*g)[l] < (*g)[r]; }
-    const MeshFunction<uint>* g;    
-    
+
+    const MeshFunction<uint>* g;
+
   };
 
 }
@@ -194,7 +196,7 @@ bool CellType::increasing(uint num_vertices, const uint* vertices,
   else
   {
     for (uint v = 1; v < num_vertices; v++)
-      if ((*global_vertex_indices)[vertices[v - 1]] >= 
+      if ((*global_vertex_indices)[vertices[v - 1]] >=
           (*global_vertex_indices)[vertices[v]])
         return false;
   }

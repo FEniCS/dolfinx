@@ -46,8 +46,9 @@ namespace dolfin
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Irregular refinement of cell
-    void refine_cellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell,
-			     uint refinement_rule, uint* marked_edges) const;
+    void refine_cellIrregular(Cell& cell, MeshEditor& editor,
+                              uint& current_cell, uint refinement_rule,
+                              uint* marked_edges) const;
 
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
@@ -58,7 +59,7 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, uint facet, uint i) const;
 
-    /// Compute of given facet with respect to the cell
+    /// Compute normal of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell
