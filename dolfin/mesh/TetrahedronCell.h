@@ -58,7 +58,7 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, uint facet, uint i) const;
 
-    /// Compute of given facet with respect to the cell
+    /// Compute normal of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell

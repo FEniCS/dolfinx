@@ -53,26 +53,26 @@ namespace dolfin
     /// connectivity.
     std::pair<const Cell, const Cell> adjacent_cells(const MeshFunction<uint>* facet_orientation=0) const
     {
-       assert(num_entities(dim() + 1) == 2);
+      assert(num_entities(dim() + 1) == 2);
 
-       // Get cell indices
-       const uint D = dim() + 1;
-       const uint c0 = entities(D)[0];
-       const uint c1 = entities(D)[1];
+      // Get cell indices
+      const uint D = dim() + 1;
+      const uint c0 = entities(D)[0];
+      const uint c1 = entities(D)[1];
 
-       // Normal ordering
-       if (!facet_orientation || (*facet_orientation)[*this] == c0)
-         return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
+      // Normal ordering
+      if (!facet_orientation || (*facet_orientation)[*this] == c0)
+        return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
 
-       // Sanity check
-       if ((*facet_orientation)[*this] != c1)
-       {
+      // Sanity check
+      if ((*facet_orientation)[*this] != c1)
+      {
         error("Illegal facet orientation specified, cell %d is not a neighbor of facet %d.",
-               (*facet_orientation)[*this], index());
-        }
+             (*facet_orientation)[*this], index());
+      }
 
-       // Opposite ordering
-       return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
+      // Opposite ordering
+      return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
     }
 
   };

@@ -13,7 +13,7 @@ double Face::area() const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = mesh().geometry();
-  
+
   // Get the coordinates of the three vertices
   const uint* vertices = entities(0);
   const double* x0 = geometry.x(vertices[0]);
@@ -26,6 +26,6 @@ double Face::area() const
   double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
   // Formula for area from http://mathworld.wolfram.com
-  return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+  return  0.5*sqrt(v0*v0 + v1*v1 + v2*v2);
 }
 //-----------------------------------------------------------------------------
