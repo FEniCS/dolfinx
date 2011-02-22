@@ -4,11 +4,12 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-02-21
+// Last changed: 2011-02-22
 
 #include <armadillo>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -19,7 +20,10 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
+#include <dolfin/function/Constant.h>
+#include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/solve.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 
@@ -39,6 +43,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
                            boost::shared_ptr<Form> L_R_dT,
                            boost::shared_ptr<Form> eta_T,
                            bool is_linear)
+  : Hierarchical<ErrorControl>(*this)
 {
   // Assign input
   _a_star = a_star;
@@ -56,8 +61,9 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& e_tmp(dynamic_cast<const Function&>(_residual->coefficient(improved_dual)));
   _E = e_tmp.function_space_ptr();
 
-  const Function& b_tmp(dynamic_cast<const Function&>(_a_R_dT->coefficient(0)));
-  _C = b_tmp.function_space_ptr();
+  const Function& cone(dynamic_cast<const Function&>(_a_R_dT->coefficient(0)));
+  _C = cone.function_space_ptr();
+  _cell_cone.reset(new Function(_C));
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
@@ -68,7 +74,7 @@ double ErrorControl::estimate_error(const Function& u,
   compute_dual(z_h, bcs);
 
   // Compute extrapolation of discrete dual
-  compute_extrapolation(z_h,  bcs);
+  compute_extrapolation(z_h, bcs);
 
   // Extract number of coefficients in residual
   const uint num_coeffs = _residual->num_coefficients();
@@ -91,13 +97,26 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
                                 std::vector<const BoundaryCondition*> bcs)
 {
-  // FIXME: Create dual (homogenized) boundary conditions
-  std::vector<const BoundaryCondition*> dual_bcs;
-  for (uint i = 0; i < bcs.size(); i++)
-    dual_bcs.push_back(bcs[i]);   // push_back(bcs[i].homogenize());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
 
-  // Create and solve dual variational problem
-  VariationalProblem dual(*_a_star, *_L_star, dual_bcs);
+  for (uint i = 0; i < bcs.size(); i++)
+  {
+    // Only handle DirichletBCs
+    const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i]);
+    if (!bc_ptr)
+      continue;
+
+    // Create shared_ptr to boundary condition
+    const boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
+
+    // Run homogenize
+    dual_bc_ptr->homogenize();
+
+    // Plug pointer into into vector
+    dual_bcs.push_back(dual_bc_ptr);
+  }
+
+  VariationalProblem dual(_a_star, _L_star, dual_bcs, 0, 0, 0);
   dual.solve(z);
 }
 //-----------------------------------------------------------------------------
@@ -121,11 +140,9 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
     {
-      // Define constant 0.0 on this space
-      const Function u0(V);
-
       // Create corresponding boundary condition for extrapolation
-      DirichletBC e_bc(V, u0, bc.markers());
+      DirichletBC e_bc(V, bc.value(), bc.markers());
+      e_bc.homogenize();
 
       // Apply boundary condition to extrapolation
       e_bc.apply(_Ez_h->vector());
@@ -135,11 +152,9 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // Create Subspace of _Ez_h
     SubSpace S(*_E, component[0]); // FIXME: Only one level allowed so far...
 
-    // Define constant 0.0 on this space
-    const Function u0(S);
-
     // Create corresponding boundary condition for extrapolation
-    DirichletBC e_bc(S, u0, bc.markers());
+    DirichletBC e_bc(S, bc.value(), bc.markers());
+    e_bc.homogenize();
 
     // Apply boundary condition to extrapolation
     //e_bc.apply(_Ez_h->vector()); // FIXME!! Awaits BUG #698229
@@ -149,47 +164,41 @@ void ErrorControl::compute_extrapolation(const Function& z,
 void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
 {
   // Create Function for the strong cell residual (R_T)
-  Function R_T(_a_R_T->function_space(1));
+  _R_T.reset(new Function(_a_R_T->function_space(1)));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
   std::vector<Function> f_e;
-  for (uint i = 0; i <= R_T.geometric_dimension(); i++)
+  for (uint i = 0; i <= _R_T->geometric_dimension(); i++)
     f_e.push_back(Function(_a_R_dT->function_space(1)));
 
-  SpecialFacetFunction* R_dT;
   if (f_e[0].value_rank() == 0)
-    R_dT = new SpecialFacetFunction(f_e);
+    _R_dT.reset(new SpecialFacetFunction(f_e));
   else if (f_e[0].value_rank() == 1)
-    R_dT = new SpecialFacetFunction(f_e, f_e[0].value_dimension(0));
+    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
   else
   {
-    R_dT = new SpecialFacetFunction(f_e, f_e[0].value_dimension(0));
+    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
     error("Not implemented for tensor-valued functions");
   }
 
   // Compute residual representation
-  residual_representation(R_T, *R_dT, u);
+  residual_representation(*_R_T, *_R_dT, u);
 
   // Interpolate dual extrapolation into primal test (dual trial space)
-  Function Pi_E_z_h(_a_star->function_space(1));
-  Pi_E_z_h.interpolate(*_Ez_h);
+  _Pi_E_z_h.reset(new Function(_a_star->function_space(1)));
+  _Pi_E_z_h->interpolate(*_Ez_h);
 
   // Attach coefficients to error indicator form
   _eta_T->set_coefficient(0, *_Ez_h);
-  _eta_T->set_coefficient(1, R_T);
-  _eta_T->set_coefficient(2, *R_dT);
-  _eta_T->set_coefficient(3, Pi_E_z_h);
+  _eta_T->set_coefficient(1, *_R_T);
+  _eta_T->set_coefficient(2, *_R_dT);
+  _eta_T->set_coefficient(3, *_Pi_E_z_h);
 
   // Assemble error indicator form
   assemble(indicators, *_eta_T);
 
   // Take absolute value of indicators
   indicators.abs();
-
-  // Delete stuff
-  //for (uint i = 0; i <= R_T.geometric_dimension(); i++)
-  //  delete f_e[i];
-  delete R_dT;
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::residual_representation(Function& R_T,
@@ -296,7 +305,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, u);
 
   // Attach cell residual to residual form
-  _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, R_T);
+  _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, *_R_T);
 
   // Extract (common) dof map
   const GenericDofMap& dofmap = V.dofmap();
@@ -307,7 +316,6 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   arma::vec x(N);
 
   // Variables to be used for the construction of the cone function
-  // b_e
   const uint num_cells = mesh.num_cells();
   const std::vector<double> ones(num_cells, 1.0);
   std::vector<uint> facet_dofs(num_cells);
@@ -318,15 +326,15 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     // Construct "cone function" for this local facet number by
     // setting the "right" degree of freedom equal to one on each
     // cell. (Requires dof-ordering knowledge.)
-    Function b_e(_C);
+    _cell_cone->vector() = 0.0;
     facet_dofs.clear();
     for (uint k = 0; k < num_cells; k++)
       facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
-    b_e.vector().set(&ones[0], num_cells, &facet_dofs[0]);
+    _cell_cone->vector().set(&ones[0], num_cells, &facet_dofs[0]);
 
-    // Attach b_e to _a_R_dT and _L_R_dT
-    _a_R_dT->set_coefficient(0, b_e);
-    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, b_e);
+    // Attach cell cone  to _a_R_dT and _L_R_dT
+    _a_R_dT->set_coefficient(0, *_cell_cone);
+    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, *_cell_cone);
 
     // Create data structures for local assembly data
     UFC ufc_lhs(*_a_R_dT);
