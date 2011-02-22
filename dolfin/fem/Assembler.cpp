@@ -269,8 +269,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-    assert(facet->num_entities(mesh.topology().dim()) == 1);
-    Cell mesh_cell(mesh, facet->entities(mesh.topology().dim())[0]);
+    assert(facet->num_entities(D) == 1);
+    Cell mesh_cell(mesh, facet->entities(D)[0]);
 
     // Get local index of facet with respect to the cell
     const uint local_facet = mesh_cell.index(*facet);
@@ -322,13 +322,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
-  mesh.init(mesh.topology().dim() - 1);
-  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
   MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
-  if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+  if (facet_orientation && facet_orientation->dim() != D - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
           facet_orientation);
