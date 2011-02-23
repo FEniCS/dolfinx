@@ -747,7 +747,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
         // Loop over all dofs on cell
-        for (uint i = 0; i < dofmap.dimension(c->index()); ++i)
+        for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
         {
           // Check if the coordinates are on current facet and thus on boundary
           if (!on_facet(data.coordinates[i], facet))
@@ -800,7 +800,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     bool already_interpolated = false;
 
     // Loop all dofs on cell
-    for (uint i = 0; i < dofmap.dimension(cell->index()); ++i)
+    for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       // Check if the coordinates are part of the sub domain (calls user-defined 'indside' function)
       if (!user_sub_domain->inside(data.array_coordinates[i], false))

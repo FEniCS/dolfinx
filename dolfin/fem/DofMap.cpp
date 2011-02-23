@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-02-21
+// Last changed: 2011-02-23
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -93,12 +93,6 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::string DofMap::signature() const
-{
-  error("DofMap has been re-ordered. Cannot return signature string.");
-  return _ufc_dofmap->signature();
-}
-//-----------------------------------------------------------------------------
 bool DofMap::needs_mesh_entities(unsigned int d) const
 {
   assert(_ufc_dofmap);
@@ -112,22 +106,13 @@ unsigned int DofMap::global_dimension() const
   return _ufc_dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::local_dimension() const
+unsigned int DofMap::cell_dimension(uint cell_index) const
 {
-  //return (_ownership_range.second - _ownership_range.first) + _off_process_owner.size();
-
-  // FIXME: This is inelgant and expensize. Need to use _local_dimension and
-  //        make sure that it's handled correctly with sub-dofmaps
-
-  return this->dofs().size();
-}
-//-----------------------------------------------------------------------------
-unsigned int DofMap::dimension(uint cell_index) const
-{
+  assert(cell_index < dofmap.size());
   return dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::max_local_dimension() const
+unsigned int DofMap::max_cell_dimension() const
 {
   assert( _ufc_dofmap);
   return _ufc_dofmap->max_local_dimension();
@@ -278,7 +263,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   UFCCell ufc_cell(dolfin_mesh);
 
   // Build UFC-to-actual-dofs map
-  std::vector<uint> ufc_dofs(collapsed_dofmap->max_local_dimension());
+  std::vector<uint> ufc_dofs(collapsed_dofmap->max_cell_dimension());
   for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);

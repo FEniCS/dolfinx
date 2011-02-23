@@ -1,8 +1,8 @@
-// Copyright (C) 2010 Anders Logg and Garth N. Wells.
+// Copyright (C) 2010-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-05-26
-// Last changed:
+// Last changed: 2011-02-23
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -37,24 +37,18 @@ namespace dolfin
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
 
-    /// Return a string identifying the dof map
-    virtual std::string signature() const = 0;
-
     /// Return true iff mesh entities of topological dimension d are needed
     virtual bool needs_mesh_entities(unsigned int d) const = 0;
 
     /// Return the dimension of the global finite element function space
     virtual unsigned int global_dimension() const = 0;
 
-    /// Return the dimension of the local (process) finite element function space
-    virtual unsigned int local_dimension() const = 0;
-
     /// Return the dimension of the local finite element function space on a
     /// cell
-    virtual unsigned int dimension(uint index) const = 0;
+    virtual unsigned int cell_dimension(uint index) const = 0;
 
     /// Return the maximum dimension of the local finite element function space
-    virtual unsigned int max_local_dimension() const = 0;
+    virtual unsigned int max_cell_dimension() const = 0;
 
     // Return the geometric dimension of the coordinates this dof map provides
     virtual unsigned int geometric_dimension() const = 0;
@@ -89,7 +83,7 @@ namespace dolfin
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,
                                               const Mesh& dolfin_mesh) const = 0;
 
-    /// "Collapse" a sub dofmap
+    /// Create a "collapsed" a dofmap (collapses a sub-dofmap)
     virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
                                     const Mesh& dolfin_mesh) const = 0;
 

@@ -80,10 +80,10 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
   : n(0), w(0), cell_dofs(0), facet_dofs(0),
-    array_coordinates(V.dofmap().max_local_dimension())
+    array_coordinates(V.dofmap().max_cell_dimension())
 {
   // Create array for coefficients
-  n = V.dofmap().max_local_dimension();
+  n = V.dofmap().max_cell_dimension();
   w = new double[n];
   for (uint i = 0; i < n; i++)
     w[i] = 0.0;

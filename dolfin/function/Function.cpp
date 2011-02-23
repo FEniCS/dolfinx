@@ -164,9 +164,11 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
+
     // Create collapsed dof map
+    const GenericDofMap& v_dofmap = v._function_space->dofmap();
     std::map<uint, uint> collapsed_map;
-    boost::shared_ptr<GenericDofMap> collapsed_dofmap(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
+    boost::shared_ptr<GenericDofMap> collapsed_dofmap(v_dofmap.collapse(collapsed_map, v._function_space->mesh()));
 
     // Create new FunctionsSpapce
     _function_space = v._function_space->collapse_sub_space(collapsed_dofmap);

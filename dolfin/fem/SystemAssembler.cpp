@@ -631,11 +631,11 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
-  uint A_num_entries  = a.function_space(0)->dofmap().max_local_dimension();
-  A_num_entries      *= a.function_space(1)->dofmap().max_local_dimension();
+  uint A_num_entries  = a.function_space(0)->dofmap().max_cell_dimension();
+  A_num_entries      *= a.function_space(1)->dofmap().max_cell_dimension();
   Ae.resize(A_num_entries);
 
-  be.resize(L.function_space(0)->dofmap().max_local_dimension());
+  be.resize(L.function_space(0)->dofmap().max_cell_dimension());
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::~Scratch()

@@ -23,6 +23,10 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+# Form compiler options
+parameters["form_compiler"]["optimize"]     = True
+parameters["form_compiler"]["cpp_optimize"] = True
+
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)

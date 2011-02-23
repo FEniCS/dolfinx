@@ -48,9 +48,6 @@ namespace dolfin
     void init(const Form& form);
 
     /// Update current cell
-    void update_new(const Cell& cell);
-
-    /// Update current cell
     void update(const Cell& cell);
 
     /// Update current cell and facet

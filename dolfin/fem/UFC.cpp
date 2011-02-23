@@ -61,28 +61,28 @@ void UFC::init(const Form& form)
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
     boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i));
-    coefficient_elements.push_back( FiniteElement(element) );
+    coefficient_elements.push_back(FiniteElement(element));
   }
 
   // Create cell integrals
   for (uint i = 0; i < this->form.num_cell_domains(); i++)
-    cell_integrals.push_back( boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)) );
+    cell_integrals.push_back(boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)));
 
   // Create exterior facet integrals
   for (uint i = 0; i < this->form.num_exterior_facet_domains(); i++)
-    exterior_facet_integrals.push_back( boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)) );
+    exterior_facet_integrals.push_back(boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)));
 
   // Create interior facet integrals
   for (uint i = 0; i < this->form.num_interior_facet_domains(); i++)
-    interior_facet_integrals.push_back( boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)) );
+    interior_facet_integrals.push_back(boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)));
 
   // Get maximum local dimensions
   std::vector<uint> max_local_dimension;
   std::vector<uint> max_macro_local_dimension;
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    max_local_dimension.push_back(V[i]->dofmap().max_local_dimension());
-    max_macro_local_dimension.push_back(2*V[i]->dofmap().max_local_dimension());
+    max_local_dimension.push_back(V[i]->dofmap().max_cell_dimension());
+    max_macro_local_dimension.push_back(2*V[i]->dofmap().max_cell_dimension());
   }
 
   // Initialize local tensor
@@ -110,16 +110,6 @@ void UFC::init(const Form& form)
     const uint n = 2*coefficient_elements[i].space_dimension();
     macro_w[i] = new double[n];
   }
-}
-//-----------------------------------------------------------------------------
-void UFC::update_new(const Cell& cell)
-{
-  // Update UFC cell
-  this->cell.update(cell);
-
-  // Restrict coefficients to cell
-  for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell)

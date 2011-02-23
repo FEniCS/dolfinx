@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-02-21
+// Last changed: 2011-02-23
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -63,25 +63,18 @@ namespace dolfin
     bool is_view() const
     { return _is_view; }
 
-    /// Return a string identifying the dof map
-    std::string signature() const;
-
     /// Return true iff mesh entities of topological dimension d are needed
     bool needs_mesh_entities(unsigned int d) const;
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const;
 
-    /// Return the dimension of the local (process) finite element function
-    // space
-    unsigned int local_dimension() const;
-
     /// Return the dimension of the local finite element function space on a
     // cell
-    unsigned int dimension(uint cell_index) const;
+    unsigned int cell_dimension(uint cell_index) const;
 
     /// Return the maximum dimension of the local finite element function space
-    unsigned int max_local_dimension() const;
+    unsigned int max_cell_dimension() const;
 
     // Return the geometric dimension of the coordinates this dof map provides
     unsigned int geometric_dimension() const;
@@ -126,7 +119,7 @@ namespace dolfin
     DofMap* extract_sub_dofmap(const std::vector<uint>& component,
                                const Mesh& dolfin_mesh) const;
 
-    /// "Collapse" a sub dofmap
+    /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     DofMap* collapse(std::map<uint, uint>& collapsed_map,
                      const Mesh& dolfin_mesh) const;
 
@@ -163,7 +156,7 @@ namespace dolfin
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
-    // Dof map (dofs for cell dofmap[i])
+    // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::uint> > dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)

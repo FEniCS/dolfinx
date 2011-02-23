@@ -320,7 +320,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       }
 
       // Update to current cell
-      ufc.update_new(cell);
+      ufc.update(cell);
 
       // Get local-to-global dof maps for cell
       for (uint i = 0; i < form_rank; ++i)

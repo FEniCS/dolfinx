@@ -220,7 +220,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     cell_based_dim *= mesh.topology().dim();
 
   const GenericDofMap& dofmap(u.function_space().dofmap());
-  if (dofmap.max_local_dimension() == cell_based_dim)
+  if (dofmap.max_cell_dimension() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
     write_point_data(u, mesh, vtu_filename);
@@ -442,7 +442,7 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
-  if (dofmap.max_local_dimension() == cell_based_dim)
+  if (dofmap.max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
   // Write file

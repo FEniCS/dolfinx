@@ -138,7 +138,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell->index());
-    const uint cell_dimension = dofmap.dimension(cell->index());
+    const uint cell_dimension = dofmap.cell_dimension(cell->index());
     for (uint i = 0; i < cell_dimension; ++i)
     {
       // Mark dof as owned if in unowned set
@@ -238,7 +238,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const uint cell_index = cell->index();
-    const uint cell_dimension = dofmap.dimension(cell_index);
+    const uint cell_dimension = dofmap.cell_dimension(cell_index);
 
     // Resize cell map and insert dofs
     new_dofmap[cell_index].resize(cell_dimension);

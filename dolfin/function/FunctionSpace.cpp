@@ -11,7 +11,6 @@
 // Last changed: 2011-02-03
 
 #include <iostream>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/MPI.h>
@@ -129,9 +128,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.zero();
 
   // Initialize local arrays
-  const uint max_local_dimension = _dofmap->max_local_dimension();
-  boost::scoped_array<double> cell_coefficients(new double[max_local_dimension]);
-  boost::scoped_array<uint> cell_dofs(new uint[max_local_dimension]);
+  std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
 
   // Iterate over mesh and interpolate on each cell
   UFCCell ufc_cell(*_mesh);
@@ -141,15 +138,15 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     ufc_cell.update(*cell);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.get(), this->element(), *cell, ufc_cell);
+    v.restrict(&cell_coefficients[0], this->element(), *cell, ufc_cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(cell_dofs.get(), *cell);
+    const std::vector<uint>& cell_dofs =  _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
-    expansion_coefficients.set(cell_coefficients.get(),
-                               _dofmap->dimension(cell->index()),
-                               cell_dofs.get());
+    expansion_coefficients.set(&cell_coefficients[0],
+                               _dofmap->cell_dimension(cell->index()),
+                               &cell_dofs[0]);
   }
 
   // Finalise changes
@@ -235,7 +232,7 @@ void FunctionSpace::print_dofmap() const
 {
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const uint n = _dofmap->dimension(cell->index());
+    const uint n = _dofmap->cell_dimension(cell->index());
     std::vector<uint> dofs(n);
     _dofmap->tabulate_dofs(&dofs[0], *cell);
 
