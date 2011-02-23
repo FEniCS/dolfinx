@@ -159,11 +159,15 @@ namespace dolfin
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::uint> > dofmap;
 
+    // UFC dof map
+    boost::shared_ptr<ufc::dofmap> _ufc_dofmap;
+
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     std::map<dolfin::uint, uint> ufc_map_to_dofmap;
 
-    // UFC dof map
-    boost::shared_ptr<ufc::dofmap> _ufc_dofmap;
+    // UFC dof map offset (this is greater than zero when the dof map is a view,
+    // i.e. a sub-dofmap that has not been collapsed)
+    unsigned int ufc_offset;
 
     // Ownership range (dofs in this range are owned by this process)
     std::pair<uint, uint> _ownership_range;
@@ -171,10 +175,6 @@ namespace dolfin
     // Owner (process) of dofs in this local dof map that do not belong to
     // this process
     boost::unordered_map<uint, uint> _off_process_owner;
-
-    // UFC dof map offset (this is greater than zero when the dof map is a view,
-    // i.e. a sub-dofmap that has not been collapsed)
-    unsigned int ufc_offset;
 
     // True iff sub-dofmap
     bool _is_view;

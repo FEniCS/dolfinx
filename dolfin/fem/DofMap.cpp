@@ -220,7 +220,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     sub_dofmap->ufc_map_to_dofmap = ufc_map_to_dofmap;
   }
 
-  // Mark subdof map as a view
+  // Mark sub-dofmap as a view
   sub_dofmap->_is_view = true;
 
   // Set local ownership range
@@ -416,7 +416,7 @@ void DofMap::renumber(const std::vector<uint>& renumbering_map)
   if (ufc_map_to_dofmap.size() == 0)
   {
     for (uint i = 0; i < dofmap.size(); ++i)
-      ufc_map_to_dofmap[i] = renumbering_map[ i ];
+      ufc_map_to_dofmap[i] = renumbering_map[i];
   }
   else
   {
