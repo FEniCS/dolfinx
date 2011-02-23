@@ -44,6 +44,11 @@ namespace dolfin
 %ignore dolfin::Array::operator[];
 
 //-----------------------------------------------------------------------------
+// Global modifications to the IndexSet interface
+//-----------------------------------------------------------------------------
+%ignore dolfin::IndexSet::operator[];
+
+//-----------------------------------------------------------------------------
 // Global modifications to the dolfin::Set interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::Set::operator[];
