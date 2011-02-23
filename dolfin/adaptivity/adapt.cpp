@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-22
+// Last changed: 2011-02-23
 
 #include <boost/shared_ptr.hpp>
 
@@ -107,13 +107,6 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
                                            boost::shared_ptr<const Mesh> refined_mesh)
 {
-
-#ifndef UFC_DEV
-  info("UFC_DEV compiler flag is not set.");
-  error("Refinement of function spaces relies on the development version of UFC.");
-  return const_cast<FunctionSpace&>(space);
-#else
-
   // Skip refinement if already refined
   if (space.has_child())
   {
@@ -146,8 +139,6 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   set_parent_child(space, refined_space);
 
   return *refined_space;
-
-#endif
 }
 //-----------------------------------------------------------------------------
 const dolfin::Function& dolfin::adapt(const Function& function,

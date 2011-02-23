@@ -187,11 +187,6 @@ if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
 
 endif()
 
-# UFC
-if (UFC_DEV)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DUFC_DEV")
-endif()
-
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

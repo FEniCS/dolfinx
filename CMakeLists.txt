@@ -92,7 +92,6 @@ endforeach()
 # Package-specific options
 
 option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
-option(UFC_DEV "Enable development version of UFC (if available)" ON)
 
 #------------------------------------------------------------------------------
 # Compiler flags
