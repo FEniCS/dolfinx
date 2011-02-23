@@ -21,8 +21,9 @@ namespace dolfin
   /// Typedefs for simple graph data structures
 
   /// Vector of unordered sets
-  //typedef std::vector<boost::unordered_set<unsigned int> > Graph;
-  typedef std::vector<dolfin::Set<unsigned int> > Graph;
+  typedef dolfin::Set<unsigned int> graph_set_type;
+  //typedef boost::unordered_set<unsigned int> graph_set_type;
+  typedef std::vector<graph_set_type> Graph;
 
   // Boost graph typedefs
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> BoostDirectedGraph;

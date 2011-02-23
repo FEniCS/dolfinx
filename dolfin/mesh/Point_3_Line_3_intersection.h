@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andre Massing 
+// Copyright (C) 2009 Andre Massing
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
@@ -19,74 +19,76 @@ namespace CGALi {
 namespace internal {
 #endif
 
-template <class K>
-inline bool
-do_intersect(const typename K::Point_3 &pt, 
-	     const typename K::Line_3 &line,
-	     const K&)
-{
+  template <class K>
+  inline bool
+  do_intersect(const typename K::Point_3 &pt,
+	       const typename K::Line_3 &line,
+	       const K&)
+  {
     return line.has_on(pt);
-}
+  }
 
-template <class K>
-inline bool
-do_intersect(const typename K::Line_3 &line,
-	     const typename K::Point_3 &pt, 
-	     const K&)
-{
+  template <class K>
+  inline bool
+  do_intersect(const typename K::Line_3 &line,
+	       const typename K::Point_3 &pt,
+	       const K&)
+  {
     return line.has_on(pt);
-}
+  }
 
-template <class K>
-Object
-intersection(const typename K::Point_3 &pt, 
-	     const typename K::Line_3 &line,
-	     const K& k)
-{
-    if (do_intersect(pt,line, k)) {
-        return make_object(pt);
+  template <class K>
+  Object
+  intersection(const typename K::Point_3 &pt,
+	       const typename K::Line_3 &line,
+	       const K& k)
+  {
+    if (do_intersect(pt, line, k))
+    {
+      return make_object(pt);
     }
     return Object();
-}
+  }
 
-template <class K>
-Object
-intersection(const typename K::Line_3 &line,
-	     const typename K::Point_3 &pt, 
-	     const K& k)
-{
-    if (do_intersect(pt,line, k)) {
-        return make_object(pt);
+  template <class K>
+  Object
+  intersection(const typename K::Line_3 &line,
+	       const typename K::Point_3 &pt,
+	       const K& k)
+  {
+    if (do_intersect(pt, line, k))
+    {
+      return make_object(pt);
     }
     return Object();
-}
+  }
 
 } // namespace CGALi
 
 template <class K>
-inline 
+inline
 bool
-do_intersect(const Line_3<K> &line, 
+do_intersect(const Line_3<K> &line,
 	     const Point_3<K> &pt)
 {
   typedef typename K::Do_intersect_3 Do_intersect;
-    return Do_intersect()(pt, line);
+  return Do_intersect()(pt, line);
 }
 
 template <class K>
-inline 
+inline
 bool
 do_intersect(const Point_3<K> &pt,
 	     const Line_3<K> &line)
 {
-  typedef typename K::Do_intersect_3 Do_intersect;
+    typedef typename K::Do_intersect_3 Do_intersect;
     return Do_intersect()(pt, line);
 }
 
 template <class K>
-inline 
+inline
 Object
-intersection(const Line_3<K> &line, 
+intersection(const Line_3<K> &line,
 	     const Point_3<K> &pt)
 {
   typedef typename K::Intersect_3 Intersect;
@@ -94,7 +96,7 @@ intersection(const Line_3<K> &line,
 }
 
 template <class K>
-inline 
+inline
 Object
 intersection(const Point_3<K> &pt,
 	     const Line_3<K> &line)

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andre Massing 
+// Copyright (C) 2009 Andre Massing
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
@@ -20,52 +20,54 @@ namespace CGALi {
 namespace internal {
 #endif
 
-template <class K>
-inline 
-bool
-do_intersect(const typename K::Point_3 &pt, 
-	     const typename K::Tetrahedron_3 &tet,
-	     const K&)
-{
+  template <class K>
+  inline
+  bool
+  do_intersect(const typename K::Point_3 &pt,
+	       const typename K::Tetrahedron_3 &tet,
+	       const K&)
+  {
     return !tet.has_on_unbounded_side(pt);
-}
+  }
 
-template <class K>
-inline 
-bool
-do_intersect(const typename K::Tetrahedron_3 &tet,
-	     const typename K::Point_3 &pt, 
-	     const K&)
-{
+  template <class K>
+  inline
+  bool
+  do_intersect(const typename K::Tetrahedron_3 &tet,
+	       const typename K::Point_3 &pt,
+	       const K&)
+  {
     return !tet.has_on_unbounded_side(pt);
-}
+  }
 
 
-template <class K>
-inline
-Object
-intersection(const typename K::Point_3 &pt, 
-	     const typename K::Tetrahedron_3 &tet, 
-	     const K&)
-{
-    if (do_intersect(pt,tet)) {
-        return make_object(pt);
+  template <class K>
+  inline
+  Object
+  intersection(const typename K::Point_3 &pt,
+	       const typename K::Tetrahedron_3 &tet,
+	       const K&)
+  {
+    if (do_intersect(pt,tet))
+    {
+      return make_object(pt);
     }
     return Object();
-}
+  }
 
-template <class K>
-inline
-Object
-intersection( const typename K::Tetrahedron_3 &tet, 
-	      const typename K::Point_3 &pt, 
-	      const K&)
-{
-    if (do_intersect(pt,tet)) {
-        return make_object(pt);
+  template <class K>
+  inline
+  Object
+  intersection( const typename K::Tetrahedron_3 &tet,
+	        const typename K::Point_3 &pt,
+	        const K&)
+  {
+    if (do_intersect(pt,tet))
+    {
+      return make_object(pt);
     }
     return Object();
-}
+  }
 
 } // namespace CGALi
 
@@ -83,7 +85,7 @@ inline bool
 do_intersect(const Point_3<K> &pt, const Tetrahedron_3<K> &tet)
 {
   typedef typename K::Do_intersect_3 Do_intersect;
-    return Do_intersect()(pt, tet);
+  return Do_intersect()(pt, tet);
 }
 
 
@@ -100,7 +102,7 @@ inline Object
 intersection(const Point_3<K> &pt, const Tetrahedron_3<K> &tet)
 {
   typedef typename K::Intersect_3 Intersect;
-    return Intersect()(pt, tet);
+  return Intersect()(pt, tet);
 }
 
 CGAL_END_NAMESPACE

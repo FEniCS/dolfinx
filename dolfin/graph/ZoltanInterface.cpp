@@ -96,14 +96,16 @@ void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(uint* num_edges) co
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int ZoltanInterface::ZoltanGraphInterface::get_number_of_objects(void* data, int* ierr)
+int ZoltanInterface::ZoltanGraphInterface::get_number_of_objects(void* data,
+                                                                 int* ierr)
 {
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
   *ierr = ZOLTAN_OK;
   return objs->graph.size();
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data, int sizeGID, int sizeLID,
+void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data,
+                                   int sizeGID, int sizeLID,
                                    ZOLTAN_ID_PTR global_id,
                                    ZOLTAN_ID_PTR local_id, int wgt_dim,
                                    float* obj_wgts, int* ierr)
@@ -117,7 +119,8 @@ void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data, int size
   }
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::ZoltanGraphInterface::get_number_edges(void *data, int num_gid_entries,
+void ZoltanInterface::ZoltanGraphInterface::get_number_edges(void *data,
+                                    int num_gid_entries,
                                     int num_lid_entries,
                                     int num_obj, ZOLTAN_ID_PTR global_ids,
                                     ZOLTAN_ID_PTR local_ids, int *num_edges,
@@ -127,7 +130,8 @@ void ZoltanInterface::ZoltanGraphInterface::get_number_edges(void *data, int num
   objs->num_vertex_edges(reinterpret_cast<uint*>(num_edges));
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data, int num_gid_entries,
+void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
+                                 int num_gid_entries,
                                  int num_lid_entries, int num_obj,
                                  ZOLTAN_ID_PTR global_ids,
                                  ZOLTAN_ID_PTR local_ids,

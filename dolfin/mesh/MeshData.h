@@ -143,10 +143,11 @@ namespace dolfin
 
     //--- Coloring data ---
 
-    /// First triplet is (colored entity dim, connection entity dim, distance). MeshFunction
-    /// stores mesh entity colors and the vector<vector> a list of all mesh entity inddices
-    /// of the same color, e.g. vector<vector>[color][i] is the indec of the ith entity of
-    // color 'color'.
+    /// First vector is (colored entity dim - dim0 - .. -  colored entity dim).
+    /// MeshFunction stores mesh entity colors and the vector<vector> a list
+    /// of all mesh entity indices of the same color,
+    /// e.g. vector<vector>[color][i] is the index of the ith entity of
+    /// color 'color'.
     std::map<const std::vector<uint>,
              std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 

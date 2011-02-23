@@ -1,8 +1,8 @@
-// Copyright (C) 2010 Garth N. Wells.
+// Copyright (C) 2010-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-19
-// Last changed:
+// Last changed: 2011-02-22
 
 #ifndef __GRAPH_BUILDER_H
 #define __GRAPH_BUILDER_H
@@ -10,6 +10,7 @@
 #include <set>
 #include <vector>
 #include <dolfin/common/types.h>
+#include "Graph.h"
 
 namespace dolfin
 {
@@ -24,6 +25,20 @@ namespace dolfin
   {
 
   public:
+
+    /// Build local graph from mesh (general version)
+    static Graph local_graph(const Mesh& mesh,
+                             const std::vector<uint>& coloring_type);
+
+    // Build local Boost graph (general version)
+    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
+                                        const std::vector<uint>& coloring_type);
+
+    // Build local graph (specialized version)
+    static Graph local_graph(const Mesh& mesh, uint dim0, uint dim1);
+
+    // Build local Boost graph (specialized version)
+    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh, uint dim0, uint dim1);
 
     /// Build distributed dual graph for mesh
     static void compute_dual_graph(const LocalMeshData& mesh_data,
