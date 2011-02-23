@@ -17,8 +17,9 @@ namespace dolfin
 {
 
   class DofMap;
-  class UFC;
   class Mesh;
+  class UFC;
+  class UFCMesh;
 
   /// Documentation of class
 
@@ -39,10 +40,14 @@ namespace dolfin
 
   public:
 
-    /// Build dof map
-    static void parallel_build(DofMap& dofmap, const Mesh& mesh);
+    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh, bool distributed);
+
 
   private:
+
+    // Build distributed dof map
+    static void build_distributed(DofMap& dofmap, const Mesh& mesh);
 
     static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                   set& shared_unowned_dofs,

@@ -15,6 +15,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <ufc.h>
@@ -42,17 +43,15 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
-           Mesh& dolfin_mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& dolfin_mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
-           const Mesh& dolfin_mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& dolfin_mesh);
 
   private:
 
     /// Create dof map on mesh with a std::vector dof map
-    DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap, const UFCMesh& ufc_mesh);
+    DofMap(const ufc::dofmap& ufc_dofmap, const UFCMesh& ufc_mesh);
 
   public:
 
@@ -132,51 +131,50 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+  private:
+
     // Recursively extract UFC sub-dofmap and compute offset
-    static ufc::dofmap* extract_sub_dofmap(const ufc::dofmap& ufc_dofmap,
+    static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             uint& offset,
                                             const std::vector<uint>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh);
 
+  public:
+
     /// Return ufc::dofmap
-    boost::shared_ptr<const ufc::dofmap> ufc_dofmap() const
-    { return _ufc_dofmap; }
+    const ufc::dofmap& ufc_dofmap() const
+    { return *_ufc_dofmap; }
 
   private:
 
-    /// Friends
+    // Friends
     friend class DofMapBuilder;
 
-    // Build dofmap from the UFC dofmap
-    void build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
-
-    /// Initialize the UFC dofmap
-    static void init_ufc_dofmap(ufc::dofmap& dofmap,
-                                const ufc::mesh ufc_mesh,
+    // Initialize the UFC dofmap
+    static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::uint> > dofmap;
 
     // UFC dof map
-    boost::shared_ptr<ufc::dofmap> _ufc_dofmap;
+    boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     std::map<dolfin::uint, uint> ufc_map_to_dofmap;
 
-    // UFC dof map offset (this is greater than zero when the dof map is a view,
-    // i.e. a sub-dofmap that has not been collapsed)
+    // UFC dof map offset
     unsigned int ufc_offset;
 
     // Ownership range (dofs in this range are owned by this process)
     std::pair<uint, uint> _ownership_range;
 
-    // Owner (process) of dofs in this local dof map that do not belong to
+    // Owner (process) of dofs in local dof map that do not belong to
     // this process
     boost::unordered_map<uint, uint> _off_process_owner;
 
-    // True iff sub-dofmap
+    // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;
 
     // True iff running in parallel

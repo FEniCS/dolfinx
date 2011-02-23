@@ -124,7 +124,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 
   // Create new copies of UFC finite element and dofmap
   boost::shared_ptr<ufc::finite_element> ufc_element(space.element().ufc_element()->create());
-  boost::shared_ptr<ufc::dofmap> ufc_dofmap(dofmap->ufc_dofmap()->create());
+  boost::shared_ptr<ufc::dofmap> ufc_dofmap(dofmap->ufc_dofmap().create());
 
   // Create DOLFIN finite element and dofmap
   boost::shared_ptr<const FiniteElement> refined_element(new FiniteElement(ufc_element));
@@ -190,7 +190,6 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
-
   // Refine coefficients
   std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
   for (uint i = 0; i < coefficients.size(); i++)
@@ -252,7 +251,8 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
     {
       adapt(*bc, refined_mesh);
       refined_bcs.push_back(bc->child_shared_ptr());
-    } else
+    }
+    else
       error("Refinement of bcs only implemented for DirichletBCs!");
   }
 
@@ -299,7 +299,8 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
                                      g->child_shared_ptr(),
                                      domain));
-  } else
+  }
+  else
   {
     refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
                                      bc.value_ptr(),

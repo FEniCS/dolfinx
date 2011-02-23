@@ -60,7 +60,7 @@
 //-----------------------------------------------------------------------------
 // Ignore one of the constructors for DofMap to avoid warning
 //-----------------------------------------------------------------------------
-%ignore dolfin::DofMap::DofMap(boost::shared_ptr<ufc::dofmap>, const Mesh&);
+%ignore dolfin::DofMap::DofMap(boost::shared_ptr<const ufc::dofmap>, const Mesh&);
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
