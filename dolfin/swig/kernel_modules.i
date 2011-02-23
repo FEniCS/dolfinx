@@ -199,6 +199,7 @@
 %include "dolfin/swig/fem_post.i"
 
 // DOLFIN headers included from adaptivity
+%include "dolfin/swig/adaptivity_pre.i"
 %include "dolfin/adaptivity/ErrorControl.h"
 %include "dolfin/adaptivity/TimeSeries.h"
 %include "dolfin/adaptivity/adapt.h"
