@@ -476,6 +476,10 @@ void Function::gather() const
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
+  // Check that function space is not a subspace (view)
+  if (function_space().dofmap().is_view())
+    error("Cannot create a Function from a subspace. The subspace needs to be collapsed.");
+
   // Get global size
   const uint N = _function_space->dofmap().global_dimension();
 

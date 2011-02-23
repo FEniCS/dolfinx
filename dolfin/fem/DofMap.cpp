@@ -27,7 +27,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap, Mesh& dolfin_mesh)
-             : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
+             : _ufc_dofmap(ufc_dofmap), ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
@@ -60,7 +60,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap, Mesh& dolfin_mesh)
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh)
-             : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
+             : _ufc_dofmap(ufc_dofmap), ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
@@ -81,7 +81,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dofmap> ufc_dofmap,
                const UFCMesh& ufc_mesh)
-             : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
+             : _ufc_dofmap(ufc_dofmap), ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 
 {
@@ -114,10 +114,11 @@ unsigned int DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 unsigned int DofMap::local_dimension() const
 {
+  //return (_ownership_range.second - _ownership_range.first) + _off_process_owner.size();
+
   // FIXME: This is inelgant and expensize. Need to use _local_dimension and
   //        make sure that it's handled correctly with sub-dofmaps
 
-  //return (_ownership_range.second - _ownership_range.first) + _off_process_owner.size();
   return this->dofs().size();
 }
 //-----------------------------------------------------------------------------
@@ -146,6 +147,9 @@ unsigned int DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 {
+  if (is_view())
+    error("Cannot determine ownership range for sub dofmaps.");
+
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
@@ -187,7 +191,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   // Create new dof map
   DofMap* sub_dofmap = new DofMap(ufc_sub_dofmap, ufc_mesh);
 
-   // Create new dof map
+   // Create sub-map data structure
   std::vector<std::vector<uint> >& sub_map = sub_dofmap->dofmap;
   sub_map.resize(dolfin_mesh.num_cells());
 
@@ -231,6 +235,12 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     sub_dofmap->ufc_map_to_dofmap = ufc_map_to_dofmap;
   }
 
+  // Mark subdof map as a view
+  sub_dofmap->_is_view = true;
+
+  // Set local ownership range
+  sub_dofmap->_ownership_range = std::make_pair(0, 0);
+
   return sub_dofmap;
 }
 //-----------------------------------------------------------------------------
@@ -239,7 +249,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
 {
   assert(_ufc_dofmap);
 
-  // Create new dof map (this set ufc_offset = 0 and it will renumber the map
+  // Create new dof map (this sets ufc_offset = 0 and it will renumber the map
   // if runnning in parallel)
   DofMap* collapsed_dofmap = new DofMap(_ufc_dofmap, dolfin_mesh);
 
@@ -248,7 +258,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   assert(collapsed_dofmap->dofmap.size() == dolfin_mesh.num_cells());
   assert(dofmap.size() == dolfin_mesh.num_cells());
 
-  // FIXME: Could we use a std::vector instead of std::map of the collapsed
+  // FIXME: Could we use a std::vector instead of std::map if the collapsed
   //        dof map is contiguous (0, . . . ,n)?
 
   // Build map from collapsed dof index to original dof index
@@ -284,6 +294,12 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
 
   // Reset offset of collapsed map
   collapsed_dofmap->ufc_offset = 0;
+
+  // Set local ownership range
+
+  // Update off-process owner
+
+  cout << "Leaving collapse dof map" << endl;
 
   return collapsed_dofmap;
 }

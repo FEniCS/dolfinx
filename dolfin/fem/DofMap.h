@@ -59,6 +59,10 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
+    /// True if dof map is a view into another map (is a sub-dofmap)
+    bool is_view() const
+    { return _is_view; }
+
     /// Return a string identifying the dof map
     std::string signature() const;
 
@@ -178,6 +182,9 @@ namespace dolfin
     // UFC dof map offset (this is greater than zero when the dof map is a view,
     // i.e. a sub-dofmap that has not been collapsed)
     unsigned int ufc_offset;
+
+    // True iff sub-dofmap
+    bool _is_view;
 
     // True iff running in parallel
     bool _distributed;
