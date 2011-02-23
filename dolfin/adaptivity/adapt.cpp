@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-21
+// Last changed: 2011-02-22
 
 #include <boost/shared_ptr.hpp>
 
@@ -23,7 +23,9 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/VariationalProblem.h>
-#include "refine.h"
+#include "ErrorControl.h"
+#include "SpecialFacetFunction.h"
+#include "adapt.h"
 
 using namespace dolfin;
 
@@ -40,12 +42,12 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
 }
 
 //-----------------------------------------------------------------------------
-const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
+const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
   {
-    info("Mesh has already been refined, returning child mesh.");
+    dolfin_debug("Mesh has already been refined, returning child mesh.");
     return mesh.child();
   }
 
@@ -59,13 +61,13 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh)
   return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
-                                   const MeshFunction<bool>& cell_markers)
+const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
+                                  const MeshFunction<bool>& cell_markers)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
   {
-    info("Mesh has already been refined, returning child mesh.");
+    dolfin_debug("Mesh has already been refined, returning child mesh.");
     return mesh.child();
   }
 
@@ -79,33 +81,32 @@ const dolfin::Mesh& dolfin::refine(const Mesh& mesh,
   return *refined_mesh;
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space)
+const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
 {
   // Refine mesh
-  refine(space.mesh());
+  adapt(space.mesh());
 
   // Refine space
-  refine(space, space.mesh().child_shared_ptr());
+  adapt(space, space.mesh().child_shared_ptr());
 
   return space.child();
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
-                                            const MeshFunction<bool>& cell_markers)
+const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
+                                           const MeshFunction<bool>& cell_markers)
 {
   // Refine mesh
-  refine(space.mesh(), cell_markers);
+  adapt(space.mesh(), cell_markers);
 
   // Refine space
-  refine(space, space.mesh().child_shared_ptr());
+  adapt(space, space.mesh().child_shared_ptr());
 
   return space.child();
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
-                                            boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
+                                           boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining function space." << endl;
 
 #ifndef UFC_DEV
   info("UFC_DEV compiler flag is not set.");
@@ -116,7 +117,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   // Skip refinement if already refined
   if (space.has_child())
   {
-    info("Function space has already been refined, returning child space.");
+    dolfin_debug("Function space has already been refined, returning child space.");
     return space.child();
   }
 
@@ -124,7 +125,7 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
   const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
   if (!dofmap)
   {
-    info("FunctionSpace is defined by a non-stand dofmap.");
+    dolfin_debug("FunctionSpace is defined by a non-standard dofmap.");
     error("Unable to refine function space.");
   }
 
@@ -149,21 +150,19 @@ const dolfin::FunctionSpace& dolfin::refine(const FunctionSpace& space,
 #endif
 }
 //-----------------------------------------------------------------------------
-const dolfin::Function& dolfin::refine(const Function& function,
-                                       boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::Function& dolfin::adapt(const Function& function,
+                                      boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining function." << endl;
-
   // Skip refinement if already refined
   if (function.has_child())
   {
-    info("Function has already been refined, returning child function.");
+    dolfin_debug("Function has already been refined, returning child function.");
     return function.child();
   }
 
   // Refine function space
   boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
-  refine(*space, refined_mesh);
+  adapt(*space, refined_mesh);
   boost::shared_ptr<const FunctionSpace> refined_space = space->child_shared_ptr();
 
   // Create new function on refined space and interpolate
@@ -176,15 +175,13 @@ const dolfin::Function& dolfin::refine(const Function& function,
   return *refined_function;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Form& dolfin::refine(const Form& form,
-                                   boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::Form& dolfin::adapt(const Form& form,
+                                  boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining form." << endl;
-
   // Skip refinement if already refined
   if (form.has_child())
   {
-    info("Form has already been refined, returning child form.");
+    dolfin_debug("Form has already been refined, returning child form.");
     return form.child();
   }
 
@@ -198,9 +195,10 @@ const dolfin::Form& dolfin::refine(const Form& form,
   for (uint i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
-    refine(space, refined_mesh);
+    adapt(space, refined_mesh);
     refined_spaces.push_back(space.child_shared_ptr());
   }
+
 
   // Refine coefficients
   std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
@@ -212,15 +210,13 @@ const dolfin::Form& dolfin::refine(const Form& form,
     // If we have a Function, refine
     if (function != 0)
     {
-      refine(*function, refined_mesh);
+      adapt(*function, refined_mesh);
       refined_coefficients.push_back(function->child_shared_ptr());
+      continue;
     }
 
-    // If not, just reuse the same coefficient
-    else
-    {
-      refined_coefficients.push_back(coefficients[i]);
-    }
+    // If not function, just reuse the same coefficient
+    refined_coefficients.push_back(coefficients[i]);
   }
 
   /// Create new form (constructor used from Python interface)
@@ -237,15 +233,13 @@ const dolfin::Form& dolfin::refine(const Form& form,
   return *refined_form;
 }
 //-----------------------------------------------------------------------------
-const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& problem,
-                                                 boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& problem,
+                                                boost::shared_ptr<const Mesh> refined_mesh)
 {
-  cout << "Refining variational problem." << endl;
-
   // Skip refinement if already refined
   if (problem.has_child())
   {
-    info("Variational problem has already been refined, returning child problem.");
+    dolfin_debug("Variational problem has already been refined, returning child problem.");
     return problem.child();
   }
 
@@ -255,8 +249,8 @@ const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& probl
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs_shared_ptr();
 
   // Refine forms
-  refine(*form_0, refined_mesh);
-  refine(*form_1, refined_mesh);
+  adapt(*form_0, refined_mesh);
+  adapt(*form_1, refined_mesh);
 
   // Refine bcs
   std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
@@ -265,7 +259,7 @@ const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& probl
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
     {
-      refine(*bc, refined_mesh);
+      adapt(*bc, refined_mesh);
       refined_bcs.push_back(bc->child_shared_ptr());
     } else
       error("Refinement of bcs only implemented for DirichletBCs!");
@@ -286,35 +280,81 @@ const dolfin::VariationalProblem& dolfin::refine(const VariationalProblem& probl
   return *refined_problem;
 }
 //-----------------------------------------------------------------------------
-const dolfin::DirichletBC& dolfin::refine(const DirichletBC& bc,
-                                          boost::shared_ptr<const Mesh> refined_mesh)
+const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
+                                         boost::shared_ptr<const Mesh> refined_mesh)
 {
   // Skip refinement if already refined
   if (bc.has_child())
   {
-    info("DirichletBC has already been refined, returning child problem.");
+    dolfin_debug("DirichletBC has already been refined, returning child problem.");
     return bc.child();
   }
 
   // Refine function space
   boost::shared_ptr<const FunctionSpace> V = bc.function_space_ptr();
-  refine(*V, refined_mesh);
-
-  // Refine value
-  const Function& g(dynamic_cast<const Function&>(bc.value()));
-  refine(g, refined_mesh);
+  adapt(*V, refined_mesh);
 
   // Extract but keep sub-domain
   boost::shared_ptr<const SubDomain> domain = bc.user_sub_domain_ptr();
 
-  // Create refined boundary condition
-  boost::shared_ptr<DirichletBC>
-    refined_bc(new DirichletBC(V->child_shared_ptr(), g.child_shared_ptr(),
-                               domain));
+  // Refine value
+  const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());
 
+  // Create refined boundary condition
+  boost::shared_ptr<DirichletBC> refined_bc;
+  if (g != 0)
+  {
+    adapt(*g, refined_mesh);
+    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
+                                     g->child_shared_ptr(),
+                                     domain));
+  } else
+  {
+    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
+                                     bc.value_ptr(),
+                                     domain));
+  }
   // Set parent / child
   set_parent_child(bc, refined_bc);
 
   return *refined_bc;
+}
+//-----------------------------------------------------------------------------
+const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
+                                          boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Skip refinement if already refined
+  if (ec.has_child())
+  {
+    dolfin_debug("ErrorControl has already been refined, returning child problem.");
+    return ec.child();
+  }
+
+  // Refine data
+  adapt(*ec._a_star, refined_mesh);
+  adapt(*ec._L_star, refined_mesh);
+  adapt(*ec._residual, refined_mesh);
+  adapt(*ec._a_R_T, refined_mesh);
+  adapt(*ec._L_R_T, refined_mesh);
+  adapt(*ec._a_R_dT, refined_mesh);
+  adapt(*ec._L_R_dT, refined_mesh);
+  adapt(*ec._eta_T, refined_mesh);
+
+  // Create refined error control
+  boost::shared_ptr<ErrorControl>
+    refined_ec(new ErrorControl(ec._a_star->child_shared_ptr(),
+                                ec._L_star->child_shared_ptr(),
+                                ec._residual->child_shared_ptr(),
+                                ec._a_R_T->child_shared_ptr(),
+                                ec._L_R_T->child_shared_ptr(),
+                                ec._a_R_dT->child_shared_ptr(),
+                                ec._L_R_dT->child_shared_ptr(),
+                                ec._eta_T->child_shared_ptr(),
+                                ec._is_linear));
+
+  // Set parent / child
+  set_parent_child(ec, refined_ec);
+
+  return *refined_ec;
 }
 //-----------------------------------------------------------------------------

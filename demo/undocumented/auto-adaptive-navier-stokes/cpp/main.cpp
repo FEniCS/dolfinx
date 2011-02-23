@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-24
+// Last changed: 2011-02-13
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -39,9 +39,10 @@ class Pressure : public Expression
 
 int main() {
 
+  parameters["allow_extrapolation"] = true;
+
   // Create mesh and function space
   Mesh mesh("channel_with_flap.xml");
-
   AdaptiveNavierStokes::Form_8::TrialSpace W(mesh);
 
   // Unknown
@@ -77,10 +78,11 @@ int main() {
   VariationalProblem pde(F, dF, bc);
 
   // Give reference
-  pde.parameters("adaptivity")["reference"] = 0.82174229794; // FIXME
+  pde.parameters("adaptivity")["reference"] = 0.40863917*2; // FIXME
+  pde.parameters("adaptivity")["plot_mesh"] = false; // FIXME
 
   // Solve problem with goal-oriented error control to given tolerance
-  double tol = 0.0;
+  double tol = 1.e-5;
   pde.solve(w, tol, M);
 
   summary();

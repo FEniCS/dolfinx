@@ -2,4 +2,4 @@
 
 %import(module="dolfin.cpp") "dolfin/adaptivity/ErrorControl.h"
 %import(module="dolfin.cpp") "dolfin/adaptivity/TimeSeries.h"
-%import(module="dolfin.cpp") "dolfin/adaptivity/refine.h"
+%import(module="dolfin.cpp") "dolfin/adaptivity/adapt.h"

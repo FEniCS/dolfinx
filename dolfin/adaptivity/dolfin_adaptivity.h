@@ -5,6 +5,6 @@
 
 #include <dolfin/adaptivity/ErrorControl.h>
 #include <dolfin/adaptivity/TimeSeries.h>
-#include <dolfin/adaptivity/refine.h>
+#include <dolfin/adaptivity/adapt.h>
 
 #endif

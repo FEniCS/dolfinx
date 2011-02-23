@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-10-11
-// Last changed: 2010-11-30
+// Last changed: 2011-02-09
 
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>

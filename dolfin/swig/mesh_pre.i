@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2011-02-14
+// Last changed: 2011-02-16
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -76,7 +76,7 @@
 
         return reinterpret_cast<PyObject*>(array);
     }
-    
+
     PyObject* array() {
         int m = self->size();
         int n = 0;
@@ -142,7 +142,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 //-----------------------------------------------------------------------------
 // Rename refine so we can wrap it manually (avoid copy in return-by-value)
 //-----------------------------------------------------------------------------
-%rename(_refine) dolfin::refine;
+%rename(_adapt) dolfin::adapt;
 
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
@@ -177,7 +177,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
     def entities(self, dim):
         """ Return number of incident mesh entities of given topological dimension"""
         return self.mesh().topology()(self.dim(), dim)(self.index())
-    
+
     def __str__(self):
         """Pretty print of MeshEntity"""
         return self.str(0)

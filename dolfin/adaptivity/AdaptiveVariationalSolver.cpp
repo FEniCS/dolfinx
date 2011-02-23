@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-28
+// Last changed: 2011-02-17
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -19,7 +19,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/plot.h>
-#include "refine.h"
+#include "adapt.h"
 #include "ErrorControl.h"
 #include "GoalFunctional.h"
 #include "marking.h"
@@ -29,10 +29,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AdaptiveVariationalSolver::solve(Function& u,
-                                      VariationalProblem& problem,
-                                      double tol,
+                                      const VariationalProblem& problem,
+                                      const double tol,
                                       GoalFunctional& M,
-                                      Parameters& parameters)
+                                      const Parameters& parameters)
 {
 
   // Extract error control view from goal functional
@@ -42,24 +42,31 @@ void AdaptiveVariationalSolver::solve(Function& u,
   AdaptiveVariationalSolver::solve(u, problem, tol, M, ec, parameters);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveVariationalSolver::solve(Function& u,
-                                      VariationalProblem& problem,
-                                      double tol,
-                                      Form& M,
-                                      ErrorControl& ec,
-                                      Parameters& parameters)
+void AdaptiveVariationalSolver::solve(Function& w,
+                                      const VariationalProblem& pde,
+                                      const double tol,
+                                      Form& goal,
+                                      ErrorControl& control,
+                                      const Parameters& parameters)
 {
   // Set tolerance parameter if not set
-  if (parameters["tolerance"].change_count() == 0)
-    parameters["tolerance"] = tol;
+  //if (parameters["tolerance"].change_count() == 0)
+  //  parameters["tolerance"] = tol;
 
   // A list of adaptive data
   std::vector<AdaptiveDatum> data;
 
   // Start adaptive loop
   const uint maxiter = parameters["max_iterations"];
+
   for (uint i = 0; i < maxiter; i++)
   {
+    // Update references to current
+    const VariationalProblem& problem = pde.fine();
+    Function& u = w.fine();
+    Form& M = goal.fine();
+    ErrorControl& ec = control.fine();
+
     //--- Stage 0: Solve primal problem ---
     info("");
     begin("Stage %d.0: Solving primal problem...", i);
@@ -68,10 +75,6 @@ void AdaptiveVariationalSolver::solve(Function& u,
     // Extract function space and mesh
     const FunctionSpace& V(u.function_space());
     const Mesh& mesh(V.mesh());
-
-    // FIXME: Init mesh (should only initialize required stuff.)
-    // FIXME: Remove this, should not be needed!
-    mesh.init();
     end();
 
     //--- Stage 1: Estimate error ---
@@ -85,13 +88,13 @@ void AdaptiveVariationalSolver::solve(Function& u,
 
     // Initialize adaptive data
     AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
-                        parameters["tolerance"], functional_value);
+                        tol, functional_value);
     if (parameters["reference"].change_count() > 0)
       datum.set_reference_value(parameters["reference"]);
     data.push_back(datum);
 
     // Check stopping criterion
-    if (stop(V, error_estimate, parameters))
+    if (stop(V, error_estimate, tol, parameters))
     {
       end();
       summary(data, parameters);
@@ -100,39 +103,37 @@ void AdaptiveVariationalSolver::solve(Function& u,
     info("Estimated error (%0.5g) does not satisfy tolerance (%0.5g).",
          error_estimate, tol);
     end();
+    summary(datum);
+
 
     //--- Stage 2: Compute error indicators ---
     begin("Stage %d.2: Computing error indicators...", i);
-
     Vector indicators(mesh.num_cells());
     ec.compute_indicators(indicators, u);
-
     end();
 
     //--- Stage 3: Mark mesh for refinement ---
     begin("Stage %d.3: Marking mesh for refinement...", i);
-
     MeshFunction<bool> markers(mesh, mesh.topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
     mark(markers, indicators, strategy, fraction);
-
     end();
 
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
-
-    Mesh refined_mesh = refine(mesh, markers);
+    adapt(mesh, markers);
+    mesh.child().init();
     if (parameters["plot_mesh"])
-      plot(refined_mesh, "Refined mesh");
-
+      plot(mesh.child(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
-
-    info("Updating forms to new mesh. Dc. Logg will fix...");
-
+    adapt(problem, mesh.fine_shared_ptr());
+    adapt(u, mesh.fine_shared_ptr());
+    adapt(M, mesh.fine_shared_ptr());
+    adapt(ec, mesh.fine_shared_ptr());
     end();
   }
 
@@ -142,10 +143,10 @@ void AdaptiveVariationalSolver::solve(Function& u,
 //-----------------------------------------------------------------------------
 bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
                                      const double error_estimate,
+                                     const double tolerance,
                                      const Parameters& parameters)
 {
   // Done if error is less than tolerance
-  const double tolerance = parameters["tolerance"];
   if (std::abs(error_estimate) < tolerance)
     return true;
 
@@ -180,3 +181,14 @@ void AdaptiveVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
   info("");
 }
 //-----------------------------------------------------------------------------
+void AdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
+{
+  // Show summary for all iterations
+  info("");
+  info("Current adaptive data");
+  info("");
+  Table table("Level");
+  datum.store(table);
+  info(indent(table.str(true)));
+  info("");
+}

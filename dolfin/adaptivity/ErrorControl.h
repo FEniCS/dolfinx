@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-14
+// Last changed: 2011-02-17
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -10,10 +10,13 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/Hierarchical.h>
+
 namespace dolfin
 {
 
   class BoundaryCondition;
+  class DirichletBC;
   class Form;
   class Function;
   class FunctionSpace;
@@ -26,7 +29,7 @@ namespace dolfin
   /// goal-oriented error control I: stationary variational problems",
   /// ME Rognes and A Logg, 2010-2011.
 
-  class ErrorControl
+  class ErrorControl : public Hierarchical<ErrorControl>
   {
   public:
 
@@ -139,6 +142,9 @@ namespace dolfin
     void compute_extrapolation(const Function& z,
                                std::vector<const BoundaryCondition*> bcs);
 
+    friend const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
+                                               boost::shared_ptr<const Mesh> refined_mesh);
+
   private:
 
     // Bilinear and linear form for dual problem
@@ -159,18 +165,23 @@ namespace dolfin
     // Linear form for computing error indicators
     boost::shared_ptr<Form> _eta_T;
 
-    // Pointers to other function spaces (FIXME: Only out-of-scope
-    // motivated)
-    boost::shared_ptr<const FunctionSpace> _E;
-    boost::shared_ptr<const FunctionSpace> _C;
-
     // Computed extrapolation
     boost::shared_ptr<Function> _Ez_h;
 
     bool _is_linear;
 
-  };
+    // Pointers to other function spaces (FIXME: Only out-of-scope
+    // motivated)
+    boost::shared_ptr<const FunctionSpace> _E;
+    boost::shared_ptr<const FunctionSpace> _C;
 
+    // Pointers to other functions (FIXME: Only out-of-scope
+    // motivated)
+    boost::shared_ptr<Function> _cell_cone;
+    boost::shared_ptr<Function> _R_T;
+    boost::shared_ptr<SpecialFacetFunction> _R_dT;
+    boost::shared_ptr<Function> _Pi_E_z_h;
+  };
 }
 
 #endif

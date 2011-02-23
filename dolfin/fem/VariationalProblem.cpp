@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-02-03
+// Last changed: 2011-02-16
 
 #include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveVariationalSolver.h>
@@ -113,7 +113,7 @@ VariationalProblem::~VariationalProblem()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u)
+void VariationalProblem::solve(Function& u) const
 {
   // Call nonlinear solver
   if (_is_nonlinear)
@@ -124,7 +124,7 @@ void VariationalProblem::solve(Function& u)
     LinearVariationalSolver::solve(u, *this, parameters("solver"));
 }
 //-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u0, Function& u1)
+void VariationalProblem::solve(Function& u0, Function& u1) const
 {
   // Create function
   Function u(trial_space());
@@ -137,7 +137,7 @@ void VariationalProblem::solve(Function& u0, Function& u1)
   u1 = u[1];
 }
 //-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
+void VariationalProblem::solve(Function& u0, Function& u1, Function& u2) const
 {
   // Create function
   Function u(trial_space());
@@ -152,17 +152,17 @@ void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u,
-                               double tolerance,
-                               GoalFunctional& M)
+                               const double tolerance,
+                               GoalFunctional& M) const
 {
   // Call adaptive solver
   AdaptiveVariationalSolver::solve(u, *this, tolerance, M, parameters("adaptivity"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u,
-                               double tolerance,
+                               const double tolerance,
                                Form& M,
-                               ErrorControl& ec)
+                               ErrorControl& ec) const
 {
   // Call adaptive solver
   AdaptiveVariationalSolver::solve(u, *this, tolerance, M, ec, parameters("adaptivity"));

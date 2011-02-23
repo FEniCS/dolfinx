@@ -14,6 +14,8 @@ class Outflow(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] > 4.0 - DOLFIN_EPS
 
+parameters["allow_extrapolation"] = True;
+
 # Material parameters
 nu = Constant(0.02)
 
