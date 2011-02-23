@@ -9,47 +9,39 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/real.h>
-#include <dolfin/log/dolfin_log.h>
 #include "Lagrange.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(unsigned int q)
+  :q(q), n(q+1), counter(0), constants(NULL),
+   instability_detected("Warning: Lagrange polynomial is not numerically stable. The degree is too high.")
 {
-  this->q = q;
-  n = q + 1;
-
   points = new real[n];
   for (unsigned int i = 0; i < n; i++)
     points[i] = 0.0;
-
-  constants = 0;
-  init();
 }
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(const Lagrange& p)
+  : q(p.q), n(p.n), counter(p.counter), constants(NULL), 
+    instability_detected(p.instability_detected)
 {
-  this->q = p.q;
-  n = p.n;
-
   points = new real[p.n];
   for (unsigned int i = 0; i < p.n; i++)
     points[i] = p.points[i];
 
-  constants = 0;
-  init();
+  if (counter == size())
+    init();
 }
 //-----------------------------------------------------------------------------
 Lagrange::~Lagrange()
 {
   if ( points )
     delete [] points;
-  points = 0;
 
   if ( constants )
     delete [] constants;
-  constants = 0;
 }
 //-----------------------------------------------------------------------------
 void Lagrange::set(unsigned int i, real x)
@@ -57,7 +49,10 @@ void Lagrange::set(unsigned int i, real x)
   assert(i <= q);
 
   points[i] = x;
-  init();
+
+  counter++;
+  if (counter == size())
+    init();
 }
 //-----------------------------------------------------------------------------
 unsigned int Lagrange::size() const
@@ -168,11 +163,10 @@ std::string Lagrange::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void Lagrange::init()
 {
-  // Note: this will be computed each time a new nodal point is specified,
-  // but will only be correct once all nodal points are distinct. This
-  // requires some extra work at the start but give increased performance
-  // since we don't have to check each time that the constants have been
-  // computed.
+  // Note: this will be computed when n nodal points have been set, assuming they are
+  // distinct. Precomputing the constants has a downside wrt. to numerical stability, since
+  // the constants will decrease as the degree increases (and for high order be less than 
+  // epsilon.
 
   if (constants == 0)
     constants = new real[n];
@@ -183,9 +177,19 @@ void Lagrange::init()
     real product = 1.0;
     for (unsigned int j = 0; j < n; j++)
       if (j != i)
+      {
+        if (real_abs(points[i] - points[j]) < real_epsilon())
+        {
+          error("Lagrange points not distinct");
+        }
+
         product *= points[i] - points[j];
-    if (real_abs(product) > real_epsilon())
-      constants[i] = 1.0 / product;
+      }
+
+    if (real_abs(product) < real_epsilon())
+      instability_detected();
+
+    constants[i] = 1.0 / product;
   }
 }
 //-----------------------------------------------------------------------------
