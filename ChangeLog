@@ -1,3 +1,4 @@
+0.9.10 [2011-02-23]
  - Handle TimeSeries stored backward in time (automatic reversal)
  - Automatic storage of hierarchy during refinement
  - Remove directory/library 'main', merged into 'common'
