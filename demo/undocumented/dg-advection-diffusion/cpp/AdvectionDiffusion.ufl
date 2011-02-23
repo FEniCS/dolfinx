@@ -2,7 +2,7 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2007-06-29
-# Last changed: 2011-02-22
+# Last changed: 2008-07-15
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # advection-diffusion. Discontinuous formulation with upwinding.
@@ -24,21 +24,20 @@ n = scalar.cell().n
 kappa = Constant(triangle)
 alpha = Constant(triangle)
 
-# ( dot(v, n) + |dot(v, n)| )/2.0
+# ( dot(v, n) + |dot(v, n)| )/2.0 
 un = (dot(u, n) + abs(dot(u, n)))/2.0
 
 # Bilinear form
-#a_int = dot(grad(v), kappa*grad(phi) - u*phi)*dx
-a_int = dot(grad(v), - u*phi)*dx
+a_int = dot(grad(v), kappa*grad(phi) - u*phi)*dx
 
-#a_fac = kappa('+')*(alpha('+')/h_avg)*dot(jump(v, n), jump(phi, n))*dS \
-#      - kappa('+')*dot(avg(grad(v)), jump(phi, n))*dS \
-#      - kappa('+')*dot(jump(v, n), avg(grad(phi)))*dS
+a_fac = kappa('+')*(alpha('+')/h_avg)*dot(jump(v, n), jump(phi, n))*dS \
+      - kappa('+')*dot(avg(grad(v)), jump(phi, n))*dS \
+      - kappa('+')*dot(jump(v, n), avg(grad(phi)))*dS
 
 a_vel = dot(jump(v), un('+')*phi('+') - un('-')*phi('-') )*dS  + dot(v, un*phi)*ds
 
-a = a_int + a_vel
+a = a_int + a_fac + a_vel
 
 # Linear form
-#L = v*f*dx
+L = v*f*dx
 
