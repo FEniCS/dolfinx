@@ -50,7 +50,7 @@ namespace dolfin
 
   private:
 
-    /// Create a view sub-dofmap of parent_dofmap
+    /// Create a sub-dofmap (a view) from parent_dofmap
     DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
            const Mesh& mesh, bool distributed);
 
