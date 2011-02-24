@@ -87,7 +87,7 @@ namespace dolfin
                                               const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
+    virtual GenericDofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                                     const Mesh& mesh) const = 0;
 
     /// Return the set of dof indices

@@ -167,8 +167,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
-               const Mesh& mesh, bool distributed)
+DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
+               const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
              : _ufc_dofmap(dofmap_view._ufc_dofmap->create()), ufc_offset(0),
                _is_view(false), _distributed(distributed)
 {
@@ -199,13 +199,14 @@ DofMap::DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
   collapsed_map.clear();
   for (uint i = 0; i < mesh.num_cells(); ++i)
   {
-    const std::vector<uint>& dofs = dofmap_view.dofmap[i];
-    const std::vector<uint>& collapsed_dofs = dofmap[i];
-    assert(dofs.size() == collapsed_dofs.size());
-    for (uint j = 0; j < dofs.size(); ++j)
-      collapsed_map[collapsed_dofs[j]] = dofs[j];
+    const std::vector<uint>& view_cell_dofs = dofmap_view.dofmap[i];
+    const std::vector<uint>& cell_dofs = dofmap[i];
+    assert(view_cell_dofs.size() == cell_dofs.size());
+    for (uint j = 0; j < view_cell_dofs.size(); ++j)
+      collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
 
+  /*
   // Create UFC cell
   UFCCell ufc_cell(mesh);
 
@@ -223,6 +224,7 @@ DofMap::DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
     for (uint j = 0; j < collapsed_dofs.size(); ++j)
       ufc_map_to_dofmap[ufc_dofs[j]] = collapsed_dofs[j];
   }
+  */
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -304,7 +306,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   return new DofMap(*this, component, mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
+DofMap* DofMap::collapse(boost::unordered_map<uint, uint>& collapsed_map,
                          const Mesh& mesh) const
 {
   return new DofMap(collapsed_map, *this, mesh, _distributed);

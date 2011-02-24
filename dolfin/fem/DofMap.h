@@ -55,7 +55,7 @@ namespace dolfin
            const Mesh& mesh, bool distributed);
 
     /// Create a collapsed dofmap from parent_dofmap
-    DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
+    DofMap(boost::unordered_map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
            const Mesh& mesh, bool distributed);
 
   public:
@@ -127,7 +127,7 @@ namespace dolfin
                                const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
-    DofMap* collapse(std::map<uint, uint>& collapsed_map,
+    DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                      const Mesh& mesh) const;
 
     /// Return the set of dof indices

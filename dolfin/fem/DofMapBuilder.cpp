@@ -36,6 +36,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
   // Create space for dof map
   dofmap.dofmap.resize(dolfin_mesh.num_cells());
 
+  _off_process_owner.clear();
+
   assert(dofmap._ufc_dofmap);
 
   // Build dofmap from ufc::dofmap
