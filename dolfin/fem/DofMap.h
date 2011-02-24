@@ -40,10 +40,10 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& dolfin_mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& dolfin_mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
 
     /// Copy constructor
     DofMap(const DofMap& dofmap);
@@ -119,13 +119,16 @@ namespace dolfin
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
+    /// Create a copy of the dof map
+    DofMap* copy(const Mesh& mesh) const;
+
     /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component,
-                               const Mesh& dolfin_mesh) const;
+                               const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     DofMap* collapse(std::map<uint, uint>& collapsed_map,
-                     const Mesh& dolfin_mesh) const;
+                     const Mesh& mesh) const;
 
     /// Return the set of dof indices
     boost::unordered_set<dolfin::uint> dofs() const;

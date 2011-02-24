@@ -294,16 +294,22 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
-                                   const Mesh& dolfin_mesh) const
+DofMap* DofMap::copy(const Mesh& mesh) const
 {
-  return new DofMap(*this, component, dolfin_mesh, _distributed);
+  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create());
+  return new DofMap(ufc_dof_map, mesh);
+}
+//-----------------------------------------------------------------------------
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
+                                   const Mesh& mesh) const
+{
+  return new DofMap(*this, component, mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
-                         const Mesh& dolfin_mesh) const
+                         const Mesh& mesh) const
 {
-  return new DofMap(collapsed_map, *this, dolfin_mesh, _distributed);
+  return new DofMap(collapsed_map, *this, mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
