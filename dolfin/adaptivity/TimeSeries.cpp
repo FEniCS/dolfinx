@@ -1,8 +1,8 @@
-// Copyright (C) 2009 Anders Logg.
+// Copyright (C) 2009-20111 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-16
+// Last changed: 2011-02-24
 
 #include <algorithm>
 #include <sstream>
@@ -13,10 +13,11 @@
 using namespace dolfin;
 
 // Template function for storing objects
-template <class T> void store_object(const T& object, double t,
-                                     std::vector<double>& times,
-                                     std::string series_name,
-                                     std::string type_name)
+template <class T>
+void store_object(const T& object, double t,
+                  std::vector<double>& times,
+                  std::string series_name,
+                  std::string type_name)
 {
   // Write object
   File file_data(TimeSeries::filename_data(series_name, type_name, times.size()));
@@ -28,55 +29,6 @@ template <class T> void store_object(const T& object, double t,
   // Store times
   File file_times(TimeSeries::filename_times(series_name, type_name));
   file_times << times;
-}
-
-// Template function for retrieving objects
-template <class T> void retrieve_object(T& object, double t,
-                                        const std::vector<double>& times,
-                                        std::string series_name,
-                                        std::string type_name,
-                                        bool reversed)
-{
-  // Must have at least one value stored
-  if (times.size() == 0)
-    error("Unable to retrieve %s, no %s stored in time series.",
-          type_name.c_str(), type_name.c_str());
-
-  // Find lower and upper bound for given time. Note that lower_bound()
-  // returns the first item that is larger than the given time, or end
-  // of vector if no such item exists.
-  std::vector<double>::const_iterator lower, upper;
-  lower = std::lower_bound(times.begin(), times.end(), t);
-  if (lower == times.begin())
-    upper = lower;
-  else if (lower == times.end())
-    upper = lower = lower - 1;
-  else {
-    lower = lower - 1;
-    upper = lower + 1;
-  }
-
-  // Check which is closer
-  unsigned int index = 0;
-  if (std::abs(t - *lower) < std::abs(t - *upper))
-    index = lower - times.begin();
-  else
-    index = upper - times.begin();
-
-  dolfin_debug1("Looking for value at time t = %g", t);
-  dolfin_debug2("Neighboring values are %g and %g", *lower, *upper);
-  dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
-
-  // Check if series is reversed
-  if (reversed)
-  {
-    index = times.size() - 1 - index;
-    dolfin_debug1("Series is reversed so I'm using index = %d instead.", index);
-  }
-
-  // Read object
-  File file(TimeSeries::filename_data(series_name, type_name, index));
-  file >> object;
 }
 
 //-----------------------------------------------------------------------------
@@ -157,12 +109,24 @@ void TimeSeries::store(const Mesh& mesh, double t)
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t) const
 {
-  retrieve_object(vector, t, _vector_times, _name, "vector", _reversed);
+  // Get index closest to given time
+  const uint index = find_closest_index(t, _vector_times, _name,
+                                        "vector", _reversed);
+
+  // Read vector
+  File file(filename_data(_name, "vector", index));
+  file >> vector;
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
-  retrieve_object(mesh, t, _vector_times, _name, "mesh", _reversed);
+  // Get index closest to given time
+  const uint index = find_closest_index(t, _vector_times, _name,
+                                        "vector", _reversed);
+
+  // Read vector
+  File file(filename_data(_name, "mesh", index));
+  file >> mesh;
 }
 //-----------------------------------------------------------------------------
 Array<double> TimeSeries::vector_times() const
@@ -241,5 +205,51 @@ bool TimeSeries::increasing(const std::vector<double>& times)
     if (!(times[i + 1] > times[i]))
       return false;
   return true;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint TimeSeries::find_closest_index(double t,
+                                            const std::vector<double>& times,
+                                            std::string series_name,
+                                            std::string type_name,
+                                            bool reversed)
+{
+  // Must have at least one value stored
+  if (times.size() == 0)
+    error("Unable to retrieve %s, no %s stored in time series.",
+          type_name.c_str(), type_name.c_str());
+
+  // Find lower and upper bound for given time. Note that lower_bound()
+  // returns the first item that is larger than the given time, or end
+  // of vector if no such item exists.
+  std::vector<double>::const_iterator lower, upper;
+  lower = std::lower_bound(times.begin(), times.end(), t);
+  if (lower == times.begin())
+    upper = lower;
+  else if (lower == times.end())
+    upper = lower = lower - 1;
+  else {
+    lower = lower - 1;
+    upper = lower + 1;
+  }
+
+  // Check which is closer
+  unsigned int index = 0;
+  if (std::abs(t - *lower) < std::abs(t - *upper))
+    index = lower - times.begin();
+  else
+    index = upper - times.begin();
+
+  dolfin_debug1("Looking for value at time t = %g", t);
+  dolfin_debug2("Neighboring values are %g and %g", *lower, *upper);
+  dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
+
+  // Check if series is reversed
+  if (reversed)
+  {
+    index = times.size() - 1 - index;
+    dolfin_debug1("Series is reversed so I'm using index = %d instead.", index);
+  }
+
+  return index;
 }
 //-----------------------------------------------------------------------------

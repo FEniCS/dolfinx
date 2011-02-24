@@ -3,9 +3,11 @@ __date__ = "2009-11-11"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-09-01
+# Last changed: 2011-02-24
 
 from dolfin import *
+
+set_log_level(DEBUG)
 
 not_working_in_parallel("This demo")
 
@@ -31,8 +33,8 @@ while t < 1.0:
     t += 0.2
 
 # Retrieve mesh and vector at some point in time
-series.retrieve(mesh, 0.3)
-series.retrieve(x, 0.3)
+series.retrieve(mesh, 0.29)
+series.retrieve(x, 0.31)
 
 # Plot mesh
 plot(mesh, interactive=True)

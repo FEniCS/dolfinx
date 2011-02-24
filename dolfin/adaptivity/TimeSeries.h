@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-16
+// Last changed: 2011-02-24
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -74,6 +74,13 @@ namespace dolfin
 
     // Check if values are strictly increasing
     static bool increasing(const std::vector<double>& times);
+
+    // Find index closest to given time
+    static uint find_closest_index(double t,
+                                   const std::vector<double>& times,
+                                   std::string series_name,
+                                   std::string type_name,
+                                   bool reversed);
 
     // Name of series
     std::string _name;
