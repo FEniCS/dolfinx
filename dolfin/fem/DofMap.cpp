@@ -118,7 +118,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     ufc_cell.update(*cell);
 
     // Resize for list for cell
-    dofmap[index].resize(_ufc_dofmap->local_dimension(ufc_cell));
+    dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
     _ufc_dofmap->tabulate_dofs(&dofmap[cell_index][0], ufc_mesh, ufc_cell);
@@ -377,7 +377,7 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
   // Build set of dofs
   boost::unordered_set<dolfin::uint> dof_list;
   std::vector<std::vector<uint> >::const_iterator cell_dofs;
-  for (cell_dofs = dofmap.begin(); cell_dofs = !dofmap.end(); ++cell_dofs)
+  for (cell_dofs = dofmap.begin(); cell_dofs != dofmap.end(); ++cell_dofs)
     dof_list.insert(cell_dofs->begin(), cell_dofs->end());
 
   return dof_list;
