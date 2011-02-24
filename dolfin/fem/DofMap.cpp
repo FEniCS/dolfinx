@@ -58,6 +58,11 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
+DofMap::DofMap(const DofMap& dofmap)
+{
+  error("DofMaps cannot be copied");
+}
+//-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
                ufc_offset(0), _is_view(false),

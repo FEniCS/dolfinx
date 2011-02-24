@@ -45,6 +45,9 @@ namespace dolfin
     /// Create dof map on mesh (const mesh version)
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& dolfin_mesh);
 
+    /// Copy constructor
+    DofMap(const DofMap& dofmap);
+
   private:
 
     /// Create a sub-dofmap (a view) from parent_dofmap
