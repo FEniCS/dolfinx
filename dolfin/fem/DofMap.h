@@ -50,8 +50,9 @@ namespace dolfin
 
   private:
 
-    /// Create dof map on mesh with a std::vector dof map
-    DofMap(const ufc::dofmap& ufc_dofmap, const UFCMesh& ufc_mesh);
+    /// Create a view sub-dofmap of parent_dofmap
+    DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+           const Mesh& mesh, bool distributed);
 
   public:
 
@@ -144,7 +145,10 @@ namespace dolfin
 
     /// Return ufc::dofmap
     const ufc::dofmap& ufc_dofmap() const
-    { return *_ufc_dofmap; }
+    {
+      assert(_ufc_dofmap);
+      return *_ufc_dofmap;
+    }
 
   private:
 
@@ -162,7 +166,7 @@ namespace dolfin
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
-    std::map<dolfin::uint, uint> ufc_map_to_dofmap;
+    boost::unordered_map<dolfin::uint, uint> ufc_map_to_dofmap;
 
     // UFC dof map offset
     unsigned int ufc_offset;
