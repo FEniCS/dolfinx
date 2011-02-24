@@ -83,7 +83,7 @@ namespace dolfin
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,
                                               const Mesh& dolfin_mesh) const = 0;
 
-    /// Create a "collapsed" a dofmap (collapses a sub-dofmap)
+    /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
     virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
                                     const Mesh& dolfin_mesh) const = 0;
 

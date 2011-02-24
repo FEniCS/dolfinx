@@ -32,11 +32,8 @@ namespace dolfin
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
-  /// reorder the dofs when running in parallel.
-  ///
-  /// If ufc_offset != 0, then the dof map provides a view into a
-  /// larger dof map. A dof map which is a view, can be 'collapsed'
-  /// such that the dof indices are contiguous.
+  /// reorder the dofs when running in parallel. Sub-dofmaps, both
+  /// views and copies, are supported.
 
   class DofMap : public GenericDofMap
   {
@@ -52,6 +49,10 @@ namespace dolfin
 
     /// Create a sub-dofmap (a view) from parent_dofmap
     DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+           const Mesh& mesh, bool distributed);
+
+    /// Create a collapsed dofmap from parent_dofmap
+    DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
            const Mesh& mesh, bool distributed);
 
   public:
