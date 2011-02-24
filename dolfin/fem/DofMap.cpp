@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-02-23
+// Last changed: 2011-02-24
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -86,7 +86,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                const Mesh& mesh, bool distributed) : ufc_offset(0),
-               _ownership_range(0, 0), _is_view(true), _distributed(distributed)
+               _ownership_range(0, 0), _is_view(true),
+               _distributed(distributed)
 {
   // Ownership range is set to zero since dofmap is a view
 
@@ -313,10 +314,10 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                        uint& offset,
-                                        const std::vector<uint>& component,
-                                        const ufc::mesh ufc_mesh,
-                                        const Mesh& dolfin_mesh)
+                                            uint& offset,
+                                            const std::vector<uint>& component,
+                                            const ufc::mesh ufc_mesh,
+                                            const Mesh& dolfin_mesh)
 {
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps() == 0)

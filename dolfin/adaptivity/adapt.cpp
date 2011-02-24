@@ -1,11 +1,11 @@
-// Copyright (C) 2010 Garth N. Wells.
+// Copyright (C) 2010-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010-2011.
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-23
+// Last changed: 2011-02-24
 
 #include <boost/shared_ptr.hpp>
 
@@ -114,21 +114,12 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
     return space.child();
   }
 
-  // Get DofMap (GenericDofMap does not know about ufc::dofmap)
-  const DofMap* dofmap = dynamic_cast<const DofMap*>(&space.dofmap());
-  if (!dofmap)
-  {
-    dolfin_debug("FunctionSpace is defined by a non-standard dofmap.");
-    error("Unable to refine function space.");
-  }
-
-  // Create new copies of UFC finite element and dofmap
+  // Create new copy of UFC finite element
   boost::shared_ptr<ufc::finite_element> ufc_element(space.element().ufc_element()->create());
-  boost::shared_ptr<ufc::dofmap> ufc_dofmap(dofmap->ufc_dofmap().create());
 
   // Create DOLFIN finite element and dofmap
   boost::shared_ptr<const FiniteElement> refined_element(new FiniteElement(ufc_element));
-  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(ufc_dofmap, *refined_mesh));
+  boost::shared_ptr<const GenericDofMap> refined_dofmap(space.dofmap().copy(*refined_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace> refined_space(new FunctionSpace(refined_mesh,
