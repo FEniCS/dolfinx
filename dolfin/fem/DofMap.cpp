@@ -102,7 +102,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Get parent UFC dof map
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
 
-  // Extract UFC sub-dofmap from parent and get offset
+  // Extract ufc sub-dofmap from parent and get offset
   _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
                                            component, ufc_mesh, mesh));
   assert(_ufc_dofmap);
@@ -110,7 +110,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Set UFC offset
   this->ufc_offset = offset;
 
-  // Initialise ufc dofmap
+  // Initialise UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
 
   // Resize dofmap data structure
@@ -125,7 +125,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     // Update to current cell
     ufc_cell.update(*cell);
 
-    // Resize for list for cell
+    // Resize list for cell
     dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
@@ -202,6 +202,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
     const std::vector<uint>& view_cell_dofs = dofmap_view.dofmap[i];
     const std::vector<uint>& cell_dofs = dofmap[i];
     assert(view_cell_dofs.size() == cell_dofs.size());
+
     for (uint j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }

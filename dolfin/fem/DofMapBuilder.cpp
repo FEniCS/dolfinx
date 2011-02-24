@@ -44,7 +44,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
   dolfin::UFCCell ufc_cell(dolfin_mesh);
   for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
-    // Update ufc cell
+    // Update UFC cell
     ufc_cell.update(*cell);
 
     // Get standard local dimension
