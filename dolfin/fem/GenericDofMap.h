@@ -79,13 +79,16 @@ namespace dolfin
     virtual void tabulate_coordinates(double** coordinates,
                                       const Cell& cell) const = 0;
 
+    /// Create a copy of the dof map
+    virtual GenericDofMap* copy(const Mesh& mesh) const = 0;
+
     /// Extract sub dofmap component
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,
-                                              const Mesh& dolfin_mesh) const = 0;
+                                              const Mesh& mesh) const = 0;
 
-    /// Create a "collapsed" a dofmap (collapses a sub-dofmap)
-    virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
-                                    const Mesh& dolfin_mesh) const = 0;
+    /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
+    virtual GenericDofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
+                                    const Mesh& mesh) const = 0;
 
     /// Return the set of dof indices
     virtual boost::unordered_set<dolfin::uint> dofs() const = 0;

@@ -151,7 +151,6 @@ const Function& Function::operator= (const Function& v)
 {
   assert(v._vector);
 
-
   // Make a copy of all the data, or if v is a sub-function, then we collapse
   // the dof map and copy only the relevant entries from the vector of v.
   if (v._vector->size() == v._function_space->dim())
@@ -164,10 +163,9 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
-
     // Create collapsed dof map
     const GenericDofMap& v_dofmap = v._function_space->dofmap();
-    std::map<uint, uint> collapsed_map;
+    boost::unordered_map<uint, uint> collapsed_map;
     boost::shared_ptr<GenericDofMap> collapsed_dofmap(v_dofmap.collapse(collapsed_map, v._function_space->mesh()));
 
     // Create new FunctionsSpapce
@@ -178,7 +176,7 @@ const Function& Function::operator= (const Function& v)
     //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
 
     // Get row indices of original and new vectors
-    std::map<uint, uint>::const_iterator entry;
+    boost::unordered_map<uint, uint>::const_iterator entry;
     std::vector<uint> new_rows(collapsed_map.size());
     Array<uint> old_rows(collapsed_map.size());
     uint i = 0;

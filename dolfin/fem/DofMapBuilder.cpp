@@ -10,6 +10,7 @@
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Edge.h>
@@ -18,14 +19,50 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include "UFCCell.h"
 #include "DofMap.h"
+#include "UFCCell.h"
+#include "UFCMesh.h"
 #include "DofMapBuilder.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
+void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
+                          const UFCMesh& ufc_mesh, bool distributed)
+{
+  // Start timer for dofmap initialization
+  Timer t0("Init dofmap");
+
+  // Create space for dof map
+  dofmap.dofmap.resize(dolfin_mesh.num_cells());
+
+  dofmap._off_process_owner.clear();
+
+  assert(dofmap._ufc_dofmap);
+
+  // Build dofmap from ufc::dofmap
+  dolfin::UFCCell ufc_cell(dolfin_mesh);
+  for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+  {
+    // Update UFC cell
+    ufc_cell.update(*cell);
+
+    // Get standard local dimension
+    const unsigned int local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
+    dofmap.dofmap[cell->index()].resize(local_dim);
+
+    // Tabulate standard UFC dof map
+    dofmap._ufc_dofmap->tabulate_dofs(&dofmap.dofmap[cell->index()][0], ufc_mesh, ufc_cell);
+  }
+
+  // Build (renumber) dofmap when running in parallel
+  if (distributed)
+    build_distributed(dofmap, dolfin_mesh);
+  else
+    dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
+}
+//-----------------------------------------------------------------------------
+void DofMapBuilder::build_distributed(DofMap& dofmap, const Mesh& mesh)
 {
   // Create data structures
   set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
