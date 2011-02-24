@@ -138,6 +138,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
+  _off_process_owner.clear();
   if (parent_dofmap.ufc_map_to_dofmap.size() > 0)
   {
     boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
@@ -151,18 +152,19 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         ufc_to_current_dof = parent_dofmap.ufc_map_to_dofmap.find(*dof);
         assert(ufc_to_current_dof != parent_dofmap.ufc_map_to_dofmap.end());
 
-        // Add to map
+        // Add to ufc-to-current dof map
         ufc_map_to_dofmap.insert(*ufc_to_current_dof);
 
         // Set dof index
         *dof = ufc_to_current_dof->second;
+
+        // Add to off-process dof owner map
+        boost::unordered_map<uint, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        if (parent_off_proc != parent_dofmap._off_process_owner.end())
+          _off_process_owner.insert(*parent_off_proc);
       }
     }
   }
-
-  // FIXME
-  // Handle boost::unordered_map<uint, uint> _off_process_owner;
-
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
@@ -221,11 +223,6 @@ DofMap::DofMap(std::map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
     for (uint j = 0; j < collapsed_dofs.size(); ++j)
       ufc_map_to_dofmap[ufc_dofs[j]] = collapsed_dofs[j];
   }
-
-  // FIXME
-  // Set local ownership range
-
-  // Update off-process owner
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
