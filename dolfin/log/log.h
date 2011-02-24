@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-01-24
+// Last changed: 2011-02-25
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -95,10 +95,11 @@ namespace dolfin
 // DOLFIN namespace and therefore don't require a prefix.
 
 // Debug macros (with varying number of arguments)
-#define dolfin_debug(msg)              do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_debug1(msg, a0)         do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_debug2(msg, a0, a1)     do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_debug3(msg, a0, a1, a2) do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
+#define dolfin_debug(msg)                  do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
+#define dolfin_debug1(msg, a0)             do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
+#define dolfin_debug2(msg, a0, a1)         do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
+#define dolfin_debug3(msg, a0, a1, a2)     do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
+#define dolfin_debug4(msg, a0, a1, a2, a3) do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2, a3); } while (false)
 
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() \
