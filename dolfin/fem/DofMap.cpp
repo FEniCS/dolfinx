@@ -157,8 +157,6 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
                                    const Mesh& dolfin_mesh) const
 {
-  cout << "****Extracting dof map "  << endl;
-
   assert(_ufc_dofmap);
 
   // Create UFC mesh
@@ -239,7 +237,8 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
 
   // Create new dof map (this sets ufc_offset = 0 and it will renumber the map
   // if runnning in parallel)
-  DofMap* collapsed_dofmap = new DofMap(*_ufc_dofmap, dolfin_mesh);
+  boost::shared_ptr<const ufc::dofmap> wrapped_ufc_dofmap(_ufc_dofmap.get(), NoDeleter());
+  DofMap* collapsed_dofmap = new DofMap(wrapped_ufc_dofmap, dolfin_mesh);
 
   // Dimension checks
   assert(collapsed_dofmap->global_dimension() == global_dimension());
@@ -286,8 +285,6 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   // Set local ownership range
 
   // Update off-process owner
-
-  cout << "Leaving collapse dof map" << endl;
 
   return collapsed_dofmap;
 }
