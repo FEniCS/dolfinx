@@ -39,10 +39,10 @@ namespace dolfin
   {
   public:
 
-    /// Create dof map on mesh
+    /// Create dof map on mesh (data is not shared)
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& mesh);
 
-    /// Create dof map on mesh (const mesh version)
+    /// Create dof map on mesh ((data is not shared), const mesh version)
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
 
     /// Copy constructor
