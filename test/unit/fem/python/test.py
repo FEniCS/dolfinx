@@ -57,9 +57,10 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b separately (multi-threaded)
-        parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        if MPI.num_processes() == 0:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     def test_cell_assembly(self):
 
@@ -90,9 +91,10 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b separately (multi-threaded)
-        parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        if MPI.num_processes() == 0:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
     def test_nonsquare_assembly(self):
         """Test assembly of a rectangular matrix"""
@@ -112,9 +114,9 @@ class Assembly(unittest.TestCase):
         parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
 
-        parameters["num_threads"] = 4
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-
+        if MPI.num_processes() == 0:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
 
 class DofMap(unittest.TestCase):
 
