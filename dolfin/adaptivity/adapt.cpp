@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-24
+// Last changed: 2011-02-25
 
 #include <boost/shared_ptr.hpp>
 
@@ -114,11 +114,8 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
     return space.child();
   }
 
-  // Create new copy of UFC finite element
-  boost::shared_ptr<ufc::finite_element> ufc_element(space.element().ufc_element()->create());
-
   // Create DOLFIN finite element and dofmap
-  boost::shared_ptr<const FiniteElement> refined_element(new FiniteElement(ufc_element));
+  boost::shared_ptr<const FiniteElement> refined_element(space.element().create());
   boost::shared_ptr<const GenericDofMap> refined_dofmap(space.dofmap().copy(*refined_mesh));
 
   // Create new function space

@@ -1,8 +1,8 @@
-// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-20011 Anders Logg and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2011-02-13
+// Last changed: 2011-02-25
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -84,8 +84,11 @@ namespace dolfin
     boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<uint>& component) const;
 
     /// Return ufc::finite_element
-    boost::shared_ptr<const ufc::finite_element> ufc_element() const
-    { return _ufc_element; }
+    boost::shared_ptr<const FiniteElement> create() const
+    {
+      boost::shared_ptr<const ufc::finite_element> ufc_element(_ufc_element->create());
+      return boost::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
+    }
 
   private:
 
