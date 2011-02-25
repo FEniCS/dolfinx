@@ -59,6 +59,9 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool reset_sparsity,
                                bool add_values)
 {
+  if (MPI::num_processes() > 1)
+    error("OpenMpAssembler has not been tested in combination with MPI.");
+
   //warning("OpenMpAssembler is experimental.");
 
   // All assembler functions above end up calling this function, which
