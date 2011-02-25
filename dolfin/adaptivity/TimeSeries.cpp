@@ -192,6 +192,24 @@ dolfin::uint TimeSeries::find_closest_index(double t,
                                             std::string series_name,
                                             std::string type_name)
 {
+  // Get closest pair
+  std::pair<uint, uint> index_pair = find_closest_pair(t, times, series_name, type_name);
+  const uint i0 = index_pair.first;
+  const uint i1 = index_pair.second;
+
+  // Check which is closer
+  const uint i = (std::abs(t - times[i0]) < std::abs(t - times[i1]) ? i0 : i1);
+  dolfin_debug2("Using closest value t[%d] = %g", i, times[i]);
+
+  return i;
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint>
+TimeSeries::find_closest_pair(double t,
+                              const std::vector<double>& times,
+                              std::string series_name,
+                              std::string type_name)
+{
   for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
 
   // Must have at least one value stored
@@ -203,7 +221,7 @@ dolfin::uint TimeSeries::find_closest_index(double t,
   if (times.size() == 1)
   {
     dolfin_debug("Series has just one value, returning index 0.");
-    return 0;
+    return std::make_pair(0, 0);
   }
 
   // Check whether series is reversed
@@ -217,29 +235,23 @@ dolfin::uint TimeSeries::find_closest_index(double t,
   else
     lower = std::lower_bound(times.begin(), times.end(), t, std::less<double>());
 
-  // Set lower and upper bound
-  std::vector<double>::const_iterator upper;
+  // Set indexlower and upper bound
+  uint i0 = 0;
+  uint i1 = 0;
   if (lower == times.begin())
-    upper = lower;
+    i0 = i1 = lower - times.begin();
   else if (lower == times.end())
-    upper = lower = lower - 1;
+    i0 = i1 = lower - times.begin() - 1;
   else
   {
-    lower = lower - 1;
-    upper = lower + 1;
+    i0 = lower - times.begin() - 1;
+    i1 = i0 + 1;
   }
 
-  // Check which is closer
-  unsigned int index = 0;
-  if (std::abs(t - *lower) < std::abs(t - *upper))
-    index = lower - times.begin();
-  else
-    index = upper - times.begin();
-
   dolfin_debug1("Looking for value at time t = %g", t);
-  dolfin_debug2("Neighboring values are %g and %g", *lower, *upper);
-  dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
+  dolfin_debug4("Neighboring values are t[%d] = %g and t[%d] = %g",
+                i0, times[i0], i1, times[i1]);
 
-  return index;
+  return std::make_pair(i0, i1);
 }
 //-----------------------------------------------------------------------------

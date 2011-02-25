@@ -81,6 +81,12 @@ namespace dolfin
                                    std::string series_name,
                                    std::string type_name);
 
+    // Find index pair closest to given time
+    static std::pair<uint, uint> find_closest_pair(double t,
+                                                   const std::vector<double>& times,
+                                                   std::string series_name,
+                                                   std::string type_name);
+
     // Name of series
     std::string _name;
 
