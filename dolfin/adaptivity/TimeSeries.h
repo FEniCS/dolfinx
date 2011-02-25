@@ -46,7 +46,7 @@ namespace dolfin
     void store(const Mesh& mesh, double t);
 
     /// Retrieve vector at given time
-    void retrieve(GenericVector& vector, double t) const;
+    void retrieve(GenericVector& vector, double t, bool interpolate=true) const;
 
     /// Retrieve mesh at given time
     void retrieve(Mesh& mesh, double t) const;

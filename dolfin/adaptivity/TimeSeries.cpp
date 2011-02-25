@@ -6,8 +6,11 @@
 
 #include <algorithm>
 #include <sstream>
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/io/File.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
 #include "TimeSeries.h"
 
 using namespace dolfin;
@@ -58,7 +61,7 @@ TimeSeries::TimeSeries(std::string name)
     // Read from file
     File file(filename);
     file >> _mesh_times;
-    info("Found %d mesh sample(s) in time series.", _vector_times.size());
+    info("Found %d mesh sample(s) in time series.", _mesh_times.size());
   }
   else
     info("No mesh samples found in time series.");
@@ -89,20 +92,74 @@ void TimeSeries::store(const Mesh& mesh, double t)
   store_object(mesh, t, _mesh_times, _name, "mesh");
 }
 //-----------------------------------------------------------------------------
-void TimeSeries::retrieve(GenericVector& vector, double t) const
+void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) const
 {
-  // Get index closest to given time
-  const uint index = find_closest_index(t, _vector_times, _name, "vector");
+  // Interpolate value
+  if (interpolate)
+  {
+    // Find closest pair
+    const std::pair<uint, uint> index_pair = find_closest_pair(t, _vector_times, _name, "vector");
+    const uint i0 = index_pair.first;
+    const uint i1 = index_pair.second;
 
-  // Read vector
-  File file(filename_data(_name, "vector", index));
-  file >> vector;
+    // Special case: same index
+    if (i0 == i1)
+    {
+      File f(filename_data(_name, "vector", i0));
+      f >> vector;
+      info(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
+      return;
+    }
+
+    info("Interpolating vector value at t = %g in interval [%g, %g].",
+         t, _vector_times[i0], _vector_times[i1]);
+
+    // Read vectors
+    GenericVector& x0(vector);
+    boost::scoped_ptr<GenericVector> x1(x0.factory().create_vector());
+    File f0(filename_data(_name, "vector", i0));
+    File f1(filename_data(_name, "vector", i1));
+    f0 >> x0;
+    f1 >> *x1;
+
+    // Check that the vectors have the same size
+    if (x0.size() != x1->size())
+      error("Unable to interpolate vector value; vector sizes don't match (%d and %d).",
+            x0.size(), x1->size());
+
+    // Compute weights for linear interpolation
+    const double dt = _vector_times[i1] - _vector_times[i0];
+    assert(std::abs(dt) > DOLFIN_EPS);
+    const double w0 = (_vector_times[i1] - t) / dt;
+    const double w1 = 1.0 - w0;
+
+    // Interpolate
+    x0 *= w0;
+    x0.axpy(w1, *x1);
+  }
+
+  // Read closest value
+  else
+  {
+    // Find closest index
+    const uint index = find_closest_index(t, _vector_times, _name, "vector");
+
+    info("Reading vector at t = %g (close to t = %g).",
+         _vector_times[index], t);
+
+    // Read vector
+    File file(filename_data(_name, "vector", index));
+    file >> vector;
+  }
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
   // Get index closest to given time
-  const uint index = find_closest_index(t, _vector_times, _name, "mesh");
+  const uint index = find_closest_index(t, _mesh_times, _name, "mesh");
+
+  info(PROGRESS, "Reading mesh at t = %g (close to t = %g).",
+       _mesh_times[index], t);
 
   // Read vector
   File file(filename_data(_name, "mesh", index));
@@ -193,7 +250,7 @@ dolfin::uint TimeSeries::find_closest_index(double t,
                                             std::string type_name)
 {
   // Get closest pair
-  std::pair<uint, uint> index_pair = find_closest_pair(t, times, series_name, type_name);
+  const std::pair<uint, uint> index_pair = find_closest_pair(t, times, series_name, type_name);
   const uint i0 = index_pair.first;
   const uint i1 = index_pair.second;
 
@@ -210,7 +267,7 @@ TimeSeries::find_closest_pair(double t,
                               std::string series_name,
                               std::string type_name)
 {
-  for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
+  //for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
 
   // Must have at least one value stored
   if (times.size() == 0)
