@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-04
+// Last changed: 2011-02-25
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -47,8 +47,8 @@ int main()
   }
 
   // Retrieve mesh and vector at some point in time
-  series.retrieve(mesh, 0.3);
-  series.retrieve(x, 0.3);
+  series.retrieve(mesh, 0.29);
+  series.retrieve(x, 0.31, false);
 
   // Plot mesh
   plot(mesh);

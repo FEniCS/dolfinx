@@ -15,18 +15,18 @@ series = TimeSeries("primal")
 
 # Create a mesh and a vector
 mesh = UnitSquare(2, 2)
-x = Vector(10)
-x[:] = ones(x.size())
+x = Vector()
 
 # Add a bunch of meshes and vectors to the series
-t = 1.0
+t = 0.0
 while t < 1.0:
 
-    # Refine mesh
+    # Refine mesh and resize vector
     mesh = refine(mesh);
+    x.resize(mesh.num_vertices());
 
-    # Scale vector
-    x *= 2.0
+    # Set some vector values
+    x[:] = ones(x.size())
 
     # Append to series
     series.store(mesh, t)
@@ -36,8 +36,7 @@ while t < 1.0:
 
 # Retrieve mesh and vector at some point in time
 series.retrieve(mesh, 0.29)
-series.retrieve(x, 0.31)
+series.retrieve(x, 0.31, False)
 
-# Plot mesh and print vector
+# Plot mesh
 plot(mesh, interactive=True)
-info(x, True)
