@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-24
+// Last changed: 2011-02-25
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -79,8 +79,7 @@ namespace dolfin
     static uint find_closest_index(double t,
                                    const std::vector<double>& times,
                                    std::string series_name,
-                                   std::string type_name,
-                                   bool reversed);
+                                   std::string type_name);
 
     // Name of series
     std::string _name;
@@ -91,9 +90,6 @@ namespace dolfin
 
     // True if series has been cleared
     bool _cleared;
-
-    // True if series is reversed
-    bool _reversed;
 
   };
 
