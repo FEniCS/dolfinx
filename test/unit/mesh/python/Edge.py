@@ -10,6 +10,7 @@ from dolfin import *
 
 cube   = UnitCube(5, 5, 5)
 square = UnitSquare(5, 5)
+meshes = [cube, square]
 
 class EdgeFunctions(unittest.TestCase):
 
@@ -18,26 +19,23 @@ class EdgeFunctions(unittest.TestCase):
         length = 0.0
         for e in edges(square):
             length += e.length()
-        self.assertAlmostEqual(length, 19.07106781186544708362)
+        if MPI.num_processes() == 1:
+            self.assertAlmostEqual(length, 19.07106781186544708362)
 
     def test3DEdgeLength(self):
         """Iterate over edges and sum length."""
         length = 0.0
         for e in edges(cube):
             length += e.length()
-        self.assertAlmostEqual(length, 278.58049080280125053832)
+        if MPI.num_processes() == 1:
+            self.assertAlmostEqual(length, 278.58049080280125053832)
 
-    def test3DEdgeDot(self):
-        """Iterate over edges and sum length."""
-        for e in edges(cube):
-            dot = e.dot(e)/(e.length()**2)
-            self.assertAlmostEqual(dot, 1.0)
-
-    def test2DEdgeDot(self):
-        """Iterate over edges and sum length."""
-        for e in edges(square):
-            dot = e.dot(e)/(e.length()**2)
-            self.assertAlmostEqual(dot, 1.0)
+    def testEdgeDot(self):
+        """Iterate over edges compute dot product with self."""
+        for mesh in meshes:
+            for e in edges(mesh):
+                dot = e.dot(e)/(e.length()**2)
+                self.assertAlmostEqual(dot, 1.0)
 
 if __name__ == "__main__":
     unittest.main()

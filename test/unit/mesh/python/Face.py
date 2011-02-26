@@ -17,7 +17,8 @@ class Area(unittest.TestCase):
         area = 0.0
         for f in faces(cube):
             area += f.area()
-        self.assertAlmostEqual(area, 39.21320343559672494393)
+        if MPI.num_processes() == 1:
+            self.assertAlmostEqual(area, 39.21320343559672494393)
 
 class Normal(unittest.TestCase):
 
