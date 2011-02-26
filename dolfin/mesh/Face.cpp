@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2006-06-02
-// Last changed: 2011-02-22
+// Last changed: 2011-02-26
 
 #include "Cell.h"
 #include "Point.h"
@@ -15,8 +15,15 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 double Face::area() const
 {
+  assert(_mesh);
+  assert(_mesh->ordered());
+
+  // Initialize needed connectivity
+  const uint D = _mesh->topology().dim();
+  _mesh->init(2, D);
+
   // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(3)[0]);
+  const Cell cell(*_mesh, this->entities(D)[0]);
 
   // Get local index of facet with respect to the cell
   const uint local_facet = cell.index(*this);
@@ -26,12 +33,15 @@ double Face::area() const
 //-----------------------------------------------------------------------------
 double Face::normal(uint i) const
 {
-  _mesh->init(2);
-  _mesh->init(2, 3);
+  assert(_mesh);
   assert(_mesh->ordered());
 
+  // Initialize needed connectivity
+  const uint D = _mesh->topology().dim();
+  _mesh->init(2, D);
+
   // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(3)[0]);
+  const Cell cell(*_mesh, this->entities(D)[0]);
 
   // Get local index of facet with respect to the cell
   const uint local_facet = cell.index(*this);
@@ -41,12 +51,15 @@ double Face::normal(uint i) const
 //-----------------------------------------------------------------------------
 Point Face::normal() const
 {
-  _mesh->init(2);
-  _mesh->init(2, 3);
+  assert(_mesh);
   assert(_mesh->ordered());
 
+  // Initialize needed connectivity
+  const uint D = _mesh->topology().dim();
+  _mesh->init(2, D);
+
   // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(3)[0]);
+  const Cell cell(*_mesh, this->entities(D)[0]);
 
   // Get local index of facet with respect to the cell
   const uint local_facet = cell.index(*this);
@@ -54,4 +67,3 @@ Point Face::normal() const
   return cell.normal(local_facet);
 }
 //-----------------------------------------------------------------------------
-
