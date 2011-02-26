@@ -1,9 +1,9 @@
-"""Unit tests for the Facet class"""
+"""Unit tests for the Face class"""
 
-__author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
-__date__ = "2011-02-26"
+__author__    = "Garth N. Wells (gnw20@cam.ac.uk)"
+__date__      = "2011-02-26"
 __copyright__ = "Copyright (C) 2011 Garth N. Wells"
-__license__  = "GNU LGPL Version 2.1"
+__license__   = "GNU LGPL Version 2.1"
 
 import unittest
 from dolfin import *
