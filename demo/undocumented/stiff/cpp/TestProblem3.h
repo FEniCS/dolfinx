@@ -17,13 +17,13 @@ public:
     info("A non-normal test problem, critically damped oscillation.");
   }
 
-  void u0(RealArray& u)
+  void u0(Array<real>& u)
   {
     u[0] = 1.0;
     u[1] = 1.0;
   }
 
-  void f(const RealArray& u, real t, RealArray& y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     y[0] = -1000*u[0] + 10000*u[1];
     y[1] = -100*u[1];

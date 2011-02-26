@@ -18,13 +18,13 @@ public:
     info("The heat equation on [0,1] with h = %f", to_double(h));
   }
 
-  void u0(RealArray& u)
+  void u0(Array<real>& u)
   {
     for (unsigned int i = 0; i < N; i++)
       u[i] = 0.0;
   }
 
-  void f(const RealArray& u, real t, RealArray& y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     // Boundary values
     y[0]   = 0.0;

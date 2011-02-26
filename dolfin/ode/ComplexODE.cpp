@@ -76,7 +76,7 @@ bool ComplexODE::update(const complex z[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::u0(real* u)
+void ComplexODE::u0(Array<real> u)
 {
   // Translate initial value from complex to real
   z0(zvalues);
@@ -87,7 +87,7 @@ void ComplexODE::u0(real* u)
   }
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(const real* u, real t, uint i)
+real ComplexODE::f(const Array<real> u, real t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
   // u_i depends on u_j, then u_i depends on both the real and
@@ -115,7 +115,7 @@ real ComplexODE::f(const real* u, real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const real* u, real t, real* y)
+void ComplexODE::f(const Array<real> u, real t, Array<real> y)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -136,8 +136,8 @@ void ComplexODE::f(const real* u, real t, real* y)
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const real* x, real* y,
-		   const real* u, real t)
+void ComplexODE::M(const Array<real> x, Array<real> y,
+		   const Array<real> u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -168,8 +168,8 @@ void ComplexODE::M(const real* x, real* y,
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const real* x, real* y,
-		   const real* u, real t)
+void ComplexODE::J(const Array<real> x, Array<real> y,
+		   const Array<real> u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -206,7 +206,7 @@ real ComplexODE::timestep(uint i)
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const real* u, real t, bool end)
+bool ComplexODE::update(const Array<real>& u, real t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)

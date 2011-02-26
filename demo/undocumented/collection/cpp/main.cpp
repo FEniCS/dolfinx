@@ -18,7 +18,7 @@ public:
 
   Harmonic(real T) : ODE(2, T) {}
 
-  void u0(RealArray& u)
+  void u0(Array<real>& u)
   {
     cout << "Calling u0() to get initial data" << endl;
 
@@ -26,7 +26,7 @@ public:
     u[1] = 1.0;
   }
 
-  void f(const RealArray& u, real t, RealArray& y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     y[0] = u[1];
     y[1] = - u[0];
