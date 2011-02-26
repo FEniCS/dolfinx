@@ -276,8 +276,8 @@ void MonoAdaptiveTimeSlab::feval(uint m)
       const real t = _a + method->qpoint(m) * (_b - _a);
       //copy(x, m*N, u, 0, N);
       //ode.f(&x[m*N], t, &fq[m*N]);
-      RealArray u(N, &x[m*N]);
-      RealArray y(N, &fq[m*N]);
+      Array<real> u(N, &x[m*N]);
+      Array<real> y(N, &fq[m*N]);
       ode.f(u, t, y);
       //copy(f, 0, fq, m*N, N);
     }

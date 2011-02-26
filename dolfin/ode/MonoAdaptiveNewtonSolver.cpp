@@ -165,8 +165,8 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real* F)
 void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
 {
   // Use vectors from Jacobian for storing multiplication
-  RealArray xx(ts.N, A.xx.data());
-  RealArray yy(ts.N, A.yy.data());
+  Array<real> xx(ts.N, A.xx.data());
+  Array<real> yy(ts.N, A.yy.data());
 
   // Compute size of time step
   const real a = ts.starttime();

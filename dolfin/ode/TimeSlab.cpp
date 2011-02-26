@@ -93,7 +93,7 @@ const real* TimeSlab::get_quadrature_weights() const {
   return method->get_quadrature_weights();
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(RealArray& u)
+void TimeSlab::write(Array<real>& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -142,32 +142,32 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yof
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const uBLASVector& x, uint xoffset, RealArray& y)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, Array<real>& y)
 {
   for (uint i = 0; i < y.size(); i++)
     y[i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real* x, uint xoffset, RealArray& y)
+void TimeSlab::copy(const real* x, uint xoffset, Array<real>& y)
 {
   for (uint i = 0; i < y.size(); i++)
     y[i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const RealArray& x, uBLASVector& y , uint yoffset)
+void TimeSlab::copy(const Array<real>& x, uBLASVector& y , uint yoffset)
 {
   for (uint i = 0; i < x.size(); i++)
     y[yoffset + i] = to_double(x[i]);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const RealArray& x, real* y, uint yoffset)
+void TimeSlab::copy(const Array<real>& x, real* y, uint yoffset)
 {
   for (uint i = 0; i < x.size(); i++)
     y[yoffset + i] = to_double(x[i]);
 }
 
 /*
-void TimeSlab::copy(const uBLASVector& x, uint xoffset, RealArray& y)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, Array<real>& y)
 {
   for (uint i = 0; i < y.size(); i++)
     y[i] = x[xoffset + i];

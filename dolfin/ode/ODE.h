@@ -81,25 +81,25 @@ namespace dolfin
     virtual ~ODE();
 
     /// Set initial values
-    virtual void u0(RealArray& u) = 0;
+    virtual void u0(Array<real>& u) = 0;
 
     /// Evaluate right-hand side y = f(u, t), mono-adaptive version (default, optional)
-    virtual void f(const RealArray& u, real t, RealArray& y);
+    virtual void f(const Array<real>& u, real t, Array<real>& y);
 
     /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
-    virtual real f(const RealArray& u, real t, uint i);
+    virtual real f(const Array<real>& u, real t, uint i);
 
     /// Compute product dy = M dx for implicit system (optional)
-    virtual void M(const RealArray& dx, RealArray& dy, const RealArray& u, real t);
+    virtual void M(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t);
 
     /// Compute product dy = J dx for Jacobian J (optional)
-    virtual void J(const RealArray& dx, RealArray& dy, const RealArray& u, real t);
+    virtual void J(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t);
 
     /// Compute product dy = tranpose(J) dx for Jacobian J (optional, for dual problem)
-    virtual void JT(const RealArray& dx, RealArray& dy, const RealArray& u, real t);
+    virtual void JT(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t);
 
     /// Compute entry of Jacobian (optional)
-    virtual real dfdu(const RealArray& u, real t, uint i, uint j);
+    virtual real dfdu(const Array<real>& u, real t, uint i, uint j);
 
     /// Time step to use for the whole system at a given time t (optional)
     virtual real timestep(real t, real k0) const;
@@ -108,7 +108,7 @@ namespace dolfin
     virtual real timestep(real t, uint i, real k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const RealArray& u, real t, bool end);
+    virtual bool update(const Array<real>& u, real t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
@@ -267,8 +267,8 @@ namespace dolfin
   private:
 
     // Temporary vectors used for computing Jacobian
-    RealArray tmp0;
-    RealArray tmp1;
+    Array<real> tmp0;
+    Array<real> tmp1;
 
     // Events
     Event not_impl_f;

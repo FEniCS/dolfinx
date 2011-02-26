@@ -177,8 +177,6 @@ namespace dolfin
     }
   }
 
-  typedef Array<real> RealArray;
-
 }
 
 #endif

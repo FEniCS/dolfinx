@@ -39,7 +39,7 @@ void StabilityAnalysis::analyze_integral(uint q)
   // Collect
   std::vector< std::pair<real, real*> > s;
 
-  RealArray tmp(n);
+  Array<real> tmp(n);
   //boost::scoped_array<real> tmp_array(new real [n]); real* tmp = tmp_array.get();
   boost::scoped_array<real> A_array(new real[n*n]);  real* A = A_array.get();
   boost::scoped_array<real> B_array(new real[n*n]);  real* B = B_array.get();
@@ -93,7 +93,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     s.push_back(std::pair<real, real*>(t + timestep.k, C));
 
     // Now compute the stability factor for T = t by integrating
-    RealArray sample(n);
+    Array<real> sample(n);
     sample.zero();
 
     real prev = 0.0;
@@ -160,7 +160,7 @@ void StabilityAnalysis::analyze_endpoint()
   boost::scoped_array<real> _A(new real[n*n]);  real* A = _A.get();
   boost::scoped_array<real> _B(new real[n*n]);  real* B = _B.get();
 
-  RealArray tmp(n);
+  Array<real> tmp(n);
 
 
   // How should the length of the timestep be decided?
@@ -197,15 +197,15 @@ void StabilityAnalysis::analyze_endpoint()
   end();
 }
 //-----------------------------------------------------------------------------
-void StabilityAnalysis::get_JT(real* JT, const RealArray& u, real& t)
+void StabilityAnalysis::get_JT(real* JT, const Array<real>& u, real& t)
 {
   uint n = u.size();
 
   // Note that matrices are stored column-oriented in the real functions
 
-  RealArray e(n);
+  Array<real> e(n);
   // Declare array to wrap the columns of JT. 
-  RealArray JT_array(n, JT);
+  Array<real> JT_array(n, JT);
   for (uint i = 0; i < n; ++i)
   {
     // Fill out each column of A

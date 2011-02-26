@@ -44,7 +44,7 @@ ODE::~ODE()
   delete time_stepper;
 }
 //-----------------------------------------------------------------------------
-void ODE::f(const RealArray& u, real t, RealArray& y)
+void ODE::f(const Array<real>& u, real t, Array<real>& y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
@@ -57,13 +57,13 @@ void ODE::f(const RealArray& u, real t, RealArray& y)
     y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-real ODE::f(const RealArray& u, real t, uint i)
+real ODE::f(const Array<real>& u, real t, uint i)
 {
   error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
+void ODE::M(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
@@ -72,7 +72,7 @@ void ODE::M(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
   real_set(N, dy.data().get(), dx.data().get());
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
+void ODE::J(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -91,7 +91,7 @@ void ODE::J(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  RealArray& uu = const_cast<RealArray&>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Initialize temporary array if necessary
   //if (!tmp0) tmp0 = new real[N];
@@ -114,7 +114,7 @@ void ODE::J(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
   real_mult(N, dy.data().get(), 0.5/h);
 }
 //------------------------------------------------------------------------
-void ODE::JT(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
+void ODE::JT(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // Display warning
   not_impl_JT();
@@ -127,7 +127,7 @@ void ODE::JT(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  RealArray& uu = const_cast<RealArray&>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Initialize temporary arrays if necessary
   //if (!tmp0) tmp0 = new real[N];
@@ -155,7 +155,7 @@ void ODE::JT(const RealArray& dx, RealArray& dy, const RealArray& u, real t)
   }
 }
 //------------------------------------------------------------------------
-real ODE::dfdu(const RealArray& u, real t, uint i, uint j)
+real ODE::dfdu(const Array<real>& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
 
@@ -163,7 +163,7 @@ real ODE::dfdu(const RealArray& u, real t, uint i, uint j)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  RealArray& uu = const_cast<RealArray&>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Save value of u_j
   real uj = uu[j];
@@ -202,7 +202,7 @@ real ODE::timestep(real t, uint i, real k0) const
   return k0;
 }
 //-----------------------------------------------------------------------------
-bool ODE::update(const RealArray& u, real t, bool end)
+bool ODE::update(const Array<real>& u, real t, bool end)
 {
   return true;
 }

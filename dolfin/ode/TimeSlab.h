@@ -91,7 +91,7 @@ namespace dolfin
   protected:
 
     // Write given solution vector to file
-    static void write(RealArray& u);
+    static void write(Array<real>& u);
 
     //TODO: Clean needed here? These functions should probably not be here.
 
@@ -108,19 +108,19 @@ namespace dolfin
     static void copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const uBLASVector& x, uint xoffset, RealArray& y);
+    static void copy(const uBLASVector& x, uint xoffset, Array<real>& y);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, uBLASVector& y, uint xoffset);
+    static void copy(const Array<real>& x, uBLASVector& y, uint xoffset);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, RealArray& y);
+    static void copy(const Array<real>& x, Array<real>& y);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const real* x, uint xoffset, RealArray& y);
+    static void copy(const real* x, uint xoffset, Array<real>& y);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, real* y, uint yoffset);
+    static void copy(const Array<real>& x, real* y, uint yoffset);
 
 
     uint N;  // Size of system
@@ -129,7 +129,7 @@ namespace dolfin
 
     ODE& ode;             // The ODE
     const Method* method; // Method, mcG(q) or mdG(q)
-    RealArray u0;         // Initial values (current end-time state)
+    Array<real> u0;         // Initial values (current end-time state)
 
     bool save_final; // True if we should save the solution at final time
 

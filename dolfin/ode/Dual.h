@@ -46,10 +46,10 @@ namespace dolfin
     ~Dual();
 
     /// Initial value
-    void u0(RealArray& psi);
+    void u0(Array<real>& psi);
 
     /// Right-hand side
-    void f(const RealArray& phi, real t, RealArray& y);
+    void f(const Array<real>& phi, real t, Array<real>& y);
 
     /// Return real time (might be flipped backwards for dual)
     real time(real t) const;

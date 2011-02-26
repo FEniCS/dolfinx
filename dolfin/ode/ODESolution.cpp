@@ -195,7 +195,7 @@ void ODESolution::flush()
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real& t, RealArray& y)
+void ODESolution::eval(const real& t, Array<real>& y)
 {
   if (!read_mode)
     error("Can not evaluate solution");

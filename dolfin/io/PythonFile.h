@@ -16,7 +16,7 @@
 
 namespace dolfin
 {
-  typedef boost::reference_wrapper<RealArray> RealArrayRef;
+  typedef boost::reference_wrapper<Array<real> > RealArrayRef;
 
   class Sample;
 

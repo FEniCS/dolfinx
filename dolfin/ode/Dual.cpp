@@ -28,7 +28,7 @@ Dual::~Dual()
   // Do nothing
 }
 //------------------------------------------------------------------------
-void Dual::u0(RealArray& psi)
+void Dual::u0(Array<real>& psi)
 {
   // FIXME: Enable different choices of initial data to the dual
   //return 1.0 / sqrt(static_cast<real>(N));
@@ -38,7 +38,7 @@ void Dual::u0(RealArray& psi)
   psi[0] = 1.0;
 }
 //------------------------------------------------------------------------
-void Dual::f(const RealArray& phi, real t, RealArray& y)
+void Dual::f(const Array<real>& phi, real t, Array<real>& y)
 {
   // FIXME: Here we can do some optimization. Since we compute the sum
   // FIXME: over all dual dependencies of i we will do the update of

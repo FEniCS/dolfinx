@@ -111,7 +111,7 @@ void PythonFile::operator<<(const Sample& sample)
 void PythonFile::operator<<(const std::pair<real, RealArrayRef> sample)
 {  
   const real& t      = sample.first;
-  const RealArray& u = sample.second;
+  const Array<real>& u = sample.second;
 
   // First time
   if ( counter2 == 0 )

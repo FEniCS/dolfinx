@@ -109,7 +109,7 @@ namespace dolfin
     void flush();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const real& t, RealArray& y);
+    void eval(const real& t, Array<real>& y);
 
     /// Get timeslab (used when iterating)
     ODESolutionData& get_timeslab(uint index);

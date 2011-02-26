@@ -58,7 +58,7 @@ namespace dolfin
   private:
 
     // Check given dependency
-    bool check_dependency(ODE& ode, RealArray& u, real f0, uint i, uint j);
+    bool check_dependency(ODE& ode, Array<real>& u, real f0, uint i, uint j);
 
     // Make pattern sparse
     void make_sparse();

@@ -40,7 +40,7 @@ namespace dolfin
 
   private:
 
-    void get_JT(real* JT, const RealArray& u, real& t);
+    void get_JT(real* JT, const Array<real>& u, real& t);
 
     ODE& ode;
     ODESolution& u;

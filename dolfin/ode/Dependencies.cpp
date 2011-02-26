@@ -136,7 +136,7 @@ void Dependencies::detect(ODE& ode)
 
   // Randomize solution vector
   //real* u = new real[N];
-  RealArray u(N);
+  Array<real> u(N);
   for (uint i = 0; i < N; i++)
     u[i] = rand();
 
@@ -207,7 +207,7 @@ std::string Dependencies::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::check_dependency(ODE& ode, RealArray& u, real f0,
+bool Dependencies::check_dependency(ODE& ode, Array<real>& u, real f0,
                                     uint i, uint j)
 {
   // Save original value
