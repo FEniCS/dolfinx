@@ -84,24 +84,6 @@ class MeshIterators(unittest.TestCase):
                 n += 1
         self.assertEqual(n, 4*mesh.num_cells())
 
-class MeshAreas(unittest.TestCase):
-
-    def testEdgeLength(self):
-        """Iterate over edges and sum length."""
-        mesh = UnitCube(5, 5, 5)
-        length = 0
-        for e in edges(mesh):
-            length += e.length()
-        self.assertEqual(length, 278.58049080280125053832)
-
-    def testFaceArea(self):
-        """Iterate over faces and sum area."""
-        mesh = UnitCube(5, 5, 5)
-        area = 0
-        for f in faces(mesh):
-            area += f.area()
-        self.assertAlmostEqual(area, 39.21320343559672494393)
-
 class NamedMeshFunctions(unittest.TestCase):
 
     def setUp(self):
