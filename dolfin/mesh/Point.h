@@ -45,69 +45,69 @@ namespace dolfin
     ~Point() {};
 
     /// Return address of coordinate in direction i
-    double& operator[] (uint i) 
+    double& operator[] (uint i)
     { assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
-    double operator[] (uint i) const 
+    double operator[] (uint i) const
     { assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
-    double x() const 
+    double x() const
     { return _x[0]; }
 
     /// Return y-coordinate
-    double y() const 
+    double y() const
     { return _x[1]; }
 
     /// Return z-coordinate
-    double z() const 
+    double z() const
     { return _x[2]; }
 
     /// Return coordinate array
-    const double* coordinates() const 
+    const double* coordinates() const
     { return _x; }
 
     /// Compute sum of two points
-    Point operator+ (const Point& p) const 
+    Point operator+ (const Point& p) const
     { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
 
     /// Compute difference of two points
-    Point operator- (const Point& p) const 
+    Point operator- (const Point& p) const
     { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
     /// Add given point
-    const Point& operator+= (const Point& p) 
+    const Point& operator+= (const Point& p)
     { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
 
     /// Subtract given point
-    const Point& operator-= (const Point& p) 
+    const Point& operator-= (const Point& p)
     { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
 
     /// Multiplication with scalar
-    Point operator* (double a) const 
+    Point operator* (double a) const
     { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
 
     /// Incremental multiplication with scalar
-    const Point& operator*= (double a) 
+    const Point& operator*= (double a)
     { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
 
     /// Division by scalar
-    Point operator/ (double a) const 
+    Point operator/ (double a) const
     { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
 
     /// Incremental division by scalar
-    const Point& operator/= (double a) 
+    const Point& operator/= (double a)
     { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
 
     /// Assignment operator
-    const Point& operator= (const Point& p) 
+    const Point& operator= (const Point& p)
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
-    
-#ifdef HAS_CGAL
+
+    #ifdef HAS_CGAL
     ///Conversion operator to appropriate CGAL Point_3 class.
     template <typename Kernel>
-    operator CGAL::Point_3<Kernel>() const 
+    operator CGAL::Point_3<Kernel>() const
     { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
 
     ///Constructor taking a CGAL::Point_3. Allows conversion from CGAL Point_3 class to Point class.
@@ -117,9 +117,9 @@ namespace dolfin
 
     ///Provides a CGAL bounding box, using conversion operator.
     template <typename Kernel>
-    CGAL::Bbox_3  bbox() 
+    CGAL::Bbox_3  bbox()
     { return CGAL::Point_3<Kernel>(*this).bbox(); }
-#endif
+    #endif
 
     /// Compute distance to given point
     double distance(const Point& p) const;
