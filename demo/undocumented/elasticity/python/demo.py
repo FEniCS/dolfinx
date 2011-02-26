@@ -95,4 +95,4 @@ if MPI.num_processes() > 1:
     File("partitions.pvd") << CellFunction("uint", mesh, MPI.process_number())
 
 # Plot solution
-#plot(u, mode="displacement", interactive=True)
+plot(u, mode="displacement", interactive=True)

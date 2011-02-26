@@ -12,6 +12,7 @@ from dolfin import *
 class MeshEditorTest(unittest.TestCase):
 
     def testTriangle(self):
+        # Create mesh object and open editor
         mesh = Mesh()
         editor = MeshEditor()
         editor.open(mesh, 2, 2);
@@ -27,10 +28,9 @@ class MeshEditorTest(unittest.TestCase):
         editor.add_vertex(2, p);
 
         # Add cell
-        # Problem with std::vector wrapper.
-        #vertex_indices = [0, 1, 2]
         editor.add_cell(0, 0, 1, 2);
 
+        # Close editor
         editor.close()
 
 class MeshIterators(unittest.TestCase):
@@ -83,6 +83,24 @@ class MeshIterators(unittest.TestCase):
             for v in vertices(c):
                 n += 1
         self.assertEqual(n, 4*mesh.num_cells())
+
+class MeshAreas(unittest.TestCase):
+
+    def testEdgeLength(self):
+        """Iterate over edges and sum length."""
+        mesh = UnitCube(5, 5, 5)
+        length = 0
+        for e in edges(mesh):
+            length += e.length()
+        self.assertEqual(length, 278.58049080280125053832)
+
+    def testFaceArea(self):
+        """Iterate over faces and sum area."""
+        mesh = UnitCube(5, 5, 5)
+        area = 0
+        for f in faces(mesh):
+            area += f.area()
+        self.assertAlmostEqual(area, 39.21320343559672494393)
 
 class NamedMeshFunctions(unittest.TestCase):
 
