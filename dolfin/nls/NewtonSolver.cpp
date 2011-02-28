@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-09-20
+// Last changed: 2011-02-28
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -34,7 +34,7 @@ Parameters NewtonSolver::default_parameters()
   p.add("convergence_criterion",   "residual");
   p.add("method",                  "full");
   p.add("relaxation_parameter",    1.0);
-  p.add("report",                  true);
+  p.add("report",                  false);
   p.add("error_on_nonconvergence", true);
 
   //p.add("reuse_preconditioner", false);

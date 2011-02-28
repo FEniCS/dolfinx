@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2008-07-16
-// Last changed: 2010-03-02
+// Last changed: 2011-02-28
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -23,7 +23,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
 {
-  cout << "Smoothing mesh: " << mesh << endl;
+  info(PROGRESS, "Smoothing mesh");
 
   // Make sure we have cell-facet connectivity
   mesh.init(mesh.topology().dim(), mesh.topology().dim() - 1);
@@ -115,7 +115,7 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
   }
 
   if (num_iterations > 1)
-    info("Mesh smoothing repeated %d times.", num_iterations);
+    info(PROGRESS, "Mesh smoothing repeated %d times.", num_iterations);
 }
 //-----------------------------------------------------------------------------
 void MeshSmoothing::smooth_boundary(Mesh& mesh,
