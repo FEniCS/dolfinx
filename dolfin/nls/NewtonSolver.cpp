@@ -80,8 +80,6 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
 
   const uint maxiter = parameters["maximum_iterations"];
 
-  begin("Starting Newton solve.");
-
   uint krylov_iterations = 0;
   newton_iteration = 0;
   bool newton_converged = false;
@@ -143,8 +141,6 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     else
       warning("Newton solver did not converge.");
   }
-
-  end();
 
   return std::make_pair(newton_iteration, newton_converged);
 }
