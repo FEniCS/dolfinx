@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2010-06-21
+// Last changed: 2011-02-28
 
 #include <ostream>
 #include <sstream>
@@ -643,10 +643,8 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write pvd files
   finalize(vtu_filename, counter);
 
-  cout << "saved mesh function " << counter << " times." << endl;
-
-  cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in VTK format." << endl;
+  info(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
+       mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const

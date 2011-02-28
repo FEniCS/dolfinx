@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-25
+// Last changed: 2011-02-28
 
 #include <algorithm>
 #include <sstream>
@@ -49,10 +49,10 @@ TimeSeries::TimeSeries(std::string name)
     // Read from file
     File file(filename);
     file >> _vector_times;
-    info("Found %d vector sample(s) in time series.", _vector_times.size());
+    info(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
   }
   else
-    info("No vector samples found in time series.");
+    info(PROGRESS, "No vector samples found in time series.");
 
   // Read mesh times
   filename = TimeSeries::filename_times(_name, "mesh");
@@ -61,10 +61,10 @@ TimeSeries::TimeSeries(std::string name)
     // Read from file
     File file(filename);
     file >> _mesh_times;
-    info("Found %d mesh sample(s) in time series.", _mesh_times.size());
+    info(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
   }
   else
-    info("No mesh samples found in time series.");
+    info(PROGRESS, "No mesh samples found in time series.");
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
@@ -111,7 +111,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
       return;
     }
 
-    info("Interpolating vector value at t = %g in interval [%g, %g].",
+    info(PROGRESS, "Interpolating vector value at t = %g in interval [%g, %g].",
          t, _vector_times[i0], _vector_times[i1]);
 
     // Read vectors
@@ -144,7 +144,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
     // Find closest index
     const uint index = find_closest_index(t, _vector_times, _name, "vector");
 
-    info("Reading vector at t = %g (close to t = %g).",
+    info(PROGRESS, "Reading vector at t = %g (close to t = %g).",
          _vector_times[index], t);
 
     // Read vector

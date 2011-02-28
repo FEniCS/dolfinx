@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-11-06
+// Last changed: 2011-02-28
 
 #include <map>
 #include <vector>
@@ -168,7 +168,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   assert(rhs_values_master);
   assert(rhs_values_slave);
 
-  cout << "Applying periodic boundary conditions to linear system." << endl;
+  info(PROGRESS, "Applying periodic boundary conditions to linear system.");
 
   // Check arguments
   check_arguments(A, b, x);
