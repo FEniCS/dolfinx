@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-07-02
+// Last changed: 2011-02-28
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -30,10 +30,10 @@ namespace dolfin
     ~Logger();
 
     /// Print message
-    void info(std::string msg, int log_level = INFO) const;
+    void info(std::string msg, int log_level=INFO) const;
 
     /// Print underlined message
-    void info_underline(std::string msg, int log_level = INFO) const;
+    void info_underline(std::string msg, int log_level=INFO) const;
 
     /// Print warning
     void warning(std::string msg) const;
@@ -42,7 +42,7 @@ namespace dolfin
     void error(std::string msg) const;
 
     /// Begin task (increase indentation level)
-    void begin(std::string msg, int log_level = PROGRESS);
+    void begin(std::string msg, int log_level=INFO);
 
     /// End task (decrease indentation level)
     void end();
