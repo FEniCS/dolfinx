@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2010-09-01
+// Last changed: 2011-02-28
 
 #include <iomanip>
 #include <iostream>
@@ -25,7 +25,7 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : active(true), log_level(PROGRESS), indentation_level(0), logstream(&std::cout),
+  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
     process_number(-1)
 {
   if (MPI::num_processes() > 1)

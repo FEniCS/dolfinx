@@ -1,3 +1,4 @@
+ - Change default log level from PROGRESS to INFO
  - Add copy functions to FiniteElement and DofMap
  - Simplify DofMap
  - Interpolate vector values when reading from time series
