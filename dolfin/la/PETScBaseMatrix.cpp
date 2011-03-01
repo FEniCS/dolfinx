@@ -58,9 +58,9 @@ void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
   // Create new PETSc vector
   boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
   if (dim == 0)
-    MatGetVecs(*A, x.get(), PETSC_NULL);
-  else if (dim == 1)
     MatGetVecs(*A, PETSC_NULL, x.get());
+  else if (dim == 1)
+    MatGetVecs(*A, x.get(), PETSC_NULL);
   else
     error("dim must be <= 1 when resizing vector.");
 

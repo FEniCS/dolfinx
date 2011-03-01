@@ -167,9 +167,8 @@ namespace dolfin
     /// Return sum of vector
     virtual double sum() const = 0;
 
-    /// Return sum of selected rows in vector. Repeated entries only summed once.
-    virtual double sum(const Array<uint>& rows) const
-    { error("GenericVector::sum(const Array<uint>& rows) not implemented by backend"); return 0.0; }
+    /// Return sum of selected rows in vector. Repeated entries are only summed once.
+    virtual double sum(const Array<uint>& rows) const = 0;
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;

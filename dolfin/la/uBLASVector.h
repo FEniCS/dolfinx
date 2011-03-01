@@ -139,6 +139,9 @@ namespace dolfin
     /// Return sum of values of vector
     virtual double sum() const;
 
+    /// Return sum of selected rows in vector. Repeated entries are only summed once.
+    virtual double sum(const Array<uint>& rows) const;
+
     /// Multiply vector by given number
     virtual const uBLASVector& operator*= (double a);
 

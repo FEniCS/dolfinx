@@ -12,6 +12,7 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
+#include <boost/scoped_ptr.hpp>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -28,29 +29,33 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector() : vector(0)
-    { DefaultFactory factory; vector = factory.create_vector(); }
+    Vector()
+    { DefaultFactory factory; vector.reset(factory.create_vector()); }
 
     /// Create vector of size N
-    explicit Vector(uint N) : vector(0)
-    { DefaultFactory factory; vector = factory.create_vector(); vector->resize(N); }
+    explicit Vector(uint N)
+    {
+      DefaultFactory factory;
+      vector.reset(factory.create_vector());
+      vector->resize(N);
+    }
 
     /// Copy constructor
     Vector(const Vector& x) : vector(x.vector->copy()) {}
 
     /// Create a Vector from a GenericVetor
-    Vector(const GenericVector& x) : vector(x.factory().create_vector())
-    { vector = x.copy(); }
-
-    /// Destructor
-    virtual ~Vector()
-    { delete vector; }
+    Vector(const GenericVector& x)
+    { vector.reset(x.copy()); }
 
     //--- Implementation of the GenericTensor interface ---
 
     /// Return copy of tensor
     virtual Vector* copy() const
-    { Vector* x = new Vector(); delete x->vector; x->vector = vector->copy(); return x; }
+    {
+      Vector* x = new Vector();
+      x->vector.reset(vector->copy());
+      return x;
+    }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
@@ -203,11 +208,11 @@ namespace dolfin
 
     /// Return concrete instance / unwrap (const version)
     virtual const GenericVector* instance() const
-    { return vector; }
+    { return vector.get(); }
 
     /// Return concrete instance / unwrap (non-const version)
     virtual GenericVector* instance()
-    { return vector; }
+    { return vector.get(); }
 
     //--- Special Vector functions ---
 
@@ -218,7 +223,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    GenericVector* vector;
+    boost::scoped_ptr<GenericVector> vector;
 
   };
 
