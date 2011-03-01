@@ -207,12 +207,12 @@ namespace dolfin
     //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
-    //virtual const GenericVector* instance() const
-    //{ return vector; }
+    virtual const GenericVector* instance() const
+    { return vector.get(); }
 
     /// Return concrete instance / unwrap (non-const version)
-    //virtual GenericVector* instance()
-    //{ return vector; }
+    virtual GenericVector* instance()
+    { return vector.get(); }
 
     //--- Special Vector functions ---
 
