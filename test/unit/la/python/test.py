@@ -18,39 +18,45 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-    def assemble_matrix(self, use_backend=False):
-        " Assemble a simple matrix"
+    def assemble_matrices(self, use_backend=False):
+        " Assemble a pair of matrices, one (square) MxM and one MxN"
         mesh = UnitSquare(3,3)
 
-        V = FunctionSpace(mesh,"Lagrange", 1)
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
 
-        u = TrialFunction(V)
         v = TestFunction(V)
+        u = TrialFunction(V)
+        s = TrialFunction(W)
+
+        # Forms
+        a = dot(grad(u),grad(v))*dx
+        b = v*s*dx
 
         if use_backend:
             if self.backend == "uBLAS":
                 backend = globals()[self.backend+self.sub_backend+'Factory_instance']()
             else:
                 backend = globals()[self.backend+'Factory_instance']()
-            return assemble(dot(grad(u),grad(v))*dx, backend=backend)
+            return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
-            return assemble(dot(grad(u),grad(v))*dx)
+            return assemble(a), assemble(b)
 
-    def get_Vector(self, A=None):
-        from numpy import random, linspace
-        if A == None:
-            vec = Vector(16)
-        else:
-            vec = Vector()
-            A.resize(vec, 1)
-        vec.set_local(random.rand(vec.local_size()))
-        return vec
+    def assemble_vectors(self):
+        mesh = UnitSquare(3,3)
+
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
+
+        v = TestFunction(V)
+        t = TestFunction(W)
+
+        return assemble(v*dx), assemble(t*dx)
 
     def run_matrix_test(self,use_backend):
-        from numpy import ndarray, array, ones
-        org = self.assemble_matrix(use_backend)
-        A = org.copy()
-        B = org.copy()
+        from numpy import ndarray, array, ones, sum
+        A,B = self.assemble_matrices(use_backend)
+        unit_norm = A.norm('frobenius')
 
         def wrong_getitem(type):
             if type == 0:
@@ -66,107 +72,78 @@ class AbstractBaseTest(object):
         self.assertRaises(TypeError,wrong_getitem,2)
 
         # Test __imul__ operator
-        B *= 0.5
         A *= 2
-        self.assertAlmostEqual(A[5,5], 4*B[5,5])
+        self.assertAlmostEqual(A.norm('frobenius'), 2*unit_norm)
 
         # Test __idiv__ operator
-        B /= 2
-        A /= 0.5
-        self.assertAlmostEqual(A[5,5],16*B[5,5])
-
-        # Test __iadd__ operator
-        A += B
-        self.assertAlmostEqual(A[5,5],17)
-
-        # Test __isub__ operator
-        A -= B
-        self.assertAlmostEqual(A[5,5],16)
+        A /= 2
+        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
 
         # Test __mul__ operator
-        C = 16*B
-        self.assertAlmostEqual(A[5,5],C[5,5])
+        C = 4*A
+        self.assertAlmostEqual(C.norm('frobenius'), 4*unit_norm)
+
+        # Test __iadd__ operator
+        A += C
+        self.assertAlmostEqual(A.norm('frobenius'), 5*unit_norm)
+
+        # Test __isub__ operator
+        A -= C
+        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
 
         # Test __mul__ and __add__ operator
-        D = (C+B)*5
-        self.assertAlmostEqual(D[5,5],85)
+        D = (C+A)*0.2
+        self.assertAlmostEqual(D.norm('frobenius'), unit_norm)
 
         # Test __div__ and __sub__ operator
-        F = (A-B)/4
-        self.assertAlmostEqual(F[5,5],3.75)
+        F = (C-A)/3
+        self.assertAlmostEqual(F.norm('frobenius'), unit_norm)
 
         # Test axpy
-        A.axpy(100,B,True)
-        self.assertAlmostEqual(A[5,5],116)
+        A.axpy(10,C,True)
+        self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
 
         # Test to NumPy array
-        A2 = A.array()
-        self.assertTrue(isinstance(A2,ndarray))
-        self.assertEqual(A2.shape,(16,16))
-        self.assertAlmostEqual(A2[5,5],A[5,5])
+        if MPI.num_processes() <= 1:
+            A2 = A.array()
+            self.assertTrue(isinstance(A2,ndarray))
+            self.assertEqual(A2.shape,(49,49))
+            self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
 
-        # setitem segfaults for MTL4 backend
-        if not self.backend == "MTL4":
-            A[5,5] = 15.
-            self.assertEqual(A[5,5],15.)
+        # Test expected size of rectangular array
+        self.assertEqual(A.size(0), B.size(0))
+        self.assertEqual(B.size(1), 16)
 
-        # Test Matrix.getslice
-        B = A[0,:]
-        self.assertEqual(B.size(),A.size(1))
-        self.assertEqual(B[1],A[0,1])
+        # Test setitem/getitem
+        #A[5,5] = 15
+        #self.assertEqual(A[5,5],15)
 
-        #if self.backend == "Epetra":
-        print "Testing of Matrix slicing is turned of for the Epetra backend:"
-        print "because resize() is not implemented."
-        return
 
-        inds1 = [0,4,5,10]
+    def test_matrix_with_backend(self):
+        self.run_matrix_test(True)
 
-        C = A[inds1,inds1]
-        self.assertEqual(C.size(0),len(inds1))
-        self.assertEqual(C.size(1),len(inds1))
-        self.assertEqual(C[2,2],A[5,5])
-
-        inds2 = array(inds1)
-        one_vec = Vector(len(inds1))
-        one_vec[:] = 1.
-
-        D = A[inds1,inds2]
-        self.assertAlmostEqual(((C-D)*one_vec).sum(),0.0)
-
-        E = A[inds1,:]
-        self.assertEqual(E.size(0),len(inds1))
-        self.assertEqual(E.size(1),A.size(1))
-        for i in xrange(len(inds1)):
-            for j in xrange(A.size(1)):
-                self.assertAlmostEqual(E[i,j],A[inds1[i],j])
-
-    # FIXME: Matrix tests need to be updated once interface is sorted out
-    #def test_matrix_with_backend(self):
-    #    self.run_matrix_test(True)
-
-    #def test_matrix_without_backend(self):
-    #    self.run_matrix_test(False)
+    def test_matrix_without_backend(self):
+        self.run_matrix_test(False)
 
     def test_vector(self):
         from numpy import ndarray, linspace, array, fromiter
         from numpy import int,int0,int16,int32,int64
         from numpy import uint,uint0,uint16,uint32,uint64
-        org = self.get_Vector()
+        v,w = self.assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
-        n0, n1 = org.local_range()
+        n0, n1 = v.local_range()
         distributed = True
-        if (n1 - n0) == org.size():
+        if (n1 - n0) == v.size():
             distributed = False
 
         # Test set and access with different integers
         for t in [int,int0,int16,int32,int64,uint,uint0,uint16,uint32,uint64]:
-            org[t(0)] = 2.0
-            if org.owns_index(t(0)): self.assertAlmostEqual(org[t(0)], 2.0)
+            v[t(0)] = 2.0
+            if v.owns_index(t(0)): self.assertAlmostEqual(v[t(0)], 2.0)
 
-        A = org.copy()
-        B = down_cast(org.copy())
+        A = v.copy()
+        B = down_cast(v.copy())
         if A.owns_index(5): self.assertAlmostEqual(A[5], B[5])
 
         B *= 0.5
@@ -234,10 +211,10 @@ class AbstractBaseTest(object):
 
             self.assertAlmostEqual(G1.sum(),G.sum())
             self.assertAlmostEqual(G2.sum(),G.sum())
-            self.assertAlmostEqual(len(G3),len(G4))
+            self.assertEqual(len(G3),len(G4))
             self.assertAlmostEqual(G3.sum(),G4.sum())
-            self.assertAlmostEqual(A[-1],A[15])
-            self.assertAlmostEqual(A[-16],A[0])
+            self.assertEqual(A[-1],A[len(A)-1])
+            self.assertEqual(A[-len(A)],A[0])
             self.assertEqual(len(ind),len(G))
             self.assertTrue(all(val==G[i] for i, val in enumerate(G)))
             self.assertTrue((G==G1).all())
@@ -270,12 +247,12 @@ class AbstractBaseTest(object):
             def wrong_index(ind):
                 A[ind]
 
-            self.assertRaises(RuntimeError,wrong_index,(-17))
-            self.assertRaises(RuntimeError,wrong_index,(16))
+            self.assertRaises(RuntimeError,wrong_index,(-len(A)-1))
+            self.assertRaises(RuntimeError,wrong_index,(len(A)+1))
             self.assertRaises(TypeError,wrong_index,("jada"))
             self.assertRaises(TypeError,wrong_index,(.5))
-            self.assertRaises(RuntimeError,wrong_index,([-17,2]))
-            self.assertRaises(RuntimeError,wrong_index,([16,2]))
+            self.assertRaises(RuntimeError,wrong_index,([-len(A)-1,2]))
+            self.assertRaises(RuntimeError,wrong_index,([len(A),2]))
 
             def wrong_dim(ind0,ind1):
                 A[ind0] = B[ind1]
@@ -293,8 +270,8 @@ class AbstractBaseTest(object):
 
     def test_matrix_vector(self):
         from numpy import dot, absolute
-        A = self.assemble_matrix()
-        v = self.get_Vector(A=A)
+        A,B = self.assemble_matrices()
+        v,w = self.assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
         n0, n1 = v.local_range()
@@ -302,9 +279,36 @@ class AbstractBaseTest(object):
         if (n1 - n0) == v.size():
             distributed = False
 
+        # Reference values
+        v_norm  = 0.181443684651
+        Av_norm = 0.575896483442
+        Bw_norm = 0.0149136743079
+        Cv_norm = 0.00951459156865
+
         u = A*v
+
         self.assertTrue(isinstance(u, type(v)))
         self.assertEqual(len(u), len(v))
+
+        # Test basic square matrix multiply results
+
+        self.assertAlmostEqual(v.norm('l2'), v_norm)
+        self.assertAlmostEqual(u.norm('l2'), Av_norm)
+
+        # Test rectangular matrix multiply results
+
+        self.assertAlmostEqual((B*w).norm('l2'), Bw_norm)
+
+        # Test transpose multiply (rectangular)
+
+        x = Vector()
+        if self.backend == 'uBLAS':
+            self.assertRaises(RuntimeError, B.transpmult, v, x)
+        else:
+            B.transpmult(v, x)
+            self.assertAlmostEqual(x.norm('l2'), Cv_norm)
+
+        # Miscellaneous tests
 
         u2 = 2*u - A*v
         if u2.owns_index(4): self.assertAlmostEqual(u2[4], u[4])
@@ -325,10 +329,10 @@ class AbstractBaseTest(object):
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
-class DataTester(object):
+class DataTester(AbstractBaseTest):
     def test_matrix_data(self):
         """ Test for ordinary Matrix"""
-        A = self.assemble_matrix()
+        A,B = self.assemble_matrices()
         array = A.array()
         rows, cols, values = A.data()
         i = 0
@@ -346,7 +350,7 @@ class DataTester(object):
 
     def test_vector_data(self):
         # Test for ordinary Vector
-        v = self.get_Vector()
+        v,w = self.assemble_vectors()
         array = v.array()
         data = v.data()
         self.assertTrue((data==array).all())
@@ -356,16 +360,16 @@ class DataTester(object):
         data = v.data()
         self.assertTrue((data==array).all())
 
-class DataNotWorkingTester(object):
+class DataNotWorkingTester(AbstractBaseTest):
     def test_matrix_data(self):
-        A = self.assemble_matrix()
+        A,B = self.assemble_matrices()
         self.assertRaises(RuntimeError,A.data)
 
         A = down_cast(A)
         self.assertRaises(RuntimeError,A.data)
 
     def test_vector_data(self):
-        v = self.get_Vector()
+        v,w = self.assemble_vectors()
         self.assertRaises(RuntimeError,v.data)
 
         v = down_cast(v)
@@ -374,25 +378,26 @@ class DataNotWorkingTester(object):
         self.assertRaises(AttributeError,no_attribute)
 
 
-class uBLASSparseTester(AbstractBaseTest,DataTester,unittest.TestCase):
-    backend     = "uBLAS"
-    sub_backend = "Sparse"
+if MPI.num_processes() <= 1:
+    class uBLASSparseTester(DataTester, unittest.TestCase):
+        backend     = "uBLAS"
+        sub_backend = "Sparse"
 
-class uBLASDenseTester(AbstractBaseTest,DataTester,unittest.TestCase):
-    backend     = "uBLAS"
-    sub_backend = "Dense"
+    class uBLASDenseTester(DataTester, unittest.TestCase):
+        backend     = "uBLAS"
+        sub_backend = "Dense"
+
+    if has_la_backend("MTL4"):
+        class MTL4Tester(DataTester, unittest.TestCase):
+            backend    = "MTL4"
 
 if has_la_backend("PETSc"):
-    class PETScTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "PETSc"
 
 if has_la_backend("Epetra"):
-    class EpetraTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "Epetra"
-
-if has_la_backend("MTL4"):
-    class MTL4Tester(AbstractBaseTest,DataTester,unittest.TestCase):
-        backend    = "MTL4"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output
