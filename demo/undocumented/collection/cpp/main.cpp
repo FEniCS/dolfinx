@@ -48,7 +48,7 @@ int main()
   ODECollection collection(ode, n);
 
   // Set initial states for all ODE systems
-  real u0[2];
+  Array<real> u0(2);
   for (unsigned int i = 0; i < n; i++)
   {
     u0[0] = 2.0 * static_cast<real>(i) / static_cast<real>(n);
