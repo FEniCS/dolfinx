@@ -333,23 +333,23 @@ void ODE::analyze_stability_initial(ODESolution& u) {
   S.analyze_endpoint();
 }
 //-----------------------------------------------------------------------------
-void ODE::set_state(const real* u)
+void ODE::set_state(const Array<real>& u)
 {
   // Create time stepper if not created before
   if (!time_stepper)
     time_stepper = new TimeStepper(*this);
 
   // Set state
-  time_stepper->set_state(u);
+  time_stepper->set_state(u.data().get());
 }
 //-----------------------------------------------------------------------------
-void ODE::get_state(real* u)
+void ODE::get_state(Array<real>& u)
 {
   // Create time stepper if not created before
   if (!time_stepper)
     time_stepper = new TimeStepper(*this);
 
   // Get state
-  time_stepper->get_state(u);
+  time_stepper->get_state(u.data().get());
 }
 //-----------------------------------------------------------------------------

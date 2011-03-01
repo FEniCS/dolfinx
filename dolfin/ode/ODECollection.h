@@ -44,19 +44,19 @@ namespace dolfin
     void solve(real t0, real t1);
 
     /// Set state for given ODE system
-    void set_state(uint system, const real* u);
+    void set_state(uint system, const Array<real>& u);
 
     /// Set states for all ODE systems
-    void set_state(const real* u);
+    void set_state(const Array<real>& u);
 
     /// Get state for given ODE system
-    void get_state(uint system, real* u);
+    void get_state(uint system, Array<real>& u);
 
     /// Get states for all ODE systems
-    void get_state(real* u);
+    void get_state(Array<real>& u);
 
     /// Optional user-defined update, called between solves
-    virtual void update(real* u, real t, uint system);
+    virtual void update(Array<real>& u, real t, uint system);
 
   private:
 

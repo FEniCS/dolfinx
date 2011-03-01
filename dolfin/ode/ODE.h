@@ -163,10 +163,10 @@ namespace dolfin
     void analyze_stability_initial(ODESolution& u);
 
     /// Set state for ODE (only available during interval stepping)
-    void set_state(const real* u);
+    void set_state(const Array<real>& u);
 
     /// Get state for ODE (only available during interval stepping)
-    void get_state(real* u);
+    void get_state(Array<real>& u);
 
     /// Default parameter values
     static Parameters default_parameters()
