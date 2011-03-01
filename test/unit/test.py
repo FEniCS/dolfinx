@@ -18,7 +18,7 @@ tests = {
     "function": ["test"],
     "mesh": ["test", "Edge", "Face"],
     "meshconvert": ["test"],
-    "la": ["test"],
+    "la": ["test", "Vector"],
     "io": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"]
@@ -69,7 +69,7 @@ for prefix in prefixes:
                     failed += [(test, subtest, "C++", output)]
             else:
                 print "Skipping"
-    
+
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
                 output = getoutput("cd %s%spython && %s python .%s%s.py" % \
@@ -82,7 +82,7 @@ for prefix in prefixes:
                     failed += [(test, subtest, "Python", output)]
             else:
                 print "Skipping"
-    
+
             print ""
 
     # Print output for failed tests
