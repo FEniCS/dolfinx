@@ -8,14 +8,15 @@
 // First added:  2006-04-04
 // Last changed: 2011-01-14
 
+#include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
-#include <algorithm>
-
-#include <dolfin/log/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
+#include <boost/unordered_set.hpp>
+
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
@@ -210,6 +211,23 @@ double uBLASVector::max() const
 double uBLASVector::sum() const
 {
   return ublas::sum(*x);
+}
+//-----------------------------------------------------------------------------
+double uBLASVector::sum(const Array<uint>& rows) const
+{
+  boost::unordered_set<uint> row_set;
+  double _sum = 0.0;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    const uint index = rows[i];
+    assert(index < size());
+    if (row_set.find(index) == row_set.end())
+    {
+      _sum += (*x)[index];
+      row_set.insert(index);
+    }
+  }
+  return _sum;
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::axpy(double a, const GenericVector& y)

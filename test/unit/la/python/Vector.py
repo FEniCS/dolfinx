@@ -129,35 +129,172 @@ class AbstractBaseTest(object):
         in_range = local_range[0] <= n < local_range[1]
         self.assertEqual(v0.owns_index(n), in_range)
 
+    #def test_get_local(self):
+
+    #def test_set(self):
+
+    #def test_add(self):
+
+    def test_get_local(self):
+        from numpy import empty
+        n = 301
+        v0 = Vector(n)
+        data = empty((v0.local_size()), dtype='d')
+        v0.get_local(data)
+
+    def test_set_local(self):
+        from numpy import zeros
+        n = 301
+        v0 = Vector(n)
+        data = zeros((v0.local_size()), dtype='d')
+        v0.set_local(data)
+
+    def test_add_local(self):
+        from numpy import zeros
+        n = 301
+        v0 = Vector(n)
+        data = zeros((v0.local_size()), dtype='d')
+        v0.add_local(data)
+
+    #def test_gather(self):
+
+    def test_axpy(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = 1.0
+        v1 = Vector(v0)
+        v0.axpy(2.0, v1)
+        self.assertEqual(v0.sum(), 2*n + n)
+
+    def test_abs(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -1.0
+        v0.abs()
+        self.assertEqual(v0.sum(), n)
+
+    def test_inner(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = 2.0
+        v1 = Vector(n)
+        v1[:] = 3.0
+        self.assertEqual(v0.inner(v1), 6*n)
+
+    def test_norm(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -2.0
+        self.assertEqual(v0.norm("l1"), 2.0*n)
+        self.assertEqual(v0.norm("l2"), sqrt(4.0*n))
+        self.assertEqual(v0.norm("linf"), 2.0)
+
+    def test_min(self):
+        v0 = Vector(301)
+        v0[:] = 2.0
+        self.assertEqual(v0.min(), 2.0)
+
+    def test_max(self):
+        v0 = Vector(301)
+        v0[:] = -2.0
+        self.assertEqual(v0.max(), -2.0)
+
+    def test_sum(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -2.0
+        self.assertEqual(v0.sum(), -2.0*n)
+
+    def test_sum_entries(self):
+        from numpy import zeros
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -2.0
+        entries = zeros(5, dtype='I')
+        self.assertEqual(v0.sum(entries), -2.0)
+        entries[0] = 2
+        entries[1] = 1
+        entries[2] = 236
+        entries[3] = 123
+        entries[4] = 97
+        self.assertEqual(v0.sum(entries), -2.0*5)
+
+    def test_scalar_mult(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -1.0
+        v0 *= 2.0
+        self.assertEqual(v0.sum(), -2.0*n)
+
+    def test_vector_element_mult(self):
+        n = 301
+        v0 = Vector(n)
+        v1 = Vector(n)
+        v0[:] = -2.0
+        v1[:] =  3.0
+        v0 *= v1
+        self.assertEqual(v0.sum(), -6.0*n)
+
+    def test_scalar_divide(self):
+        n = 301
+        v0 = Vector(n)
+        v0[:] = -1.0
+        v0 /= -2.0
+        self.assertEqual(v0.sum(), 0.5*n)
+
+    def test_vector_add(self):
+        n = 301
+        v0 = Vector(n)
+        v1 = Vector(n)
+        v0[:] = -1.0
+        v1[:] =  2.0
+        v0 += v1
+        self.assertEqual(v0.sum(), n)
+
+    def test_vector_subtract(self):
+        n = 301
+        v0 = Vector(n)
+        v1 = Vector(n)
+        v0[:] = -1.0
+        v1[:] =  2.0
+        v0 -= v1
+        self.assertEqual(v0.sum(), -3.0*n)
+
+    def test_vector_assignment(self):
+        m, n = 301, 345
+        v0 = Vector(m)
+        v1 = Vector(n)
+        v0[:] = -1.0
+        v1[:] =  2.0
+        v0 = v1
+        self.assertEqual(v0.sum(), 2.0*n)
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester(AbstractBaseTest):
     def test_vector_data(self):
-        print "Test data"
         # Test for ordinary Vector
-        #v,w = self.assemble_vectors()
-        #array = v.array()
-        #data = v.data()
-        #self.assertTrue((data==array).all())
+        v = Vector(301)
+        array = v.array()
+        data = v.data()
+        self.assertTrue((data == array).all())
 
         # Test for down_casted Vector
-        #v = down_cast(v)
-        #data = v.data()
-        #self.assertTrue((data==array).all())
+        v = down_cast(v)
+        data = v.data()
+        self.assertTrue((data==array).all())
 
 class DataNotWorkingTester(AbstractBaseTest):
     def test_vector_data(self):
-        print "Test data"
-        #v, w = self.assemble_vectors()
-        #self.assertRaises(RuntimeError,v.data)
+        v = Vector(301)
+        self.assertRaises(RuntimeError, v.data)
 
-        #v = down_cast(v)
-        #def no_attribute():
-        #    v.data()
-        #self.assertRaises(AttributeError,no_attribute)
+        v = down_cast(v)
+        def no_attribute():
+            v.data()
+        self.assertRaises(AttributeError,no_attribute)
 
-#
+
 if MPI.num_processes() <= 1:
     class uBLASSparseTester(DataTester, unittest.TestCase):
         backend     = "uBLAS"

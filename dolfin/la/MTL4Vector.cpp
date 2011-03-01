@@ -10,11 +10,12 @@
 #ifdef HAS_MTL4
 
 #include <cmath>
+#include <boost/unordered_set.hpp>
 #include <dolfin/common/Array.h>
-#include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
-#include "MTL4Vector.h"
+#include <dolfin/math/dolfin_math.h>
 #include "MTL4Factory.h"
+#include "MTL4Vector.h"
 
 using namespace dolfin;
 
@@ -286,12 +287,16 @@ double MTL4Vector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double MTL4Vector::min() const
 {
+  assert(size() > 0);
   return mtl::min(x);
 }
 //-----------------------------------------------------------------------------
 double MTL4Vector::max() const
 {
-  return mtl::max(x);
+  assert(size() > 0);
+  // There appears to be a bug in mtl::max
+  //return mtl::max(x);
+  return *std::max_element(x.begin(), x.end());
 }
 //-----------------------------------------------------------------------------
 double MTL4Vector::sum() const
@@ -299,4 +304,22 @@ double MTL4Vector::sum() const
   return mtl::sum(x);
 }
 //-----------------------------------------------------------------------------
+double MTL4Vector::sum(const Array<uint>& rows) const
+{
+  boost::unordered_set<uint> row_set;
+  double _sum = 0.0;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    const uint index = rows[i];
+    assert(index < size());
+    if (row_set.find(index) == row_set.end())
+    {
+      _sum += x[index];
+      row_set.insert(index);
+    }
+  }
+  return _sum;
+}
+//-----------------------------------------------------------------------------
+
 #endif
