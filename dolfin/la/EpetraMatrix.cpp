@@ -151,10 +151,15 @@ EpetraMatrix* EpetraMatrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraMatrix::size(uint dim) const
 {
-  assert(A);
-  const int M = A->NumGlobalRows();
-  const int N = A->NumGlobalCols();
-  return (dim == 0 ? M : N);
+  assert(dim < 2);
+  if (A)
+  {
+    const int M = A->NumGlobalRows();
+    const int N = A->NumGlobalCols();
+    return (dim == 0 ? M : N);
+  }
+  else
+    return 0;
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const

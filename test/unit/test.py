@@ -18,7 +18,7 @@ tests = {
     "function": ["test"],
     "mesh": ["test", "Edge", "Face"],
     "meshconvert": ["test"],
-    "la": ["test", "Vector"],
+    "la": ["test", "Vector", "Matrix"],
     "io": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"]
