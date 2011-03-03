@@ -18,29 +18,29 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-    #def assemble_matrices(self, use_backend=False):
-    #    " Assemble a pair of matrices, one (square) MxM and one MxN"
-    #    mesh = UnitSquare(3,3)
-    #
-    #    V = FunctionSpace(mesh, "Lagrange", 2)
-    #    W = FunctionSpace(mesh, "Lagrange", 1)
-    #
-    #    v = TestFunction(V)
-    #    u = TrialFunction(V)
-    #    s = TrialFunction(W)
+    def assemble_matrices(self, use_backend=False):
+        " Assemble a pair of matrices, one (square) MxM and one MxN"
+        mesh = UnitSquare(34, 33)
 
-    #    # Forms
-    #    a = dot(grad(u),grad(v))*dx
-    #    b = v*s*dx
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
 
-    #    if use_backend:
-    #        if self.backend == "uBLAS":
-    #            backend = globals()[self.backend+self.sub_backend+'Factory_instance']()
-    #        else:
-    #            backend = globals()[self.backend+'Factory_instance']()
-    #        return assemble(a, backend=backend), assemble(b, backend=backend)
-    #    else:
-    #        return assemble(a), assemble(b)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        s = TrialFunction(W)
+
+        # Forms
+        a = dot(grad(u), grad(v))*dx
+        b = v*s*dx
+
+        if use_backend:
+            if self.backend == "uBLAS":
+                backend = globals()[self.backend+self.sub_backend + 'Factory_instance']()
+            else:
+                backend = globals()[self.backend + 'Factory_instance']()
+            return assemble(a, backend=backend), assemble(b, backend=backend)
+        else:
+            return assemble(a), assemble(b)
 
     #def assemble_vectors(self):
     #    mesh = UnitSquare(3,3)
@@ -53,6 +53,20 @@ class AbstractBaseTest(object):
 
     #    return assemble(v*dx), assemble(t*dx)
 
+    #def create_sparsity_pattern(self):
+    #    "Create a sparsity pattern"
+    #    mesh = UnitSquare(34, 33)
+    #
+    #    V = FunctionSpace(mesh, "Lagrange", 2)
+    #    W = FunctionSpace(mesh, "Lagrange", 1)
+    #
+    #    v = TestFunction(V)
+    #    u = TrialFunction(V)
+    #    s = TrialFunction(W)
+    #
+    #    # Forms
+    #    a = dot(grad(u), grad(v))*dx
+    #    b = v*s*dx
 
     def test_create_empty_matrix(self):
         A = Matrix()
@@ -63,27 +77,31 @@ class AbstractBaseTest(object):
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester(AbstractBaseTest):
-    def test_vector_data(self):
-        # Test for ordinary Vector
-        v = Vector(301)
-        array = v.array()
-        data = v.data()
-        self.assertTrue((data == array).all())
+    def test_matrix_data(self):
+        """ Test for ordinary Matrix"""
+        A, B = self.assemble_matrices()
+        array = A.array()
+        rows, cols, values = A.data()
+        i = 0
+        for row in xrange(A.size(0)):
+            for col in xrange(rows[row], rows[row+1]):
+                self.assertEqual(array[row, cols[col]],values[i])
+                i += 1
 
-        # Test for down_casted Vector
-        v = down_cast(v)
-        data = v.data()
-        self.assertTrue((data==array).all())
+        # Test for down_casted Matrix
+        A = down_cast(A)
+        rows, cols, values = A.data()
+        for row in xrange(A.size(0)):
+            for k in xrange(rows[row], rows[row+1]):
+                self.assertEqual(array[row,cols[k]], values[k])
 
 class DataNotWorkingTester(AbstractBaseTest):
-    def test_vector_data(self):
-        v = Vector(301)
-        self.assertRaises(RuntimeError, v.data)
+    def test_matrix_data(self):
+        A, B = self.assemble_matrices()
+        self.assertRaises(RuntimeError, A.data)
 
-        v = down_cast(v)
-        def no_attribute():
-            v.data()
-        self.assertRaises(AttributeError,no_attribute)
+        A = down_cast(A)
+        self.assertRaises(RuntimeError, A.data)
 
 
 if MPI.num_processes() <= 1:
