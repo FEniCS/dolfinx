@@ -1,7 +1,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(3D-demo)
+project(demo_3D)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 include_directories(${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(3D-demo )
+add_executable(demo_3D )
 
 # Target libraries
-target_link_libraries(3D-demo ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(demo_3D ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

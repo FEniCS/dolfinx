@@ -1,7 +1,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(dg-poisson-demo)
+project(demo_dg-poisson)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 include_directories(${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(dg-poisson-demo main.cpp)
+add_executable(demo_dg-poisson main.cpp)
 
 # Target libraries
-target_link_libraries(dg-poisson-demo ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(demo_dg-poisson ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

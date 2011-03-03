@@ -1,7 +1,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(nonmatching-projection-demo)
+project(demo_nonmatching-projection)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 include_directories(${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(nonmatching-projection-demo main.cpp)
+add_executable(demo_nonmatching-projection main.cpp)
 
 # Target libraries
-target_link_libraries(nonmatching-projection-demo ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(demo_nonmatching-projection ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

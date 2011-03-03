@@ -1,7 +1,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(speedup-bench)
+project(bench_speedup)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)

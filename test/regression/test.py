@@ -1,12 +1,12 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-08 -- 2009-10-11"
+__date__ = "2008-04-08 -- 2011-03-03"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Anders Logg, 2008-2009.
-# Modified by Johannes Ring, 2009.
+# Modified by Johannes Ring, 2009, 2011.
 # Modified by Johan Hake, 2009.
 
 import sys, os, re
@@ -26,7 +26,8 @@ for dpath, dnames, fnames in os.walk(demodir):
         if os.path.isfile(os.path.join(dpath, 'Makefile')):
             cppdemos.append(dpath)
     elif os.path.basename(dpath) == 'python':
-        if os.path.isfile(os.path.join(dpath, 'demo.py')):
+        tmp = dpath.split(os.path.sep)[-2]
+        if os.path.isfile(os.path.join(dpath, 'demo_' + tmp + '.py')):
             pydemos.append(dpath)
 
 # Set non-interactive
@@ -84,14 +85,13 @@ for prefix in prefixes:
         print "----------------------------------------------------------------------"
         print "Running C++ demo %s%s" % (prefix, demo)
         print ""
-        cppdemo_ext = ''
+        cppdemo_executable = 'demo_' + demo.split(os.path.sep)[-2]
         if platform.system() == 'Windows':
-            cppdemo_ext = '.exe'
-        cppdemo_prefix = demo.split(os.path.sep)[-2]
-        if os.path.isfile(os.path.join(demo, cppdemo_prefix + '-demo' + cppdemo_ext)):
+            cppdemo_executable += '.exe'
+        if os.path.isfile(os.path.join(demo, cppdemo_executable)):
             t1 = time()
-            output = getstatusoutput("cd %s && %s .%s%s-demo%s" % \
-                                         (demo, prefix, os.path.sep, cppdemo_prefix, cppdemo_ext))
+            output = getstatusoutput("cd %s && %s .%s%s" % \
+                                     (demo, prefix, os.path.sep, cppdemo_executable))
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:
@@ -110,9 +110,10 @@ for prefix in prefixes:
         print "----------------------------------------------------------------------"
         print "Running Python demo %s%s" % (prefix, demo)
         print ""
-        if os.path.isfile(os.path.join(demo, 'demo.py')):
+        demofile = 'demo_' + demo.split(os.path.sep)[-2] + '.py'
+        if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
-            output = getstatusoutput("cd %s && %s python demo.py" % (demo, prefix))
+            output = getstatusoutput("cd %s && %s python %s" % (demo, prefix, demofile))
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:

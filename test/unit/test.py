@@ -53,14 +53,13 @@ for prefix in prefixes:
             print "Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix)
             print "----------------------------------------------------------------------"
 
-            cpptest_ext = ''
+            cpptest_executable = subtest + "_" + test
             if platform.system() == 'Windows':
-                cpptest_ext = '.exe'
+                cpptest_executable += '.exe'
             print "C++:   ",
-            if not only_python and os.path.isfile(os.path.join(test, "cpp", test + "-" + subtest + cpptest_ext)):
-                output = getoutput("cd %s%scpp && %s .%s%s-test%s" % \
-                                   (test, os.path.sep, prefix,
-                                    os.path.sep, test, cpptest_ext))
+            if not only_python and os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+                output = getoutput("cd %s%scpp && %s .%s%s" % \
+                                   (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
                 if "OK" in output:
                     num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
                     print "OK (%d tests)" % num_tests

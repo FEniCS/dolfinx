@@ -46,7 +46,7 @@ add_executable(%s %s)
 target_link_libraries(%s ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
 """
 
-def generate_cmake_files(subdirectory, executable_suffix):
+def generate_cmake_files(subdirectory, executable_prefix):
     """Search for C++ code and write CMakeLists.txt files"""
     cwd = os.getcwd()
     for root, dirs, files in os.walk(cwd + "/" + subdirectory):
@@ -64,7 +64,7 @@ def generate_cmake_files(subdirectory, executable_suffix):
                     cpp_files.append(f)
 
             # Name of demo and cpp source files
-            program_name += executable_suffix
+            program_name = executable_prefix + program_name
             cpp_files = ' '.join(cpp_files)
 
             # Check for duplicate executable names
@@ -84,6 +84,6 @@ def generate_cmake_files(subdirectory, executable_suffix):
 
 
 # Generate CMakeLists.text files
-sub_directories = [('demo', '-demo'), ('test', '-test'), ('bench', '-bench')]
+sub_directories = [('demo', 'demo_'), ('test', 'test_'), ('bench', 'bench_')]
 for sub_dir in sub_directories:
     generate_cmake_files(sub_dir[0], sub_dir[1])
