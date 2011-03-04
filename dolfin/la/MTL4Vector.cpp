@@ -294,9 +294,7 @@ double MTL4Vector::min() const
 double MTL4Vector::max() const
 {
   assert(size() > 0);
-  // There appears to be a bug in mtl::max
-  //return mtl::max(x);
-  return *std::max_element(x.begin(), x.end());
+  return mtl::max(x);
 }
 //-----------------------------------------------------------------------------
 double MTL4Vector::sum() const

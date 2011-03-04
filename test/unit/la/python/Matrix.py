@@ -20,7 +20,7 @@ class AbstractBaseTest(object):
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
-        mesh = UnitSquare(34, 33)
+        mesh = UnitSquare(21, 23)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
@@ -72,6 +72,39 @@ class AbstractBaseTest(object):
         A = Matrix()
         self.assertEqual(A.size(0), 0)
         self.assertEqual(A.size(1), 0)
+
+    def test_copy_empty_matrix(self):
+        A = Matrix()
+        B = Matrix(A)
+        self.assertEqual(B.size(0), 0)
+        self.assertEqual(B.size(1), 0)
+
+    def test_copy_matrix(self):
+        A0, B0 = self.assemble_matrices()
+
+        A1 = Matrix(A0)
+        self.assertEqual(A0.size(0), A1.size(0))
+        self.assertEqual(A0.size(1), A1.size(1))
+        self.assertEqual(A0.norm("frobenius"), A1.norm("frobenius"))
+
+        B1 = Matrix(B0)
+        self.assertEqual(B0.size(0), B1.size(0))
+        self.assertEqual(B0.size(1), B1.size(1))
+        self.assertEqual(B0.norm("frobenius"), B1.norm("frobenius"))
+
+    #def test_create_from_sparsity_pattern(self):
+
+    #def test_size(self):
+
+    #def test_local_range(self):
+
+    #def test_zero(self):
+
+    #def test_apply(self):
+
+    #def test_str(self):
+
+    #def test_resize(self):
 
 
 # A DataTester class that test the acces of the raw data through pointers

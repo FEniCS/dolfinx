@@ -193,15 +193,17 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  assert(A);
+  if (!A)
+    return new PETScMatrix();
+  else
+  {
+    // Create copy of PETSc matrix
+    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
-  // Create copy of PETSc matrix
-  boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
-  MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
-
-  // Create PETScMatrix
-  PETScMatrix* Acopy = new PETScMatrix(_Acopy);
-  return Acopy;
+    // Create PETScMatrix
+    return new PETScMatrix(_Acopy);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block, uint m, const uint* rows,
@@ -397,10 +399,11 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
-  assert(A.mat());
-
-  // Check for self-assignment
-  if (this != &A)
+  if (!A.mat())
+  {
+    this->A.reset();
+  }
+  else if (this != &A) // Check for self-assignment
   {
     if (this->A && !this->A.unique())
       error("Cannot assign PETScMatrix because more than one object points to the underlying PETSc object.");
