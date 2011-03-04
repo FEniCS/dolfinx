@@ -204,7 +204,7 @@ void StabilityAnalysis::get_JT(real* JT, const Array<real>& u, real& t)
   // Note that matrices are stored column-oriented in the real functions
 
   Array<real> e(n);
-  // Declare array to wrap the columns of JT. 
+  // Declare array to wrap the columns of JT.
   Array<real> JT_array(n, JT);
   for (uint i = 0; i < n; ++i)
   {

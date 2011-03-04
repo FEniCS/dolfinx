@@ -213,7 +213,7 @@ void cGqMethod::compute_weights()
   {
     // Get nodal point
     //real x = qpoints[i];
-    
+
     // Evaluate test functions at current nodal point
     for (uint j = 0; j < nn; j++)
     {
@@ -238,10 +238,10 @@ void cGqMethod::compute_weights()
 #else
 
     real w_real[q];
-    
+
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
-    
+
     // Solve system using the double precision invert as preconditioner
     real_solve_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
 
@@ -252,5 +252,3 @@ void cGqMethod::compute_weights()
   }
 }
 //-----------------------------------------------------------------------------
-
-

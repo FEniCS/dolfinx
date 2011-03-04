@@ -59,5 +59,3 @@ namespace dolfin
 }
 
 #endif
-
-

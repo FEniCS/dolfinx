@@ -123,7 +123,7 @@ namespace dolfin
     // Density of sampling (for adaptive sampling)
     unsigned int sample_density;
 
-    // 
+    //
     bool save_to_odesolution;
     ODESolution* u;
 

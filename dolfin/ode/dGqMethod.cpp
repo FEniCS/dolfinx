@@ -195,8 +195,8 @@ void dGqMethod::compute_weights()
         //integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
         integral += qweights[k] * trial_ddx[j + nq*k] * test_eval[i + nq*k];
 
-      }     
-      
+      }
+
       A_real[i + nn*j] = integral + trial_eval_0[j] * test_eval_0[i];
       _A(i, j) = to_double(A_real[i + nn*j]);
     }
@@ -212,7 +212,7 @@ void dGqMethod::compute_weights()
   {
     // Get nodal point
     //real x = qpoints[i];
-    
+
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
     {
@@ -231,16 +231,16 @@ void dGqMethod::compute_weights()
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
 
-#else 
-    
+#else
+
     real w_real[nn];
-    
+
     // Solve system using the double precision invert as preconditioner
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
-    
+
     SORSolver::SOR_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
-    
+
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
 

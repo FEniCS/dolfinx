@@ -52,7 +52,7 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   filename(filename),
   buffer_index_cache(0)
 {
-  use_exact_interpolation = parameters["exact_interpolation"];  
+  use_exact_interpolation = parameters["exact_interpolation"];
 
   std::ifstream file;
   uint timeslabs_in_file = open_and_read_header(file, 0u);
@@ -264,8 +264,8 @@ void ODESolution::interpolate_linear(Array<real>& y, ODESolutionData& timeslab, 
   uint index_a = std::min(trial->size()-2, (uint) to_double(tau*timeslab.nodal_size));
 
   // Search for the right nodal points
-  while (tau < trial->point(index_a)-real_epsilon() || 
-         index_a >= trial->size()-1 || 
+  while (tau < trial->point(index_a)-real_epsilon() ||
+         index_a >= trial->size()-1 ||
          tau > trial->point(index_a + 1)+real_epsilon())
   {
     if (tau < trial->point(index_a)-real_epsilon())
@@ -471,7 +471,7 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 
   while( range_end != range_start)
   {
-    if (t > data[buffer_index_cache].a + data[buffer_index_cache].k) 
+    if (t > data[buffer_index_cache].a + data[buffer_index_cache].k)
     {
       range_start = std::max(buffer_index_cache, range_start+1);
     } else
@@ -483,7 +483,7 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 
     count++;
 
-    // NOTE: Is 100 a reasonable number? 
+    // NOTE: Is 100 a reasonable number?
     // How should the maximum number of iterations be determined?
     assert(count < 100);
   }
@@ -504,7 +504,7 @@ void ODESolution::read_file(uint file_number)
 
   real a;
   real k;
-  
+
   boost::scoped_array<real> values(new real[nodal_size*N]);
 
   uint count = 0;
@@ -515,7 +515,7 @@ void ODESolution::read_file(uint file_number)
   }
   Progress p(ss.str(), timeslabs);
 
-  while (true) 
+  while (true)
   {
     file >> a;
     file >> k;

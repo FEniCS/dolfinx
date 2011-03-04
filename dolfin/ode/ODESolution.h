@@ -108,7 +108,7 @@ namespace dolfin
     /// Make object ready for evaluating, set to read mode
     void flush();
 
-    /// Evaluate (interpolate) value of solution at given time    
+    /// Evaluate (interpolate) value of solution at given time
     void eval(const real& t, Array<real>& y);
 
     /// Get timeslab (used when iterating)

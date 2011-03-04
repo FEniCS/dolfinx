@@ -173,4 +173,3 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, Array<real>& y)
     y[i] = x[xoffset + i];
 }
 */
-
