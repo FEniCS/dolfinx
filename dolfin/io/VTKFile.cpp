@@ -64,10 +64,10 @@ VTKFile::~VTKFile()
 void VTKFile::operator<<(const Mesh& mesh)
 {
   // Get vtu file name and intialise out files
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write local mesh to vtu file
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -118,10 +118,11 @@ void VTKFile::write(const Function& u, double time)
   const Mesh& mesh = u.function_space().mesh();
 
   // Get vtu file name and intialise
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write mesh
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary,
+                        compress);
 
   // Write results
   results_write(u, vtu_filename);
@@ -141,7 +142,7 @@ void VTKFile::write(const Function& u, double time)
        u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const Mesh& mesh) const
+std::string VTKFile::init(const Mesh& mesh, uint dim) const
 {
   // Get vtu file name and clear file
   std::string vtu_filename = vtu_name(MPI::process_number(),
@@ -150,8 +151,11 @@ std::string VTKFile::init(const Mesh& mesh) const
                                       ".vtu");
   clear_file(vtu_filename);
 
+  // Number of cell
+  const uint num_cells = mesh.topology().size(dim);
+
   // Write headers
-  vtk_header_open(mesh.num_vertices(), mesh.num_cells(), vtu_filename);
+  vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
 
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
@@ -610,14 +614,14 @@ template<class T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemented for cell-based functions only.");
+  //if (meshfunction.dim() != mesh.topology().dim())
+  //  error("VTK output of mesh functions is implemented for cell-based functions only.");
 
   // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, meshfunction.dim());
 
   // Write mesh
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, meshfunction.dim(), vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -700,7 +704,8 @@ void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
   header[2] = 0;
 
   // Compress data
-  std::pair<boost::shared_array<unsigned char>, dolfin::uint> compressed_data = Encoder::compress_data(data);
+  std::pair<boost::shared_array<unsigned char>, dolfin::uint> compressed_data;
+  compressed_data = Encoder::compress_data(data);
 
   // Length of compressed data
   header[3] = compressed_data.second;

@@ -38,7 +38,7 @@ namespace dolfin
 
     void write(const Function& u, double time);
 
-    std::string init(const Mesh& mesh) const;
+    std::string init(const Mesh& mesh, uint dim) const;
 
     void finalize(std::string vtu_filename, double time);
 

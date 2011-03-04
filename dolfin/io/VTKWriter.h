@@ -21,7 +21,7 @@ namespace dolfin
   public:
 
     // Mesh writer
-    static void write_mesh(const Mesh& mesh, std::string file,
+    static void write_mesh(const Mesh& mesh, uint cell_dim, std::string file,
                            bool binary, bool compress);
 
     // Cell data writer
@@ -46,9 +46,10 @@ namespace dolfin
                                         uint dim, uint rank, bool compress);
 
     // Mesh writer
-    static void write_ascii_mesh(const Mesh& mesh, std::string file);
-    static void write_base64_mesh(const Mesh& meqsh, std::string file,
-                                  bool compress);
+    static void write_ascii_mesh(const Mesh& mesh, uint cell_dim,
+                                 std::string file);
+    static void write_base64_mesh(const Mesh& mesh, uint cell_dim,
+                                  std::string file, bool compress);
 
     // Compute base64 encoded stream for VTK
     template<typename T>

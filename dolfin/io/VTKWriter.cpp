@@ -28,13 +28,13 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-void VTKWriter::write_mesh(const Mesh& mesh, std::string filename,
-                           bool binary, bool compress)
+void VTKWriter::write_mesh(const Mesh& mesh, uint cell_dim,
+                           std::string filename, bool binary, bool compress)
 {
   if (binary)
-    write_base64_mesh(mesh, filename, compress);
+    write_base64_mesh(mesh, cell_dim, filename, compress);
   else
-    write_ascii_mesh(mesh, filename);
+    write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
 void VTKWriter::write_cell_data(const Function& u, std::string filename,
@@ -208,7 +208,8 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
   return encode_stream(data, compress);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::string filename)
+void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
+                                 std::string filename)
 {
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -228,7 +229,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::string filename)
   // Write cell connectivity
   file << "<Cells>" << std::endl;
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << "ascii" << "\">" << std::endl;
-  for (CellIterator c(mesh); !c.end(); ++c)
+  //for (CellIterator c(mesh); !c.end(); ++c)
+  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (VertexIterator v(*c); !v.end(); ++v)
       file << v->index() << " ";
@@ -245,13 +247,24 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::string filename)
 
   // Write cell type
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii" << "\">" << std::endl;
+
+  CellType::Type cell_type = mesh.type().cell_type();
+  if (mesh.topology().dim() == cell_dim)
+    cell_type = mesh.type().cell_type();
+  else if (mesh.topology().dim() - 1 == cell_dim)
+    cell_type = mesh.type().facet_type();
+  else
+    error("Can only handle cells and cell facets with VTK output for now.");
+
   uint vtk_cell_type = 0;
-  if (mesh.type().cell_type() == CellType::tetrahedron)
+  if (cell_type == CellType::tetrahedron)
     vtk_cell_type = 10;
-  if (mesh.type().cell_type() == CellType::triangle)
+  else if (cell_type == CellType::triangle)
     vtk_cell_type = 5;
-  if (mesh.type().cell_type() == CellType::interval)
+  else if (cell_type == CellType::interval)
     vtk_cell_type = 3;
+  else
+    error("Unknown cell type");
 
   for (uint types = 0; types < mesh.num_cells(); types++)
     file << " " << vtk_cell_type << std::endl;
@@ -262,8 +275,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::string filename)
   file.close();
 }
 //-----------------------------------------------------------------------------
-void VTKWriter::write_base64_mesh(const Mesh& mesh, std::string filename,
-                                 bool compress)
+void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
+                                  std::string filename, bool compress)
 {
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);

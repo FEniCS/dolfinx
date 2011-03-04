@@ -43,7 +43,7 @@ namespace dolfin
     /// Destructor
     virtual ~MeshEntity();
 
-    ///Comparision Operator
+    /// Comparision Operator
     bool operator==(const MeshEntity& another) const
     { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
 
