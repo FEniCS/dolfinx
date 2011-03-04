@@ -25,13 +25,13 @@ public:
     mu2  = 0.3;
   }
 
-  void u0(real* u)
+  void u0(Array<real>& u)
   {
     u[0] = 0.2;
     u[1] = 0.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
 

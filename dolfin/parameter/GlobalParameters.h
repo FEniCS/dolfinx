@@ -36,6 +36,7 @@ namespace dolfin
       p.add("timer_prefix", "");                             // Prefix for timer tasks
       p.add("plot_filename_prefix", "dolfin_plot_data");     // Prefix for temporary plot files
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
+      p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
 
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
@@ -84,13 +85,6 @@ namespace dolfin
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);
-
-      // Floating-point precision (only relevant when using GMP)
-      #ifdef HAS_GMP
-      p.add("floating_point_precision", 30);                 // Use higher precision for GMP (can be changed)
-      #else
-      p.add("floating_point_precision", 16);                 // Use double precision when GMP is not available
-      #endif
 
       return p;
     }

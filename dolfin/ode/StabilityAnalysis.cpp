@@ -11,6 +11,8 @@
 #include <dolfin/log/Progress.h>
 #include <dolfin/io/PythonFile.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Array.h>
+#include <dolfin/la/HighPrecision.h>
 #include <vector>
 #include <boost/scoped_array.hpp>
 
@@ -37,7 +39,8 @@ void StabilityAnalysis::analyze_integral(uint q)
   // Collect
   std::vector< std::pair<real, real*> > s;
 
-  boost::scoped_array<real> tmp_array(new real [n]); real* tmp = tmp_array.get();
+  Array<real> tmp(n);
+  //boost::scoped_array<real> tmp_array(new real [n]); real* tmp = tmp_array.get();
   boost::scoped_array<real> A_array(new real[n*n]);  real* A = A_array.get();
   boost::scoped_array<real> B_array(new real[n*n]);  real* B = B_array.get();
 
@@ -62,7 +65,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     real* C = new real[n*n];
 
     // Get solution values at first nodal point on interval
-    timestep.eval_a(tmp);
+    timestep.eval_a(tmp.data().get());
 
     // Get transpose of Jacobian
     get_JT(A, tmp, t);
@@ -90,8 +93,9 @@ void StabilityAnalysis::analyze_integral(uint q)
     s.push_back(std::pair<real, real*>(t + timestep.k, C));
 
     // Now compute the stability factor for T = t by integrating
-    boost::scoped_array<real> sample(new real[n]);
-    real_zero(n, sample.get());
+    Array<real> sample(n);
+    sample.zero();
+
     real prev = 0.0;
     for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin();
 	 s_iterator != s.end(); ++s_iterator)
@@ -121,7 +125,7 @@ void StabilityAnalysis::analyze_integral(uint q)
       //sample[i] = real_sqrt(sample[i]);
 
     // Store to file
-    file << std::tr1::tuple<uint, real, real*>(n, t, sample.get());
+    file << std::pair<real, RealArrayRef>(t, RealArrayRef(sample));
 
     // Update progress
     double t_double = to_double(t);
@@ -155,7 +159,8 @@ void StabilityAnalysis::analyze_endpoint()
 
   boost::scoped_array<real> _A(new real[n*n]);  real* A = _A.get();
   boost::scoped_array<real> _B(new real[n*n]);  real* B = _B.get();
-  boost::scoped_array<real> _tmp(new real[n]);  real* tmp = _tmp.get();
+
+  Array<real> tmp(n);
 
 
   // How should the length of the timestep be decided?
@@ -168,7 +173,7 @@ void StabilityAnalysis::analyze_endpoint()
       break;
 
     //u.eval(t, tmp);
-    timestep.eval_a(tmp);
+    timestep.eval_a(tmp.data().get());
 
     get_JT(A, tmp, t);
 
@@ -183,7 +188,7 @@ void StabilityAnalysis::analyze_endpoint()
       tmp[i] = real_norm(n, &s[i*n]);
     }
 
-    file << std::tr1::tuple<uint, real, real*>(n, t, tmp);
+    file << std::pair<real, RealArrayRef>(t, RealArrayRef(tmp));
 
     p = to_double(t/endtime);
 
@@ -192,17 +197,22 @@ void StabilityAnalysis::analyze_endpoint()
   end();
 }
 //-----------------------------------------------------------------------------
-void StabilityAnalysis::get_JT(real* JT, const real* u, real& t)
+void StabilityAnalysis::get_JT(real* JT, const Array<real>& u, real& t)
 {
+  uint n = u.size();
+
   // Note that matrices are stored column-oriented in the real functions
 
-  boost::scoped_array<real> _e(new real[n]);  real* e = _e.get();
+  Array<real> e(n);
+  // Declare array to wrap the columns of JT. 
+  Array<real> JT_array(n, JT);
   for (uint i = 0; i < n; ++i)
   {
     // Fill out each column of A
-    real_zero(n, e);
+    e.zero();
     e[i] = 1.0;
-    ode.JT(e, &JT[i*n], u, t);
+    JT_array.update(n, &JT[i*n]);
+    ode.JT(e, JT_array, u, t);
   }
 }
 //-----------------------------------------------------------------------------

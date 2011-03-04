@@ -68,25 +68,25 @@ namespace dolfin
     virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
-    void u0(real* u);
+    void u0(Array<real>& u);
 
     /// Return right-hand side for real-valued ODE
-    real f(const real* u, real t, uint i);
+    real f(const Array<real>& u, real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const real* u, real t, real* y);
+    void f(const Array<real>& u, real t, Array<real>& y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const real* x, real* y, const real* u, real t);
+    void M(const Array<real>& x, Array<real>& y, const Array<real>& u, real t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const real* x, real* y, const real* u, real t);
+    void J(const Array<real>& x, Array<real>& y, const Array<real>& u, real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const real* u, real t, bool end);
+    bool update(const Array<real>& u, real t, bool end);
 
   protected:
 
@@ -127,9 +127,9 @@ namespace dolfin
       warning("ComplexODE not available when DOLFIN is compiled with GMP support.");
     }
 
-    void u0(real* u) {}
+    void u0(Array<real>& u) {}
 
-    void f(const real* u, real t, real* y) {}
+    void f(const Array<real>& u, real t, Array<real>& y) {}
 
   protected:
 

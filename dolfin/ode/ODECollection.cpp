@@ -12,12 +12,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODECollection::ODECollection(ODE& ode, uint num_systems)
-  : ode(ode), num_systems(num_systems), states(0)
+  : ode(ode), num_systems(num_systems), states(new real[num_systems*ode.size()])
 {
   info(TRACE, "Creating ODE collection of size %d x %d.", num_systems, ode.size());
 
-  // Allocate state vectors
-  states = new real[num_systems*ode.size()];
 }
 //-----------------------------------------------------------------------------
 ODECollection::~ODECollection()
@@ -38,17 +36,20 @@ void ODECollection::solve(real t0, real t1)
     // Compute offset for ODE
     const uint offset = system*ode.size();
 
+    // Wrap relevant part of state array in an Array<real>
+    Array<real> s(ode.size(), states+offset);
+
     // Copy initial state from state vector
-    ode.set_state(states + offset);
+    ode.set_state(s);
 
     // Call user-defined update
-    update(states + offset, t0, system);
+    update(s, t0, system);
 
     // Time-stepping
     ode.solve(t0, t1);
 
     // Copy final state to state vector
-    ode.get_state(states + offset);
+    ode.get_state(s);
 
     end();
   }
@@ -56,33 +57,33 @@ void ODECollection::solve(real t0, real t1)
   end();
 }
 //-----------------------------------------------------------------------------
-void ODECollection::set_state(uint system, const real* u)
+void ODECollection::set_state(uint system, const Array<real>& u)
 {
   const uint offset = system*ode.size();
   for (uint j = 0; j < ode.size(); j++)
     states[offset + j] = u[j];
 }
 //-----------------------------------------------------------------------------
-void ODECollection::set_state(const real* u)
+void ODECollection::set_state(const Array<real>& u)
 {
   for (uint j = 0; j < num_systems*ode.size(); j++)
     states[j] = u[j];
 }
 //-----------------------------------------------------------------------------
-void ODECollection::get_state(uint system, real* u)
+void ODECollection::get_state(uint system, Array<real>& u)
 {
   const uint offset = system*ode.size();
   for (uint j = 0; j < ode.size(); j++)
     u[j] = states[offset + j];
 }
 //-----------------------------------------------------------------------------
-void ODECollection::get_state(real* u)
+void ODECollection::get_state(Array<real>& u)
 {
   for (uint j = 0; j < num_systems*ode.size(); j++)
     u[j] = states[j];
 }
 //-----------------------------------------------------------------------------
-void ODECollection::update(real* u, real t, uint system)
+void ODECollection::update(Array<real>& u, real t, uint system)
 {
   // Do nothing
 }

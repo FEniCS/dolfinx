@@ -7,6 +7,7 @@
 // Last changed: 2011-01-30
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include "ODESolver.h"
@@ -19,7 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODE::ODE(uint N, real T)
-  : N(N), t(0), T(T), dependencies(N), transpose(N), time_stepper(0), tmp0(0), tmp1(0),
+  : N(N), t(0), T(T), dependencies(N), transpose(N), time_stepper(0), tmp0(N), tmp1(N),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
@@ -38,12 +39,12 @@ ODE::ODE(uint N, real T)
 //-----------------------------------------------------------------------------
 ODE::~ODE()
 {
-  delete [] tmp0;
-  delete [] tmp1;
+  //delete [] tmp0;
+  //delete [] tmp1;
   delete time_stepper;
 }
 //-----------------------------------------------------------------------------
-void ODE::f(const real* u, real t, real* y)
+void ODE::f(const Array<real>& u, real t, Array<real>& y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
@@ -56,22 +57,22 @@ void ODE::f(const real* u, real t, real* y)
     y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-real ODE::f(const real* u, real t, uint i)
+real ODE::f(const Array<real>& u, real t, uint i)
 {
   error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const real* dx, real* dy, const real* u, real t)
+void ODE::M(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
 
   // Assume M is the identity if not supplied by user: y = x
-  real_set(N, dy, dx);
+  real_set(N, dy.data().get(), dx.data().get());
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const real* dx, real* dy, const real* u, real t)
+void ODE::J(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -90,29 +91,30 @@ void ODE::J(const real* dx, real* dy, const real* u, real t)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  real* uu = const_cast<real*>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Initialize temporary array if necessary
-  if (!tmp0) tmp0 = new real[N];
-  real_zero(N, tmp0);
+  //if (!tmp0) tmp0 = new real[N];
+  //real_zero(N, tmp0);
+  tmp0.zero();
 
   // Evaluate at u + hx
-  real_axpy(N, uu, h, dx);
+  real_axpy(N, uu.data().get(), h, dx.data().get());
   f(uu, t, dy);
 
   // Evaluate at u - hx
-  real_axpy(N, uu, -2.0*h, dx);
+  real_axpy(N, uu.data().get(), -2.0*h, dx.data().get());
   f(uu, t, tmp0);
 
   // Reset u
-  real_axpy(N, uu, h, dx);
+  real_axpy(N, uu.data().get(), h, dx.data().get());
 
   // Compute product dy = J dx
-  real_sub(N, dy, tmp0);
-  real_mult(N, dy, 0.5/h);
+  real_sub(N, dy.data().get(), tmp0.data().get());
+  real_mult(N, dy.data().get(), 0.5/h);
 }
 //------------------------------------------------------------------------
-void ODE::JT(const real* dx, real* dy, const real* u, real t)
+void ODE::JT(const Array<real>& dx, Array<real>& dy, const Array<real>& u, real t)
 {
   // Display warning
   not_impl_JT();
@@ -125,13 +127,15 @@ void ODE::JT(const real* dx, real* dy, const real* u, real t)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  real* uu = const_cast<real*>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Initialize temporary arrays if necessary
-  if (!tmp0) tmp0 = new real[N];
-  real_zero(N, tmp0);
-  if (!tmp1) tmp1 = new real[N];
-  real_zero(N, tmp1);
+  //if (!tmp0) tmp0 = new real[N];
+  //real_zero(N, tmp0);
+  tmp0.zero();
+  //if (!tmp1) tmp1 = new real[N];
+  //real_zero(N, tmp1);
+  tmp1.zero();
 
   // Compute action of transpose of Jacobian
   for (uint i = 0; i < N; ++i)
@@ -144,14 +148,14 @@ void ODE::JT(const real* dx, real* dy, const real* u, real t)
 
     uu[i] += h;
 
-    real_sub(N, tmp0, tmp1);
-    real_mult(N, tmp0, 0.5/h);
+    real_sub(N, tmp0.data().get(), tmp1.data().get());
+    real_mult(N, tmp0.data().get(), 0.5/h);
 
-    dy[i] = real_inner(N, tmp0, dx);
+    dy[i] = real_inner(N, tmp0.data().get(), dx.data().get());
   }
 }
 //------------------------------------------------------------------------
-real ODE::dfdu(const real* u, real t, uint i, uint j)
+real ODE::dfdu(const Array<real>& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
 
@@ -159,7 +163,7 @@ real ODE::dfdu(const real* u, real t, uint i, uint j)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  real* uu = const_cast<real*>(u);
+  Array<real>& uu = const_cast<Array<real>&>(u);
 
   // Save value of u_j
   real uj = uu[j];
@@ -198,7 +202,7 @@ real ODE::timestep(real t, uint i, real k0) const
   return k0;
 }
 //-----------------------------------------------------------------------------
-bool ODE::update(const real* u, real t, bool end)
+bool ODE::update(const Array<real>& u, real t, bool end)
 {
   return true;
 }
@@ -329,23 +333,23 @@ void ODE::analyze_stability_initial(ODESolution& u) {
   S.analyze_endpoint();
 }
 //-----------------------------------------------------------------------------
-void ODE::set_state(const real* u)
+void ODE::set_state(const Array<real>& u)
 {
   // Create time stepper if not created before
   if (!time_stepper)
     time_stepper = new TimeStepper(*this);
 
   // Set state
-  time_stepper->set_state(u);
+  time_stepper->set_state(u.data().get());
 }
 //-----------------------------------------------------------------------------
-void ODE::get_state(real* u)
+void ODE::get_state(Array<real>& u)
 {
   // Create time stepper if not created before
   if (!time_stepper)
     time_stepper = new TimeStepper(*this);
 
   // Get state
-  time_stepper->get_state(u);
+  time_stepper->get_state(u.data().get());
 }
 //-----------------------------------------------------------------------------

@@ -12,8 +12,8 @@
 #include <dolfin/quadrature/LobattoQuadrature.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/la/HighPrecision.h>
 #include <dolfin/ode/ODE.h>
-#include <dolfin/ode/SORSolver.h>
 #include "cGqMethod.h"
 
 using namespace dolfin;
@@ -243,7 +243,7 @@ void cGqMethod::compute_weights()
     A_inv.invert();
     
     // Solve system using the double precision invert as preconditioner
-    SORSolver::SOR_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
+    real_solve_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
 
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];

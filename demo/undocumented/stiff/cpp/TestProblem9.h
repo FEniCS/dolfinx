@@ -19,14 +19,14 @@ public:
     lambda = 1000.0;
   }
 
-  void u0(real* u)
+  void u0(Array<real>& u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
     u[2] = 1.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     y[0] = u[1];
     y[1] = -(1.0 - u[2])*u[0];

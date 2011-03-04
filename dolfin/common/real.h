@@ -225,18 +225,5 @@ namespace dolfin
     for (uint i=0; i < n; ++i)
       A[i*n+i] = value;
   }
-
-  // Matrix multiplication res = A*B
-  void real_mat_prod(uint n, real* res, const real* A, const real* B);
-
-  // Matrix multiplication A = A * B
-  void real_mat_prod_inplace(uint n, real* A, const real* B);
-
-  // Matrix vector product y = Ax
-  void real_mat_vector_prod(uint n, real* y, const real* A, const real* x);
-
-  // Matrix power A = B^q
-  void real_mat_pow(uint n, real* A, const real* B, uint q);
-
 }
 #endif

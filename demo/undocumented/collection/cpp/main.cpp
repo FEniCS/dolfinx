@@ -18,7 +18,7 @@ public:
 
   Harmonic(real T) : ODE(2, T) {}
 
-  void u0(real* u)
+  void u0(Array<real>& u)
   {
     cout << "Calling u0() to get initial data" << endl;
 
@@ -26,7 +26,7 @@ public:
     u[1] = 1.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     y[0] = u[1];
     y[1] = - u[0];
@@ -48,7 +48,7 @@ int main()
   ODECollection collection(ode, n);
 
   // Set initial states for all ODE systems
-  real u0[2];
+  Array<real> u0(2);
   for (unsigned int i = 0; i < n; i++)
   {
     u0[0] = 2.0 * static_cast<real>(i) / static_cast<real>(n);
