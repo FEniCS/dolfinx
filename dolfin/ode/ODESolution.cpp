@@ -5,11 +5,12 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-06-11
-// Last changed: 2010-06-23
+// Last changed: 2011-02-16
 
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
 #include <dolfin/log/Logger.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <algorithm>
 #include <iostream>
 #include <ios>
@@ -17,6 +18,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <boost/scoped_array.hpp>
 
 using namespace dolfin;
 
@@ -35,6 +37,7 @@ ODESolution::ODESolution() :
   filename("odesolution"),
   buffer_index_cache(0)
 {
+  use_exact_interpolation = parameters["exact_interpolation"];
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) :
@@ -49,6 +52,8 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   filename(filename),
   buffer_index_cache(0)
 {
+  use_exact_interpolation = parameters["exact_interpolation"];  
+
   std::ifstream file;
   uint timeslabs_in_file = open_and_read_header(file, 0u);
   file.close();
@@ -71,10 +76,12 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
       // seek backwards from the end of the file to find the last
       // newline
       // FIXME: Is there a better way to do this? Some library function
-      // doing the same as the command tail
+      // doing the same as the command `tail`
       char buf[1001];
       file.seekg (0, std::ios::end);
-      int pos = file.tellg();
+
+      // Note: Use long to be able to handle (fairly) big files.
+      unsigned long pos = file.tellg();
       pos -= 1001;
       file.seekg(pos, std::ios::beg);
 
@@ -188,7 +195,7 @@ void ODESolution::flush()
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real& t, real* y)
+void ODESolution::eval(const real& t, Array<real>& y)
 {
   if (!read_mode)
     error("Can not evaluate solution");
@@ -205,7 +212,7 @@ void ODESolution::eval(const real& t, real* y)
     // Copy values
     if (cache[i].first == t)
     {
-      real_set(N, y, cache[i].second);
+      real_set(N, y.data().get(), cache[i].second);
       return;
     }
   }
@@ -217,22 +224,69 @@ void ODESolution::eval(const real& t, real* y)
   }
 
   // Find the right timeslab in buffer
-  ODESolutionData& a = data[get_buffer_index(t)];
-  real tau = (t-a.a)/a.k;
+  uint timeslab_index = get_buffer_index(t);
+  ODESolutionData& timeslab = data[timeslab_index];
 
-  assert(tau <= 1.0+real_epsilon());
+  assert(t >= timeslab.a - real_epsilon());
+  assert(t <= timeslab.a + timeslab.k + real_epsilon());
 
+  real tau = (t-timeslab.a)/timeslab.k;
+
+  if (use_exact_interpolation)
+    interpolate_exact(y, timeslab, tau);
+  else
+    interpolate_linear(y, timeslab, tau);
+
+
+  // store in cache
+  cache[ringbufcounter].first = t;
+  real_set(N, cache[ringbufcounter].second, y.data().get());
+  ringbufcounter = (ringbufcounter + 1) % cache_size;
+}
+//-----------------------------------------------------------------------------
+void ODESolution::interpolate_exact(Array<real>& y, ODESolutionData& timeslab, real tau)
+{
   for (uint i = 0; i < N; ++i)
   {
     y[i] = 0.0;
+
+    // Evaluate each Lagrange polynomial
     for (uint j = 0; j < nodal_size; j++)
-      y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
+    {
+      y[i] += timeslab.nv[i*nodal_size + j] * trial->eval(j, tau);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void ODESolution::interpolate_linear(Array<real>& y, ODESolutionData& timeslab, real tau)
+{
+  // Make a guess of the nodal point
+  uint index_a = std::min(trial->size()-2, (uint) to_double(tau*timeslab.nodal_size));
+
+  // Search for the right nodal points
+  while (tau < trial->point(index_a)-real_epsilon() || 
+         index_a >= trial->size()-1 || 
+         tau > trial->point(index_a + 1)+real_epsilon())
+  {
+    if (tau < trial->point(index_a)-real_epsilon())
+      index_a--;
+    else
+      index_a++;
+
   }
 
-  //store in cache
-  cache[ringbufcounter].first = t;
-  real_set(N, cache[ringbufcounter].second, y);
-  ringbufcounter = (ringbufcounter + 1) % cache_size;
+  //Do the linear interpolation
+  const real a = trial->point(index_a);
+  const real b = trial->point(index_a+1);
+
+  for (uint i = 0; i < N; ++i)
+  {
+    const real y_a = timeslab.nv[i*nodal_size + index_a];
+    const real y_b = timeslab.nv[i*nodal_size + index_a+1];
+    const real slobe = (y_b-y_a)/(b-a);
+
+    y[i] = y_a + (tau-a)*slobe;
+  }
 }
 //-----------------------------------------------------------------------------
 ODESolutionData& ODESolution::get_timeslab(uint index)
@@ -242,7 +296,7 @@ ODESolutionData& ODESolution::get_timeslab(uint index)
 
   if ( data_on_disk && (index > b_index_in_memory() || index < a_index_in_memory()))
   {
-    //Scan the cache
+    // Scan the cache
     uint file_no = file_table.size()-1;
     while (file_table[file_no].second > index) file_no--;
 
@@ -330,6 +384,10 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   uint timeslabs;
   file >> timeslabs;
 
+  // Inform the data vector about the number of elements
+  // to avoid unnecessary copying
+  data.reserve(timeslabs);
+
   uint tmp;
   real tmp_real;
 
@@ -343,7 +401,7 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
       error("Wrong nodal size in file: %s", f.str().c_str());
     file >> tmp;
 
-    //skip nodal points and quadrature weights
+    // skip nodal points and quadrature weights
     for (uint i=0; i < nodal_size*2; ++i)
       file >> tmp_real;
   }
@@ -354,7 +412,7 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
     file >> nodal_size;
     file >> tmp;
 
-    //read nodal points
+    // read nodal points
     Lagrange l(nodal_size-1);
     for (uint i=0; i < nodal_size; ++i)
     {
@@ -362,11 +420,13 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
       l.set(i, tmp_real);
     }
 
-    real q_weights[nodal_size];
+    boost::scoped_array<real> q_weights(new real[nodal_size]);
     for (uint i=0; i < nodal_size; ++i)
+    {
       file >> q_weights[i];
+    }
 
-    init(_N, l, q_weights);
+    init(_N, l, q_weights.get());
   }
 
   std::string marker;
@@ -405,23 +465,26 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
   }
 
   // Do binary search in interval
-  int range_start = std::max(buffer_index_cache-width, 0);
-  int range_end   = std::min(buffer_index_cache+width, (int) data.size()-1);
+  int range_start = std::max(buffer_index_cache - width, 0);
+  int range_end   = std::min(buffer_index_cache + width, (int) data.size()-1);
   buffer_index_cache = (range_start+range_end)/2;
 
   while( range_end != range_start)
   {
-    if (t < data[buffer_index_cache].a)
-      range_end = std::min(buffer_index_cache, range_end-1);
-    else
+    if (t > data[buffer_index_cache].a + data[buffer_index_cache].k) 
+    {
       range_start = std::max(buffer_index_cache, range_start+1);
+    } else
+    {
+      range_end = std::min(buffer_index_cache, range_end-1);
+    }
 
     buffer_index_cache = (range_end + range_start)/2;
 
     count++;
 
-    // FIXME: How should the maximum number of iterations
-    // be determined?
+    // NOTE: Is 100 a reasonable number? 
+    // How should the maximum number of iterations be determined?
     assert(count < 100);
   }
 
@@ -441,10 +504,19 @@ void ODESolution::read_file(uint file_number)
 
   real a;
   real k;
-  real values[nodal_size*N];
+  
+  boost::scoped_array<real> values(new real[nodal_size*N]);
 
   uint count = 0;
-  while (true) {
+  std::stringstream ss("Reading ODESolution file", std::ios_base::app | std::ios_base::out);
+  if (file_table.size() > 1)
+  {
+    ss << " " << file_number;
+  }
+  Progress p(ss.str(), timeslabs);
+
+  while (true) 
+  {
     file >> a;
     file >> k;
 
@@ -454,8 +526,9 @@ void ODESolution::read_file(uint file_number)
     for (uint i = 0; i < N*nodal_size; ++i)
       file >> values[i];
 
-    add_data(a, a+k, values);
+    add_data(a, a+k, values.get());
     count++;
+    p++;
   }
 
   file.close();

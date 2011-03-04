@@ -42,7 +42,7 @@ public:
   }
 
   /// Initial condition
-  void u0(real* u)
+  void u0(Array<real>& u)
   {
     for (unsigned int i = 0; i < N; i++)
     {
@@ -52,7 +52,7 @@ public:
   }
 
   /// Right-hand side, multi-adaptive version
-  real f(const real* u, real t, unsigned int i)
+  real f(const Array<real>& u, real t, unsigned int i)
   {
     const real ui = u[i];
 

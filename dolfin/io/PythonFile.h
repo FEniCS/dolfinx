@@ -12,9 +12,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include "GenericFile.h"
+#include <boost/ref.hpp>
 
 namespace dolfin
 {
+  typedef boost::reference_wrapper<Array<real> > RealArrayRef;
 
   class Sample;
 
@@ -35,7 +37,7 @@ namespace dolfin
     // Output
 
     void operator<< (const Sample& sample);
-    void operator<< (const std::tr1::tuple<uint, real, real*>&);
+    void operator<< (const std::pair<real, RealArrayRef>);
 
     std::string filename_t, filename_u, filename_k, filename_r;
 

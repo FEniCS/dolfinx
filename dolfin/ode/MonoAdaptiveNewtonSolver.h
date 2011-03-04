@@ -74,7 +74,7 @@ namespace dolfin
     uBLASVector dx;              // Increment for Newton's method
     uBLASVector b;               // Right-hand side b = -F(x)
     real* btmp;                // Copy of right-hand side b = -F(x)
-    real* Mu0;                 // Precomputed product M*u0 for implicit system
+    Array<real> Mu0;                 // Precomputed product M*u0 for implicit system
     uBLASKrylovSolver* krylov;   // Iterative linear solver
     UmfpackLUSolver* lu;         // Direct linear solver
     KrylovSolver* krylov_g;      // Iterative linear solver (general)

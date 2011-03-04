@@ -28,7 +28,7 @@ public:
     H   = 737.0;
   }
 
-  void u0(real* u)
+  void u0(Array<real>& u)
   {
     u[0] = 0.444;
     u[1] = 0.00123;
@@ -38,7 +38,7 @@ public:
     u[5] = 0.36;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const Array<real>& u, real t, Array<real>& y)
   {
     y[0] = -2.0*r1(u) + r2(u) - r3(u) - r4(u);
     y[1] = -0.5*r1(u) - r4(u) - 0.5*r5(u) + F(u);
@@ -50,32 +50,32 @@ public:
 
 private:
 
-  real r1(const real* u)
+  real r1(const Array<real>& u)
   {
     return k1*real_pow(u[0], 4.0)*real_sqrt(u[1]);
   }
 
-  real r2(const real* u)
+  real r2(const Array<real>& u)
   {
     return k2*u[2]*u[3];
   }
 
-  real r3(const real* u)
+  real r3(const Array<real>& u)
   {
     return (k2/K)*u[0]*u[4];
   }
 
-  real r4(const real* u)
+  real r4(const Array<real>& u)
   {
     return k3*u[0]*real_pow(u[3], 2.0);
   }
 
-  real r5(const real* u)
+  real r5(const Array<real>& u)
   {
     return k4*real_pow(u[5], 2.0)*real_sqrt(u[1]);
   }
 
-  real F(const real* u)
+  real F(const Array<real>& u)
   {
     return klA * (p/H - u[1]);
   }

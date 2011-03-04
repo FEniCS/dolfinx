@@ -27,7 +27,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(ode.parameters["matrix_piecewise_constant"]),
-    ts(timeslab), A(timeslab, implicit, piecewise), btmp(0), Mu0(0),
+    ts(timeslab), A(timeslab, implicit, piecewise), btmp(0), Mu0(ts.N),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
   #ifdef HAS_GMP
@@ -36,11 +36,11 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 
 
   // Initialize product M*u0 for implicit system
-  if (implicit)
-  {
-    Mu0 = new real[ts.N];
-    real_zero(ts.N, Mu0);
-  }
+//   if (implicit)
+//   {
+//     Mu0 = new real[ts.N];
+//     real_zero(ts.N, Mu0);
+//   }
 
   // Choose linear solver
   chooseLinearSolver();
@@ -49,7 +49,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
   delete [] btmp;
-  delete [] Mu0;
+  //delete [] Mu0;
   delete krylov;
   delete lu;
   delete krylov_g;
@@ -165,8 +165,8 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real* F)
 void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
 {
   // Use vectors from Jacobian for storing multiplication
-  real* xx = A.xx;
-  real* yy = A.yy;
+  Array<real> xx(ts.N, A.xx.data());
+  Array<real> yy(ts.N, A.yy.data());
 
   // Compute size of time step
   const real a = ts.starttime();
@@ -201,7 +201,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
     const uint noffset = n * ts.N;
 
     // Copy values to xx
-    ts.copy(ts.x, noffset, xx, 0, ts.N);
+    ts.copy(ts.x, noffset, xx.data().get(), 0, ts.N);
 
     // Do multiplication
     if ( piecewise )
@@ -211,7 +211,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
     else
     {
       const real t = a + method.npoint(n) * k;
-      ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+      ts.copy(ts.x, noffset, ts.u);
       ode.M(xx, yy, ts.u, t);
     }
 

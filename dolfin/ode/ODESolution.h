@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-06-11
-// Last changed: 2010-06-21
+// Last changed: 2011-02-16
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
@@ -15,6 +15,7 @@
 #include <utility>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Array.h>
 #include "Method.h"
 
 namespace dolfin
@@ -107,8 +108,8 @@ namespace dolfin
     /// Make object ready for evaluating, set to read mode
     void flush();
 
-    /// Evaluate (interpolate) value of solution at given time
-    void eval(const real& t, real* y);
+    /// Evaluate (interpolate) value of solution at given time    
+    void eval(const real& t, Array<real>& y);
 
     /// Get timeslab (used when iterating)
     ODESolutionData& get_timeslab(uint index);
@@ -149,13 +150,15 @@ namespace dolfin
     bool initialized;
     bool read_mode;
 
+    bool use_exact_interpolation;
+
     // Stuff related to file storage
     static const uint max_filesize = 3000000000u;     // approx 3GB
-    std::vector< std::pair<real, uint> > file_table; // table mapping t values and index to files
-    uint fileno_in_memory;                           // which file is currently in memory
-    bool data_on_disk;                               //
-    uint max_timeslabs;                              // number of timeslabs pr file and in memory
-    bool dirty;                                      // all data written to disk
+    std::vector< std::pair<real, uint> > file_table;  // table mapping t values and index to files
+    uint fileno_in_memory;                            // which file is currently in memory
+    bool data_on_disk;                                //
+    uint max_timeslabs;                               // number of timeslabs pr file and in memory
+    bool dirty;                                       // all data written to disk
     std::string filename;
 
     uint get_file_index(const real& t); //find which file stores timeslab containing given t
@@ -163,6 +166,11 @@ namespace dolfin
     dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber);
 
     void add_data(const real& a, const real& b, const real* data);
+
+    void interpolate_exact(Array<real>& y, ODESolutionData& timeslab, real tau);
+
+    //Evaluate linearly between closest nodal points
+    void interpolate_linear(Array<real>& y, ODESolutionData& timeslab, real tau);
 
     uint get_buffer_index(const real& t);
     int buffer_index_cache;
