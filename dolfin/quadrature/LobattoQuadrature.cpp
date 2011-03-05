@@ -5,8 +5,8 @@
 // Last changed: 2009-08-11
 
 #include <iomanip>
-#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "LobattoQuadrature.h"
@@ -16,15 +16,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
-  if ( n < 2 )
+  if (n < 2)
     error("Lobatto quadrature requires at least 2 points.");
 
   init();
 
-  if ( !check(2*n-3) )
+  if (!check(2*n - 3))
     error("Lobatto quadrature not ok, check failed.");
-
-  //info("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 std::string LobattoQuadrature::str(bool verbose) const
@@ -40,7 +38,7 @@ std::string LobattoQuadrature::str(bool verbose) const
 
     s << std::setiosflags(std::ios::scientific) << std::setprecision(16);
 
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < points.size(); i++)
     {
       s << i << " "
         << to_double(points[i]) << " "
@@ -49,9 +47,7 @@ std::string LobattoQuadrature::str(bool verbose) const
     }
   }
   else
-  {
-    s << "<LobattoQuadrature with " << n << " points on [-1, 1]>";
-  }
+    s << "<LobattoQuadrature with " << points.size() << " points on [-1, 1]>";
 
   return s.str();
 }
@@ -62,48 +58,52 @@ void LobattoQuadrature::compute_points()
   // and the zeroes of the derivatives of the Legendre polynomials
   // using Newton's method
 
+  const uint n = points.size();
+
   // Special case n = 1 (should not be used)
-  if ( n == 1 )
+  if (n == 1)
   {
     points[0] = 0.0;
     return;
   }
 
   // Special case n = 2
-  if ( n == 2 ) {
+  if (n == 2)
+  {
     points[0] = -1.0;
     points[1] = 1.0;
     return;
   }
 
-  Legendre p(n-1);
+  Legendre p(n - 1);
   real x, dx;
 
   // Set the first and last nodal points which are 0 and 1
   points[0] = -1.0;
-  points[n-1] = 1.0;
+  points[n - 1] = 1.0;
 
   // Compute the rest of the nodes by Newton's method
-  for (unsigned int i = 1; i <= ((n-1)/2); i++) {
+  for (unsigned int i = 1; i <= ((n-1)/2); i++)
+  {
 
     // Initial guess
-    x = cos(3.1415926*double(i)/double(n-1));
+    x = cos(3.1415926*double(i)/double(n - 1));
 
     // Newton's method
     do
     {
-      dx = - p.ddx(x) / p.d2dx(x);
+      dx = -p.ddx(x)/p.d2dx(x);
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 
     // Save the value using the symmetry of the points
-    points[i] = - x;
-    points[n-1-i] = x;
+    points[i] = -x;
+    points[n - 1 - i] = x;
 
   }
 
   // Fix the middle node
-  if ( (n % 2) != 0 )
+  if ((n % 2) != 0)
     points[n/2] = 0.0;
 }
 //----------------------------------------------------------------------------

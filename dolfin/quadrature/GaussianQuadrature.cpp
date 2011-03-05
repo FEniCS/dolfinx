@@ -17,10 +17,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n)
+GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n, 2.0)
 {
-  // Length of interval [-1,1]
-  m = 2.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void GaussianQuadrature::init()
@@ -39,8 +38,10 @@ void GaussianQuadrature::compute_weights()
   // This requires that the n-point quadrature rule is exact at least for
   // polynomials of degree n-1.
 
+  const uint n = points.size();
+
   // Special case n = 0
-  if ( n == 0 )
+  if (n == 0)
   {
     weights[0] = 2.0;
     return;
@@ -92,7 +93,7 @@ void GaussianQuadrature::compute_weights()
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  HighPrecision::real_solve_precond(n, &A_real[0], weights, &b_real[0], A_inv, real_epsilon());
+  HighPrecision::real_solve_precond(n, &A_real[0], &weights[0], &b_real[0], A_inv, real_epsilon());
 
 #endif
 }
@@ -106,8 +107,8 @@ bool GaussianQuadrature::check(unsigned int q) const
   Legendre p(q);
 
   real sum = 0.0;
-  for (unsigned int i = 0; i < n; i++)
-    sum += weights[i] * p(points[i]);
+  for (unsigned int i = 0; i < points.size(); i++)
+    sum += weights[i]*p(points[i]);
 
   //info("Checking quadrature weights: %.2e.", fabs(sum));
 
@@ -118,7 +119,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   }
   else
   {
-    if (real_abs(sum) < 100.0 * real_epsilon())
+    if (real_abs(sum) < 100.0*real_epsilon())
       return true;
   }
 

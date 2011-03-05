@@ -32,7 +32,7 @@ cGqMethod::cGqMethod(uint q) : Method(q, q + 1, q)
 //-----------------------------------------------------------------------------
 real cGqMethod::ueval(real x0, real values[], real tau) const
 {
-  real sum = x0 * trial->eval(0, tau);
+  real sum = x0*trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i + 1, tau);
 
@@ -41,11 +41,11 @@ real cGqMethod::ueval(real x0, real values[], real tau) const
 //-----------------------------------------------------------------------------
 real cGqMethod::residual(real x0, real values[], real f, real k) const
 {
-  real sum = x0 * derivatives[0];
+  real sum = x0*derivatives[0];
   for (uint i = 0; i < nn; i++)
-    sum += values[i] * derivatives[i + 1];
+    sum += values[i]*derivatives[i + 1];
 
-  return sum / k - f;
+  return sum/k - f;
 }
 //-----------------------------------------------------------------------------
 real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
@@ -69,7 +69,6 @@ void cGqMethod::get_nodal_values(const real& u0, const real* x,
                                  real* nodal_values) const
 {
   nodal_values[0] = u0;
-
   for (uint i = 0; i < nn; i++)
     nodal_values[i+1] = x[i];
 }

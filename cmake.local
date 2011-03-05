@@ -13,8 +13,6 @@ mkdir -p build
 cd build
 
 cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
-      -DCMAKE_VERBOSE_MAKEFILE=true \
-      -DDOLFIN_ENABLE_GMP=true \
       -DDOLFIN_ENABLE_TESTING=true \
       -DDOLFIN_ENABLE_BENCHMARKS=true \
       -DCMAKE_BUILD_TYPE=Developer ..

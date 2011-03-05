@@ -6,8 +6,8 @@
 
 #include <iomanip>
 #include <cmath>
-#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "GaussQuadrature.h"
@@ -19,10 +19,8 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   init();
 
-  if ( !check(2*n-1) )
+  if (!check(2*n-1))
     error("Gauss quadrature not ok, check failed.");
-
-  //info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 std::string GaussQuadrature::str(bool verbose) const
@@ -38,7 +36,7 @@ std::string GaussQuadrature::str(bool verbose) const
 
     s << std::setiosflags(std::ios::scientific) << std::setprecision(16);
 
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < points.size(); i++)
     {
       s << i << " "
         << to_double(points[i]) << " "
@@ -48,7 +46,7 @@ std::string GaussQuadrature::str(bool verbose) const
   }
   else
   {
-    s << "<GaussQuadrature with " << n << " points on [-1, 1]>";
+    s << "<GaussQuadrature with " << points.size() << " points on [-1, 1]>";
   }
 
   return s.str();
@@ -59,8 +57,10 @@ void GaussQuadrature::compute_points()
   // Compute Gauss quadrature points on [-1,1] as the
   // as the zeroes of the Legendre polynomials using Newton's method
 
+  const uint n = points.size();
+
   // Special case n = 1
-  if ( n == 1 )
+  if (n == 1)
   {
     points[0] = 0.0;
     return;
