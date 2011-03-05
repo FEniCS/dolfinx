@@ -56,17 +56,17 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
     return kmax;
 
   const real qq = static_cast<real>(q);
-  return real_pow(tol * real_pow(k0, q) / real_abs(r), 0.5 / qq);
+  return real_pow(tol*real_pow(k0, q)/real_abs(r), 0.5/qq);
 }
 //-----------------------------------------------------------------------------
 real cGqMethod::error(real k, real r) const
 {
   // FIXME: Missing interpolation constant
-  return real_pow(k, static_cast<real>(q)) * real_abs(r);
+  return real_pow(k, static_cast<real>(q))*real_abs(r);
 }
 //-----------------------------------------------------------------------------
-
-void cGqMethod::get_nodal_values(const real& u0, const real* x, real* nodal_values) const
+void cGqMethod::get_nodal_values(const real& u0, const real* x,
+                                 real* nodal_values) const
 {
   nodal_values[0] = u0;
 
@@ -169,17 +169,16 @@ void cGqMethod::compute_weights()
   uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();
 
-  real A_real[q*q];
-  //real_zero(q*q, A_real);
+  std::vector<real> A_real(q*q);
 
-  real trial_ddx[nn * nq];
-  real test_eval[nn * nq];
+  std::vector<real> trial_ddx(nn*nq);
+  std::vector<real> test_eval(nn*nq);
 
   for (uint a = 0; a < nn; ++a)
   {
     for (uint b = 0; b < nq; ++b)
     {
-      trial_ddx[a + nn*b] = trial->ddx(a+1, qpoints[b]);
+      trial_ddx[a + nn*b] = trial->ddx(a + 1, qpoints[b]);
       test_eval[a + nn*b] = test->eval(a, qpoints[b]);
     }
   }
@@ -195,12 +194,11 @@ void cGqMethod::compute_weights()
       {
         //real x = qpoints[k];
         //integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
-	integral += qweights[k] * trial_ddx[j + nn*k] * test_eval[i + nn*k];
+        integral += qweights[k] * trial_ddx[j + nn*k] * test_eval[i + nn*k];
       }
 
       A_real[i + nn*j] = integral;
       _A(i, j) = to_double(integral);
-
     }
   }
 
@@ -208,7 +206,7 @@ void cGqMethod::compute_weights()
 
   uBLASVector b(q);
   ublas_vector& _b = b.vec();
-  real b_real[q];
+  std::vector<real> b_real(q);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (uint i = 0; i < nq; i++)
@@ -226,7 +224,6 @@ void cGqMethod::compute_weights()
     //b.disp();
 
 #ifndef HAS_GMP
-
     uBLASVector w(q);
     ublas_vector& _w = w.vec();
 
@@ -236,21 +233,18 @@ void cGqMethod::compute_weights()
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
-
 #else
-
-    real w_real[q];
+    std::vector<real> w_real(q);
 
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
 
     // Solve system using the double precision invert as preconditioner
-    HighPrecision::real_solve_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
+    HighPrecision::real_solve_precond(q, &A_real[0], &w_real[0], &b_real[0], A_inv, real_epsilon());
 
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
 #endif
-
   }
 }
 //-----------------------------------------------------------------------------

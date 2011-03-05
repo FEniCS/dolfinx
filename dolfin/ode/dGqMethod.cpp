@@ -61,16 +61,17 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
   //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
 
   const real qq = static_cast<real>(q);
-  return real_pow(tol * real_pow(k0, q) / real_abs(r), 1.0 / (2.0*qq + 1.0));
+  return real_pow(tol*real_pow(k0, q)/real_abs(r), 1.0/(2.0*qq + 1.0));
 }
 //-----------------------------------------------------------------------------
 real dGqMethod::error(real k, real r) const
 {
   // FIXME: Missing jump term and interpolation constant
-  return real_pow(k, static_cast<real>(q + 1)) * real_abs(r);
+  return real_pow(k, static_cast<real>(q + 1))*real_abs(r);
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::get_nodal_values(const real& x0, const real* x, real* nodal_values) const
+void dGqMethod::get_nodal_values(const real& x0, const real* x,
+                                 real* nodal_values) const
 {
   real_set(nn, nodal_values, x);
 }
@@ -118,9 +119,7 @@ std::string dGqMethod::str(bool verbose) const
     }
   }
   else
-  {
     s << "<dGqMethod for q = " << q << ">";
-  }
 
   return s.str();
 }
@@ -133,13 +132,13 @@ void dGqMethod::compute_quadrature()
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < nq; i++)
   {
-    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i) + 1.0) / 2.0;
+    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i) + 1.0)/2.0;
     npoints[i] = qpoints[i];
   }
 
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < nq; i++)
-    qweights[i] = 0.5 * quadrature.weight(nq - 1 - i);
+    qweights[i] = 0.5*quadrature.weight(nq - 1 - i);
 }
 //-----------------------------------------------------------------------------
 void dGqMethod::compute_basis()
@@ -163,20 +162,22 @@ void dGqMethod::compute_weights()
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
 
-  real A_real[nn*nn];
-  real_zero(nn*nn, A_real);
+  std::vector<real> A_real(nn*nn);
+  real_zero(nn*nn, &A_real[0]);
 
-  real trial_ddx[nn * nq];
-  real test_eval[nn * nq];
+  std::vector<real> trial_ddx(nn*nq);
+  std::vector<real> test_eval(nn*nq);
 
-  real trial_eval_0[nn];
-  real test_eval_0[nn];
+  std::vector<real> trial_eval_0(nn);
+  std::vector<real> test_eval_0(nn);
 
-  for (uint a = 0; a < nn; ++a) {
+  for (uint a = 0; a < nn; ++a)
+  {
     trial_eval_0[a] = trial->eval(a, 0.0);
     test_eval_0[a]  = test->eval(a, 0.0);
 
-    for (uint b = 0; b < nq; ++b) {
+    for (uint b = 0; b < nq; ++b)
+    {
       trial_ddx[a + nq*b] = trial->ddx(a, qpoints[b]);
       test_eval[a + nq*b] = test->eval(a, qpoints[b]);
     }
@@ -194,7 +195,6 @@ void dGqMethod::compute_weights()
         //real x = qpoints[k];
         //integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
         integral += qweights[k] * trial_ddx[j + nq*k] * test_eval[i + nq*k];
-
       }
 
       A_real[i + nn*j] = integral + trial_eval_0[j] * test_eval_0[i];
@@ -205,7 +205,7 @@ void dGqMethod::compute_weights()
   uBLASVector b(nn);
   ublas_vector& _b = b.vec();
 
-  real b_real[nn];
+  std::vector<real> b_real(nn);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
@@ -231,13 +231,14 @@ void dGqMethod::compute_weights()
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
     #else
-    real w_real[nn];
+    std::vector<real> w_real(nn);
 
     // Solve system using the double precision invert as preconditioner
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
 
-    HighPrecision::real_solve_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
+    HighPrecision::real_solve_precond(nn, &A_real[0], &w_real[0], &b_real[0],
+                                      A_inv, real_epsilon());
 
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
