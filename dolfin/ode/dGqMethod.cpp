@@ -220,7 +220,7 @@ void dGqMethod::compute_weights()
       _b[j] = to_double(b_real[j]);
     }
 
-#ifndef HAS_GMP
+    #ifndef HAS_GMP
     uBLASVector w(nn);
     ublas_vector& _w = w.vec();
 
@@ -230,22 +230,18 @@ void dGqMethod::compute_weights()
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
-
-#else
-
+    #else
     real w_real[nn];
 
     // Solve system using the double precision invert as preconditioner
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
 
-    SORSolver::SOR_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
+    HighPrecision::real_solve_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
 
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
-
-#endif
-
+    #endif
   }
 }
 //-----------------------------------------------------------------------------

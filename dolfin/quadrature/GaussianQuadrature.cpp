@@ -50,7 +50,7 @@ void GaussianQuadrature::compute_weights()
   ublas_dense_matrix& _A = A.mat();
   real A_real[n*n];
 
-  uBLASVector b(n);  
+  uBLASVector b(n);
   ublas_vector& _b = b.vec();
   real b_real[n];
 
@@ -84,7 +84,7 @@ void GaussianQuadrature::compute_weights()
   for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
 
-#else 
+#else
   //With extended precision: Use the double precision result as initial guess for the
   //extended precision linear solver.
 
@@ -92,7 +92,7 @@ void GaussianQuadrature::compute_weights()
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  real_solve_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
+  HighPrecision::real_solve_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
 
 #endif
 }
@@ -111,14 +111,14 @@ bool GaussianQuadrature::check(unsigned int q) const
 
   //info("Checking quadrature weights: %.2e.", fabs(sum));
 
-  if ( q == 0 )
+  if (q == 0)
   {
-    if ( real_abs(sum - 2.0) < 100.0*real_epsilon() )
+    if (real_abs(sum - 2.0) < 100.0*real_epsilon())
       return true;
   }
   else
   {
-    if ( real_abs(sum) < 100.0 * real_epsilon() )
+    if (real_abs(sum) < 100.0 * real_epsilon())
       return true;
   }
 
