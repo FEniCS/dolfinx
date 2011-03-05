@@ -336,14 +336,14 @@ void SparsityPattern::info_statistics() const
   if (num_nonzeros_total != num_nonzeros_diagonal)
   {
     cout << "Diagonal: " << num_nonzeros_diagonal << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_diagonal) / static_cast<double>(num_nonzeros_total))
-         << "\%), ";
+         << (100.0*static_cast<double>(num_nonzeros_diagonal) / static_cast<double>(num_nonzeros_total))
+         << "%), ";
     cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_off_diagonal) / static_cast<double>(num_nonzeros_total))
-         << "\%), ";
+         << (100.0*static_cast<double>(num_nonzeros_off_diagonal)/static_cast<double>(num_nonzeros_total))
+         << "%), ";
     cout << "non-local: " << num_nonzeros_non_local << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_non_local) / static_cast<double>(num_nonzeros_total))
-         << "\%)";
+         << (100.0*static_cast<double>(num_nonzeros_non_local)/static_cast<double>(num_nonzeros_total))
+         << "%)";
     cout << endl;
   }
 }
