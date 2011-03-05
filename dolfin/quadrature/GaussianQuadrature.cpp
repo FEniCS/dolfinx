@@ -48,11 +48,11 @@ void GaussianQuadrature::compute_weights()
 
   uBLASDenseMatrix A(n, n);
   ublas_dense_matrix& _A = A.mat();
-  real A_real[n*n];
+  std::vector<real> A_real(n*n);
 
   uBLASVector b(n);
   ublas_vector& _b = b.vec();
-  real b_real[n];
+  std::vector<real> b_real(n);
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
@@ -62,8 +62,8 @@ void GaussianQuadrature::compute_weights()
     {
       A_real[i + n*j] = p(points[j]);
       _A(i, j) = to_double(A_real[i + n*j]);
-    _b[i] = 0.0;
-    b_real[i] = 0.0;
+      _b[i] = 0.0;
+      b_real[i] = 0.0;
     }
   }
   _b[0] = 2.0;
@@ -92,7 +92,7 @@ void GaussianQuadrature::compute_weights()
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  HighPrecision::real_solve_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
+  HighPrecision::real_solve_precond(n, &A_real[0], weights, &b_real[0], A_inv, real_epsilon());
 
 #endif
 }

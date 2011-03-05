@@ -114,9 +114,6 @@ namespace dolfin
   /// Compute pi
   real real_pi();
 
-  /// Compute matrix exponential using Pade approximation og degree p
-  void real_mat_exp(uint n, real* res, const real* A, const uint p=6);
-
   // FIXME: Add description
   double real_frexp(int* exp, const real& x);
 

@@ -177,7 +177,7 @@ void StabilityAnalysis::analyze_endpoint()
 
     real_mult(n*n, A.get(), timestep.k);
 
-    real_mat_exp(n, B.get(), A.get(), 10);
+    HighPrecision::real_mat_exp(n, B.get(), A.get(), 10);
 
     HighPrecision::real_mat_prod_inplace(n, s.get(), B.get());
 

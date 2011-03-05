@@ -14,6 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HighPrecision::real_mat_exp(uint n, real* E, const real* A, const uint p)
 {
+  // FIXME: This is not legal C allocation
   real _A[n*n];
   real A2[n*n];
   real  P[n*n];
@@ -149,11 +150,8 @@ void HighPrecision::real_mat_pow(uint n, real* A, const real* B, uint q)
     real_mat_prod_inplace(n, A, B);
 }
 //-----------------------------------------------------------------------------
-void HighPrecision::real_solve(uint n,
-		    const real* A,
-		    real* x,
-		    const real* b,
-		    const real& tol)
+void HighPrecision::real_solve(uint n, const real* A, real* x, const real* b,
+		                           const real& tol)
 {
   real prev[n];
 
@@ -161,14 +159,12 @@ void HighPrecision::real_solve(uint n,
 
   real diff = DBL_MAX; // some big number
 
-  while ( diff > tol )
+  while (diff > tol)
   {
     if ( iterations > MAX_ITERATIONS )
       error("SOR: System seems not to converge");
 
     real_set(n, prev, x);
-
-    //SOR_iteration(n, A, b, x, prev);
 
     // Do SOR iteration
     for (uint i = 0; i < n; ++i)
