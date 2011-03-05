@@ -175,8 +175,10 @@ void cGqMethod::compute_weights()
   real trial_ddx[nn * nq];
   real test_eval[nn * nq];
 
-  for (uint a = 0; a < nn; ++a) {
-    for (uint b = 0; b < nq; ++b) {
+  for (uint a = 0; a < nn; ++a)
+  {
+    for (uint b = 0; b < nq; ++b)
+    {
       trial_ddx[a + nn*b] = trial->ddx(a+1, qpoints[b]);
       test_eval[a + nn*b] = test->eval(a, qpoints[b]);
     }
@@ -243,7 +245,7 @@ void cGqMethod::compute_weights()
     A_inv.invert();
 
     // Solve system using the double precision invert as preconditioner
-    real_solve_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
+    HighPrecision::real_solve_precond(q, A_real, w_real, b_real, A_inv, real_epsilon());
 
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];

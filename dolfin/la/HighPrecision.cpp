@@ -9,9 +9,10 @@
 #include <cfloat>
 #include "HighPrecision.h"
 
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
+void HighPrecision::real_mat_exp(uint n, real* E, const real* A, const uint p)
 {
   real _A[n*n];
   real A2[n*n];
@@ -110,8 +111,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 }
 
 //-----------------------------------------------------------------------------
-// Matrix multiplication res = A*B
-void dolfin::real_mat_prod(uint n, real* res, const real* A, const real* B)
+void HighPrecision::real_mat_prod(uint n, real* res, const real* A, const real* B)
 {
   for (uint i = 0; i < n; ++i)
   {
@@ -124,16 +124,14 @@ void dolfin::real_mat_prod(uint n, real* res, const real* A, const real* B)
   }
 }
 //-----------------------------------------------------------------------------
-// Matrix multiplication A = A * B
-void dolfin::real_mat_prod_inplace(uint n, real* A, const real* B)
+void HighPrecision::real_mat_prod_inplace(uint n, real* A, const real* B)
 {
   real tmp[n*n];
   real_set(n*n, tmp, A);
   real_mat_prod(n, A, tmp, B);
 }
 //-----------------------------------------------------------------------------
-// Matrix vector product y = Ax
-void dolfin::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
+void HighPrecision::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
 {
   for (uint i = 0; i < n; ++i)
   {
@@ -143,8 +141,7 @@ void dolfin::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
   }
 }
 //-----------------------------------------------------------------------------
-// Matrix power A = B^q
-void dolfin::real_mat_pow(uint n, real* A, const real* B, uint q)
+void HighPrecision::real_mat_pow(uint n, real* A, const real* B, uint q)
 {
   // TODO : Minimize number of matrix multiplications
   real_identity(n, A);
@@ -152,7 +149,7 @@ void dolfin::real_mat_pow(uint n, real* A, const real* B, uint q)
     real_mat_prod_inplace(n, A, B);
 }
 //-----------------------------------------------------------------------------
-void dolfin::real_solve(uint n,
+void HighPrecision::real_solve(uint n,
 		    const real* A,
 		    real* x,
 		    const real* b,
@@ -197,7 +194,7 @@ void dolfin::real_solve(uint n,
   }
 }
 //-----------------------------------------------------------------------------
-void dolfin::real_solve_precond(uint n,
+void HighPrecision::real_solve_precond(uint n,
 			    const real* A,
 			    real* x,
 			    const real* b,
@@ -228,7 +225,7 @@ void dolfin::real_solve_precond(uint n,
   real_solve(n, A_precond, x, b_precond, tol);
 }
 //-----------------------------------------------------------------------------
-void dolfin::real_solve_mat_with_preconditioning(uint n,
+void HighPrecision::real_solve_mat_with_preconditioning(uint n,
 					     const real* A,
 					     real* X,
 					     const real* B,
