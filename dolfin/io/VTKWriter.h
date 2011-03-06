@@ -34,6 +34,7 @@ namespace dolfin
     template<typename T>
     static std::string encode_stream(const std::vector<T>& data,
                                      bool compress);
+  //friend class VTKFile;
 
   private:
 
