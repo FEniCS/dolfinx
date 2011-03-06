@@ -8,6 +8,7 @@
 
 #include <armadillo>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
@@ -58,10 +59,10 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 
   // Extract and store additional function spaces
   const uint improved_dual = _residual->num_coefficients() - 1;
-  const Function& e_tmp(dynamic_cast<const Function&>(_residual->coefficient(improved_dual)));
+  const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
   _E = e_tmp.function_space_ptr();
 
-  const Function& cone(dynamic_cast<const Function&>(_a_R_dT->coefficient(0)));
+  const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space_ptr();
   _cell_cone.reset(new Function(_C));
 }
@@ -85,7 +86,10 @@ double ErrorControl::estimate_error(const Function& u,
   // Attach primal approximation if linear problem (already attached
   // otherwise).
   if (_is_linear)
-    _residual->set_coefficient(num_coeffs - 2, u);
+  {
+    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    _residual->set_coefficient(num_coeffs - 2, _u);
+  }
 
   // Assemble error estimate
   const double error_estimate = assemble(*_residual);
@@ -189,10 +193,10 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   _Pi_E_z_h->interpolate(*_Ez_h);
 
   // Attach coefficients to error indicator form
-  _eta_T->set_coefficient(0, *_Ez_h);
-  _eta_T->set_coefficient(1, *_R_T);
-  _eta_T->set_coefficient(2, *_R_dT);
-  _eta_T->set_coefficient(3, *_Pi_E_z_h);
+  _eta_T->set_coefficient(0, _Ez_h);
+  _eta_T->set_coefficient(1, _R_T);
+  _eta_T->set_coefficient(2, _R_dT);
+  _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
   assemble(indicators, *_eta_T);
@@ -232,7 +236,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   if (_is_linear)
   {
     const uint num_coeffs = _L_R_T->num_coefficients();
-    _L_R_T->set_coefficient(num_coeffs - 2, u);
+    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    _L_R_T->set_coefficient(num_coeffs - 2, _u);
   }
 
   // Create data structures for local assembly data
@@ -302,10 +307,13 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Attach primal approximation if linear (already attached
   // otherwise).
   if (_is_linear)
-    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, u);
+  {
+    boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, _u);
+  }
 
   // Attach cell residual to residual form
-  _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, *_R_T);
+  _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, _R_T);
 
   // Extract (common) dof map
   const GenericDofMap& dofmap = V.dofmap();
@@ -333,8 +341,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     _cell_cone->vector().set(&ones[0], num_cells, &facet_dofs[0]);
 
     // Attach cell cone  to _a_R_dT and _L_R_dT
-    _a_R_dT->set_coefficient(0, *_cell_cone);
-    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, *_cell_cone);
+    _a_R_dT->set_coefficient(0, _cell_cone);
+    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, _cell_cone);
 
     // Create data structures for local assembly data
     UFC ufc_lhs(*_a_R_dT);

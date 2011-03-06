@@ -2,12 +2,12 @@
 // Copyright (C) 2009 Anders Logg
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth Wells, 2007-2009.
+// Modified by Garth Wells, 2007-2011.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2011-02-09
+// Last changed: 2011-03-06
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -44,13 +44,6 @@
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
 
-%ignore dolfin::Form::set_mesh(const Mesh& mesh);
-
-%ignore dolfin::Form::set_coefficient(std::string name,
-				      const GenericFunction& coefficient);
-
-%ignore dolfin::Form::set_coefficients(std::map<std::string,
-				       const GenericFunction*> coefficients);
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
@@ -71,7 +64,8 @@
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical Form
 //-----------------------------------------------------------------------------
-namespace dolfin {
+namespace dolfin
+{
   class Form;
   class VariationalProblem;
   class DirichletBC;

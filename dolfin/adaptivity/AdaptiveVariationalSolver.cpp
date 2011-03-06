@@ -83,7 +83,10 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     // Evaluate functional value
     if (!problem.is_nonlinear())
-      M.set_coefficient(M.num_coefficients() - 1, u);
+    {
+      boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+      M.set_coefficient(M.num_coefficients() - 1, _u);
+    }
     const double functional_value = assemble(M);
 
     // Initialize adaptive data
@@ -155,10 +158,11 @@ bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
   const uint max_dimension = parameters["max_dimension"];
   if (parameters["max_dimension"].change_count() > 0
       && V.dim() > max_dimension)
+  {
     return true;
-
-  // Otherwise, not done.
-  return false;
+  }
+  else
+    return false;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
