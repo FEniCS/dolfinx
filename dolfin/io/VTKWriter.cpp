@@ -39,6 +39,10 @@ void VTKWriter::write_mesh(const Mesh& mesh, uint cell_dim,
 void VTKWriter::write_cell_data(const Function& u, std::string filename,
                                 bool binary, bool compress)
 {
+  // For brevity
+  const Mesh& mesh = u.function_space().mesh();
+  const GenericDofMap& dofmap = u.function_space().dofmap();
+
   const uint num_cells = mesh.num_cells();
 
   std::string encode_string;
@@ -46,10 +50,6 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
     encode_string = "ascii";
   else
     encode_string = "binary";
-
-  // For brevity
-  const Mesh& mesh = u.function_space().mesh();
-  const GenericDofMap& dofmap = u.function_space().dofmap();
 
   // Get rank of Function
   const uint rank = u.value_rank();
