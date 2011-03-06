@@ -1,11 +1,11 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2011.
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-01-31
+// Last changed: 2011-03-06
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -14,8 +14,8 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/types.h>
 
 // Forward declaration
 namespace ufc
@@ -117,11 +117,6 @@ namespace dolfin
 
     /// Check function spaces and coefficients
     void check() const;
-
-    /// Friends
-    friend class LinearPDE;
-    friend class NonlinearPDE;
-    friend class VariationalProblem;
 
   protected:
 
