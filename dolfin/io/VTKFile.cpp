@@ -21,7 +21,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+//#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -347,12 +347,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     }
 
     // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-
-    // Send stream to file
-    fp << base64_stream.str();
-    fp << std::endl;
+    fp << VTKWriter::encode_stream(data, compress) << std::endl;
   }
 
   fp << "</DataArray> " << std::endl;
@@ -672,55 +667,4 @@ std::string VTKFile::strip_path(std::string file) const
   fname.assign(file, filename.find_last_of("/") + 1, file.size());
   return fname;
 }
-//----------------------------------------------------------------------------
-template<typename T>
-void VTKFile::encode_stream(std::stringstream& stream,
-                            const std::vector<T>& data) const
-{
-  if (encoding == "compressed")
-  {
-    #ifdef HAS_ZLIB
-    encode_inline_compressed_base64(stream, data);
-    #else
-    warning("zlib must be configured to enable compressed VTK output. Using uncompressed base64 encoding instead.");
-    encode_inline_base64(stream, data);
-    #endif
-  }
-  else
-    encode_inline_base64(stream, data);
-}
-//----------------------------------------------------------------------------
-template<typename T>
-void VTKFile::encode_inline_base64(std::stringstream& stream,
-                                   const std::vector<T>& data) const
-{
-  const boost::uint32_t size = data.size()*sizeof(T);
-  Encoder::encode_base64(&size, 1, stream);
-  Encoder::encode_base64(data, stream);
-}
-//----------------------------------------------------------------------------
-#ifdef HAS_ZLIB
-template<typename T>
-void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
-                                              const std::vector<T>& data) const
-{
-  boost::uint32_t header[4];
-  header[0] = 1;
-  header[1] = data.size()*sizeof(T);
-  header[2] = 0;
-
-  // Compress data
-  std::pair<boost::shared_array<unsigned char>, dolfin::uint> compressed_data;
-  compressed_data = Encoder::compress_data(data);
-
-  // Length of compressed data
-  header[3] = compressed_data.second;
-
-  // Encode header
-  Encoder::encode_base64(&header[0], 4, stream);
-
-  // Encode data
-  Encoder::encode_base64(compressed_data.first.get(), compressed_data.second, stream);
-}
-#endif
 //----------------------------------------------------------------------------
