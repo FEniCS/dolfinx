@@ -53,10 +53,10 @@ namespace dolfin
     static std::string type2string(Type type);
 
     /// Return type of cell
-    inline Type cell_type() const { return _cell_type; }
+    Type cell_type() const { return _cell_type; }
 
     /// Return type of cell for facets
-    inline Type facet_type() const { return _facet_type; }
+    Type facet_type() const { return _facet_type; }
 
     /// Return topological dimension of cell
     virtual uint dim() const = 0;

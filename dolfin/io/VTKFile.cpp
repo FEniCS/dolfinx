@@ -142,7 +142,7 @@ void VTKFile::write(const Function& u, double time)
        u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const Mesh& mesh, uint dim) const
+std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
 {
   // Get vtu file name and clear file
   std::string vtu_filename = vtu_name(MPI::process_number(),
@@ -152,7 +152,7 @@ std::string VTKFile::init(const Mesh& mesh, uint dim) const
   clear_file(vtu_filename);
 
   // Number of cell
-  const uint num_cells = mesh.topology().size(dim);
+  const uint num_cells = mesh.topology().size(cell_dim);
 
   // Write headers
   vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
@@ -285,8 +285,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad 2D tensors with 0.0 to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-          ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -330,8 +330,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad with 0.0 to 2D tensors to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          *entry++ = values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-          *entry++ = values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          *entry++ = values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
+          *entry++ = values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
           *entry++ = 0.0;
         }
         *entry++ = 0.0;
@@ -614,14 +614,20 @@ template<class T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  //if (meshfunction.dim() != mesh.topology().dim())
-  //  error("VTK output of mesh functions is implemented for cell-based functions only.");
+  const uint cell_dim = meshfunction.dim();
+
+  // Throw error for MeshFunctions on vertices for interval elements
+  if (mesh.topology().dim() == 1 && cell_dim == 0)
+    error("VTK output for MeshFunctions on interval facets is not supported.");
+
+  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
+    error("VTK output of mesh functions is implemented for cell- and facet-based functions only.");
 
   // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh, meshfunction.dim());
+  std::string vtu_filename = init(mesh, cell_dim);
 
   // Write mesh
-  VTKWriter::write_mesh(mesh, meshfunction.dim(), vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -636,7 +642,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
   fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">" << std::endl;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << std::endl;
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
@@ -673,12 +679,12 @@ void VTKFile::encode_stream(std::stringstream& stream,
 {
   if (encoding == "compressed")
   {
-  #ifdef HAS_ZLIB
+    #ifdef HAS_ZLIB
     encode_inline_compressed_base64(stream, data);
-  #else
+    #else
     warning("zlib must be configured to enable compressed VTK output. Using uncompressed base64 encoding instead.");
     encode_inline_base64(stream, data);
-  #endif
+    #endif
   }
   else
     encode_inline_base64(stream, data);
