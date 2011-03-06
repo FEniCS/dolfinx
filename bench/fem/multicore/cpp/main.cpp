@@ -27,33 +27,33 @@ double bench(std::string form, const Mesh& mesh)
   info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
 
   // Create form
-  FunctionSpace *V(0), *W0(0), *W1(0), *W2(0), *W3(0), *W4(0);
-  Form* a(0);
-  Function *w0(0), *w1(0), *w2(0), *w3(0), *w4(0);
+  boost::shared_ptr<FunctionSpace> V, W0, W1, W2, W3, W4;
+  boost::shared_ptr<Form> a;
+  boost::shared_ptr<Function> w0, w1, w2, w3, w4;
   if (form == "Poisson")
   {
-    V = new Poisson::FunctionSpace(mesh);
-    a = new Poisson::BilinearForm(*V, *V);
+    V.reset(new Poisson::FunctionSpace(mesh));
+    a.reset(new Poisson::BilinearForm(V, V));
   }
   else if (form == "NavierStokes")
   {
-    V  = new NavierStokes::FunctionSpace(mesh);
-    W0 = new NavierStokes::Form_0_FunctionSpace_2(mesh);
-    W1 = new NavierStokes::Form_0_FunctionSpace_3(mesh);
-    W2 = new NavierStokes::Form_0_FunctionSpace_4(mesh);
-    W3 = new NavierStokes::Form_0_FunctionSpace_5(mesh);
-    W4 = new NavierStokes::Form_0_FunctionSpace_6(mesh);
-    a = new NavierStokes::BilinearForm(*V, *V);
-    w0 = new Function(*W0);
-    w1 = new Function(*W1);
-    w2 = new Function(*W2);
-    w3 = new Function(*W3);
-    w4 = new Function(*W4);
-    a->set_coefficient(0, *w0);
-    a->set_coefficient(1, *w1);
-    a->set_coefficient(2, *w2);
-    a->set_coefficient(3, *w3);
-    a->set_coefficient(4, *w4);
+    V.reset(new NavierStokes::FunctionSpace(mesh));
+    W0.reset(new NavierStokes::Form_0_FunctionSpace_2(mesh));
+    W1.reset(new NavierStokes::Form_0_FunctionSpace_3(mesh));
+    W2.reset(new NavierStokes::Form_0_FunctionSpace_4(mesh));
+    W3.reset(new NavierStokes::Form_0_FunctionSpace_5(mesh));
+    W4.reset(new NavierStokes::Form_0_FunctionSpace_6(mesh));
+    a.reset(new NavierStokes::BilinearForm(*V, *V));
+    w0.reset(new Function(*W0));
+    w1.reset(new Function(*W1));
+    w2.reset(new Function(*W2));
+    w3.reset(new Function(*W3));
+    w4.reset(new Function(*W4));
+    a->set_coefficient(0, w0);
+    a->set_coefficient(1, w1);
+    a->set_coefficient(2, w2);
+    a->set_coefficient(3, w3);
+    a->set_coefficient(4, w4);
   }
 
   // Create STL matrix
@@ -71,20 +71,6 @@ double bench(std::string form, const Mesh& mesh)
 
   // Write summary
   summary(true);
-
-  // Cleanup
-  delete V;
-  delete W0;
-  delete W1;
-  delete W2;
-  delete W3;
-  delete W4;
-  delete w0;
-  delete w1;
-  delete w2;
-  delete w3;
-  delete w4;
-  delete a;
 
   info("");
 
@@ -116,7 +102,7 @@ int main(int argc, char* argv[])
   // If parameter num_threads has been set, just run once
   if (parameters["num_threads"].change_count() > 0)
   {
-    for (int i = 0; i < forms.size(); i++)
+    for (unsigned int i = 0; i < forms.size(); i++)
       bench(forms[i], mesh);
   }
 
@@ -133,7 +119,7 @@ int main(int argc, char* argv[])
       parameters["num_threads"] = num_threads;
 
       // Iterate over forms
-      for (int i = 0; i < forms.size(); i++)
+      for (unsigned int i = 0; i < forms.size(); i++)
       {
         // Run test case
         const double t = bench(forms[i], mesh);
