@@ -53,10 +53,10 @@ namespace dolfin
     static std::string type2string(Type type);
 
     /// Return type of cell
-    inline Type cell_type() const { return _cell_type; }
+    Type cell_type() const { return _cell_type; }
 
     /// Return type of cell for facets
-    inline Type facet_type() const { return _facet_type; }
+    Type facet_type() const { return _facet_type; }
 
     /// Return topological dimension of cell
     virtual uint dim() const = 0;
@@ -74,7 +74,8 @@ namespace dolfin
     virtual void create_entities(uint** e, uint dim, const uint* v) const = 0;
 
     /// Refine cell uniformly
-    virtual void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
+    virtual void refine_cell(Cell& cell, MeshEditor& editor,
+                             uint& current_cell) const = 0;
 
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
@@ -95,7 +96,8 @@ namespace dolfin
     // FIXME: implementation for all cell types, just as we have for ordered()
 
     /// Order entities locally
-    virtual void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const = 0;
+    virtual void order(Cell& cell,
+                    const MeshFunction<uint>* global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
     bool ordered(const Cell& cell, MeshFunction<uint>* global_vertex_indices) const;

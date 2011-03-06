@@ -12,44 +12,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Quadrature::Quadrature(unsigned int n)
+Quadrature::Quadrature(unsigned int n, real m) : points(n), weights(n, 0), m(m)
 {
-  this->n = n;
-
-  points = new real[n];
-  weights = new real[n];
-
-  for (unsigned int i = 0; i < n; i++)
-    weights[i] = 0;
-
-  m = 1.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Quadrature::~Quadrature()
 {
-  if ( points )
-    delete [] points;
-  points = 0;
-
-  if ( weights )
-    delete [] weights;
-  weights = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Quadrature::size() const
 {
-  return n;
+  return points.size();
 }
 //-----------------------------------------------------------------------------
 real Quadrature::point(unsigned int i) const
 {
-  assert(i < n);
+  assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
 real Quadrature::weight(unsigned int i) const
 {
-  assert(i < n);
+  assert(i < points.size());
   return weights[i];
 }
 //-----------------------------------------------------------------------------

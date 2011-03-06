@@ -38,7 +38,7 @@ namespace dolfin
 
     void write(const Function& u, double time);
 
-    std::string init(const Mesh& mesh) const;
+    std::string init(const Mesh& mesh, uint dim) const;
 
     void finalize(std::string vtu_filename, double time);
 
@@ -73,19 +73,7 @@ namespace dolfin
     // Strip path from file
     std::string strip_path(std::string file) const;
 
-    // Compute base64 encoded stream for VTK
-    template<typename T>
-    void encode_stream(std::stringstream& stream, const std::vector<T>& data) const;
-
   private:
-
-    // Compute base64 encoded stream for VTK
-    template<typename T>
-    void encode_inline_base64(std::stringstream& stream, const std::vector<T>& data) const;
-
-    // Compute compressed base64 encoded stream for VTK
-    template<typename T>
-    void encode_inline_compressed_base64(std::stringstream& stream, const std::vector<T>& data) const;
 
     // Most recent position in pvd file
     std::ios::pos_type mark;

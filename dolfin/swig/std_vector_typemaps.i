@@ -87,34 +87,41 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
     {
       py_item = PyList_GetItem($input,i);
       res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE *), 0);
-      if (SWIG_IsOK(res)) {
+      if (SWIG_IsOK(res))
+      {
         tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
       }
-      else{
-	// If failed with normal pointer conversion then
-	// try with shared_ptr conversion
-	newmem = 0;
-	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-	if (SWIG_IsOK(res)){
-	  // If we need to release memory
-	  if (newmem & SWIG_CAST_NEW_MEMORY){
-	    tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
-	    delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-	    arg = const_cast< dolfin::TYPE * >(tempshared.get());
-	  }
-	  else {
-	    arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
-	  }
-	  tmp_vec.push_back(arg);
-	}
-	else {
-	  SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-	}
+      else
+      {
+	      // If failed with normal pointer conversion then
+	      // try with shared_ptr conversion
+	      newmem = 0;
+	      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+        if (SWIG_IsOK(res))
+        {
+          // If we need to release memory
+          if (newmem & SWIG_CAST_NEW_MEMORY)
+          {
+            tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+            delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+            arg = const_cast< dolfin::TYPE * >(tempshared.get());
+          }
+	        else
+          {
+            arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+          }
+          tmp_vec.push_back(arg);
+        }
+        else
+        {
+          SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
+        }
       }
     }
     $1 = &tmp_vec;
   }
-  else {
+  else
+  {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
   }
 }
@@ -141,13 +148,13 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY)  \
 const std::vector<TYPE>&  ARG_NAME
 {
-    $1 = PyArray_Check($input) ? 1 : 0;
+  $1 = PyArray_Check($input) ? 1 : 0;
 }
 
 // The typemap
 %typemap(in) const std::vector<TYPE>& ARG_NAME (std::vector<TYPE> temp)
 {
-  // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, 
+  // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
   //                                     NUMPY_TYPE, TYPE_NAME, DESCR)
   {
     if (PyArray_Check($input))
@@ -256,23 +263,24 @@ const std::vector<TYPE>&  ARG_NAME
 
 %typemap (in) std::vector<TYPE> ARG_NAME (std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
 {
-  // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, 
+  // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME, SEQ_LENGTH)
 
   // A first sequence test
   if (!PySequence_Check($input))
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
-  
+
   // Get sequence length
   Py_ssize_t pyseq_length = PySequence_Size($input);
   if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
     SWIG_exception(SWIG_TypeError, "expected a sequence with length "	\
 		   "SEQ_LENGTH for argument $argnum");
-  
+
   tmp_vec.reserve(pyseq_length);
-  for (i = 0; i < pyseq_length; i++) {
+  for (i = 0; i < pyseq_length; i++)
+  {
     item = PySequence_GetItem($input, i);
-    
+
     if(!SWIG_IsOK(Py_ ## TYPE_NAME ## _convert(item, value)))
       SWIG_exception(SWIG_TypeError, "expected items of sequence to be of type "\
 		     "\"TYPE_NAME\" in argument $argnum");

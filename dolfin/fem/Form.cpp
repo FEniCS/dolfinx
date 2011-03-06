@@ -8,6 +8,7 @@
 // Last changed: 2011-02-03
 
 #include <string>
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -24,10 +25,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(uint rank, uint num_coefficients)
-  : Hierarchical<Form>(*this),
-    _function_spaces(rank),
-    _coefficients(num_coefficients)
+Form::Form(uint rank, uint num_coefficients) : Hierarchical<Form>(*this),
+                         _function_spaces(rank), _coefficients(num_coefficients)
 {
   // Do nothing
 }
@@ -35,10 +34,8 @@ Form::Form(uint rank, uint num_coefficients)
 Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
            std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
            std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
-  : Hierarchical<Form>(*this),
-    _ufc_form(ufc_form),
-    _function_spaces(function_spaces),
-    _coefficients(coefficients)
+  : Hierarchical<Form>(*this), _ufc_form(ufc_form),
+    _function_spaces(function_spaces), _coefficients(coefficients)
 {
   // Do nothing
 }
@@ -76,11 +73,6 @@ dolfin::uint Form::num_coefficients() const
   return _ufc_form->num_coefficients();
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(const Mesh& mesh)
-{
-  _mesh = reference_to_no_delete_pointer(mesh);
-}
-//-----------------------------------------------------------------------------
 void Form::set_mesh(boost::shared_ptr<const Mesh> mesh)
 {
   _mesh = mesh;
@@ -95,8 +87,10 @@ const Mesh& Form::mesh() const
   // Extract meshes from function spaces
   std::vector<const Mesh*> meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
+  {
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
+  }
 
   // Add common mesh if any
   if (_mesh)
@@ -123,8 +117,10 @@ const Mesh& Form::mesh() const
 
   // Check that all meshes are the same
   for (uint i = 1; i < meshes.size(); i++)
+  {
     if (meshes[i] != meshes[i - 1])
       error("Unable to extract mesh from form (nonmatching meshes for function spaces).");
+  }
 
   // Return first mesh
   assert(meshes[0]);
@@ -147,12 +143,6 @@ std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() con
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficient(uint i, const GenericFunction& coefficient)
-{
-  assert(i < _coefficients.size());
-  _coefficients[i] = reference_to_no_delete_pointer(coefficient);
-}
-//-----------------------------------------------------------------------------
 void Form::set_coefficient(uint i,
                            boost::shared_ptr<const GenericFunction> coefficient)
 {
@@ -161,49 +151,31 @@ void Form::set_coefficient(uint i,
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(std::string name,
-                           const GenericFunction& coefficient)
-{
-  set_coefficient(coefficient_number(name), coefficient);
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficient(std::string name,
                            boost::shared_ptr<const GenericFunction> coefficient)
 {
   set_coefficient(coefficient_number(name), coefficient);
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficients(std::map<std::string, const GenericFunction*> coefficients)
-{
-  std::map<std::string, const GenericFunction*>::iterator it;
-  for (it = coefficients.begin(); it != coefficients.end(); ++it)
-    set_coefficient(it->first, *it->second);
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients)
 {
   std::map<std::string, boost::shared_ptr<const GenericFunction> >::iterator it;
   for (it = coefficients.begin(); it != coefficients.end(); ++it)
-    set_coefficient(it->first, *it->second);
+    set_coefficient(it->first, it->second);
 }
 //-----------------------------------------------------------------------------
-const GenericFunction& Form::coefficient(uint i) const
+boost::shared_ptr<const GenericFunction> Form::coefficient(uint i) const
 {
   assert(i < _coefficients.size());
-  return *_coefficients[i];
+  return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const GenericFunction& Form::coefficient(std::string name) const
+boost::shared_ptr<const GenericFunction> Form::coefficient(std::string name) const
 {
   return coefficient(coefficient_number(name));
 }
 //-----------------------------------------------------------------------------
 std::vector<boost::shared_ptr<const GenericFunction> > Form::coefficients() const
 {
-  //std::vector<const GenericFunction*> V;
-  //for (uint i = 0; i < _coefficients.size(); ++i)
-  //V.push_back(_coefficients[i].get());
-  //return V;
-
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
@@ -237,18 +209,22 @@ void Form::check() const
 {
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
+  {
     error("Form expects %d FunctionSpace(s), %d provided.",
           _ufc_form->rank(), _function_spaces.size());
+  }
 
   // Check that the number of coefficient function spaces is correct
   if (_ufc_form->num_coefficients() != _coefficients.size())
-    error("Form expects %d coefficient function(s), %d provided.",
+  {
+   error("Form expects %d coefficient function(s), %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
+  }
 
   // Check argument function spaces
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
-    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    boost::scoped_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
     {

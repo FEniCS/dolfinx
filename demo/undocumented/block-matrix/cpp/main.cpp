@@ -55,4 +55,4 @@ int main()
   // Multiply
   AA.mult(xx, yy);
   info("||Ax|| = %g", y->norm("l2"));
-};
+}

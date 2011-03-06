@@ -1,11 +1,11 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2011.
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-01-31
+// Last changed: 2011-03-06
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -14,8 +14,8 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/types.h>
 
 // Forward declaration
 namespace ufc
@@ -52,14 +52,12 @@ namespace dolfin
     /// Destructor
     virtual ~Form();
 
-    /// Return rank of form (bilinear form = 2, linear form = 1, functional = 0, etc)
+    /// Return rank of form (bilinear form = 2, linear form = 1,
+    /// functional = 0, etc)
     uint rank() const;
 
     /// Return number of coefficients
     uint num_coefficients() const;
-
-    /// Set mesh, necessary for functionals when there are no function spaces
-    void set_mesh(const Mesh& mesh);
 
     /// Set mesh, necessary for functionals when there are no function spaces
     void set_mesh(boost::shared_ptr<const Mesh> mesh);
@@ -76,29 +74,23 @@ namespace dolfin
     /// Return function spaces for arguments
     std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces() const;
 
-    /// Set coefficient with given number
-    void set_coefficient(uint i, const GenericFunction& coefficient);
-
     /// Set coefficient with given number (shared pointer version)
-    void set_coefficient(uint i, boost::shared_ptr<const GenericFunction> coefficient);
-
-    /// Set coefficient with given name
-    void set_coefficient(std::string name, const GenericFunction& coefficient);
+    void set_coefficient(uint i,
+                         boost::shared_ptr<const GenericFunction> coefficient);
 
     /// Set coefficient with given name (shared pointer version)
-    void set_coefficient(std::string name, boost::shared_ptr<const GenericFunction> coefficient);
+    void set_coefficient(std::string name,
+                         boost::shared_ptr<const GenericFunction> coefficient);
 
     /// Set all coefficients in given map, possibly a subset
-    void set_coefficients(std::map<std::string, const GenericFunction*> coefficients);
-
-    /// Set all coefficients in given map, possibly a subset  (shared pointer version)
+    /// (shared pointer version)
     void set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients);
 
     /// Return coefficient with given number
-    const GenericFunction& coefficient(uint i) const;
+    boost::shared_ptr<const GenericFunction> coefficient(uint i) const;
 
     /// Return coefficient with given name
-    const GenericFunction& coefficient(std::string name) const;
+    boost::shared_ptr<const GenericFunction> coefficient(std::string name) const;
 
     /// Return all coefficients
     std::vector<boost::shared_ptr<const GenericFunction> > coefficients() const;
@@ -117,11 +109,6 @@ namespace dolfin
 
     /// Check function spaces and coefficients
     void check() const;
-
-    /// Friends
-    friend class LinearPDE;
-    friend class NonlinearPDE;
-    friend class VariationalProblem;
 
   protected:
 

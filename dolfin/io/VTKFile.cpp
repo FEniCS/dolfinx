@@ -21,7 +21,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -64,10 +63,10 @@ VTKFile::~VTKFile()
 void VTKFile::operator<<(const Mesh& mesh)
 {
   // Get vtu file name and intialise out files
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write local mesh to vtu file
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -118,10 +117,11 @@ void VTKFile::write(const Function& u, double time)
   const Mesh& mesh = u.function_space().mesh();
 
   // Get vtu file name and intialise
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
 
   // Write mesh
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary,
+                        compress);
 
   // Write results
   results_write(u, vtu_filename);
@@ -141,7 +141,7 @@ void VTKFile::write(const Function& u, double time)
        u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const Mesh& mesh) const
+std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
 {
   // Get vtu file name and clear file
   std::string vtu_filename = vtu_name(MPI::process_number(),
@@ -150,8 +150,11 @@ std::string VTKFile::init(const Mesh& mesh) const
                                       ".vtu");
   clear_file(vtu_filename);
 
+  // Number of cell
+  const uint num_cells = mesh.topology().size(cell_dim);
+
   // Write headers
-  vtk_header_open(mesh.num_vertices(), mesh.num_cells(), vtu_filename);
+  vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
 
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
@@ -281,8 +284,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad 2D tensors with 0.0 to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-          ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -326,8 +329,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad with 0.0 to 2D tensors to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          *entry++ = values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-          *entry++ = values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          *entry++ = values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
+          *entry++ = values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
           *entry++ = 0.0;
         }
         *entry++ = 0.0;
@@ -343,12 +346,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     }
 
     // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-
-    // Send stream to file
-    fp << base64_stream.str();
-    fp << std::endl;
+    fp << VTKWriter::encode_stream(data, compress) << std::endl;
   }
 
   fp << "</DataArray> " << std::endl;
@@ -610,14 +608,20 @@ template<class T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemented for cell-based functions only.");
+  const uint cell_dim = meshfunction.dim();
+
+  // Throw error for MeshFunctions on vertices for interval elements
+  if (mesh.topology().dim() == 1 && cell_dim == 0)
+    error("VTK output for MeshFunctions on interval facets is not supported.");
+
+  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
+    error("VTK output of mesh functions is implemented for cell- and facet-based functions only.");
 
   // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh);
+  std::string vtu_filename = init(mesh, cell_dim);
 
   // Write mesh
-  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -632,7 +636,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
   fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">" << std::endl;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << std::endl;
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
@@ -662,54 +666,4 @@ std::string VTKFile::strip_path(std::string file) const
   fname.assign(file, filename.find_last_of("/") + 1, file.size());
   return fname;
 }
-//----------------------------------------------------------------------------
-template<typename T>
-void VTKFile::encode_stream(std::stringstream& stream,
-                            const std::vector<T>& data) const
-{
-  if (encoding == "compressed")
-  {
-  #ifdef HAS_ZLIB
-    encode_inline_compressed_base64(stream, data);
-  #else
-    warning("zlib must be configured to enable compressed VTK output. Using uncompressed base64 encoding instead.");
-    encode_inline_base64(stream, data);
-  #endif
-  }
-  else
-    encode_inline_base64(stream, data);
-}
-//----------------------------------------------------------------------------
-template<typename T>
-void VTKFile::encode_inline_base64(std::stringstream& stream,
-                                   const std::vector<T>& data) const
-{
-  const boost::uint32_t size = data.size()*sizeof(T);
-  Encoder::encode_base64(&size, 1, stream);
-  Encoder::encode_base64(data, stream);
-}
-//----------------------------------------------------------------------------
-#ifdef HAS_ZLIB
-template<typename T>
-void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
-                                              const std::vector<T>& data) const
-{
-  boost::uint32_t header[4];
-  header[0] = 1;
-  header[1] = data.size()*sizeof(T);
-  header[2] = 0;
-
-  // Compress data
-  std::pair<boost::shared_array<unsigned char>, dolfin::uint> compressed_data = Encoder::compress_data(data);
-
-  // Length of compressed data
-  header[3] = compressed_data.second;
-
-  // Encode header
-  Encoder::encode_base64(&header[0], 4, stream);
-
-  // Encode data
-  Encoder::encode_base64(compressed_data.first.get(), compressed_data.second, stream);
-}
-#endif
 //----------------------------------------------------------------------------

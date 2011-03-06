@@ -152,5 +152,12 @@ int main()
   mesh.move(u);
   plot(mesh, "Deformed mesh");
 
+  // Write boundary condition facets markers ton VTK format
+  MeshFunction<dolfin::uint> facet_markers(mesh, 2, 0);
+  left.mark(facet_markers, 1);
+  right.mark(facet_markers, 2);
+  File facet_file("facet_markers.pvd");
+  facet_file << facet_markers;
+
  return 0;
 }

@@ -71,23 +71,23 @@ void StabilityAnalysis::analyze_integral(uint q)
     get_JT(A, tmp, t);
 
     // Multiply by A^q to differentiate q times: C = JT^q
-    real_mat_pow(n, C, A, q);
+    HighPrecision::real_mat_pow(n, C, A, q);
 
     // Multiply A with length of timestep: A = k*JT
     real_mult(n*n, A, timestep.k);
 
     // Compute matrix exponential: B = e^(k*JT)
-    real_mat_exp(n, B, A, 10);
+    HighPrecision::real_mat_exp(n, B, A, 10);
 
     // Multiply each matrix in s with B from right
     for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin();
-	 s_iterator != s.end(); ++s_iterator)
+	        s_iterator != s.end(); ++s_iterator)
     {
-      real_mat_prod_inplace(n, (*s_iterator).second, B);
+      HighPrecision::real_mat_prod_inplace(n, (*s_iterator).second, B);
     }
 
     // Differentiate: C = JT^q * e^(k*JT)
-    real_mat_prod_inplace(n, C, B);
+    HighPrecision::real_mat_prod_inplace(n, C, B);
 
     // Store differentiated fundamental solution
     s.push_back(std::pair<real, real*>(t + timestep.k, C));
@@ -107,14 +107,14 @@ void StabilityAnalysis::analyze_integral(uint q)
       // Initial data is unit vectors so we don't need to multiply, just pick columns in Z
       for (uint i = 0; i < n; ++i)
       {
-	// Compute norm of (differentiated) dual solution
-	real norm = real_norm(n, &Z[n*i]);
+        // Compute norm of (differentiated) dual solution
+        real norm = real_norm(n, &Z[n*i]);
 
-	// Add to integral (for computing L^1 norm in time)
-	sample[i] += norm * real_abs(t - prev);
+        // Add to integral (for computing L^1 norm in time)
+        sample[i] += norm * real_abs(t - prev);
 
-	// Add to integral (for computing L^2 norm in time)
-	//sample[i] += norm * norm * real_abs(t-prev);
+        // Add to integral (for computing L^2 norm in time)
+        //sample[i] += norm * norm * real_abs(t-prev);
       }
 
       prev = t;
@@ -128,7 +128,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     file << std::pair<real, RealArrayRef>(t, RealArrayRef(sample));
 
     // Update progress
-    double t_double = to_double(t);
+    const double t_double = to_double(t);
     p = (t_double * t_double + t_double) / progress_end;
     count++;
   }
@@ -154,17 +154,15 @@ void StabilityAnalysis::analyze_endpoint()
   PythonFile file("stability_factors.py");
 
   uint n = ode.size();
-  boost::scoped_array<real> _s(new real[n*n]); real* s =_s.get();
-  real_identity(n,s);
+  boost::scoped_array<real> s(new real[n*n]);
+  real_identity(n, s.get());
 
-  boost::scoped_array<real> _A(new real[n*n]);  real* A = _A.get();
-  boost::scoped_array<real> _B(new real[n*n]);  real* B = _B.get();
-
+  boost::scoped_array<real> A(new real[n*n]);
+  boost::scoped_array<real> B(new real[n*n]);
   Array<real> tmp(n);
 
-
   // How should the length of the timestep be decided?
-  for (  ODESolution::iterator it = u.begin(); it != u.end(); it++ )
+  for (ODESolution::iterator it = u.begin(); it != u.end(); it++)
   {
     ODESolutionData& timestep = *it;
     real& t = timestep.a;
@@ -175,23 +173,20 @@ void StabilityAnalysis::analyze_endpoint()
     //u.eval(t, tmp);
     timestep.eval_a(tmp.data().get());
 
-    get_JT(A, tmp, t);
+    get_JT(A.get(), tmp, t);
 
-    real_mult(n*n, A, timestep.k);
+    real_mult(n*n, A.get(), timestep.k);
 
-    real_mat_exp(n, B, A, 10);
+    HighPrecision::real_mat_exp(n, B.get(), A.get(), 10);
 
-    real_mat_prod_inplace(n, s, B);
+    HighPrecision::real_mat_prod_inplace(n, s.get(), B.get());
 
-    for (uint i=0; i<n; ++i)
-    {
+    for (uint i = 0; i < n; ++i)
       tmp[i] = real_norm(n, &s[i*n]);
-    }
 
     file << std::pair<real, RealArrayRef>(t, RealArrayRef(tmp));
 
     p = to_double(t/endtime);
-
   }
 
   end();

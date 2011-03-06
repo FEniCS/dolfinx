@@ -684,7 +684,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   MeshFunction<uint>* global_cell_indices = mesh.data().create_mesh_function(cell_name.str(), mesh_data.tdim);
   assert(global_cell_indices);
   const std::vector<uint>& gci = mesh_data.global_cell_indices;
-  for(uint i=0; i < gci.size(); ++i)
+  for(uint i = 0; i < gci.size(); ++i)
     (*global_cell_indices)[i] = gci[i];
 
   // Close mesh: Note that this must be done after creating the global vertex map or
@@ -695,6 +695,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::vector<uint>* num_global_entities = mesh.data().create_array("num global entities", mesh_data.tdim + 1);
   for (uint d = 0; d <= mesh_data.tdim; ++d)
     (*num_global_entities)[d] = 0;
+
   (*num_global_entities)[0] = mesh_data.num_global_vertices;
   (*num_global_entities)[mesh_data.tdim] = mesh_data.num_global_cells;
 
@@ -707,10 +708,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const uint boundary_size = boundary_vertex_map->size();
 
   // Build sorted array of global boundary vertex indices (global numbering)
-  uint global_vertex_send[boundary_size];
+  std::vector<uint> global_vertex_send(boundary_size);
   for (uint i = 0; i < boundary_size; ++i)
     global_vertex_send[i] = (*global_vertex_indices)[(*boundary_vertex_map)[i]];
-  std::sort(global_vertex_send, global_vertex_send + boundary_size);
+  std::sort(global_vertex_send.begin(), global_vertex_send.end());
 
   // Distribute boundaries' sizes
   std::vector<uint> boundary_sizes(num_processes);
@@ -721,7 +722,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const uint max_boundary_size = *(std::max_element(boundary_sizes.begin(), boundary_sizes.end()));
 
   // Recieve buffer
-  uint global_vertex_recv[max_boundary_size];
+  std::vector<uint> global_vertex_recv(max_boundary_size);
 
   // Create overlap: mapping from shared vertices to list of neighboring processes
   std::map<uint, std::vector<uint> >* overlap = mesh.data().create_vector_mapping("overlap");
@@ -736,13 +737,14 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     const int q = (process_number + i) % num_processes;
 
     // Send and receive
-    MPI::send_recv(global_vertex_send, boundary_size, p, global_vertex_recv, boundary_sizes[q], q);
+    MPI::send_recv(&global_vertex_send[0], boundary_size, p, &global_vertex_recv[0], boundary_sizes[q], q);
 
     // Compute intersection of global indices
     std::vector<uint> intersection(std::min(boundary_size, boundary_sizes[q]));
     std::vector<uint>::iterator intersection_end = std::set_intersection(
-         global_vertex_send, global_vertex_send + boundary_size,
-         global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin());
+         global_vertex_send.begin(), global_vertex_send.end(),
+         &global_vertex_recv[0], &global_vertex_recv[0] + boundary_sizes[q],
+         intersection.begin());
 
     // Fill overlap information
     for (std::vector<uint>::const_iterator index = intersection.begin();
@@ -780,4 +782,3 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     (*exterior)[entities.find(it->first)->second] = 0;
 }
 //-----------------------------------------------------------------------------
-

@@ -9,6 +9,8 @@
 
 #include <string>
 #include <vector>
+#include <boost/cstdint.hpp>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -21,7 +23,7 @@ namespace dolfin
   public:
 
     // Mesh writer
-    static void write_mesh(const Mesh& mesh, std::string file,
+    static void write_mesh(const Mesh& mesh, uint cell_dim, std::string file,
                            bool binary, bool compress);
 
     // Cell data writer
@@ -32,23 +34,32 @@ namespace dolfin
     template<typename T>
     static std::string encode_stream(const std::vector<T>& data,
                                      bool compress);
+  //friend class VTKFile;
 
   private:
 
-    // Cell data
+    // Write cell data (ascii)
     static std::string ascii_cell_data(const Mesh& mesh,
                                        const std::vector<uint>& offset,
                                        const std::vector<double>& values,
                                        uint dim, uint rank);
+
+    // Write cell data (base64)
     static std::string base64_cell_data(const Mesh& mesh,
                                         const std::vector<uint>& offset,
                                         const std::vector<double>& values,
                                         uint dim, uint rank, bool compress);
 
-    // Mesh writer
-    static void write_ascii_mesh(const Mesh& mesh, std::string file);
-    static void write_base64_mesh(const Mesh& meqsh, std::string file,
-                                  bool compress);
+    // Mesh writer (ascii)
+    static void write_ascii_mesh(const Mesh& mesh, uint cell_dim,
+                                 std::string file);
+
+    // Mesh writer (base64)
+    static void write_base64_mesh(const Mesh& mesh, uint cell_dim,
+                                  std::string file, bool compress);
+
+    // Get VTK cell type
+    static boost::uint8_t vtk_cell_type(const Mesh& mesh, uint cell_dim);
 
     // Compute base64 encoded stream for VTK
     template<typename T>

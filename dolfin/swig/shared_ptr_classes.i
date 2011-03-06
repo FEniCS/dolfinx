@@ -40,6 +40,8 @@
 // Declare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
 #if SWIG_VERSION >= 0x020000
+%shared_ptr(ufc::form)
+
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)

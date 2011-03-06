@@ -17,10 +17,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n)
+GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n, 2.0)
 {
-  // Length of interval [-1,1]
-  m = 2.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void GaussianQuadrature::init()
@@ -39,8 +38,10 @@ void GaussianQuadrature::compute_weights()
   // This requires that the n-point quadrature rule is exact at least for
   // polynomials of degree n-1.
 
+  const uint n = points.size();
+
   // Special case n = 0
-  if ( n == 0 )
+  if (n == 0)
   {
     weights[0] = 2.0;
     return;
@@ -48,11 +49,11 @@ void GaussianQuadrature::compute_weights()
 
   uBLASDenseMatrix A(n, n);
   ublas_dense_matrix& _A = A.mat();
-  real A_real[n*n];
+  std::vector<real> A_real(n*n);
 
-  uBLASVector b(n);  
+  uBLASVector b(n);
   ublas_vector& _b = b.vec();
-  real b_real[n];
+  std::vector<real> b_real(n);
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
@@ -62,8 +63,8 @@ void GaussianQuadrature::compute_weights()
     {
       A_real[i + n*j] = p(points[j]);
       _A(i, j) = to_double(A_real[i + n*j]);
-    _b[i] = 0.0;
-    b_real[i] = 0.0;
+      _b[i] = 0.0;
+      b_real[i] = 0.0;
     }
   }
   _b[0] = 2.0;
@@ -84,7 +85,7 @@ void GaussianQuadrature::compute_weights()
   for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
 
-#else 
+#else
   //With extended precision: Use the double precision result as initial guess for the
   //extended precision linear solver.
 
@@ -92,7 +93,7 @@ void GaussianQuadrature::compute_weights()
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  real_solve_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
+  HighPrecision::real_solve_precond(n, &A_real[0], &weights[0], &b_real[0], A_inv, real_epsilon());
 
 #endif
 }
@@ -106,19 +107,19 @@ bool GaussianQuadrature::check(unsigned int q) const
   Legendre p(q);
 
   real sum = 0.0;
-  for (unsigned int i = 0; i < n; i++)
-    sum += weights[i] * p(points[i]);
+  for (unsigned int i = 0; i < points.size(); i++)
+    sum += weights[i]*p(points[i]);
 
   //info("Checking quadrature weights: %.2e.", fabs(sum));
 
-  if ( q == 0 )
+  if (q == 0)
   {
-    if ( real_abs(sum - 2.0) < 100.0*real_epsilon() )
+    if (real_abs(sum - 2.0) < 100.0*real_epsilon())
       return true;
   }
   else
   {
-    if ( real_abs(sum) < 100.0 * real_epsilon() )
+    if (real_abs(sum) < 100.0*real_epsilon())
       return true;
   }
 

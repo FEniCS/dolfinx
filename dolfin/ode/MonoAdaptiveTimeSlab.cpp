@@ -212,19 +212,17 @@ void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
 {
   //printf("MonoAdaptiveTimeSlab::save_solution\n");
   // Prepare array of values
-  real data[N*u.nsize()];
+  std::vector<real> data(N*u.nsize());
 
-  for (uint i = 0; i < N; ++i) {
+  for (uint i = 0; i < N; ++i)
+  {
     for (uint n = 0; n < method->nsize(); n++)
       dofs[n] = x[n*N + i];
 
     method->get_nodal_values(u0[i], dofs, &data[i*u.nsize()]);
   }
 
-  u.add_timeslab(starttime(),
-		 endtime(),
-		 data);
-
+  u.add_timeslab(starttime(), endtime(), &data[0]);
 }
 //-----------------------------------------------------------------------------
 std::string MonoAdaptiveTimeSlab::str(bool verbose) const
@@ -246,42 +244,39 @@ std::string MonoAdaptiveTimeSlab::str(bool verbose) const
     s << std::endl;;
   }
   else
-  {
     s << "<MonoAdaptiveTimeSlab with " << N << " components>";
-  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::feval(uint m)
 {
-    // Evaluation depends on the choice of method
-    if (method->type() == Method::cG)
+  // Evaluation depends on the choice of method
+  if (method->type() == Method::cG)
+  {
+    // Special case: m = 0
+    if (m == 0)
     {
-      // Special case: m = 0
-      if (m == 0)
-      {
-	// We don't need to evaluate f at t = a since we evaluated
-	// f at t = b for the previous time slab
-	return;
-      }
-
-      const real t = _a + method->qpoint(m) * (_b - _a);
-      copy(x, (m - 1)*N, u);
-      ode.f(u, t, f);
-      copy(f, fq, m*N);
-    }
-    else
-    {
-      const real t = _a + method->qpoint(m) * (_b - _a);
-      //copy(x, m*N, u, 0, N);
-      //ode.f(&x[m*N], t, &fq[m*N]);
-      Array<real> u(N, &x[m*N]);
-      Array<real> y(N, &fq[m*N]);
-      ode.f(u, t, y);
-      //copy(f, 0, fq, m*N, N);
+      // We don't need to evaluate f at t = a since we evaluated
+      // f at t = b for the previous time slab
+      return;
     }
 
+    const real t = _a + method->qpoint(m)*(_b - _a);
+    copy(x, (m - 1)*N, u);
+    ode.f(u, t, f);
+    copy(f, fq, m*N);
+  }
+  else
+  {
+    const real t = _a + method->qpoint(m) * (_b - _a);
+    //copy(x, m*N, u, 0, N);
+    //ode.f(&x[m*N], t, &fq[m*N]);
+    Array<real> u(N, &x[m*N]);
+    Array<real> y(N, &fq[m*N]);
+    ode.f(u, t, y);
+    //copy(f, 0, fq, m*N, N);
+  }
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
@@ -324,9 +319,7 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
     }
   }
   else
-  {
     error("Uknown solver type: %s.", solver.c_str());
-  }
 
   return 0;
 }
