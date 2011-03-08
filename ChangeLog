@@ -1,3 +1,5 @@
+ - Add FiniteElement::evaluate_basis_all
+ - Add FiniteElement::evaluate_basis_derivatives_all
  - Add support for VTK output of facet-based MeshFunctions
  - Change default log level from PROGRESS to INFO
  - Add copy functions to FiniteElement and DofMap

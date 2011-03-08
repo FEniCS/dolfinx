@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2011-02-25
+// Last changed: 2011-03-08
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -56,7 +56,15 @@ namespace dolfin
 
     void evaluate_basis(uint i, double* values, const double* x,
                         const Cell& cell) const
-    { UFCCell ufc_cell(cell); _ufc_element->evaluate_basis(i, values, x, ufc_cell); }
+    {
+      UFCCell ufc_cell(cell);
+      _ufc_element->evaluate_basis(i, values, x, ufc_cell);
+    }
+
+    void evaluate_basis_all(double* values,
+                            const double* coordinates,
+                            const ufc::cell& c) const
+    { _ufc_element->evaluate_basis_all(values, coordinates, c); }
 
     void evaluate_basis_derivatives(unsigned int i,
                                     unsigned int n,
@@ -64,6 +72,12 @@ namespace dolfin
                                     const double* x,
                                     const ufc::cell& cell) const
     { _ufc_element->evaluate_basis_derivatives(i, n, values, x, cell); }
+
+    void evaluate_basis_derivatives_all(unsigned int n,
+                                        double* values,
+                                        const double* coordinates,
+                                        const ufc::cell& c) const
+    { _ufc_element->evaluate_basis_derivatives_all(n, values, coordinates, c); }
 
     double evaluate_dof(uint i, const ufc::function& function,
                         const ufc::cell& cell) const
