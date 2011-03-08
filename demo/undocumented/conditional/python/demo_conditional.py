@@ -32,8 +32,8 @@ u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 x = V.cell().x
 
 c0 = conditional(le( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.015), -1.0, 5.0)
@@ -45,8 +45,8 @@ t2 = conditional(ge( x[1],  0.05), t1, 0.0)
 t3 = conditional(le( x[1],  0.45), t2, 0.0)
 t = conditional(ge( x[1] - x[0] - 0.05 + 0.55,  0.0), t3, 0.0)
 f = c + t
-a = inner(grad(v), grad(u))*dx
-L = v*f*dx
+a = inner(grad(u), grad(v))*dx
+L = f*v*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bc)

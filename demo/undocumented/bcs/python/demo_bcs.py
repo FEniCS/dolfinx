@@ -14,11 +14,11 @@ mesh = Mesh("aneurysm.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Constant(0.0)
-a = dot(grad(v), grad(u))*dx
-L = v*f*dx
+a = dot(grad(u), grad(v))*dx
+L = f*v*dx
 
 # Define boundary condition values
 u0 = Constant(0.0)

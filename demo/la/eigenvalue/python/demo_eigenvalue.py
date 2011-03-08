@@ -31,7 +31,7 @@ V = FunctionSpace(mesh, "CG", 1)
 # Define basis and bilinear form
 u = TrialFunction(V)
 v = TestFunction(V)
-a = dot(grad(v), grad(u))*dx
+a = dot(grad(u), grad(v))*dx
 
 # Assemble stiffness form
 A = PETScMatrix()

@@ -12,9 +12,9 @@ from dolfin import *
 # Create a simple stiffness matrix
 mesh = UnitSquare(4, 4)
 V = FunctionSpace(mesh, "CG", 1)
-v = TestFunction(V)
 u = TrialFunction(V)
-a = dot(grad(v), grad(u))*dx
+v = TestFunction(V)
+a = dot(grad(u), grad(v))*dx
 A = assemble(a)
 
 # Create a block matrix

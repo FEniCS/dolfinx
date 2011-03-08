@@ -45,14 +45,14 @@ bc2 = DirichletBC(W.sub(1), zero, left)
 bcs = [bc0, bc1, bc2]
 
 # Define variational problem
-(v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
+(v, q) = TestFunctions(W)
 f = Constant((0.0, 0.0, 0.0))
-a = inner(grad(v), grad(u))*dx + div(v)*p*dx + q*div(u)*dx
-L = inner(v, f)*dx
+a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
+L = inner(f, v)*dx
 
 # Form for use in constructing preconditioner matrix
-b = inner(grad(v), grad(u))*dx + q*p*dx
+b = inner(grad(u), grad(v))*dx + p*q*dx
 
 # Assemble system
 A, bb = assemble_system(a, L, bcs)

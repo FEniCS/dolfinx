@@ -53,12 +53,12 @@ bc1 = PeriodicBC(V, pbc)
 bcs = [bc0, bc1]
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Source()
 
-a = dot(grad(v), grad(u))*dx
-L = v*f*dx
+a = dot(grad(u), grad(v))*dx
+L = f*v*dx
 
 # Solve PDE
 problem = VariationalProblem(a, L, bcs)

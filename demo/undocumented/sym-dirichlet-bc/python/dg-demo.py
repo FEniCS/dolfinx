@@ -22,12 +22,10 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return bool(on_boundary)
 
-
-
 # Define variational problem
 V = FunctionSpace(mesh, "DG", 1)
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 
 # Normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
@@ -44,16 +42,13 @@ boundary = DirichletBoundary()
 bc = DirichletBC(V, u0, boundary)
 
 # Bilinear form
-
-a = dot(grad(v), grad(u))*dx \
-   - dot(avg(grad(v)), jump(u, n))*dS \
+a = dot(grad(u), grad(v))*dx \
+   - dot(jump(u, n), avg(grad(v)))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
-   + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
-   - dot(grad(v), mult(u, n))*ds \
+   + alpha/h('+')*dot(jump(u, n), jump(v, n))*dS \
+   - dot(mult(u, n), grad(v))*ds \
    - dot(mult(v, n), grad(u))*ds \
    + gamma/h*v*u*ds
-
-
 
 # Linear form
 L = v*f*dx

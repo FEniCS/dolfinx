@@ -41,14 +41,14 @@ bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
 x = V.cell().x
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 d_x = x[0] - 0.5
 d_y = x[1] - 0.5
 f = 10.0*exp(-(d_x*d_x + d_y*d_y) / 0.02)
 g = -sin(5.0*x[0])
-a = inner(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+a = inner(grad(u), grad(v))*dx
+L = f*v*dx + g*v*ds
 
 # Compute solution
 problem = VariationalProblem(a, L, bc)

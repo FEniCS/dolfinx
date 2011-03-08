@@ -37,8 +37,8 @@ p0 = Expression("(4.0 - x[0])/4.0")
 
 # Define variational forms
 n = FacetNormal(mesh)
-a = (nu*inner(grad(v), grad(u_h)) - div(v)*p_h + q*div(u_h))*dx
-a = a + inner(v, grad(u_h)*u_h)*dx
+a = (nu*inner(grad(u_h), grad(v)) - div(v)*p_h + q*div(u_h))*dx
+a = a + inner(grad(u_h)*u_h, v)*dx
 L = - p0*dot(v, n)*ds
 F = a - L
 

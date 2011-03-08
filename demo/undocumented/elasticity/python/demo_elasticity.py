@@ -55,8 +55,8 @@ def right(x, on_boundary):
     return x[0] > 0.9 and on_boundary
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Constant((0.0, 0.0, 0.0))
 
 E  = 10.0
@@ -68,8 +68,8 @@ lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
 def sigma(v):
     return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
 
-a = inner(grad(v), sigma(u))*dx
-L = inner(v, f)*dx
+a = inner(sigma(u), grad(v))*dx
+L = inner(f, v)*dx
 
 # Set up boundary condition at left end
 c = Constant((0.0, 0.0, 0.0))

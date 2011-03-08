@@ -74,8 +74,8 @@ mesh = UnitSquare(32, 32)
 V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Test and trial functions
-r = TestFunction(V)
 u = TrialFunction(V)
+r = TestFunction(V)
 
 E  = 1.0
 nu = 0.0
@@ -125,8 +125,8 @@ def sigma(r):
     return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.cell().d)
 
 # Forms
-a = factor_m1*inner(r, u)*dx + factor_d1*inner(r, u)*dx \
-   +(1.0-alpha_f)*inner(grad(r), sigma(u))*dx
+a = factor_m1*inner(u, r)*dx + factor_d1*inner(u, r)*dx \
+   +(1.0-alpha_f)*inner(sigma(u), grad(r))*dx
 
 L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx \
    + factor_m3*inner(r, a0)*dx \

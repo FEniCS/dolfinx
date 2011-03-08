@@ -19,11 +19,11 @@ from dolfin import *
 # Define variational problem
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Expression("sin(x[0])*sin(x[1])")
-a = dot(grad(v), grad(u))*dx + v*u*dx
-L = v*f*dx
+a = dot(grad(u), grad(v))*dx + u*v*dx
+L = f*v*dx
 
 # Compute and plot solution
 problem = VariationalProblem(a, L)

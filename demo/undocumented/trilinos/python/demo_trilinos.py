@@ -35,13 +35,12 @@ class DirichletBoundary(SubDomain):
         return on_boundary and x[0] < DOLFIN_EPS
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Expression("500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
-a = dot(grad(v), grad(u))*dx
-L = v*f*dx
-
+a = dot(grad(u), grad(v))*dx
+L = f*v*dx
 
 # Define boundary condition
 u0 = Constant(0)

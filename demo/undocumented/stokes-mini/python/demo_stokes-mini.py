@@ -1,7 +1,7 @@
-"""This demo solves the Stokes equations, using quadratic elements for
-the velocity and first degree elements for the pressure (Taylor-Hood
-elements). The sub domains for the different boundary conditions
-used in this simulation are computed by the demo program in
+"""This demo solves the Stokes equations, using linear elements
+enriched with a bubble for the velocity and linear elements for the
+pressure (Mini elements). The sub domains for the different boundary
+conditions used in this simulation are computed by the demo program in
 src/demo/mesh/subdomains."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
@@ -39,11 +39,11 @@ bc2 = DirichletBC(Mini.sub(1), zero, sub_domains, 2)
 bcs = [bc0, bc1, bc2]
 
 # Define variational problem
-(v, q) = TestFunctions(Mini)
 (u, p) = TrialFunctions(Mini)
+(v, q) = TestFunctions(Mini)
 f = Constant((0, 0))
-a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
-L = inner(v, f)*dx
+a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
+L = inner(f, v)*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bcs)

@@ -88,11 +88,11 @@ c.c11 = c11
 C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
 # Define variational problem
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-a = inner(grad(v), C*grad(u))*dx
-L = v*f*dx
+a = inner(C*grad(u), grad(v))*dx
+L = f*v*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bc)
