@@ -2,13 +2,13 @@
 # Licensed under the GNU LGPL Version 2.1
 #
 # First added:  2005-06-05
-# Last changed: 2006-03-28
+# Last changed: 2011-03-09
 #
 # The bilinear form for a mass matrix.
 
 element = FiniteElement("Lagrange", "tetrahedron", 1)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 
-a = v*u*dx
+a = u*v*dx

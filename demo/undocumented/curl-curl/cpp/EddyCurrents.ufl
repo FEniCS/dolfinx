@@ -2,19 +2,19 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2009-03-30
-# Last changed: 2009-09-16
+# Last changed: 2011-03-09
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(u, v) and linear form L(v) for
 # curl-curl eddy currents equation.
 #
-# Compile this form with FFC: ffc -l dolfin EddyCurrents.form
+# Compile this form with FFC: ffc -l dolfin EddyCurrents.ufl
 
 EN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 1)
 EL = VectorElement("Lagrange", "tetrahedron", 1)
 
-v = TestFunction(EN)
 u = TrialFunction(EN)
+v = TestFunction(EN)
 dbdt = Coefficient(EL)
 
-a =  inner(curl(v), curl(u))*dx
-L = -inner(v, dbdt)*dx
+a = inner(curl(u), curl(v))*dx
+L = - inner(dbdt, v)*dx

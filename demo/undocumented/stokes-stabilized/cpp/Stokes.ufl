@@ -2,12 +2,12 @@
 # Licensed under the GNU LGPL Version 2.1
 #
 # First added:  2005
-# Last changed: 2007-04-30
+# Last changed: 2011-03-09
 #
-# The bilinear form a(v, u) and Linear form L(v) for the Stokes
+# The bilinear form a(u, v) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (equal-order stabilized).
 #
-# Compile this form with FFC: ffc -l dolfin Stokes.form
+# Compile this form with FFC: ffc -l dolfin Stokes.ufl
 
 vector   = VectorElement("Lagrange", "triangle", 1)
 scalar   = FiniteElement("Lagrange", "triangle", 1)
@@ -22,5 +22,5 @@ h = 2.0*scalar.cell().circumradius
 beta  = 0.2
 delta = beta*h*h
 
-a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
-L = dot(v + delta*grad(q), f)*dx
+a = (inner(grad(u), grad(v)) - div(v)*p + div(u)*q + delta*dot(grad(p), grad(q)))*dx
+L = dot(f, v + delta*grad(q))*dx

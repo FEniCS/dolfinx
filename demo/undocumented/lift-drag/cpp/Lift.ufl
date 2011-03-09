@@ -2,12 +2,12 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2007-05-14
-# Last changed: 2007-05-14
+# Last changed: 2011-03-09
 #
 # This form defines the functional for computing the
 # lift on a body.
 #
-# Compile this form with FFC: ffc -l dolfin Lift.form.
+# Compile this form with FFC: ffc -l dolfin Lift.ufl
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
