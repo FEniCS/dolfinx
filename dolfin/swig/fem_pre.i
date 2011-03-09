@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2011-03-06
+// Last changed: 2011-03-10
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -60,6 +60,13 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::BoundaryCondition::function_space;
 %rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
+
+//-----------------------------------------------------------------------------
+// Ignores domain assignment for Form class
+//-----------------------------------------------------------------------------
+%ignore dolfin::Form::cell_domains;
+%ignore dolfin::Form::exterior_facet_domains;
+%ignore dolfin::Form::interior_facet_domains;
 
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical Form

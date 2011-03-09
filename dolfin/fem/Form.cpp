@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-03-09
+// Last changed: 2011-03-10
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -25,8 +25,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(uint rank, uint num_coefficients) : Hierarchical<Form>(*this),
-                         _function_spaces(rank), _coefficients(num_coefficients)
+Form::Form(uint rank, uint num_coefficients)
+  : Hierarchical<Form>(*this),
+    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
+    _function_spaces(rank), _coefficients(num_coefficients)
 {
   // Do nothing
 }
@@ -34,8 +36,9 @@ Form::Form(uint rank, uint num_coefficients) : Hierarchical<Form>(*this),
 Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
            std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
            std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
-  : Hierarchical<Form>(*this), _ufc_form(ufc_form),
-    _function_spaces(function_spaces), _coefficients(coefficients)
+  : Hierarchical<Form>(*this),
+    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
+    _ufc_form(ufc_form), _function_spaces(function_spaces), _coefficients(coefficients)
 {
   // Do nothing
 }
@@ -44,6 +47,7 @@ Form::Form(const ufc::form& ufc_form,
            const std::vector<const FunctionSpace*>& function_spaces,
            const std::vector<const GenericFunction*>& coefficients)
   : Hierarchical<Form>(*this),
+    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
     _function_spaces(function_spaces.size()),
     _coefficients(coefficients.size())
 {
@@ -195,19 +199,19 @@ std::string Form::coefficient_name(uint i) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-Form::cell_domains() const
+Form::cell_domains_shared_ptr() const
 {
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-Form::exterior_facet_domains() const
+Form::exterior_facet_domains_shared_ptr() const
 {
   return _exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-Form::interior_facet_domains() const
+Form::interior_facet_domains_shared_ptr() const
 {
   return _interior_facet_domains;
 }

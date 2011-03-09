@@ -17,6 +17,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
+#include "DomainAssigner.h"
 
 // Forward declaration
 namespace ufc
@@ -125,13 +126,13 @@ namespace dolfin
     virtual std::string coefficient_name(dolfin::uint i) const;
 
     /// Return cell domains (pointer may be zero if no domains have been specified)
-    boost::shared_ptr<const MeshFunction<uint> > cell_domains() const;
+    boost::shared_ptr<const MeshFunction<uint> > cell_domains_shared_ptr() const;
 
     /// Return exterior facet domains (pointer may be zero if no domains have been specified)
-    boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains() const;
+    boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains_shared_ptr() const;
 
     /// Return interior facet domains (pointer may be zero if no domains have been specified)
-    boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains() const;
+    boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains_shared_ptr() const;
 
     /// Set cell domains
     void set_cell_domains(boost::shared_ptr<const MeshFunction<uint> > cell_domains);
@@ -150,6 +151,11 @@ namespace dolfin
 
     /// Check function spaces and coefficients
     void check() const;
+
+    // Assignment of domains
+    CellDomainAssigner cell_domains;
+    ExteriorFacetDomainAssigner exterior_facet_domains;
+    InteriorFacetDomainAssigner interior_facet_domains;
 
   protected:
 
