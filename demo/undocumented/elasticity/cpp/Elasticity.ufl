@@ -5,15 +5,15 @@
 # Modified by Garth N. Wells 2008
 #
 # First added:  2005
-# Last changed: 2008-09-12
+# Last changed: 2011-03-09
 #
 # The bilinear form for classical linear elasticity (Navier).
-# Compile this form with FFC: ffc -l dolfin Elasticity.form.
+# Compile this form with FFC: ffc -l dolfin Elasticity.ufl
 
 element = VectorElement("Lagrange", "tetrahedron", 1)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 f = Coefficient(element)
 
 mu    = Constant("tetrahedron")
@@ -25,5 +25,5 @@ def epsilon(v):
 def sigma(v):
     return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.cell().d)
 
-a = inner(epsilon(v), sigma(u))*dx
-L = inner(v, f)*dx
+a = inner(sigma(u), epsilon(v))*dx
+L = inner(f, v)*dx

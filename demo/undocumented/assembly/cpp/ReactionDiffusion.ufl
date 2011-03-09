@@ -2,12 +2,12 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2008-02-04
-# Last changed: 2008-02-04
+# Last changed: 2011-03-09
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(u, v) and linear form L(v) for
 # the reaction-diffusion equation -div grad u + u = f.
 #
-# Compile this form with FFC: ffc -l dolfin ReactionDiffusion.form
+# Compile this form with FFC: ffc -l dolfin ReactionDiffusion.ufl
 
 element = FiniteElement("Lagrange", "tetrahedron", 1)
 
@@ -15,5 +15,5 @@ v = TestFunction(element)
 u = TrialFunction(element)
 f = Coefficient(element)
 
-a = dot(grad(v), grad(u))*dx + v*u*dx
+a = dot(grad(u), grad(v))*dx + u*v*dx
 L = v*f*dx

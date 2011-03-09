@@ -2,20 +2,19 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2009-01-22
-# Last changed: 2009
+# Last changed: 2011-03-09
 #
 # Projection
 #
-# Compile this form with FFC: ffc -l dolfin DG0_eps-xx.form
+# Compile this form with FFC: ffc -l dolfin DG0_eps-xx.ufl
 
 vector   = VectorElement("Lagrange", "triangle", 1)
 constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
-# displacement, velocity 
-v   = TestFunction(constant)
 eps = TrialFunction(constant)
+v   = TestFunction(constant)
 u   = Coefficient(vector)
 
-a = v*eps*dx
-L = v*u[0].dx(0)*dx
+a = eps*v*dx
+L = u[0].dx(0)*v*dx
 

@@ -6,11 +6,11 @@
 
 element = FiniteElement("Nedelec 1st kind H(curl)", "triangle", 3)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 
 def curl_t(w):
     return Dx(w[1], 0) - Dx(w[0], 1)
 
-a = curl_t(v)*curl_t(u)*dx
-L = inner(v, u)*dx
+a = curl_t(u)*curl_t(v)*dx
+L = inner(u, v)*dx

@@ -2,21 +2,21 @@
 # Licensed under the GNU LGPL Version 2.1
 #
 # First added:  2005
-# Last changed: 2007-04-23
+# Last changed: 2011-03-09
 #
-# The bilinear form a(v, u) and Linear form L(v) for the Stokes
+# The bilinear form a(u, v) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (Taylor-Hood elements).
 #
-# Compile this form with FFC: ffc -l dolfin Stokes.form
+# Compile this form with FFC: ffc -l dolfin Stokes.ufl
 
 P2 = VectorElement("Lagrange", "triangle", 2)
 P1 = FiniteElement("Lagrange", "triangle", 1)
 TH = P2 * P1
 
-(v, q) = TestFunctions(TH)
 (u, p) = TrialFunctions(TH)
+(v, q) = TestFunctions(TH)
 
 f = Coefficient(P2)
 
-a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
-L = dot(v, f)*dx
+a = (inner(grad(u), grad(v)) - div(v)*p + div(u)*q)*dx
+L = dot(f, v)*dx
