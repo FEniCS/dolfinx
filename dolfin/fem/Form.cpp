@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-02-03
+// Last changed: 2011-03-09
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -192,6 +192,42 @@ std::string Form::coefficient_name(uint i) const
   std::ostringstream name;
   name << "w" << i;
   return name.str();
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const MeshFunction<dolfin::uint> >
+Form::cell_domains() const
+{
+  return _cell_domains;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const MeshFunction<dolfin::uint> >
+Form::exterior_facet_domains() const
+{
+  return _exterior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const MeshFunction<dolfin::uint> >
+Form::interior_facet_domains() const
+{
+  return _interior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+void Form::set_cell_domains
+(boost::shared_ptr<const MeshFunction<uint> > cell_domains)
+{
+  _cell_domains = cell_domains;
+}
+//-----------------------------------------------------------------------------
+void Form::set_exterior_facet_domains
+(boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains)
+{
+  _exterior_facet_domains = exterior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+void Form::set_interior_facet_domains
+(boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains)
+{
+  _interior_facet_domains = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const
