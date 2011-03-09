@@ -1,9 +1,12 @@
+ - Updates for UFC 2.0.1
+ - Add FiniteElement::evaluate_basis_derivatives_all
  - Add support for VTK output of facet-based MeshFunctions
  - Change default log level from PROGRESS to INFO
  - Add copy functions to FiniteElement and DofMap
  - Simfplify DofMap
  - Interpolate vector values when reading from time series
 0.9.10 [2011-02-23]
+ - Updates for UFC 2.0.0
  - Handle TimeSeries stored backward in time (automatic reversal)
  - Automatic storage of hierarchy during refinement
  - Remove directory/library 'main', merged into 'common'
