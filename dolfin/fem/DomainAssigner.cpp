@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-03-09
-// Last changed: 2011-03-09
+// Last changed: 2011-03-10
 
 #include <dolfin/common/NoDeleter.h>
 #include "Form.h"
@@ -29,7 +29,7 @@ DomainAssigner::operator= (const MeshFunction<uint>& domains)
 }
 //-----------------------------------------------------------------------------
 const DomainAssigner&
-operator= (boost::shared_ptr<const MeshFunction<uint> > domains)
+DomainAssigner::operator= (boost::shared_ptr<const MeshFunction<uint> > domains)
 {
   assign(domains);
   return *this;
