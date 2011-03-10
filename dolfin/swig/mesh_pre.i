@@ -197,4 +197,3 @@ namespace dolfin {
 }
 
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
-

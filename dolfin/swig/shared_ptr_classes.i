@@ -185,6 +185,7 @@
 %shared_ptr(dolfin::CellFunction<bool>)
 %shared_ptr(dolfin::CellFunction<double>)
 %shared_ptr(dolfin::CellFunction<int>)
+%shared_ptr(dolfin::CellFunction<unsigned int>)
 %shared_ptr(dolfin::CellFunction<dolfin::uint>)
 
 %shared_ptr(dolfin::EdgeFunction<bool>)
@@ -209,9 +210,7 @@
 %shared_ptr(dolfin::VertexFunction<double>)
 %shared_ptr(dolfin::VertexFunction<int>)
 %shared_ptr(dolfin::VertexFunction<unsigned int>)
-%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
-
-
+//%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 
 // math
 %shared_ptr(dolfin::Lagrange)
