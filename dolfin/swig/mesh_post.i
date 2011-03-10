@@ -103,7 +103,7 @@ DECLARE_MESHFUNCTIONS(CellFunction)
 _doc_string = MeshFunctionInt.__doc__
 _doc_string += """
   *Arguments*
-    tp (str) 
+    tp (str)
       String defining the type of the MeshFunction
       Allowed: 'int', 'uint', 'double', and 'bool'
     mesh (_Mesh_)

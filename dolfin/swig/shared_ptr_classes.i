@@ -32,7 +32,7 @@
 %include <boost_shared_ptr.i>
 
 //-----------------------------------------------------------------------------
-// Make PyDOLFIN aware of the types defined in UFC
+// Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
 %import "swig/ufc.i"
 
@@ -40,9 +40,6 @@
 // Declare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
 #if SWIG_VERSION >= 0x020000
-
-// ufc
-%shared_ptr(ufc::function)
 
 // adaptivity
 %shared_ptr(dolfin::TimeSeries)
@@ -188,7 +185,6 @@
 %shared_ptr(dolfin::CellFunction<bool>)
 %shared_ptr(dolfin::CellFunction<double>)
 %shared_ptr(dolfin::CellFunction<int>)
-%shared_ptr(dolfin::CellFunction<unsigned int>)
 %shared_ptr(dolfin::CellFunction<dolfin::uint>)
 
 %shared_ptr(dolfin::EdgeFunction<bool>)
