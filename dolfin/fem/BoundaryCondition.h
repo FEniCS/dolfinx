@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2010-04-22
+// Last changed: 2011-03-10
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -60,9 +60,6 @@ namespace dolfin
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
   protected:
-
-    // Friends
-    friend class AdaptiveObjects;
 
     // Check arguments
     void check_arguments(GenericMatrix* A,
