@@ -67,6 +67,7 @@ def next(self):
 %template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
 
 %shared_ptr(MESHFUNCTION ## TYPENAME)
+//%shared_ptr(dolfin::MESHFUNCTION<TYPE>)
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
@@ -84,8 +85,8 @@ def next(self):
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTIONS(MESHFUNCTION)
-DECLARE_MESHFUNCTION(MESHFUNCTION, int, Int)
 DECLARE_MESHFUNCTION(MESHFUNCTION, unsigned int, UInt)
+DECLARE_MESHFUNCTION(MESHFUNCTION, int, Int)
 DECLARE_MESHFUNCTION(MESHFUNCTION, double, Double)
 DECLARE_MESHFUNCTION(MESHFUNCTION, bool, Bool)
 %enddef

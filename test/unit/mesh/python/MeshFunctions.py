@@ -27,17 +27,13 @@ class NamedMeshFunctions(unittest.TestCase):
         for tp in self.tps:
             for name in self.names:
                 if name is "Vertex":
-                    print "Test (a):", tp, name
-                    print "Test    :", self.funcs[(tp, name)]
-                    #print "Test    :", self.funcs[(tp, name)].size()
-                #    a = self.funcs[(tp, name)].size()
-                #    b = self.mesh.num_vertices()
-                #    self.assertEqual(a, b)
-                #else:
-                #    print "Test (b):", tp, name
-                #    a = self.funcs[(tp, name)].size()
-                #    b = getattr(self.mesh, "num_%ss"%name.lower())()
-                #    self.assertEqual(a, b)
+                    a = self.funcs[(tp, name)].size()
+                    b = self.mesh.num_vertices()
+                    self.assertEqual(a, b)
+                else:
+                    a = self.funcs[(tp, name)].size()
+                    b = getattr(self.mesh, "num_%ss"%name.lower())()
+                    self.assertEqual(a, b)
 
     #def test_access_type(self):
     #    type_dict = dict(int=int, uint=int, double=float, bool=bool)

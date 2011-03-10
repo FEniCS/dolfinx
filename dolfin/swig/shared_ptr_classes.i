@@ -176,41 +176,42 @@
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
+
 %shared_ptr(dolfin::MeshFunction<bool>)
 %shared_ptr(dolfin::MeshFunction<double>)
 %shared_ptr(dolfin::MeshFunction<int>)
-%shared_ptr(dolfin::MeshFunction<unsigned int>)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
+%shared_ptr(dolfin::MeshFunction<unsigned int>)
 
 %shared_ptr(dolfin::CellFunction<bool>)
 %shared_ptr(dolfin::CellFunction<double>)
 %shared_ptr(dolfin::CellFunction<int>)
-%shared_ptr(dolfin::CellFunction<unsigned int>)
 %shared_ptr(dolfin::CellFunction<dolfin::uint>)
+%shared_ptr(dolfin::CellFunction<unsigned int>)
 
 %shared_ptr(dolfin::EdgeFunction<bool>)
 %shared_ptr(dolfin::EdgeFunction<double>)
 %shared_ptr(dolfin::EdgeFunction<int>)
-%shared_ptr(dolfin::EdgeFunction<unsigned int>)
 %shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
+%shared_ptr(dolfin::EdgeFunction<unsigned int>)
 
 %shared_ptr(dolfin::FaceFunction<bool>)
 %shared_ptr(dolfin::FaceFunction<double>)
 %shared_ptr(dolfin::FaceFunction<int>)
-%shared_ptr(dolfin::FaceFunction<unsigned int>)
 %shared_ptr(dolfin::FaceFunction<dolfin::uint>)
+%shared_ptr(dolfin::FaceFunction<unsigned int>)
 
 %shared_ptr(dolfin::FacetFunction<bool>)
 %shared_ptr(dolfin::FacetFunction<double>)
 %shared_ptr(dolfin::FacetFunction<int>)
-%shared_ptr(dolfin::FacetFunction<unsigned int>)
 %shared_ptr(dolfin::FacetFunction<dolfin::uint>)
+%shared_ptr(dolfin::FacetFunction<unsigned int>)
 
 %shared_ptr(dolfin::VertexFunction<bool>)
 %shared_ptr(dolfin::VertexFunction<double>)
 %shared_ptr(dolfin::VertexFunction<int>)
+%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 %shared_ptr(dolfin::VertexFunction<unsigned int>)
-//%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 
 // math
 %shared_ptr(dolfin::Lagrange)

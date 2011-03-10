@@ -40,7 +40,7 @@ namespace dolfin
     virtual void snap(Array<double>& x) const {}
 
     /// Set sub domain markers (uint) for given subdomain
-    void mark(MeshFunction<uint>& sub_domains, uint sub_domain) const;
+    void mark(MeshFunction<unsigned int>& sub_domains, unsigned int sub_domain) const;
 
     /// Set sub domain markers (int) for given subdomain
     void mark(MeshFunction<int>& sub_domains, int sub_domain) const;
@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     /// Set sub domain markers for given subdomain
-    template<class T> 
+    template<class T>
     void mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) const;
 
     // Friends
