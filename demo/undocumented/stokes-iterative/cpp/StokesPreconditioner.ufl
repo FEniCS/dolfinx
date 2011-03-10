@@ -4,19 +4,18 @@
 # First added:  2011-01-05
 # Last changed:
 #
-# The bilinear form a(v, u) and Linear form L(v) for a Stokes
-# preconditioner matrix (Taylor-Hood elements).
+# The bilinear form a(u, v) for a Stokes preconditioner matrix
+# (Taylor-Hood elements).
 #
-# Compile this form with FFC: ffc -l dolfin Stokes.form
+# Compile this form with FFC: ffc -l dolfin StokesPreconditioner.ufl
 
 P2 = VectorElement("Lagrange", "tetrahedron", 2)
 P1 = FiniteElement("Lagrange", "tetrahedron", 1)
 TH = P2 * P1
 
-(v, q) = TestFunctions(TH)
 (u, p) = TrialFunctions(TH)
+(v, q) = TestFunctions(TH)
 
 f = Coefficient(P2)
 
-a = inner(grad(v), grad(u))*dx + q*p*dx
-L = dot(v, f)*dx
+a = inner(grad(u), grad(v))*dx + p*q*dx

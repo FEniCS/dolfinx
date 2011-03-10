@@ -1,16 +1,16 @@
 # Copyright (C) 2009 Anders Logg (logg@simula.no)
 # Licensed under the GNU GPL version 3 or any later version
 #
-# The bilinear form a(v, u) and linear form L(v) for a simple
+# The bilinear form a(u, v) and linear form L(v) for a simple
 # reaction-diffusion equation using simplified tuple notation.
 #
 # Compile this form with FFC: ffc ReactionDiffusion.ufl
 
 element = FiniteElement("Lagrange", triangle, 1)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 f = Coefficient(element)
 
-a = (grad(v), grad(u)) + (v, u)
-L = (v, f)
+a = (grad(u), grad(v)) + (u, v)
+L = (f, v)

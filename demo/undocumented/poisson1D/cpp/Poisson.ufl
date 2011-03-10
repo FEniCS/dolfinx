@@ -2,20 +2,20 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2007-11-23
-# Last changed: 2010-01-31
+# Last changed: 2011-03-09
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(u, v) and linear form L(v) for
 # Poisson's equation.
 #
-# Compile this form with FFC: ffc -l dolfin Poisson.form.
+# Compile this form with FFC: ffc -l dolfin Poisson.ufl
 
 element = FiniteElement("Lagrange", "interval", 1)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 
 f = Coefficient(element)
 g = Coefficient(element)
 
-a = dot(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+a = dot(grad(u), grad(v))*dx
+L = f*v*dx + g*v*ds

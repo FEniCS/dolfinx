@@ -2,12 +2,12 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2007-05-14
-# Last changed: 2007-05-14
+# Last changed: 2011-03-09
 #
 # This form defines the functional for computing the
 # drag on a body.
 #
-# Compile this form with FFC: ffc -l dolfin Drag.form.
+# Compile this form with FFC: ffc -l dolfin Drag.ufl
 
 element = FiniteElement("Lagrange", "triangle", 1)
 

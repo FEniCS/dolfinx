@@ -1,7 +1,7 @@
 # Copyright (C) 2010 Kristian B. Oelgaard (k.b.oelgaard@gmail.com)
 # Licensed under the GNU GPL version 3 or any later version
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(u, v) and linear form L(v) for
 # Poisson's equation where spatial coordinates are used to define the source
 # and boundary flux terms.
 #
@@ -9,8 +9,8 @@
 
 element = FiniteElement("Lagrange", triangle, 2)
 
-v = TestFunction(element)
 u = TrialFunction(element)
+v = TestFunction(element)
 
 x = triangle.x[0]
 d_x = triangle.x[0] - 0.5
@@ -18,5 +18,5 @@ d_y = triangle.x[1] - 0.5
 f = 10.0*exp(-(d_x*d_x + d_y*d_y) / 0.02)
 g = -sin(5.0*x)
 
-a = inner(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+a = inner(grad(u), grad(v))*dx
+L = f*v*dx + g*v*ds
