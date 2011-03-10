@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-02-21
+// Last changed: 2011-03-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -38,7 +38,7 @@ void Assembler::assemble(GenericTensor& A,
 {
   // Extract boundary indicators (if any)
   MeshFunction<uint>* exterior_facet_domains
-    = a.mesh().data().mesh_function("exterior facet domains");
+    = a.mesh().data().mesh_function("exterior_facet_domains");
 
   // Assemble
   assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);

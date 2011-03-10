@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010-2011.
 //
 // First added:  2006-11-01
-// Last changed: 2011-02-22
+// Last changed: 2011-03-10
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -46,15 +46,15 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   newmesh.data().clear();
 
   // Rewrite materials
-  if (oldmesh.data().mesh_function("material indicators"))
+  if (oldmesh.data().mesh_function("material_indicators"))
   {
     MeshFunction<dolfin::uint>* mat;
-    mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
+    mat = newmesh.data().create_mesh_function("material_indicators", newmesh.type().dim());
 
     for(dolfin::uint i=0; i < newmesh.num_cells(); i++)
-      (*mat)[i] = (*oldmesh.data().mesh_function("material indicators"))[cell_map[i]];
+      (*mat)[i] = (*oldmesh.data().mesh_function("material_indicators"))[cell_map[i]];
 
-    info(TRACE, "MeshData MeshFunction \"material indicators\" transformed.");
+    info(TRACE, "MeshData MeshFunction \"material_indicators\" transformed.");
   }
 
   // Rewrite boundary indicators

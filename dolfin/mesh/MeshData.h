@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2011-01-17
+// Last changed: 2011-03-10
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -24,6 +24,8 @@ namespace dolfin
   class Mesh;
   template <class T> class MeshFunction;
 
+  // FIXME: Remove space with underscore in names
+
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as MeshFunctions over topological mesh
   /// entities, arrays or maps. Each dataset is identified by a unique
@@ -34,14 +36,16 @@ namespace dolfin
   ///
   /// Boundary indicators
   ///
-  ///   "boundary facet cells"   - Array<uint> of size num_facets
-  ///   "boundary facet numbers" - Array<uint> of size num_facets
-  ///   "boundary indicators"    - Array<uint> of size num_facets
-  ///   "material indicators"    - MeshFunction<uint> of dimension D
+  ///   "boundary_facet_cells"   - Array<uint> of size num_facets
+  ///   "boundary_facet_numbers" - Array<uint> of size num_facets
+  ///   "boundary_indicators"    - Array<uint> of size num_facets
+  ///   "material_indicators"    - MeshFunction<uint> of dimension D
   ///
-  /// Boundary indicators (alternative)
+  /// Subdomain indicators
   ///
-  ///   "exterior facet domains" - MeshFunction<uint> of dimension D - 1
+  ///   "cell_domains"           - MeshFunction<uint> of dimension D
+  ///   "interior_facet_domains" - MeshFunction<uint> of dimension D - 1
+  ///   "exterior_facet_domains" - MeshFunction<uint> of dimension D - 1
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///

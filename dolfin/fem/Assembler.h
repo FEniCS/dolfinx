@@ -37,10 +37,19 @@ namespace dolfin
   ///    form.exterior_facet_domains = exterior_facet_domains
   ///    form.interior_facet_domains = interior_facet_domains
   ///
-  /// 2. By specifying a SubDomain which specifies the domain numbered
+  /// 2. By MeshFunctions stored in MeshData as
+  ///
+  ///    "cell_domains"
+  ///    "exterior_facet_domains"
+  ///    "interior_facet_domains"
+  ///
+  ///    Note that if both (1) and (2) are specified, then (1) will
+  ///    override (2).
+  ///
+  /// 3. By specifying a SubDomain which specifies the domain numbered
   ///    as 0 (with the rest treated as domain number 1)
   ///
-  /// 3. By explicitly passing MeshFunctions (as pointers) to the
+  /// 4. By explicitly passing MeshFunctions (as pointers) to the
   ///    assemble functions
 
   class Assembler

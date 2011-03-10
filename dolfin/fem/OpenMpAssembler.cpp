@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2010-11-10
-// Last changed: 2011-02-21
+// Last changed: 2011-03-10
 
 #ifdef HAS_OPENMP
 
@@ -45,7 +45,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 {
   // Extract boundary indicators (if any)
   MeshFunction<uint>* exterior_facet_domains
-    = a.mesh().data().mesh_function("exterior facet domains");
+    = a.mesh().data().mesh_function("exterior_facet_domains");
 
   // Assemble
   assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);

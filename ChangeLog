@@ -1,3 +1,7 @@
+ - Rename MeshData "boundary facet cells" --> "boundary_facet_cells"
+ - Rename MeshData "boundary facet numbers" --> "boundary_facet_numbers"
+ - Rename MeshData "boundary indicators" --> "boundary_indicators"
+ - Rename MeshData "exterior facet domains" --> "exterior_facet_domains"
  - Updates for UFC 2.0.1
  - Add FiniteElement::evaluate_basis_derivatives_all
  - Add support for VTK output of facet-based MeshFunctions
