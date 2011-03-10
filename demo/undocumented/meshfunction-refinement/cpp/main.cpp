@@ -27,12 +27,13 @@ int main()
     }
   };
 
-  UnitSquare mesh(5, 5);
+  UnitSquare mesh(1, 1);
 
   // Create MeshFunction over facets
   MeshFunction<unsigned int> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
   Inflow inflow;
   inflow.mark(inflow_facets, 1);
+  //plot(inflow_facets);
 
   // Create MeshFunction over cells
   MeshFunction<unsigned int> right_cells(mesh, mesh.topology().dim(), 0);
@@ -45,32 +46,23 @@ int main()
   for (CellIterator c(mesh); !c.end(); ++c)
     (*materials)[*c] = right_cells[*c];
 
-  MeshFunction<unsigned int>* boundaries = \
-    mesh.data().create_mesh_function("boundary indicators", mesh.topology().dim()-1);
-  for (FacetIterator f(mesh); !f.end(); ++f)
-    (*boundaries)[*f] = inflow_facets[*f];
-
   // Mark cells for refinement
   MeshFunction<bool> cell_markers(mesh, mesh.topology().dim(), false);
   Point p(1.0, 0.0);
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if (c->midpoint().distance(p) < 0.2)
+    if (c->midpoint().distance(p) < 0.5)
       cell_markers[*c] = true;
   }
 
   // Refine mesh -> new_mesh
   Mesh new_mesh = refine(mesh, cell_markers);
+  plot(new_mesh);
 
   // Extract and plot refined material indicators
-  MeshFunction<unsigned int>* new_materials = \
+  MeshFunction<dolfin::uint>* new_materials =                   \
     new_mesh.data().mesh_function("material indicators");
   plot(*new_materials);
-
-  MeshFunction<unsigned int>* new_boundaries =                  \
-    new_mesh.data().mesh_function("boundary indicators");
-  //info(*new_boundaries); // Segmentation fault.
-  //plot(*new_boundaries);
 
   return 0;
 }
