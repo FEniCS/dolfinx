@@ -73,12 +73,6 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
     g(reference_to_no_delete_pointer(g)),
     _method(method)
 {
-  std::cout << "-----In reference" << std::endl;
-
-  std::cout << "Dim:" << std::endl;
-  std::cout << "Dim(a) " << V.dim() << std::endl;
-
-
   check();
   parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
@@ -93,8 +87,6 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method)
 {
-  std::cout << "-----In sahared" << std::endl;
-
   check();
   parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
@@ -438,12 +430,9 @@ void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
-  std::cout << "Hello !" << std::endl;
-
   // Check arguments
   check_arguments(A, b, x);
 
-  std::cout << "Hello 2" << std::endl;
   // A map to hold the mapping from boundary dofs to boundary values
   Map boundary_values;
 
@@ -453,7 +442,7 @@ void DirichletBC::apply(GenericMatrix* A,
   // Compute dofs and values
   compute_bc(boundary_values, data, _method);
 
- // Copy boundary value data to arrays
+  // Copy boundary value data to arrays
   const uint size = boundary_values.size();
   std::vector<uint> dofs(size);
   std::vector<double> values(size);
@@ -483,8 +472,6 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify RHS vector (b[i] = value) and apply changes
   if (b)
   {
-    std::cout << "APPly BC RHS" << std::endl;
-
     b->set(&values[0], size, &dofs[0]);
     b->apply("insert");
   }
@@ -492,8 +479,6 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify linear system (A_ii = 1) and apply changes
   if (A)
   {
-    std::cout << "APPly BC LHS" << std::endl;
-
     const bool use_ident = parameters["use_ident"];
     if (use_ident)
       A->ident(size, &dofs[0]);
