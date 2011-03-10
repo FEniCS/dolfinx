@@ -20,6 +20,7 @@ set(CMAKE_SWIG_FLAGS
   -fastquery
   -nobuildnone
   -Iinclude/swig
+  -w520
   ${DOLFIN_CXX_DEFINITIONS}
   )
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
