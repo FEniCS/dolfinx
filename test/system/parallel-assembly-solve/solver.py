@@ -24,15 +24,16 @@ def solve(mesh_file, degree):
     # Define variational problem
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Function(V, "sin(x[0])")
-    g = Function(V, "x[0]*x[1]")
-    a = (grad(v), grad(u)) + (v, u)
-    L = (v, f) + (v, -g, ds)
+    f = Expression("sin(x[0])", degree=degree)
+    g = Expression("x[0]*x[1]", degree=degree)
+    a = dot(grad(v), grad(u))*dx + v*u*dx
+    L = v*f*dx - v*g*ds
 
     # Compute solution
+    print "Degree:", degree
     problem = VariationalProblem(a, L)
-    problem.parameters["linear_solver"] = "iterative"
-    problem.parameters["krylov_solver"]["relative_tolerance"] = 1e-15
+    #problem.parameters["linear_solver"] = "iterative"
+    #problem.parameters["krylov_solver"]["relative_tolerance"] = 1e-15
     u = problem.solve()
 
     # Return norm of solution vector
