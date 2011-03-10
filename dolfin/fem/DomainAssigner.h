@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-03-09
-// Last changed: 2011-03-09
+// Last changed: 2011-03-10
 
 #ifndef __DOMAIN_ASSIGNER_H
 #define __DOMAIN_ASSIGNER_H

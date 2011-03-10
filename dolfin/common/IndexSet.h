@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-02-07
-// Last changed: 2011-03-09
+// Last changed: 2011-03-10
 
 #ifndef __INDEX_SET_H
 #define __INDEX_SET_H
@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     /// Create index set of given size
-    IndexSet(uint size) : _has_index(size), _positions(size)
+    IndexSet(uint size) : _size(size), _has_index(size), _positions(size)
     {
       _indices.reserve(size);
       clear();
@@ -38,14 +38,14 @@ namespace dolfin
     /// Check whether index is in set
     bool has_index(uint index) const
     {
-      assert(index < _indices.size());
+      assert(index < _size);
       return _has_index[index];
     }
 
     /// Return position (if any) for given index
     uint find(uint index) const
     {
-      assert(index < _indices.size());
+      assert(index < _size);
       if (!_has_index[index])
         error("No such index: %d.", index);
       return _positions[index];
@@ -68,7 +68,7 @@ namespace dolfin
     /// Insert index into set
     void insert(uint index)
     {
-      assert(index < _indices.size());
+      assert(index < _size);
       if (_has_index[index])
         return;
       _indices.push_back(index);
@@ -80,7 +80,7 @@ namespace dolfin
     void fill()
     {
       _indices.clear();
-      for (uint i = 0; i < _has_index.size(); i++)
+      for (uint i = 0; i < _size; i++)
         _indices.push_back(i);
       std::fill(_has_index.begin(), _has_index.end(), true);
     }
@@ -94,6 +94,9 @@ namespace dolfin
     }
 
   private:
+
+    // Size (maximum index + 1)
+    uint _size;
 
     // Vector of indices
     std::vector<uint> _indices;
