@@ -1,3 +1,5 @@
+ - Recognize subdomain data in Assembler from both Form and Mesh
+ - Add storage for subdomains (cell_domains etc) in Form class
  - Rename MeshData "boundary facet cells" --> "boundary_facet_cells"
  - Rename MeshData "boundary facet numbers" --> "boundary_facet_numbers"
  - Rename MeshData "boundary indicators" --> "boundary_indicators"
