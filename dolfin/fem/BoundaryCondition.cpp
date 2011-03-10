@@ -51,29 +51,52 @@ boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() c
 void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
                                         const GenericVector* x) const
 {
+  std::cout << "About to assert" << std::endl;
   assert(_function_space);
+  std::cout << "End assert" << std::endl;
 
   // Check matrix and vector dimensions
   if (A && x && A->size(0) != x->size())
+  {
     error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
           A->size(0), x->size());
+  }
   if (A && b && A->size(0) != b->size())
+  {
     error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
           A->size(0), b->size());
+  }
   if (x && b && x->size() != b->size())
+  {
     error("Vector dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
           x->size(), b->size());
+  }
+  std::cout << "Mid-check" << std::endl;
+
+  if (A)
+  {
+    std::cout << "Size " << A->size(0) << std::endl;
+    std::cout << "Dim " << _function_space->dim() << std::endl;
+  }
 
   // Check dimension of function space
   if (A && A->size(0) < _function_space->dim())
+  {
     error("Dimension of function space (%d) too large for application of boundary conditions to linear system (%d rows).",
           _function_space->dim(), A->size(0));
+  }
+  std::cout << "end-check (a)" << std::endl;
   if (x && x->size() < _function_space->dim())
+  {
     error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
           _function_space->dim(), x->size());
+  }
+  std::cout << "end-check" << std::endl;
   if (b && b->size() < _function_space->dim())
+  {
     error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
           _function_space->dim(), b->size());
+  }
 
   // FIXME: Check case A.size() > _function_space->dim() for subspaces
 }

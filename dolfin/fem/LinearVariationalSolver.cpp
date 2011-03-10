@@ -62,20 +62,24 @@ void LinearVariationalSolver::solve(Function& u,
   else
   {
     // Assemble linear system
+    std::cout << "Assemble LHS" << std::endl;
     assemble(*A,
              problem.bilinear_form(),
              problem.cell_domains(),
              problem.exterior_facet_domains(),
              problem.interior_facet_domains());
+    std::cout << "Assemble RHS" << std::endl;
     assemble(*b,
              problem.linear_form(),
              problem.cell_domains(),
              problem.exterior_facet_domains(),
              problem.interior_facet_domains());
 
+    std::cout << "Apply BCS" << std::endl;
     // Apply boundary conditions
     for (uint i = 0; i < problem.bcs().size(); i++)
       problem.bcs()[i]->apply(*A, *b);
+    std::cout << "End BCS" << std::endl;
   }
 
   // Print vector/matrix

@@ -85,7 +85,6 @@ namespace dolfin
   public:
 
     typedef boost::unordered_map<uint, double> Map;
-    //typedef std::map<uint, double> Map;
 
     /// Create boundary condition for subdomain
     DirichletBC(const FunctionSpace& V,
@@ -102,13 +101,13 @@ namespace dolfin
     /// Create boundary condition for subdomain specified by index
     DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
-                const MeshFunction<uint>& sub_domains, uint sub_domain,
+                const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
-                const MeshFunction<uint>& sub_domains, uint sub_domain,
+                const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh

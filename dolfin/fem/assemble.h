@@ -48,9 +48,9 @@ namespace dolfin
   /// Assemble tensor on sub domains
   void assemble(GenericTensor& A,
                 const Form& a,
-                const MeshFunction<uint>* cell_domains,
-                const MeshFunction<uint>* exterior_facet_domains,
-                const MeshFunction<uint>* interior_facet_domains,
+                const MeshFunction<unsigned int>* cell_domains,
+                const MeshFunction<unsigned int>* exterior_facet_domains,
+                const MeshFunction<unsigned int>* interior_facet_domains,
                 bool reset_sparsity=true,
                 bool add_values=false);
 
@@ -86,9 +86,9 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const std::vector<const DirichletBC*>& bcs,
-                       const MeshFunction<uint>* cell_domains,
-                       const MeshFunction<uint>* exterior_facet_domains,
-                       const MeshFunction<uint>* interior_facet_domains,
+                       const MeshFunction<unsigned int>* cell_domains,
+                       const MeshFunction<unsigned int>* exterior_facet_domains,
+                       const MeshFunction<unsigned int>* interior_facet_domains,
                        const GenericVector* x0,
                        bool reset_sparsities=true,
                        bool add_values=false);
@@ -108,9 +108,9 @@ namespace dolfin
 
   /// Assemble scalar on sub domains
   double assemble(const Form& a,
-                  const MeshFunction<uint>* cell_domains,
-                  const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains,
+                  const MeshFunction<unsigned int>* cell_domains,
+                  const MeshFunction<unsigned int>* exterior_facet_domains,
+                  const MeshFunction<unsigned int>* interior_facet_domains,
                   bool reset_sparsity=true,
                   bool add_values=false);
 

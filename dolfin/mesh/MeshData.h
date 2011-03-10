@@ -88,10 +88,10 @@ namespace dolfin
     //--- Creation of data ---
 
     /// Create MeshFunction with given name (uninitialized)
-    MeshFunction<uint>* create_mesh_function(std::string name);
+    MeshFunction<unsigned int>* create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
-    MeshFunction<uint>* create_mesh_function(std::string name, uint dim);
+    MeshFunction<unsigned int>* create_mesh_function(std::string name, uint dim);
 
     /// Create empty array (vector) with given name
     std::vector<uint>* create_array(std::string name);
@@ -108,7 +108,7 @@ namespace dolfin
     //--- Retrieval of data ---
 
     /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<uint>* mesh_function(const std::string name) const;
+    MeshFunction<unsigned int>* mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not available)
     std::vector<uint>* array(const std::string name) const;

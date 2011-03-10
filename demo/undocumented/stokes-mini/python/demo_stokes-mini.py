@@ -16,6 +16,11 @@ from dolfin import *
 # Load mesh and subdomains
 mesh = Mesh("dolfin-2.xml.gz")
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
+print sub_domains.size()
+print type(sub_domains)
+#info(sub_domains, True)
+print "------------------"
+
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
@@ -26,6 +31,10 @@ Mini = (P1 + B)*Q
 # No-slip boundary condition for velocity
 noslip = Constant((0, 0))
 bc0 = DirichletBC(Mini.sub(0), noslip, sub_domains, 0)
+
+test = Mini.sub(0)
+print "Hi"
+print "bc0", Mini.function_space().dim()
 
 # Inflow boundary condition for velocity
 inflow = Expression(("-sin(x[1]*pi)", "0.0"))
