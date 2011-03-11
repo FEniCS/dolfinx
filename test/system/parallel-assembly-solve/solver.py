@@ -14,11 +14,10 @@ from dolfin import *
 # Relative tolerance for regression test
 tol = 1e-10
 
-def solve(mesh_file, degree):
+def solve(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
-    # Create mesh and define function space
-    mesh = Mesh(mesh_file);
+    # Create function space
     V = FunctionSpace(mesh, "CG", degree)
 
     # Define variational problem
@@ -79,35 +78,26 @@ def check_results(results, reference, tol):
     return status
 
 # Reference values for norm of solution vector
-#reference = { ("unitsquare.xml.gz", 1): 7.821707395007537 ,
-#              ("unitsquare.xml.gz", 2): 15.18829494599347 ,
-#              ("unitsquare.xml.gz", 3): 22.55234140275229 ,
-#              ("unitsquare.xml.gz", 4): 29.91638783448794 ,
-#              ("unitsquare.xml.gz", 5): 37.28043428001642 ,
-#              ("unitcube.xml.gz", 1): 3.647913575216382 ,
-#              ("unitcube.xml.gz", 2): 8.523874310611367 ,
-#              ("unitcube.xml.gz", 3): 14.55432230797502 ,
-#              ("unitcube.xml.gz", 4): 21.57286638104142 ,
-#              ("unitcube.xml.gz", 5): 29.45598181177814 }
-reference = { ("unitsquare.xml.gz", 1): 9.547454087327344 ,
-              ("unitsquare.xml.gz", 2): 18.42366670418527 ,
-              ("unitsquare.xml.gz", 3): 27.29583104741712 ,
-              ("unitsquare.xml.gz", 4): 36.1686712809094 ,
-              ("unitcube.xml.gz", 1): 8.876490653853809 ,
-              ("unitcube.xml.gz", 2): 19.99081167299566 ,
-              ("unitcube.xml.gz", 3): 33.85477561286852 ,
-              ("unitcube.xml.gz", 4): 49.97357666762962 }
+reference = { ("16x16 unit square", 1): 9.547454087328376 ,
+              ("16x16 unit square", 2): 18.42366670418269 ,
+              ("16x16 unit square", 3): 27.29583104732836 ,
+              ("16x16 unit square", 4): 36.16867128121694 ,
+              ("4x4x4 unit cube", 1): 12.23389289626038 ,
+              ("4x4x4 unit cube", 2): 28.96491629163837 ,
+              ("4x4x4 unit cube", 3): 49.97350551329799 ,
+              ("4x4x4 unit cube", 4): 74.49938266409099 }
 
 # Mesh files and degrees to check
-mesh_files = ["unitsquare.xml.gz", "unitcube.xml.gz"]
+meshes= [(UnitSquare(16, 16), "16x16 unit square"),\
+         (UnitCube(4, 4, 4),  "4x4x4 unit cube")]
 degrees = [1, 2, 3, 4]
 
 ## Iterate over test cases and collect results
 results = []
-for mesh_file in mesh_files:
+for mesh in meshes:
     for degree in degrees:
-        norm = solve(mesh_file, degree)
-        results.append((mesh_file, degree, norm))
+        norm = solve(mesh[0], degree)
+        results.append((mesh[1], degree, norm))
 
 # Uncomment to print results for use as reference
 #print_reference(results)
