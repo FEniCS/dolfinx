@@ -82,18 +82,18 @@ namespace dolfin
     VariationalProblem(const Form& form_0,
                        const Form& form_1,
                        const std::vector<const BoundaryCondition*>& bcs,
-                       const MeshFunction<uint>* cell_domains,
-                       const MeshFunction<uint>* exterior_facet_domains,
-                       const MeshFunction<uint>* interior_facet_domains);
+                       const MeshFunction<unsigned int>* cell_domains,
+                       const MeshFunction<unsigned int>* exterior_facet_domains,
+                       const MeshFunction<unsigned int>* interior_facet_domains);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
     /// and subdomains for cells, exterior and interior facets of the mesh
     VariationalProblem(boost::shared_ptr<const Form> form_0,
                        boost::shared_ptr<const Form> form_1,
                        std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
-                       const MeshFunction<uint>* cell_domains,
-                       const MeshFunction<uint>* exterior_facet_domains,
-                       const MeshFunction<uint>* interior_facet_domains);
+                       const MeshFunction<unsigned int>* cell_domains,
+                       const MeshFunction<unsigned int>* exterior_facet_domains,
+                       const MeshFunction<unsigned int>* interior_facet_domains);
 
     /// Destructor
     ~VariationalProblem();
@@ -147,13 +147,13 @@ namespace dolfin
     const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs_shared_ptr() const;
 
     /// Return the cell domains
-    const MeshFunction<uint>* cell_domains() const;
+    const MeshFunction<unsigned int>* cell_domains() const;
 
     /// Return the exterior facet domains
-    const MeshFunction<uint>* exterior_facet_domains() const;
+    const MeshFunction<unsigned int>* exterior_facet_domains() const;
 
     /// Return the interior facet domains
-    const MeshFunction<uint>* interior_facet_domains() const;
+    const MeshFunction<unsigned int>* interior_facet_domains() const;
 
     /// Default parameter values
     static Parameters default_parameters()

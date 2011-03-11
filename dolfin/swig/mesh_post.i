@@ -63,8 +63,13 @@ def next(self):
 //-----------------------------------------------------------------------------
 // MeshFunction macro
 //-----------------------------------------------------------------------------
-%define DECLARE_MESHFUNCTION(MESHFUNCTION,TYPE,TYPENAME)
+%define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
 %template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
+
+#if SWIG_VERSION >= 0x020000
+%shared_ptr(MESHFUNCTION ## TYPENAME)
+//%shared_ptr(dolfin::MESHFUNCTION<TYPE>)
+#endif
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
@@ -82,28 +87,28 @@ def next(self):
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTIONS(MESHFUNCTION)
-DECLARE_MESHFUNCTION(MESHFUNCTION,int,Int)
-DECLARE_MESHFUNCTION(MESHFUNCTION,dolfin::uint,UInt)
-DECLARE_MESHFUNCTION(MESHFUNCTION,double,Double)
-DECLARE_MESHFUNCTION(MESHFUNCTION,bool,Bool)
+DECLARE_MESHFUNCTION(MESHFUNCTION, unsigned int, UInt)
+DECLARE_MESHFUNCTION(MESHFUNCTION, int, Int)
+DECLARE_MESHFUNCTION(MESHFUNCTION, double, Double)
+DECLARE_MESHFUNCTION(MESHFUNCTION, bool, Bool)
 %enddef
 
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
 DECLARE_MESHFUNCTIONS(MeshFunction)
-DECLARE_MESHFUNCTIONS(VertexFunction)
+DECLARE_MESHFUNCTIONS(CellFunction)
 DECLARE_MESHFUNCTIONS(EdgeFunction)
 DECLARE_MESHFUNCTIONS(FaceFunction)
 DECLARE_MESHFUNCTIONS(FacetFunction)
-DECLARE_MESHFUNCTIONS(CellFunction)
+DECLARE_MESHFUNCTIONS(VertexFunction)
 
 %pythoncode
 %{
 _doc_string = MeshFunctionInt.__doc__
 _doc_string += """
   *Arguments*
-    tp (str) 
+    tp (str)
       String defining the type of the MeshFunction
       Allowed: 'int', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
@@ -155,7 +160,7 @@ def _new_closure(MeshType):
 
 # Create the named MeshFunction types
 VertexFunction = type("VertexFunction", (), \
-		      {"__new__":_new_closure("VertexFunction"),\
+		                {"__new__":_new_closure("VertexFunction"),\
                        "__doc__":"Create MeshFunction of topological" \
                        " dimension 0 on given mesh."})
 EdgeFunction = type("EdgeFunction", (), \
@@ -187,4 +192,3 @@ CellFunction = type("CellFunction", (),\
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
-

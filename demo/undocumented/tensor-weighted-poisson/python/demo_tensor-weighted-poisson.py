@@ -70,9 +70,9 @@ public:
   }
 
   // The data stored in mesh functions
-  MeshFunction<double>* c00;
-  MeshFunction<double>* c01;
-  MeshFunction<double>* c11;
+  boost::shared_ptr<MeshFunction<double> > c00;
+  boost::shared_ptr<MeshFunction<double> > c01;
+  boost::shared_ptr<MeshFunction<double> > c11;
 
 };
 """
