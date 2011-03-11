@@ -106,7 +106,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Return if global entity indices are already calculated
   std::stringstream mesh_data_name;
   mesh_data_name << "global entity indices " << d;
-  MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+  boost::shared_ptr<MeshFunction<unsigned int> > global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
 
   // Already computed the global entity numbers; do nothing
   if (global_entity_indices != NULL)
@@ -117,7 +117,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   const uint process_number = MPI::process_number();
 
   // Get global vertex indices and overlap
-  MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
   std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
   assert(global_vertex_indices);
   assert(overlap);
@@ -673,7 +673,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   }
 
   // Construct local to global mapping based on the global to local mapping
-  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
   assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     (*global_vertex_indices)[(*iter).second] = (*iter).first;
@@ -681,7 +681,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct local to global mapping for cells
   std::stringstream cell_name;
   cell_name << "global entity indices " << mesh_data.tdim;
-  MeshFunction<uint>* global_cell_indices = mesh.data().create_mesh_function(cell_name.str(), mesh_data.tdim);
+  boost::shared_ptr<MeshFunction<unsigned int> > global_cell_indices = mesh.data().create_mesh_function(cell_name.str(), mesh_data.tdim);
   assert(global_cell_indices);
   const std::vector<uint>& gci = mesh_data.global_cell_indices;
   for(uint i = 0; i < gci.size(); ++i)
@@ -703,7 +703,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
-  MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
+  boost::shared_ptr<MeshFunction<unsigned int> > boundary_vertex_map = bmesh.data().mesh_function("vertex map");
   assert(boundary_vertex_map);
   const uint boundary_size = boundary_vertex_map->size();
 
@@ -770,8 +770,7 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
                Mesh& mesh, uint d, std::string name)
 {
   // Create mesh markers and mark all
-  MeshFunction<uint>* exterior = 0;
-  exterior = mesh.data().create_mesh_function(name, d);
+  boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().create_mesh_function(name, d);
   exterior->set_all(1);
 
   // Remove all entities in the overlap

@@ -63,7 +63,7 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
   IndexSet marked_cells(mesh.num_cells());
 
   // Get bisection data
-  MeshFunction<uint>* bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
 
   // Iterate until no more cells are marked
   cells.fill();
@@ -237,7 +237,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Get bisection data for old mesh
-  MeshFunction<uint>* bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
 
   // Markers for bisected cells pointing to their bisection twins in refined mesh
   std::vector<uint> refined_bisection_twins(num_cells);
@@ -446,7 +446,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   editor.close();
 
   // Attach data for bisection twins
-  MeshFunction<uint>* _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
+  boost::shared_ptr<MeshFunction<unsigned int> > _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
   assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
   _refined_bisection_twins->set(refined_bisection_twins);
