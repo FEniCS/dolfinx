@@ -69,6 +69,8 @@ def next(self):
 #if SWIG_VERSION >= 0x020000
 %shared_ptr(MESHFUNCTION ## TYPENAME)
 //%shared_ptr(dolfin::MESHFUNCTION<TYPE>)
+#else
+SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
 #endif
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";

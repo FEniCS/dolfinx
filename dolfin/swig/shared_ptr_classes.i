@@ -258,6 +258,14 @@ SWIG_SHARED_PTR_DERIVED(FacetArea, dolfin::Expression, dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)
 SWIG_SHARED_PTR_DERIVED(MeshCoordinates, dolfin::Expression, dolfin::MeshCoordinates)
 
+SWIG_SHARED_PTR(MeshFunctionUInt, dolfin::MeshFunction<unsigned int>)
+SWIG_SHARED_PTR(CellFunctionUInt, dolfin::CellFunction<unsigned int>)
+SWIG_SHARED_PTR(EdgeFunctionUInt, dolfin::EdgeFunction<unsigned int>)
+SWIG_SHARED_PTR(FaceFunctionUInt, dolfin::FaceFunction<unsigned int>)
+SWIG_SHARED_PTR(FacetFunctionUInt, dolfin::FacetFunction<unsigned int>)
+SWIG_SHARED_PTR(VertexFunctionUInt, dolfin::VertexFunction<unsigned int>)
+
+
 //SWIG_SHARED_PTR(HierarchicalMesh, dolfin::Hierarchical<dolfin::Mesh>)
 //SWIG_SHARED_PTR_DERIVED(Mesh, dolfin::Hierarchical<dolfin::Mesh>, dolfin::Mesh)
 SWIG_SHARED_PTR(Mesh, dolfin::Mesh)
@@ -276,7 +284,6 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere, dolfin::Mesh, dolfin::UnitSphere)
 
 SWIG_SHARED_PTR(SubDomain, dolfin::SubDomain)
 SWIG_SHARED_PTR_DERIVED(DomainBoundary, dolfin::SubDomain, dolfin::DomainBoundary)
-
 
 SWIG_SHARED_PTR(GenericTensor, dolfin::GenericTensor)
 SWIG_SHARED_PTR_DERIVED(GenericVector, dolfin::GenericTensor, dolfin::GenericVector)
