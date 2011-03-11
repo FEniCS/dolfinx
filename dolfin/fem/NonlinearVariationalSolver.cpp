@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-01-14
+// Last changed: 2011-03-11
 
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -55,10 +55,7 @@ void NonlinearVariationalSolver::
 _NonlinearProblem::F(GenericVector& b, const GenericVector& x)
 {
   // Assemble right-hand side
-  assemble(b, problem.linear_form(),
-           problem.cell_domains(),
-           problem.exterior_facet_domains(),
-           problem.interior_facet_domains());
+  assemble(b, problem.linear_form());
 
   // Apply boundary conditions
   for (uint i = 0; i < problem.bcs().size(); i++)
@@ -77,11 +74,7 @@ _NonlinearProblem::J(GenericMatrix& A, const GenericVector& x)
   bool reset_sparsity = !(parameters["reset_jacobian"] && jacobian_initialized);
 
   // Assemble left-hand side
-  assemble(A, problem.bilinear_form(),
-           problem.cell_domains(),
-           problem.exterior_facet_domains(),
-           problem.interior_facet_domains(),
-           reset_sparsity);
+  assemble(A, problem.bilinear_form(), reset_sparsity);
 
   // Remember that Jacobian has been initialized
   jacobian_initialized = true;

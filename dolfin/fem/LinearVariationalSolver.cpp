@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-01-17
+// Last changed: 2011-03-11
 
 #include <dolfin/function/Function.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
@@ -53,25 +53,15 @@ void LinearVariationalSolver::solve(Function& u,
                     problem.bilinear_form(),
                     problem.linear_form(),
                     bcs,
-                    problem.cell_domains(),
-                    problem.exterior_facet_domains(),
-                    problem.interior_facet_domains(),
+                    0, 0, 0,
                     0,
                     true, false);
   }
   else
   {
     // Assemble linear system
-    assemble(*A,
-             problem.bilinear_form(),
-             problem.cell_domains(),
-             problem.exterior_facet_domains(),
-             problem.interior_facet_domains());
-    assemble(*b,
-             problem.linear_form(),
-             problem.cell_domains(),
-             problem.exterior_facet_domains(),
-             problem.interior_facet_domains());
+    assemble(*A, problem.bilinear_form());
+    assemble(*b, problem.linear_form());
 
     // Apply boundary conditions
     for (uint i = 0; i < problem.bcs().size(); i++)

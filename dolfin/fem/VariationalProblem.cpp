@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-02-16
+// Last changed: 2011-03-11
 
 #include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveVariationalSolver.h>
@@ -21,10 +21,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
   : Hierarchical<VariationalProblem>(*this),
     _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
-    _bilinear_form(extract_bilinear_form(form_0, form_1)),
-    _cell_domains(0),
-    _exterior_facet_domains(0),
-    _interior_facet_domains(0)
+    _bilinear_form(extract_bilinear_form(form_0, form_1))
 {
   // Initialize parameters
   init_parameters();
@@ -36,10 +33,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
   : Hierarchical<VariationalProblem>(*this),
     _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
-    _bilinear_form(extract_bilinear_form(form_0, form_1)),
-    _cell_domains(0),
-    _exterior_facet_domains(0),
-    _interior_facet_domains(0)
+    _bilinear_form(extract_bilinear_form(form_0, form_1))
 {
   // Initialize parameters
   init_parameters();
@@ -54,32 +48,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
   : Hierarchical<VariationalProblem>(*this),
     _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
-    _bilinear_form(extract_bilinear_form(form_0, form_1)),
-    _cell_domains(0),
-    _exterior_facet_domains(0),
-    _interior_facet_domains(0)
-{
-  // Initialize parameters
-  init_parameters();
-
-  // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
-}
-//-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(const Form& form_0,
-                                       const Form& form_1,
-                                       const std::vector<const BoundaryCondition*>& bcs,
-                                       const MeshFunction<uint>* cell_domains,
-                                       const MeshFunction<uint>* exterior_facet_domains,
-                                       const MeshFunction<uint>* interior_facet_domains)
-  : Hierarchical<VariationalProblem>(*this),
-    _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
-    _linear_form(extract_linear_form(form_0, form_1)),
-    _bilinear_form(extract_bilinear_form(form_0, form_1)),
-    _cell_domains(cell_domains),
-    _exterior_facet_domains(exterior_facet_domains),
-    _interior_facet_domains(interior_facet_domains)
+    _bilinear_form(extract_bilinear_form(form_0, form_1))
 {
   // Initialize parameters
   init_parameters();
@@ -91,18 +60,12 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(boost::shared_ptr<const Form> form_0,
                                        boost::shared_ptr<const Form> form_1,
-                                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
-                                       const MeshFunction<uint>* cell_domains,
-                                       const MeshFunction<uint>* exterior_facet_domains,
-                                       const MeshFunction<uint>* interior_facet_domains)
+                                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
   : Hierarchical<VariationalProblem>(*this),
     _is_nonlinear(extract_is_nonlinear(form_0, form_1)),
     _linear_form(extract_linear_form(form_0, form_1)),
     _bilinear_form(extract_bilinear_form(form_0, form_1)),
-    _bcs(bcs),
-    _cell_domains(cell_domains),
-    _exterior_facet_domains(exterior_facet_domains),
-    _interior_facet_domains(interior_facet_domains)
+    _bcs(bcs)
 {
   // Initialize parameters
   init_parameters();
@@ -233,21 +196,6 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> >
 VariationalProblem::bcs_shared_ptr() const
 {
   return _bcs;
-}
-//-----------------------------------------------------------------------------
-const MeshFunction<dolfin::uint>* VariationalProblem::cell_domains() const
-{
-  return _cell_domains;
-}
-//-----------------------------------------------------------------------------
-const MeshFunction<dolfin::uint>* VariationalProblem::exterior_facet_domains() const
-{
-  return _exterior_facet_domains;
-}
-//-----------------------------------------------------------------------------
-const MeshFunction<dolfin::uint>* VariationalProblem::interior_facet_domains() const
-{
-  return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 bool VariationalProblem::extract_is_nonlinear(const Form& form_0,

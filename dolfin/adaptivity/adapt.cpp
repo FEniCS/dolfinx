@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-25
+// Last changed: 2011-03-11
 
 #include <boost/shared_ptr.hpp>
 
@@ -250,8 +250,7 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
   boost::shared_ptr<VariationalProblem>
     refined_problem(new VariationalProblem(form_0->child_shared_ptr(),
                                            form_1->child_shared_ptr(),
-                                           refined_bcs,
-                                           0, 0, 0));
+                                           refined_bcs));
 
   // Set parent / child
   set_parent_child(problem, refined_problem);

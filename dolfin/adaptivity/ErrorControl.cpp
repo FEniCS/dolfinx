@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-02-22
+// Last changed: 2011-03-11
 
 #include <armadillo>
 
@@ -120,7 +120,7 @@ void ErrorControl::compute_dual(Function& z,
     dual_bcs.push_back(dual_bc_ptr);
   }
 
-  VariationalProblem dual(_a_star, _L_star, dual_bcs, 0, 0, 0);
+  VariationalProblem dual(_a_star, _L_star, dual_bcs);
   dual.solve(z);
 }
 //-----------------------------------------------------------------------------
