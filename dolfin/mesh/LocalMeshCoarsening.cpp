@@ -200,7 +200,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     vertex_boundary[v->index()] = false;
 
   BoundaryMesh boundary(mesh);
-  MeshFunction<uint>* bnd_vertex_map = boundary.data().mesh_function("vertex map");
+  boost::shared_ptr<MeshFunction<unsigned int> > bnd_vertex_map = boundary.data().mesh_function("vertex map");
   assert(bnd_vertex_map);
   for (VertexIterator v(boundary); !v.end(); ++v)
     vertex_boundary[(*bnd_vertex_map)[v->index()]] = true;

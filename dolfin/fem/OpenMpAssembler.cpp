@@ -44,11 +44,11 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool add_values)
 {
   // Extract boundary indicators (if any)
-  MeshFunction<uint>* exterior_facet_domains
+   boost::shared_ptr<MeshFunction<unsigned int> > exterior_facet_domains
     = a.mesh().data().mesh_function("exterior facet domains");
 
   // Assemble
-  assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);
+  assemble(A, a, 0, exterior_facet_domains.get(), 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
@@ -255,7 +255,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
 
   // Extract exterior (non shared) facets markers
-  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+   boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -429,11 +429,11 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
+   boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
-          facet_orientation);
+          facet_orientation->dim());
   }
 
   // Get coloring data
@@ -491,7 +491,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
         continue;
 
       // Get cells incident with facet
-      std::pair<const Cell, const Cell> cells = facet.adjacent_cells(facet_orientation);
+      std::pair<const Cell, const Cell> cells = facet.adjacent_cells(facet_orientation.get());
       const Cell& cell0 = cells.first;
       const Cell& cell1 = cells.second;
 

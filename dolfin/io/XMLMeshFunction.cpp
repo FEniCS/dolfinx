@@ -294,10 +294,11 @@ void XMLMeshFunction::build_mapping(uint entity_dimension)
   // Exit gracefully if wrong entity dimension is asked for (only vertices and cells working)
   if (entity_dimension > 0 and entity_dimension < mesh.topology().dim())
     not_working_in_parallel("XMLMeshFunction for faces and facets");
+
   // Read global entity indices from mesh, currently only working for vertices and cells
   std::stringstream mesh_data_name;
   mesh_data_name << "global entity indices " << entity_dimension;
-  MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+   boost::shared_ptr<MeshFunction<unsigned int> > global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
   if (global_entity_indices == NULL)
   {
     MeshPartitioning::number_entities(mesh, entity_dimension);

@@ -48,7 +48,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   // Rewrite materials
   if (oldmesh.data().mesh_function("material indicators"))
   {
-    MeshFunction<dolfin::uint>* mat;
+     boost::shared_ptr<MeshFunction<unsigned int> > mat;
     mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
 
     for(dolfin::uint i=0; i < newmesh.num_cells(); i++)

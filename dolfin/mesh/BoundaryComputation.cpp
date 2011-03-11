@@ -61,7 +61,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
-  MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
+   boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
@@ -106,13 +106,13 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<uint>* vertex_map = boundary.data().create_mesh_function("vertex map");
+   boost::shared_ptr<MeshFunction<unsigned int> > vertex_map = boundary.data().create_mesh_function("vertex map");
   assert(vertex_map);
   if (num_boundary_vertices > 0)
     vertex_map->init(boundary, 0, num_boundary_vertices);
 
   // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<uint>* cell_map = boundary.data().create_mesh_function("cell map");
+   boost::shared_ptr<MeshFunction<unsigned int> > cell_map = boundary.data().create_mesh_function("cell map");
   assert(cell_map);
   if (num_boundary_cells > 0)
     cell_map->init(boundary, D - 1, num_boundary_cells);

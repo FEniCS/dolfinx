@@ -26,8 +26,8 @@ void TransfiniteInterpolation::move(Mesh& mesh, const Mesh& new_boundary,
     error("Mesh interpolation only implemented in 2D and 3D so far.");
 
   // Get vertex and cell maps
-  const MeshFunction<uint>* vertex_map = new_boundary.data().mesh_function("vertex map");
-  const MeshFunction<uint>* cell_map   = new_boundary.data().mesh_function("cell map");
+  boost::shared_ptr<const MeshFunction<unsigned int> > vertex_map = new_boundary.data().mesh_function("vertex map");
+  boost::shared_ptr<const MeshFunction<unsigned int> > cell_map   = new_boundary.data().mesh_function("cell map");
   assert(vertex_map);
   assert(cell_map);
 

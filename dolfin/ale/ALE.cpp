@@ -46,10 +46,10 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1, ALEType method)
   BoundaryMesh boundary1(mesh1);
 
   // Get vertex mappings
-  MeshFunction<uint>* local_to_global_0  = mesh0.data().mesh_function("global vertex indices");
-  MeshFunction<uint>* local_to_global_1  = mesh1.data().mesh_function("global vertex indices");
-  MeshFunction<uint>* boundary_to_mesh_0 = boundary0.data().mesh_function("vertex map");
-  MeshFunction<uint>* boundary_to_mesh_1 = boundary1.data().mesh_function("vertex map");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0  = mesh0.data().mesh_function("global vertex indices");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1  = mesh1.data().mesh_function("global vertex indices");
+  boost::shared_ptr<MeshFunction<unsigned int> > boundary_to_mesh_0 = boundary0.data().mesh_function("vertex map");
+  boost::shared_ptr<MeshFunction<unsigned int> > boundary_to_mesh_1 = boundary1.data().mesh_function("vertex map");
   assert(local_to_global_0);
   assert(local_to_global_1);
   assert(boundary_to_mesh_0);
