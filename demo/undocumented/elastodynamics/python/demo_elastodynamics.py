@@ -6,7 +6,7 @@ __date__ = "2010-04-30"
 __copyright__ = "Copyright (C) 2010 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg, 2008-2011
 
 from dolfin import *
 
@@ -32,7 +32,6 @@ def update(u, u0, v0, a0, beta, gamma, dt):
     # Update (u0 <- u0)
     v0.vector()[:], a0.vector()[:] = v_vec, a_vec
     u0.vector()[:] = u.vector()
-
 
 # External load
 class Traction(Expression):
@@ -139,8 +138,12 @@ L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx \
 zero = Constant((0.0, 0.0))
 bc = DirichletBC(V, zero, left)
 
+# Attach subdomains
+a.exterior_facet_domains = boundary_subdomains
+L.exterior_facet_domains = boundary_subdomains
+
 # Set up PDE and solve
-problem = VariationalProblem(a, L, bcs=bc, exterior_facet_domains=boundary_subdomains)
+problem = VariationalProblem(a, L, bcs=bc)
 
 vtk_file = File("elasticity.pvd")
 while t <= T:
