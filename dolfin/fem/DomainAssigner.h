@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-03-09
-// Last changed: 2011-03-10
+// Last changed: 2011-03-11
 
 #ifndef __DOMAIN_ASSIGNER_H
 #define __DOMAIN_ASSIGNER_H
@@ -15,7 +15,7 @@ namespace dolfin
   class Form;
   template <class T> class MeshFunction;
 
-  /// This class is used for assignment of domains to forms:
+  /// These classes are used for assignment of domains to forms:
   ///
   ///   a.cell_domains = cell_domains
   ///   a.exterior_facet_domains = exterior_facet_domains
@@ -24,68 +24,66 @@ namespace dolfin
   /// where the arguments can be either objects/references or
   /// shared pointers to MeshFunctions.
 
-  class DomainAssigner
+  /// Assignment of cell domains
+  class CellDomainAssigner
   {
   public:
 
-    /// Constructor
-    DomainAssigner(Form& form);
+    // Constructor
+    CellDomainAssigner(Form& form) : form(form) {}
 
-    /// Destructor
-    virtual ~DomainAssigner();
+    // Assign reference
+    const CellDomainAssigner& operator= (const MeshFunction<uint>& domains);
 
-    /// Assign reference
-    const DomainAssigner& operator= (const MeshFunction<uint>& domains);
+    // Assign shared pointer
+    const CellDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
 
-    /// Assign shared pointer
-    const DomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
-
-  protected:
-
-    // Assignment implemented by subclasses
-    virtual void assign(boost::shared_ptr<const MeshFunction<uint> > domains) = 0;
+  private:
 
     // The form
     Form& form;
 
   };
 
-  /// Assignment of cell domains
-  class CellDomainAssigner : public DomainAssigner
-  {
-  public:
-
-    CellDomainAssigner(Form& form) : DomainAssigner(form) {}
-
-  protected:
-
-    void assign(boost::shared_ptr<const MeshFunction<uint> > domains);
-
-  };
-
   /// Assignment of exterior facet domains
-  class ExteriorFacetDomainAssigner : public DomainAssigner
+  class ExteriorFacetDomainAssigner
   {
   public:
 
-    ExteriorFacetDomainAssigner(Form& form) : DomainAssigner(form) {}
+    // Constructor
+    ExteriorFacetDomainAssigner(Form& form) : form(form) {}
 
-  protected:
+    // Assign reference
+    const ExteriorFacetDomainAssigner& operator= (const MeshFunction<uint>& domains);
 
-    void assign(boost::shared_ptr<const MeshFunction<uint> > domains);
+    // Assign shared pointer
+    const ExteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
+
+  private:
+
+    // The form
+    Form& form;
 
   };
 
   /// Assignment of interior facet domains
-  class InteriorFacetDomainAssigner : public DomainAssigner
+  class InteriorFacetDomainAssigner
   {
   public:
 
-    InteriorFacetDomainAssigner(Form& form) : DomainAssigner(form) {}
+    // Constructor
+    InteriorFacetDomainAssigner(Form& form) : form(form) {}
 
-  protected:
+    // Assign reference
+    const InteriorFacetDomainAssigner& operator= (const MeshFunction<uint>& domains);
 
-    void assign(boost::shared_ptr<const MeshFunction<uint> > domains);
+    // Assign shared pointer
+    const InteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
+
+  private:
+
+    // The form
+    Form& form;
 
   };
 
