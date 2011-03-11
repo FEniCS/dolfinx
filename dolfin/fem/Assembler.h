@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2011-03-10
+// Last changed: 2011-03-11
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -30,27 +30,26 @@ namespace dolfin
   /// Subdomains for cells and facets may be specified in a number
   /// of different ways:
   ///
-  /// 1. By assigning subdomain indicators specified by MeshFunctions
+  /// 1. By explicitly passing MeshFunctions (as pointers) to the
+  ///    assemble functions
+  ///
+  /// 2. By assigning subdomain indicators specified by MeshFunctions
   ///    to the Form being assembled:
   ///
   ///    form.cell_domains = cell_domains
   ///    form.exterior_facet_domains = exterior_facet_domains
   ///    form.interior_facet_domains = interior_facet_domains
   ///
-  /// 2. By MeshFunctions stored in MeshData as
+  /// 3. By MeshFunctions stored in MeshData as
   ///
   ///    "cell_domains"
   ///    "exterior_facet_domains"
   ///    "interior_facet_domains"
   ///
-  ///    Note that if both (1) and (2) are specified, then (1) will
-  ///    override (2).
-  ///
-  /// 3. By specifying a SubDomain which specifies the domain numbered
+  /// 4. By specifying a SubDomain which specifies the domain numbered
   ///    as 0 (with the rest treated as domain number 1)
   ///
-  /// 4. By explicitly passing MeshFunctions (as pointers) to the
-  ///    assemble functions
+  /// Note that (1) overrides (2), which overrides (3).
 
   class Assembler
   {
