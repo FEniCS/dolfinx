@@ -66,8 +66,10 @@ def next(self):
 %define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
 %template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
 
+#if SWIG_VERSION >= 0x020000
 %shared_ptr(MESHFUNCTION ## TYPENAME)
 //%shared_ptr(dolfin::MESHFUNCTION<TYPE>)
+#endif
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
