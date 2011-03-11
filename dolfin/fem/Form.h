@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-03-09
+// Last changed: 2011-03-11
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -135,13 +135,18 @@ namespace dolfin
     boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains_shared_ptr() const;
 
     /// Set cell domains
-    void set_cell_domains(boost::shared_ptr<const MeshFunction<uint> > cell_domains);
+    void set_cell_domains(boost::shared_ptr<const MeshFunction<unsigned int> > cell_domains);
 
     /// Set exterior facet domains
-    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains);
+    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facet_domains);
 
     /// Set interior facet domains
-    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains);
+    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
+
+    // FIXME: Remove these when the above shared_ptr version work from Python
+    void set_cell_domains(const MeshFunction<unsigned int>* cell_domains);
+    void set_exterior_facet_domains(const MeshFunction<unsigned int>* exterior_facet_domains);
+    void set_interior_facet_domains(const MeshFunction<unsigned int>* interior_facet_domains);
 
     /// Return UFC form
     const ufc::form& ufc_form() const;

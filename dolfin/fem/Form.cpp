@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-03-10
+// Last changed: 2011-03-11
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -233,6 +233,23 @@ void Form::set_interior_facet_domains
 {
   _interior_facet_domains = interior_facet_domains;
 }
+//-----------------------------------------------------------------------------
+
+// FIXME: Remove these when the above shared_ptr version work from Python
+
+void Form::set_cell_domains(const MeshFunction<unsigned int>* cell_domains)
+{
+  _cell_domains = reference_to_no_delete_pointer(*cell_domains);
+}
+void Form::set_exterior_facet_domains(const MeshFunction<unsigned int>* exterior_facet_domains)
+{
+  _exterior_facet_domains = reference_to_no_delete_pointer(*exterior_facet_domains);
+}
+void Form::set_interior_facet_domains(const MeshFunction<unsigned int>* interior_facet_domains)
+{
+  _interior_facet_domains = reference_to_no_delete_pointer(*interior_facet_domains);
+}
+
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const
 {

@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-03-10
+// Last changed: 2011-03-11
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -36,29 +36,7 @@ void Assembler::assemble(GenericTensor& A,
                          bool reset_sparsity,
                          bool add_values)
 {
-  // Get subdomains from form or mesh and let form data override mesh data
-
-  // Get cell domains
-  const MeshFunction<uint>* cell_domains = a.cell_domains_shared_ptr().get();
-  if (!cell_domains)
-    cell_domains = a.mesh().data().mesh_function("cell_domains");
-
-  // Get exterior facet domains
-  const MeshFunction<uint>* exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
-  if (!exterior_facet_domains)
-    exterior_facet_domains = a.mesh().data().mesh_function("exterior_facet_domains");
-
-  // Get interior facet domains
-  const MeshFunction<uint>* interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
-  if (!interior_facet_domains)
-    interior_facet_domains = a.mesh().data().mesh_function("interior_facet_domains");
-
-  // Assemble
-  assemble(A, a,
-           cell_domains,
-           exterior_facet_domains,
-           interior_facet_domains,
-           reset_sparsity, add_values);
+  assemble(A, a, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -110,6 +88,30 @@ void Assembler::assemble(GenericTensor& A,
   // cells, exterior and interior facets. Note the importance of
   // treating empty mesh functions as null pointers for the PyDOLFIN
   // interface.
+
+  // Get cell domains
+  if (!cell_domains || cell_domains->size() == 0)
+  {
+    cell_domains = a.cell_domains_shared_ptr().get();
+    if (!cell_domains)
+      cell_domains = a.mesh().data().mesh_function("cell_domains");
+  }
+
+  // Get exterior facet domains
+  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  {
+    exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+    if (!exterior_facet_domains)
+      exterior_facet_domains = a.mesh().data().mesh_function("exterior_facet_domains");
+  }
+
+  // Get interior facet domains
+  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  {
+    interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+    if (!interior_facet_domains)
+      interior_facet_domains = a.mesh().data().mesh_function("interior_facet_domains");
+  }
 
   // Check whether we should call the multi-core assembler
   #ifdef HAS_OPENMP
