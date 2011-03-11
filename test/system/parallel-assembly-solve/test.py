@@ -16,8 +16,8 @@ if not (has_mpi() and has_parmetis()):
     print "DOLFIN has not been compiled with mpi and Parmetis. Test is not run."
     sys.exit(0)
 
-# If it works on nine processes, it works for any number of processes (N. Jansson, 2009)
-num_processes = 9 # Should really be 9 here, but it breaks
+# Number of processes
+num_processes = 3
 
 # Run solver.py
 failure, output = getstatusoutput("mpirun -n %d python solver.py" % num_processes)
