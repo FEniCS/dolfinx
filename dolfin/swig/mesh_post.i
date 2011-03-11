@@ -63,15 +63,11 @@ def next(self):
 //-----------------------------------------------------------------------------
 // MeshFunction macro
 //-----------------------------------------------------------------------------
+#if SWIG_VERSION >= 0x020000
 %define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
 %template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
 
-#if SWIG_VERSION >= 0x020000
 %shared_ptr(MESHFUNCTION ## TYPENAME)
-//%shared_ptr(dolfin::MESHFUNCTION<TYPE>)
-#else
-SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
-#endif
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
@@ -84,6 +80,26 @@ SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
 }
 %enddef
+
+#else
+
+%define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
+%template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
+
+SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
+
+%feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
+%extend dolfin::MESHFUNCTION<TYPE>
+{
+  TYPE __getitem__(unsigned int i) { return (*self)[i]; }
+  void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
+
+  TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
+  void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+}
+%enddef
+#endif
 
 //-----------------------------------------------------------------------------
 // Macro for declaring MeshFunctions
