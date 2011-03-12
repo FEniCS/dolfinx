@@ -3,25 +3,19 @@
 //
 // Modified by Anders Logg, 2009.
 // Modified by Garth N. Wells, 2010-2011.
+// Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-11-01
 // Last changed: 2011-03-12
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
-#include "BoundaryMesh.h"
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Cell.h>
-#include "Cell.h"
-#include "Edge.h"
 #include "Mesh.h"
-#include "MeshConnectivity.h"
-#include "MeshEditor.h"
+#include "Facet.h"
+#include "Cell.h"
 #include "MeshFunction.h"
-#include "MeshGeometry.h"
-#include "MeshTopology.h"
 #include "RivaraRefinement.h"
-#include "Vertex.h"
 #include "BisectionRefinement.h"
 
 using namespace dolfin;
@@ -41,15 +35,15 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   const uint D = refined_mesh.topology().dim();
 
   info("Storing parent cell information");
-  MeshFunction<uint>* cf;
-  cf = refined_mesh.data().create_mesh_function("parent_cell", D);
+  boost::shared_ptr<MeshFunction<unsigned int> > cf = \
+    refined_mesh.data().create_mesh_function("parent_cell", D);
   for(uint i = 0; i < refined_mesh.num_cells(); i++)
     (*cf)[i] = cell_map[i];
 
   // Create mesh function in refined mesh encoding parent facet maps
   info("Storing parent facet information");
-  MeshFunction<uint>* ff;
-  ff = refined_mesh.data().create_mesh_function("parent_facet", D - 1);
+  boost::shared_ptr<MeshFunction<unsigned int> > ff = \
+    refined_mesh.data().create_mesh_function("parent_facet", D - 1);
 
   // Fill ff from facet_map
   refined_mesh.init(); // FIXME

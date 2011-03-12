@@ -55,7 +55,7 @@ const dolfin::MeshFunction<dolfin::uint>& dolfin::adapt(const MeshFunction<uint>
   MeshFunction<uint> refined_mf(*refined_mesh, mesh_function.dim());
 
   // Extract parent map from data of refined mesh
-  MeshFunction<uint>* parent = 0;
+  boost::shared_ptr<MeshFunction<unsigned int> > parent;
   if (mesh_function.dim() == dim)
     parent = refined_mesh->data().mesh_function("parent_cell");
   else if (mesh_function.dim() == (dim - 1))
@@ -64,7 +64,7 @@ const dolfin::MeshFunction<dolfin::uint>& dolfin::adapt(const MeshFunction<uint>
     dolfin_not_implemented();
 
   // Check that parent map exists
-  if (!parent)
+  if (!parent.get())
     error("Unable to extract information about parent mesh entites");
 
   // Map values of mesh function into refined mesh function
