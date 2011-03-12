@@ -7,6 +7,8 @@
 #ifndef __PARALLEL_DATA_H
 #define __PARALLEL_DATA_H
 
+#include <map>
+#include <vector>
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -42,6 +44,12 @@ namespace dolfin
       return _global_entity_indices[d];
     }
 
+    std::map<uint, std::vector<uint> >& overlap()
+    { return _overlap; }
+
+    const std::map<uint, std::vector<uint> >& overlap() const
+    { return _overlap; }
+
     //--- Data for shared memory parallelism (multicore) ---
 
     /*
@@ -74,6 +82,13 @@ namespace dolfin
     // Global indices for entity of dimension d
     std::vector<MeshFunction<unsigned int> > _global_entity_indices;
 
+    // Maps each shared vertex to a list of the processes sharing
+    // the vertex
+    std::map<uint, std::vector<uint> > _overlap;
+
+    std::vector<uint> _num_global_entities;
+
+    MeshFunction<bool> _exterior_facet;
 
     /*
     // Some typedefs for complex types

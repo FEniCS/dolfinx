@@ -4,8 +4,9 @@
 // First added:  2008-12-01
 // Last changed: 2011-02-03
 
-#include <vector>
 #include <algorithm>
+#include <iterator>
+
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -84,12 +85,12 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   distribute_cells(mesh_data, cell_partition);
 
   // Distribute vertices
-  std::map<uint, uint> glob2loc;
-  distribute_vertices(mesh_data, glob2loc);
+  std::map<uint, uint> vertex_global_to_local;
+  distribute_vertices(mesh_data, vertex_global_to_local);
   timer.stop();
 
   // Build mesh
-  build_mesh(mesh, mesh_data, glob2loc);
+  build_mesh(mesh, mesh_data, vertex_global_to_local);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)

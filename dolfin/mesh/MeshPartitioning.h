@@ -9,7 +9,6 @@
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
 
-#include <iterator>
 #include <map>
 #include <vector>
 #include <dolfin/common/types.h>
@@ -18,7 +17,6 @@ namespace dolfin
 {
 
   class Mesh;
-
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
@@ -93,7 +91,7 @@ namespace dolfin
 
     // Mark non-shared mesh entities
     static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
-               const std::map<std::vector<uint>, uint>& shared_entity_indices, 
+               const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
                Mesh& mesh, uint d, std::string name);
   };

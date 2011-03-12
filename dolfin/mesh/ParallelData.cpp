@@ -10,7 +10,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ParallelData::ParallelData(const Mesh& mesh)
-  : _global_entity_indices(mesh.topology().dim(), mesh)
+  : _global_entity_indices(mesh.topology().dim(), mesh),
+    _exterior_facet(mesh)
 {
   // Do nothing
 }
