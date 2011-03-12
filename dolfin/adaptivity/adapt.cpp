@@ -41,47 +41,6 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
   _parent.set_child(child);
   child->set_parent(reference_to_no_delete_pointer(_parent));
 }
-
-//-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& dolfin::adapt(const MeshFunction<uint>& mesh_function,
-                                                boost::shared_ptr<const Mesh> refined_mesh)
-{
-  // FIXME: MeshFunction Hierarchical ok?
-  // FIXME: Skip refinement if already refined
-  // FIXME: Update according to shared_ptr changes in MeshFunction
-
-  const Mesh& mesh = mesh_function.mesh();
-  const uint dim = mesh.topology().dim();
-  MeshFunction<uint> refined_mf(*refined_mesh, mesh_function.dim());
-
-  // Extract parent map from data of refined mesh
-  boost::shared_ptr<MeshFunction<unsigned int> > parent;
-  if (mesh_function.dim() == dim)
-    parent = refined_mesh->data().mesh_function("parent_cell");
-  else if (mesh_function.dim() == (dim - 1))
-    parent = refined_mesh->data().mesh_function("parent_facet");
-  else
-    dolfin_not_implemented();
-
-  // Check that parent map exists
-  if (!parent.get())
-    error("Unable to extract information about parent mesh entites");
-
-  // Map values of mesh function into refined mesh function
-  const uint undefined = 1000; // FIXME
-  for (uint i = 0; i < refined_mf.size(); i++)
-  {
-    const uint parent_index = (*parent)[i];
-    if (parent_index < mesh_function.size())
-      refined_mf[i] = mesh_function[parent_index];
-    else
-      refined_mf[i] = undefined;
-  }
-
-  // Return new mesh function
-  return mesh_function; // FIXME
-
-}
 //-----------------------------------------------------------------------------
 const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
 {
@@ -376,5 +335,56 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
   set_parent_child(ec, refined_ec);
 
   return *refined_ec;
+}
+//-----------------------------------------------------------------------------
+const dolfin::MeshFunction<dolfin::uint>&
+dolfin::adapt(const MeshFunction<uint>& mesh_function,
+              boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // FIXME: MeshFunction Hierarchical ok?
+
+  // Skip refinement if already refined
+  if (mesh_function.has_child())
+  {
+    dolfin_debug("MeshFunction has already been refined, returning child");
+    return mesh_function.child();
+  }
+
+  const Mesh& mesh = mesh_function.mesh();
+  const uint dim = mesh.topology().dim();
+
+  // Extract parent map from data of refined mesh
+  boost::shared_ptr<MeshFunction<unsigned int> > parent;
+  if (mesh_function.dim() == dim)
+    parent = refined_mesh->data().mesh_function("parent_cell");
+  else if (mesh_function.dim() == (dim - 1))
+    parent = refined_mesh->data().mesh_function("parent_facet");
+  else
+    dolfin_not_implemented();
+
+  // Check that parent map exists
+  if (!parent.get())
+    error("Unable to extract information about parent mesh entites");
+
+  // Map values of mesh function into refined mesh function
+  boost::shared_ptr<MeshFunction<uint> >
+    refined_mesh_function(new MeshFunction<uint>(*refined_mesh,
+                                                 mesh_function.dim()));
+
+  const uint undefined = 1000; // FIXME
+  for (uint i = 0; i < refined_mesh_function->size(); i++)
+  {
+    const uint parent_index = (*parent)[i];
+    if (parent_index < mesh_function.size())
+      (*refined_mesh_function)[i] = mesh_function[parent_index];
+    else
+      (*refined_mesh_function)[i] = undefined;
+  }
+
+  // Set parent / child relations
+  set_parent_child(mesh_function, refined_mesh_function);
+
+  // Return refined mesh function
+  return *refined_mesh_function;
 }
 //-----------------------------------------------------------------------------

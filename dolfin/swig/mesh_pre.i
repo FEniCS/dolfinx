@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2011-03-11
+// Last changed: 2011-03-12
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -66,7 +66,7 @@
 //-----------------------------------------------------------------------------
 %define ALL_VALUES(name, TYPE)
 %extend name {
-    PyObject* values() 
+    PyObject* values()
     {
         dolfin::warning("MeshFunction.values() is depricated and will be removed."\
 			" Use MeshFunction.array() instead.");
@@ -78,7 +78,7 @@
         return reinterpret_cast<PyObject*>(array);
     }
 
-    PyObject* array() 
+    PyObject* array()
   	{
         int m = self->size();
         int n = 0;
@@ -193,10 +193,19 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %feature("director") dolfin::SubDomain;
 
 //-----------------------------------------------------------------------------
-// Instantiate Hierarchical Mesh template class
+// Instantiate Hierarchical Mesh template classes
 //-----------------------------------------------------------------------------
 namespace dolfin {
   class Mesh;
+  template<class T> class MeshFunction;
 }
 
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
+%template (HierarchicalMeshFunctionUInt) \
+    dolfin::Hierarchical<dolfin::MeshFunction<unsigned int> >;
+%template (HierarchicalMeshFunctionInt) \
+    dolfin::Hierarchical<dolfin::MeshFunction<int> >;
+%template (HierarchicalMeshFunctionBool) \
+    dolfin::Hierarchical<dolfin::MeshFunction<bool> >;
+%template (HierarchicalMeshFunctionDouble) \
+    dolfin::Hierarchical<dolfin::MeshFunction<double> >;

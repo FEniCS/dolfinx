@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-05-22
-// Last changed: 2011-02-08
+// Last changed: 2011-03-12
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -13,6 +13,7 @@
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/Hierarchical.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLMeshFunction.h>
 #include "MeshEntity.h"
@@ -30,7 +31,8 @@ namespace dolfin
   /// numbering scheme for the entities of a (parallel) mesh, marking
   /// sub domains or boolean markers for mesh refinement.
 
-  template <class T> class MeshFunction : public Variable
+  template <class T> class MeshFunction : public Variable,
+    public Hierarchical<MeshFunction<T> >
   {
   public:
 
@@ -137,14 +139,17 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class T>
   MeshFunction<T>::MeshFunction() : Variable("f", "unnamed MeshFunction"),
-                     _values(0), _mesh(0), _dim(0), _size(0)
+    Hierarchical<MeshFunction<T> >(*this),
+    _values(0), _mesh(0), _dim(0), _size(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh) : Variable("f", "unnamed MeshFunction"),
-    _values(0), _mesh(&mesh), _dim(0), _size(0)
+  MeshFunction<T>::MeshFunction(const Mesh& mesh) :
+      Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
+      _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
     // Do nothing
   }
@@ -152,6 +157,7 @@ namespace dolfin
   template <class T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, uint dim) :
       Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
     init(dim);
@@ -160,6 +166,7 @@ namespace dolfin
   template <class T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, uint dim, const T& value) :
       Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
     init(dim);
@@ -169,6 +176,7 @@ namespace dolfin
   template <class T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, const std::string filename) :
       Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
     File file(filename);
@@ -178,6 +186,7 @@ namespace dolfin
   template <class T>
   MeshFunction<T>::MeshFunction(const MeshFunction<T>& f) :
       Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(0), _dim(0), _size(0)
   {
     *this = f;
@@ -260,6 +269,9 @@ namespace dolfin
     _values = new T[_size];
     for (uint i = 0; i < _size; i++)
       _values[i] = f._values[i];
+
+    Hierarchical<MeshFunction<T> >::operator=(f);
+
     return *this;
   }
   //---------------------------------------------------------------------------
@@ -267,6 +279,9 @@ namespace dolfin
   const MeshFunction<T>& MeshFunction<T>::operator= (const T& value)
   {
     set_all(value);
+
+    //Hierarchical<MeshFunction<T> >::operator=(value);
+
     return *this;
   }
   //---------------------------------------------------------------------------
