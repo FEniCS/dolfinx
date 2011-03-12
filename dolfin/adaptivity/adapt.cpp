@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-25
+// Last changed: 2011-03-12
 
 #include <boost/shared_ptr.hpp>
 
@@ -23,6 +23,7 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/plot/plot.h>
 #include "ErrorControl.h"
 #include "SpecialFacetFunction.h"
 #include "adapt.h"
@@ -41,6 +42,43 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
   child->set_parent(reference_to_no_delete_pointer(_parent));
 }
 
+//-----------------------------------------------------------------------------
+const dolfin::MeshFunction<dolfin::uint>& dolfin::adapt(const MeshFunction<uint>& mesh_function,
+                                                boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // FIXME: MeshFunction Hierarchical ok?
+  // FIXME: Skip refinement if already refined
+  // FIXME: Update according to shared_ptr changes in MeshFunction
+
+  const Mesh& mesh = mesh_function.mesh();
+  const uint dim = mesh.topology().dim();
+  MeshFunction<uint> refined_mf(*refined_mesh, mesh_function.dim());
+
+  // Extract parent encoding from refined mesh
+  MeshFunction<uint>* parent = 0;
+  if (mesh_function.dim() == dim)
+  {
+    parent = refined_mesh->data().mesh_function("parent_cell");
+  } else if (mesh_function.dim() == (dim - 1))
+  {
+    parent = refined_mesh->data().mesh_function("parent_facet");
+  } else
+    dolfin_not_implemented();
+
+  // Check that parent info exists
+  if (!parent)
+    error("Unable to extract information about parent mesh entites");
+
+  // Map values of mesh function into refined mesh function
+  for (uint i = 0; i < refined_mf.size(); i++)
+    refined_mf[i] = mesh_function[(*parent)[i]];
+
+  plot(refined_mf);
+
+  // Return new mesh function
+  return mesh_function; // FIXME
+
+}
 //-----------------------------------------------------------------------------
 const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
 {

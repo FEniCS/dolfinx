@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-02-16
+// Last changed: 2011-03-12
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -52,6 +52,10 @@ namespace dolfin
   /// Refine coefficient based on refined mesh
   const Function& adapt(const Function& function,
                         boost::shared_ptr<const Mesh> refined_mesh);
+
+  /// Refine mesh function<uint> based on mesh
+  const MeshFunction<dolfin::uint>& adapt(const MeshFunction<uint>& mesh_function,
+                                  boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of boundary conditions ---
 

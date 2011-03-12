@@ -1,7 +1,7 @@
 // Copyright (C) 2011 Marie E. Rognes
 // Licensed under the GNU LGPL Version 3 or any later version
 //
-// Last changed: 2011-03-10
+// Last changed: 2011-03-12
 
 #include <dolfin.h>
 
@@ -27,24 +27,18 @@ int main()
     }
   };
 
-  UnitSquare mesh(1, 1);
-
-  // Create MeshFunction over facets
-  MeshFunction<unsigned int> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
-  Inflow inflow;
-  inflow.mark(inflow_facets, 1);
-  //plot(inflow_facets);
+  UnitSquare mesh(5, 5);
 
   // Create MeshFunction over cells
   MeshFunction<unsigned int> right_cells(mesh, mesh.topology().dim(), 0);
   Right right;
   right.mark(right_cells, 1);
+  plot(right_cells);
 
-  // Copy data over to mesh data (Better way?)
-  MeshFunction<unsigned int>* materials = \
-    mesh.data().create_mesh_function("material indicators", mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
-    (*materials)[*c] = right_cells[*c];
+  // Create MeshFunction over facets
+  MeshFunction<unsigned int> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
+  Inflow inflow;
+  inflow.mark(inflow_facets, 1);
 
   // Mark cells for refinement
   MeshFunction<bool> cell_markers(mesh, mesh.topology().dim(), false);
@@ -55,14 +49,13 @@ int main()
       cell_markers[*c] = true;
   }
 
-  // Refine mesh -> new_mesh
-  Mesh new_mesh = refine(mesh, cell_markers);
-  plot(new_mesh);
+  // Refine mesh
+  adapt(mesh, cell_markers);
 
-  // Extract and plot refined material indicators
-  MeshFunction<dolfin::uint>* new_materials =                   \
-    new_mesh.data().mesh_function("material indicators");
-  plot(*new_materials);
+  // Adapt cell function to refined mesh
+  adapt(right_cells, mesh.child_shared_ptr());
+
+  //plot(right_cells.child());
 
   return 0;
 }

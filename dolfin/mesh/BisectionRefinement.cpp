@@ -5,9 +5,9 @@
 // Modified by Garth N. Wells, 2010-2011.
 //
 // First added:  2006-11-01
-// Last changed: 2011-02-22
+// Last changed: 2011-03-12
 
-#include <dolfin/math/dolfin_math.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
@@ -29,14 +29,29 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
                         const Mesh& mesh, const MeshFunction<bool>& cell_marker)
 {
   // Transformation maps
-  MeshFunction<dolfin::uint> cell_map;
+  MeshFunction<uint> cell_map;
   std::vector<int> facet_map;
 
   // Call Rivara refinement
   RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map, facet_map);
 
-  // Transform data
-  transform_data(refined_mesh, mesh, cell_map, facet_map);
+  // Store child->parent cell and facet information
+  info("Creating parent cell mapping");
+  MeshFunction<dolfin::uint>* cf;
+  cf = refined_mesh.data().create_mesh_function("parent_cell",
+                                                refined_mesh.topology().dim());
+  for(uint i = 0; i < refined_mesh.num_cells(); i++)
+    (*cf)[i] = cell_map[i];
+
+  // Create mesh function in new mesh coding parent facet information
+  MeshFunction<dolfin::uint>* ff;
+  ff = refined_mesh.data().create_mesh_function("parent_facet",
+                                               refined_mesh.topology().dim()-1);
+
+  // Fill ff from facet_map
+
+  // Transform data   // Marie says: Removed. Doesn't match new style.
+  //transform_data(refined_mesh, mesh, cell_map, facet_map);
 }
 //-----------------------------------------------------------------------------
 void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,

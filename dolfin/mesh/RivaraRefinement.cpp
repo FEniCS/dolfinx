@@ -6,7 +6,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2011-03-10
+// Last changed: 2011-03-12
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -74,7 +74,6 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
   for (uint i = 0; i < new2old_facet_arr.size(); i++)
   {
     facet_map[i] = new2old_facet_arr[i];
-    std::cout << i << " => " << facet_map[i] << std::endl;
   }
 
 }
