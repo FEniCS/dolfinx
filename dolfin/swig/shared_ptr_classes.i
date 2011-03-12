@@ -258,13 +258,15 @@ SWIG_SHARED_PTR_DERIVED(FacetArea, dolfin::Expression, dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)
 SWIG_SHARED_PTR_DERIVED(MeshCoordinates, dolfin::Expression, dolfin::MeshCoordinates)
 
+
+/*
 SWIG_SHARED_PTR(MeshFunctionTUInt, dolfin::MeshFunction<unsigned int>)
 SWIG_SHARED_PTR(CellFunctionTUInt, dolfin::CellFunction<unsigned int>)
 SWIG_SHARED_PTR(EdgeFunctionTUInt, dolfin::EdgeFunction<unsigned int>)
 SWIG_SHARED_PTR(FaceFunctionTUInt, dolfin::FaceFunction<unsigned int>)
 SWIG_SHARED_PTR(FacetFunctionTUInt, dolfin::FacetFunction<unsigned int>)
 SWIG_SHARED_PTR(VertexFunctionTUInt, dolfin::VertexFunction<unsigned int>)
-
+*/
 
 //SWIG_SHARED_PTR(HierarchicalMesh, dolfin::Hierarchical<dolfin::Mesh>)
 //SWIG_SHARED_PTR_DERIVED(Mesh, dolfin::Hierarchical<dolfin::Mesh>, dolfin::Mesh)
@@ -313,6 +315,8 @@ SWIG_SHARED_PTR_DERIVED(PETScVector, dolfin::GenericVector, dolfin::PETScVector)
 SWIG_SHARED_PTR_DERIVED(MTL4Matrix, dolfin::GenericMatrix, dolfin::MTL4Matrix)
 SWIG_SHARED_PTR_DERIVED(MTL4Vector, dolfin::GenericVector, dolfin::MTL4Vector)
 #endif
+
+SWIG_SHARED_PTR(FunctionPlotData, dolfin::FunctionPlotData)
 
 #endif
 
