@@ -61,7 +61,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
-   boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
+  boost::shared_ptr<const MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices

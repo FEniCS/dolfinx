@@ -11,11 +11,15 @@ from dolfin import *
 
 class Assembly(unittest.TestCase):
 
-    def test_functional_assmebly(self):
+    def test_functional_assembly(self):
 
         mesh = UnitSquare(24, 24)
-        f = Constant(1.0)
 
+        # This is a hack to get around a DOLFIN bug
+        if MPI.num_processes() > 1:
+            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
+
+        f = Constant(1.0)
         M = f*dx
         parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(M, mesh=mesh), 1.0)
