@@ -78,11 +78,8 @@ VariationalProblem::~VariationalProblem()
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u) const
 {
-  // Call nonlinear solver
   if (_is_nonlinear)
     NonlinearVariationalSolver::solve(u, *this, parameters("solver"));
-
-  // Call linear solver
   else
     LinearVariationalSolver::solve(u, *this, parameters("solver"));
 }

@@ -112,7 +112,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
     ++indent;
 
     // Write mesh functions
-    typedef std::map<std::string, MeshFunction<uint>*>::const_iterator mf_iter;
+    typedef std::map<std::string,  boost::shared_ptr<MeshFunction<unsigned int> > >::const_iterator mf_iter;
     for (mf_iter it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
     {
       // Write data entry header
@@ -250,7 +250,7 @@ void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
   if ( mf_type.compare("uint") != 0 )
     error("Only MeshFunctions of type 'uint' supported as mesh data. Found '%s'.", mf_type.c_str());
   delete xml_mesh_function;
-  MeshFunction<uint>* mf = data.create_mesh_function(entity_name);
+   boost::shared_ptr<MeshFunction<unsigned int> > mf = data.create_mesh_function(entity_name);
   xml_mesh_function = new XMLMeshFunction(*mf, parser, size, dim);
   xml_mesh_function->handle();
 }

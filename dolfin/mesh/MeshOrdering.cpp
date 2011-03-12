@@ -21,13 +21,13 @@ void MeshOrdering::order(Mesh& mesh)
     return;
 
   // Get global vertex numbering (important when running in parallel)
-  MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
 
   // Iterate over all cells and order the mesh entities locally
   Progress p("Ordering mesh", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    cell->order(global_vertex_indices);
+    cell->order(global_vertex_indices.get());
     p++;
   }
 }
@@ -39,13 +39,13 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     return true;
 
   // Get global vertex numbering (important when running in parallel)
-  MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
 
   // Check if all cells are ordered
   Progress p("Checking mesh ordering", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (!cell->ordered(global_vertex_indices))
+    if (!cell->ordered(global_vertex_indices.get()))
       return false;
     p++;
   }

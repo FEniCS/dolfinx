@@ -61,7 +61,7 @@ namespace dolfin
     void operator>> (Parameters& input)            { read_xml(input); }
     void operator>> (FunctionPlotData&  input)     { read_xml(input); }
     void operator>> (MeshFunction<int>&  input)    { read_xml(input); }
-    void operator>> (MeshFunction<uint>&  input)   { read_xml(input); }
+    void operator>> (MeshFunction<unsigned int>&  input)   { read_xml(input); }
     void operator>> (MeshFunction<double>&  input) { read_xml(input); }
     void operator>> (std::vector<int>& x)                             { read_xml_array(x); }
     void operator>> (std::vector<uint>& x)                            { read_xml_array(x); }
@@ -80,7 +80,7 @@ namespace dolfin
     void operator<< (const Parameters& output)            { write_xml(output); }
     void operator<< (const FunctionPlotData& output)      { write_xml(output); }
     void operator<< (const MeshFunction<int>&  output)    { write_xml(output); }
-    void operator<< (const MeshFunction<uint>&  output)   { write_xml(output); }
+    void operator<< (const MeshFunction<unsigned int>&  output)   { write_xml(output); }
     void operator<< (const MeshFunction<double>&  output) { write_xml(output); }
     void operator<< (const std::vector<int>& x)                             { write_xml_array(x); }
     void operator<< (const std::vector<uint>& x)                            { write_xml_array(x); }

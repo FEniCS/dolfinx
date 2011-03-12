@@ -21,6 +21,7 @@
 // version of constructors to these types
 //-----------------------------------------------------------------------------
 %ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
+
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 const SubDomain&,
@@ -28,7 +29,7 @@
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
-					 const MeshFunction<uint>&,
+					 const MeshFunction<unsigned int>&,
 					 uint,
 					 std::string method="topological");
 

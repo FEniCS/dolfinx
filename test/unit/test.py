@@ -16,7 +16,7 @@ from dolfin import has_mpi, has_parmetis
 tests = {
     "fem": ["test"],
     "function": ["test"],
-    "mesh": ["test", "Edge", "Face"],
+    "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],
     "io": ["test"],

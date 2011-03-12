@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-03-11
+// Last changed: 2011-03-12
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -94,7 +94,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
-      cell_domains = a.mesh().data().mesh_function("cell_domains");
+      cell_domains = a.mesh().data().mesh_function("cell_domains").get();
   }
 
   // Get exterior facet domains
@@ -102,7 +102,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
-      exterior_facet_domains = a.mesh().data().mesh_function("exterior_facet_domains");
+      exterior_facet_domains = a.mesh().data().mesh_function("exterior_facet_domains").get();
   }
 
   // Get interior facet domains
@@ -110,7 +110,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
-      interior_facet_domains = a.mesh().data().mesh_function("interior_facet_domains");
+      interior_facet_domains = a.mesh().data().mesh_function("interior_facet_domains").get();
   }
 
   // Check whether we should call the multi-core assembler
@@ -262,7 +262,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+  boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
@@ -349,11 +349,11 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
+  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet orientation");
   if (facet_orientation && facet_orientation->dim() != D - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
-          facet_orientation);
+          facet_orientation->dim());
   }
 
   // Assemble over interior facets (the facets of the mesh)
@@ -382,7 +382,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       continue;
 
     // Get cells incident with facet
-    std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);
+    std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation.get());
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 

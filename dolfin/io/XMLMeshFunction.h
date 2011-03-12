@@ -26,8 +26,8 @@ namespace dolfin
     XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser);
     XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim);
 
-    XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser);
-    XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint size, uint dim);
+    XMLMeshFunction(MeshFunction<unsigned int>& umf, XMLFile& parser);
+    XMLMeshFunction(MeshFunction<unsigned int>& umf, XMLFile& parser, uint size, uint dim);
 
     XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser);
     XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim);
@@ -40,7 +40,7 @@ namespace dolfin
 
     /// Write to file
     static void write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
-    static void write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
+    static void write(const MeshFunction<unsigned int>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
     static void write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
 
   private:

@@ -41,23 +41,23 @@ void SubDomain::map(const Array<double>& x, Array<double>&) const
 //-----------------------------------------------------------------------------
 /// Set sub domain markers (uint) for given subdomain
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
-{ 
-  mark_meshfunction(sub_domains, sub_domain); 
+{
+  mark_meshfunction(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<int>& sub_domains, int sub_domain) const
 {
-  mark_meshfunction(sub_domains, sub_domain); 
+  mark_meshfunction(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<double>& sub_domains, double sub_domain) const
-{ 
-  mark_meshfunction(sub_domains, sub_domain); 
+{
+  mark_meshfunction(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
-{ 
-  mark_meshfunction(sub_domains, sub_domain); 
+{
+  mark_meshfunction(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SubDomain::geometric_dimension() const
@@ -93,7 +93,7 @@ void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) co
   bool on_boundary = false;
 
   // Extract exterior (non shared) facets markers
-  MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
+  boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
 
   Array<double> x;
 
