@@ -10,9 +10,7 @@ import re, sys, os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-# Diable system tests (see https://bugs.launchpad.net/dolfin/+bug/733370)
-#tests = ["unit", "regression", "system"]
-tests = ["unit", "regression"]
+tests = ["unit", "regression", "system"]
 
 # Check if we should enable memory testing
 if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
