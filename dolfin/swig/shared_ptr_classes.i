@@ -47,14 +47,6 @@
 // common
 %shared_ptr(dolfin::Variable)
 
-// ode
-%shared_ptr(dolfin::Sample)
-%shared_ptr(dolfin::ODE)
-%shared_ptr(dolfin::ComplexODE)
-%shared_ptr(dolfin::Method)
-%shared_ptr(dolfin::dGqMethod)
-%shared_ptr(dolfin::cGqMethod)
-
 // fem
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
 %shared_ptr(dolfin::GenericDofMap)
@@ -149,13 +141,8 @@
 %shared_ptr(dolfin::TrilinosPreconditioner)
 #endif
 
-#ifdef HAS_UMFPACK
 %shared_ptr(dolfin::UmfpackLUSolver)
-#endif
-
-#ifdef HAS_CHOLMOD
 %shared_ptr(dolfin::CholmodCholeskySolver)
-#endif
 
 %shared_ptr(dolfin::uBLASKrylovSolver)
 
@@ -218,6 +205,15 @@
 
 // nls
 %shared_ptr(dolfin::NewtonSolver)
+
+// ode
+%shared_ptr(dolfin::Sample)
+%shared_ptr(dolfin::ODE)
+%shared_ptr(dolfin::DummyComplexODE)
+%shared_ptr(dolfin::ComplexODE)
+%shared_ptr(dolfin::Method)
+%shared_ptr(dolfin::dGqMethod)
+%shared_ptr(dolfin::cGqMethod)
 
 // plot
 %shared_ptr(dolfin::FunctionPlotData)
