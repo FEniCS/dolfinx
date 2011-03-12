@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2011-01-31
+// Last changed: 2011-03-11
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -84,9 +84,8 @@ def next(self):
 #else
 
 %define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
-%template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
 
-SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
+%template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
@@ -99,6 +98,31 @@ SWIG_SHARED_PTR(MESHFUNCTION ## TYPENAME, dolfin::MESHFUNCTION<TYPE>)
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
 }
 %enddef
+
+%define DECLARE_DERIVED_MESHFUNCTION(DERIVEDMESHFUNCTION, TYPE, TYPENAME)
+SWIG_SHARED_PTR_DERIVED(DERIVEDMESHFUNCTION ## TYPENAME, dolfin::MeshFunction<TYPE>, dolfin::DERIVEDMESHFUNCTION<TYPE>)
+
+%template(DERIVEDMESHFUNCTION ## TYPENAME) dolfin::DERIVEDMESHFUNCTION<TYPE>;
+
+%feature("docstring") dolfin::DERIVEDMESHFUNCTION::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::DERIVEDMESHFUNCTION::__setitem__ "Missing docstring";
+%extend dolfin::DERIVEDMESHFUNCTION<TYPE>
+{
+  TYPE __getitem__(unsigned int i) { return (*self)[i]; }
+  void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
+
+  TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
+  void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+}
+%enddef
+
+%define DECLARE_DERIVED_MESHFUNCTIONS(MESHFUNCTION)
+DECLARE_DERIVED_MESHFUNCTION(MESHFUNCTION, unsigned int, UInt)
+DECLARE_DERIVED_MESHFUNCTION(MESHFUNCTION, int, Int)
+DECLARE_DERIVED_MESHFUNCTION(MESHFUNCTION, double, Double)
+DECLARE_DERIVED_MESHFUNCTION(MESHFUNCTION, bool, Bool)
+%enddef
+
 #endif
 
 //-----------------------------------------------------------------------------
@@ -114,12 +138,23 @@ DECLARE_MESHFUNCTION(MESHFUNCTION, bool, Bool)
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
+#if SWIG_VERSION >= 0x020000
 DECLARE_MESHFUNCTIONS(MeshFunction)
 DECLARE_MESHFUNCTIONS(CellFunction)
 DECLARE_MESHFUNCTIONS(EdgeFunction)
 DECLARE_MESHFUNCTIONS(FaceFunction)
 DECLARE_MESHFUNCTIONS(FacetFunction)
 DECLARE_MESHFUNCTIONS(VertexFunction)
+
+#else
+DECLARE_MESHFUNCTIONS(MeshFunction)
+DECLARE_DERIVED_MESHFUNCTIONS(CellFunction)
+DECLARE_DERIVED_MESHFUNCTIONS(EdgeFunction)
+DECLARE_DERIVED_MESHFUNCTIONS(FaceFunction)
+DECLARE_DERIVED_MESHFUNCTIONS(FacetFunction)
+DECLARE_DERIVED_MESHFUNCTIONS(VertexFunction)
+
+#endif
 
 %pythoncode
 %{

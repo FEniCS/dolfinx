@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-02-09
+// Last changed: 2011-03-11
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -259,17 +259,12 @@ SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)
 SWIG_SHARED_PTR_DERIVED(MeshCoordinates, dolfin::Expression, dolfin::MeshCoordinates)
 
 
-/*
-SWIG_SHARED_PTR(MeshFunctionTUInt, dolfin::MeshFunction<unsigned int>)
-SWIG_SHARED_PTR(CellFunctionTUInt, dolfin::CellFunction<unsigned int>)
-SWIG_SHARED_PTR(EdgeFunctionTUInt, dolfin::EdgeFunction<unsigned int>)
-SWIG_SHARED_PTR(FaceFunctionTUInt, dolfin::FaceFunction<unsigned int>)
-SWIG_SHARED_PTR(FacetFunctionTUInt, dolfin::FacetFunction<unsigned int>)
-SWIG_SHARED_PTR(VertexFunctionTUInt, dolfin::VertexFunction<unsigned int>)
-*/
+// Forward declare shared pointer declarations so typemaps will be available
+SWIG_SHARED_PTR(MeshFunctionUInt, dolfin::MeshFunction<unsigned int>)
+SWIG_SHARED_PTR(MeshFunctionInt, dolfin::MeshFunction<int>)
+SWIG_SHARED_PTR(MeshFunctionDouble, dolfin::MeshFunction<double>)
+SWIG_SHARED_PTR(MeshFunctionBool, dolfin::MeshFunction<bool>)
 
-//SWIG_SHARED_PTR(HierarchicalMesh, dolfin::Hierarchical<dolfin::Mesh>)
-//SWIG_SHARED_PTR_DERIVED(Mesh, dolfin::Hierarchical<dolfin::Mesh>, dolfin::Mesh)
 SWIG_SHARED_PTR(Mesh, dolfin::Mesh)
 SWIG_SHARED_PTR_DERIVED(BoundaryMesh, dolfin::Mesh, dolfin::BoundaryMesh)
 SWIG_SHARED_PTR_DERIVED(SubMesh, dolfin::Mesh, dolfin::SubMesh)
