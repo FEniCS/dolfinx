@@ -25,5 +25,3 @@
 %template(__lshift__) dolfin::File::operator<< <Sample>;
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
 %template(__lshift__) dolfin::File::operator<< <FunctionPlotData>;
-
-

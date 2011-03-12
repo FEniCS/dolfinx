@@ -118,6 +118,43 @@ class Assembly(unittest.TestCase):
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
 
+    def test_subdomain_assembly(self):
+        """Test assembly over subdomains"""
+
+        # Define mesh
+        mesh = UnitSquare(8, 8)
+
+        # This is a hack to get around a DOLFIN bug
+        if MPI.num_processes() > 1:
+            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
+
+        # Define domain for lower left corner
+        class MyDomain(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] < 0.5 + DOLFIN_EPS and x[1] < 0.5 + DOLFIN_EPS
+        my_domain = MyDomain()
+
+        # Mark mesh functions
+        D = mesh.topology().dim()
+        cell_domains = MeshFunction("uint", mesh, D)
+        exterior_facet_domains = MeshFunction("uint", mesh, D - 1)
+        cell_domains.set_all(1)
+        exterior_facet_domains.set_all(1)
+        my_domain.mark(cell_domains, 0)
+        my_domain.mark(exterior_facet_domains, 0)
+
+        # Define forms
+        c = Constant(1.0)
+        a0 = c*dx
+        a1 = c*ds
+
+        # Attach subdomains
+        a0.cell_domains = cell_domains
+        a1.exterior_facet_domains = exterior_facet_domains
+
+        self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
+        self.assertAlmostEqual(assemble(a1, mesh=mesh), 1.0)
+
 class DofMap(unittest.TestCase):
 
     def test_sub_dofmap(self):

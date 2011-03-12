@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-02-16
+// Last changed: 2011-03-11
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -35,9 +35,7 @@ namespace dolfin
   /// where V_h is the trial space and V_h' is the test space.
   ///
   /// The variational problem is specified in terms of a pair of
-  /// _Form_s and, optionally, a set of _BoundaryCondition_s and
-  /// _MeshFunction_s that specify any subdomains involved in the
-  /// definition of the _Form_s.
+  /// _Form_s and, optionally, a set of _BoundaryCondition_s.
   ///
   /// The pair of forms may either specify a nonlinear problem
   ///
@@ -78,22 +76,9 @@ namespace dolfin
                        const std::vector<const BoundaryCondition*>& bcs);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
-    /// and subdomains for cells, exterior and interior facets of the mesh
-    VariationalProblem(const Form& form_0,
-                       const Form& form_1,
-                       const std::vector<const BoundaryCondition*>& bcs,
-                       const MeshFunction<unsigned int>* cell_domains,
-                       const MeshFunction<unsigned int>* exterior_facet_domains,
-                       const MeshFunction<unsigned int>* interior_facet_domains);
-
-    /// Define variational problem with a list of Dirichlet boundary conditions
-    /// and subdomains for cells, exterior and interior facets of the mesh
     VariationalProblem(boost::shared_ptr<const Form> form_0,
                        boost::shared_ptr<const Form> form_1,
-                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
-                       const MeshFunction<unsigned int>* cell_domains,
-                       const MeshFunction<unsigned int>* exterior_facet_domains,
-                       const MeshFunction<unsigned int>* interior_facet_domains);
+                       std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
     /// Destructor
     ~VariationalProblem();
@@ -145,15 +130,6 @@ namespace dolfin
 
     /// Return the list of boundary conditions (shared_ptr version)
     const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs_shared_ptr() const;
-
-    /// Return the cell domains
-    const MeshFunction<unsigned int>* cell_domains() const;
-
-    /// Return the exterior facet domains
-    const MeshFunction<unsigned int>* exterior_facet_domains() const;
-
-    /// Return the interior facet domains
-    const MeshFunction<unsigned int>* interior_facet_domains() const;
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -210,11 +186,6 @@ namespace dolfin
 
     // Boundary conditions
     std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs;
-
-    // Mesh functions for assembly
-    const MeshFunction<uint>* _cell_domains;
-    const MeshFunction<uint>* _exterior_facet_domains;
-    const MeshFunction<uint>* _interior_facet_domains;
 
   };
 

@@ -14,9 +14,9 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem": ["test"],
+    "fem": ["test", "Assembly"],
     "function": ["test"],
-    "mesh": ["test", "Edge", "Face"],
+    "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],
     "io": ["test"],
@@ -35,13 +35,10 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 
 # Build prefix list
 prefixes = [""]
-if "RUN_TESTS_IN_PARALLEL" in os.environ:
-    if "RUN_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
-        prefixes.append("mpirun -np 3 ")
-    else:
-        print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
+if has_mpi() and has_parmetis():
+    prefixes.append("mpirun -np 3 ")
 else:
-    print "RUN_TESTS_IN_PARALLEL environment variable not set. Unit tests will not be run in parallel."
+    print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
 
 # Run in serial, then in parallel
 for prefix in prefixes:

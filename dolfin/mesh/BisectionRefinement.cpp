@@ -92,15 +92,15 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   newmesh.data().clear();
 
   // Rewrite materials
-  if (oldmesh.data().mesh_function("material indicators"))
+  if (oldmesh.data().mesh_function("material_indicators"))
   {
-    MeshFunction<dolfin::uint>* mat;
-    mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
+    boost::shared_ptr<MeshFunction<unsigned int> > mat;
+    mat = newmesh.data().create_mesh_function("material_indicators", newmesh.type().dim());
 
     for(dolfin::uint i=0; i < newmesh.num_cells(); i++)
-      (*mat)[i] = (*oldmesh.data().mesh_function("material indicators"))[cell_map[i]];
+      (*mat)[i] = (*oldmesh.data().mesh_function("material_indicators"))[cell_map[i]];
 
-    info(TRACE, "MeshData MeshFunction \"material indicators\" transformed.");
+    info(TRACE, "MeshData MeshFunction \"material_indicators\" transformed.");
   }
 
   // Rewrite boundary indicators

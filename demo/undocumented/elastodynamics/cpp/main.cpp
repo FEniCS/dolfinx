@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2011-01-24
+// Last changed: 2011-03-11
 //
 
 #include <dolfin.h>
@@ -173,8 +173,12 @@ int main(int argc, char* argv[])
   L.p = p;
   L.p0 = p0;
 
+  // Attach subdomains
+  a_form.exterior_facet_domains = right_boundary_function;
+  L.exterior_facet_domains = right_boundary_function;
+
   // Create variational problem
-  VariationalProblem pde(a_form, L, bc, 0, &right_boundary_function, 0);
+  VariationalProblem pde(a_form, L, bc);
 
   // Create projection to compute the normal strain eps_xx
   DG0_eps_xx::FunctionSpace Vdg(mesh);

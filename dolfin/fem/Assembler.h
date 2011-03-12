@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-04
+// Last changed: 2011-03-11
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -27,15 +27,32 @@ namespace dolfin
   /// more generally, assembly of a sparse tensor from a given
   /// variational form.
   ///
-  /// The MeshFunction arguments can be used to specify assembly over
-  /// subdomains of the mesh cells, exterior facets or interior
-  /// facets. Either a null pointer or an empty MeshFunction may be
-  /// used to specify that the tensor should be assembled over the
-  /// entire set of cells or facets.
+  /// Subdomains for cells and facets may be specified in a number
+  /// of different ways:
+  ///
+  /// 1. By explicitly passing MeshFunctions (as pointers) to the
+  ///    assemble functions
+  ///
+  /// 2. By assigning subdomain indicators specified by MeshFunctions
+  ///    to the Form being assembled:
+  ///
+  ///    form.cell_domains = cell_domains
+  ///    form.exterior_facet_domains = exterior_facet_domains
+  ///    form.interior_facet_domains = interior_facet_domains
+  ///
+  /// 3. By MeshFunctions stored in MeshData as
+  ///
+  ///    "cell_domains"
+  ///    "exterior_facet_domains"
+  ///    "interior_facet_domains"
+  ///
+  /// 4. By specifying a SubDomain which specifies the domain numbered
+  ///    as 0 (with the rest treated as domain number 1)
+  ///
+  /// Note that (1) overrides (2), which overrides (3).
 
   class Assembler
   {
-
   public:
 
     /// Assemble tensor from given form

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2011-01-17
+// Last changed: 2011-03-10
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -14,6 +14,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -23,6 +24,8 @@ namespace dolfin
 
   class Mesh;
   template <class T> class MeshFunction;
+
+  // FIXME: Remove space with underscore in names
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as MeshFunctions over topological mesh
@@ -34,14 +37,16 @@ namespace dolfin
   ///
   /// Boundary indicators
   ///
-  ///   "boundary facet cells"   - Array<uint> of size num_facets
-  ///   "boundary facet numbers" - Array<uint> of size num_facets
-  ///   "boundary indicators"    - Array<uint> of size num_facets
-  ///   "material indicators"    - MeshFunction<uint> of dimension D
+  ///   "boundary_facet_cells"   - Array<uint> of size num_facets
+  ///   "boundary_facet_numbers" - Array<uint> of size num_facets
+  ///   "boundary_indicators"    - Array<uint> of size num_facets
+  ///   "material_indicators"    - MeshFunction<uint> of dimension D
   ///
-  /// Boundary indicators (alternative)
+  /// Subdomain indicators
   ///
-  ///   "exterior facet domains" - MeshFunction<uint> of dimension D - 1
+  ///   "cell_domains"           - MeshFunction<uint> of dimension D
+  ///   "interior_facet_domains" - MeshFunction<uint> of dimension D - 1
+  ///   "exterior_facet_domains" - MeshFunction<uint> of dimension D - 1
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///
@@ -88,10 +93,10 @@ namespace dolfin
     //--- Creation of data ---
 
     /// Create MeshFunction with given name (uninitialized)
-    MeshFunction<unsigned int>* create_mesh_function(std::string name);
+    boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
-    MeshFunction<unsigned int>* create_mesh_function(std::string name, uint dim);
+    boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name, uint dim);
 
     /// Create empty array (vector) with given name
     std::vector<uint>* create_array(std::string name);
@@ -108,7 +113,7 @@ namespace dolfin
     //--- Retrieval of data ---
 
     /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<unsigned int>* mesh_function(const std::string name) const;
+    boost::shared_ptr<MeshFunction<unsigned int> > mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not available)
     std::vector<uint>* array(const std::string name) const;
@@ -161,7 +166,7 @@ namespace dolfin
     Mesh& mesh;
 
     // A map from named mesh data to MeshFunctions
-    std::map<std::string, MeshFunction<uint>* > mesh_functions;
+    std::map<std::string, boost::shared_ptr<MeshFunction<uint> > > mesh_functions;
 
     // A map from named mesh data to vector
     std::map<std::string, std::vector<uint>* > arrays;

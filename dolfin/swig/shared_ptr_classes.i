@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-02-09
+// Last changed: 2011-03-11
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -46,14 +46,6 @@
 
 // common
 %shared_ptr(dolfin::Variable)
-
-// ode
-%shared_ptr(dolfin::Sample)
-%shared_ptr(dolfin::ODE)
-%shared_ptr(dolfin::ComplexODE)
-%shared_ptr(dolfin::Method)
-%shared_ptr(dolfin::dGqMethod)
-%shared_ptr(dolfin::cGqMethod)
 
 // fem
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
@@ -149,13 +141,8 @@
 %shared_ptr(dolfin::TrilinosPreconditioner)
 #endif
 
-#ifdef HAS_UMFPACK
 %shared_ptr(dolfin::UmfpackLUSolver)
-#endif
-
-#ifdef HAS_CHOLMOD
 %shared_ptr(dolfin::CholmodCholeskySolver)
-#endif
 
 %shared_ptr(dolfin::uBLASKrylovSolver)
 
@@ -219,6 +206,15 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 
+// ode
+%shared_ptr(dolfin::Sample)
+%shared_ptr(dolfin::ODE)
+%shared_ptr(dolfin::DummyComplexODE)
+%shared_ptr(dolfin::ComplexODE)
+%shared_ptr(dolfin::Method)
+%shared_ptr(dolfin::dGqMethod)
+%shared_ptr(dolfin::cGqMethod)
+
 // plot
 %shared_ptr(dolfin::FunctionPlotData)
 
@@ -258,8 +254,13 @@ SWIG_SHARED_PTR_DERIVED(FacetArea, dolfin::Expression, dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(Constant, dolfin::Expression, dolfin::Constant)
 SWIG_SHARED_PTR_DERIVED(MeshCoordinates, dolfin::Expression, dolfin::MeshCoordinates)
 
-//SWIG_SHARED_PTR(HierarchicalMesh, dolfin::Hierarchical<dolfin::Mesh>)
-//SWIG_SHARED_PTR_DERIVED(Mesh, dolfin::Hierarchical<dolfin::Mesh>, dolfin::Mesh)
+
+// Forward declare shared pointer declarations so typemaps will be available
+SWIG_SHARED_PTR(MeshFunctionUInt, dolfin::MeshFunction<unsigned int>)
+SWIG_SHARED_PTR(MeshFunctionInt, dolfin::MeshFunction<int>)
+SWIG_SHARED_PTR(MeshFunctionDouble, dolfin::MeshFunction<double>)
+SWIG_SHARED_PTR(MeshFunctionBool, dolfin::MeshFunction<bool>)
+
 SWIG_SHARED_PTR(Mesh, dolfin::Mesh)
 SWIG_SHARED_PTR_DERIVED(BoundaryMesh, dolfin::Mesh, dolfin::BoundaryMesh)
 SWIG_SHARED_PTR_DERIVED(SubMesh, dolfin::Mesh, dolfin::SubMesh)
@@ -276,7 +277,6 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere, dolfin::Mesh, dolfin::UnitSphere)
 
 SWIG_SHARED_PTR(SubDomain, dolfin::SubDomain)
 SWIG_SHARED_PTR_DERIVED(DomainBoundary, dolfin::SubDomain, dolfin::DomainBoundary)
-
 
 SWIG_SHARED_PTR(GenericTensor, dolfin::GenericTensor)
 SWIG_SHARED_PTR_DERIVED(GenericVector, dolfin::GenericTensor, dolfin::GenericVector)
@@ -306,6 +306,8 @@ SWIG_SHARED_PTR_DERIVED(PETScVector, dolfin::GenericVector, dolfin::PETScVector)
 SWIG_SHARED_PTR_DERIVED(MTL4Matrix, dolfin::GenericMatrix, dolfin::MTL4Matrix)
 SWIG_SHARED_PTR_DERIVED(MTL4Vector, dolfin::GenericVector, dolfin::MTL4Vector)
 #endif
+
+SWIG_SHARED_PTR(FunctionPlotData, dolfin::FunctionPlotData)
 
 #endif
 

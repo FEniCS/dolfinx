@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2011-02-09
+// Last changed: 2011-03-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -401,13 +401,11 @@ void MeshEditor::add_cell_common(uint c, uint tdim)
 
   // Check that the dimension matches
   if (tdim != this->tdim)
-    error("Illegal dimension for cell: %d (should be %d).",
-          tdim, this->tdim);
+    error("Illegal dimension for cell: %d (should be %d).", tdim, this->tdim);
 
   // Check value of cell index
   if (c >= num_cells)
-    error("Cell index (%d) out of range [0, %d].",
-          c, num_cells - 1);
+    error("Cell index (%d) out of range [0, %d].", c, num_cells - 1);
 
   // Check if there is room for more cells
   if (next_cell >= num_cells)
@@ -443,14 +441,19 @@ void MeshEditor::add_higher_order_cell_common(uint c, uint tdim)
 //-----------------------------------------------------------------------------
 void MeshEditor::compute_boundary_indicators()
 {
-  // Do nothing if mesh function "exterior facet domains" is present
-  if (mesh->data().mesh_function("exterior facet domains"))
+  // This function is called from close(), which lets a user of
+  // MeshEditor (such as for example VMTK) to attach MeshFunctions for
+  // boundaries before calling close() which then results in the
+  // generation of data named "exterior_facet_domains".
+
+  // Do nothing if mesh function "exterior_facet_domains" is present
+  if (mesh->data().mesh_function("exterior_facet_domains"))
     return;
 
   // Extract data for boundary indicators
-  std::vector<uint>* facet_cells   = mesh->data().array("boundary facet cells");
-  std::vector<uint>* facet_numbers = mesh->data().array("boundary facet numbers");
-  std::vector<uint>* indicators    = mesh->data().array("boundary indicators");
+  std::vector<uint>* facet_cells   = mesh->data().array("boundary_facet_cells");
+  std::vector<uint>* facet_numbers = mesh->data().array("boundary_facet_numbers");
+  std::vector<uint>* indicators    = mesh->data().array("boundary_indicators");
 
   // Do nothing if there are no indicators
   if (!indicators)
@@ -469,8 +472,8 @@ void MeshEditor::compute_boundary_indicators()
   assert(num_facets > 0);
 
   // Create mesh function "exterior_facet_domains"
-  MeshFunction<uint>* exterior_facet_domains =
-    mesh->data().create_mesh_function("exterior facet domains", D - 1);
+  boost::shared_ptr<MeshFunction<unsigned int> > exterior_facet_domains
+    = mesh->data().create_mesh_function("exterior_facet_domains", D - 1);
 
   // Initialize meshfunction to zero
   (*exterior_facet_domains) = 0;

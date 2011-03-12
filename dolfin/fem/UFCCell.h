@@ -103,7 +103,7 @@ namespace dolfin
         std::stringstream name;
         name << "global entity indices " << d;
         // This pointer may be zero, in which case local entity indices are used
-        global_entities[d] = cell.mesh().data().mesh_function(name.str());
+        global_entities[d] = cell.mesh().data().mesh_function(name.str()).get();
       }
 
       // Allocate vertex coordinates

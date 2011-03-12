@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2009 Anders Logg.
+// Copyright (C) 2007-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008-2011.
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-03-08
+// Last changed: 2011-03-11
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -14,8 +14,10 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
+#include "DomainAssigner.h"
 
 // Forward declaration
 namespace ufc
@@ -123,6 +125,29 @@ namespace dolfin
     /// Return the name of the coefficient with this number
     virtual std::string coefficient_name(dolfin::uint i) const;
 
+    /// Return cell domains (pointer may be zero if no domains have been specified)
+    boost::shared_ptr<const MeshFunction<uint> > cell_domains_shared_ptr() const;
+
+    /// Return exterior facet domains (pointer may be zero if no domains have been specified)
+    boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains_shared_ptr() const;
+
+    /// Return interior facet domains (pointer may be zero if no domains have been specified)
+    boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains_shared_ptr() const;
+
+    /// Set cell domains
+    void set_cell_domains(boost::shared_ptr<const MeshFunction<unsigned int> > cell_domains);
+
+    /// Set exterior facet domains
+    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facet_domains);
+
+    /// Set interior facet domains
+    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
+
+    // FIXME: Remove these when the above shared_ptr version work from Python
+    void set_cell_domains(const MeshFunction<unsigned int>* cell_domains);
+    void set_exterior_facet_domains(const MeshFunction<unsigned int>* exterior_facet_domains);
+    void set_interior_facet_domains(const MeshFunction<unsigned int>* interior_facet_domains);
+
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
@@ -131,6 +156,11 @@ namespace dolfin
 
     /// Check function spaces and coefficients
     void check() const;
+
+    // Assignment of domains
+    CellDomainAssigner cell_domains;
+    ExteriorFacetDomainAssigner exterior_facet_domains;
+    InteriorFacetDomainAssigner interior_facet_domains;
 
   protected:
 
@@ -145,6 +175,15 @@ namespace dolfin
 
     // The mesh (needed for functionals when we don't have any spaces)
     boost::shared_ptr<const Mesh> _mesh;
+
+    // Markers for cell domains
+    boost::shared_ptr<const MeshFunction<uint> > _cell_domains;
+
+    // Markers for exterior facet domains
+    boost::shared_ptr<const MeshFunction<uint> > _exterior_facet_domains;
+
+    // Markers for interior facet domains
+    boost::shared_ptr<const MeshFunction<uint> > _interior_facet_domains;
 
   };
 

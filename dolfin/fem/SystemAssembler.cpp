@@ -203,7 +203,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+   boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Form ranks
   const uint a_rank = a.rank();

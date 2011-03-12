@@ -291,8 +291,7 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
   boost::shared_ptr<VariationalProblem>
     refined_problem(new VariationalProblem(form_0->child_shared_ptr(),
                                            form_1->child_shared_ptr(),
-                                           refined_bcs,
-                                           0, 0, 0));
+                                           refined_bcs));
 
   // Set parent / child
   set_parent_child(problem, refined_problem);

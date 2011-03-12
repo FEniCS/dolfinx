@@ -97,7 +97,7 @@ void SubMesh::init(const Mesh& mesh,
   editor.close();
 
   // Build local-to-global mapping for vertices
-  MeshFunction<uint>* global_vertex_indices = data().create_mesh_function("global vertex indices", 0);
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = data().create_mesh_function("global vertex indices", 0);
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
     (*global_vertex_indices)[it->second] = it->first;
 }
