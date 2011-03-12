@@ -1,7 +1,7 @@
 "Run solver.py in parallel"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-08-17 -- 2011-03-09"
+__date__ = "2009-08-17 -- 2011-03-12"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL version 2.1"
 
@@ -25,7 +25,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     print output
 
 # Return exit status
-if failure:
+if "ERROR" in output:
     print output
     sys.exit(1)
 else:
