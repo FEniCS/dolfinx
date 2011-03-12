@@ -6,7 +6,6 @@
 //
 // Modified by Johan Hake, 2009.
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>

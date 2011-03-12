@@ -7,8 +7,6 @@
 #ifndef __PARALLEL_DATA_H
 #define __PARALLEL_DATA_H
 
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -26,13 +24,27 @@ namespace dolfin
     ParallelData(const Mesh& mesh);
 
     /// Destructor
-    ~ParallelData();
+    //~ParallelData();
 
     //--- Data for distributed memory parallelism ---
 
+    /// Return global indices for entity of dimension d
+    MeshFunction<uint>& global_entity_indices(uint d)
+    {
+      assert(d < _global_entity_indices.size());
+      return _global_entity_indices[d];
+    }
+
+    /// Return global indices for entity of dimension d (const version)
+    const MeshFunction<uint>& global_entity_indices(uint d) const
+    {
+      assert(d < _global_entity_indices.size());
+      return _global_entity_indices[d];
+    }
 
     //--- Data for shared memory parallelism (multicore) ---
 
+    /*
     /// Return the number of colors for entities of dimension D
     /// colored by entities of dimension d and coloring distance rho.
     uint num_colors(uint D, uint d, uint rho) const;
@@ -55,9 +67,15 @@ namespace dolfin
     /// colored by entities of dimension d and coloring distance rho
     /// (const version).
     const std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho) const;
+    */
 
   private:
 
+    // Global indices for entity of dimension d
+    std::vector<MeshFunction<unsigned int> > _global_entity_indices;
+
+
+    /*
     // Some typedefs for complex types
     typedef boost::tuple<uint, uint, uint> tuple_type;
     typedef std::map<tuple_type, MeshFunction<uint> > entity_colors_map_type;
@@ -71,6 +89,8 @@ namespace dolfin
 
     // Map to colored entities
     colored_entities_map_type _colored_entities;
+
+    */
 
   };
 

@@ -39,6 +39,7 @@ using namespace dolfin;
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
                _data(*this),
+               _parallel_data(new ParallelData(*this)),
                _cell_type(0),
                unique_id(UniqueIdGenerator::id()),
                _intersection_operator(*this),
@@ -50,6 +51,7 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
                                _data(*this),
+                               _parallel_data(new ParallelData(*this)),
                                _cell_type(0),
                                unique_id(UniqueIdGenerator::id()),
                                _intersection_operator(*this),
@@ -60,7 +62,9 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
-                                   _data(*this), _cell_type(0),
+                                   _data(*this),
+                                   _parallel_data(new ParallelData(*this)),
+                                   _cell_type(0),
                                    unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
                                    _ordered(false)
@@ -70,12 +74,12 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
     // Read local mesh data
     Timer timer("PARALLEL 0: Parse local mesh data");
     File file(filename);
-    LocalMeshData data;
-    file >> data;
+    LocalMeshData local_data;
+    file >> local_data;
     timer.stop();
 
     // Partition data
-    MeshPartitioning::partition(*this, data);
+    MeshPartitioning::partition(*this, local_data);
   }
   else
   {
@@ -98,6 +102,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _data = mesh._data;
+  _parallel_data.reset(new ParallelData(*mesh._parallel_data));
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
 
@@ -122,21 +127,13 @@ const MeshData& Mesh::data() const
 //-----------------------------------------------------------------------------
 ParallelData& Mesh::parallel_data()
 {
-  // Create if not already created
-  if (!_parallel_data)
-    _parallel_data.reset(new ParallelData(*this));
-
-  // Return data
+  assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 const ParallelData& Mesh::parallel_data() const
 {
-  // Check that data exists
-  if (!_parallel_data)
-    error("Parallel data not available.");
-
-  // Return data
+  assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------

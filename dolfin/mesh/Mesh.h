@@ -35,6 +35,7 @@ namespace dolfin
   class Function;
   class MeshEntity;
   template <class T> class MeshFunction;
+  class ParallelData;
   class SubDomain;
   class XMLMesh;
   class ParallelData;

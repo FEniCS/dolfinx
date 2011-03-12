@@ -41,6 +41,12 @@
 //-----------------------------------------------------------------------------
 #if SWIG_VERSION >= 0x020000
 
+// Macro to declare Hierarchical base class
+%define DECLARE_HIERACHIAL_SHARED_PTR(NAME)
+%shared_ptr(dolfin::Hierarchical<NAME >)
+%shared_ptr(NAME)
+%enddef
+
 // adaptivity
 %shared_ptr(dolfin::TimeSeries)
 
@@ -164,11 +170,11 @@
 %shared_ptr(dolfin::MeshData)
 
 
-%shared_ptr(dolfin::MeshFunction<bool>)
-%shared_ptr(dolfin::MeshFunction<double>)
-%shared_ptr(dolfin::MeshFunction<int>)
-%shared_ptr(dolfin::MeshFunction<dolfin::uint>)
-%shared_ptr(dolfin::MeshFunction<unsigned int>)
+DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<bool>)
+DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<double>)
+DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<int>)
+DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<dolfin::uint>)
+DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<unsigned int>)
 
 %shared_ptr(dolfin::CellFunction<bool>)
 %shared_ptr(dolfin::CellFunction<double>)

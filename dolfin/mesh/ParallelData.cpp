@@ -9,10 +9,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ParallelData::ParallelData(const Mesh& mesh) : _mesh(mesh)
+ParallelData::ParallelData(const Mesh& mesh)
+  : _global_entity_indices(mesh.topology().dim(), mesh)
 {
   // Do nothing
 }
+/*
 //-----------------------------------------------------------------------------
 ParallelData::~ParallelData()
 {
@@ -104,3 +106,4 @@ ParallelData::colored_entities(uint D, uint d, uint rho) const
   return it->second;
 }
 //-----------------------------------------------------------------------------
+*/

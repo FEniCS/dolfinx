@@ -8,7 +8,6 @@
 // Last changed: 2009-10-05
 
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
 #include "Constant.h"
 
 using namespace dolfin;
