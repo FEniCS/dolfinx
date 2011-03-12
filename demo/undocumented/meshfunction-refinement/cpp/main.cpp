@@ -33,7 +33,6 @@ int main()
   MeshFunction<unsigned int> right_cells(mesh, mesh.topology().dim(), 0);
   Right right;
   right.mark(right_cells, 1);
-  plot(right_cells);
 
   // Create MeshFunction over facets
   MeshFunction<unsigned int> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
@@ -55,7 +54,8 @@ int main()
   // Adapt cell function to refined mesh
   adapt(right_cells, mesh.child_shared_ptr());
 
-  //plot(right_cells.child());
+  // Adapt facet function to refined mesh
+  adapt(inflow_facets, mesh.child_shared_ptr());
 
   return 0;
 }

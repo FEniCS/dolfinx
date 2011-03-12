@@ -5,22 +5,15 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2006-11-01
-// Last changed: 2011-02-22
+// Last changed: 2011-03-12
 
 #ifndef __BISECTION_REFINEMENT_H
 #define __BISECTION_REFINEMENT_H
 
-#include <vector>
-#include "dolfin/common/types.h"
-
 namespace dolfin
 {
-
   // Forward declarations
-  class Cell;
-  class Edge;
   class Mesh;
-  class MeshEditor;
   template<class T> class MeshFunction;
 
   /// This class implements local mesh refinement by edge bisection.
@@ -37,12 +30,12 @@ namespace dolfin
                                               const Mesh& mesh,
                                               const MeshFunction<bool>& cell_marker);
 
-  private:
+  // private:
 
     /// Transform mesh data
-    static void transform_data(Mesh& newmesh, const Mesh& oldmesh,
-                               const MeshFunction<uint>& cell_map,
-                               const std::vector<int>& facet_map);
+    //static void transform_data(Mesh& newmesh, const Mesh& oldmesh,
+    //                           const MeshFunction<uint>& cell_map,
+    //                           const std::vector<int>& facet_map);
 
   };
 

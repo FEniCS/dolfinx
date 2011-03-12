@@ -10,6 +10,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Cell.h>
 #include "Cell.h"
 #include "Edge.h"
 #include "Mesh.h"
@@ -35,24 +37,53 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   // Call Rivara refinement
   RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map, facet_map);
 
-  // Store child->parent cell and facet information
-  info("Creating parent cell mapping");
-  MeshFunction<dolfin::uint>* cf;
-  cf = refined_mesh.data().create_mesh_function("parent_cell",
-                                                refined_mesh.topology().dim());
+  // Store child->parent cell and facet information as mesh data
+  const uint D = refined_mesh.topology().dim();
+
+  info("Storing parent cell information");
+  MeshFunction<uint>* cf;
+  cf = refined_mesh.data().create_mesh_function("parent_cell", D);
   for(uint i = 0; i < refined_mesh.num_cells(); i++)
     (*cf)[i] = cell_map[i];
 
-  // Create mesh function in new mesh coding parent facet information
-  MeshFunction<dolfin::uint>* ff;
-  ff = refined_mesh.data().create_mesh_function("parent_facet",
-                                               refined_mesh.topology().dim()-1);
+  // Create mesh function in refined mesh encoding parent facet maps
+  info("Storing parent facet information");
+  MeshFunction<uint>* ff;
+  ff = refined_mesh.data().create_mesh_function("parent_facet", D - 1);
 
   // Fill ff from facet_map
+  refined_mesh.init(); // FIXME
+  const uint orphan = mesh.num_facets() + 1;
+  for (FacetIterator facet(refined_mesh); !facet.end(); ++facet)
+  {
+    // Extract (arbitrary) cell that this facet belongs to
+    Cell cell(refined_mesh, facet->entities(D)[0]);
 
-  // Transform data   // Marie says: Removed. Doesn't match new style.
-  //transform_data(refined_mesh, mesh, cell_map, facet_map);
+    // Extract local facet number of this facet with that cell
+    const uint local_facet = cell.index(*facet);
+
+    // Extract local facet index of parent cell (from facet_map)
+    const uint index = cell.index()*(D + 1) + local_facet;
+    const int parent_local_facet_index = facet_map[index];
+
+    // Ignore if orphaned facet
+    if (parent_local_facet_index == -1)
+    {
+      (*ff)[*facet] = orphan;
+      continue;
+    }
+
+    // Get parent cell
+    Cell parent_cell(mesh, (*cf)[cell]);
+
+    // Figure out global facet number of local facet number of parent
+    const uint parent_facet_index = parent_cell.entities(D - 1)[parent_local_facet_index];
+
+    // Assign parent facet index to this facet
+    (*ff)[*facet] = parent_facet_index;
+  }
 }
+/*
 //-----------------------------------------------------------------------------
 void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
                                          const MeshFunction<uint>& cell_map,
@@ -135,3 +166,4 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   }
 }
 //-----------------------------------------------------------------------------
+*/

@@ -54,26 +54,29 @@ const dolfin::MeshFunction<dolfin::uint>& dolfin::adapt(const MeshFunction<uint>
   const uint dim = mesh.topology().dim();
   MeshFunction<uint> refined_mf(*refined_mesh, mesh_function.dim());
 
-  // Extract parent encoding from refined mesh
+  // Extract parent map from data of refined mesh
   MeshFunction<uint>* parent = 0;
   if (mesh_function.dim() == dim)
-  {
     parent = refined_mesh->data().mesh_function("parent_cell");
-  } else if (mesh_function.dim() == (dim - 1))
-  {
+  else if (mesh_function.dim() == (dim - 1))
     parent = refined_mesh->data().mesh_function("parent_facet");
-  } else
+  else
     dolfin_not_implemented();
 
-  // Check that parent info exists
+  // Check that parent map exists
   if (!parent)
     error("Unable to extract information about parent mesh entites");
 
   // Map values of mesh function into refined mesh function
+  const uint undefined = 1000; // FIXME
   for (uint i = 0; i < refined_mf.size(); i++)
-    refined_mf[i] = mesh_function[(*parent)[i]];
-
-  plot(refined_mf);
+  {
+    const uint parent_index = (*parent)[i];
+    if (parent_index < mesh_function.size())
+      refined_mf[i] = mesh_function[parent_index];
+    else
+      refined_mf[i] = undefined;
+  }
 
   // Return new mesh function
   return mesh_function; // FIXME
