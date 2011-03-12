@@ -46,7 +46,8 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
     refined_mesh.data().create_mesh_function("parent_facet", D - 1);
 
   // Fill ff from facet_map
-  refined_mesh.init(); // FIXME
+  mesh.init(D, D-1);
+  refined_mesh.init(D-1, D);
   const uint orphan = mesh.num_facets() + 1;
   for (FacetIterator facet(refined_mesh); !facet.end(); ++facet)
   {
@@ -56,7 +57,7 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
     // Extract local facet number of this facet with that cell
     const uint local_facet = cell.index(*facet);
 
-    // Extract local facet index of parent cell (from facet_map)
+    // Extract local facet index of parent cell (using facet_map)
     const uint index = cell.index()*(D + 1) + local_facet;
     const int parent_local_facet_index = facet_map[index];
 
@@ -71,7 +72,8 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
     Cell parent_cell(mesh, (*cf)[cell]);
 
     // Figure out global facet number of local facet number of parent
-    const uint parent_facet_index = parent_cell.entities(D - 1)[parent_local_facet_index];
+    const uint parent_facet_index = \
+      parent_cell.entities(D - 1)[parent_local_facet_index];
 
     // Assign parent facet index to this facet
     (*ff)[*facet] = parent_facet_index;
