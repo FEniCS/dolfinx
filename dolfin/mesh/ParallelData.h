@@ -30,18 +30,28 @@ namespace dolfin
 
     //--- Data for distributed memory parallelism ---
 
+    /// Return true if global indices have been computed for entity of dimension d
+    bool have_global_entity_indices(uint d) const
+    {
+      if (_global_entity_indices.find(d) != _global_entity_indices.end())
+        return true;
+      else
+        return false;
+    }
+
     /// Return global indices for entity of dimension d
     MeshFunction<uint>& global_entity_indices(uint d)
     {
-      assert(d < _global_entity_indices.size());
-      return _global_entity_indices[d];
+      if (!have_global_entity_indices(d))
+        _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
+      return _global_entity_indices.find(d)->second;
     }
 
     /// Return global indices for entity of dimension d (const version)
     const MeshFunction<uint>& global_entity_indices(uint d) const
     {
-      assert(d < _global_entity_indices.size());
-      return _global_entity_indices[d];
+      assert(have_global_entity_indices(d));
+      return _global_entity_indices.find(d)->second;
     }
 
     std::map<uint, std::vector<uint> >& overlap()
@@ -49,6 +59,12 @@ namespace dolfin
 
     const std::map<uint, std::vector<uint> >& overlap() const
     { return _overlap; }
+
+    MeshFunction<bool>& exterior_facet()
+    { return _exterior_facet; }
+
+    const MeshFunction<bool>& exterior_facet() const
+    { return _exterior_facet; }
 
     //--- Data for shared memory parallelism (multicore) ---
 
@@ -79,8 +95,11 @@ namespace dolfin
 
   private:
 
+    // Mesh
+    const Mesh& mesh;
+
     // Global indices for entity of dimension d
-    std::vector<MeshFunction<unsigned int> > _global_entity_indices;
+    std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
 
     // Maps each shared vertex to a list of the processes sharing
     // the vertex
@@ -88,6 +107,7 @@ namespace dolfin
 
     std::vector<uint> _num_global_entities;
 
+    // True if a facet is an exterior facet, false otherwise
     MeshFunction<bool> _exterior_facet;
 
     /*
