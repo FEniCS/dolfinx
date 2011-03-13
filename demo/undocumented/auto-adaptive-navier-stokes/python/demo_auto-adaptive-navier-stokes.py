@@ -49,13 +49,18 @@ dF = derivative(F, w_h, dw) # FIXME
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
 # Define variational problem (with new notation)
-problem = VariationalProblem(F, dF, bc)
+pde = VariationalProblem(F, dF, bc)
 
 # Define goal and reference
-M = u_h[0]*ds#(0) #FIXME
-problem.parameters["adaptivity"]["reference"] = 0.82174229794; # FIXME
+M = u_h[0]*ds(0)
+outflow = Outflow()
+outflow_markers = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
+outflow_markers.set_all(1)
+outflow.mark(outflow_markers, 0)
+M.exterior_facet_domains = outflow_markers;
+
+pde.parameters["adaptivity"]["reference"] = 0.40863917;
 
 # Solve to given tolerance
-tol = 0.0
-problem.solve(w_h, tol, M)
-
+tol = 1.e-05
+pde.solve(w_h, tol, M)

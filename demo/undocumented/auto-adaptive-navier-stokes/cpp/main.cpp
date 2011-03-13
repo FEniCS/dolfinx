@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-13
+// Last changed: 2011-03-13
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -54,7 +54,7 @@ int main() {
   SubSpace W0(W, 0);
   DirichletBC bc(W0, u0, noslip);
 
-  // Define variational problem
+  // Create variational formulation and assign coefficients
   Constant nu(0.02);
   AdaptiveNavierStokes::Form_9 F(W);
   Pressure p0;
@@ -62,24 +62,26 @@ int main() {
   F.nu = nu;
   F.w = w;
 
-  // Define goal functional
-  AdaptiveNavierStokes::Form_10 M(mesh);
-  M.w = w;
-
-  // FIXME: The darned exterior_facet_domains must be tackled somewhere
-  // Outflow outflow; M = u.ds(outflow);
-
-  // Define variational problem
+  // Create Jacobian and assign coefficients
   AdaptiveNavierStokes::Form_8 dF(W, W);
   dF.nu = nu;
   dF.w = w;
 
-  // New notation for variational problem
+  // Define variational problem
   VariationalProblem pde(F, dF, bc);
 
+  // Define goal functional
+  AdaptiveNavierStokes::Form_10 M(mesh);
+  M.w = w;
+
+  Outflow outflow;
+  MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim() - 1, 1);
+  outflow.mark(outflow_markers, 0);
+  M.exterior_facet_domains = outflow_markers;
+
   // Give reference
-  pde.parameters("adaptivity")["reference"] = 0.40863917*2; // FIXME
-  pde.parameters("adaptivity")["plot_mesh"] = false; // FIXME
+  pde.parameters("adaptivity")["reference"] = 0.40863917;
+  // pde.parameters("adaptivity")["plot_mesh"] = false;
 
   // Solve problem with goal-oriented error control to given tolerance
   double tol = 1.e-5;
