@@ -66,11 +66,11 @@ namespace dolfin
     { return _mesh->type().facet_area(*this, facet); }
 
     /// Order entities locally
-    void order(MeshFunction<uint>* global_vertex_indices)
+    void order(const MeshFunction<uint>* global_vertex_indices)
     { _mesh->type().order(*this, global_vertex_indices); }
 
     /// Check if entities are ordered
-    bool ordered(MeshFunction<uint>* global_vertex_indices)
+    bool ordered(const MeshFunction<uint>* global_vertex_indices) const
     { return _mesh->type().ordered(*this, global_vertex_indices); }
 
   };

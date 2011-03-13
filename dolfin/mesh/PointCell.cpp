@@ -9,10 +9,10 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
-#include "MeshEditor.h"
 #include "Facet.h"
-#include "PointCell.h"
+#include "MeshEditor.h"
 #include "Vertex.h"
+#include "PointCell.h"
 
 using namespace dolfin;
 
@@ -99,7 +99,7 @@ double PointCell::facet_area(const Cell& cell, uint facet) const
 void PointCell::order(Cell& cell,
                       const MeshFunction<uint>* global_vertex_indices) const
 {
-  //  error("PointCell::order() not defined.");
+  error("PointCell::order() not defined.");
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

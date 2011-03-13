@@ -4,9 +4,12 @@
 // First added:  2007-01-30
 // Last changed: 2010-10-19
 
+#include <boost/shared_ptr.hpp>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
-#include "Mesh.h"
 #include "Cell.h"
+#include "Mesh.h"
+#include "ParallelData.h"
 #include "MeshOrdering.h"
 
 using namespace dolfin;
@@ -21,13 +24,15 @@ void MeshOrdering::order(Mesh& mesh)
     return;
 
   // Get global vertex numbering (important when running in parallel)
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  const MeshFunction<unsigned int>* global_vertex_indices = 0;
+  if (mesh.parallel_data().have_global_entity_indices(0))
+    global_vertex_indices = &(mesh.parallel_data().global_entity_indices(0));
 
   // Iterate over all cells and order the mesh entities locally
   Progress p("Ordering mesh", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    cell->order(global_vertex_indices.get());
+    cell->order(global_vertex_indices);
     p++;
   }
 }
@@ -39,13 +44,17 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     return true;
 
   // Get global vertex numbering (important when running in parallel)
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  // Get global vertex numbering (important when running in parallel)
+  const MeshFunction<unsigned int>* global_vertex_indices = 0;
+  if (mesh.parallel_data().have_global_entity_indices(0))
+    global_vertex_indices = &(mesh.parallel_data().global_entity_indices(0));
+
 
   // Check if all cells are ordered
   Progress p("Checking mesh ordering", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (!cell->ordered(global_vertex_indices.get()))
+    if (!cell->ordered(global_vertex_indices))
       return false;
     p++;
   }

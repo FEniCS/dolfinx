@@ -672,7 +672,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
-  assert(global_vertex_indices.size() == glob2loc.size());
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices[(*iter).second] = (*iter).first;
 
