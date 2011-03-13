@@ -66,9 +66,9 @@ namespace dolfin
                            boost::shared_ptr<const Mesh> refined_mesh);
 
   /// Helper function for refinement of boundary conditions
-  void adapt_markers(std::vector<std::pair<uint, uint> > refined_markers,
+  void adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
                      const Mesh& refined_mesh,
-                     const std::vector<std::pair<uint, uint> > markers,
+                     const std::vector<std::pair<uint, uint> >& markers,
                      const Mesh& mesh);
 
   //--- Refinement of forms ---

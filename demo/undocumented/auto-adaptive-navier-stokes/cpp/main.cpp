@@ -75,9 +75,8 @@ int main() {
   // Define goal functional
   AdaptiveNavierStokes::Form_10 M(mesh);
   M.w = w;
-
   Outflow outflow;
-  MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim() - 1, 1);
+  MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim()-1, 1);
   outflow.mark(outflow_markers, 0);
   M.exterior_facet_domains = outflow_markers;
 

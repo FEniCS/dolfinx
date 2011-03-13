@@ -414,9 +414,9 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   return *refined_mesh_function;
 }
 //-----------------------------------------------------------------------------
-void dolfin::adapt_markers(std::vector<std::pair<uint, uint> > refined_markers,
+void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
                            const Mesh& refined_mesh,
-                           const std::vector<std::pair<uint, uint> > markers,
+                           const std::vector<std::pair<uint, uint> >& markers,
                            const Mesh& mesh)
 {
 
