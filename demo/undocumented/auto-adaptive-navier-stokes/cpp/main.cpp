@@ -51,8 +51,10 @@ int main() {
   // Define boundary condition
   Constant u0(0.0, 0.0);
   Noslip noslip;
+  MeshFunction<dolfin::uint> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
+  noslip.mark(noslip_markers, 0);
   SubSpace W0(W, 0);
-  DirichletBC bc(W0, u0, noslip);
+  DirichletBC bc(W0, u0, noslip_markers, 0);
 
   // Create variational formulation and assign coefficients
   Constant nu(0.02);
@@ -81,7 +83,7 @@ int main() {
 
   // Give reference
   pde.parameters("adaptivity")["reference"] = 0.40863917;
-  // pde.parameters("adaptivity")["plot_mesh"] = false;
+  pde.parameters("adaptivity")["plot_mesh"] = false;
 
   // Solve problem with goal-oriented error control to given tolerance
   double tol = 1.e-5;
