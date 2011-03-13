@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-03-11
+// Last changed: 2011-03-13
 
 #include <armadillo>
 
@@ -134,7 +134,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
   // Apply homogeneous boundary conditions to extrapolated dual
   for (uint i = 0; i < bcs.size(); i++)
   {
-    // FIXME: Suboptimal cast.
+    // Add check here.
     DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i]));
 
     // Extract SubSpace component
@@ -161,7 +161,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     e_bc.homogenize();
 
     // Apply boundary condition to extrapolation
-    //e_bc.apply(_Ez_h->vector()); // FIXME!! Awaits BUG #698229
+    e_bc.apply(_Ez_h->vector());
   }
 }
 //-----------------------------------------------------------------------------

@@ -409,9 +409,7 @@ void DirichletBC::homogenize()
   }
 
   const uint value_dim = g->value_dimension(0);
-  std::vector<double> values;
-  for (uint i = 0; i < value_dim; i ++)
-    values.push_back(0.0);
+  std::vector<double> values(value_dim, 0.0);
   boost::shared_ptr<Constant> zero(new Constant(values));
   set_value(zero);
 }

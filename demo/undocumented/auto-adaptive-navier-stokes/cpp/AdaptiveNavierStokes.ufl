@@ -2,7 +2,7 @@
 # Licensed under the GNU LGPL Version 3.0 or any later version
 
 # First added:  2010-11-01
-# Last changed: 2011-01-08
+# Last changed: 2011-03-13
 
 V = VectorElement("CG", "triangle", 2)
 Q = FiniteElement("CG", "triangle", 1)
@@ -28,7 +28,7 @@ L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q
      + p0*dot(v, n)*ds
 
 # Define goal functional
-M = w[0]*ds#(0) # FIXME
+M = w[0]*ds(0)
 
 # Label the unknown
 unknown = w
