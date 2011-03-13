@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-12
+// Last changed: 2011-03-13
 
 #include <boost/shared_ptr.hpp>
 
@@ -205,6 +205,28 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   /// Attach mesh
   refined_form->set_mesh(refined_mesh);
 
+  // Attached refined sub domains
+  const MeshFunction<uint>* cell_domains = form.cell_domains_shared_ptr().get();
+  if (cell_domains)
+  {
+    adapt(*cell_domains, refined_mesh);
+    refined_form->cell_domains = cell_domains->child_shared_ptr();
+  }
+  const MeshFunction<uint>* exterior_domains =
+    form.exterior_facet_domains_shared_ptr().get();
+  if (exterior_domains)
+  {
+    adapt(*exterior_domains, refined_mesh);
+    refined_form->exterior_facet_domains = exterior_domains->child_shared_ptr();
+  }
+  const MeshFunction<uint>* interior_domains =
+    form.interior_facet_domains_shared_ptr().get();
+  if (interior_domains)
+  {
+    adapt(*interior_domains, refined_mesh);
+    refined_form->interior_facet_domains = interior_domains->child_shared_ptr();
+  }
+
   // Set parent / child
   set_parent_child(form, refined_form);
 
@@ -341,8 +363,6 @@ const dolfin::MeshFunction<dolfin::uint>&
 dolfin::adapt(const MeshFunction<uint>& mesh_function,
               boost::shared_ptr<const Mesh> refined_mesh)
 {
-  // FIXME: MeshFunction Hierarchical ok?
-
   // Skip refinement if already refined
   if (mesh_function.has_child())
   {
