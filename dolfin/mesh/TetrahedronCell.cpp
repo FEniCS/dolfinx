@@ -12,11 +12,11 @@
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
+#include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
-#include "Facet.h"
-#include "TetrahedronCell.h"
 #include "Vertex.h"
+#include "TetrahedronCell.h"
 
 using namespace dolfin;
 

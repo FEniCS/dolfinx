@@ -18,6 +18,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
@@ -57,6 +58,8 @@ namespace dolfin
       // Clear old data
       clear();
 
+      const Mesh& mesh = cell.mesh();
+
       // Set cell shape
       switch (cell.type())
       {
@@ -77,10 +80,10 @@ namespace dolfin
       }
 
       // Set topological dimension
-      topological_dimension = cell.mesh().topology().dim();
+      topological_dimension = mesh.topology().dim();
 
       // Set geometric dimension
-      geometric_dimension = cell.mesh().geometry().dim();
+      geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
       entity_indices = new uint*[topological_dimension + 1];
@@ -98,12 +101,13 @@ namespace dolfin
 
       // Get global entity indices (if any)
       global_entities.resize(topological_dimension + 1);
+      const ParallelData& parallel_data = mesh.parallel_data();
       for (uint d = 0; d <= topological_dimension; ++d)
       {
-        std::stringstream name;
-        name << "global entity indices " << d;
-        // This pointer may be zero, in which case local entity indices are used
-        global_entities[d] = cell.mesh().data().mesh_function(name.str()).get();
+        if (parallel_data.have_global_entity_indices(d))
+          global_entities[d] = &(parallel_data.global_entity_indices(d));
+        else
+          global_entities[d] = 0;
       }
 
       // Allocate vertex coordinates
@@ -210,7 +214,7 @@ namespace dolfin
     uint num_higher_order_vertices;
 
     // Mappings from local to global entity indices (if any)
-    std::vector<MeshFunction<uint>*> global_entities;
+    std::vector<const MeshFunction<uint>* > global_entities;
 
     // Number of cell entities of dimension d at initialisation
     std::vector<uint> num_cell_entities;

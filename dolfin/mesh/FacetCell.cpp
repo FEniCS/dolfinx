@@ -16,7 +16,7 @@ using namespace dolfin;
 FacetCell::FacetCell(const Mesh& mesh, const Cell& facet)
   : Cell(mesh, 0), _facet_index(0)
 {
-  // Get mapping from facets (boundary cells) to mesh cells
+  // Get map from facets (boundary cells) to mesh cells
   boost::shared_ptr<const MeshFunction<unsigned int> > cell_map = facet.mesh().data().mesh_function("cell map");
 
   // Check that mapping exists

@@ -261,7 +261,7 @@ void TriangleCell::order(Cell& cell,
   const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if ( topology(1, 0).size() > 0 )
+  if (topology(1, 0).size() > 0)
   {
     assert(topology(2, 1).size() > 0);
 
@@ -277,7 +277,7 @@ void TriangleCell::order(Cell& cell,
   }
 
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
-  if ( topology(2, 0).size() > 0 )
+  if (topology(2, 0).size() > 0)
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(3, cell_vertices, global_vertex_indices);

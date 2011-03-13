@@ -20,8 +20,11 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"  && diagonal != "left/right"  && diagonal != "crossed")
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
+        && diagonal != "left/right"  && diagonal != "crossed")
+  {
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\".");
+  }
 
   if (nx < 1 || ny < 1)
     error("Size of unit square must be at least 1 in each dimension.");
@@ -35,12 +38,12 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices((nx+1)*(ny+1) + nx*ny);
+    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny);
     editor.init_cells(4*nx*ny);
   }
   else
   {
-    editor.init_vertices((nx+1)*(ny+1));
+    editor.init_vertices((nx + 1)*(ny + 1));
     editor.init_cells(2*nx*ny);
   }
 

@@ -100,7 +100,8 @@ namespace dolfin
                     const MeshFunction<uint>* global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
-    bool ordered(const Cell& cell, MeshFunction<uint>* global_vertex_indices) const;
+    bool ordered(const Cell& cell,
+                 const MeshFunction<uint>* global_vertex_indices) const;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

@@ -9,15 +9,15 @@
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
-#include "PointCell.h"
-#include "IntervalCell.h"
-#include "TriangleCell.h"
-#include "TetrahedronCell.h"
-#include "Vertex.h"
-#include "CellType.h"
 #include "Cell.h"
-#include "Point.h"
+#include "CellType.h"
+#include "IntervalCell.h"
 #include "MeshFunction.h"
+#include "Point.h"
+#include "PointCell.h"
+#include "TetrahedronCell.h"
+#include "TriangleCell.h"
+#include "Vertex.h"
 
 using namespace dolfin;
 
@@ -29,11 +29,11 @@ namespace dolfin
   {
   public:
 
-    GlobalSort(const MeshFunction<uint>* global_vertex_indices) : g(global_vertex_indices) {}
+    GlobalSort(const MeshFunction<uint>& global_vertex_indices) : g(global_vertex_indices) {}
 
-    bool operator() (const uint& l, const uint& r) { return (*g)[l] < (*g)[r]; }
+    bool operator() (const uint& l, const uint& r) { return g[l] < g[r]; }
 
-    const MeshFunction<uint>* g;
+    const MeshFunction<uint>& g;
 
   };
 
@@ -109,7 +109,7 @@ std::string CellType::type2string(Type type)
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell,
-                       MeshFunction<uint>* global_vertex_indices) const
+                       const MeshFunction<uint>* global_vertex_indices) const
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
@@ -168,7 +168,7 @@ void CellType::sort_entities(uint num_vertices,
   // Two cases here, either sort vertices directly (when running in serial)
   // or sort based on the global indices (when running in parallel)
 
-  if (global_vertex_indices == 0)
+  if (!global_vertex_indices)
   {
     // Serial case, just sort
     std::sort(vertices, vertices + num_vertices);
@@ -176,7 +176,7 @@ void CellType::sort_entities(uint num_vertices,
   else
   {
     // Parallel case, sort on global indices
-    GlobalSort global_sort(global_vertex_indices);
+    GlobalSort global_sort(*global_vertex_indices);
     std::sort(vertices, vertices + num_vertices, global_sort);
   }
 }
@@ -187,7 +187,7 @@ bool CellType::increasing(uint num_vertices, const uint* vertices,
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
 
-  if (global_vertex_indices == 0)
+  if (!global_vertex_indices)
   {
     for (uint v = 1; v < num_vertices; v++)
       if (vertices[v - 1] >= vertices[v])
@@ -196,8 +196,7 @@ bool CellType::increasing(uint num_vertices, const uint* vertices,
   else
   {
     for (uint v = 1; v < num_vertices; v++)
-      if ((*global_vertex_indices)[vertices[v - 1]] >=
-          (*global_vertex_indices)[vertices[v]])
+      if ((*global_vertex_indices)[vertices[v - 1]] >= (*global_vertex_indices)[vertices[v]])
         return false;
   }
 
@@ -249,7 +248,7 @@ bool CellType::increasing(uint n0, const uint* v0,
       }
     }
 
-  if (!incident)
+    if (!incident)
       w1[k++] = v;
   }
   assert(k == num_non_incident);
@@ -257,7 +256,7 @@ bool CellType::increasing(uint n0, const uint* v0,
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)
   {
-    if (global_vertex_indices == 0)
+    if (!global_vertex_indices)
     {
       if (w0[k] < w1[k])
         return true;

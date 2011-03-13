@@ -104,7 +104,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   std::vector<uint> send_buffer;
 
   // Build set of dofs on process boundary (assume all are owned by this process)
-   boost::shared_ptr<const MeshFunction<unsigned int> > cell_map = interior_boundary.data().mesh_function("cell map");
+  boost::shared_ptr<const MeshFunction<unsigned int> > cell_map = interior_boundary.data().mesh_function("cell map");
   if (cell_map)
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)

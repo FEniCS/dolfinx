@@ -13,13 +13,15 @@
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include "BoundaryMesh.h"
 #include "LocalMeshData.h"
+#include "Mesh.h"
+#include "MeshEditor.h"
+#include "MeshEntityIterator.h"
+#include "MeshFunction.h"
+#include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
-#include "BoundaryMesh.h"
-#include "MeshEntityIterator.h"
-#include "MeshEditor.h"
-#include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
 
@@ -105,12 +107,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     error("Unable to number entities of dimension 0. Vertex indices must already exist.");
 
   // Return if global entity indices are already calculated
-  std::stringstream mesh_data_name;
-  mesh_data_name << "global entity indices " << d;
-  boost::shared_ptr<MeshFunction<unsigned int> > global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
-
-  // Already computed the global entity numbers; do nothing
-  if (global_entity_indices != NULL)
+  if (mesh.parallel_data().have_global_entity_indices(d))
     return;
 
   // Get number of processes and process number
@@ -118,9 +115,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   const uint process_number = MPI::process_number();
 
   // Get global vertex indices and overlap
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
+  MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
   std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
-  assert(global_vertex_indices);
   assert(overlap);
 
   // Sort overlap
@@ -136,7 +132,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   {
     std::vector<uint> entity;
     for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity.push_back((*global_vertex_indices)[vertex->index()]);
+      entity.push_back(global_vertex_indices[vertex->index()]);
     std::sort(entity.begin(), entity.end());
     entities[entity] = e->index();
   }
@@ -500,13 +496,14 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   ignored_entity_processes.clear();
 
   // Create mesh data
-  global_entity_indices = mesh.data().create_mesh_function(mesh_data_name.str(), d);
+  MeshFunction<unsigned int>& global_entity_indices = mesh.parallel_data().global_entity_indices(d);
   for (uint i = 0; i < entity_indices.size(); ++i)
   {
     if (entity_indices[i] < 0)
       info(WARNING, "Missing global number for local entity (%d, %d).", d, i);
     assert(entity_indices[i] >= 0);
-    (*global_entity_indices)[i] = static_cast<uint>(entity_indices[i]);
+    assert(i < global_entity_indices.size());
+    global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -674,19 +671,17 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   }
 
   // Construct local to global mapping based on the global to local mapping
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
-  assert(global_vertex_indices);
+  MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
-    (*global_vertex_indices)[(*iter).second] = (*iter).first;
+    global_vertex_indices[(*iter).second] = (*iter).first;
 
   // Construct local to global mapping for cells
-  std::stringstream cell_name;
-  cell_name << "global entity indices " << mesh_data.tdim;
-  boost::shared_ptr<MeshFunction<unsigned int> > global_cell_indices = mesh.data().create_mesh_function(cell_name.str(), mesh_data.tdim);
-  assert(global_cell_indices);
+  MeshFunction<unsigned int>& global_cell_indices = mesh.parallel_data().global_entity_indices(mesh_data.tdim);
   const std::vector<uint>& gci = mesh_data.global_cell_indices;
+  assert(global_cell_indices.size() > 0);
+  assert(global_cell_indices.size() == gci.size());
   for(uint i = 0; i < gci.size(); ++i)
-    (*global_cell_indices)[i] = gci[i];
+    global_cell_indices[i] = gci[i];
 
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
@@ -711,7 +706,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Build sorted array of global boundary vertex indices (global numbering)
   std::vector<uint> global_vertex_send(boundary_size);
   for (uint i = 0; i < boundary_size; ++i)
-    global_vertex_send[i] = (*global_vertex_indices)[(*boundary_vertex_map)[i]];
+    global_vertex_send[i] = global_vertex_indices[(*boundary_vertex_map)[i]];
   std::sort(global_vertex_send.begin(), global_vertex_send.end());
 
   // Distribute boundaries' sizes
