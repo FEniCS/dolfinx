@@ -5,13 +5,15 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-12
+// Last changed: 2011-03-13
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
 
 #ifndef __DOLFIN_ADAPT_H
 #define __DOLFIN_ADAPT_H
+
+#include <vector>
 
 namespace dolfin
 {
@@ -63,6 +65,12 @@ namespace dolfin
   const DirichletBC& adapt(const DirichletBC& bc,
                            boost::shared_ptr<const Mesh> refined_mesh);
 
+  /// Helper function for refinement of boundary conditions
+  void adapt_markers(std::vector<std::pair<uint, uint> > refined_markers,
+                     const Mesh& refined_mesh,
+                     const std::vector<std::pair<uint, uint> > markers,
+                     const Mesh& mesh);
+
   //--- Refinement of forms ---
 
   /// Refine form based on refined mesh
@@ -78,6 +86,7 @@ namespace dolfin
   /// Refine error control object based on mesh
   const ErrorControl& adapt(const ErrorControl& ec,
                             boost::shared_ptr<const Mesh> refined_mesh);
+
 
 }
 

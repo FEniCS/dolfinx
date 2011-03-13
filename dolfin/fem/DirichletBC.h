@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-02-17
+// Last changed: 2011-03-13
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -176,7 +176,7 @@ namespace dolfin
 
     /// Return boundary markers (facets stored as pairs of cells and local
     /// facet numbers)
-    const std::vector<std::pair<uint, uint> >& markers();
+    const std::vector<std::pair<uint, uint> >& markers() const;
 
     /// Return boundary value g
     const GenericFunction& value() const;

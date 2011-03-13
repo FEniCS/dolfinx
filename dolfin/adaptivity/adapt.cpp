@@ -7,13 +7,17 @@
 // First added:  2010-02-10
 // Last changed: 2011-03-13
 
+#include <map>
+
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/LocalMeshRefinement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
@@ -286,7 +290,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   // Skip refinement if already refined
   if (bc.has_child())
   {
-    dolfin_debug("DirichletBC has already been refined, returning child problem.");
+    dolfin_debug("DirichletBC has already been refined, returning child.");
     return bc.child();
   }
 
@@ -294,10 +298,14 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   boost::shared_ptr<const FunctionSpace> V = bc.function_space_ptr();
   adapt(*V, refined_mesh);
 
-  // Extract but keep sub-domain
-  boost::shared_ptr<const SubDomain> domain = bc.user_sub_domain_ptr();
+  // Extract markers
+  const std::vector<std::pair<uint, uint> >& markers = bc.markers();
 
-  // Refine value
+  // Create refined markers
+  std::vector<std::pair<uint, uint> > refined_markers;
+  adapt_markers(refined_markers, *refined_mesh, markers, V->mesh());
+
+  // Extract value
   const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());
 
   // Create refined boundary condition
@@ -307,14 +315,12 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     adapt(*g, refined_mesh);
     refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
                                      g->child_shared_ptr(),
-                                     domain));
+                                     refined_markers));
   }
   else
-  {
     refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
                                      bc.value_ptr(),
-                                     domain));
-  }
+                                     refined_markers));
   // Set parent / child
   set_parent_child(bc, refined_bc);
 
@@ -408,3 +414,74 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   return *refined_mesh_function;
 }
 //-----------------------------------------------------------------------------
+void dolfin::adapt_markers(std::vector<std::pair<uint, uint> > refined_markers,
+                           const Mesh& refined_mesh,
+                           const std::vector<std::pair<uint, uint> > markers,
+                           const Mesh& mesh)
+{
+
+  // Extract parent map from data of refined mesh
+  boost::shared_ptr<MeshFunction<unsigned int> > parent_cells = \
+    refined_mesh.data().mesh_function("parent_cell");
+  boost::shared_ptr<MeshFunction<unsigned int> > parent_facets = \
+    refined_mesh.data().mesh_function("parent_facet");
+
+  // Check that parent maps exist
+  if (!parent_cells.get() || !parent_facets.get())
+    error("Unable to extract information about parent mesh entites");
+
+  // Create map (parent_cell, parent_local_facet) -> [(child_cell,
+  // child_local_facet), ...] for boundary facets
+  std::pair<uint, uint> child;
+  std::pair<uint, uint> parent;
+  std::map< std::pair<uint, uint>,
+    std::vector< std::pair<uint, uint> > > children;
+
+  const uint D = mesh.topology().dim();
+  for (FacetIterator facet(refined_mesh); !facet.end(); ++facet)
+  {
+    // Ignore interior facets
+    if (facet->num_entities(D) == 2)
+      continue;
+
+    // Extract cell and local facet number
+    Cell cell(refined_mesh, facet->entities(D)[0]);
+    const uint local_facet = cell.index(*facet);
+
+    child.first = cell.index();
+    child.second = local_facet;
+
+    // Extract parent cell
+    Cell parent_cell(mesh, (*parent_cells)[cell]);
+
+    // Extract (global) index of parent facet
+    // Add assert here.
+    const uint parent_facet_index = (*parent_facets)[*facet];
+
+    // Extract local number of parent facet wrt parent cell
+    Facet parent_facet(mesh, parent_facet_index);
+    const uint parent_local_facet = parent_cell.index(parent_facet);
+
+    parent.first = parent_cell.index();
+    parent.second = parent_local_facet;
+
+    // Add this (cell, local_facet) to list of child facets
+    children[parent].push_back(child);
+
+    //std::cout << "(" << parent.first << ", " << parent.second << ") maps to " ;
+    //std::cout << "(" << child.first << ", " << child.second << ")" ;
+    //std::cout << std::endl;
+  }
+
+  // Use above map to construct refined markers
+  std::vector<std::pair<uint, uint> >  child_facets;
+  std::vector<std::pair<uint, uint> >::const_iterator it;
+  for (it = markers.begin(); it != markers.end(); ++it)
+  {
+    child_facets = children[*it];
+    for (uint k = 0; k < child_facets.size(); k++)
+    {
+      refined_markers.push_back(child_facets[k]);
+    }
+  }
+}
