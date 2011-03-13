@@ -34,7 +34,7 @@ Parameters NewtonSolver::default_parameters()
   p.add("convergence_criterion",   "residual");
   p.add("method",                  "full");
   p.add("relaxation_parameter",    1.0);
-  p.add("report",                  false);
+  p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
 
   //p.add("reuse_preconditioner", false);
@@ -130,7 +130,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   if (newton_converged)
   {
     if (dolfin::MPI::process_number() == 0)
-     info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
+     info("Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   }
   else

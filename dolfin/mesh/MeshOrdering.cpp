@@ -44,11 +44,9 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     return true;
 
   // Get global vertex numbering (important when running in parallel)
-  // Get global vertex numbering (important when running in parallel)
   const MeshFunction<unsigned int>* global_vertex_indices = 0;
   if (mesh.parallel_data().have_global_entity_indices(0))
     global_vertex_indices = &(mesh.parallel_data().global_entity_indices(0));
-
 
   // Check if all cells are ordered
   Progress p("Checking mesh ordering", mesh.num_cells());
