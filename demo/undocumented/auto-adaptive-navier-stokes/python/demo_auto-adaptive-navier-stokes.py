@@ -60,6 +60,7 @@ outflow.mark(outflow_markers, 0)
 M.exterior_facet_domains = outflow_markers;
 
 pde.parameters["adaptivity"]["reference"] = 0.40863917;
+pde.parameters["adaptivity"]["plot_mesh"] = False;
 
 # Solve to given tolerance
 tol = 1.e-05
