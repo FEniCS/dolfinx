@@ -15,9 +15,6 @@ set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VER
 #------------------------------------------------------------------------------
 # General configuration
 
-# Set verbose output while testing CMake
-#set(CMAKE_VERBOSE_MAKEFILE 1)
-
 # Set CMake options, see `cmake --help-policy CMP000x`
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
@@ -109,16 +106,13 @@ if (HAVE_PIPE)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-pipe ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
+# Add some strict compiler checks
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-#CHECK_CXX_COMPILER_FLAG("-Wvla" HAVE_DISABLE_NON_STD_FEATURES)
-#if (HAVE_DISABLE_NON_STD_FEATURES)
-#  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wvla ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-#endif()
-
+# Disable strict checks that fail for inlcuded 3rd party libraries
 CHECK_CXX_COMPILER_FLAG(-Wno-long-long HAVE_DISABLE_PEDANTIC_CHECKS)
 if (HAVE_DISABLE_PEDANTIC_CHECKS)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wno-long-long ${DOLFIN_CXX_DEVELOPER_FLAGS}")
@@ -129,6 +123,7 @@ if (HAVE_STD)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
+# Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-g ${DOLFIN_CXX_DEVELOPER_FLAGS}")
