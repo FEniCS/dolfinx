@@ -79,7 +79,8 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     //--- Stage 1: Estimate error ---
     begin("Stage %d.1: Computing error estimate...", i);
-    const double error_estimate = ec.estimate_error(u, problem.bcs_shared_ptr());
+    const double error_estimate = ec.estimate_error(u,
+                                                    problem.bcs_shared_ptr());
 
     // Evaluate functional value
     if (!problem.is_nonlinear())

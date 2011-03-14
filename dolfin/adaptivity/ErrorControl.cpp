@@ -111,7 +111,7 @@ void ErrorControl::compute_dual(Function& z,
       continue;
 
     // Create shared_ptr to boundary condition
-    const boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
+    boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
 
     // Run homogenize
     dual_bc_ptr->homogenize();
@@ -140,6 +140,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // Extract SubSpace component
     const FunctionSpace& V(bc.function_space());
     const Array<uint>& component(V.component());
+    if (component.size() > 1)
+      error("Get meg to implement std:vector return of component or similar.");
 
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
