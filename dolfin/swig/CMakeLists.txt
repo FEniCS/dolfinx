@@ -65,13 +65,6 @@ install(FILES
   COMPONENT RuntimeLibraries
   )
 
-install(DIRECTORY
-  ${CMAKE_SOURCE_DIR}/site-packages/dolfin
-  DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-  USE_SOURCE_PERMISSIONS
-  COMPONENT RuntimeLibraries
-  )
-
 install(FILES ${DOLFIN_SWIG_INTERFACE_FILES}
   DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig
   COMPONENT Development

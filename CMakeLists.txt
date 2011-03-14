@@ -360,6 +360,29 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
+# Installation of dolfin Python module
+
+if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
+  install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/site-packages/dolfin
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS
+    COMPONENT RuntimeLibraries
+    PATTERN "*.in" EXCLUDE
+    )
+  
+  get_filename_component(SWIG_BINARY ${SWIG_EXECUTABLE} NAME)
+
+  configure_file(${CMAKE_SOURCE_DIR}/site-packages/dolfin/common/globalparameters.py.in
+    ${CMAKE_BINARY_DIR}/globalparameters.py @ONLY)
+
+  install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
+    COMPONENT RuntimeLibraries
+    )
+endif()
+  
+#------------------------------------------------------------------------------
 # Installation of dolfin_utils
 
 if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
