@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-13
+// Last changed: 2011-03-14
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -63,7 +63,8 @@ namespace dolfin
 
   /// Refine Dirichlet bc based on refined mesh
   const DirichletBC& adapt(const DirichletBC& bc,
-                           boost::shared_ptr<const Mesh> refined_mesh);
+                           boost::shared_ptr<const Mesh> refined_mesh,
+                           const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
   void adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,

@@ -20,6 +20,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/SubSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -119,13 +120,15 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   }
 
   // Create DOLFIN finite element and dofmap
-  boost::shared_ptr<const FiniteElement> refined_element(space.element().create());
-  boost::shared_ptr<const GenericDofMap> refined_dofmap(space.dofmap().copy(*refined_mesh));
+  boost::shared_ptr<const FiniteElement>
+    refined_element(space.element().create());
+  boost::shared_ptr<const GenericDofMap>
+    refined_dofmap(space.dofmap().copy(*refined_mesh));
 
   // Create new function space
-  boost::shared_ptr<FunctionSpace> refined_space(new FunctionSpace(refined_mesh,
-                                                                   refined_element,
-                                                                   refined_dofmap));
+  boost::shared_ptr<FunctionSpace>
+    refined_space(new FunctionSpace(refined_mesh, refined_element,
+                                    refined_dofmap));
 
   // Set parent / child
   set_parent_child(space, refined_space);
@@ -146,7 +149,8 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   // Refine function space
   boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
   adapt(*space, refined_mesh);
-  boost::shared_ptr<const FunctionSpace> refined_space = space->child_shared_ptr();
+  boost::shared_ptr<const FunctionSpace>
+    refined_space = space->child_shared_ptr();
 
   // Create new function on refined space and interpolate
   boost::shared_ptr<Function> refined_function(new Function(refined_space));
@@ -169,8 +173,10 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   }
 
   // Get data
-  std::vector<boost::shared_ptr<const FunctionSpace> > spaces = form.function_spaces();
-  std::vector<boost::shared_ptr<const GenericFunction> > coefficients = form.coefficients();
+  std::vector<boost::shared_ptr<const FunctionSpace> >
+    spaces = form.function_spaces();
+  std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients = form.coefficients();
   boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
 
   // Refine function spaces
@@ -187,7 +193,8 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   for (uint i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
-    const Function* function = dynamic_cast<const Function*>(coefficients[i].get());
+    const Function*
+      function = dynamic_cast<const Function*>(coefficients[i].get());
 
     // If we have a Function, refine
     if (function != 0)
@@ -250,20 +257,22 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
   // Get data
   boost::shared_ptr<const Form> form_0 = problem.form_0_shared_ptr();
   boost::shared_ptr<const Form> form_1 = problem.form_1_shared_ptr();
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs_shared_ptr();
+  std::vector<boost::shared_ptr<const BoundaryCondition> >
+    bcs = problem.bcs_shared_ptr();
 
   // Refine forms
   adapt(*form_0, refined_mesh);
   adapt(*form_1, refined_mesh);
 
   // Refine bcs
+  const FunctionSpace& S(problem.trial_space());
   std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
   for (uint i = 0; i < bcs.size(); i++)
   {
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
     {
-      adapt(*bc, refined_mesh);
+      adapt(*bc, refined_mesh, S);
       refined_bcs.push_back(bc->child_shared_ptr());
     }
     else
@@ -283,7 +292,8 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
 }
 //-----------------------------------------------------------------------------
 const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                         boost::shared_ptr<const Mesh> refined_mesh)
+                                         boost::shared_ptr<const Mesh> refined_mesh,
+                                         const FunctionSpace& S)
 {
   // Skip refinement if already refined
   if (bc.has_child())
@@ -292,16 +302,28 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
+  boost::shared_ptr<const FunctionSpace> W = bc.function_space_ptr();
+  boost::shared_ptr<const FunctionSpace> V;
+
   // Refine function space
-  boost::shared_ptr<const FunctionSpace> V = bc.function_space_ptr();
-  adapt(*V, refined_mesh);
+  const Array<uint>& component(W->component());
+  if (component.size() == 0)
+  {
+    adapt(*W, refined_mesh);
+    V = W->child_shared_ptr();
+  }
+  else
+  {
+    adapt(S, refined_mesh);
+    V.reset(new SubSpace(S.child(), component[0]));
+  }
 
   // Extract markers
   const std::vector<std::pair<uint, uint> >& markers = bc.markers();
 
   // Create refined markers
   std::vector<std::pair<uint, uint> > refined_markers;
-  adapt_markers(refined_markers, *refined_mesh, markers, V->mesh());
+  adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
 
   // Extract value
   const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());
@@ -311,14 +333,12 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   if (g != 0)
   {
     adapt(*g, refined_mesh);
-    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
-                                     g->child_shared_ptr(),
+    refined_bc.reset(new DirichletBC(V, g->child_shared_ptr(),
                                      refined_markers));
   }
   else
-    refined_bc.reset(new DirichletBC(V->child_shared_ptr(),
-                                     bc.value_ptr(),
-                                     refined_markers));
+    refined_bc.reset(new DirichletBC(V, bc.value_ptr(), refined_markers));
+
   // Set parent / child
   set_parent_child(bc, refined_bc);
 
@@ -466,9 +486,6 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     // Add this (cell, local_facet) to list of child facets
     children[parent].push_back(child);
 
-    //std::cout << "(" << parent.first << ", " << parent.second << ") maps to " ;
-    //std::cout << "(" << child.first << ", " << child.second << ")" ;
-    //std::cout << std::endl;
   }
 
   // Use above map to construct refined markers
