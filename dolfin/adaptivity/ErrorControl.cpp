@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-03-13
+// Last changed: 2011-03-14
 
 #include <armadillo>
 
@@ -68,7 +68,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-                                    std::vector<const BoundaryCondition*> bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
 {
   // Compute discrete dual approximation
   Function z_h(_a_star->function_space(1));
@@ -99,14 +99,14 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(Function& z,
-                                std::vector<const BoundaryCondition*> bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
 {
   std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
 
   for (uint i = 0; i < bcs.size(); i++)
   {
     // Only handle DirichletBCs
-    const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i]);
+    const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (!bc_ptr)
       continue;
 
@@ -125,7 +125,7 @@ void ErrorControl::compute_dual(Function& z,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
-                                         std::vector<const BoundaryCondition*> bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
 {
   // Extrapolate
   _Ez_h.reset(new Function(_E));
@@ -135,7 +135,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
   for (uint i = 0; i < bcs.size(); i++)
   {
     // Add check here.
-    DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i]));
+    DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i].get()));
 
     // Extract SubSpace component
     const FunctionSpace& V(bc.function_space());
@@ -145,7 +145,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     if (component.size() == 0)
     {
       // Create corresponding boundary condition for extrapolation
-      DirichletBC e_bc(V, bc.value(), bc.markers());
+      DirichletBC e_bc(*_E, bc.value(), bc.markers());
       e_bc.homogenize();
 
       // Apply boundary condition to extrapolation
