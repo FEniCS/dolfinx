@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-13
+// Last changed: 2011-03-14
 
 #include <map>
 
@@ -269,8 +269,6 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
     else
       error("Refinement of bcs only implemented for DirichletBCs!");
   }
-
-  // FIXME: Skipping mesh functions
 
   // Create new problem
   boost::shared_ptr<VariationalProblem>
