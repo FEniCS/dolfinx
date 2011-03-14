@@ -158,7 +158,6 @@
 //-----------------------------------------------------------------------------
 // Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
 //-----------------------------------------------------------------------------
-#if SWIG_VERSION >= 0x020000
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
 %newobject dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::copy;
@@ -170,18 +169,6 @@
 %newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_pattern;
 %newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_vector;
 LA_PRE_FACTORY(uBLASFactory<boost::numeric::ublas::matrix<double> >)
-
-#else
-
-%rename(assign) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::operator=;
-%rename(assign) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::operator=;
-%newobject dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::copy;
-%newobject dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::copy;
-
-LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)
-LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_dense_matrix>)
-
-#endif
 
 LA_PRE_FACTORY(DefaultFactory)
 

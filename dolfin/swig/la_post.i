@@ -9,17 +9,10 @@
 // ---------------------------------------------------------------------------
 // Instantiate uBLAS template classes
 // ---------------------------------------------------------------------------
-#if SWIG_VERSION >= 0x020000
 %template(uBLASSparseMatrix) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >;
 %template(uBLASDenseMatrix) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >;
 %template(uBLASSparseFactory) dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >;
 %template(uBLASDenseFactory) dolfin::uBLASFactory<boost::numeric::ublas::matrix<double> >;
-
-#else
-%template(uBLASSparseMatrix) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>;
-%template(uBLASDenseMatrix) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>;
-%template(uBLASSparseFactory) dolfin::uBLASFactory<dolfin::ublas_sparse_matrix>;
-%template(uBLASDenseFactory) dolfin::uBLASFactory<dolfin::ublas_dense_matrix>;
 
 // ---------------------------------------------------------------------------
 // Define names for uBLAS matrix types
@@ -27,9 +20,6 @@
 // ---------------------------------------------------------------------------
 %typedef dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix> uBLASSparseMatrix;
 %typedef dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>  uBLASDenseMatrix;
-
-#endif
-
 
 // ---------------------------------------------------------------------------
 // SLEPc specific extension code
@@ -715,7 +705,6 @@ _matrix_vector_mul_map = {}
 // ---------------------------------------------------------------------------
 DOWN_CAST_MACRO(uBLASVector)
 
-#if SWIG_VERSION >= 0x020000
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
 bool has_type_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
@@ -737,13 +726,6 @@ _down_cast_map[uBLASDenseMatrix] = down_cast_uBLASDenseMatrix
 _has_type_map[uBLASSparseMatrix] = has_type_uBLASSparseMatrix
 _down_cast_map[uBLASSparseMatrix] = down_cast_uBLASSparseMatrix
 %}
-
-#else
-
-DOWN_CAST_MACRO(uBLASSparseMatrix)
-DOWN_CAST_MACRO(uBLASDenseMatrix)
-
-#endif
 
 // ---------------------------------------------------------------------------
 // Fill lookup map
