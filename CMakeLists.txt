@@ -186,6 +186,11 @@ if (DOLFIN_ENABLE_PYTHON)
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
     find_package(NumPy REQUIRED)
+
+    # This is to help pick up swig on Debian/Ubuntu. It can be removed
+    # when Debian/Ubuntu rename swig2.0 -> swig
+    find_program(SWIG_EXECUTABLE swig2.0)
+
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
       message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
@@ -370,7 +375,7 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
     COMPONENT RuntimeLibraries
     PATTERN "*.in" EXCLUDE
     )
-  
+
   get_filename_component(SWIG_BINARY ${SWIG_EXECUTABLE} NAME)
 
   configure_file(${CMAKE_SOURCE_DIR}/site-packages/dolfin/common/globalparameters.py.in
@@ -381,7 +386,7 @@ if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
     COMPONENT RuntimeLibraries
     )
 endif()
-  
+
 #------------------------------------------------------------------------------
 # Installation of dolfin_utils
 
