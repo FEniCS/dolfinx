@@ -1,3 +1,4 @@
+ - Make SWIG version >= 2.0 a requirement
  - Recognize subdomain data in Assembler from both Form and Mesh
  - Add storage for subdomains (cell_domains etc) in Form class
  - Rename MeshData "boundary facet cells" --> "boundary_facet_cells"

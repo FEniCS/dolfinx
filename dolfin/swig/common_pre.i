@@ -112,7 +112,6 @@ namespace dolfin {
 // Ignore all foo and rename foo_shared_ptr to foo for SWIG >= 2.0
 // and ignore foo_shared_ptr for SWIG < 2.0
 //-----------------------------------------------------------------------------
-#if SWIG_VERSION >= 0x020000
 %ignore dolfin::Hierarchical::parent;
 %rename(parent) dolfin::Hierarchical::parent_shared_ptr;
 %ignore dolfin::Hierarchical::child;
@@ -121,10 +120,4 @@ namespace dolfin {
 %rename(coarse) dolfin::Hierarchical::coarse_shared_ptr;
 %ignore dolfin::Hierarchical::fine;
 %rename(fine) dolfin::Hierarchical::fine_shared_ptr;
-#else
-%ignore dolfin::Hierarchical::parent_shared_ptr;
-%ignore dolfin::Hierarchical::child_shared_ptr;
-%ignore dolfin::Hierarchical::coarse_shared_ptr;
-%ignore dolfin::Hierarchical::fine_shared_ptr;
-#endif
 
