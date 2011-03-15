@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2011-03-15
+// Last changed: 2011-03-10
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -17,7 +17,6 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
-#include <ufc.h>
 
 #include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
@@ -549,20 +548,6 @@ namespace dolfin
     ///
     ///         1
     dolfin::uint closest_cell(const Point& point) const;
-
-    /// Computes the index of the cell in the mesh which contained the
-    /// barycenter of the given ufc_cell
-    ///
-    /// *Arguments*
-    ///     cell (_ufc::cell_)
-    ///         A ufc::cell object.
-    ///
-    /// *Returns*
-    ///     uint
-    ///         The index of the cell in the mesh which supports the
-    ///         barycenter
-    ///
-    dolfin::uint supporting_cell(const ufc::cell& cell) const;
 
     /// Computes the point inside the mesh and the corresponding cell
     /// index which are closest to the point query.

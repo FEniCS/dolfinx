@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-03-15
+// Last changed: 2011-02-07
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -368,24 +368,6 @@ dolfin::uint Mesh::closest_cell(const Point & point) const
 std::pair<Point,dolfin::uint> Mesh::closest_point_and_cell(const Point & point) const
 {
   return _intersection_operator.closest_point_and_cell(point);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Mesh::supporting_cell(const ufc::cell& cell) const
-{
-  // Extract vertices of cell from some (other) mesh
-  const double * const * vertices = cell.coordinates;
-
-  // Compute barycenter
-  Point barycenter;
-  for (uint i = 0; i <= _topology.dim(); i++)
-  {
-    Point vertex(_topology.dim(), vertices[i]);
-    barycenter += vertex;
-  }
-  barycenter /= (_topology.dim() + 1);
-
-  // Find cell intersecting this barycenter
-  return any_intersected_entity(barycenter);
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator& Mesh::intersection_operator()

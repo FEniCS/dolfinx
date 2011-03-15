@@ -26,6 +26,7 @@
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Point.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -395,7 +396,8 @@ void Function::non_matching_eval(Array<double>& values,
   assert(_function_space);
 
   const double* _x = x.data().get();
-  const Point point(_function_space->mesh().geometry().dim(), _x);
+  const uint dim = _function_space->mesh().geometry().dim();
+  const Point point(dim, _x);
 
   // Alternative 1: Find cell that point (x) intersects
   int id = _function_space->mesh().any_intersected_entity(point);
@@ -403,15 +405,28 @@ void Function::non_matching_eval(Array<double>& values,
   if (id == -1 && !allow_extrapolation)
     error("Unable to evaluate function at given point (not inside domain). Set parameter 'allow_extrapolation' to true to allow extrapolation'.");
 
-  // Alternative 2: Compute cell that contains barycenter of ufc_cell
+  // Alternative 2: Compute closest cell to point (x)
+  if (id == -1 && allow_extrapolation && dim == 2)
+    id = _function_space->mesh().closest_cell(point);
+
+  // Alternative 3: Compute cell that contains barycenter of ufc_cell
   // NB: This is slightly heuristic, but should work well for
   // evaluation of points on refined meshes
   if (id == -1 && allow_extrapolation)
-    id = _function_space->mesh().supporting_cell(ufc_cell);
+  {
+    // Extract vertices of ufc_cell
+    const double * const * vertices = ufc_cell.coordinates;
 
-  // Alternative 3: Compute closest cell to point (x)
-  if (id == -1 && allow_extrapolation)
-    id = _function_space->mesh().closest_cell(point);
+    Point barycenter;
+    for (uint i = 0; i <= dim; i++)
+    {
+      Point vertex(dim, vertices[i]);
+      barycenter += vertex;
+    }
+    barycenter /= (dim + 1);
+
+    id = _function_space->mesh().any_intersected_entity(barycenter);
+  }
 
   // Throw error if all alternatives failed.
   if (id == -1)
