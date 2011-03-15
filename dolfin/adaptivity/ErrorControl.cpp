@@ -140,8 +140,6 @@ void ErrorControl::compute_extrapolation(const Function& z,
     // Extract SubSpace component
     const FunctionSpace& V(bc.function_space());
     const Array<uint>& component(V.component());
-    if (component.size() > 1)
-      error("Get meg to implement std:vector return of component or similar.");
 
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
@@ -155,8 +153,13 @@ void ErrorControl::compute_extrapolation(const Function& z,
       continue;
     }
 
+    // Reconstruct std::vector version of Array
+    std::vector<uint> sub_component;
+    for (uint c=0; c < component.size(); c++)
+      sub_component.push_back(component[c]);
+
     // Create Subspace of _Ez_h
-    SubSpace S(*_E, component[0]);
+    SubSpace S(*_E, sub_component);
 
     // Create corresponding boundary condition for extrapolation
     DirichletBC e_bc(S, bc.value(), bc.markers());

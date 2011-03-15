@@ -5,7 +5,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-14
+// Last changed: 2011-03-15
 
 #include <map>
 
@@ -315,7 +315,14 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   else
   {
     adapt(S, refined_mesh);
-    V.reset(new SubSpace(S.child(), component[0]));
+
+    // Reconstruct std::vector version of Array, and use as
+    // component. (SubSpace extracts own version of component.)
+    std::vector<uint> sub_component;
+    for (uint c=0; c < component.size(); c++)
+      sub_component.push_back(component[c]);
+
+    V.reset(new SubSpace(S.child(), sub_component));
   }
 
   // Extract markers
