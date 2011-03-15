@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-14
+// Last changed: 2011-03-15
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -127,7 +127,6 @@ void AdaptiveVariationalSolver::solve(Function& w,
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
     adapt(mesh, markers);
-    mesh.child().init();
     if (parameters["plot_mesh"])
       plot(mesh.child(), "Refined mesh");
     end();

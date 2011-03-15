@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-02-17
+// Last changed: 2011-03-15
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -65,21 +65,14 @@ namespace dolfin
     {
       Parameters p("adaptive_solver");
 
-      // Set default adaptive parameters associated with stopping
-      // criteria
-      //p.add("tolerance", 0.0);
+      // Set default adaptive parameters
       p.add("max_iterations", 20);
       p.add("max_dimension", 0);
+      //p.add("tolerance", 0.0);
 
       // Set generic adaptive parameters
       p.add("plot_mesh", true);
       p.add("reference", 0.0);
-
-      // FIXME: Should nest the various parameters in a sensible way.
-      // Set (dolfin) parameters for error estimation. Other
-      // parameters for error estimation should be controlled by the
-      // form compiler.
-      p.add("dual_solver", "extrapolation");
 
       // Set parameters for mesh marking
       p.add("marking_strategy", "dorfler");

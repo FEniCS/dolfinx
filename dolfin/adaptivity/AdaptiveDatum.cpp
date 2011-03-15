@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-11-01
-// Last changed: 2011-01-07
+// Last changed: 2011-03-15
 
 #include <sstream>
 #include <dolfin/common/utils.h>
@@ -59,10 +59,10 @@ void AdaptiveDatum::store(Table& table) const
     const double error = reference - functional_value;
     double efficiency_index = 0.0;
     if (error)
-      efficiency_index = error_estimate/error;
+      efficiency_index = std::abs(error_estimate/error);
 
     table(s.str(), "eta") = error;
-    table(s.str(), "eta_h/eta") = efficiency_index;
+    table(s.str(), "|eta_h/eta|") = efficiency_index;
   }
 }
 //-----------------------------------------------------------------------------

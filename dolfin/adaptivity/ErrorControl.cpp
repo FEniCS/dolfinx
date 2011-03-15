@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-03-14
+// Last changed: 2011-03-15
 
 #include <armadillo>
 
@@ -156,7 +156,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     }
 
     // Create Subspace of _Ez_h
-    SubSpace S(*_E, component[0]); // FIXME: Only one level allowed so far...
+    SubSpace S(*_E, component[0]);
 
     // Create corresponding boundary condition for extrapolation
     DirichletBC e_bc(S, bc.value(), bc.markers());
@@ -228,11 +228,6 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation");
 
-  // FIXME:
-  const MeshFunction<uint>* cell_domains = 0;
-  const MeshFunction<uint>* exterior_facet_domains = 0;
-  const MeshFunction<uint>* interior_facet_domains = 0;
-
   // Attach primal approximation to left-hand side form (residual) if
   // necessary
   if (_is_linear)
@@ -256,6 +251,14 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   arma::mat A(N, N);
   arma::mat b(N, 1);
   arma::vec x(N);
+
+  // Extract cell_domains etc from right-hand side form
+  const MeshFunction<uint>*
+    cell_domains = _L_R_T->cell_domains_shared_ptr().get();
+  const MeshFunction<uint>*
+    exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
+  const MeshFunction<uint>*
+    interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
   // Assemble and solve local linear systems
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -283,11 +286,6 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& R_T)
 {
   begin("Computing facet residual representation");
-
-  // FIXME:
-  const MeshFunction<uint>* cell_domains = 0;
-  const MeshFunction<uint>* exterior_facet_domains = 0;
-  const MeshFunction<uint>* interior_facet_domains = 0;
 
   // Extract function space for facet residual approximation
   const FunctionSpace& V = R_dT[0].function_space();
@@ -329,6 +327,14 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const uint num_cells = mesh.num_cells();
   const std::vector<double> ones(num_cells, 1.0);
   std::vector<uint> facet_dofs(num_cells);
+
+  // Extract cell_domains etc from right-hand side form
+  const MeshFunction<uint>*
+    cell_domains = _L_R_T->cell_domains_shared_ptr().get();
+  const MeshFunction<uint>*
+    exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
+  const MeshFunction<uint>*
+    interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
   // Compute the facet residual for each local facet number
   for (int local_facet = 0; local_facet < (dim + 1); local_facet++)

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-09-16
-// Last changed: 2010-12-02
+// Last changed: 2011-03-15
 
 #ifndef __GOAL_FUNCTIONAL_H
 #define __GOAL_FUNCTIONAL_H
@@ -22,7 +22,9 @@ namespace dolfin
 
   public:
 
-    // FIXME: Remove rank argument
+    // FIXME: The rank argument is unnecessary, a GoalFunction should
+    // always have rank 0. The argument should be removed for that
+    // reason.
 
     /// Create _GoalFunctional_
     ///

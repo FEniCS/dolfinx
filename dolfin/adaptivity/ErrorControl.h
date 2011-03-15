@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-14
+// Last changed: 2011-03-15
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -170,13 +170,11 @@ namespace dolfin
 
     bool _is_linear;
 
-    // Pointers to other function spaces (FIXME: Only out-of-scope
-    // motivated)
+    // Pointers to other function spaces
     boost::shared_ptr<const FunctionSpace> _E;
     boost::shared_ptr<const FunctionSpace> _C;
 
-    // Pointers to other functions (FIXME: Only out-of-scope
-    // motivated)
+    // Pointers to other functions
     boost::shared_ptr<Function> _cell_cone;
     boost::shared_ptr<Function> _R_T;
     boost::shared_ptr<SpecialFacetFunction> _R_dT;
