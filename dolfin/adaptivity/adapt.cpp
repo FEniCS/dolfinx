@@ -417,12 +417,19 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   if (!parent.get())
     error("Unable to extract information about parent mesh entites");
 
+  // Define an unused value as 'undefined'. MER: This will hence
+  // increase with the number of iterations. Not sure if that is good
+  // or bad.
+  uint max_value = 0;
+  for (uint i = 0; i < mesh_function.size(); i++)
+    if (mesh_function[i] > max_value)
+      max_value = mesh_function[i];
+  const uint undefined = max_value + 1;
+
   // Map values of mesh function into refined mesh function
   boost::shared_ptr<MeshFunction<uint> >
     refined_mesh_function(new MeshFunction<uint>(*refined_mesh,
                                                  mesh_function.dim()));
-
-  const uint undefined = 1000; // FIXME
   for (uint i = 0; i < refined_mesh_function->size(); i++)
   {
     const uint parent_index = (*parent)[i];
