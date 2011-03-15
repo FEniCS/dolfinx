@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2011-02-21
+// Last changed: 2011-03-15
 
 #include <algorithm>
 #include <map>
@@ -377,14 +377,52 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 {
   assert(_function_space);
 
-  // Check if UFC cell comes from mesh, otherwise redirect to point-based evaluation
+  // Check if UFC cell comes from mesh, otherwise redirect to
+  // evaluate on non-matching cell
   if (ufc_cell.mesh_identifier == (int) _function_space->mesh().id())
   {
     const Cell cell(_function_space->mesh(), ufc_cell.index);
     eval(values, x, cell, ufc_cell);
   }
   else
-    eval(values, x);
+    non_matching_eval(values, x, ufc_cell);
+}
+//-----------------------------------------------------------------------------
+void Function::non_matching_eval(Array<double>& values,
+                                 const Array<double>& x,
+                                 const ufc::cell& ufc_cell) const
+{
+  assert(_function_space);
+
+  const double* _x = x.data().get();
+  const Point point(_function_space->mesh().geometry().dim(), _x);
+
+  // Alternative 1: Find cell that point (x) intersects
+  int id = _function_space->mesh().any_intersected_entity(point);
+
+  if (id == -1 && !allow_extrapolation)
+    error("Unable to evaluate function at given point (not inside domain). Set parameter 'allow_extrapolation' to true to allow extrapolation'.");
+
+  // Alternative 2: Compute cell that contains barycenter of ufc_cell
+  // NB: This is slightly heuristic, but should work well for
+  // evaluation of points on refined meshes
+  if (id == -1 && allow_extrapolation)
+    id = _function_space->mesh().supporting_cell(ufc_cell);
+
+  // Alternative 3: Compute closest cell to point (x)
+  if (id == -1 && allow_extrapolation)
+    id = _function_space->mesh().closest_cell(point);
+
+  // Throw error if all alternatives failed.
+  if (id == -1)
+    error("Cannot evaluate function at given point. No matching cell found.");
+
+  // Create cell that contains point
+  const Cell cell(_function_space->mesh(), id);
+  const UFCCell new_ufc_cell(cell);
+
+  // Call evaluate function
+  eval(values, x, cell, new_ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w,
@@ -396,7 +434,8 @@ void Function::restrict(double* w,
   assert(_function_space);
 
   // Check if we are restricting to an element of this function space
-  if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
+  if (_function_space->has_element(element)
+      && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = _function_space->dofmap();

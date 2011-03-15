@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2011-01-31
+// Last changed: 2011-03-15
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -140,7 +140,12 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const;
+    virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const;
+
+    /// Evaluate function for given data
+    void non_matching_eval(Array<double>& values, const Array<double>& x,
+                           const ufc::cell& ufc_cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
