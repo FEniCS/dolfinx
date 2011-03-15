@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2011-01-04
-// Last changed: 2011-02-21
+// Last changed: 2011-03-15
 
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
@@ -116,10 +116,8 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   const uint M = A.n_rows;
   const uint N = A.n_cols;
   for (uint i=0; i < M; i++)
-  {
     for (uint j=0; j < N; j++)
       A(i, j) += ufc.A[N*i + j];
-  }
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_interior_facet(arma::mat& A,
@@ -161,8 +159,13 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
   // Stuff upper left quadrant (corresponding to this cell) into A
   const uint M = A.n_rows;
   const uint N = A.n_cols;
-  for (uint i=0; i < M; i++)
-    for (uint j=0; j < N; j++)
-      A(i, j) += ufc.macro_A[2*N*i + j]; // FIXME: row/col swap for vectors!
+
+  if (N == 1)
+    for (uint i=0; i < M; i++)
+      A(i, 0) = ufc.macro_A[i];
+  else
+    for (uint i=0; i < M; i++)
+      for (uint j=0; j < N; j++)
+        A(i, j) += ufc.macro_A[2*N*i + j];
 }
 //------------------------------------------------------------------------------
