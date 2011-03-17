@@ -40,8 +40,8 @@ namespace dolfin
     IntersectionOperator(boost::shared_ptr<const Mesh> _mesh,
                          const std::string& kernel_type = "SimpleCartesian");
 
-    /// Destructor. Needed be explicit written, otherwise default inline here, with prohibits
-    /// pImpl with scoped_ptr.
+    /// Destructor. Needed be explicit written, otherwise default inline
+    /// here, with prohibits pImpl with scoped_ptr.
     ~IntersectionOperator();
 
     /// Compute all id of all cells which are intersects by a \em point.
@@ -86,18 +86,18 @@ namespace dolfin
     /// @internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point& point) const;
 
-    /// Computes the point inside the mesh which are closest to the point query.
+    /// Computes the point inside the mesh which is closest to the point query.
     Point closest_point(const Point & point) const;
 
     /// Computes the index of the cell inside the mesh which are closest to the point query.
     dolfin::uint closest_cell(const Point & point) const;
 
     /// Computes the point inside the mesh and the corresponding cell index
-    /// which are closest to the point query.
+    /// that are closest to the point query.
     std::pair<Point,uint> closest_point_and_cell(const Point & point) const;
 
-    /// Rebuilds the underlying search structure from scratch and uses the kernel kernel_type
-    /// underlying CGAL Geometry kernel.
+    /// Rebuilds the underlying search structure from scratch and uses
+    /// the kernel kernel_type underlying CGAL Geometry kernel.
     void reset_kernel(const std::string& kernel_type  = "SimpleCartesian");
 
     /// Clears search structure. Should be used if the mesh has changed
@@ -110,8 +110,8 @@ namespace dolfin
     // Helper function to introduce lazy initialization.
     const IntersectionOperatorImplementation& rImpl() const;
 
-    // Factory function to create the dimension dependent intersection operator
-    // implementation.
+    // Factory function to create the dimension dependent intersection
+    // operator implementation.
     IntersectionOperatorImplementation*
         create_intersection_operator(boost::shared_ptr<const Mesh> mesh,
                                      const std::string & kernel_type);

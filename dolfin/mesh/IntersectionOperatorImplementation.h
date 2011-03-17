@@ -9,24 +9,19 @@
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
 
-
 #include <vector>
 #include <utility>
-
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 
 #include <dolfin/common/types.h>
-
 #include "Point.h"
 #include "Mesh.h"
-
 
 #ifdef HAS_CGAL
 
 #include "cgal_includes.h"
-
 typedef CGAL::Simple_cartesian<double> SCK;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel EPICK;
 
@@ -67,12 +62,11 @@ namespace dolfin
     typedef typename PT::K K;
     typedef MeshPrimitive<PT> CellPrimitive;
 
-//    typedef Tree_Traits<K,CellPrimitive> AABB_PrimitiveTraits;
     typedef CGAL::AABB_traits<K,CellPrimitive> AABB_PrimitiveTraits;
     typedef CGAL::AABB_tree<AABB_PrimitiveTraits> Tree;
-//    typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
   public:
+
     ///Constructor.
     IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh)
       : _mesh(_mesh), point_search_tree_constructed(false)
@@ -103,7 +97,6 @@ namespace dolfin
     boost::shared_ptr<const Mesh> _mesh;
     boost::scoped_ptr<Tree> tree;
     bool point_search_tree_constructed;
-
   };
 
   template <class P, class K>
@@ -125,67 +118,69 @@ namespace dolfin
     }
   }
 
-  template <class P, class K>
+  template<class P, class K>
   void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
   {
     std::insert_iterator< std::vector<uint> > output_it(ids_result,ids_result.end());
     //Convert entity to corresponding cgal geomtric object according to the mesh
     //entity dimension.
-    switch(entity.dim())
+    switch (entity.dim())
     {
-      case 0 : tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(entity), output_it); break;
-      case 1 : tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(entity), output_it); break;
-      case 2 : tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(entity), output_it); break;
-      case 3 : tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(entity), output_it); break;
-      default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
+      case 0: tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(entity), output_it); break;
+      case 1: tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(entity), output_it); break;
+      case 2: tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(entity), output_it); break;
+      case 3: tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(entity), output_it); break;
+      default: error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
     }
   }
 
-  template <class P, class K>
+  template<class P, class K>
   void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
   {
     std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
     for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); entity != entities.end(); ++entity)
       switch(entity->dim())
       {
-        case 0 :
+        case 0:
           tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(*entity), output_it); break;
-        case 1 :
+        case 1:
           tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(*entity), output_it); break;
-        case 2 :
+        case 2:
           tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*entity), output_it); break;
-        case 3 :
+        case 3:
           tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*entity), output_it); break;
         default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh EntityType is not known.");
       }
   }
 
-  template <class P, class K>
+  template<class P, class K>
   void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
   {
     //Avoid instantiation of an insert_iterator for each cell.
     std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
     switch( another_mesh.type().cell_type())
     {
-      case CellType::point        :
+      case CellType::point:
         for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-          tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(*cell),output_it); break;
-      case CellType::interval     :
+          tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(*cell),output_it);
+        break;
+      case CellType::interval:
         if (dim == 1 || dim == 3)
           dolfin_not_implemented();
         else
           for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-            tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(*cell),output_it); break;
-      case CellType::triangle     :
-        for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-          tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*cell),output_it); break;
-      case CellType::tetrahedron  :
-          for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-          {
-            tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell),output_it);
-          }
+            tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(*cell),output_it);
           break;
-      default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
+      case CellType::triangle:
+        for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+          tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*cell),output_it);
+        break;
+      case CellType::tetrahedron:
+          for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+            tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell),output_it);
+          break;
+      default:
+        error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
     }
   }
 
@@ -205,7 +200,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static  Point_3 compute(const Tree & tree, const Point_3 & point)
+    static Point_3 compute(const Tree & tree, const Point_3 & point)
     {
       return tree.closest_point(point);
     }
@@ -248,8 +243,6 @@ namespace dolfin
     {
        Point_and_primitive_id pp = tree.closest_point_and_primitive(point);
        return std::pair<Point,uint>(Point(pp.first),pp.second);
-//       TEST!
-//      return std::pair<Point,uint>(Point(),0);
     }
   };
 
@@ -263,7 +256,7 @@ namespace dolfin
     static std::pair<Point,dolfin::uint> compute(const Tree & tree, const Point_3 & point)
     {
       dolfin_not_implemented();
-      return std::pair<Point,uint>(Point(),0);
+      return std::pair<Point,uint>(Point(), 0);
     }
   };
 
@@ -277,7 +270,7 @@ namespace dolfin
     static std::pair<Point,dolfin::uint> compute(const Tree & tree, const Point_3 & point)
     {
       dolfin_not_implemented();
-      return std::pair<Point,uint>(Point(),0);
+      return std::pair<Point,uint>(Point(), 0);
     }
   };
 
@@ -328,6 +321,7 @@ namespace dolfin  {
   class IntersectionOperatorImplementation
   {
   public:
+
     IntersectionOperatorImplementation()
     {
       error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
