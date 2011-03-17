@@ -4,7 +4,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2010-04-19
+// Last changed: 2011-03-18
 
 #ifdef HAS_MTL4
 
@@ -119,9 +119,9 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
   }
 
   // Check exit condition
-  if(errno_ == 0)
-    info(PROGRESS, "ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
-	    method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+  if (errno_ == 0)
+    log(PROGRESS, "ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
+        method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
   else
   {
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];

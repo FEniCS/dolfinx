@@ -6,7 +6,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-11-01
-// Last changed: 2011-03-12
+// Last changed: 2011-03-18
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
@@ -96,7 +96,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
     for(dolfin::uint i=0; i < newmesh.num_cells(); i++)
       (*mat)[i] = (*oldmesh.data().mesh_function("material_indicators"))[cell_map[i]];
 
-    info(TRACE, "MeshData MeshFunction \"material_indicators\" transformed.");
+    log(TRACE, "MeshData MeshFunction \"material_indicators\" transformed.");
   }
 
   // Rewrite boundary indicators
@@ -158,7 +158,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
         }
       }
     }
-    info(TRACE, "MeshData \"boundary indicators\" transformed.");
+    log(TRACE, "MeshData \"boundary indicators\" transformed.");
   }
 }
 //-----------------------------------------------------------------------------
