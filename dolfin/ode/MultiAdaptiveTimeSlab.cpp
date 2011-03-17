@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2010-06-07
+// Last changed: 2011-03-17
 
 #include <string>
 #include <algorithm>
@@ -44,7 +44,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   u.zero();
 
   // Initialize transpose of dependencies if necessary
-  info(TRACE, "Computing transpose (inverse) of dependency pattern.");
+  log(TRACE, "Computing transpose (inverse) of dependency pattern.");
   if (ode.dependencies.sparse() && !ode.transpose.sparse())
     ode.transpose.transp(ode.dependencies);
 }
@@ -99,7 +99,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::solve()
 {
-  //info(TRACE, "Solving time slab system on [%f, %f].", _a, _b);
+  //log(TRACE, "Solving time slab system on [%f, %f].", _a, _b);
 
   // Copy u0 to u. This happens automatically in feval if user has set
   // dependencies correctly, but you never know...
@@ -119,7 +119,7 @@ bool MultiAdaptiveTimeSlab::solve()
   //for (uint i = 0; i < N; i++)
   // {
   //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
-  //  info(DBG, "i = %d: u = %.16e", i, endval);
+  //  log(DBG, "i = %d: u = %.16e", i, endval);
   // }
 }
 //-----------------------------------------------------------------------------
@@ -417,7 +417,7 @@ void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
   // Get next available position
   uint pos = size_e.next++;
 
-  //info(DBG, "  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
+  //log(DBG, "  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
 
   //if ( index == 145 )
   //  cout << "Modified: " << b - a << endl << endl;
@@ -455,7 +455,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
   // Add dependencies to elements that depend on the given element if the
   // depending elements use larger time steps
 
-  //info(TRACE, "Checking dependencies to element %d (component %d)", element, index);
+  //log(TRACE, "Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
   const std::vector<uint>& deps = ode.transpose[i0];
@@ -485,7 +485,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
     if ( !within(a0, b0, a1, b1) || s0 == s1 )
       continue;
 
-    //info(DBG, "  Checking element %d (component %d)", e1, i1);
+    //log(DBG, "  Checking element %d (component %d)", e1, i1);
 
     // Iterate over dofs for element
     for (uint n = 0; n < method->nsize(); n++)
@@ -493,7 +493,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
       //const uint j = j1 + n;
       const real t = a1 + k1*method->npoint(n);
 
-      //info(DBG, "    Checking dof at t = %f", t);
+      //log(DBG, "    Checking dof at t = %f", t);
 
       // Check if dof is contained in the current element
       if ( within(t, a0, b0) )
@@ -527,7 +527,7 @@ void MultiAdaptiveTimeSlab::alloc_s(uint newsize)
 
   if ( newsize <= size_s.size ) return;
 
-  //info(DBG, "Reallocating: ns = %d", newsize);
+  //log(DBG, "Reallocating: ns = %d", newsize);
 
   Alloc::realloc(&sa, size_s.size, newsize);
   Alloc::realloc(&sb, size_s.size, newsize);
@@ -541,7 +541,7 @@ void MultiAdaptiveTimeSlab::alloc_e(uint newsize)
 
   if ( newsize <= size_e.size ) return;
 
-  //info(DGG, "Reallocating: ne = %d", newsize);
+  //log(DGG, "Reallocating: ne = %d", newsize);
 
   Alloc::realloc(&ei, size_e.size, newsize);
   Alloc::realloc(&es, size_e.size, newsize);
@@ -557,7 +557,7 @@ void MultiAdaptiveTimeSlab::alloc_j(uint newsize)
 
   if ( newsize <= size_j.size ) return;
 
-  //info(DBG, "Reallocating: nj = %d", newsize);
+  //log(DBG, "Reallocating: nj = %d", newsize);
 
   Alloc::realloc(&jx, size_j.size, newsize);
 
@@ -568,9 +568,9 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 {
   size_d.next = 0;
 
-  if ( newsize <= size_d.size ) return;
+  if (newsize <= size_d.size) return;
 
-  //info(DBG, "Reallocating: nd = %d", newsize);
+  //log(DBG, "Reallocating: nd = %d", newsize);
 
   Alloc::realloc(&de, size_d.size, newsize);
 

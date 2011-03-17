@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2009-02-09
-// Last changed: 2009-09-10
+// Last changed: 2011-03-17
 
 #include "ODECollection.h"
 
@@ -14,8 +14,7 @@ using namespace dolfin;
 ODECollection::ODECollection(ODE& ode, uint num_systems)
   : ode(ode), num_systems(num_systems), states(new real[num_systems*ode.size()])
 {
-  info(TRACE, "Creating ODE collection of size %d x %d.", num_systems, ode.size());
-
+  log(TRACE, "Creating ODE collection of size %d x %d.", num_systems, ode.size());
 }
 //-----------------------------------------------------------------------------
 ODECollection::~ODECollection()

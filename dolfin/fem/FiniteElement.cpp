@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-14
-// Last changed: 2011-01-27
+// Last changed: 2011-03-17
 
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
@@ -21,7 +21,7 @@ boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const 
 {
   // Recursively extract sub element
   boost::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
-  info(DBG, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
+  log(DBG, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
 
   return sub_finite_element;
 }

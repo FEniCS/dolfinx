@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2006-11-01
-// Last changed: 2009-10-08
+// Last changed: 2011-03-17
 
 #include <list>
 
@@ -33,7 +33,7 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
                                                         MeshFunction<bool>& cell_marker,
                                                         bool coarsen_boundary)
 {
-  info(TRACE, "Coarsen simplicial mesh by edge collapse.");
+  log(TRACE, "Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
   //const uint num_vertices = mesh.size(0);

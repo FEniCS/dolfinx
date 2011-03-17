@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2009-08-11
+// Last changed: 2011-03-17
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
 {
-  info(TRACE, "Initializing discontinuous Galerkin method dG(%d).", q);
+  log(TRACE, "Initializing discontinuous Galerkin method dG(%d).", q);
 
   init();
 

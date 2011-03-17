@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-17
-// Last changed: 2009-09-08
+// Last changed: 2011-03-17
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -90,7 +90,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   }
 
   // Fallback
-  info(WARNING, "Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
+  log(WARNING, "Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
   return DefaultFactory::instance();
 }
 //-----------------------------------------------------------------------------

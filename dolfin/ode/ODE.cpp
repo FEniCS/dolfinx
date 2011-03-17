@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2003-10-21
-// Last changed: 2011-01-30
+// Last changed: 2011-03-17
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -28,7 +28,7 @@ ODE::ODE(uint N, real T)
 {
   not_working_in_parallel("ODE solver");
 
-  info(TRACE, "Creating ODE of size %d.", N);
+  log(TRACE, "Creating ODE of size %d.", N);
   parameters = default_parameters();
 
   #ifdef HAS_GMP

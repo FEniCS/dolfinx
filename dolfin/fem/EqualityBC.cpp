@@ -4,7 +4,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2009-04-03
-// Last changed: 2011-02-28
+// Last changed: 2011-03-17
 
 #include <vector>
 
@@ -76,7 +76,7 @@ void EqualityBC::apply(GenericVector& b) const
 //-----------------------------------------------------------------------------
 void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
 {
-  info(PROGRESS, "Applying equality boundary conditions to linear system.");
+  log(PROGRESS, "Applying equality boundary conditions to linear system.");
 
   if (equal_dofs.size() < 2)
   {

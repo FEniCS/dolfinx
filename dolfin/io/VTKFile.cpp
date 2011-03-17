@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2011-02-28
+// Last changed: 2011-03-17
 
 #include <ostream>
 #include <sstream>
@@ -78,8 +78,8 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Finalise and write pvd files
   finalize(vtu_filename, counter);
 
-  info(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-       mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
+      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
@@ -137,8 +137,8 @@ void VTKFile::write(const Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  info(TRACE, "Saved function %s (%s) to file %s in VTK format.",
-       u.name().c_str(), u.label().c_str(), filename.c_str());
+  log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
+      u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
@@ -647,8 +647,8 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write pvd files
   finalize(vtu_filename, counter);
 
-  info(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
-       mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+  log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
+      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
@@ -37,7 +37,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
   for (uint pos = 0; pos < sum; pos++)
     Jvalues[pos] = 0.0;
 
-  info(PROGRESS, "Generated Jacobian data structure for %d dependencies.", sum);
+  log(PROGRESS, "Generated Jacobian data structure for %d dependencies.", sum);
 
   // Compute maximum number of dependencies
   uint maxsize = 0;
@@ -83,7 +83,7 @@ void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
   double t = to_double(ts.starttime());
-  //info(PROGRESS, "Recomputing Jacobian matrix at t = %f.", t);
+  //log(PROGRESS, "Recomputing Jacobian matrix at t = %f.", t);
 
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
@@ -96,7 +96,7 @@ void MultiAdaptiveJacobian::init()
   /*
   // Compute Jacobian at the end of the slab
   double t = ts.endtime();
-  //info(PROGRESS, "Recomputing Jacobian matrix at t = %f.", t);
+  //log(PROGRESS, "Recomputing Jacobian matrix at t = %f.", t);
 
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
@@ -275,7 +275,7 @@ void MultiAdaptiveJacobian::cg_mult(const uBLASVector& x, uBLASVector& y) const
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const double dfdu = Jlookup[dep];
-	//info(DBG, "Looks like df_%d/du_%d = %f", i0, i1, dfdu);
+	//log(DBG, "Looks like df_%d/du_%d = %f", i0, i1, dfdu);
 
 	// Iterate over quadrature points of other element
 	const double tmp0 = k0 * dfdu;
@@ -447,7 +447,7 @@ void MultiAdaptiveJacobian::dg_mult(const uBLASVector& x, uBLASVector& y) const
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const double dfdu = Jlookup[dep];
-	//info(DBG, "Looks like df_%d/du_%d = %f", i0, i1, dfdu);
+	//log(DBG, "Looks like df_%d/du_%d = %f", i0, i1, dfdu);
 
 	// Iterate over quadrature points of other element
 	const double tmp0 = k0 * dfdu;

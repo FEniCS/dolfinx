@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2011-02-03
+// Last changed: 2011-03-17
 
 #include <algorithm>
 #include <iterator>
@@ -500,7 +500,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   for (uint i = 0; i < entity_indices.size(); ++i)
   {
     if (entity_indices[i] < 0)
-      info(WARNING, "Missing global number for local entity (%d, %d).", d, i);
+      log(WARNING, "Missing global number for local entity (%d, %d).", d, i);
     assert(entity_indices[i] >= 0);
     assert(i < global_entity_indices.size());
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);

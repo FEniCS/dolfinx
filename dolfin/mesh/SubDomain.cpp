@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2007-04-24
-// Last changed: 2011-01-25
+// Last changed: 2011-03-17
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
@@ -72,7 +72,7 @@ dolfin::uint SubDomain::geometric_dimension() const
 template<class T>
 void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) const
 {
-  info(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
+  log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
   // Get the dimension of the entities we are marking
   const uint dim = sub_domains.dim();

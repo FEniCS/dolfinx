@@ -5,7 +5,7 @@
 // Modified by Nuno Lopes, 2008
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2011-03-17
 
 #include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
@@ -20,12 +20,12 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  info(WARNING, "UnitSphere is experimental. It may be of poor quality mesh");
+  log(WARNING, "UnitSphere is experimental. It may be of poor quality mesh");
 
-  uint ny=nx;
-  uint nz=nx;
+  const uint ny = nx;
+  const uint nz = nx;
 
-  if ( nx < 1 || ny < 1 || nz < 1 )
+  if (nx < 1 || ny < 1 || nz < 1)
     error("Size of unit cube must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
@@ -46,9 +46,9 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
       for (uint ix = 0; ix <= nx; ix++)
       {
         const double x = -1.0+static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-        double trns_x=transformx(x,y,z);
-        double trns_y=transformy(x,y,z);
-        double trns_z=transformz(x,y,z);
+        double trns_x = transformx(x,y,z);
+        double trns_y = transformy(x,y,z);
+        double trns_z = transformz(x,y,z);
         editor.add_vertex(vertex++, trns_x, trns_y, trns_z);
       }
     }
@@ -91,45 +91,35 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 //-----------------------------------------------------------------------------
 double UnitSphere::transformx(double x,double y,double z)
 {
-  double retrn=0.0;
-  if (x||y||z)
-    retrn=x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+  if (x || y || z)
+    return x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
-    retrn=x;
-  return retrn;
+    return x;
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::transformy(double x,double y,double z)
 {
-  double retrn=0.0;
-  if (x||y||z)
-    retrn=y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+  if (x || y || z)
+    return y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
-    retrn=y;
-  return retrn;
+    return y;
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::transformz(double x,double y,double z)
 {
-  double retrn=0.0;
-  //maxn transformation
-  if (x||y||z)
-    retrn=z*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+  if (x || y || z)
+    return z*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
-    retrn=z;
-  return retrn;
+    return z;
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::max(double x,double y, double z)
 {
-  double rtrn=0.0;
-
-  if ((x>=y)*(x>=z))
-    rtrn=x;
-  else if ((y>=x)*(y>=z))
-    rtrn=y;
+  if ((x >= y)*(x >= z))
+    return x;
+  else if ((y >= x)*(y >= z))
+    return y;
   else
-    rtrn=z;
-  return rtrn;
+    return z;
 }
 //-----------------------------------------------------------------------------

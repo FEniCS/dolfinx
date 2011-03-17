@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-15
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
@@ -82,7 +82,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 	             (double*) std::tr1::get<2>(data), M, nnz);
 
   // Factorize
-  info(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
+  log(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
   cholmod.factorize();
 
   return 1;
@@ -92,16 +92,16 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
 {
   const uint N = b.size();
 
-  if(!cholmod.factorized)
+  if (!cholmod.factorized)
     error("Factorized solve must be preceded by call to factorize.");
 
-  if(N != cholmod.N)
+  if (N != cholmod.N)
     error("Vector does not match size of factored matrix");
 
   // Initialise solution vector and solve
   x.resize(N);
 
-  info(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
+  log(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
 
   cholmod.factorized_solve(x.data(), b.data());
 
@@ -154,12 +154,12 @@ CholmodCholeskySolver::Cholmod::~Cholmod()
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::clear()
 {
-  if(A_chol)
+  if (A_chol)
   {
     cholmod_l_free(1, sizeof(cholmod_sparse), A_chol, &c);
     A_chol = 0;
   }
-  if(L_chol)
+  if (L_chol)
   {
     cholmod_l_free_factor(&L_chol, &c);
     L_chol = 0;
@@ -169,8 +169,8 @@ void CholmodCholeskySolver::Cholmod::clear()
 void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
 					  uint M, uint nz)
 {
-  if(factorized)
-    info(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
+  if (factorized)
+    log(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
 
   // Clear any data
   clear();
@@ -232,7 +232,7 @@ void CholmodCholeskySolver::Cholmod::factorized_solve(double*x, const double* b)
   double residn = residual_norm(r_chol, x_chol, b_chol);
 
   // Iterative refinement
-  if(residn > 1.0e-14)
+  if (residn > 1.0e-14)
   {
     refine_once(x_chol, r_chol);
 
@@ -301,14 +301,14 @@ void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 {
   UF_long status = c.status;
 
-  if( status < 0)
+  if ( status < 0)
   {
     cout << "\nCHOLMOD Warning: problem related to call to " << function
 	    << ".\n_full CHOLMOD common dump:" << endl;
 
     cholmod_l_print_common(NULL, &c);
   }
-  else if(status > 0)
+  else if (status > 0)
   {
     cout << "\nCHOLMOD Fatal error: problem related to call to " << function
 	    << ".\n_full CHOLMOD common dump:" << endl;

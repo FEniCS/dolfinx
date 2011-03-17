@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2008-10-02
-// Last changed: 2011-01-24
+// Last changed: 2011-03-17
 //
 // This file provides utilities for working with variable-precision
 // floating-point numbers. It defines a datatype "real" which defaults
@@ -123,7 +123,7 @@ namespace dolfin
 
   /// Logarithmic function (note: not full precision!)
   inline real real_log(const real& x)
-  { return to_real(log(to_double(x))); }
+  { return to_real(std::log(to_double(x))); }
 
   // Get computed epsilon
   inline const real& real_epsilon()

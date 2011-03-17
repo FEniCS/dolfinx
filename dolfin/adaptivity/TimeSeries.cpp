@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-28
+// Last changed: 2011-03-17
 
 #include <algorithm>
 #include <sstream>
@@ -49,10 +49,10 @@ TimeSeries::TimeSeries(std::string name)
     // Read from file
     File file(filename);
     file >> _vector_times;
-    info(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
+    log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
   }
   else
-    info(PROGRESS, "No vector samples found in time series.");
+    log(PROGRESS, "No vector samples found in time series.");
 
   // Read mesh times
   filename = TimeSeries::filename_times(_name, "mesh");
@@ -61,10 +61,10 @@ TimeSeries::TimeSeries(std::string name)
     // Read from file
     File file(filename);
     file >> _mesh_times;
-    info(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
+    log(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
   }
   else
-    info(PROGRESS, "No mesh samples found in time series.");
+    log(PROGRESS, "No mesh samples found in time series.");
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
@@ -107,12 +107,12 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
     {
       File f(filename_data(_name, "vector", i0));
       f >> vector;
-      info(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
+      log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
     }
 
-    info(PROGRESS, "Interpolating vector value at t = %g in interval [%g, %g].",
-         t, _vector_times[i0], _vector_times[i1]);
+    log(PROGRESS, "Interpolating vector value at t = %g in interval [%g, %g].",
+        t, _vector_times[i0], _vector_times[i1]);
 
     // Read vectors
     GenericVector& x0(vector);
@@ -144,8 +144,8 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
     // Find closest index
     const uint index = find_closest_index(t, _vector_times, _name, "vector");
 
-    info(PROGRESS, "Reading vector at t = %g (close to t = %g).",
-         _vector_times[index], t);
+    log(PROGRESS, "Reading vector at t = %g (close to t = %g).",
+        _vector_times[index], t);
 
     // Read vector
     File file(filename_data(_name, "vector", index));
@@ -158,8 +158,8 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
   // Get index closest to given time
   const uint index = find_closest_index(t, _mesh_times, _name, "mesh");
 
-  info(PROGRESS, "Reading mesh at t = %g (close to t = %g).",
-       _mesh_times[index], t);
+  log(PROGRESS, "Reading mesh at t = %g (close to t = %g).",
+      _mesh_times[index], t);
 
   // Read vector
   File file(filename_data(_name, "mesh", index));

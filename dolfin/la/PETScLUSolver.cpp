@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #ifdef HAS_PETSC
 
@@ -317,8 +317,8 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
 
   if (report && dolfin::MPI::process_number() == 0)
   {
-    info(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
-         A.size(0), A.size(1), solver_type);
+    log(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
+        A.size(0), A.size(1), solver_type);
   }
 }
 //-----------------------------------------------------------------------------

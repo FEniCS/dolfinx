@@ -1,7 +1,7 @@
 // Copyright (C) 2008-2010 Kent-Andre Mardal and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2010-02-21
+// Last changed: 2011-03-17
 
 #ifdef HAS_TRILINOS
 
@@ -141,8 +141,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     numeric_factorized = true;
   }
 
-  info(PROGRESS, "Solving linear system of size %d x %d (Trilinos LU solver (%s)).",
-       A->NumGlobalRows(), A->NumGlobalCols(), solver_type.c_str());
+  log(PROGRESS, "Solving linear system of size %d x %d (Trilinos LU solver (%s)).",
+      A->NumGlobalRows(), A->NumGlobalCols(), solver_type.c_str());
 
   // Solve
   AMESOS_CHK_ERR(solver->Solve());

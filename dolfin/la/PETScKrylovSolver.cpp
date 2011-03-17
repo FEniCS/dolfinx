@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2010-05-08
+// Last changed: 2011-03-17
 
 #ifdef HAS_PETSC
 
@@ -158,7 +158,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
-    info(PROGRESS, "Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
+    log(PROGRESS, "Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
   if (x.size() != M)
@@ -184,8 +184,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Solve linear system
   if (MPI::process_number() == 0)
   {
-    info(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
-                    A->size(0), A->size(1));
+    log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
+        A->size(0), A->size(1));
   }
   KSPSolve(*_ksp, *b.vec(), *x.vec());
 
@@ -348,19 +348,19 @@ void PETScKrylovSolver::write_report(int num_iterations,
   {
     if (reason >= 0)
     {
-      info(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
-              ksp_type, pc_type, num_iterations);
+      log(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
+          ksp_type, pc_type, num_iterations);
     }
     else
     {
-      info(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
-              ksp_type, pc_type, num_iterations);
+      log(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
+          ksp_type, pc_type, num_iterations);
     }
 
     if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
     {
-      info(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
-              pc_type, sub_ksp_type, sub_pc_type);
+      log(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
+          pc_type, sub_ksp_type, sub_pc_type);
     }
 
     #if PETSC_HAVE_HYPRE
@@ -369,7 +369,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
       const char* hypre_sub_type;
       PCHYPREGetType(pc, &hypre_sub_type);
 
-      info(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
+      log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
     }
     #endif
   }

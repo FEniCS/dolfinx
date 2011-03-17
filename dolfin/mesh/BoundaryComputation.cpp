@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2010-03-02
+// Last changed: 2011-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
@@ -45,7 +45,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  info(TRACE, "Computing boundary mesh.");
+  log(TRACE, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();

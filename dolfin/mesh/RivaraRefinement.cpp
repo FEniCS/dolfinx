@@ -6,7 +6,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2011-03-12
+// Last changed: 2011-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -24,7 +24,7 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
                               MeshFunction<uint>& cell_map,
                               std::vector<int>& facet_map)
 {
-  info(TRACE, "Refining simplicial mesh by recursive Rivara bisection.");
+  log(TRACE, "Refining simplicial mesh by recursive Rivara bisection.");
 
   // Create dynamic mesh and import data
   DMesh dmesh;

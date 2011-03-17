@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-10-11
-// Last changed: 2011-02-09
+// Last changed: 2011-03-17
 
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -30,9 +30,9 @@ void dolfin::mark(dolfin::MeshFunction<bool>& markers,
   }
 
   // Report the number of marked cells
-  info(INFO,
-       "Marking %d cells out of %d (%.1f%%) for refinement",
-       num_marked, markers.size(), 100.0*num_marked/markers.size());
+  log(INFO,
+      "Marking %d cells out of %d (%.1f%%) for refinement",
+      num_marked, markers.size(), 100.0*num_marked/markers.size());
 }
 //-----------------------------------------------------------------------------
 void dolfin::dorfler_mark(dolfin::MeshFunction<bool>& markers,

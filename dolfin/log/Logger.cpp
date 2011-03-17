@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2009 Anders Logg.
+// Copyright (C) 2003-2011 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-02-28
+// Last changed: 2011-03-17
 
 #include <iomanip>
 #include <iostream>
@@ -37,15 +37,15 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::info(std::string msg, int log_level) const
+void Logger::log(std::string msg, int log_level) const
 {
   write(log_level, msg);
 }
 //-----------------------------------------------------------------------------
-void Logger::info_underline(std::string msg, int log_level) const
+void Logger::log_underline(std::string msg, int log_level) const
 {
   if (msg.size() == 0)
-    info(msg, log_level);
+    log(msg, log_level);
 
   std::stringstream s;
   s << msg;
@@ -55,7 +55,7 @@ void Logger::info_underline(std::string msg, int log_level) const
   for (uint i = 0; i < msg.size(); i++)
     s << "-";
 
-  info(s.str(), log_level);
+  log(s.str(), log_level);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg) const
@@ -73,7 +73,7 @@ void Logger::error(std::string msg) const
 void Logger::begin(std::string msg, int log_level)
 {
   // Write a message
-  info(msg, log_level);
+  log(msg, log_level);
   indentation_level++;
 }
 //-----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
-  info(line.str(), TRACE);
+  log(line.str(), TRACE);
 
   // Store values for summary
   map_iterator it = timings.find(task);
@@ -148,11 +148,11 @@ void Logger::summary(bool reset)
 {
   if (timings.size() == 0)
   {
-    info("Summary: no timings to report.");
+    log("Summary: no timings to report.");
     return;
   }
 
-  info("");
+  log("");
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {
@@ -165,7 +165,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  info(table.str(true));
+  log(table.str(true));
 
   // Clear timings
   if (reset)

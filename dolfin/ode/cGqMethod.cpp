@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2005-05-02
-// Last changed: 2009-03-23
+// Last changed: 2011-03-17
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -21,7 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 cGqMethod::cGqMethod(uint q) : Method(q, q + 1, q)
 {
-  info(TRACE, "Initializing continuous Galerkin method cG(%d).", q);
+  log(TRACE, "Initializing continuous Galerkin method cG(%d).", q);
 
   init();
 

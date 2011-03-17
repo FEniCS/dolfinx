@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-06-11
-// Last changed: 2011-02-16
+// Last changed: 2011-03-17
 
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
@@ -493,7 +493,7 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 //-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
-  info(PROGRESS,  "ODESolution: Reading file %d", file_number);
+  log(PROGRESS,  "ODESolution: Reading file %d", file_number);
 
   if (data.size() > 0)
     data.clear();
@@ -543,7 +543,7 @@ void ODESolution::read_file(uint file_number)
   //Try to set the initial guess
   buffer_index_cache = buffer_index_cache > (int) data.size()/2 ? data.size()-1 : 0;
 
-  info(PROGRESS, "  Done reading file %d", file_number);
+  log(PROGRESS, "  Done reading file %d", file_number);
 }
 //-----------------------------------------------------------------------------
 void ODESolution::add_data(const real& a, const real& b, const real* nodal_values)

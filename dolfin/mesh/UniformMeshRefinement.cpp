@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2006-06-08
-// Last changed: 2010-10-19
+// Last changed: 2011-03-17
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -24,7 +24,7 @@ using namespace dolfin;
 void UniformMeshRefinement::refine(Mesh& refined_mesh,
                                    const Mesh& mesh)
 {
-  info(TRACE, "Refining simplicial mesh uniformly.");
+  log(TRACE, "Refining simplicial mesh uniformly.");
 
   // Check that refined_mesh and mesh are not the same
   if (&refined_mesh == &mesh)

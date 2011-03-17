@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added: 2009-03-03
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #include <libxml/relaxng.h>
 
@@ -94,7 +94,7 @@ void XMLFile::validate(const std::string filename)
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
   if (ret == 0)
-    info(DBG, "%s validates", filename.c_str());
+    log(DBG, "%s validates", filename.c_str());
   else if ( ret < 0 )
     error("%s failed to load", filename.c_str());
   else

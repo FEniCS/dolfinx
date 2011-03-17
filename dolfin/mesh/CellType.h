@@ -5,7 +5,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-06-05
-// Last changed: 2010-02-03
+// Last changed: 2011-03-17
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H

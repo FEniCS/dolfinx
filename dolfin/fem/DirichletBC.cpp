@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-03-13
+// Last changed: 2011-03-17
 
 #include <boost/assign/list_of.hpp>
 
@@ -465,7 +465,7 @@ void DirichletBC::apply(GenericMatrix* A,
       values[i] = x_values[i] - values[i];
   }
 
-  info(PROGRESS, "Applying boundary conditions to linear system.");
+  log(PROGRESS, "Applying boundary conditions to linear system.");
 
   // Modify RHS vector (b[i] = value) and apply changes
   if (b)
@@ -713,7 +713,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Initialize facets, needed for geometric search
-  info(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
+  log(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
   // Iterate over facets

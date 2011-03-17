@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-02-02
-// Last changed: 2008-10-06
+// Last changed: 2011-03-17
 
 #ifndef HAS_GMP
 
@@ -14,7 +14,7 @@ using namespace dolfin;
 ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
                                            zvalues(0), fvalues(0), yvalues(0)
 {
-  info(TRACE, "Creating complex ODE of size %d (%d complex components).", N, n);
+  log(TRACE, "Creating complex ODE of size %d (%d complex components).", N, n);
 
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];
@@ -28,9 +28,9 @@ ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
 //-----------------------------------------------------------------------------
 ComplexODE::~ComplexODE()
 {
-  if ( zvalues ) delete [] zvalues;
-  if ( fvalues ) delete [] fvalues;
-  if ( yvalues ) delete [] yvalues;
+  delete [] zvalues;
+  delete [] fvalues;
+  delete [] yvalues;
 }
 //-----------------------------------------------------------------------------
 complex ComplexODE::f(const complex z[], real t, uint i)

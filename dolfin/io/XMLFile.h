@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-03-03
-// Last changed: 2011-01-24
+// Last changed: 2011-03-17
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
@@ -129,7 +129,7 @@ namespace dolfin
     /// for STL objects)
     template<class T> void read_xml_map(T& map)
     {
-      info(TRACE, "Reading map from file %s.", filename.c_str());
+      log(TRACE, "Reading map from file %s.", filename.c_str());
       XMLMap xml_map(map, *this);
       XMLDolfin xml_dolfin(xml_map, *this);
       xml_dolfin.handle();
@@ -142,7 +142,7 @@ namespace dolfin
     /// for STL objects)
     template<class T> void read_xml_array(T& x)
     {
-      info(TRACE, "Reading array from file %s.", filename.c_str());
+      log(TRACE, "Reading array from file %s.", filename.c_str());
       XMLArray xml_array(x, *this);
       XMLDolfin xml_dolfin(xml_array, *this);
       xml_dolfin.handle();

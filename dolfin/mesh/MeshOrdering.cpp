@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2010-10-19
+// Last changed: 2011-03-17
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/NoDeleter.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshOrdering::order(Mesh& mesh)
 {
-  info(TRACE, "Ordering mesh.");
+  log(TRACE, "Ordering mesh.");
 
   // Special case
   if (mesh.num_cells() == 0)

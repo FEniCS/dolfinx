@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2008-08-12
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
@@ -80,7 +80,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                       set& shared_unowned_dofs,
                                       const DofMap& dofmap, const Mesh& mesh)
 {
-  info(TRACE, "Determining dof ownership for parallel dof map");
+  log(TRACE, "Determining dof ownership for parallel dof map");
 
   // Create a radom number generator for ownership 'voting'
   boost::mt19937 engine(MPI::process_number());
@@ -188,7 +188,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   const uint _owned_dim = owned_dofs.size();
   assert(MPI::sum(_owned_dim) == dofmap.global_dimension());
 
-  info(TRACE, "Finished determining dof ownership for parallel dof map");
+  log(TRACE, "Finished determining dof ownership for parallel dof map");
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_renumber(const set& owned_dofs,
@@ -196,7 +196,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
                              const set& shared_unowned_dofs,
                              DofMap& dofmap, const Mesh& mesh)
 {
-  info(TRACE, "Renumber dofs for parallel dof map");
+  log(TRACE, "Renumber dofs for parallel dof map");
 
   // FIXME: Handle double-renumbered dof map
   if (dofmap.ufc_map_to_dofmap.size() > 0)
@@ -292,6 +292,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Set ownership range
   dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, process_offset + owned_dofs.size());
 
-  info(TRACE, "Finished renumbering dofs for parallel dof map");
+  log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2011-02-02
+// Last changed: 2011-03-17
 
 #ifdef HAS_SLEPC
 
@@ -139,8 +139,8 @@ void SLEPcEigenSolver::solve(uint n)
 
   const EPSType eps_type = 0;
   EPSGetType(eps, &eps_type);
-  info(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
-       eps_type, num_iterations);
+  log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
+      eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const

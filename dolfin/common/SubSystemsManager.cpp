@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-01-07
-// Last changed: 2009-09-05
+// Last changed: 2011-03-17
 
 #ifdef HAS_MPI
 #include <mpi.h>
@@ -65,7 +65,7 @@ void SubSystemsManager::init_petsc()
   if ( sub_systems_manager.petsc_initialized )
     return;
 
-  info(TRACE, "Initializing PETSc (ignoring command-line arguments).");
+  log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
 
   // Dummy command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
@@ -90,7 +90,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is intialised with command line arguments
   if (argc > 1)
-    info(TRACE, "Initializing PETSc with given command-line arguments.");
+    log(TRACE, "Initializing PETSc with given command-line arguments.");
 
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);

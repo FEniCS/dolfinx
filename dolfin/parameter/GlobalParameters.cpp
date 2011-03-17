@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-04-05
+// Last changed: 2011-03-17
 
 #include <fstream>
 #include <cstdlib>
@@ -70,7 +70,7 @@ GlobalParameters::~GlobalParameters()
 //-----------------------------------------------------------------------------
 void GlobalParameters::parse(int argc, char* argv[])
 {
-  info(TRACE, "Parsing command-line arguments.");
+  log(TRACE, "Parsing command-line arguments.");
 
   // Extract DOLFIN and PETSc arguments
   std::vector<std::string> args_dolfin;

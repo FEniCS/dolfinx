@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-03-11
+// Last changed: 2011-03-17
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -285,8 +285,8 @@ void Form::check() const
     assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
     {
-      info(ERROR, "Expected element: %s", element->signature());
-      info(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      log(ERROR, "Expected element: %s", element->signature());
+      log(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
       error("Wrong type of function space for argument %d.", i);
     }
   }

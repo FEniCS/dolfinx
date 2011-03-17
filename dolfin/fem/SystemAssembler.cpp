@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2011-02-21
+// Last changed: 2011-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -64,7 +64,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                bool reset_sparsity, bool add_values)
 {
   Timer timer("Assemble system");
-  info(PROGRESS, "Assembling linear system and applying boundary conditions...");
+  log(PROGRESS, "Assembling linear system and applying boundary conditions...");
 
   const Mesh& mesh = a.mesh();
 

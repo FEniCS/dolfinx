@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-15
-// Last changed: 2010-12-30
+// Last changed: 2011-03-17
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
@@ -35,7 +35,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x,
                                    const GenericVector& b)
 {
-  info(TRACE, "Solving singular system...");
+  log(TRACE, "Solving singular system...");
 
   // Propagate parameters
   linear_solver.parameters.update(parameters("linear_solver"));
@@ -63,7 +63,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    const GenericVector& b,
                                    const GenericMatrix& M)
 {
-  info(TRACE, "Solving singular system...");
+  log(TRACE, "Solving singular system...");
 
   // Propagate parameters
   linear_solver.parameters.update(parameters("linear_solver"));
@@ -177,7 +177,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   assert(B);
   assert(c);
 
-  info(TRACE, "Creating extended hopefully non-singular system...");
+  log(TRACE, "Creating extended hopefully non-singular system...");
 
   // Reset matrix
   B->zero();

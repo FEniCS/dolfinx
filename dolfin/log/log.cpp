@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-01-21
+// Last changed: 2011-03-17
 
 #include <cstdarg>
 #include <cstdlib>
@@ -60,15 +60,7 @@ void dolfin::info(std::string msg, ...)
   if (!LogManager::logger.is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.info(buffer.get());
-}
-//-----------------------------------------------------------------------------
-void dolfin::info(int log_level, std::string msg, ...)
-{
-  if (!LogManager::logger.is_active())
-    return; // optimization
-  read(buffer.get(), msg);
-  LogManager::logger.info(buffer.get(), log_level);
+  LogManager::logger.log(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::info(const Variable& variable, bool verbose)
@@ -94,7 +86,7 @@ void dolfin::info_stream(std::ostream& out, std::string msg)
     return; // optimization
   std::ostream& old_out = LogManager::logger.get_output_stream();
   LogManager::logger.set_output_stream(out);
-  LogManager::logger.info(msg);
+  LogManager::logger.log(msg);
   LogManager::logger.set_output_stream(old_out);
 }
 //-----------------------------------------------------------------------------
@@ -103,7 +95,7 @@ void dolfin::info_underline(std:: string msg, ...)
   if (!LogManager::logger.is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.info_underline(buffer.get());
+  LogManager::logger.log_underline(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
@@ -118,6 +110,14 @@ void dolfin::error(std::string msg, ...)
 {
   read(buffer.get(), msg);
   LogManager::logger.error(buffer.get());
+}
+//-----------------------------------------------------------------------------
+void dolfin::log(int log_level, std::string msg, ...)
+{
+  if (!LogManager::logger.is_active())
+    return; // optimization
+  read(buffer.get(), msg);
+  LogManager::logger.log(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(std::string msg, ...)

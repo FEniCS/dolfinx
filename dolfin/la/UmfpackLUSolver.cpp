@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-01
-// Last changed: 2010-11-29
+// Last changed: 2011-03-17
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -174,7 +174,7 @@ void UmfpackLUSolver::symbolic_factorize()
   assert(nnz >= M);
 
   // Factorize and solve
-  info(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
+  log(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
   // Perform symbolic factorisation
   symbolic = umfpack_factorize_symbolic(M, N, Ap, Ai, Ax);
@@ -198,7 +198,7 @@ void UmfpackLUSolver::numeric_factorize()
   assert(nnz >= M);
 
   // Factorize and solve
-  info(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
+  log(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
   assert(symbolic);
   numeric.reset();
@@ -232,8 +232,8 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
   const std::size_t* Ai  = std::tr1::get<1>(data);
   const double*      Ax  = std::tr1::get<2>(data);
 
-  info(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
-       A->size(0), A->size(1));
+  log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
+      A->size(0), A->size(1));
 
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
   umfpack_solve(Ap, Ai, Ax, x.data(), b.data(), numeric.get());

@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2010-05-03
+// Last changed: 2011-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
@@ -40,7 +40,7 @@ void ODESolver::solve()
 
   // Report elapsed time
   tt = time() - tt;
-  info(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
+  log(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
 
   end();
 }
@@ -59,7 +59,7 @@ void ODESolver::solve(ODESolution& u)
 
   // Report elapsed time
   tt = time() - tt;
-  info(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
+  log(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
 
   end();
 }

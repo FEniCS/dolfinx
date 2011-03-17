@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2009 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2011 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-02-25
+// Last changed: 2011-03-17
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -26,13 +26,10 @@ namespace dolfin
   ///
   /// Only messages with a debug level higher than or equal to the current
   /// log level are printed (the default being zero). Logging may also be
-  /// turned off by calling log(false).
+  /// turned off by calling logging(false).
 
   /// Print message
   void info(std::string msg, ...);
-
-  /// Print message at given debug level
-  void info(int debug_level, std::string msg, ...);
 
   /// Print parameter (using output of str() method)
   void info(const Parameters& parameters, bool verbose=false);
@@ -51,6 +48,9 @@ namespace dolfin
 
   /// Print error message and throw an exception
   void error(std::string msg, ...);
+
+  /// Print message at given debug level
+  void log(int debug_level, std::string msg, ...);
 
   /// Begin task (increase indentation level)
   void begin(std::string msg, ...);
