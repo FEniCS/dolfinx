@@ -89,56 +89,67 @@ int main() {
 
   if (ARMADILLO_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
+    mark_as_advanced(ARMADILLO_VERSION)
   endif()
 
-  if (${ARMADILLO_VERSION} VERSION_GREATER "0.9.10")
-    set(armadillo_test_str "
+  set(armadillo_test_str "
 #include <armadillo>
+
+using namespace arma;
+
 int main()
 {
- arma::mat A = arma::randu(4, 4);
- arma::vec b = arma::randu(4);
- arma::vec x = arma::solve(A, b);
- return 0;
+  int n = 20;
+  double h = 1.0/(n-1);
+  mat A(n, n);
+  vec b(n);
+  vec u(n);
+  double beta = 0.2;
+  double gamma = 1000;
+
+  A.fill(0.0);
+  b.fill(0.0);
+  double x; int i;
+
+  i = 0;
+  A(i, i) = 1;
+  b(i) = 0;
+  for (i=1; i<n-1; i++) {
+    x = (i-1)*h;
+    A(i, i-1) = 1;  A(i, i) = -2;  A(i, i+1) = 1;
+    b(i) = - h*h*gamma*exp(-beta*x);
+  }
+  i = n-1;  x = (i-1)*h;
+  A(i, i-1) = 2;  A(i, i) = -2;
+
+  u = solve(A, b);
+
+  return 0;
 }
 ")
-  else()
-    set(armadillo_test_str "
-#include <armadillo>
-int main()
-{
- arma::mat A = arma::rand(4, 4);
- arma::vec b = arma::rand(4);
- arma::vec x = arma::solve(A, b);
- return 0;
-}
-")
-  endif()
 
   # Check that C++ program runs
   check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_TEST_RUNS)
 
-  # If program does not run, try adding LAPACK library and test again
-  if(NOT ARMADILLO_TEST_RUNS)
-    if (NOT LAPACK_FOUND)
-      find_package(LAPACK)
-    endif()
-    if (LAPACK_LIBRARIES)
-      set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})
-      check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_LAPACK_TEST_RUNS)
-
-      # Add LAPACK libary if required
-      if (ARMADILLO_LAPACK_TEST_RUNS)
-        set(ARMADILLO_LIBRARIES ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})
+  # If program does not run, try adding LAPACK and BLAS libraries and test again
+  foreach (ARMADILLO_DEP LAPACK BLAS)
+    if(NOT ARMADILLO_TEST_RUNS)
+      if (NOT ${ARMADILLO_DEP}_FOUND)
+	find_package(${ARMADILLO_DEP})
       endif()
 
-    endif()
-  endif()
-endif()
+      if (${ARMADILLO_DEP}_LIBRARIES)
+	list(APPEND CMAKE_REQUIRED_LIBRARIES ${${ARMADILLO_DEP}_LIBRARIES})
+	check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_${ARMADILLO_DEP}_TEST_RUNS)
 
-# Set test run to 'true' if test runs with or without LAPACK lib
-if(ARMADILLO_TEST_RUNS OR ARMADILLO_LAPACK_TEST_RUNS)
-  set(ARMADILLO_TEST_RUNS TRUE)
+	if (ARMADILLO_${ARMADILLO_DEP}_TEST_RUNS)
+	  list(APPEND ARMADILLO_LIBRARIES ${${ARMADILLO_DEP}_LIBRARIES})
+	  set(ARMADILLO_TEST_RUNS TRUE)
+	  break()
+	endif()
+      endif()
+    endif()
+  endforeach()
 endif()
 
 # Standard package handling
