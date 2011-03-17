@@ -408,7 +408,7 @@ namespace dolfin
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
-    /// CellFunction<uint> named "cell colors" as mesh data which
+    /// CellFunction<unsigned int> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
     /// *Arguments*
@@ -418,24 +418,24 @@ namespace dolfin
     ///         "facet".
     ///
     /// *Returns*
-    ///     MeshFunction<uint>
+    ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<uint>& color(std::string coloring_type) const;
+    const MeshFunction<unsigned int>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
-    /// CellFunction<uint> named "cell colors" as mesh data which
+    /// CellFunction<unsigned int> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
     /// *Arguments*
-    ///     coloring_type (std::vector<uint>)
+    ///     coloring_type (std::vector<unsigned int>)
     ///         Coloring type given as list of topological dimensions,
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<uint>
+    ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over entities of the mesh.
-    const MeshFunction<uint>& color(std::vector<uint> coloring_type) const;
+    const MeshFunction<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
 
     /// Compute all ids of all cells which are intersected by the
     /// given point.
