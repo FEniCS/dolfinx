@@ -74,19 +74,19 @@ namespace dolfin
       build_tree();
     }
 
-    virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const;
-    virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const;
+    virtual void all_intersected_entities(const Point& point, uint_set& ids_result) const;
+    virtual void all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const;
 
-    virtual void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const;
-    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;
+    virtual void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const;
+    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const;
 
-    virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const;
+    virtual void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const;
 
-    virtual  int any_intersected_entity(const Point & point) const;
+    virtual  int any_intersected_entity(const Point& point) const;
 
-    virtual Point closest_point(const Point & point) const;
-    virtual dolfin::uint closest_cell(const Point & point) const;
-    virtual std::pair<Point,dolfin::uint> closest_point_and_cell(const Point & point) const;
+    virtual Point closest_point(const Point& point) const;
+    virtual dolfin::uint closest_cell(const Point& point) const;
+    virtual std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
 
     ///Topological dimension of the mesh.
     static const uint dim = PT::dim;
@@ -100,18 +100,18 @@ namespace dolfin
   };
 
   template <class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Point & point, uint_set & ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Point& point, uint_set& ids_result) const
   {
     //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
-    std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
+    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
     tree->all_intersected_primitives(PrimitiveTraits<PointPrimitive,K>::datum(point), output_it);
   }
 
   template <class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const
   {
     //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
-    std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
+    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
     for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
     {
       tree->all_intersected_primitives(PrimitiveTraits<PointPrimitive,K>::datum(*p), output_it);
@@ -119,9 +119,9 @@ namespace dolfin
   }
 
   template<class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const
   {
-    std::insert_iterator< std::vector<uint> > output_it(ids_result,ids_result.end());
+    std::insert_iterator< std::vector<uint> > output_it(ids_result, ids_result.end());
     //Convert entity to corresponding cgal geomtric object according to the mesh
     //entity dimension.
     switch (entity.dim())
@@ -135,9 +135,9 @@ namespace dolfin
   }
 
   template<class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const
   {
-    std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
+    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
     for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); entity != entities.end(); ++entity)
       switch(entity->dim())
       {
@@ -154,30 +154,30 @@ namespace dolfin
   }
 
   template<class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const
   {
     //Avoid instantiation of an insert_iterator for each cell.
-    std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
+    std::insert_iterator<uint_set> output_it(ids_result, ids_result.end());
     switch( another_mesh.type().cell_type())
     {
       case CellType::point:
         for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-          tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(*cell),output_it);
+          tree->all_intersected_primitives(PrimitiveTraits<PointCell,K>::datum(*cell), output_it);
         break;
       case CellType::interval:
         if (dim == 1 || dim == 3)
           dolfin_not_implemented();
         else
           for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-            tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(*cell),output_it);
+            tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(*cell), output_it);
           break;
       case CellType::triangle:
         for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-          tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*cell),output_it);
+          tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*cell), output_it);
         break;
       case CellType::tetrahedron:
           for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-            tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell),output_it);
+            tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell), output_it);
           break;
       default:
         error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
@@ -185,7 +185,7 @@ namespace dolfin
   }
 
   template <class P, class K>
-  int IntersectionOperatorImplementation_d<P, K>::any_intersected_entity(const Point & point) const
+  int IntersectionOperatorImplementation_d<P, K>::any_intersected_entity(const Point& point) const
   {
     boost::optional<uint> id = tree->any_intersected_primitive(PrimitiveTraits<PointPrimitive,K>::datum(point));
     if (id)
@@ -200,7 +200,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static Point_3 compute(const Tree & tree, const Point_3 & point)
+    static Point_3 compute(const Tree& tree, const Point_3& point)
     {
       return tree.closest_point(point);
     }
@@ -213,7 +213,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static Point_3 compute(const Tree & tree, const Point_3 & point)
+    static Point_3 compute(const Tree& tree, const Point_3& point)
     {
       dolfin_not_implemented();
       return Point_3();
@@ -227,7 +227,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static Point_3 compute(const Tree & tree, const Point_3 & point)
+    static Point_3 compute(const Tree& tree, const Point_3& point)
     {
       dolfin_not_implemented();
       return Point_3();
@@ -239,10 +239,10 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
     typedef typename Tree::Point_and_primitive_id Point_and_primitive_id;
-    static std::pair<Point,dolfin::uint> compute(const Tree & tree, const Point_3 & point)
+    static std::pair<Point,dolfin::uint> compute(const Tree& tree, const Point_3& point)
     {
        Point_and_primitive_id pp = tree.closest_point_and_primitive(point);
-       return std::pair<Point,uint>(Point(pp.first),pp.second);
+       return std::pair<Point,uint>(Point(pp.first), pp.second);
     }
   };
 
@@ -253,7 +253,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static std::pair<Point,dolfin::uint> compute(const Tree & tree, const Point_3 & point)
+    static std::pair<Point, dolfin::uint> compute(const Tree& tree, const Point_3& point)
     {
       dolfin_not_implemented();
       return std::pair<Point,uint>(Point(), 0);
@@ -267,7 +267,7 @@ namespace dolfin
   {
     typedef typename K::Point_3 Point_3;
 
-    static std::pair<Point,dolfin::uint> compute(const Tree & tree, const Point_3 & point)
+    static std::pair<Point,dolfin::uint> compute(const Tree& tree, const Point_3& point)
     {
       dolfin_not_implemented();
       return std::pair<Point,uint>(Point(), 0);
@@ -275,7 +275,7 @@ namespace dolfin
   };
 
   template <class P, class K>
-  Point IntersectionOperatorImplementation_d<P, K>::closest_point(const Point & point) const
+  Point IntersectionOperatorImplementation_d<P, K>::closest_point(const Point& point) const
   {
     if (!point_search_tree_constructed)
       tree->accelerate_distance_queries();
@@ -283,13 +283,13 @@ namespace dolfin
   }
 
   template <class P, class K>
-  dolfin::uint IntersectionOperatorImplementation_d<P, K>::closest_cell(const Point & point) const
+  dolfin::uint IntersectionOperatorImplementation_d<P, K>::closest_cell(const Point& point) const
   {
     return closest_point_and_cell(point).second;
   }
 
   template <class P, class K>
-  std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell(const Point & point) const
+  std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell(const Point& point) const
   {
     if (!point_search_tree_constructed)
       tree->accelerate_distance_queries();
@@ -327,15 +327,15 @@ namespace dolfin  {
       error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
     }
     virtual ~IntersectionOperatorImplementation() {}
-    virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const {}
-    virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const {}
-    virtual void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const {};
-    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const {};
-    virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
-    virtual int any_intersected_entity(const Point & point) const {return -1; }
-    virtual Point closest_point(const Point & point) const {return Point(); }
-    virtual dolfin::uint closest_cell(const Point & point) const {return 0; }
-    virtual std::pair<Point,uint> closest_point_and_cell(const Point & point) const {return std::pair<Point,uint>(); }
+    virtual void all_intersected_entities(const Point& point, uint_set& ids_result) const {}
+    virtual void all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const {}
+    virtual void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const {};
+    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const {};
+    virtual void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const {}
+    virtual int any_intersected_entity(const Point& point) const {return -1; }
+    virtual Point closest_point(const Point& point) const {return Point(); }
+    virtual dolfin::uint closest_cell(const Point& point) const {return 0; }
+    virtual std::pair<Point,uint> closest_point_and_cell(const Point& point) const {return std::pair<Point, uint>(); }
 
   };
 }

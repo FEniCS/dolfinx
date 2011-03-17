@@ -424,7 +424,6 @@ void Function::non_matching_eval(Array<double>& values,
       barycenter += vertex;
     }
     barycenter /= (dim + 1);
-
     id = _function_space->mesh().any_intersected_entity(barycenter);
   }
 

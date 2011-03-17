@@ -37,7 +37,7 @@ IntersectionOperator::IntersectionOperator(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh,
-                                           const std::string & kernel_type)
+                                           const std::string& kernel_type)
     : _mesh(mesh), _kernel_type(kernel_type)
 {
   // Do nothing
@@ -51,13 +51,13 @@ IntersectionOperator::~IntersectionOperator()
 void IntersectionOperator::all_intersected_entities(const Point& point,
                                                     uint_set& ids_result) const
 {
-  rImpl().all_intersected_entities(point,ids_result);
+  rImpl().all_intersected_entities(point, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const std::vector<Point>& points,
                                                    uint_set& ids_result) const
 {
-  rImpl().all_intersected_entities(points,ids_result);
+  rImpl().all_intersected_entities(points, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const MeshEntity & entity,
@@ -66,10 +66,10 @@ void IntersectionOperator::all_intersected_entities(const MeshEntity & entity,
   rImpl().all_intersected_entities(entity,ids_result);
 }
 //-----------------------------------------------------------------------------
-void IntersectionOperator::all_intersected_entities(const std::vector<MeshEntity> & entities,
-						    uint_set & ids_result) const
+void IntersectionOperator::all_intersected_entities(const std::vector<MeshEntity>& entities,
+						    uint_set& ids_result) const
 {
-  rImpl().all_intersected_entities(entities,ids_result);
+  rImpl().all_intersected_entities(entities, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const Mesh& another_mesh,
@@ -83,24 +83,24 @@ int IntersectionOperator::any_intersected_entity(const Point& point) const
   return rImpl().any_intersected_entity(point);
 }
 //-----------------------------------------------------------------------------
-Point IntersectionOperator::closest_point(const Point & point) const
+Point IntersectionOperator::closest_point(const Point& point) const
 {
   return rImpl().closest_point(point);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntersectionOperator::closest_cell(const Point & point) const
+dolfin::uint IntersectionOperator::closest_cell(const Point& point) const
 {
   return rImpl().closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell(const Point & point) const
+std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell(const Point& point) const
 {
   return rImpl().closest_point_and_cell(point);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::reset_kernel(const std::string& kernel_type)
 {
-  _pImpl.reset(create_intersection_operator(_mesh,kernel_type));
+  _pImpl.reset(create_intersection_operator(_mesh, kernel_type));
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::clear()
@@ -131,22 +131,24 @@ IntersectionOperatorImplementation*
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, EPICK >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, EPICK >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, EPICK >(mesh);
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, EPICK >(mesh);
-      default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
+      case CellType::point      : return new IntersectionOperatorImplementation_d<PointCell, EPICK>(mesh);
+      case CellType::interval   : return new IntersectionOperatorImplementation_d<IntervalCell, EPICK>(mesh);
+      case CellType::triangle   : return new IntersectionOperatorImplementation_d<TriangleCell, EPICK>(mesh);
+      case CellType::tetrahedron: return new IntersectionOperatorImplementation_d<TetrahedronCell, EPICK>(mesh);
+      default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      return 0;
     }
   }
   else  // Default is SimpleCartesion
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, SCK  >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(mesh);
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(mesh);
-      default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
+      case CellType::point      : return new IntersectionOperatorImplementation_d< PointCell, SCK  >(mesh);
+      case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(mesh);
+      case CellType::triangle   : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(mesh);
+      case CellType::tetrahedron: return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(mesh);
+      default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      return 0;
     }
   }
 }
