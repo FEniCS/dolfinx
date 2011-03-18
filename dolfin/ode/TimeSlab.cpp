@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2009-09-08
+// Last changed: 2011-03-18
 
 #include <stdio.h>
 #include <string>
@@ -163,8 +163,9 @@ void TimeSlab::copy(const Array<real>& x, uBLASVector& y , uint yoffset)
 void TimeSlab::copy(const Array<real>& x, real* y, uint yoffset)
 {
   for (uint i = 0; i < x.size(); i++)
-    y[yoffset + i] = to_double(x[i]);
+    y[yoffset + i] = x[i];
 }
+//-----------------------------------------------------------------------------
 
 /*
 void TimeSlab::copy(const uBLASVector& x, uint xoffset, Array<real>& y)
