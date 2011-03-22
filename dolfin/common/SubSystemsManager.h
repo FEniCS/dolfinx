@@ -66,7 +66,7 @@ namespace dolfin
     static void finalize_petsc();
 
     // Singleton instance
-    static SubSystemsManager sub_systems_manager;
+    static SubSystemsManager& singleton();
 
     // State variables
     bool petsc_initialized;
