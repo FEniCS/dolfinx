@@ -123,6 +123,17 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   assert(_element);
   assert(_dofmap);
 
+  // Check that function ranks match
+  if (element().value_rank() != v.value_rank())
+    error("Cannot interpolate functions of different ranks.");
+
+  // Check that function dims match
+  for (uint i = 0; i < element().value_rank(); ++i)
+  {
+    if (element().value_dimension(i) != v.value_dimension(i))
+      error("Cannot interpolate functions with different value dimensions.");
+  }
+
   // Initialize vector of expansion coefficients
   expansion_coefficients.resize(_dofmap->global_dimension());
   expansion_coefficients.zero();
