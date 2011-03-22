@@ -10,6 +10,7 @@
 #include <dolfin/la/solve.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -22,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void HarmonicSmoothing::move(Mesh& mesh, const Mesh& new_boundary)
+void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
   // Choose form and function space
   FunctionSpace* V = 0;
@@ -56,10 +57,9 @@ void HarmonicSmoothing::move(Mesh& mesh, const Mesh& new_boundary)
   Vector b(N);
 
   // Get array of dofs for boundary vertices
-  boost::shared_ptr<const MeshFunction<unsigned int> > vertex_map = new_boundary.data().mesh_function("vertex map");
-  assert(vertex_map);
-  const uint num_dofs = vertex_map->size();
-  const uint* dofs = vertex_map->values();
+  const MeshFunction<unsigned int>& vertex_map = new_boundary.vertex_map();
+  const uint num_dofs = vertex_map.size();
+  const uint* dofs = vertex_map.values();
 
   // Modify matrix (insert 1 on diagonal)
   A.ident(num_dofs, dofs);

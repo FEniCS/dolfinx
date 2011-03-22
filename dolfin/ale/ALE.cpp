@@ -46,14 +46,12 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1, ALEType method)
   BoundaryMesh boundary1(mesh1);
 
   // Get vertex mappings
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0  = mesh0.data().mesh_function("global vertex indices");
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1  = mesh1.data().mesh_function("global vertex indices");
-  boost::shared_ptr<MeshFunction<unsigned int> > boundary_to_mesh_0 = boundary0.data().mesh_function("vertex map");
-  boost::shared_ptr<MeshFunction<unsigned int> > boundary_to_mesh_1 = boundary1.data().mesh_function("vertex map");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0 = mesh0.data().mesh_function("global vertex indices");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1 = mesh1.data().mesh_function("global vertex indices");
+  const MeshFunction<unsigned int>& boundary_to_mesh_0 = boundary0.vertex_map();
+  const MeshFunction<unsigned int>& boundary_to_mesh_1 = boundary1.vertex_map();
   assert(local_to_global_0);
   assert(local_to_global_1);
-  assert(boundary_to_mesh_0);
-  assert(boundary_to_mesh_1);
 
   // Build global-to-local vertex mapping for mesh
   std::map<uint, uint> global_to_local_0;
@@ -62,15 +60,15 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1, ALEType method)
 
   // Build mapping from mesh vertices to boundary vertices
   std::map<uint, uint> mesh_to_boundary_0;
-  for (uint i = 0; i < boundary_to_mesh_0->size(); i++)
-    mesh_to_boundary_0[(*boundary_to_mesh_0)[i]] = i;
+  for (uint i = 0; i < boundary_to_mesh_0.size(); i++)
+    mesh_to_boundary_0[boundary_to_mesh_0[i]] = i;
 
   // Iterate over vertices in boundary1
   const uint dim = mesh0.geometry().dim();
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)
-    const uint global_vertex_index = (*local_to_global_1)[(*boundary_to_mesh_1)[v->index()]];
+    const uint global_vertex_index = (*local_to_global_1)[boundary_to_mesh_1[v->index()]];
 
     // Get local vertex index for mesh0 if possible (step 3)
     std::map<uint, uint>::const_iterator it;

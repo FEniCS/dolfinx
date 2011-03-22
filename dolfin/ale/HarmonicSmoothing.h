@@ -10,6 +10,7 @@
 namespace dolfin
 {
 
+  class BoundaryMesh;
   class Mesh;
 
   /// This class implements harmonic mesh smoothing. Poisson's equation
@@ -22,7 +23,7 @@ namespace dolfin
   public:
 
     /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, const Mesh& new_boundary);
+    static void move(Mesh& mesh, const BoundaryMesh& new_boundary);
 
   };
 
