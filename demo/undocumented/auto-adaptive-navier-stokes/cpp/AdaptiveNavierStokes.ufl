@@ -1,15 +1,17 @@
 # Copyright (C) 2010 Marie E. Rognes
 # Licensed under the GNU LGPL Version 3.0 or any later version
-
+#
+# Compile with ffc -e -l dolfin AdaptiveNavierStokes.ufl
+#
 # First added:  2010-11-01
-# Last changed: 2011-03-13
+# Last changed: 2011-03-22
 
 V = VectorElement("CG", "triangle", 2)
 Q = FiniteElement("CG", "triangle", 1)
 W = V * Q
 
 w = Coefficient(W)
-(u, p) = (as_vector((w[0], w[1])), w[2]) # This could probably be prettier
+(u, p) = (as_vector((w[0], w[1])), w[2])
 (v, q) = TestFunctions(W)
 
 # Prescribed pressure
@@ -30,5 +32,5 @@ L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q
 # Define goal functional
 M = w[0]*ds(0)
 
-# Label the unknown
-unknown = w
+# NB: Label the unknown
+unknown =  w
