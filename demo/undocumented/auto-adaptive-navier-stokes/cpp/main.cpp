@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-13
+// Last changed: 2011-03-22
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -43,7 +43,7 @@ int main() {
 
   // Create mesh and function space
   Mesh mesh("channel_with_flap.xml");
-  AdaptiveNavierStokes::Form_8::TrialSpace W(mesh);
+  AdaptiveNavierStokes::BilinearForm::TrialSpace W(mesh);
 
   // Unknown
   Function w(W);
@@ -58,14 +58,14 @@ int main() {
 
   // Create variational formulation and assign coefficients
   Constant nu(0.02);
-  AdaptiveNavierStokes::Form_9 F(W);
+  AdaptiveNavierStokes::LinearForm F(W);
   Pressure p0;
   F.p0 = p0;
   F.nu = nu;
   F.w = w;
 
   // Create Jacobian and assign coefficients
-  AdaptiveNavierStokes::Form_8 dF(W, W);
+  AdaptiveNavierStokes::BilinearForm dF(W, W);
   dF.nu = nu;
   dF.w = w;
 
@@ -73,14 +73,14 @@ int main() {
   VariationalProblem pde(F, dF, bc);
 
   // Define goal functional
-  AdaptiveNavierStokes::Form_10 M(mesh);
+  AdaptiveNavierStokes::GoalFunctional M(mesh);
   M.w = w;
   Outflow outflow;
   MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim()-1, 1);
   outflow.mark(outflow_markers, 0);
   M.exterior_facet_domains = outflow_markers;
 
-  // Give reference
+  // Give reference and don't plot mesh in each iteration
   pde.parameters("adaptivity")["reference"] = 0.40863917;
   pde.parameters("adaptivity")["plot_mesh"] = false;
 
@@ -88,6 +88,7 @@ int main() {
   double tol = 1.e-5;
   pde.solve(w, tol, M);
 
+  // Show timings
   summary();
 
   return 0;
