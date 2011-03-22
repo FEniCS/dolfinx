@@ -560,7 +560,7 @@ namespace dolfin
     ///     std::pair<_Point_, uint>
     ///         The point inside the mesh and the corresponding cell
     ///         index which is closest to the point query.
-    std::pair<Point,dolfin::uint> closest_point_and_cell(const Point& point) const;
+    std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
 
     /// Compute minimum cell diameter.
     ///

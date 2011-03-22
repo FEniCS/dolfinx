@@ -25,9 +25,16 @@
 
 using namespace dolfin;
 
-// Initialise static data
-dolfin::SubSystemsManager dolfin::SubSystemsManager::sub_systems_manager;
 
+// Return singleton instance. Do NOT make the singleton a global static object;
+// the method here ensures that the singleton is initialised before use.
+// (google "static initialization order fiasco" for full explanation)
+
+SubSystemsManager& SubSystemsManager::singleton()
+{
+  static SubSystemsManager the_instance;
+  return the_instance;
+}
 //-----------------------------------------------------------------------------
 SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
                                          control_mpi(false)
@@ -53,7 +60,7 @@ void SubSystemsManager::init_mpi()
 
   // Initialise MPI and take responsibility
   MPI::Init();
-  sub_systems_manager.control_mpi = true;
+  singleton().control_mpi = true;
 #else
   // Do nothing
 #endif
@@ -62,7 +69,7 @@ void SubSystemsManager::init_mpi()
 void SubSystemsManager::init_petsc()
 {
 #ifdef HAS_PETSC
-  if ( sub_systems_manager.petsc_initialized )
+  if ( singleton().petsc_initialized )
     return;
 
   log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
@@ -82,7 +89,7 @@ void SubSystemsManager::init_petsc()
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
 #ifdef HAS_PETSC
-  if ( sub_systems_manager.petsc_initialized )
+  if ( singleton().petsc_initialized )
     return;
 
   // Get status of MPI before PETSc initialisation
@@ -100,11 +107,11 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 #endif
 
-  sub_systems_manager.petsc_initialized = true;
+  singleton().petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
   if (mpi_initialized() and !mpi_init_status)
-    sub_systems_manager.control_mpi = false;
+    singleton().control_mpi = false;
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
@@ -122,19 +129,19 @@ void SubSystemsManager::finalize()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::responsible_mpi()
 {
-  return sub_systems_manager.control_mpi;
+  return singleton().control_mpi;
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::responsible_petsc()
 {
-  return sub_systems_manager.petsc_initialized;
+  return singleton().petsc_initialized;
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
 #ifdef HAS_MPI
   // Finalise MPI if required
-  if (MPI::Is_initialized() and sub_systems_manager.control_mpi)
+  if (MPI::Is_initialized() and singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
     // 3rd party libary). Is it hasn't, finalise as normal.
@@ -148,7 +155,7 @@ void SubSystemsManager::finalize_mpi()
       std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module." << std::endl;
     }
 
-    sub_systems_manager.control_mpi = false;
+    singleton().control_mpi = false;
   }
 #else
   // Do nothing
@@ -158,10 +165,10 @@ void SubSystemsManager::finalize_mpi()
 void SubSystemsManager::finalize_petsc()
 {
 #ifdef HAS_PETSC
-  if (sub_systems_manager.petsc_initialized)
+  if (singleton().petsc_initialized)
   {
     PetscFinalize();
-    sub_systems_manager.petsc_initialized = false;
+    singleton().petsc_initialized = false;
 
     #ifdef HAS_SLEPC
     SlepcFinalize();
