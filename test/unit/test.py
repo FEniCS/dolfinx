@@ -1,7 +1,7 @@
 """Run all unit tests."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-09 -- 2011-03-01"
+__date__ = "2006-08-09 -- 2011-03-22"
 __copyright__ = "Copyright (C) 2006-2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -9,7 +9,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 import sys, os, re
 import platform
-from dolfin_utils.commands import getoutput
+from dolfin_utils.commands import getstatusoutput
 from dolfin import has_mpi, has_parmetis
 
 # Tests to run
@@ -55,9 +55,9 @@ for prefix in prefixes:
                 cpptest_executable += '.exe'
             print "C++:   ",
             if not only_python and os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
-                output = getoutput("cd %s%scpp && %s .%s%s" % \
+                status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
                                    (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
-                if "OK" in output:
+                if status == 0 and "OK" in output:
                     num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
                     print "OK (%d tests)" % num_tests
                 else:
@@ -68,9 +68,9 @@ for prefix in prefixes:
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
-                output = getoutput("cd %s%spython && %s python .%s%s.py" % \
+                status, output = getstatusoutput("cd %s%spython && %s python .%s%s.py" % \
                                    (test, os.path.sep, prefix, os.path.sep, subtest))
-                if "OK" in output:
+                if status == 0 and "OK" in output:
                     num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
                     print "OK (%d tests)" % num_tests
                 else:
