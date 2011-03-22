@@ -17,7 +17,7 @@
 #include <Epetra_FEVector.h>
 #include <Epetra_Export.h>
 #include <Epetra_Import.h>
-#include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
 #include <Epetra_MultiVector.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
@@ -53,7 +53,7 @@ EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const Epetra_Map& map)
+EpetraVector::EpetraVector(const Epetra_BlockMap& map)
 {
   x.reset(new Epetra_FEVector(map));
 }
@@ -106,7 +106,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   ghost_global_to_local.clear();
 
   // Pointer to Epetra map
-  boost::scoped_ptr<Epetra_Map> epetra_map;
+  boost::scoped_ptr<Epetra_BlockMap> epetra_map;
 
   // Epetra factory and serial communicator
   const EpetraFactory& f = EpetraFactory::instance();
@@ -123,13 +123,13 @@ void EpetraVector::resize(std::pair<uint, uint> range,
       error("Serial EpetraVectors do not suppprt ghost points.");
 
     // Create map
-    epetra_map.reset(new Epetra_Map(-1, local_size, 0, serial_comm));
+    epetra_map.reset(new Epetra_BlockMap(-1, local_size, 1, 0, serial_comm));
   }
   else
   {
     // Create map
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
-    epetra_map.reset(new Epetra_Map(-1, local_size, 0, mpi_comm));
+    epetra_map.reset(new Epetra_BlockMap(-1, local_size, 1, 0, mpi_comm));
 
     // Build global-to-local map for ghost indices
     for (uint i = 0; i < ghost_indices.size(); ++i)
@@ -142,8 +142,8 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   // Create local ghost vector
   const int num_ghost_entries = ghost_indices.size();
   const int* ghost_entries = reinterpret_cast<const int*>(&ghost_indices[0]);
-  Epetra_Map ghost_map(num_ghost_entries, num_ghost_entries,
-                       ghost_entries, 0, serial_comm);
+  Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
+                            ghost_entries, 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
 }
 //-----------------------------------------------------------------------------
@@ -209,7 +209,7 @@ void EpetraVector::apply(std::string mode)
 
     // Create map for y
     const int* _non_local_indices = reinterpret_cast<const int*>(&non_local_indices[0]);
-    Epetra_Map target_map(-1, non_local_indices.size(), _non_local_indices, 0, mpi_comm);
+    Epetra_BlockMap target_map(-1, non_local_indices.size(), _non_local_indices, 1, 0, mpi_comm);
 
     // Create vector y (view of non_local_values)
     Epetra_Vector y(View, target_map, &non_local_values[0]);
@@ -384,7 +384,7 @@ void EpetraVector::gather(GenericVector& y,
 
   // Create map for y
   const int* _indices = reinterpret_cast<const int*>(indices.data().get());
-  Epetra_Map target_map(indices.size(), indices.size(), _indices, 0, serial_comm);
+  Epetra_BlockMap target_map(indices.size(), indices.size(), _indices, 1, 0, serial_comm);
 
   // Reset vector y
   _y.reset(target_map);
@@ -415,7 +415,7 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (_y)[0][i];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::reset(const Epetra_Map& map)
+void EpetraVector::reset(const Epetra_BlockMap& map)
 {
   // Clear ghost data
   x_ghost.reset();

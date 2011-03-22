@@ -24,7 +24,7 @@
 class Epetra_FEVector;
 class Epetra_MultiVector;
 class Epetra_Vector;
-class Epetra_Map;
+class Epetra_BlockMap;
 
 namespace dolfin
 {
@@ -56,8 +56,8 @@ namespace dolfin
     /// Create vector view from given Epetra_FEVector pointer
     explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);
 
-    /// Create vector from given Epetra_Map
-    explicit EpetraVector(const Epetra_Map& map);
+    /// Create vector from given Epetra_BlockMap
+    explicit EpetraVector(const Epetra_BlockMap& map);
 
     /// Destructor
     virtual ~EpetraVector();
@@ -178,7 +178,7 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Reset Epetra_FEVector
-    void reset(const Epetra_Map& map);
+    void reset(const Epetra_BlockMap& map);
 
     /// Return Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> vec() const;
