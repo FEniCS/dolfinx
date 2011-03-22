@@ -699,14 +699,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
-  boost::shared_ptr<MeshFunction<unsigned int> > boundary_vertex_map = bmesh.data().mesh_function("vertex map");
-  assert(boundary_vertex_map);
-  const uint boundary_size = boundary_vertex_map->size();
+  const MeshFunction<unsigned int>& boundary_vertex_map = bmesh.vertex_map();
+  const uint boundary_size = boundary_vertex_map.size();
 
   // Build sorted array of global boundary vertex indices (global numbering)
   std::vector<uint> global_vertex_send(boundary_size);
   for (uint i = 0; i < boundary_size; ++i)
-    global_vertex_send[i] = global_vertex_indices[(*boundary_vertex_map)[i]];
+    global_vertex_send[i] = global_vertex_indices[boundary_vertex_map[i]];
   std::sort(global_vertex_send.begin(), global_vertex_send.end());
 
   // Distribute boundaries' sizes

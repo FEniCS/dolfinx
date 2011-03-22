@@ -200,16 +200,15 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     vertex_boundary[v->index()] = false;
 
   BoundaryMesh boundary(mesh);
-  boost::shared_ptr<MeshFunction<unsigned int> > bnd_vertex_map = boundary.data().mesh_function("vertex map");
-  assert(bnd_vertex_map);
+  MeshFunction<unsigned int>& bnd_vertex_map = boundary.vertex_map();
   for (VertexIterator v(boundary); !v.end(); ++v)
-    vertex_boundary[(*bnd_vertex_map)[v->index()]] = true;
+    vertex_boundary[bnd_vertex_map[v->index()]] = true;
 
   // If coarsen boundary is forbidden
-  if ( coarsen_boundary == false )
+  if (coarsen_boundary == false)
   {
     for (VertexIterator v(boundary); !v.end(); ++v)
-      vertex_forbidden[(*bnd_vertex_map)[v->index()]] = true;
+      vertex_forbidden[bnd_vertex_map[v->index()]] = true;
   }
   // Initialise data for finding which vertex to remove
   bool _collapse_edge = false;
@@ -220,7 +219,6 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Get cell type
   const CellType& cell_type = mesh.type();
-
   const Cell c(mesh, cellid);
 
   MeshEditor editor;
@@ -244,7 +242,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   for (EdgeIterator e(c); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
-    if ( !vertex_forbidden[edge_vertex[0]] || !vertex_forbidden[edge_vertex[1]] )
+    if (!vertex_forbidden[edge_vertex[0]] || !vertex_forbidden[edge_vertex[1]])
     {
       l = e->length();
       if ( lmin > l )

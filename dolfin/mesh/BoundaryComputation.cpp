@@ -106,16 +106,16 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-   boost::shared_ptr<MeshFunction<unsigned int> > vertex_map = boundary.data().create_mesh_function("vertex map");
-  assert(vertex_map);
+  //boost::shared_ptr<MeshFunction<unsigned int> > vertex_map = boundary.data().create_mesh_function("vertex map");
+  //assert(vertex_map);
+  MeshFunction<unsigned int>& vertex_map = boundary.vertex_map();
   if (num_boundary_vertices > 0)
-    vertex_map->init(boundary, 0, num_boundary_vertices);
+    vertex_map.init(boundary, 0, num_boundary_vertices);
 
   // Initialize mapping from cells in boundary to facets in mesh
-   boost::shared_ptr<MeshFunction<unsigned int> > cell_map = boundary.data().create_mesh_function("cell map");
-  assert(cell_map);
+  MeshFunction<unsigned int>& cell_map = boundary.cell_map();
   if (num_boundary_cells > 0)
-    cell_map->init(boundary, D - 1, num_boundary_cells);
+    cell_map.init(boundary, D - 1, num_boundary_cells);
 
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -124,8 +124,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (vertex_index != mesh.num_vertices())
     {
       // Create mapping from boundary vertex to mesh vertex if requested
-      if (vertex_map->size() > 0)
-        (*vertex_map)[vertex_index] = v->index();
+      if (vertex_map.size() > 0)
+        vertex_map[vertex_index] = v->index();
 
       // Add vertex
       editor.add_vertex(vertex_index, v->point());
@@ -148,8 +148,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       reorder(cell, *f);
 
       // Create mapping from boundary cell to mesh facet if requested
-      if (cell_map->size() > 0)
-        (*cell_map)[current_cell] = f->index();
+      if (cell_map.size() > 0)
+        cell_map[current_cell] = f->index();
 
       // Add cell
       editor.add_cell(current_cell++, cell);

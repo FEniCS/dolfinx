@@ -87,10 +87,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   boost::uniform_int<> distribution(0, 100000000);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> > rng(engine, distribution);
 
-  // Extract the interior boundary
-  BoundaryMesh interior_boundary;
-  interior_boundary.init_interior_boundary(mesh);
-
   // Clear data structures
   owned_dofs.clear();
   shared_owned_dofs.clear();
@@ -103,14 +99,18 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Communication buffer
   std::vector<uint> send_buffer;
 
+  // Extract the interior boundary
+  BoundaryMesh interior_boundary;
+  interior_boundary.init_interior_boundary(mesh);
+
   // Build set of dofs on process boundary (assume all are owned by this process)
-  boost::shared_ptr<const MeshFunction<unsigned int> > cell_map = interior_boundary.data().mesh_function("cell map");
-  if (cell_map)
+  const MeshFunction<unsigned int>& cell_map = interior_boundary.cell_map();
+  if (cell_map.size() > 0)
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
     {
       // Get boundary facet
-      Facet f(mesh, (*cell_map)[*bc]);
+      Facet f(mesh, cell_map[*bc]);
 
       // Get cell to which facet belongs (pick first)
       Cell c(mesh, f.entities(mesh.topology().dim())[0]);

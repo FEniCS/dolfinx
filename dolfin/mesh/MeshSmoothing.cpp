@@ -33,14 +33,13 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
 
   // Mark vertices on the boundary so we may skip them
   BoundaryMesh boundary(mesh);
-  boost::shared_ptr<MeshFunction<unsigned int> > vertex_map = boundary.data().mesh_function("vertex map");
-  assert(vertex_map);
+  const MeshFunction<unsigned int> vertex_map = boundary.vertex_map();
   MeshFunction<bool> on_boundary(mesh, 0);
   on_boundary = false;
   if (boundary.num_vertices() > 0)
   {
     for (VertexIterator v(boundary); !v.end(); ++v)
-      on_boundary[(*vertex_map)[*v]] = true;
+      on_boundary[vertex_map[*v]] = true;
   }
 
   // Iterate over all vertices
@@ -168,13 +167,12 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
-    boost::shared_ptr<const MeshFunction<unsigned int> > vertex_map = boundary.data().mesh_function("vertex map");
-    assert(vertex_map);
+    const MeshFunction<unsigned int>& vertex_map = boundary.vertex_map();
     const uint d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
     {
       const double* xb = v->x();
-      double* xm = mesh.geometry().x((*vertex_map)[*v]);
+      double* xm = mesh.geometry().x(vertex_map[*v]);
       for (uint i = 0; i < d; i++)
         xm[i] = xb[i];
     }
