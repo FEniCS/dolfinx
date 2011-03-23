@@ -1,10 +1,10 @@
 // Copyright (C) 2008-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2009.
+// Modified by Anders Logg, 2009-2011.
 //
 // First added:  2008-08-26
-// Last changed: 2009-06-29
+// Last changed: 2011-03-23
 // Last changed: 2010-07-16
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
@@ -40,6 +40,13 @@ namespace dolfin
     /// Solve linear system Ax = b
     virtual uint solve(GenericVector& x, const GenericVector& b)
     { error("solve(x, b) is not yet implemented for this backend."); return 0; }
+
+  protected:
+
+    // Check dimensions of matrix and vector(s)
+    void check_dimensions(const GenericMatrix& A,
+                          GenericVector& x,
+                          const GenericVector& b);
 
   };
 

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-10
-// Last changed: 2010-07-16
+// Last changed: 2011-03-23
 
 #include "KrylovSolver.h"
 #include "LUSolver.h"
@@ -63,4 +63,3 @@ dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-

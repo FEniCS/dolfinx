@@ -7,7 +7,7 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2010-07-11
+// Last changed: 2011-03-24
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
