@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-05-31
-// Last changed: 2010-06-07
+// Last changed: 2011-03-24
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -48,6 +48,9 @@ namespace dolfin
 
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
+
+    /// Return the operator (matrix)
+    const GenericMatrix& get_operator() const;
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     uint solve(GenericVector& x, const GenericVector& b);

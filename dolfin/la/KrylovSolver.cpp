@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2010-07-18
+// Last changed: 2011-03-24
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
@@ -82,6 +82,12 @@ void KrylovSolver::set_operator(const GenericMatrix& A)
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
+const GenericMatrix& KrylovSolver::get_operator() const
+{
+  assert(solver);
+  return solver->get_operator();
+}
+//-----------------------------------------------------------------------------
 void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
 {
   assert(solver);
@@ -92,6 +98,8 @@ void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
 dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
+  check_dimensions(solver->get_operator(), x, b);
+
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(x, b);
@@ -101,6 +109,8 @@ dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   assert(solver);
+  check_dimensions(A, x, b);
+
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);

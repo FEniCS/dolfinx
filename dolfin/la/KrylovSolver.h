@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2010-04-22
+// Last changed: 2011-03-24
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -39,6 +39,9 @@ namespace dolfin
 
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
+    /// Get operator (matrix)
+    const GenericMatrix& get_operator() const;
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);

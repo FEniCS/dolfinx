@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2010-07-16
+// Last changed: 2011-03-24
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -40,6 +40,9 @@ namespace dolfin
 
     /// Set the operator (matrix) and preconitioner matrix
     void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
+    /// Get the operator (matrix)
+    const GenericMatrix& get_operator() const;
 
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);

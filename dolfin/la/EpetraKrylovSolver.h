@@ -1,10 +1,10 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2011.
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-09-08
+// Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
 
@@ -51,11 +51,14 @@ namespace dolfin
     /// Destructor
     ~EpetraKrylovSolver();
 
-    /// Solve the operator (matrix)
+    /// Set the operator (matrix)
     void set_operator(const GenericMatrix& A);
 
-    /// Solve the operator (matrix)
+    /// Set the operator (matrix)
     void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
+    /// Get the operator (matrix)
+    const GenericMatrix& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);

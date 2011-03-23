@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2011-03-17
+// Last changed: 2011-03-24
 
 #ifdef HAS_PETSC
 
@@ -121,6 +121,7 @@ void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 void PETScKrylovSolver::set_operators(const GenericMatrix& A,
                                       const GenericMatrix& P)
 {
+  this->AA = reference_to_no_delete_pointer(A);
   set_operators(A.down_cast<PETScBaseMatrix>(), P.down_cast<PETScBaseMatrix>());
 }
 //-----------------------------------------------------------------------------
@@ -131,6 +132,13 @@ void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
   this->P = reference_to_no_delete_pointer(P);
   assert(this->A);
   assert(this->P);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& PETScKrylovSolver::get_operator() const
+{
+  if (!AA)
+    error("Operator for linear solver has not been set.");
+  return *AA;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)

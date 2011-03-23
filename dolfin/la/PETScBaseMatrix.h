@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-17
-// Last changed: 2009-09-08
+// Last changed: 2011-03-24
 
 #ifndef __PETSC_BASE_MATRIX_H
 #define __PETSC_BASE_MATRIX_H
@@ -33,7 +33,6 @@ namespace dolfin
   };
 
   class GenericVector;
-
 
   /// This class is a base class for matrices that can be used in
   /// PETScKrylovSolver.

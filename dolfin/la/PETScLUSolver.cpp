@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2011-03-17
+// Last changed: 2011-03-24
 
 #ifdef HAS_PETSC
 
@@ -124,6 +124,13 @@ void PETScLUSolver::set_operator(const PETScMatrix& A)
 {
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& PETScLUSolver::get_operator() const
+{
+  if (!A)
+    error("Operator for linear solver has not been set.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)

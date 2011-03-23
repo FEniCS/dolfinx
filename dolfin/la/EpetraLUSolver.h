@@ -1,7 +1,9 @@
 // Copyright (C) 2008-2010 Kent-Andre Mardal and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2010-07-16
+// Modified by Anders Logg, 2011.
+//
+// Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
 
@@ -43,6 +45,9 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
 
+    /// Get operator (matrix)
+    const GenericMatrix& get_operator() const;
+
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
@@ -61,6 +66,9 @@ namespace dolfin
   private:
 
     bool symbolic_factorized, numeric_factorized;
+
+    // Operator (the matrix)
+    boost::shared_ptr<const GenericMatrix> A;
 
     // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;

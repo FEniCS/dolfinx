@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2010-06-28
+// Last changed: 2011-03-24
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -50,6 +50,13 @@ namespace dolfin
     /// Solve the operator (matrix)
     void set_operator(const GenericMatrix& A)
     { error("set_operator(A) is not implemented."); }
+
+    /// Return the operator (matrix)
+    const GenericMatrix& get_operator() const
+    {
+      error("get_operator() is not implemented.");
+      return *(static_cast<GenericMatrix*>(0)); // code will not be reached
+    }
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);

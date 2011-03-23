@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2009-2011.
 //
 // First added:  2008-08-26
-// Last changed: 2011-03-23
+// Last changed: 2011-03-24
 // Last changed: 2010-07-16
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
@@ -26,12 +26,15 @@ namespace dolfin
   {
   public:
 
-    /// Solve the operator (matrix)
+    /// Set the operator (matrix)
     virtual void set_operator(const GenericMatrix& A) = 0;
 
-    /// Solve the operator (matrix) and preconditioner matrix
+    /// Set the operator (matrix) and preconditioner matrix
     virtual void set_operators(const GenericMatrix& A, const GenericMatrix& P)
     { error("Linear algebra backend solver does not support 'set_operators'."); }
+
+    /// Get the operator (matrix)
+    virtual const GenericMatrix& get_operator() const = 0;
 
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
@@ -46,7 +49,7 @@ namespace dolfin
     // Check dimensions of matrix and vector(s)
     void check_dimensions(const GenericMatrix& A,
                           GenericVector& x,
-                          const GenericVector& b);
+                          const GenericVector& b) const;
 
   };
 

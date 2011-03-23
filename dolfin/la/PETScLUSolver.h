@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009-2010.
 //
 // First added:  2005
-// Last changed: 2010-02-15
+// Last changed: 2011-03-24
 
 #ifndef __DOLFIN_PETSC_LU_SOLVER_H
 #define __DOLFIN_PETSC_LU_SOLVER_H
@@ -53,6 +53,9 @@ namespace dolfin
 
     /// Set operator (matrix)
     void set_operator(const PETScMatrix& A);
+
+    /// Get operator (matrix)
+    const GenericMatrix& get_operator() const;
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);

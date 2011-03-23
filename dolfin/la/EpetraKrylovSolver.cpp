@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2009.
+// Modified by Anders Logg, 2011.
 //
-// Last changed: 2011-03-17
+// Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
 
@@ -40,6 +41,7 @@ const std::map<std::string, int> EpetraKrylovSolver::methods
                               ("gmres",    AZ_gmres)
                               ("tfqmr",    AZ_tfqmr)
                               ("bicgstab", AZ_bicgstab);
+
 //-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
 {
@@ -99,6 +101,13 @@ void EpetraKrylovSolver::set_operators(const GenericMatrix& A,
   this->P = reference_to_no_delete_pointer(P.down_cast<EpetraMatrix>());
   assert(this->A);
   assert(this->P);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& EpetraKrylovSolver::get_operator() const
+{
+  if (!A)
+    error("Operator for linear solver has not been set.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(GenericVector& x,

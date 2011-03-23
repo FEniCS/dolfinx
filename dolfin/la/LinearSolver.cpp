@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-10
-// Last changed: 2011-03-23
+// Last changed: 2011-03-24
 
 #include "KrylovSolver.h"
 #include "LUSolver.h"
@@ -46,6 +46,12 @@ void LinearSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
   assert(solver);
   solver->parameters.update(parameters);
   solver->set_operators(A, P);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& LinearSolver::get_operator() const
+{
+  assert(solver);
+  return solver->get_operator();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,

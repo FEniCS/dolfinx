@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2010-02-25
+// Last changed: 2011-03-24
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -69,6 +69,9 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
 
+    /// Get operator (matrix)
+    const GenericMatrix& get_operator() const;
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);
 
@@ -117,7 +120,10 @@ namespace dolfin
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    /// Operator (the matrix)
+    /// Operator (the matrix) as GenericMatrix
+    boost::shared_ptr<const GenericMatrix> AA;
+
+    /// Operator (the matrix) as PETScBaseMatrix
     boost::shared_ptr<const PETScBaseMatrix> A;
 
     /// Matrix used to construct the preconditoner

@@ -1,7 +1,9 @@
 // Copyright (C) 2008-2010 Kent-Andre Mardal and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2011-03-17
+// Modified by Anders Logg, 2011.
+//
+// Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
 
@@ -14,6 +16,7 @@
 #include <Epetra_LinearProblem.h>
 #include <Epetra_MultiVector.h>
 
+#include <dolfin/common/NoDeleter.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "EpetraMatrix.h"
@@ -80,11 +83,19 @@ void EpetraLUSolver::set_operator(const GenericMatrix& A)
 {
   assert(linear_problem);
 
+  this->A = reference_to_no_delete_pointer(A);
   const EpetraMatrix& _A = A.down_cast<EpetraMatrix>();
   linear_problem->SetOperator(_A.mat().get());
 
   symbolic_factorized = false;
   numeric_factorized  = false;
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& EpetraLUSolver::get_operator() const
+{
+  if (!A)
+    error("Operator for linear solver has not been set.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)

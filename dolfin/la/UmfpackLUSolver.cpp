@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-01
-// Last changed: 2011-03-17
+// Last changed: 2011-03-24
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -119,6 +119,13 @@ void UmfpackLUSolver::set_operator(const GenericMatrix& A)
   symbolic.reset();
   numeric.reset();
   this->A = reference_to_no_delete_pointer(A);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& UmfpackLUSolver::get_operator() const
+{
+  if (!A)
+    error("Operator for linear solver has not been set.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
