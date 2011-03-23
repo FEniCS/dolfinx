@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-03-11
+// Last changed: 2011-03-23
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -67,11 +67,6 @@ namespace dolfin
     Form(boost::shared_ptr<const ufc::form> ufc_form,
          std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
          std::vector<boost::shared_ptr<const GenericFunction> > coefficients);
-
-    /// Create form (constructor used from Python interface)
-    Form(const ufc::form& ufc_form,
-         const std::vector<const FunctionSpace*>& function_spaces,
-         const std::vector<const GenericFunction*>& coefficients);
 
     /// Destructor
     virtual ~Form();

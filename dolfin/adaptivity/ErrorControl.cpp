@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2010-09-16
-// Last changed: 2011-03-15
+// Last changed: 2011-03-23
 
 #include <armadillo>
 
@@ -68,7 +68,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
   Function z_h(_a_star->function_space(1));
@@ -99,7 +99,7 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
 
@@ -125,7 +125,7 @@ void ErrorControl::compute_dual(Function& z,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Extrapolate
   _Ez_h.reset(new Function(_E));

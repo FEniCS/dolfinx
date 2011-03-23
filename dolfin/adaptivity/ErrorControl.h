@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-15
+// Last changed: 2011-03-23
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -63,7 +63,7 @@ namespace dolfin
     ///     double
     ///         error estimate
     double estimate_error(const Function& u,
-           const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs);
+           const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
     /// Compute error indicators
     ///
@@ -129,7 +129,7 @@ namespace dolfin
     ///     bcs (std::vector<const _BoundaryCondition_*>)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
-         const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs);
+         const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
     /// Compute extrapolation with boundary conditions
     ///
@@ -140,7 +140,7 @@ namespace dolfin
     ///     bcs (std::vector<const _BoundaryCondition_*>)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
-         const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs);
+         const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
     friend const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
                                                boost::shared_ptr<const Mesh> refined_mesh);

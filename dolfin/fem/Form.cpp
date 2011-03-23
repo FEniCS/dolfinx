@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-03-17
+// Last changed: 2011-03-23
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -41,23 +41,6 @@ Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
     _ufc_form(ufc_form), _function_spaces(function_spaces), _coefficients(coefficients)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-Form::Form(const ufc::form& ufc_form,
-           const std::vector<const FunctionSpace*>& function_spaces,
-           const std::vector<const GenericFunction*>& coefficients)
-  : Hierarchical<Form>(*this),
-    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
-    _function_spaces(function_spaces.size()),
-    _coefficients(coefficients.size())
-{
-  for (uint i = 0; i < function_spaces.size(); i++)
-    _function_spaces[i] = reference_to_no_delete_pointer(*function_spaces[i]);
-
-  for (uint i = 0; i < coefficients.size(); i++)
-    _coefficients[i] = reference_to_no_delete_pointer(*coefficients[i]);
-
-  _ufc_form = reference_to_no_delete_pointer(ufc_form);
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
