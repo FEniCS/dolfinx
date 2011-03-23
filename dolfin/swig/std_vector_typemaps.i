@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2011-01-29
+// Last changed: 2011-03-23
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -291,6 +291,43 @@ const std::vector<TYPE>&  ARG_NAME
 }
 %enddef
 
+//-----------------------------------------------------------------------------
+// Typemap for const std::vector<dolfin::Point>& used in IntersectionOperator
+// Expects a list of Points
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_POINTER) const std::vector<dolfin::Point>&
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
+
+%typemap (in) const std::vector<dolfin::Point>& (std::vector<dolfin::Point> tmp_vec)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_POINTS
+
+  // A first sequence test
+  if (!PyList_Check($input))
+    SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum");
+
+  int size = PyList_Size($input);
+  int res = 0;
+  PyObject * py_item = 0;
+  void * itemp = 0;
+  tmp_vec.reserve(size);
+  for (int i = 0; i < size; i++)
+  {
+    py_item = PyList_GetItem($input,i);
+    res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::Point*), 0);
+    if (SWIG_IsOK(res))
+    {
+      tmp_vec.push_back(*reinterpret_cast<dolfin::Point *>(itemp));
+    }
+    else
+    {
+      SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum, (Bad conversion)");
+    }
+  }
+  $1 = &tmp_vec;
+}
 
 //-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps

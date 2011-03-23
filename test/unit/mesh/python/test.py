@@ -1,7 +1,7 @@
 """Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2010-12-08"
+__date__ = "2006-08-08 -- 2011-03-23"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -282,11 +282,27 @@ if MPI.num_processes()==1:
             self.assertEqual(len(mesh.cells()), 50)
 
     class IntersectionOperator(unittest.TestCase):
-        def testIntersectPoints(self):
-            pass
+        def testIntersectPoint(self):
+            from numpy import linspace
+            mesh = UnitSquare(10, 10)
+            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
+            for p in points:
+                if p.x()<0 or p.x()>1:
+                    self.assertTrue(not mesh.all_intersected_entities(p))
+                else:
+                    self.assertTrue(mesh.all_intersected_entities(p))
+            
 
         def testIntersectPoints(self):
-            pass
+            from numpy import linspace
+            mesh = UnitSquare(10, 10)
+            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
+            all_intersected_entities = []
+            for p in points:
+                all_intersected_entities.extend(mesh.all_intersected_entities(p))
+            for i0, i1 in zip(sorted(all_intersected_entities),
+                              sorted(mesh.all_intersected_entities(points))):
+                self.assertEqual(i0, i1)
 
         def testIntersectMesh2D(self):
             pass
