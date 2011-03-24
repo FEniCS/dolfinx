@@ -4,7 +4,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2011-03-18
+// Last changed: 2011-03-24
 
 #ifdef HAS_MTL4
 
@@ -55,6 +55,7 @@ void ITLKrylovSolver::set_operators(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
+  check_dimensions(get_operator(), x, b);
   return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
 }
 //-----------------------------------------------------------------------------
@@ -143,6 +144,7 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
 dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                 const GenericVector& b)
 {
+  check_dimensions(A, x, b);
   set_operator(A);
   return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
 }
@@ -153,4 +155,5 @@ std::string ITLKrylovSolver::str(bool verbose) const
   return std::string();
 }
 //-----------------------------------------------------------------------------
+
 #endif

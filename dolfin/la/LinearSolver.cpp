@@ -58,6 +58,8 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   assert(solver);
+  check_dimensions(A, x, b);
+
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
 }
@@ -65,6 +67,8 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
+  check_dimensions(get_operator(), x, b);
+
   solver->parameters.update(parameters);
   return solver->solve(x, b);
 }

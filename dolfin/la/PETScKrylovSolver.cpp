@@ -143,12 +143,14 @@ const GenericMatrix& PETScKrylovSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
+  check_dimensions(get_operator(), x, b);
   return solve(x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                       const GenericVector& b)
+                                      const GenericVector& b)
 {
+  check_dimensions(A, x, b);
   return solve(A.down_cast<PETScBaseMatrix>(), x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }

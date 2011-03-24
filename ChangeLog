@@ -1,3 +1,4 @@
+ - Check for dimensions in linear solvers
  - Add support for automated error control for variational problems
  - Add support for refinement of MeshFunctions after mesh refinement
  - Change order of test and trial spaces in Form constructors

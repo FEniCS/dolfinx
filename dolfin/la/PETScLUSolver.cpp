@@ -137,6 +137,7 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(_ksp);
   assert(A);
+  check_dimensions(get_operator(), x, b);
 
   // Downcast matrix and vectors
   const PETScVector& _b = b.down_cast<PETScVector>();
@@ -180,6 +181,7 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                   const GenericVector& b)
 {
+  check_dimensions(A, x, b);
   return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }

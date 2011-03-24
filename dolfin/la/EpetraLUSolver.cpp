@@ -102,6 +102,7 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(linear_problem);
   assert(solver);
+  check_dimensions(get_operator(), x, b);
 
   // Downcast vector
   EpetraVector& _x = x.down_cast<EpetraVector>();
@@ -164,6 +165,7 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                    const GenericVector& b)
 {
+  check_dimensions(A, x, b);
   return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
                b.down_cast<EpetraVector>());
 }

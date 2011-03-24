@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2010-04-15
+// Last changed: 2011-03-24
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
@@ -65,6 +65,7 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                       const GenericVector& b)
 {
+  check_dimensions(A, x, b);
   return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
                x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
 }
