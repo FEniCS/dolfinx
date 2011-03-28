@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-09-11
+// Last changed: 2011-03-25
 //
 // Modified by Anders Logg, 2008-2009.
 
@@ -36,7 +36,6 @@ namespace dolfin
   /// partitioning again followed by redistribution of vertex and cell
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
-
 
   // FIXME: Provide a better public interface rather than using 'friend class'
 

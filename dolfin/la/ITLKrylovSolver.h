@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-07-16
-// Last changed: 2011-03-24
+// Last changed: 2011-03-28
 
 #ifdef HAS_MTL4
 
@@ -45,6 +45,9 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(const GenericMatrix& A, const GenericMatrix& P);
 
+    /// Get operator (matrix)
+    const GenericMatrix& get_operator() const;
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);
 
@@ -62,7 +65,10 @@ namespace dolfin
 
   private:
 
-    /// Operator (the matrix)
+    /// Operator (the matrix) as GenericMatrix
+    boost::shared_ptr<const GenericMatrix> AA;
+
+    /// Operator (the matrix) as MTL4Matrix
     boost::shared_ptr<const MTL4Matrix> A;
 
     /// Matrix used to construct the preconditoner

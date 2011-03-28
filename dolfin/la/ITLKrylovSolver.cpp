@@ -4,7 +4,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2011-03-24
+// Last changed: 2011-03-28
 
 #ifdef HAS_MTL4
 
@@ -47,10 +47,18 @@ void ITLKrylovSolver::set_operator(const GenericMatrix& A)
 void ITLKrylovSolver::set_operators(const GenericMatrix& A,
                                     const GenericMatrix& P)
 {
+  this->AA = reference_to_no_delete_pointer(A);
   this->A = reference_to_no_delete_pointer(A.down_cast<MTL4Matrix>());
   this->P = reference_to_no_delete_pointer(P.down_cast<MTL4Matrix>());
   assert(this->A);
   assert(this->P);
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& ITLKrylovSolver::get_operator() const
+{
+  if (!AA)
+    error("Operator for linear solver has not been set.");
+  return *AA;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
