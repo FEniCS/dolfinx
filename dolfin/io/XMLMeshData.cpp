@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added: 2009-03-09
-// Last changed: 2009-03-17
+// Last changed: 2011-03-28
 
 #include "dolfin/mesh/MeshData.h"
 #include "XMLMeshFunction.h"
@@ -19,9 +19,8 @@ XMLMeshData::XMLMeshData(MeshData& data, XMLFile& parser, bool inside)
     xml_array(0), xml_map(0), xml_mesh_function(0),
     im(0), um(0), dm(0), iam(0), uam(0), dam(0)
 {
-  if ( inside )
+  if (inside)
     state = INSIDE_DATA;
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshData::~XMLMeshData()
@@ -39,68 +38,73 @@ XMLMeshData::~XMLMeshData()
 //-----------------------------------------------------------------------------
 void XMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
 {
-  switch ( state )
+  switch (state)
   {
-    case OUTSIDE:
-      if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
-        state = INSIDE_DATA;
+  case OUTSIDE:
 
-      break;
+    if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
+      state = INSIDE_DATA;
 
-    case INSIDE_DATA:
-      if ( xmlStrcasecmp(name, (xmlChar *) "data_entry") == 0 )
-      {
-        state = INSIDE_DATA_ENTRY;
-        read_data_entry(name, attrs);
-      }
+    break;
 
-      break;
+  case INSIDE_DATA:
 
-    case INSIDE_DATA_ENTRY:
-      if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
-        read_array(name, attrs);
-      else if (xmlStrcasecmp(name, (xmlChar *) "map") == 0 )
-        read_map(name, attrs);
-      else if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
-        read_mesh_function(name, attrs);
+    if (xmlStrcasecmp(name, (xmlChar *) "data_entry") == 0)
+    {
+      state = INSIDE_DATA_ENTRY;
+      read_data_entry(name, attrs);
+    }
 
-      break;
+    break;
 
-    default:
-      ;
+  case INSIDE_DATA_ENTRY:
+
+    if (xmlStrcasecmp(name, (xmlChar *) "array") == 0)
+      read_array(name, attrs);
+    else if (xmlStrcasecmp(name, (xmlChar *) "map") == 0 )
+      read_map(name, attrs);
+    else if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+      read_mesh_function(name, attrs);
+
+    break;
+
+  default:
+    ;
   }
 }
 //-----------------------------------------------------------------------------
 void XMLMeshData::end_element (const xmlChar* name)
 {
-  switch ( state )
+  switch (state)
   {
-    case INSIDE_DATA:
-      if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
-      {
-        state = DONE;
-        release();
-      }
+  case INSIDE_DATA:
 
-      break;
+    if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
+    {
+      state = DONE;
+      release();
+    }
 
-    case INSIDE_DATA_ENTRY:
-      if ( xmlStrcasecmp(name, (xmlChar *) "data_entry") == 0 )
-      {
-        state = INSIDE_DATA;
-      }
+    break;
 
-      break;
+  case INSIDE_DATA_ENTRY:
 
-    default:
-      ;
+    if (xmlStrcasecmp(name, (xmlChar *) "data_entry") == 0)
+    {
+      state = INSIDE_DATA;
+    }
+
+    break;
+
+  default:
+    ;
   }
 }
 //-----------------------------------------------------------------------------
 void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
                         uint indentation_level)
 {
-  if ( data.mesh_functions.size() > 0 || data.arrays.size() > 0)
+  if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
   {
     XMLIndent indent(indentation_level);
 
@@ -198,7 +202,7 @@ void XMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
 {
   std::string array_type = parse_string(name, attrs, "type");
   uint size = parse_uint(name, attrs, "size");
-  if ( array_type.compare("int") == 0 )
+  if (array_type.compare("int") == 0)
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<int>* ux = new std::vector<int>();
@@ -206,14 +210,14 @@ void XMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
     xml_array = new XMLArray(*ux, parser, size);
     xml_array->handle();
   }
-  else if ( array_type.compare("uint") == 0 )
+  else if (array_type.compare("uint") == 0)
   {
     std::vector<uint>* array = data.create_array(entity_name, size);
     delete xml_array;
     xml_array = new XMLArray(*array, parser, size);
     xml_array->handle();
   }
-  else if ( array_type.compare("double") == 0 )
+  else if (array_type.compare("double") == 0)
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<double>* dx = new std::vector<double>();
@@ -228,15 +232,15 @@ void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
   std::string key_type = parse_string(name, attrs, "key_type");
   std::string value_type = parse_string(name, attrs, "value_type");
 
-  if ( ! key_type.compare("uint") == 0 )
+  if (! key_type.compare("uint") == 0)
     error("Key type in mapping must be uint.");
-  if ( value_type.compare("uint") == 0 )
+  if (value_type.compare("uint") == 0)
   {
     delete xml_map;
     std::map<uint, uint>* map = data.create_mapping(entity_name);
     xml_map = new XMLMap(*map,  parser);
     xml_map->handle();
-  } else if ( value_type.compare("array") == 0 )
+  } else if (value_type.compare("array") == 0)
     warning("Add support for array maps, needed in parallel assembly.");
   else
     error("Unknown map type '%s'.", value_type.c_str());
@@ -247,7 +251,7 @@ void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
   std::string mf_type = parse_string(name, attrs, "type");
   uint dim = parse_uint(name, attrs, "dim");
   uint size = parse_uint(name, attrs, "size");
-  if ( mf_type.compare("uint") != 0 )
+  if (mf_type.compare("uint") != 0)
     error("Only MeshFunctions of type 'uint' supported as mesh data. Found '%s'.", mf_type.c_str());
   delete xml_mesh_function;
    boost::shared_ptr<MeshFunction<unsigned int> > mf = data.create_mesh_function(entity_name);

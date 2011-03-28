@@ -30,12 +30,12 @@ public:
     p0.add("monitor_convergence", true);
 
     // Save to file
-    File f0("parameters.xml");
+    File f0("test_parameters.xml");
     f0 << p0;
 
     // Read from file
     Parameters p1;
-    File f1("parameters.xml");
+    File f1("test_parameters.xml");
     f1 >> p1;
 
     // Get parameter values
@@ -55,29 +55,32 @@ public:
   {
     // Create some nested parameters
     Parameters p0("test");
-    Parameters p00("sub");
+    Parameters p00("sub0");
     p00.add("filename", "foo.txt");
     p00.add("maxiter", 100);
     p00.add("tolerance", 0.001);
     p00.add("monitor_convergence", true);
     p0.add("foo", "bar");
+    Parameters p01(p00);
+    p01.rename("sub1");
     p0.add(p00);
+    p0.add(p01);
 
     // Save to file
-    File f0("parameters.xml");
+    File f0("test_parameters.xml");
     f0 << p0;
 
     // Read from file
     Parameters p1;
-    File f1("parameters.xml");
+    File f1("test_parameters.xml");
     f1 >> p1;
 
     // Get parameter values
     std::string foo(p1["foo"]);
-    std::string filename(p1("sub")["filename"]);
-    dolfin::uint maxiter(p1("sub")["maxiter"]);
-    double tolerance(p1("sub")["tolerance"]);
-    bool monitor_convergence(p1("sub")["monitor_convergence"]);
+    std::string filename(p1("sub0")["filename"]);
+    dolfin::uint maxiter(p1("sub0")["maxiter"]);
+    double tolerance(p1("sub0")["tolerance"]);
+    bool monitor_convergence(p1("sub0")["monitor_convergence"]);
 
     // Check values
     CPPUNIT_ASSERT(foo == "bar");

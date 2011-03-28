@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-01-20
+// Last changed: 2011-03-28
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H

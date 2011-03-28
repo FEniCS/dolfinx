@@ -7,6 +7,7 @@
 #ifndef __XML_PARAMETERS_H
 #define __XML_PARAMETERS_H
 
+#include <boost/scoped_ptr.hpp>
 #include "XMLHandler.h"
 
 namespace dolfin
@@ -21,7 +22,7 @@ namespace dolfin
   {
   public:
 
-    XMLParameters(Parameters& parameters, XMLFile& parser);
+    XMLParameters(Parameters& parameters, XMLFile& parser, bool inside=false);
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
@@ -30,13 +31,16 @@ namespace dolfin
 
   private:
 
-    enum parser_state { OUTSIDE, INSIDE_PARAMETERS, DONE };
+    enum parser_state {OUTSIDE, INSIDE_PARAMETERS, DONE};
 
     void read_parameters(const xmlChar *name, const xmlChar **attrs);
+    void read_nested_parameters(const xmlChar *name, const xmlChar **attrs);
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
 
     Parameters& parameters;
     parser_state state;
+
+    boost::scoped_ptr<XMLParameters> xml_nested_parameters;
 
   };
 

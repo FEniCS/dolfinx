@@ -20,12 +20,12 @@ class InputOutput(unittest.TestCase):
         p0.add("monitor_convergence", True)
 
         # Save to file
-        f0 = File("parameters.xml")
+        f0 = File("test_parameters.xml")
         f0 << p0
 
         # Read from file
         p1 = Parameters()
-        f1 = File("parameters.xml")
+        f1 = File("test_parameters.xml")
         f1 >> p1
 
         # Check values
@@ -39,30 +39,33 @@ class InputOutput(unittest.TestCase):
 
         # Create some nested parameters
         p0 = Parameters("test")
-        p00 = Parameters("sub")
+        p00 = Parameters("sub0")
         p00.add("filename", "foo.txt")
         p00.add("maxiter", 100)
         p00.add("tolerance", 0.001)
         p00.add("monitor_convergence", True)
         p0.add("foo", "bar")
+        p01 = Parameters(p00);
+        p01.rename("sub1");
         p0.add(p00)
+        p0.add(p01)
 
         # Save to file
-        f0 = File("parameters.xml")
+        f0 = File("test_parameters.xml")
         f0 << p0
 
         # Read from file
         p1 = Parameters()
-        f1 = File("parameters.xml")
+        f1 = File("test_parameters.xml")
         f1 >> p1
 
         # Check values
         self.assertEqual(p1.name(), "test")
         self.assertEqual(p1["foo"], "bar")
-        self.assertEqual(p1["filename"], "foo.txt")
-        self.assertEqual(p1["maxiter"], 100)
-        self.assertEqual(p1["tolerance"], 0.001)
-        self.assertEqual(p1["monitor_convergence"], True)
+        self.assertEqual(p1["sub0"]["filename"], "foo.txt")
+        self.assertEqual(p1["sub0"]["maxiter"], 100)
+        self.assertEqual(p1["sub0"]["tolerance"], 0.001)
+        self.assertEqual(p1["sub0"]["monitor_convergence"], True)
 
 if __name__ == "__main__":
     print ""

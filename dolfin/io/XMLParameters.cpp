@@ -13,16 +13,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLParameters::XMLParameters(Parameters& parameters, XMLFile& parser)
+XMLParameters::XMLParameters(Parameters& parameters, XMLFile& parser, bool inside)
   : XMLHandler(parser), parameters(parameters), state(OUTSIDE)
 {
   // Note that we don't clear the parameters here, only add new parameters
   // or overwrite existing parameters
+
+  if (inside)
+    state = INSIDE_PARAMETERS;
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state )
+  switch (state)
   {
   case OUTSIDE:
 
@@ -38,6 +41,8 @@ void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
 
     if (xmlStrcasecmp(name, (xmlChar *) "parameter") == 0)
       read_parameter(name, attrs);
+    else if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
+      read_nested_parameters(name, attrs);
 
     break;
 
@@ -48,7 +53,7 @@ void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLParameters::end_element(const xmlChar *name)
 {
-  switch ( state )
+  switch (state)
   {
   case INSIDE_PARAMETERS:
 
@@ -69,8 +74,6 @@ void XMLParameters::write(const Parameters& parameters,
                           std::ostream& outfile,
                           uint indentation_level)
 {
-  // FIXME: Handle nested parameter sets
-
   // Get keys
   std::vector<std::string> parameter_keys;
   parameters.get_parameter_keys(parameter_keys);
@@ -116,6 +119,12 @@ void XMLParameters::write(const Parameters& parameters,
   }
   --indent;
 
+  // Write nested parameter sets
+  std::vector<std::string> nested_keys;
+  parameters.get_parameter_set_keys(nested_keys);
+  for (uint i = 0; i < nested_keys.size(); ++i)
+    write(parameters(nested_keys[i]), outfile, indentation_level + 1);
+
   // Write parameters footer
   outfile << indent() << "</parameters>" << std::endl;
 }
@@ -127,6 +136,21 @@ void XMLParameters::read_parameters(const xmlChar *name, const xmlChar **attrs)
 
   // Set values
   parameters.rename(_name);
+}
+//-----------------------------------------------------------------------------
+void XMLParameters::read_nested_parameters(const xmlChar *name,
+                                           const xmlChar **attrs)
+{
+  // Parse values
+  const std::string _name = parse_string(name, attrs, "name");
+
+  // Add nested parameters
+  Parameters nested_parameters(_name);
+  parameters.add(nested_parameters);
+
+  // Let nested object continue parsing
+  xml_nested_parameters.reset(new XMLParameters(parameters(_name), parser, true));
+  xml_nested_parameters->handle();
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)

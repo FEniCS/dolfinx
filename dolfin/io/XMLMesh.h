@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-16
+// Last changed: 2011-03-28
 
 #ifndef __XML_MESH_H
 #define __XML_MESH_H
@@ -63,6 +63,7 @@ namespace dolfin
     std::vector<uint>* a;
 
     boost::scoped_ptr<XMLMeshData> xml_mesh_data;
+
   };
 
 }

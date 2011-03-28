@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-03-17
+// Last changed: 2011-03-28
 
 #include <sstream>
 #include <stdio.h>
@@ -130,7 +130,7 @@ void Parameters::add(std::string key, double value)
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
-                        double min_value, double max_value)
+                     double min_value, double max_value)
 {
   // Add parameter
   add(key, to_real(value));
