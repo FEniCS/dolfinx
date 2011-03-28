@@ -1,8 +1,8 @@
-// Copyright (C) 2009 Ola Skavhaug and Anders Logg.
+// Copyright (C) 20011 Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-07-03
+// Last changed: 2011-03-28
 
 #ifndef __XML_PARAMETERS_H
 #define __XML_PARAMETERS_H
@@ -32,6 +32,7 @@ namespace dolfin
 
     enum parser_state { OUTSIDE, INSIDE_PARAMETERS, DONE };
 
+    void read_parameters(const xmlChar *name, const xmlChar **attrs);
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
 
     Parameters& parameters;

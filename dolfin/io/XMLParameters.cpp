@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-11-11
+// Last changed: 2011-03-28
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/Parameters.h>
@@ -26,15 +26,18 @@ void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
   {
   case OUTSIDE:
 
-    if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
+    {
+      read_parameters(name, attrs);
       state = INSIDE_PARAMETERS;
+    }
 
     break;
 
   case INSIDE_PARAMETERS:
 
-    if ( xmlStrcasecmp(name,(xmlChar *) "parameter") == 0 )
-      read_parameter(name,attrs);
+    if (xmlStrcasecmp(name, (xmlChar *) "parameter") == 0)
+      read_parameter(name, attrs);
 
     break;
 
@@ -49,7 +52,7 @@ void XMLParameters::end_element(const xmlChar *name)
   {
   case INSIDE_PARAMETERS:
 
-    if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
     {
       state = DONE;
       release();
@@ -74,7 +77,7 @@ void XMLParameters::write(const Parameters& parameters,
 
   // Write parameters header
   XMLIndent indent(indentation_level);
-  outfile << indent() << "<parameters>" << std::endl;
+  outfile << indent() << "<parameters name=\"" << parameters.name() << "\">" << std::endl;
 
   // Write each parameter item
   ++indent;
@@ -117,10 +120,19 @@ void XMLParameters::write(const Parameters& parameters,
   outfile << indent() << "</parameters>" << std::endl;
 }
 //-----------------------------------------------------------------------------
+void XMLParameters::read_parameters(const xmlChar *name, const xmlChar **attrs)
+{
+  // Parse values
+  const std::string _name = parse_string(name, attrs, "name");
+
+  // Set values
+  parameters.rename(_name);
+}
+//-----------------------------------------------------------------------------
 void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  const std::string key  = parse_string(name, attrs, "key");
+  const std::string key = parse_string(name, attrs, "key");
   const std::string type = parse_string(name, attrs, "type");
   const std::string string_value = parse_string(name, attrs, "value");
 

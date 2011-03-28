@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed: 2009-10-08
+// Last changed: 2011-03-28
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -33,11 +33,11 @@ XMLMesh::~XMLMesh()
 //-----------------------------------------------------------------------------
 void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 {
-  switch (state )
+  switch (state)
   {
   case OUTSIDE:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
     {
       read_mesh_tag(name, attrs);
     }
