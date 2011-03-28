@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-12
-// Last changed: 2009-12-11
+// Last changed: 2011-03-28
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -56,7 +56,7 @@ def get_range(self):
             return
         return local_range
     elif val_type == "bool":
-        return 
+        return
     elif val_type == "real":
         from logging import DEBUG
         if get_log_level() <= DEBUG and has_gmp():
@@ -163,7 +163,7 @@ def __getitem__(self, key):
     "Return the parameter corresponding to the given key"
     if key in self._get_parameter_keys():
         return self._get_parameter(key).value()
-        
+
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
 
@@ -239,12 +239,12 @@ def get(self, key):
     """
     if key in self._get_parameter_keys():
         return self._get_parameter(key).data()
-        
+
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
 
     raise KeyError, "'%s'"%key
-    
+
 %}
 
 }
@@ -255,20 +255,27 @@ def __new_Parameter_init__(self,*args,**kwargs):
     """Initialize Parameters
 
     Usage:
-    Parameters("parameters")
-       returns an empty Parameters
+
+    Parameters()
+       create empty parameter set
+
+    Parameters(name)
+       create empty parameter set with given name
 
     Parameters(other_parameters)
-       returns a copy of the other_parameters
+       create copy of parameter set
 
-    Parameters("parameters",dim=3,tol=0.1,name='Name')
-       returns a parameters with the given values
+    Parameters(name, dim=3, tol=0.1, foo="Foo")
+       create parameter set with given parameters
 
-    Parameters("parameters",dim=(3,0,4),name=("Name",["Name","Blame"])
-      returns a parameters with the given values and ranges
+    Parameters(name, dim=(3, 0, 4), foo=("Foo", ["Foo", "Bar"])
+       create parameter set with given parameters and ranges
     """
-    if len(args) == 1 and isinstance(args[0],(str,type(self))):
-        old_init(self,args[0])
+
+    if len(args) == 0:
+        old_init(self, "parameters")
+    elif len(args) == 1 and isinstance(args[0], (str,type(self))):
+        old_init(self, args[0])
     else:
         raise TypeError, "expected a single optional argument of type 'str' or ''"%type(self).__name__
     if len(kwargs) == 0:
