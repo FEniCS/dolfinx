@@ -20,8 +20,9 @@ tests = {
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],
     "io": ["test"],
+    "parameter": ["test"],
     "python-extras": ["test"],
-    "quadrature": ["test"]
+    "quadrature": ["test"],
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
