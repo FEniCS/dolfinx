@@ -399,8 +399,8 @@ std::string Parameters::str(bool verbose) const
   else
   {
     s << "<Parameter set \"" << name() << "\" containing "
-      << _parameters.size() << " parameters and "
-      << _parameter_sets.size() << " nested parameter sets>";
+      << _parameters.size() << " parameter(s) and "
+      << _parameter_sets.size() << " nested parameter set(s)>";
   }
 
   return s.str();
