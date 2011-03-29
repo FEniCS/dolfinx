@@ -22,25 +22,25 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
 
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
 					 const GenericFunction&,
 					 const SubDomain&,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
 					 const GenericFunction&,
 					 const MeshFunction<unsigned int>&,
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
 					 const GenericFunction&,
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&, const SubDomain&);
+%ignore dolfin::PeriodicBC::PeriodicBC(const GenericFunctionSpace&, const SubDomain&);
 
-%ignore dolfin::DirichletBC(const FunctionSpace&,
+%ignore dolfin::DirichletBC(const GenericFunctionSpace&,
                             const GenericFunction&,
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
