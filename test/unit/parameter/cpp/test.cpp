@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-03-28
-// Last changed: 2011-03-28
+// Last changed: 2011-03-29
 //
 // Unit tests for the parameter library
 
@@ -30,8 +30,12 @@ public:
     p0.add("monitor_convergence", true);
 
     // Save to file
-    File f0("test_parameters.xml");
-    f0 << p0;
+    if (dolfin::MPI::process_number() == 0)
+    {
+      File f0("test_parameters.xml");
+      f0 << p0;
+    }
+    dolfin::MPI::barrier();
 
     // Read from file
     Parameters p1;
@@ -67,8 +71,12 @@ public:
     p0.add(p01);
 
     // Save to file
-    File f0("test_parameters.xml");
-    f0 << p0;
+    if (dolfin::MPI::process_number() == 0)
+    {
+      File f0("test_parameters.xml");
+      f0 << p0;
+    }
+    dolfin::MPI::barrier();
 
     // Read from file
     Parameters p1;

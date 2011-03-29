@@ -20,8 +20,10 @@ class InputOutput(unittest.TestCase):
         p0.add("monitor_convergence", True)
 
         # Save to file
-        f0 = File("test_parameters.xml")
-        f0 << p0
+        if MPI.process_number() == 0:
+            f0 = File("test_parameters.xml")
+            f0 << p0
+        MPI.barrier()
 
         # Read from file
         p1 = Parameters()
@@ -51,8 +53,10 @@ class InputOutput(unittest.TestCase):
         p0.add(p01)
 
         # Save to file
-        f0 = File("test_parameters.xml")
-        f0 << p0
+        if MPI.process_number() == 0:
+            f0 = File("test_parameters.xml")
+            f0 << p0
+        MPI.barrier()
 
         # Read from file
         p1 = Parameters()
