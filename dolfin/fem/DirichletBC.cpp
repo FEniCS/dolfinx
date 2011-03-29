@@ -428,21 +428,14 @@ void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
-  cout << "Apply bcss" << endl;
   // Check arguments
   check_arguments(A, b, x);
-
-  cout << "Apply bcs (1)" << endl;
 
   // A map to hold the mapping from boundary dofs to boundary values
   Map boundary_values;
 
-  cout << "Apply bcs (2)" << endl;
-
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
-
-  cout << "Apply bcs (3)" << endl;
 
   // Compute dofs and values
   compute_bc(boundary_values, data, _method);
@@ -460,8 +453,6 @@ void DirichletBC::apply(GenericMatrix* A,
     values[i++] = bv->second;
   }
 
-  cout << "Apply bcs (2)" << endl;
-
   // Modify boundary values for nonlinear problems
   if (x)
   {
@@ -474,8 +465,6 @@ void DirichletBC::apply(GenericMatrix* A,
     for (uint i = 0; i < size; i++)
       values[i] = x_values[i] - values[i];
   }
-
-  cout << "Apply bcs (3)" << endl;
 
   log(PROGRESS, "Applying boundary conditions to linear system.");
 
@@ -504,7 +493,6 @@ void DirichletBC::apply(GenericMatrix* A,
     // Apply changes
     A->apply("add");
   }
-  cout << "End bcs" << endl;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const

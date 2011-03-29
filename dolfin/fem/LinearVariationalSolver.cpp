@@ -14,8 +14,6 @@
 #include "VariationalProblem.h"
 #include "LinearVariationalSolver.h"
 
-#include "GenericDofMap.h"
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
