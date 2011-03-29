@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-03-28
+// Last changed: 2011-03-29
 
 #include <sstream>
 #include <stdio.h>
@@ -398,7 +398,7 @@ std::string Parameters::str(bool verbose) const
   }
   else
   {
-    s << "<Parameter set containing "
+    s << "<Parameter set \"" << name() << "\" containing "
       << _parameters.size() << " parameters and "
       << _parameter_sets.size() << " nested parameter sets>";
   }
