@@ -77,17 +77,8 @@ namespace dolfin
     /// Assignment operator
     const FunctionSpace& operator= (const FunctionSpace& V);
 
-    /// Return mesh
-    const Mesh& mesh() const;
-
-    /// Return finite element
-    const FiniteElement& element() const;
-
-    /// Return dofmap
-    const GenericDofMap& dofmap() const;
-
     /// Return dimension of function space
-    uint dim() const;
+    //uint dim() const;
 
     /// Interpolate function v into function space, returning the vector of
     /// expansion coefficients
@@ -107,15 +98,11 @@ namespace dolfin
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
-    {
-      return &cell.mesh() == &(*_mesh);
-    }
+    { return &cell.mesh() == &(*_mesh); }
 
     /// Check if function space has given element
     bool has_element(const FiniteElement& element) const
-    {
-      return element.hash() == _element->hash();
-    }
+    { return element.hash() == _element->hash(); }
 
     /// Return component (relative to super space)
     const Array<uint>& component() const;

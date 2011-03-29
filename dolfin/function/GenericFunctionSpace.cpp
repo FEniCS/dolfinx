@@ -26,4 +26,8 @@ GenericFunctionSpace::GenericFunctionSpace(boost::shared_ptr<const Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-
+unsigned int GenericFunctionSpace::dim() const
+{
+  return dofmap().global_dimension();
+}
+//-----------------------------------------------------------------------------

@@ -51,8 +51,10 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
     GenericFunctionSpace(V._mesh, V._element, V._dofmap)
 
 {
-  // Assign data (will be shared)
-  *this = V;
+  _component = V._component;
+
+  // Call assignment operator for base class
+  Hierarchical<FunctionSpace>::operator=(V);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
@@ -81,28 +83,10 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Mesh& FunctionSpace::mesh() const
-{
-  assert(_mesh);
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-const FiniteElement& FunctionSpace::element() const
-{
-  assert(_element);
-  return *_element;
-}
-//-----------------------------------------------------------------------------
-const GenericDofMap& FunctionSpace::dofmap() const
-{
-  assert(_dofmap);
-  return *_dofmap;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FunctionSpace::dim() const
-{
-  return dofmap().global_dimension();
-}
+//dolfin::uint FunctionSpace::dim() const
+//{
+//  return dofmap().global_dimension();
+//}
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
                                 const GenericFunction& v) const
@@ -220,9 +204,7 @@ std::string FunctionSpace::str(bool verbose) const
     // No verbose output implemented
   }
   else
-  {
     s << "<FunctionSpace of dimension " << dim() << ">";
-  }
 
   return s.str();
 }
