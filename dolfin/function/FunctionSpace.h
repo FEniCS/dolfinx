@@ -45,11 +45,6 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap (shared data)
-    FunctionSpace(boost::shared_ptr<Mesh> mesh,
-                  boost::shared_ptr<const FiniteElement> element,
-                  boost::shared_ptr<const GenericDofMap> dofmap);
-
-    /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const GenericDofMap> dofmap);
@@ -61,9 +56,6 @@ namespace dolfin
     /// to construct objects before the initialisation of the base
     /// class. Data can be attached to the base class using
     /// FunctionSpace::attach(...).
-    FunctionSpace(boost::shared_ptr<Mesh> mesh);
-
-    /// Create empty function space for later initialization (const version)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
