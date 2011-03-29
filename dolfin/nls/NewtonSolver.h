@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2011.
 //
 // First added:  2005-10-23
-// Last changed: 2011-01-14
+// Last changed: 2011-03-29
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -85,6 +85,7 @@ namespace dolfin
 
     /// Resdiual vector
     boost::scoped_ptr<GenericVector> b;
+
   };
 
 }

@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-03-11
+// Last changed: 2011-03-29
 
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -25,8 +25,9 @@ void NonlinearVariationalSolver::solve(Function& u,
   // Create nonlinear problem
   _NonlinearProblem nonlinear_problem(problem, parameters);
 
-  // Create Newton solver annond set parameters
-  NewtonSolver newton_solver;
+  // Create Newton solver and set parameters
+  NewtonSolver newton_solver(parameters["linear_solver"],
+                             parameters["preconditioner"]);
   newton_solver.parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
