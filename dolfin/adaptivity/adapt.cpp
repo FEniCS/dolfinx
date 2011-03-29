@@ -302,7 +302,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
-  boost::shared_ptr<const GenericFunctionSpace> W = bc.function_space_ptr();
+  boost::shared_ptr<const GenericFunctionSpace> W = bc.function_space();
   boost::shared_ptr<const FunctionSpace> V;
 
   // FIXME: Remove when subspaces sorted out

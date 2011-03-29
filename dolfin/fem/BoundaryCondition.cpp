@@ -38,13 +38,7 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const GenericFunctionSpace& BoundaryCondition::function_space() const
-{
-  assert(_function_space);
-  return *_function_space;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunctionSpace> BoundaryCondition::function_space_ptr() const
+boost::shared_ptr<const GenericFunctionSpace> BoundaryCondition::function_space() const
 {
   return _function_space;
 }

@@ -59,8 +59,7 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
 //-----------------------------------------------------------------------------
-%ignore dolfin::BoundaryCondition::function_space;
-%rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
+%rename (_function_space) dolfin::BoundaryCondition::function_space;
 
 //-----------------------------------------------------------------------------
 // Ignores domain assignment for Form class
