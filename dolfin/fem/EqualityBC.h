@@ -48,19 +48,18 @@ namespace dolfin
   public:
 
     // Create equality boundary condition for sub domain
-    EqualityBC(const FunctionSpace& V,
+    EqualityBC(const GenericFunctionSpace& V,
                const SubDomain& sub_domain);
 
     // Create equality boundary condition for sub domain
-    EqualityBC(boost::shared_ptr<const FunctionSpace> V,
+    EqualityBC(boost::shared_ptr<const GenericFunctionSpace> V,
                const SubDomain& sub_domain);
 
     // Create boundary condition for boundary data included in the mesh
-    EqualityBC(const FunctionSpace& V,
-               uint sub_domain);
+    EqualityBC(const GenericFunctionSpace& V, uint sub_domain);
 
     // Create boundary condition for boundary data included in the mesh
-    EqualityBC(boost::shared_ptr<const FunctionSpace> V,
+    EqualityBC(boost::shared_ptr<const GenericFunctionSpace> V,
                uint sub_domain);
 
     // Destructor
@@ -90,7 +89,7 @@ namespace dolfin
   private:
 
     // Vector of equal dofs
-    std::vector< uint > equal_dofs;
+    std::vector<uint> equal_dofs;
 
   };
 

@@ -21,7 +21,7 @@ namespace dolfin
   template<class T> class Array;
   class GenericMatrix;
   class GenericVector;
-  class FunctionSpace;
+  class GenericFunctionSpace;
 
   /// Common base class for boundary conditions
 
@@ -30,10 +30,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    BoundaryCondition(const FunctionSpace& V);
+    BoundaryCondition(const GenericFunctionSpace& V);
 
     /// Constructor
-    BoundaryCondition(boost::shared_ptr<const FunctionSpace> V);
+    BoundaryCondition(boost::shared_ptr<const GenericFunctionSpace> V);
 
     /// Destructor
     virtual ~BoundaryCondition();
@@ -54,10 +54,10 @@ namespace dolfin
     virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const = 0;
 
     /// Return function space
-    const FunctionSpace& function_space() const;
+    const GenericFunctionSpace& function_space() const;
 
     /// Return shared pointer to function space
-    boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
+    boost::shared_ptr<const GenericFunctionSpace> function_space_ptr() const;
 
   protected:
 
@@ -72,7 +72,7 @@ namespace dolfin
     public:
 
       // Constructor
-      LocalData(const FunctionSpace& V);
+      LocalData(const GenericFunctionSpace& V);
 
       // Destructor
       ~LocalData();
@@ -97,7 +97,7 @@ namespace dolfin
     };
 
     // The function space (possibly a sub function space)
-    boost::shared_ptr<const FunctionSpace> _function_space;
+    boost::shared_ptr<const GenericFunctionSpace> _function_space;
 
   };
 

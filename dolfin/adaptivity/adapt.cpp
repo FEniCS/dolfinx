@@ -302,15 +302,21 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
-  boost::shared_ptr<const FunctionSpace> W = bc.function_space_ptr();
+  boost::shared_ptr<const GenericFunctionSpace> W = bc.function_space_ptr();
   boost::shared_ptr<const FunctionSpace> V;
+
+  // FIXME: Remove when subspaces sorted out
+  const FunctionSpace* _W = dynamic_cast<const FunctionSpace*>(W.get());
+  if (!_W)
+    error("Dynamic cast in adapt failed.");
+
 
   // Refine function space
   const Array<uint>& component(W->component());
   if (component.size() == 0)
   {
-    adapt(*W, refined_mesh);
-    V = W->child_shared_ptr();
+    adapt(*_W, refined_mesh);
+    V = _W->child_shared_ptr();
   }
   else
   {
@@ -330,7 +336,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 
   // Create refined markers
   std::vector<std::pair<uint, uint> > refined_markers;
-  adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
+  adapt_markers(refined_markers, *refined_mesh, markers, _W->mesh());
 
   // Extract value
   const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());

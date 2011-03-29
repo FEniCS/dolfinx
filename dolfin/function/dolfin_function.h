@@ -3,6 +3,7 @@
 
 // DOLFIN function interface
 
+#include <dolfin/function/GenericFunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>

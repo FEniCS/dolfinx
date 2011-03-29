@@ -19,6 +19,7 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/VariationalProblem.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/GenericFunctionSpace.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
@@ -138,7 +139,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i].get()));
 
     // Extract SubSpace component
-    const FunctionSpace& V(bc.function_space());
+    const GenericFunctionSpace& V = bc.function_space();
     const Array<uint>& component(V.component());
 
     // If bcs[i].function_space is non subspace:

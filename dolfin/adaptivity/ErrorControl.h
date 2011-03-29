@@ -9,8 +9,8 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/function/FunctionSpace.h>
 
 namespace dolfin
 {
@@ -19,7 +19,6 @@ namespace dolfin
   class DirichletBC;
   class Form;
   class Function;
-  class FunctionSpace;
   class SpecialFacetFunction;
   class Vector;
 

@@ -81,8 +81,8 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 //-----------------------------------------------------------------------------
 void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficients,
                                          const Function& v,
-                                         const FunctionSpace& V,
-                                         const FunctionSpace& W,
+                                         const GenericFunctionSpace& V,
+                                         const GenericFunctionSpace& W,
                                          const Cell& cell0,
                                          const ufc::cell& c0,
                                          const std::vector<uint>& dofs,
@@ -135,7 +135,7 @@ void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
                                       std::map<uint, std::map<uint, uint> >& cell2dof2row,
                                       const Cell& cell0,
                                       const ufc::cell& c0,
-                                      const FunctionSpace& V)
+                                      const GenericFunctionSpace& V)
 {
   // Counter for matrix row index
   uint row = 0;
@@ -158,8 +158,8 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
                                        const Cell& cell1,
                                        const ufc::cell& c0,
                                        const ufc::cell& c1,
-                                       const FunctionSpace& V,
-                                       const FunctionSpace& W,
+                                       const GenericFunctionSpace& V,
+                                       const GenericFunctionSpace& W,
                                        const Function& v,
                                        std::map<uint, uint>& dof2row)
 {
@@ -194,7 +194,7 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint>
 Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                                   const FunctionSpace& V,
+                                   const GenericFunctionSpace& V,
                                    uint& row,
                                    std::set<uint>& unique_dofs)
 {

@@ -54,11 +54,11 @@ namespace dolfin
   public:
 
     /// Create periodic boundary condition for sub domain
-    PeriodicBC(const FunctionSpace& V,
+    PeriodicBC(const GenericFunctionSpace& V,
                const SubDomain& sub_domain);
 
     /// Create periodic boundary condition for sub domain
-    PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
+    PeriodicBC(boost::shared_ptr<const GenericFunctionSpace> V,
                boost::shared_ptr<const SubDomain> sub_domain);
 
     /// Destructor
@@ -88,7 +88,8 @@ namespace dolfin
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Extract dof pairs for sub space and append to list
-    void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<uint, uint> >& dof_pairs);
+    void extract_dof_pairs(const GenericFunctionSpace& function_space,
+                           std::vector<std::pair<uint, uint> >& dof_pairs);
 
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;

@@ -43,6 +43,11 @@ namespace dolfin
 %rename(_in) dolfin::Function::in;
 
 //-----------------------------------------------------------------------------
+// Modifying the interface of GenericFunctionSpace
+//-----------------------------------------------------------------------------
+%rename(sub) dolfin::GenericFunctionSpace::operator[];
+
+//-----------------------------------------------------------------------------
 // Modifying the interface of FunctionSpace
 //-----------------------------------------------------------------------------
 %rename(sub) dolfin::FunctionSpace::operator[];

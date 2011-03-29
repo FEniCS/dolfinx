@@ -147,6 +147,7 @@
 
 // DOLFIN headers included from function
 %include "dolfin/swig/function_pre.i"
+%include "dolfin/function/GenericFunctionSpace.h"
 %include "dolfin/function/GenericFunction.h"
 %include "dolfin/function/Expression.h"
 %include "dolfin/function/Function.h"

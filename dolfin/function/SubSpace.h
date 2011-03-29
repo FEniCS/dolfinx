@@ -30,11 +30,11 @@ namespace dolfin
 
     /// Create subspace for given component (one level)
     SubSpace(const FunctionSpace& V,
-             uint component);
+             unsigned int component);
 
     /// Create subspace for given component (two levels)
     SubSpace(const FunctionSpace& V,
-             uint component, uint sub_component);
+             unsigned int component, uint sub_component);
 
     /// Create subspace for given component (n levels)
     SubSpace(const FunctionSpace& V,

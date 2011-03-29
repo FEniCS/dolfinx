@@ -23,6 +23,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
+#include "GenericFunctionSpace.h"
 
 namespace dolfin
 {
@@ -39,7 +40,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>
+  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>, public GenericFunctionSpace
   {
   public:
 
@@ -102,7 +103,7 @@ namespace dolfin
                      const GenericFunction& v) const;
 
     /// Extract sub space for component
-    boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
+    boost::shared_ptr<GenericFunctionSpace> operator[] (uint i) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace>

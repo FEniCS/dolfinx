@@ -164,7 +164,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
+boost::shared_ptr<GenericFunctionSpace> FunctionSpace::operator[] (uint i) const
 {
   std::vector<uint> component;
   component.push_back(i);

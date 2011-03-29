@@ -34,6 +34,7 @@ namespace dolfin
   class DirichletBC;
   class Function;
   class FunctionSpace;
+  class GenericFunctionSpace;
 
   /// This class implements an algorithm for extrapolating a function
   /// on a given function space from an approximation of that function
@@ -61,17 +62,17 @@ namespace dolfin
                                   std::map<uint, std::map<uint, uint> >& cell2dof2row,
                                   const Cell& cell0,
                                   const ufc::cell& c0,
-                                  const FunctionSpace& V);
+                                  const GenericFunctionSpace& V);
 
     // Compute unique dofs in given cell
     static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                                                    const FunctionSpace& V,
+                                                    const GenericFunctionSpace& V,
                                                     uint& row, std::set<uint>& unique_dofs);
 
     // Compute coefficients on given cell
     static void compute_coefficients(std::vector<std::vector<double> >& coefficients,
-                                     const Function&v, const FunctionSpace& V,
-                                     const FunctionSpace& W, const Cell& cell0,
+                                     const Function&v, const GenericFunctionSpace& V,
+                                     const GenericFunctionSpace& W, const Cell& cell0,
                                      const ufc::cell& c0,
                                      const std::vector<uint>& dofs,
                                      uint& offset);
@@ -83,8 +84,8 @@ namespace dolfin
                                    const Cell& cell1,
                                    const ufc::cell& c0,
                                    const ufc::cell& c1,
-                                   const FunctionSpace& V,
-                                   const FunctionSpace& W,
+                                   const GenericFunctionSpace& V,
+                                   const GenericFunctionSpace& W,
                                    const Function& v,
                                    std::map<uint, uint>& dof2row);
 

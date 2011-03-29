@@ -65,7 +65,7 @@ typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordi
 typedef coordinate_map::iterator coordinate_iterator;
 
 //-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(const FunctionSpace& V,
+PeriodicBC::PeriodicBC(const GenericFunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
     num_dof_pairs(0), master_dofs(0), slave_dofs(0),
@@ -77,7 +77,7 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
   rebuild();
 }
 //-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
+PeriodicBC::PeriodicBC(boost::shared_ptr<const GenericFunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain),
     num_dof_pairs(0), master_dofs(0), slave_dofs(0),
@@ -238,7 +238,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
+void PeriodicBC::extract_dof_pairs(const GenericFunctionSpace& function_space,
                                    std::vector<std::pair<uint, uint> >& dof_pairs)
 {
   // Call recursively for subspaces, should work for arbitrary nesting
