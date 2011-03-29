@@ -131,15 +131,6 @@ namespace dolfin
     // Friends
     friend class Function;
 
-    // The mesh
-    boost::shared_ptr<const Mesh> _mesh;
-
-    // The finite element
-    boost::shared_ptr<const FiniteElement> _element;
-
-    // The dofmap
-    boost::shared_ptr<const GenericDofMap> _dofmap;
-
     // The component (for sub spaces)
     Array<uint> _component;
 
