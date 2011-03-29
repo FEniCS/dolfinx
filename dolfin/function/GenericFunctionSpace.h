@@ -20,21 +20,30 @@ namespace dolfin
 
   class GenericFunctionSpace //: public Hierarchical<GenericFunctionSpace>
   {
-  public:
+  protected:
 
     /// Create function space for given mesh, element and dofmap (shared data)
     GenericFunctionSpace(boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const GenericDofMap> dofmap);
 
-  protected:
 
     /// Create empty function space for later initialization. This
     /// constructor is intended for use by any sub-classes which need
     /// to construct objects before the initialisation of the base
     /// class. Data can be attached to the base class using
     /// FunctionSpace::attach(...).
-   GenericFunctionSpace(boost::shared_ptr<const Mesh> mesh);
+    GenericFunctionSpace(boost::shared_ptr<const Mesh> mesh);
+
+    /// Copy constructor
+    GenericFunctionSpace(const GenericFunctionSpace& V);
+
+    /// Assignment operator
+    const GenericFunctionSpace& operator= (const GenericFunctionSpace& V);
+
+    /// Attach data to an empty FunctionSpace
+    void attach(boost::shared_ptr<const FiniteElement> element,
+                boost::shared_ptr<const GenericDofMap> dofmap);
 
   public:
 

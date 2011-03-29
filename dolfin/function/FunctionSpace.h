@@ -66,14 +66,6 @@ namespace dolfin
     /// Destructor
     virtual ~FunctionSpace();
 
-  protected:
-
-    /// Attach data to an empty FunctionSpace
-    void attach(boost::shared_ptr<const FiniteElement> element,
-                boost::shared_ptr<const GenericDofMap> dofmap);
-
-  public:
-
     /// Assignment operator
     const FunctionSpace& operator= (const FunctionSpace& V);
 
@@ -98,11 +90,11 @@ namespace dolfin
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
-    { return &cell.mesh() == &(*_mesh); }
+    { return &cell.mesh() == &this->mesh(); }
 
     /// Check if function space has given element
     bool has_element(const FiniteElement& element) const
-    { return element.hash() == _element->hash(); }
+    { return element.hash() == this->element().hash(); }
 
     /// Return component (relative to super space)
     const Array<uint>& component() const;
