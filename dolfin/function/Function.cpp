@@ -49,8 +49,7 @@ Function::Function(const FunctionSpace& V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
@@ -77,14 +76,11 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
-    _vector(x),
+  : Hierarchical<Function>(*this), _function_space(V), _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
-  // Check that we don't have a subspace
-  if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+  // We do not check for a subspace since this constructor is used for creating
+  // subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
@@ -92,8 +88,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -132,8 +127,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace

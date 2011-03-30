@@ -40,28 +40,14 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
-                             boost::shared_ptr<const FiniteElement> element,
-                             boost::shared_ptr<const GenericDofMap> dofmap)
-  : Hierarchical<FunctionSpace>(*this),
-    _mesh(mesh), _element(element), _dofmap(dofmap)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh)
   : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh)
-  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V) : Hierarchical<FunctionSpace>(*this)
+FunctionSpace::FunctionSpace(const FunctionSpace& V)
+  : Hierarchical<FunctionSpace>(*this)
 {
   // Assign data (will be shared)
   *this = V;
