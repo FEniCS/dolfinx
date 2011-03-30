@@ -113,7 +113,7 @@ namespace dolfin
     { return element.hash() == _element->hash(); }
 
     /// Return component (relative to super space)
-    const Array<uint>& component() const;
+    const std::vector<uint>& component() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -136,7 +136,8 @@ namespace dolfin
     boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
-    Array<uint> _component;
+    //Array<uint> _component;
+    std::vector<uint> _component;
 
     // Cache of sub spaces
     mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;

@@ -138,8 +138,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i].get()));
 
     // Extract SubSpace component
-    const FunctionSpace& V(bc.function_space());
-    const Array<uint>& component(V.component());
+    const std::vector<uint> component = bc.function_space().component();
 
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
@@ -153,13 +152,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
       continue;
     }
 
-    // Reconstruct std::vector version of Array
-    std::vector<uint> sub_component;
-    for (uint c=0; c < component.size(); c++)
-      sub_component.push_back(component[c]);
-
     // Create Subspace of _Ez_h
-    SubSpace S(*_E, sub_component);
+    SubSpace S(*_E, component);
 
     // Create corresponding boundary condition for extrapolation
     DirichletBC e_bc(S, bc.value(), bc.markers());

@@ -127,8 +127,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>
-    refined_space(new FunctionSpace(refined_mesh, refined_element,
-                                    refined_dofmap));
+    refined_space(new FunctionSpace(refined_mesh, refined_element, refined_dofmap));
 
   // Set parent / child
   set_parent_child(space, refined_space);
@@ -223,15 +222,13 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     adapt(*cell_domains, refined_mesh);
     refined_form->cell_domains = cell_domains->child_shared_ptr();
   }
-  const MeshFunction<uint>* exterior_domains =
-    form.exterior_facet_domains_shared_ptr().get();
+  const MeshFunction<uint>* exterior_domains = form.exterior_facet_domains_shared_ptr().get();
   if (exterior_domains)
   {
     adapt(*exterior_domains, refined_mesh);
     refined_form->exterior_facet_domains = exterior_domains->child_shared_ptr();
   }
-  const MeshFunction<uint>* interior_domains =
-    form.interior_facet_domains_shared_ptr().get();
+  const MeshFunction<uint>* interior_domains = form.interior_facet_domains_shared_ptr().get();
   if (interior_domains)
   {
     adapt(*interior_domains, refined_mesh);
@@ -306,7 +303,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   boost::shared_ptr<const FunctionSpace> V;
 
   // Refine function space
-  const Array<uint>& component(W->component());
+  const std::vector<uint> component = W->component();
   if (component.size() == 0)
   {
     adapt(*W, refined_mesh);
@@ -315,14 +312,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   else
   {
     adapt(S, refined_mesh);
-
-    // Reconstruct std::vector version of Array, and use as
-    // component. (SubSpace extracts own version of component.)
-    std::vector<uint> sub_component;
-    for (uint c=0; c < component.size(); c++)
-      sub_component.push_back(component[c]);
-
-    V.reset(new SubSpace(S.child(), sub_component));
+    V.reset(new SubSpace(S.child(), component));
   }
 
   // Extract markers
@@ -422,8 +412,10 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   // or bad.
   uint max_value = 0;
   for (uint i = 0; i < mesh_function.size(); i++)
+  {
     if (mesh_function[i] > max_value)
       max_value = mesh_function[i];
+  }
   const uint undefined = max_value + 1;
 
   // Map values of mesh function into refined mesh function
@@ -514,3 +506,4 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     }
   }
 }
+//-----------------------------------------------------------------------------

@@ -202,7 +202,7 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Array<dolfin::uint>& FunctionSpace::component() const
+const std::vector<dolfin::uint>& FunctionSpace::component() const
 {
   return _component;
 }
