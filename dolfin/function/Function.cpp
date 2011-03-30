@@ -40,6 +40,10 @@ Function::Function(const FunctionSpace& V)
     _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 }
@@ -49,6 +53,10 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 }
@@ -59,6 +67,10 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 }
@@ -70,6 +82,10 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 }
@@ -81,6 +97,14 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 }
@@ -90,6 +114,10 @@ Function::Function(const FunctionSpace& V, std::string filename)
     _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 
@@ -108,6 +136,10 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());

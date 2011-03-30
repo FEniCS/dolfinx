@@ -184,7 +184,7 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
     identifier << component[i] << ".";
 
   // Check if sub space is already in the cache
-  std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
+  std::map<std::string, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
   subspace = subspaces.find(identifier.str());
   if (subspace != subspaces.end())
     return subspace->second;
