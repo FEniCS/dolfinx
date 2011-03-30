@@ -114,7 +114,9 @@ show :
   petsc_get_variable(PETSC_INCLUDE PETSC_INCLUDE)          # 3.1
   petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)  # dev
   set(PETSC_INCLUDE ${PETSC_INCLUDE} ${PETSC_CC_INCLUDES})
-  petsc_get_variable(PETSC_LIB PETSC_LIB)
+  petsc_get_variable(PETSC_LIB_BASIC PETSC_LIB_BASIC)
+  petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
+  set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
 
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
@@ -123,6 +125,13 @@ show :
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
+
+  # Add X11 includes and libraries on Mac
+  if (APPLE)
+    find_package(X11)
+    list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
+    list(APPEND PETSC_LIBRARIES ${X11_LIBRARIES})
+  endif()
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
