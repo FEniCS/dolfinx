@@ -13,7 +13,6 @@
 
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionSpace.h>
 
 namespace dolfin
 {
@@ -22,6 +21,7 @@ namespace dolfin
   class ErrorControl;
   class Form;
   class Function;
+  class FunctionSpace;
   class GoalFunctional;
   template<class T> class MeshFunction;
 

@@ -14,7 +14,6 @@
 #define __DOLFIN_ADAPT_H
 
 #include <vector>
-#include "dolfin/function/FunctionSpace.h"
 
 namespace dolfin
 {
@@ -22,6 +21,7 @@ namespace dolfin
   // Forward declarations
   class Mesh;
   template <class T> class MeshFunction;
+  class FunctionSpace;
   class GenericFunction;
   class DirichletBC;
   class Form;

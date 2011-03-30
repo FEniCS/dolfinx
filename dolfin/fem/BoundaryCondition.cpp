@@ -13,7 +13,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/function/GenericFunctionSpace.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "Form.h"
 #include "BoundaryCondition.h"
@@ -21,13 +20,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition(const GenericFunctionSpace& V)
+BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition(boost::shared_ptr<const GenericFunctionSpace> V)
+BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V)
 {
   // Do nothing
@@ -38,7 +37,13 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunctionSpace> BoundaryCondition::function_space() const
+const FunctionSpace& BoundaryCondition::function_space() const
+{
+  assert(_function_space);
+  return *_function_space;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() const
 {
   return _function_space;
 }
@@ -89,7 +94,7 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
   // FIXME: Check case A.size() > _function_space->dim() for subspaces
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::LocalData::LocalData(const GenericFunctionSpace& V)
+BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
   : n(0), w(0), cell_dofs(0), facet_dofs(0),
     array_coordinates(V.dofmap().max_cell_dimension())
 {

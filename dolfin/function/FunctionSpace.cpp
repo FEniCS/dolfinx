@@ -35,25 +35,36 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const GenericDofMap> dofmap)
   : Hierarchical<FunctionSpace>(*this),
-    GenericFunctionSpace(mesh, element, dofmap)
+    _mesh(mesh), _element(element), _dofmap(dofmap)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
+                             boost::shared_ptr<const FiniteElement> element,
+                             boost::shared_ptr<const GenericDofMap> dofmap)
+  : Hierarchical<FunctionSpace>(*this),
+    _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh)
-  : Hierarchical<FunctionSpace>(*this), GenericFunctionSpace(mesh)
+  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
-  : Hierarchical<FunctionSpace>(*this), GenericFunctionSpace(V)
-
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh)
+  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
-  _component = V._component;
-
-  // Call assignment operator for base class
-  Hierarchical<FunctionSpace>::operator=(V);
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(const FunctionSpace& V) : Hierarchical<FunctionSpace>(*this)
+{
+  // Assign data (will be shared)
+  *this = V;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
@@ -61,12 +72,19 @@ FunctionSpace::~FunctionSpace()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void FunctionSpace::attach(boost::shared_ptr<const FiniteElement> element,
+                           boost::shared_ptr<const GenericDofMap> dofmap)
+{
+  _element = element;
+  _dofmap  = dofmap;
+}
+//-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 {
-  // Call base class assignment operator
-  GenericFunctionSpace::operator=(V);
-
   // Assign data (will be shared)
+  _mesh      = V._mesh;
+  _element   = V._element;
+  _dofmap    = V._dofmap;
   _component = V._component;
 
   // Call assignment operator for base class
@@ -75,47 +93,70 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const Mesh& FunctionSpace::mesh() const
+{
+  assert(_mesh);
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------
+const FiniteElement& FunctionSpace::element() const
+{
+  assert(_element);
+  return *_element;
+}
+//-----------------------------------------------------------------------------
+const GenericDofMap& FunctionSpace::dofmap() const
+{
+  assert(_dofmap);
+  return *_dofmap;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FunctionSpace::dim() const
+{
+  return dofmap().global_dimension();
+}
+//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
-  const FiniteElement& element = this->element();
-  const GenericDofMap& dofmap = this->dofmap();
-  const Mesh& mesh = this->mesh();
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Check that function ranks match
-  if (element.value_rank() != v.value_rank())
+  if (element().value_rank() != v.value_rank())
     error("Cannot interpolate functions of different ranks.");
 
   // Check that function dims match
-  for (uint i = 0; i < element.value_rank(); ++i)
+  for (uint i = 0; i < element().value_rank(); ++i)
   {
-    if (element.value_dimension(i) != v.value_dimension(i))
+    if (element().value_dimension(i) != v.value_dimension(i))
       error("Cannot interpolate functions with different value dimensions.");
   }
 
   // Initialize vector of expansion coefficients
-  expansion_coefficients.resize(dofmap.global_dimension());
+  expansion_coefficients.resize(_dofmap->global_dimension());
   expansion_coefficients.zero();
 
   // Initialize local arrays
-  std::vector<double> cell_coefficients(dofmap.max_cell_dimension());
+  std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  UFCCell ufc_cell(*_mesh);
+  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
     ufc_cell.update(*cell);
 
     // Restrict function to cell
-    v.restrict(&cell_coefficients[0], element, *cell, ufc_cell);
+    v.restrict(&cell_coefficients[0], this->element(), *cell, ufc_cell);
 
     // Tabulate dofs
-    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<uint>& cell_dofs =  _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set(&cell_coefficients[0],
-                               dofmap.cell_dimension(cell->index()),
+                               _dofmap->cell_dimension(cell->index()),
                                &cell_dofs[0]);
   }
 
@@ -123,7 +164,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericFunctionSpace> FunctionSpace::operator[] (uint i) const
+boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 {
   std::vector<uint> component;
   component.push_back(i);
@@ -191,18 +232,20 @@ std::string FunctionSpace::str(bool verbose) const
     // No verbose output implemented
   }
   else
+  {
     s << "<FunctionSpace of dimension " << dim() << ">";
+  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  for (CellIterator cell(mesh()); !cell.end(); ++cell)
+  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const uint n = dofmap().cell_dimension(cell->index());
+    const uint n = _dofmap->cell_dimension(cell->index());
     std::vector<uint> dofs(n);
-    dofmap().tabulate_dofs(&dofs[0], *cell);
+    _dofmap->tabulate_dofs(&dofs[0], *cell);
 
     cout << cell->index() << ":";
     for (uint i = 0; i < n; i++)

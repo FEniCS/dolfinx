@@ -14,7 +14,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/function/GenericFunctionSpace.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -40,7 +40,7 @@ const std::set<std::string> DirichletBC::methods
             = boost::assign::list_of("topological")("geometric")("pointwise");
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const SubDomain& sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
@@ -52,7 +52,7 @@ DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g
   init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
@@ -65,7 +65,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
   init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain, std::string method)
   : BoundaryCondition(V),
@@ -78,7 +78,7 @@ DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
@@ -92,7 +92,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          uint sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
@@ -103,7 +103,7 @@ DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          uint sub_domain, std::string method)
   : BoundaryCondition(V),
@@ -115,7 +115,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
   : BoundaryCondition(V),
@@ -127,7 +127,7 @@ DirichletBC::DirichletBC(const GenericFunctionSpace& V, const GenericFunction& g
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
@@ -265,7 +265,7 @@ void DirichletBC::zero_columns(GenericMatrix& A, GenericVector& b, double diag_v
     if (diag_val != 0.0 && is_bc_dof[row])
     {
       A.getrow(row, cols, vals);
-      for (uint j = 0; j < cols.size(); j++)
+      for (uint j=0; j<cols.size(); j++)
         vals[j] = (cols[j]==row) * diag_val;
       A.setrow(row, cols, vals);
       A.apply("insert");
@@ -275,7 +275,7 @@ void DirichletBC::zero_columns(GenericMatrix& A, GenericVector& b, double diag_v
     {
       A.getrow(row, cols, vals);
       bool row_changed=false;
-      for (uint j = 0; j < cols.size(); j++)
+      for (uint j=0; j<cols.size(); j++)
       {
         const uint col = cols[j];
 
@@ -439,7 +439,6 @@ void DirichletBC::apply(GenericMatrix* A,
 
   // Compute dofs and values
   compute_bc(boundary_values, data, _method);
-
 
   // Copy boundary value data to arrays
   const uint size = boundary_values.size();

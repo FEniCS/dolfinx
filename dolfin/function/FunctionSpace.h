@@ -23,7 +23,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
-#include "GenericFunctionSpace.h"
 
 namespace dolfin
 {
@@ -40,9 +39,14 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>, public GenericFunctionSpace
+  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>
   {
   public:
+
+    /// Create function space for given mesh, element and dofmap (shared data)
+    FunctionSpace(boost::shared_ptr<Mesh> mesh,
+                  boost::shared_ptr<const FiniteElement> element,
+                  boost::shared_ptr<const GenericDofMap> dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,
@@ -56,6 +60,9 @@ namespace dolfin
     /// to construct objects before the initialisation of the base
     /// class. Data can be attached to the base class using
     /// FunctionSpace::attach(...).
+    FunctionSpace(boost::shared_ptr<Mesh> mesh);
+
+    /// Create empty function space for later initialization (const version)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
@@ -66,11 +73,28 @@ namespace dolfin
     /// Destructor
     virtual ~FunctionSpace();
 
+  protected:
+
+    /// Attach data to an empty FunctionSpace
+    void attach(boost::shared_ptr<const FiniteElement> element,
+                boost::shared_ptr<const GenericDofMap> dofmap);
+
+  public:
+
     /// Assignment operator
     const FunctionSpace& operator= (const FunctionSpace& V);
 
+    /// Return mesh
+    const Mesh& mesh() const;
+
+    /// Return finite element
+    const FiniteElement& element() const;
+
+    /// Return dofmap
+    const GenericDofMap& dofmap() const;
+
     /// Return dimension of function space
-    //uint dim() const;
+    uint dim() const;
 
     /// Interpolate function v into function space, returning the vector of
     /// expansion coefficients
@@ -78,7 +102,7 @@ namespace dolfin
                      const GenericFunction& v) const;
 
     /// Extract sub space for component
-    boost::shared_ptr<GenericFunctionSpace> operator[] (uint i) const;
+    boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace>
@@ -90,11 +114,15 @@ namespace dolfin
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
-    { return &cell.mesh() == &this->mesh(); }
+    {
+      return &cell.mesh() == &(*_mesh);
+    }
 
     /// Check if function space has given element
     bool has_element(const FiniteElement& element) const
-    { return element.hash() == this->element().hash(); }
+    {
+      return element.hash() == _element->hash();
+    }
 
     /// Return component (relative to super space)
     const Array<uint>& component() const;
@@ -109,6 +137,15 @@ namespace dolfin
 
     // Friends
     friend class Function;
+
+    // The mesh
+    boost::shared_ptr<const Mesh> _mesh;
+
+    // The finite element
+    boost::shared_ptr<const FiniteElement> _element;
+
+    // The dofmap
+    boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
     Array<uint> _component;

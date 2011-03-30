@@ -67,8 +67,6 @@
 %shared_ptr(dolfin::PeriodicBC)
 
 // function
-%shared_ptr(dolfin::GenericFunctionSpace)
-
 %shared_ptr(dolfin::Hierarchical<dolfin::FunctionSpace>)
 %shared_ptr(dolfin::FunctionSpace)
 %shared_ptr(dolfin::SubSpace)

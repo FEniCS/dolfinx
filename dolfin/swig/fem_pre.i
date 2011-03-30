@@ -22,25 +22,25 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
 
-%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 const SubDomain&,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 const MeshFunction<unsigned int>&,
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const GenericFunctionSpace&,
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::PeriodicBC::PeriodicBC(const GenericFunctionSpace&, const SubDomain&);
+%ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&, const SubDomain&);
 
-%ignore dolfin::DirichletBC(const GenericFunctionSpace&,
+%ignore dolfin::DirichletBC(const FunctionSpace&,
                             const GenericFunction&,
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
@@ -59,7 +59,8 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
 //-----------------------------------------------------------------------------
-%rename (_function_space) dolfin::BoundaryCondition::function_space;
+%ignore dolfin::BoundaryCondition::function_space;
+%rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
 
 //-----------------------------------------------------------------------------
 // Ignores domain assignment for Form class

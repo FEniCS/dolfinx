@@ -28,7 +28,7 @@
 namespace dolfin
 {
   class GenericFunction;
-  class GenericFunctionSpace;
+  class FunctionSpace;
   class Facet;
   class GenericMatrix;
   class GenericVector;
@@ -87,51 +87,51 @@ namespace dolfin
     typedef boost::unordered_map<uint, double> Map;
 
     /// Create boundary condition for subdomain
-    DirichletBC(const GenericFunctionSpace& V,
+    DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 const SubDomain& sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain
-    DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 boost::shared_ptr<const SubDomain> sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
-    DirichletBC(const GenericFunctionSpace& V,
+    DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
-    DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
-    DirichletBC(const GenericFunctionSpace& V,
+    DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
-    DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain by boundary markers
     /// (cells, local facet numbers)
-    DirichletBC(const GenericFunctionSpace& V,
+    DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 const std::vector<std::pair<uint, uint> >& markers,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain by boundary markers
     /// (cells, local facet numbers)
-    DirichletBC(boost::shared_ptr<const GenericFunctionSpace> V,
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 const std::vector<std::pair<uint, uint> >& markers,
                 std::string method="topological");

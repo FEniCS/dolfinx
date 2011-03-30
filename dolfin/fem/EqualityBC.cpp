@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EqualityBC::EqualityBC(const GenericFunctionSpace& V,
+EqualityBC::EqualityBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V)
 {
@@ -35,7 +35,7 @@ EqualityBC::EqualityBC(const GenericFunctionSpace& V,
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
-EqualityBC::EqualityBC(boost::shared_ptr<const GenericFunctionSpace> V,
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V)
 {
@@ -43,7 +43,7 @@ EqualityBC::EqualityBC(boost::shared_ptr<const GenericFunctionSpace> V,
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
-EqualityBC::EqualityBC(const GenericFunctionSpace& V,
+EqualityBC::EqualityBC(const FunctionSpace& V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {
@@ -51,7 +51,7 @@ EqualityBC::EqualityBC(const GenericFunctionSpace& V,
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
-EqualityBC::EqualityBC(boost::shared_ptr<const GenericFunctionSpace> V,
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {

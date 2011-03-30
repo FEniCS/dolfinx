@@ -1,6 +1,5 @@
 // Auto generated import statements for the SWIG kernel module: 'function'
 
-%import(module="dolfin.cpp") "dolfin/function/GenericFunctionSpace.h"
 %import(module="dolfin.cpp") "dolfin/function/GenericFunction.h"
 %import(module="dolfin.cpp") "dolfin/function/Expression.h"
 %import(module="dolfin.cpp") "dolfin/function/Function.h"

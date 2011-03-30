@@ -19,7 +19,6 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/VariationalProblem.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/GenericFunctionSpace.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
@@ -139,9 +138,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
     DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i].get()));
 
     // Extract SubSpace component
-    boost::shared_ptr<const GenericFunctionSpace> V = bc.function_space();
-    assert(V);
-    const Array<uint>& component = V->component();
+    const FunctionSpace& V(bc.function_space());
+    const Array<uint>& component(V.component());
 
     // If bcs[i].function_space is non subspace:
     if (component.size() == 0)
@@ -157,7 +155,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
 
     // Reconstruct std::vector version of Array
     std::vector<uint> sub_component;
-    for (uint c = 0; c < component.size(); c++)
+    for (uint c=0; c < component.size(); c++)
       sub_component.push_back(component[c]);
 
     // Create Subspace of _Ez_h

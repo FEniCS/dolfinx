@@ -65,10 +65,7 @@ void LinearVariationalSolver::solve(Function& u,
 
     // Apply boundary conditions
     for (uint i = 0; i < problem.bcs().size(); i++)
-    {
-      assert(problem.bcs()[i]);
       problem.bcs()[i]->apply(*A, *b);
-    }
   }
 
   // Print vector/matrix
