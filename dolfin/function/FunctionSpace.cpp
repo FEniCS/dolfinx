@@ -202,6 +202,20 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace> FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
+{
+  if (_component.size() > 0)
+    error("Can only collapse function spaces that a sub-spaces.");
+
+  // Create collapsed DofMap
+  boost::unordered_map<uint, uint> collapsed_map;
+  boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_map, *_mesh));
+
+  // Create new FunctionsSpace and return
+  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
+  return collapsed_sub_space;
+}
+//-----------------------------------------------------------------------------
 const std::vector<dolfin::uint>& FunctionSpace::component() const
 {
   return _component;

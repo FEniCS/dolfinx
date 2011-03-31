@@ -190,6 +190,10 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
+    boost::unordered_map<uint, uint> collapsed_map;
+    _function_space = v._function_space->collapse(collapsed_map);
+
+    /*
     // Create collapsed dof map
     const GenericDofMap& v_dofmap = v._function_space->dofmap();
     boost::unordered_map<uint, uint> collapsed_map;
@@ -201,6 +205,7 @@ const Function& Function::operator= (const Function& v)
     // FIXME: This assertion doesn't work in parallel
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
     //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
+    */
 
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;
@@ -219,7 +224,7 @@ const Function& Function::operator= (const Function& v)
 
     // Initial new vector (global)
     init_vector();
-    assert(_vector->size() == collapsed_dofmap->global_dimension());
+    assert(_vector->size() == _function_space->dofmap().global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);

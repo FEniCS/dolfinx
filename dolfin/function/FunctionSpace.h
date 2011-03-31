@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
@@ -103,6 +104,11 @@ namespace dolfin
     /// Return function space with a new dof map
     boost::shared_ptr<FunctionSpace>
     collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const;
+
+    /// Collapse a subspace and return a new function space and a map from new
+    /// to old dofs
+    boost::shared_ptr<FunctionSpace>
+    collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
