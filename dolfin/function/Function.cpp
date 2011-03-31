@@ -190,22 +190,13 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
+    // Create new collapase FunctionsSpapce
     boost::unordered_map<uint, uint> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
-
-    /*
-    // Create collapsed dof map
-    const GenericDofMap& v_dofmap = v._function_space->dofmap();
-    boost::unordered_map<uint, uint> collapsed_map;
-    boost::shared_ptr<GenericDofMap> collapsed_dofmap(v_dofmap.collapse(collapsed_map, v._function_space->mesh()));
-
-    // Create new FunctionsSpapce
-    _function_space = v._function_space->collapse_sub_space(collapsed_dofmap);
 
     // FIXME: This assertion doesn't work in parallel
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
     //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
-    */
 
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;

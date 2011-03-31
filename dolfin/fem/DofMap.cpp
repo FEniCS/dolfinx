@@ -193,7 +193,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   assert(dofmap.size() == mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map if the collapsed
-  //        dof map is contiguous (0, . . . ,n)?
+  //        dof map is contiguous (0, . . . , n)?
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
@@ -207,6 +207,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
 
+  // FIXME: Check if this is needed?
   /*
   // Create UFC cell
   UFCCell ufc_cell(mesh);

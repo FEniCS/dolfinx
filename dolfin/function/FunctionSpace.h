@@ -101,10 +101,6 @@ namespace dolfin
     boost::shared_ptr<FunctionSpace>
     extract_sub_space(const std::vector<uint>& component) const;
 
-    /// Return function space with a new dof map
-    boost::shared_ptr<FunctionSpace>
-    collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const;
-
     /// Collapse a subspace and return a new function space and a map from new
     /// to old dofs
     boost::shared_ptr<FunctionSpace>
@@ -142,7 +138,6 @@ namespace dolfin
     boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
-    //Array<uint> _component;
     std::vector<uint> _component;
 
     // Cache of sub spaces
