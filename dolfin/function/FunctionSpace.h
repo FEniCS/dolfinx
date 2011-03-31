@@ -126,7 +126,7 @@ namespace dolfin
   private:
 
     // Friends
-    friend class Function;
+    //friend class Function;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
