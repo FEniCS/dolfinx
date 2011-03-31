@@ -12,9 +12,9 @@
 #define __FUNCTION_SPACE_H
 
 #include <map>
-#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
@@ -44,11 +44,6 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap (shared data)
-    FunctionSpace(boost::shared_ptr<Mesh> mesh,
-                  boost::shared_ptr<const FiniteElement> element,
-                  boost::shared_ptr<const GenericDofMap> dofmap);
-
-    /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const GenericDofMap> dofmap);
@@ -60,9 +55,6 @@ namespace dolfin
     /// to construct objects before the initialisation of the base
     /// class. Data can be attached to the base class using
     /// FunctionSpace::attach(...).
-    FunctionSpace(boost::shared_ptr<Mesh> mesh);
-
-    /// Create empty function space for later initialization (const version)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
@@ -108,24 +100,21 @@ namespace dolfin
     boost::shared_ptr<FunctionSpace>
     extract_sub_space(const std::vector<uint>& component) const;
 
-    /// Return function space with a new dof map
+    /// Collapse a subspace and return a new function space and a map from new
+    /// to old dofs
     boost::shared_ptr<FunctionSpace>
-    collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const;
+    collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
-    {
-      return &cell.mesh() == &(*_mesh);
-    }
+    { return &cell.mesh() == &(*_mesh); }
 
     /// Check if function space has given element
     bool has_element(const FiniteElement& element) const
-    {
-      return element.hash() == _element->hash();
-    }
+    { return element.hash() == _element->hash(); }
 
     /// Return component (relative to super space)
-    const Array<uint>& component() const;
+    const std::vector<uint>& component() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -134,9 +123,6 @@ namespace dolfin
     void print_dofmap() const;
 
   private:
-
-    // Friends
-    friend class Function;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
@@ -148,10 +134,10 @@ namespace dolfin
     boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
-    Array<uint> _component;
+    std::vector<uint> _component;
 
     // Cache of sub spaces
-    mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

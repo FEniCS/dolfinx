@@ -40,15 +40,22 @@ Function::Function(const FunctionSpace& V)
     _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 }
@@ -59,28 +66,40 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
-    _vector(x),
+  : Hierarchical<Function>(*this), _function_space(V), _vector(x),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // We do not check for a subspace since this constructor is used for creating
+  // subfunctions
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 }
@@ -90,6 +109,10 @@ Function::Function(const FunctionSpace& V, std::string filename)
     _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V.component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Initialize vector
   init_vector();
 
@@ -104,10 +127,13 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
-  : Hierarchical<Function>(*this),
-    _function_space(V),
+  : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
+  // Check that we don't have a subspace
+  if (V->component().size() > 0)
+    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
@@ -164,13 +190,9 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
-    // Create collapsed dof map
-    const GenericDofMap& v_dofmap = v._function_space->dofmap();
+    // Create new collapase FunctionsSpapce
     boost::unordered_map<uint, uint> collapsed_map;
-    boost::shared_ptr<GenericDofMap> collapsed_dofmap(v_dofmap.collapse(collapsed_map, v._function_space->mesh()));
-
-    // Create new FunctionsSpapce
-    _function_space = v._function_space->collapse_sub_space(collapsed_dofmap);
+    _function_space = v._function_space->collapse(collapsed_map);
 
     // FIXME: This assertion doesn't work in parallel
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
@@ -193,7 +215,7 @@ const Function& Function::operator= (const Function& v)
 
     // Initial new vector (global)
     init_vector();
-    assert(_vector->size() == collapsed_dofmap->global_dimension());
+    assert(_vector->size() == _function_space->dofmap().global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);

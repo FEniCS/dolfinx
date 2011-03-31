@@ -138,11 +138,6 @@ namespace dolfin
     /// Set interior facet domains
     void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
 
-    // FIXME: Remove these when the above shared_ptr version work from Python
-    void set_cell_domains(const MeshFunction<unsigned int>* cell_domains);
-    void set_exterior_facet_domains(const MeshFunction<unsigned int>* exterior_facet_domains);
-    void set_interior_facet_domains(const MeshFunction<unsigned int>* interior_facet_domains);
-
     /// Return UFC form
     const ufc::form& ufc_form() const;
 

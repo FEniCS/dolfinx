@@ -10,8 +10,6 @@
 // First added:  2008-09-11
 // Last changed: 2011-02-03
 
-#include <iostream>
-
 #include <dolfin/common/utils.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -40,28 +38,14 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
-                             boost::shared_ptr<const FiniteElement> element,
-                             boost::shared_ptr<const GenericDofMap> dofmap)
-  : Hierarchical<FunctionSpace>(*this),
-    _mesh(mesh), _element(element), _dofmap(dofmap)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh)
   : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh)
-  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V) : Hierarchical<FunctionSpace>(*this)
+FunctionSpace::FunctionSpace(const FunctionSpace& V)
+  : Hierarchical<FunctionSpace>(*this)
 {
   // Assign data (will be shared)
   *this = V;
@@ -178,45 +162,49 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
   assert(_element);
   assert(_dofmap);
 
-  // Create unique identifier string for sub space
-  std::ostringstream identifier;
-  for (uint i = 0; i < component.size(); ++i)
-    identifier << component[i] << ".";
-
   // Check if sub space is already in the cache
-  std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
-  subspace = subspaces.find(identifier.str());
+  std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
+  subspace = subspaces.find(component);
   if (subspace != subspaces.end())
     return subspace->second;
+  else
+  {
+    // Extract sub element
+    boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
-  // Extract sub element
-  boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
+    // Extract sub dofmap
+    boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
-  // Extract sub dofmap
-  boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+    // Create new sub space
+    boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
-  // Create new sub space
-  boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+    // Set component
+    new_sub_space->_component.resize(component.size());
+    for (uint i = 0; i < component.size(); i++)
+      new_sub_space->_component[i] = component[i];
 
-  // Set component
-  new_sub_space->_component.resize(component.size());
-  for (uint i = 0; i < component.size(); i++)
-    new_sub_space->_component[i] = component[i];
+    // Insert new sub space into cache
+    subspaces.insert(std::pair<std::vector<uint>, boost::shared_ptr<FunctionSpace> >(component, new_sub_space));
 
-  // Insert new sub space into cache
-  subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
-
-  return new_sub_space;
+    return new_sub_space;
+  }
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-FunctionSpace::collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const
+FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
 {
-  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
+  if (_component.size() == 0)
+    error("Can only collapse function spaces that a sub-spaces.");
+
+  // Create collapsed DofMap
+  boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
+
+  // Create new FunctionsSpace and return
+  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Array<dolfin::uint>& FunctionSpace::component() const
+const std::vector<dolfin::uint>& FunctionSpace::component() const
 {
   return _component;
 }
@@ -232,9 +220,7 @@ std::string FunctionSpace::str(bool verbose) const
     // No verbose output implemented
   }
   else
-  {
     s << "<FunctionSpace of dimension " << dim() << ">";
-  }
 
   return s.str();
 }

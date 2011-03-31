@@ -55,8 +55,8 @@ namespace dolfin
            const Mesh& mesh, bool distributed);
 
     /// Create a collapsed dofmap from parent_dofmap
-    DofMap(boost::unordered_map<uint, uint>& collapsed_map, const DofMap& dofmap_view,
-           const Mesh& mesh, bool distributed);
+    DofMap(boost::unordered_map<uint, uint>& collapsed_map,
+           const DofMap& dofmap_view, const Mesh& mesh, bool distributed);
 
   public:
 

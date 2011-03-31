@@ -32,7 +32,7 @@ set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LI
 string(REGEX REPLACE ":" ";" libdirs ${_SYSTEM_LIB_PATHS})
 foreach (libdir ${libdirs})
   get_filename_component(slepc_dir_location "${libdir}/" PATH)
-  list(APPEND slepc_dir_locations ${spelc_dir_location})
+  list(APPEND slepc_dir_locations ${slepc_dir_location})
 endforeach()
 
 # Try to figure out SLEPC_DIR by finding slepc.h
@@ -50,6 +50,13 @@ endif()
 
 # Get variables from SLEPc configuration
 if (SLEPC_DIR)
+
+  find_library(SLEPC_LIBRARY
+    NAMES slepc
+    HINTS ${SLEPC_DIR}/lib $ENV{SLEPC_DIR}/lib
+    DOC "The SLEPc library"
+    )
+  mark_as_advanced(SLEPC_LIBRARY)
 
   # Create a temporary Makefile to probe the SLEPcc configuration
   set(slepc_config_makefile ${PROJECT_BINARY_DIR}/Makefile.slepc)
@@ -73,7 +80,7 @@ show :
 
   # Call macro to get the SLEPc variables
   slepc_get_variable(SLEPC_INCLUDE SLEPC_INCLUDE)
-  slepc_get_variable(SLEPC_LIB SLEPC_LIB)
+  slepc_get_variable(SLEPC_EXTERNAL_LIB SLEPC_EXTERNAL_LIB)
 
   # Remove temporary Makefile
   file(REMOVE ${slepc_config_makefile})
@@ -81,11 +88,11 @@ show :
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
   resolve_includes(SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE}")
-  resolve_libraries(SLEPC_LIBRARIES "${SLEPC_LIB}")
+  resolve_libraries(SLEPC_EXTERNAL_LIB "${SLEPC_EXTERNAL_LIB}")
 
   # Add variables to CMake cache and mark as advanced
   set(SLEPC_INCLUDE_DIRS ${SLEPC_INCLUDE_DIRS} CACHE STRING "SLEPc include paths." FORCE)
-  set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} CACHE STRING "SLEPc libraries." FORCE)
+  set(SLEPC_LIBRARIES ${SLEPC_LIBRARY} ${SLEPC_EXTERNAL_LIB} CACHE STRING "SLEPc libraries." FORCE)
   mark_as_advanced(SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
 
   # Set flags for building test program
