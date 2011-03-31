@@ -55,8 +55,8 @@ public:
     Array<double> x(3);
     x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
 
-    Array<double> u0(2);
-    Array<double> u1(2);
+    Array<double> u0(1);
+    Array<double> u1(1);
 
     // User-defined functions (one from finite element space, one not)
     F0 f0;
@@ -68,7 +68,7 @@ public:
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
 
-#ifdef HAS_CGAL
+    #ifdef HAS_CGAL
     if (dolfin::MPI::num_processes() == 1)
     {
       // Test evaluation of a discrete function
@@ -83,9 +83,9 @@ public:
       const double tol = 1.0e-6;
       f1.eval(u0, x);
       g.eval(u1, x);
-      CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
+      CPPUNIT_ASSERT(std::abs(u0[0]-u1[0]) < tol);
     }
-#endif
+    #endif
   }
 };
 

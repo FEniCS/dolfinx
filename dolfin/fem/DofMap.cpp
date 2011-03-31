@@ -206,27 +206,6 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
     for (uint j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
-
-  // FIXME: Check if this is needed?
-  /*
-  // Create UFC cell
-  UFCCell ufc_cell(mesh);
-
-  // Build UFC-to-actual-dofs map
-  std::vector<uint> ufc_dofs(max_cell_dimension());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    ufc_cell.update(*cell);
-
-    // Tabulate UFC dofs (UFC map)
-    _ufc_dofmap->tabulate_dofs(&ufc_dofs[0], ufc_mesh, ufc_cell);
-
-    // Build UFC-to-actual-dofs map
-    std::vector<uint>& collapsed_dofs = dofmap[cell->index()];
-    for (uint j = 0; j < collapsed_dofs.size(); ++j)
-      ufc_map_to_dofmap[ufc_dofs[j]] = collapsed_dofs[j];
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
