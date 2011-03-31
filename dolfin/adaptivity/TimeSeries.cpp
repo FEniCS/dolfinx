@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-03-17
+// Last changed: 2011-03-31
 
 #include <algorithm>
 #include <sstream>
@@ -40,10 +40,11 @@ TimeSeries::TimeSeries(std::string name)
 {
   not_working_in_parallel("Storing of data to time series");
 
-  std::string filename;
+  // Set default parameters
+  parameters = default_parameters();
 
   // Read vector times
-  filename = TimeSeries::filename_times(_name, "vector");
+  std::string filename = TimeSeries::filename_times(_name, "vector");
   if (File::exists(filename))
   {
     // Read from file
@@ -75,7 +76,8 @@ TimeSeries::~TimeSeries()
 void TimeSeries::store(const GenericVector& vector, double t)
 {
   // Clear earlier history first time we store a value
-  if (!_cleared)
+  const bool clear_on_write = this->parameters["clear_on_write"];
+  if (!_cleared && clear_on_write)
     clear();
 
   // Store object
@@ -85,7 +87,8 @@ void TimeSeries::store(const GenericVector& vector, double t)
 void TimeSeries::store(const Mesh& mesh, double t)
 {
   // Clear earlier history first time we store a value
-  if (!_cleared)
+  const bool clear_on_write = this->parameters["clear_on_write"];
+  if (!_cleared && clear_on_write)
     clear();
 
   // Store object

@@ -1,3 +1,4 @@
+ - Add parameter "clear_on_write" to TimeSeries
  - Add support for input/output of nested parameter sets
  - Check for dimensions in linear solvers
  - Add support for automated error control for variational problems

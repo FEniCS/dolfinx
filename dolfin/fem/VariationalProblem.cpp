@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-03-11
+// Last changed: 2011-03-31
 
 #include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveVariationalSolver.h>

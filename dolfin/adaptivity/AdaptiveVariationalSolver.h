@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-15
+// Last changed: 2011-03-31
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H

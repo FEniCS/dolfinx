@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-25
+// Last changed: 2011-03-31
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -69,6 +69,14 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("time_series");
+      p.add("clear_on_write", true);
+      return p;
+    }
 
   private:
 
