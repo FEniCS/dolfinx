@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-03-28
-// Last changed: 2011-03-29
+// Last changed: 2011-03-31
 //
 // Unit tests for the parameter library
 
@@ -22,6 +22,8 @@ public:
 
   void test_simple()
   {
+
+
     // Create some parameters
     Parameters p0("test");
     p0.add("filename", "foo.txt");

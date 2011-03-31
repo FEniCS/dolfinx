@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added: 2009-03-03
-// Last changed: 2011-03-17
+// Last changed: 2011-03-31
 
 #include <libxml/relaxng.h>
 
