@@ -141,7 +141,7 @@ namespace dolfin
     std::vector<uint> _component;
 
     // Cache of sub spaces
-    mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

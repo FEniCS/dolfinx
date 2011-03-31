@@ -164,38 +164,36 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
   assert(_element);
   assert(_dofmap);
 
-  // Create unique identifier string for sub space
-  std::ostringstream identifier;
-  for (uint i = 0; i < component.size(); ++i)
-    identifier << component[i] << ".";
-
   // Check if sub space is already in the cache
-  std::map<std::string, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
-  subspace = subspaces.find(identifier.str());
+  std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
+  subspace = subspaces.find(component);
   if (subspace != subspaces.end())
     return subspace->second;
+  else
+  {
+    // Extract sub element
+    boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
-  // Extract sub element
-  boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
+    // Extract sub dofmap
+    boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
-  // Extract sub dofmap
-  boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+    // Create new sub space
+    boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
-  // Create new sub space
-  boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+    // Set component
+    new_sub_space->_component.resize(component.size());
+    for (uint i = 0; i < component.size(); i++)
+      new_sub_space->_component[i] = component[i];
 
-  // Set component
-  new_sub_space->_component.resize(component.size());
-  for (uint i = 0; i < component.size(); i++)
-    new_sub_space->_component[i] = component[i];
+    // Insert new sub space into cache
+    subspaces.insert(std::pair<std::vector<uint>, boost::shared_ptr<FunctionSpace> >(component, new_sub_space));
 
-  // Insert new sub space into cache
-  subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
-
-  return new_sub_space;
+    return new_sub_space;
+  }
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
+boost::shared_ptr<FunctionSpace>
+FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
 {
   if (_component.size() == 0)
     error("Can only collapse function spaces that a sub-spaces.");
@@ -224,9 +222,7 @@ std::string FunctionSpace::str(bool verbose) const
     // No verbose output implemented
   }
   else
-  {
     s << "<FunctionSpace of dimension " << dim() << ">";
-  }
 
   return s.str();
 }
