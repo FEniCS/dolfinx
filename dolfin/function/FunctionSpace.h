@@ -12,7 +12,6 @@
 #define __FUNCTION_SPACE_H
 
 #include <map>
-#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -124,9 +123,6 @@ namespace dolfin
     void print_dofmap() const;
 
   private:
-
-    // Friends
-    //friend class Function;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;

@@ -10,8 +10,6 @@
 // First added:  2008-09-11
 // Last changed: 2011-02-03
 
-#include <iostream>
-
 #include <dolfin/common/utils.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
