@@ -104,7 +104,7 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
 
         # Test to NumPy array
-        if MPI.num_processes() <= 1:
+        if MPI.num_processes() == 1:
             A2 = A.array()
             self.assertTrue(isinstance(A2,ndarray))
             self.assertEqual(A2.shape,(49,49))
@@ -377,8 +377,7 @@ class DataNotWorkingTester(AbstractBaseTest):
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-
-if MPI.num_processes() <= 1:
+if MPI.num_processes() == 1:
     class uBLASSparseTester(DataTester, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

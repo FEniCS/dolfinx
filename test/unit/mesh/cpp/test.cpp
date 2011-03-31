@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2010-12-08
+// Last changed: 2011-03-31
 //
 // Unit tests for the mesh library
 
@@ -293,7 +293,7 @@ int main()
   CPPUNIT_TEST_SUITE_REGISTRATION(MeshIterators);
 
   // FIXME: The following test breaks in parallel
-  if (dolfin::MPI::num_processes()==1)
+  if (dolfin::MPI::num_processes() == 1)
   {
     CPPUNIT_TEST_SUITE_REGISTRATION(SimpleShapes);
     CPPUNIT_TEST_SUITE_REGISTRATION(MeshRefinement);

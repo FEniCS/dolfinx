@@ -66,7 +66,7 @@ class Eval(unittest.TestCase):
                return
 
           # FIXME: eval does not work in parallel yet
-          if MPI.num_processes() == 0:
+          if MPI.num_processes() == 1:
               V2 = FunctionSpace(mesh, 'CG', 2)
               g = project(f3, V2)
               u3 = f3(x)
@@ -183,7 +183,7 @@ class Interpolate(unittest.TestCase):
                 return (2,)
 
         # Interpolation not working in parallel yet
-        if MPI.num_processes() == 0:
+        if MPI.num_processes() == 1:
             # Scalar interpolation
             f0 = F0()
             f = Function(V)

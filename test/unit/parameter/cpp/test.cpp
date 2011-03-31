@@ -77,12 +77,8 @@ public:
     p0.add(p01);
 
     // Save to file
-    if (dolfin::MPI::process_number() == 0)
-    {
-      File f0("test_parameters.xml");
-      f0 << p0;
-    }
-    dolfin::MPI::barrier();
+    File f0("test_parameters.xml");
+    f0 << p0;
 
     // Read from file
     Parameters p1;

@@ -48,7 +48,7 @@ class Interpolate(unittest.TestCase):
                 return (2,)
 
         # Interpolation not working in parallel yet (need number of global vertices in tests)
-        if MPI.num_processes() == 0:
+        if MPI.num_processes() == 1:
             # Scalar interpolation
             f0 = F0()
             f = Function(V)

@@ -126,7 +126,7 @@ class NamedMeshFunctions(unittest.TestCase):
                 self.assertTrue(test)
 
 # FIXME: The following test breaks in parallel
-if MPI.num_processes()==1:
+if MPI.num_processes() == 1:
     class SimpleShapes(unittest.TestCase):
 
         def testUnitSquare(self):
@@ -291,7 +291,7 @@ if MPI.num_processes()==1:
                     self.assertTrue(not mesh.all_intersected_entities(p))
                 else:
                     self.assertTrue(mesh.all_intersected_entities(p))
-            
+
 
         def testIntersectPoints(self):
             from numpy import linspace

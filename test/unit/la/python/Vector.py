@@ -294,8 +294,7 @@ class DataNotWorkingTester(AbstractBaseTest):
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-
-if MPI.num_processes() <= 1:
+if MPI.num_processes() == 1:
     class uBLASSparseTester(DataTester, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"

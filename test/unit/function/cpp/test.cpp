@@ -5,7 +5,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2007-05-24
-// Last changed: 2010-01-30
+// Last changed: 2011-03-31
 //
 // Unit tests for the function library
 
@@ -69,7 +69,7 @@ public:
                                  DOLFIN_EPS);
 
 #ifdef HAS_CGAL
-    if (dolfin::MPI::num_processes() == 0)
+    if (dolfin::MPI::num_processes() == 1)
     {
       // Test evaluation of a discrete function
       Projection::FunctionSpace V(mesh);
