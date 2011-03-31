@@ -152,6 +152,7 @@ class Assembly(unittest.TestCase):
         a0.cell_domains = cell_domains
         a1.exterior_facet_domains = exterior_facet_domains
 
+        parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
         self.assertAlmostEqual(assemble(a1, mesh=mesh), 1.0)
 
