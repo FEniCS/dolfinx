@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2011-03-25
+// Last changed: 2009-04-04
 //
 // Modified by Anders Logg, 2008-2009.
+// Modified by Kent-Andre Mardal, 2011.
 
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
@@ -104,6 +105,9 @@ namespace dolfin
 
     /// Topological dimension
     uint tdim;
+
+    // A map from named mesh data to arrays 
+    std::map<std::string, std::vector<uint>* > arrays;
 
     // Friends
     friend class XMLLocalMeshData;
