@@ -5,20 +5,21 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2010-02-10
-// Last changed: 2011-03-15
+// Last changed: 2011-04-04
 
 #include <map>
 
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/LocalMeshRefinement.h>
+
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/UniformMeshRefinement.h>
+#include <dolfin/refinement/LocalMeshRefinement.h>
+#include <dolfin/refinement/UniformMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/GenericFunction.h>
