@@ -63,13 +63,14 @@ namespace dolfin
 
       // Set number of entities for each topological dimension
       num_entities = new uint[mesh.topology().dim() + 1];
-      const std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
-      for (uint d = 0; d <= mesh.topology().dim(); d++)
+
+      // Use number of global entities if available (when running in parallel)
+      const std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
+      if (num_global_entities.size() > 0)
+        std::copy(num_global_entities.begin(), num_global_entities.end(), num_entities);
+      else
       {
-        // Use number of global entities if available (when running in parallel)
-        if (num_global_entities)
-          num_entities[d] = (*num_global_entities)[d];
-        else
+        for (uint d = 0; d <= mesh.topology().dim(); d++)
           num_entities[d] = mesh.size(d);
       }
     }
@@ -80,8 +81,7 @@ namespace dolfin
       topological_dimension = 0;
       geometric_dimension = 0;
 
-      if (num_entities)
-        delete [] num_entities;
+      delete [] num_entities;
       num_entities = 0;
     }
 
