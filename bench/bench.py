@@ -1,9 +1,11 @@
 "Run all benchmarks"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2010-03-26 -- 2010-03-26"
+__date__ = "2010-03-26 -- 2011-04-05"
 __copyright__ = "Copyright (C) 2010 Anders Logg"
 __license__  = "GNU LGPL version 2.1"
+
+# Modified by Johannes Ring, 2011
 
 import os, sys, time
 
@@ -14,8 +16,9 @@ def run_bench(arg, directory, files):
     # Skip directories not containing a benchmark
     bench_exec = "bench"
     if directory.endswith("cpp") and \
-           directory.split(os.path.sep)[-2] + "-bench" in files:
-        bench_exec = directory.split(os.path.sep)[-2] + "-bench"
+           "bench_" + directory.split(os.path.sep)[-2] in files:
+        bench_exec = "bench_" + directory.split(os.path.sep)[-2]
+
 
     if not bench_exec in files:
         return
