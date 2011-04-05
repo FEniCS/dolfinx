@@ -8,9 +8,11 @@ __license__  = "GNU LGPL version 3 or any later version"
 # Last changed: 2011-04-06
 
 import unittest
+#from unittest import skipIf # Awaiting Python 2.7
 from dolfin import *
 from ufl.algorithms import replace
 
+#@skipIf("Skipping error control test in parallel", MPI.num_processes() > 1)
 class ErrorControlTest(unittest.TestCase):
 
     def setUp(self):
@@ -50,6 +52,9 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_error_estimation(self):
 
+        if MPI.num_processes() > 1:
+            return
+
         # Solve variational problem once
         self.problem.solve(self.u)
 
@@ -61,6 +66,9 @@ class ErrorControlTest(unittest.TestCase):
         self.assertAlmostEqual(error_estimate, reference)
 
     def test_error_indicators(self):
+
+        if MPI.num_processes() > 1:
+            return
 
         # Solve variational problem once
         self.problem.solve(self.u)
@@ -74,6 +82,9 @@ class ErrorControlTest(unittest.TestCase):
         self.assertAlmostEqual(indicators.sum(), reference)
 
     def test_adaptive_solve(self):
+
+        if MPI.num_processes() > 1:
+            return
 
         # Solve problem adaptively
         self.problem.parameters["adaptivity"]["plot_mesh"] = False
