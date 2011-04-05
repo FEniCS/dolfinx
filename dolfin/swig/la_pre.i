@@ -186,6 +186,8 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
 LA_PRE_FACTORY(EpetraFactory)
+%rename(_mat) dolfin::EpetraMatrix::mat;
+%rename(_vec) dolfin::EpetraVector::vec;
 %newobject dolfin::EpetraMatrix::copy;
 %newobject dolfin::EpetraVector::copy;
 

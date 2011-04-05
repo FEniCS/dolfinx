@@ -754,6 +754,42 @@ DOWN_CAST_MACRO(EpetraMatrix)
 %pythoncode %{
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
+
+%extend dolfin::EpetraMatrix{
+%pythoncode %{
+    def mat(self):
+        "Return the Epetra_FECrsMatrix"
+        A = self._mat()
+        
+        # Store the tensor to avoid garbage collection
+        # Need to be in try clause as this wont work when PyTrilinos
+        # is not installed
+        try:
+            A._org_vec = self
+        except:
+            pass
+        
+        return A
+%}
+}
+
+%extend dolfin::EpetraVector{
+%pythoncode %{
+    def vec(self):
+        "Return the Epetra_FEVector"
+        v = self._vec()
+
+        # Store the tensor to avoid garbage collection
+        # Need to be in try clause as this wont work when PyTrilinos
+        # is not installed
+        try:
+            v._org_vec = self
+        except:
+            pass
+        
+        return v
+%}
+}
 #endif
 
 #ifdef HAS_MTL4
@@ -774,7 +810,7 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 %pythoncode %{
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
-    for k,v in _has_type_map.items():
+    for k, v in _has_type_map.items():
         if v(tensor):
             return k
     dolfin_error("Unregistered tensor type.")
