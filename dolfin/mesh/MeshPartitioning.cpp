@@ -405,9 +405,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     num_global += num_entities_to_number[i];
 
   // Store number of global entities
-  std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
-  assert(num_global_entities);
-  (*num_global_entities)[d] = num_global;
+  std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
+  num_global_entities[d] = num_global;
 
   // Prepare list of entity numbers. Check later that nothing is -1
   std::vector<int> entity_indices(mesh.size(d));
@@ -688,12 +687,12 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   editor.close();
 
   // Construct array of length topology().dim() that holds the number of global mesh entities
-  std::vector<uint>* num_global_entities = mesh.data().create_array("num global entities", mesh_data.tdim + 1);
-  for (uint d = 0; d <= mesh_data.tdim; ++d)
-    (*num_global_entities)[d] = 0;
+  std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
+  num_global_entities.resize(mesh_data.tdim + 1);
+  std::fill(num_global_entities.begin(), num_global_entities.end(), 0);
 
-  (*num_global_entities)[0] = mesh_data.num_global_vertices;
-  (*num_global_entities)[mesh_data.tdim] = mesh_data.num_global_cells;
+  num_global_entities[0] = mesh_data.num_global_vertices;
+  num_global_entities[mesh_data.tdim] = mesh_data.num_global_cells;
 
   /// Communicate global number of boundary vertices to all processes
 

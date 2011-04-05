@@ -59,9 +59,9 @@ namespace dolfin
   ///
   /// Mesh partitioning
   ///
-  ///   "global entity indices %d" - MeshFunction<uint> of dimension 0, 1, ..., D
+  ///   (moved to ParallelData) "global entity indices %d" - MeshFunction<uint> of dimension 0, 1, ..., D
   ///   "exterior facets"          - MeshFunction<uint> of dimension D - 1
-  ///   "num global entities"      - Array<uint> of size D + 1
+  ///   (moved to ParallelData) "num global entities"      - Array<uint> of size D + 1
   ///   "overlap"                  - vector mapping
   ///
   /// Sub meshes
