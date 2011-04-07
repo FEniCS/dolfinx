@@ -112,6 +112,7 @@ namespace dolfin
 
     // FIXME: Use better name
     // FIXME: Use unordered map?
+    // FIXME: Use std::set instead of std::vector (the vector is sorted at some point in the code)
     // Maps each shared vertex to a list of the processes sharing
     // the vertex
     std::map<uint, std::vector<uint> > _overlap;
