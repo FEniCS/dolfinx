@@ -14,6 +14,7 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "BoundaryMesh.h"
+#include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
 #include "MeshEditor.h"
@@ -768,7 +769,22 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
                MeshFunction<bool>& exterior)
 {
-  exterior.set_all(true);
+  // Set all to false (not exterior)
+  exterior.set_all(false);
+
+  const Mesh& mesh = exterior.mesh();
+  const uint D = mesh.topology().dim();
+
+  assert(exterior.dim() == D - 1);
+
+  // FIXME: Check that everything is correctly initalised
+
+  // Add facets
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+    if (facet->num_entities(D) == 1)
+      exterior[*facet] = true;
+  }
 
   // Remove all entities in the overlap
   std::map<std::vector<uint>, uint>::const_iterator it;

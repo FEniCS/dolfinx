@@ -333,7 +333,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       for (FacetIterator facet(cell); !facet.end(); ++facet)
       {
         // Only consider exterior facets
-        if (facet->exterior())
+        if (!facet->exterior())
         {
           p++;
           continue;
