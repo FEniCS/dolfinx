@@ -87,7 +87,7 @@ namespace dolfin
 
     // Check if all entity vertices are in overlap
     static bool in_overlap(const std::vector<uint>& entity_vertices,
-                           std::map<uint, std::vector<uint> >& overlap);
+                           const std::map<uint, std::vector<uint> >& overlap);
 
     // Mark non-shared mesh entities
     static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,

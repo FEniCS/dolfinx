@@ -750,11 +750,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
-                                  std::map<uint, std::vector<uint> >& overlap)
+                             const std::map<uint, std::vector<uint> >& overlap)
 {
   for (uint i = 0; i < entity.size(); ++i)
-    if (overlap.count(entity[i]) == 0)
+  {
+    if (overlap.find(entity[i]) == overlap.end())
       return false;
+  }
   return true;
 }
 //-----------------------------------------------------------------------------
