@@ -19,6 +19,7 @@
 #include "MeshFunction.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
+#include "ParallelData.h"
 #include "Vertex.h"
 #include "BoundaryComputation.h"
 
@@ -61,7 +62,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
-  boost::shared_ptr<const MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
@@ -74,12 +75,12 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (f->num_entities(D) == 1)
     {
       // Determine if we have a boundary facet
-      if (!exterior)
+      if (exterior.size() == 0)
         boundary_facet[*f] = true;
       else
       {
-        bool exterior_facet = (*exterior)[*f];
-        if ( exterior_facet && !interior_boundary )
+        bool exterior_facet = exterior[*f];
+        if (exterior_facet && !interior_boundary)
           boundary_facet[*f] = true;
         else if ( !exterior_facet && interior_boundary )
           boundary_facet[*f] = true;
@@ -106,8 +107,6 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  //boost::shared_ptr<MeshFunction<unsigned int> > vertex_map = boundary.data().create_mesh_function("vertex map");
-  //assert(vertex_map);
   MeshFunction<unsigned int>& vertex_map = boundary.vertex_map();
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);

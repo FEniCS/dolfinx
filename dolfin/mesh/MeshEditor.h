@@ -112,7 +112,7 @@ namespace dolfin
     // Add higher order cell, common part
     void add_higher_order_cell_common(uint v, uint dim);
 
-    // Compute boundary indicators ("exterior facet domains")
+    // Compute boundary indicators (exterior facets)
     void compute_boundary_indicators();
 
     // Clear all data

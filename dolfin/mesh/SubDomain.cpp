@@ -12,8 +12,9 @@
 #include "MeshData.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
-#include "SubDomain.h"
+#include "ParallelData.h"
 #include "Vertex.h"
+#include "SubDomain.h"
 
 using namespace dolfin;
 
@@ -93,7 +94,7 @@ void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) co
   bool on_boundary = false;
 
   // Extract exterior (non shared) facets markers
-  boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
   Array<double> x;
 
@@ -104,8 +105,7 @@ void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) co
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
     {
-      on_boundary = (entity->num_entities(D) == 1 &&
-		     (!exterior || (((*exterior)[*entity]))));
+      on_boundary = (entity->num_entities(D) == 1 && (exterior.size() == 0 || exterior[*entity]));
     }
 
     // Start by assuming all points are inside

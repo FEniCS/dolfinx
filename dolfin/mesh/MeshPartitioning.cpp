@@ -384,8 +384,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Create mesh markers for exterior facets
   if (d == (mesh.topology().dim() - 1))
   {
+    MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
+    exterior_facets.init(d);
     mark_nonshared(entities, shared_entity_indices, ignored_entity_indices,
-                   mesh, d, "exterior facets");
+                   exterior_facets);
   }
 
   // Communicate number of entities to number
@@ -764,17 +766,15 @@ bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
 void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
                const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
-               Mesh& mesh, uint d, std::string name)
+               MeshFunction<bool>& exterior)
 {
-  // Create mesh markers and mark all
-  boost::shared_ptr<MeshFunction<unsigned int> > exterior = mesh.data().create_mesh_function(name, d);
-  exterior->set_all(1);
+  exterior.set_all(true);
 
   // Remove all entities in the overlap
   std::map<std::vector<uint>, uint>::const_iterator it;
   for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
-    (*exterior)[entities.find(it->first)->second] = 0;
+    exterior[entities.find(it->first)->second] = false;
   for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
-    (*exterior)[entities.find(it->first)->second] = 0;
+    exterior[entities.find(it->first)->second] = false;
 }
 //-----------------------------------------------------------------------------

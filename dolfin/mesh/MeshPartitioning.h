@@ -17,6 +17,7 @@ namespace dolfin
 {
 
   class Mesh;
+  template <class T> class MeshFunction;
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
@@ -93,7 +94,7 @@ namespace dolfin
     static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
                const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
-               Mesh& mesh, uint d, std::string name);
+               MeshFunction<bool>& exterior_facets);
   };
 
 }
