@@ -8,6 +8,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # DOLFIN source directories
 
 set(DOLFIN_DIRS
+  adaptivity
   ale
   common
   elements
@@ -23,10 +24,10 @@ set(DOLFIN_DIRS
   nls
   ode
   parameter
-  adaptivity
   pde
   plot
   quadrature
+  refinement
   )
 
 #------------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2003-03-14
-// Last changed: 2010-06-28
+// Last changed: 2011-04-07
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
@@ -35,7 +35,8 @@ Progress::Progress(std::string title, unsigned int n)
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
-  : title(title), n(0), i(0), p_step(0.1), t_step(0.5), p(0), t(0),
+  : title(title), n(0), i(0), p_step(0.1), t_step(0.5), c_step(1),
+    p(0), t(0), tc(0),
     always(false), finished(false), displayed(false), counter(0)
 {
   // LogManager::logger.progress(title, 0.0);
