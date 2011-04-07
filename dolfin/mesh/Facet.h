@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009-2011.
 //
 // First added:  2006-06-02
-// Last changed: 2011-02-22
+// Last changed: 2011-04-07
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -13,6 +13,7 @@
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "ParallelData.h"
 
 namespace dolfin
 {
@@ -39,14 +40,31 @@ namespace dolfin
     //        is distributed across processes
     /// Determine whether or not facet is an interior facet. This is 'relative'
     /// to the given partition of the mesh if the mesh is distributed
+    /*
     bool interior() const
     {
       not_working_in_parallel("Getting adjacent cell");
-
       if (num_entities(dim() + 1) == 2)
         return true;
       else
         return false;
+    }
+    */
+
+    /// Return true if facet is an exterior facet (relative to global mesh,
+    /// so this function will return false for facets on partition boundaries)
+    /// Facet connectivity must be initialized before calling this function.
+    bool exterior() const
+    {
+      if (_mesh->parallel_data().exterior_facet().size() > 0)
+        return _mesh->parallel_data().exterior_facet()[*this];
+      else
+      {
+        if (num_entities(dim() + 1) == 2)
+          return false;
+        else
+          return true;
+      }
     }
 
     // FIXME: This function should take care of the case where adjacent cells
@@ -82,6 +100,7 @@ namespace dolfin
     }
 
   };
+
 
   /// A FacetIterator is a MeshEntityIterator of topological codimension 1.
 

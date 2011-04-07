@@ -361,7 +361,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider interior facets
-    if (!facet->interior())
+    if (facet->exterior())
     {
       p++;
       continue;

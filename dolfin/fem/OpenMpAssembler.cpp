@@ -465,7 +465,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       const Facet facet(mesh, index);
 
       // Only consider interior facets
-      if (!facet.interior())
+      if (facet.exterior())
       {
         p++;
         continue;
