@@ -142,8 +142,10 @@
 %include "dolfin/mesh/Box.h"
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
-%include "dolfin/mesh/refine.h"
 %include "dolfin/swig/mesh_post.i"
+
+// DOLFIN headers included from refinement
+%include "dolfin/refinement/refine.h"
 
 // DOLFIN headers included from function
 %include "dolfin/swig/function_pre.i"

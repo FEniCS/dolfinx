@@ -4,18 +4,18 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2006-06-08
-// Last changed: 2011-03-17
+// Last changed: 2011-04-07
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
-#include "Mesh.h"
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "MeshConnectivity.h"
-#include "MeshEditor.h"
-#include "Vertex.h"
-#include "Edge.h"
-#include "Cell.h"
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshTopology.h>
+#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/MeshConnectivity.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Cell.h>
 #include "UniformMeshRefinement.h"
 
 using namespace dolfin;

@@ -4,26 +4,26 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2006-11-01
-// Last changed: 2011-03-17
+// Last changed: 2011-04-07
 
 #include <list>
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
-#include "BoundaryMesh.h"
-#include "Cell.h"
-#include "CellType.h"
-#include "Edge.h"
-#include "Mesh.h"
-#include "MeshConnectivity.h"
-#include "MeshData.h"
-#include "MeshEditor.h"
-#include "MeshFunction.h"
-#include "MeshGeometry.h"
-#include "MeshTopology.h"
-#include "TetrahedronCell.h"
-#include "TriangleCell.h"
-#include "Vertex.h"
+#include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshConnectivity.h>
+#include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/MeshTopology.h>
+#include <dolfin/mesh/TetrahedronCell.h>
+#include <dolfin/mesh/TriangleCell.h>
+#include <dolfin/mesh/Vertex.h>
 #include "LocalMeshCoarsening.h"
 
 using namespace dolfin;
