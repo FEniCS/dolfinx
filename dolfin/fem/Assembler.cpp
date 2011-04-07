@@ -118,12 +118,6 @@ void Assembler::assemble(GenericTensor& A,
   const uint num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
-    //MulticoreAssembler::assemble(A, a,
-    //                             cell_domains,
-    //                             exterior_facet_domains,
-    //                             interior_facet_domains,
-    //                             reset_sparsity, add_values, num_threads);
-
     OpenMpAssembler::assemble(A, a,
                               cell_domains,
                               exterior_facet_domains,
@@ -261,15 +255,12 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   mesh.init(D - 1, D);
   assert(mesh.ordered());
 
-  // Extract exterior (non shared) facets markers
-  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
-
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider exterior facets
-    if (facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]))
+    if (!facet->exterior())
     {
       p++;
       continue;

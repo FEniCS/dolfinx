@@ -249,9 +249,6 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const ufc::cell_integral* cell_integral = ufc.cell_integrals[0].get();
   const ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
 
-  // Extract exterior (non shared) facets markers
-  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
-
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
@@ -336,7 +333,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       for (FacetIterator facet(cell); !facet.end(); ++facet)
       {
         // Only consider exterior facets
-        if (facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]))
+        if (facet->exterior())
         {
           p++;
           continue;
@@ -509,11 +506,13 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
         // Copy cell dofs into macro dof vector
         std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
-        std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
+        std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                  macro_dofs[i].begin() + cell_dofs0.size());
       }
 
       // Tabulate exterior interior facet tensor on macro element
-      integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w, ufc.cell0, ufc.cell1,
+      integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w,
+                                ufc.cell0, ufc.cell1,
                                 local_facet0, local_facet1);
 
       // Add entries to global tensor

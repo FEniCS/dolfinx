@@ -202,9 +202,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   mesh.init(D - 1, D);
   assert(mesh.ordered());
 
-  // Extract exterior (non shared) facets markers
-  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
-
   // Form ranks
   const uint a_rank = a.rank();
   const uint L_rank = L.rank();
@@ -247,12 +244,10 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     // Compute exterior facet integral if present
     if (A_ufc.form.num_exterior_facet_domains() > 0 || b_ufc.form.num_exterior_facet_domains() > 0)
     {
-      const uint D = mesh.topology().dim();
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
-        // Assemble if we have an external facet
-        const bool interior_facet = facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]);
-        if (!interior_facet)
+        // Assemble if we have an exterior facet
+        if (facet->exterior())
         {
           const uint local_facet = cell->index(*facet);
           if (A_ufc.form.num_exterior_facet_domains() > 0)
@@ -357,7 +352,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
         b_ufc.macro_A[i] = 0.0;
 
       // Assemble interior facet and neighbouring cells if needed
-      assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data, boundary_values);
+      assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet,
+                              data, boundary_values);
     }
     else // Exterior facet
     {
@@ -384,7 +380,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       data.zero_cell();
 
       // Assemble exterior facet and attached cells if needed
-      assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data, boundary_values);
+      assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data,
+                              boundary_values);
     }
     p++;
   }
@@ -420,8 +417,8 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
 }
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b,
-                      const DirichletBC::Map& boundary_values,
-                      const std::vector<const std::vector<uint>* >& global_dofs)
+                     const DirichletBC::Map& boundary_values,
+                     const std::vector<const std::vector<uint>* >& global_dofs)
 {
   // Get local dimensions
   const uint m = (global_dofs[0])->size();
@@ -542,13 +539,16 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 
   // Tabulate dofs for each dimension on macro element
   std::copy(a0_dofs0.begin(), a0_dofs0.end(), a_macro_dofs[0].begin());
-  std::copy(a0_dofs1.begin(), a0_dofs1.end(), a_macro_dofs[0].begin() + a0_dofs0.size());
+  std::copy(a0_dofs1.begin(), a0_dofs1.end(),
+            a_macro_dofs[0].begin() + a0_dofs0.size());
 
   std::copy(a1_dofs0.begin(), a1_dofs0.end(), a_macro_dofs[1].begin());
-  std::copy(a1_dofs1.begin(), a1_dofs1.end(), a_macro_dofs[1].begin() + a1_dofs0.size());
+  std::copy(a1_dofs1.begin(), a1_dofs1.end(),
+            a_macro_dofs[1].begin() + a1_dofs0.size());
 
   std::copy(L_dofs0.begin(), L_dofs0.end(), L_macro_dofs[0].begin());
-  std::copy(L_dofs1.begin(), L_dofs1.end(), L_macro_dofs[0].begin() + L_dofs0.size());
+  std::copy(L_dofs1.begin(), L_dofs1.end(),
+            L_macro_dofs[0].begin() + L_dofs0.size());
 
   // Modify local matrix/element for Dirichlet boundary conditions
   std::vector<const std::vector<uint>* > _a_macro_dofs(2);

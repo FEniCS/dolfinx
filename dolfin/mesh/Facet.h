@@ -57,7 +57,10 @@ namespace dolfin
     bool exterior() const
     {
       if (_mesh->parallel_data().exterior_facet().size() > 0)
+      {
+        error("Should not be here.");
         return _mesh->parallel_data().exterior_facet()[*this];
+      }
       else
       {
         if (num_entities(dim() + 1) == 2)
