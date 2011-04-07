@@ -203,7 +203,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-   boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -251,7 +251,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
         // Assemble if we have an external facet
-        const bool interior_facet = facet->num_entities(D) == 2 || (exterior_facets && !(*exterior_facets)[*facet]);
+        const bool interior_facet = facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]);
         if (!interior_facet)
         {
           const uint local_facet = cell->index(*facet);

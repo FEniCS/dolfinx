@@ -250,7 +250,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
 
   // Extract exterior (non shared) facets markers
-  boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -336,7 +336,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       for (FacetIterator facet(cell); !facet.end(); ++facet)
       {
         // Only consider exterior facets
-        if (facet->num_entities(D) == 2 || (exterior_facets && !(*exterior_facets)[*facet]))
+        if (facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]))
         {
           p++;
           continue;

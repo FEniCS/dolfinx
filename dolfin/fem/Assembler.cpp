@@ -262,14 +262,14 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-  boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facets = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider exterior facets
-    if (facet->num_entities(D) == 2 || (exterior_facets && !(*exterior_facets)[*facet]))
+    if (facet->num_entities(D) == 2 || (exterior_facets.size() > 0 && !exterior_facets[*facet]))
     {
       p++;
       continue;
