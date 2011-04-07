@@ -116,12 +116,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Get global vertex indices and overlap
   MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
-  std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
-  assert(overlap);
+  std::map<uint, std::vector<uint> >& overlap = mesh.parallel_data().overlap();
 
   // Sort overlap
-  for (std::map<uint, std::vector<uint> >::iterator it = (*overlap).begin(); it != (*overlap).end(); ++it)
-    std::sort((*it).second.begin(), (*it).second.end());
+  for (std::map<uint, std::vector<uint> >::iterator it = overlap.begin(); it != overlap.end(); ++it)
+    std::sort(it->second.begin(), it->second.end());
 
   // Initialize entities of dimension d
   mesh.init(d);
@@ -162,16 +161,17 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
     // Compute which processes entity is shared with
     std::vector<uint> entity_processes;
-    if (in_overlap(entity, *overlap))
+    if (in_overlap(entity, overlap))
     {
-      std::vector<uint> intersection = (*overlap)[entity[0]];
+      std::vector<uint> intersection = overlap[entity[0]];
       std::vector<uint>::iterator intersection_end = intersection.end();
 
       for (uint i = 1; i < entity.size(); ++i)
       {
         const uint v = entity[i];
-        intersection_end = std::set_intersection(intersection.begin(), intersection_end,
-                                                 (*overlap)[v].begin(), (*overlap)[v].end(), intersection.begin());
+        intersection_end = std::set_intersection(intersection.begin(),
+                                   intersection_end, overlap[v].begin(),
+                                   overlap[v].end(), intersection.begin());
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -719,7 +719,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::vector<uint> global_vertex_recv(max_boundary_size);
 
   // Create overlap: mapping from shared vertices to list of neighboring processes
-  std::map<uint, std::vector<uint> >* overlap = mesh.data().create_vector_mapping("overlap");
+  std::map<uint, std::vector<uint> >& overlap = mesh.parallel_data().overlap();
+  overlap.clear();
 
   // Distribute boundaries and build mappings
   for (uint i = 1; i < num_processes; ++i)
@@ -744,7 +745,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     for (std::vector<uint>::const_iterator index = intersection.begin();
         index != intersection_end; ++index)
     {
-      (*overlap)[*index].push_back(q);
+      overlap[*index].push_back(q);
     }
   }
 }
