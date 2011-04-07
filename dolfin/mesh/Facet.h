@@ -36,31 +36,13 @@ namespace dolfin
     /// Compute normal to the facet
     Point normal() const;
 
-    // FIXME: This function should take care of facet 'ownership' when a mesh
-    //        is distributed across processes
-    /// Determine whether or not facet is an interior facet. This is 'relative'
-    /// to the given partition of the mesh if the mesh is distributed
-    /*
-    bool interior() const
-    {
-      not_working_in_parallel("Getting adjacent cell");
-      if (num_entities(dim() + 1) == 2)
-        return true;
-      else
-        return false;
-    }
-    */
-
     /// Return true if facet is an exterior facet (relative to global mesh,
     /// so this function will return false for facets on partition boundaries)
     /// Facet connectivity must be initialized before calling this function.
     bool exterior() const
     {
       if (_mesh->parallel_data().exterior_facet().size() > 0)
-      {
-        error("Should not be here.");
         return _mesh->parallel_data().exterior_facet()[*this];
-      }
       else
       {
         if (num_entities(dim() + 1) == 2)
@@ -114,8 +96,8 @@ namespace dolfin
     FacetIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim() - 1) {}
     FacetIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
 
-    inline const Facet& operator*() { return *operator->(); }
-    inline const Facet* operator->() { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
+    const Facet& operator*() { return *operator->(); }
+    const Facet* operator->() { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
 
   };
 
