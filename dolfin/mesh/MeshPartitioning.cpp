@@ -46,8 +46,8 @@ template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const cha
 {
   for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
   {
-    print_container(ostr, (*it).first.begin(), (*it).first.end(), " ");
-    ostr << ": " << (*it).second << delimiter;
+    print_container(ostr, it->first.begin(), it->first.end(), " ");
+    ostr << ": " << it->second << delimiter;
   }
 }
 
@@ -157,8 +157,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Iterate over all entities
   for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
   {
-    const std::vector<uint>& entity = (*it).first;
-    const uint local_entity_index = (*it).second;
+    const std::vector<uint>& entity = it->first;
+    const uint local_entity_index = it->second;
 
     // Compute which processes entity is shared with
     std::vector<uint> entity_processes;
@@ -217,10 +217,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
        it != ignored_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
-    const std::vector<uint>& entity = (*it).first;
+    const std::vector<uint>& entity = it->first;
 
     // Get entity processes (processes might sharing the entity)
-    const std::vector<uint>& entity_processes = (*it).second;
+    const std::vector<uint>& entity_processes = it->second;
 
     // Prepare data for sending
     for (uint j = 0; j < entity_processes.size(); ++j)
@@ -234,13 +234,13 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Communicate common entities, add the entities we think should be shared as well
   for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = shared_entity_processes.begin();
-       it != shared_entity_processes.end(); ++it)
+        it != shared_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
-    const std::vector<uint>& entity = (*it).first;
+    const std::vector<uint>& entity = it->first;
 
     // Get entity processes (processes might sharing the entity)
-    const std::vector<uint>& entity_processes = (*it).second;
+    const std::vector<uint>& entity_processes = it->second;
 
     // Prepare data for sending
     for (uint j = 0; j < entity_processes.size(); ++j)
@@ -268,14 +268,16 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     for (uint j = 0; j < entity_size; ++j)
       entity.push_back(common_entity_values[i++]);
 
-    // Check if it is an entity (in which case it will be in ignored or shared entities)
+    // Check if it is an entity (in which case it will be in ignored or
+    // shared entities)
     uint is_entity = 0;
-    if ((ignored_entity_indices.count(entity) > 0 ) || (shared_entity_indices.count(entity) > 0 ))
+    if (ignored_entity_indices.count(entity) > 0  || shared_entity_indices.count(entity) > 0 )
     {
       is_entity = 1;
     }
 
-    // Add information about entity (whether it's actually an entity) to send to other processes
+    // Add information about entity (whether it's actually an entity) to send
+    // to other processes
     is_entity_values.push_back(entity_size);
     is_entity_partition.push_back(p);
     for (uint j = 0; j < entity_size; ++j)
@@ -319,8 +321,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::vector<std::vector<uint> > unignore_entities;
   for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
   {
-    const std::vector<uint> entity = (*it).first;
-    const uint local_entity_index = (*it).second;
+    const std::vector<uint> entity = it->first;
+    const uint local_entity_index = it->second;
     if (entity_processes.count(entity) > 0)
     {
       std::vector<uint> common_processes = entity_processes[entity];
@@ -359,8 +361,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::vector<std::vector<uint> > unshare_entities;
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
-    const std::vector<uint>& entity = (*it).first;
-    const uint local_entity_index = (*it).second;
+    const std::vector<uint>& entity = it->first;
+    const uint local_entity_index = it->second;
     if (entity_processes.count(entity) == 0)
     {
       // Move from shared to owned
@@ -419,14 +421,14 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin();
       it != owned_entity_indices.end(); ++it)
   {
-    entity_indices[(*it).second] = offset++;
+    entity_indices[it->second] = offset++;
   }
 
   // Number shared entities
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin();
         it != shared_entity_indices.end(); ++it)
   {
-    entity_indices[(*it).second] = offset++;
+    entity_indices[it->second] = offset++;
   }
 
   // Communicate indices for shared entities and get indices for ignored
@@ -436,12 +438,12 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
         it != shared_entity_indices.end(); ++it)
   {
     // Get entity index
-    const uint local_entity_index = (*it).second;
+    const uint local_entity_index = it->second;
     const int entity_index = entity_indices[local_entity_index];
     assert(entity_index != -1);
 
     // Get entity vertices (global vertex indices)
-    const std::vector<uint>& entity = (*it).first;
+    const std::vector<uint>& entity = it->first;
 
     // Get entity processes (processes sharing the entity)
     const std::vector<uint>& entity_processes = shared_entity_processes[entity];
@@ -517,20 +519,22 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // process belongs. We use MPI::distribute to redistribute all cells (the
   // global vertex indices of all cells).
 
+  std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
+
   // Get dimensions of local mesh_data
-  uint num_local_cells = mesh_data.cell_vertices.size();
-  assert(mesh_data.global_cell_indices.size() == num_local_cells);
+  const uint num_local_cells = mesh_data.cell_vertices.size();
+  assert(global_cell_indices.size() == num_local_cells);
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
 
   // Build array of cell-vertex connectivity and partition vector
   // Distribute the global cell number as well
   std::vector<uint> cell_vertices;
   std::vector<uint> cell_vertices_partition;
-  cell_vertices.reserve(num_local_cells*(num_cell_vertices+1));
-  cell_vertices_partition.reserve(num_local_cells*(num_cell_vertices+1));
+  cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
+  cell_vertices_partition.reserve(num_local_cells*(num_cell_vertices + 1));
   for (uint i = 0; i < num_local_cells; i++)
   {
-    cell_vertices.push_back(mesh_data.global_cell_indices[i]);
+    cell_vertices.push_back(global_cell_indices[i]);
     cell_vertices_partition.push_back(cell_partition[i]);
     for (uint j = 0; j < num_cell_vertices; j++)
     {
@@ -541,18 +545,22 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Distribute cell-vertex connectivity
   MPI::distribute(cell_vertices, cell_vertices_partition);
+  assert(cell_vertices.size() % (num_cell_vertices + 1) == 0);
   cell_vertices_partition.clear();
 
-  // Put mesh_data back into mesh_data.cell_vertices
+  // Clear mesh data
   mesh_data.cell_vertices.clear();
-  mesh_data.global_cell_indices.clear();
-  assert(cell_vertices.size() % (num_cell_vertices + 1) == 0);
-  num_local_cells = cell_vertices.size() / (num_cell_vertices + 1);
-  mesh_data.cell_vertices.reserve(num_local_cells);
-  mesh_data.global_cell_indices.reserve(num_local_cells);
-  for (uint i = 0; i < num_local_cells; ++i)
+  global_cell_indices.clear();
+
+  // Put mesh_data back into mesh_data.cell_vertices
+  const uint num_new_local_cells = cell_vertices.size()/(num_cell_vertices + 1);
+  mesh_data.cell_vertices.reserve(num_new_local_cells);
+  global_cell_indices.reserve(num_new_local_cells);
+
+  // Loop over new cells
+  for (uint i = 0; i < num_new_local_cells; ++i)
   {
-    mesh_data.global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
+    global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];
@@ -575,24 +583,27 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
 
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
-  std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
-  for (uint i = 0; i < cell_vertices.size(); ++i)
-    for (uint j = 0; j < cell_vertices[i].size(); ++j)
-      needed_vertex_indices.insert(cell_vertices[i][j]);
+  std::vector<std::vector<uint> >::const_iterator vertices;
+  for (vertices = mesh_data.cell_vertices.begin(); vertices != mesh_data.cell_vertices.end(); ++vertices)
+    needed_vertex_indices.insert(vertices->begin(), vertices->end());
 
   // Compute where (process number) the vertices we need are located
   std::vector<uint> vertex_partition;
   std::vector<std::vector<uint> > vertex_location(num_processes);
   std::vector<uint> vertex_indices;
-  std::set<uint>::const_iterator it;
-  for (it = needed_vertex_indices.begin(); it != needed_vertex_indices.end(); ++it)
+
+  std::set<uint>::const_iterator required_vertex;
+  for (required_vertex = needed_vertex_indices.begin(); required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
-    const uint location = MPI::index_owner(*it, mesh_data.num_global_vertices);
+    // Get process that has required vertex
+    const uint location = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
     vertex_partition.push_back(location);
-    vertex_indices.push_back(*it);
-    vertex_location[location].push_back(*it);
+    vertex_indices.push_back(*required_vertex);
+    vertex_location[location].push_back(*required_vertex);
   }
-  needed_vertex_indices.clear();
+
+  // Send required vertices to other proceses, and receive back vertices
+  // required by othe processes.
   MPI::distribute(vertex_indices, vertex_partition);
   assert(vertex_indices.size() == vertex_partition.size());
 
@@ -619,10 +630,12 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   std::vector<uint> index_counters(num_processes);
   std::fill(index_counters.begin(), index_counters.end(), 0);
 
-  // Store coordinates and construct global to local mapping
+  // Clear data
   mesh_data.vertex_coordinates.clear();
   mesh_data.vertex_indices.clear();
   glob2loc.clear();
+
+  // Store coordinates and construct global to local mapping
   const uint num_local_vertices = vertex_coordinates.size()/vertex_size;
   for (uint i = 0; i < num_local_vertices; ++i)
   {
@@ -630,9 +643,9 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     for (uint j = 0; j < vertex_size; ++j)
       vertex[j] = vertex_coordinates[i*vertex_size+j];
     mesh_data.vertex_coordinates.push_back(vertex);
+
     const uint sender_process = vertex_coordinates_partition[i*vertex_size];
-    const uint global_vertex_index
-        = vertex_location[sender_process][index_counters[sender_process]++];
+    const uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
     glob2loc[global_vertex_index] = i;
   }
 }
@@ -675,7 +688,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
-    global_vertex_indices[(*iter).second] = (*iter).first;
+    global_vertex_indices[iter->second] = iter->first;
 
   // Construct local to global mapping for cells
   MeshFunction<unsigned int>& global_cell_indices = mesh.parallel_data().global_entity_indices(mesh_data.tdim);
@@ -716,7 +729,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   MPI::gather(boundary_sizes);
 
   // Find largest boundary size (for recv buffer)
-  const uint max_boundary_size = *(std::max_element(boundary_sizes.begin(), boundary_sizes.end()));
+  const uint max_boundary_size = *std::max_element(boundary_sizes.begin(), boundary_sizes.end());
 
   // Recieve buffer
   std::vector<uint> global_vertex_recv(max_boundary_size);
@@ -779,7 +792,7 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
 
   // FIXME: Check that everything is correctly initalised
 
-  // Add facets
+  // Add facets that are connected to one cell only
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     if (facet->num_entities(D) == 1)

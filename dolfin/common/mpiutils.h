@@ -74,8 +74,10 @@ namespace dolfin
     // Allocate memory for send and receive buffers
     // assert(send_buffer_size > 0);
     // assert(recv_buffer_size > 0);
-    T* send_buffer = new T[send_buffer_size];
-    T* recv_buffer = new T[recv_buffer_size];
+    //T* send_buffer = new T[send_buffer_size];
+    //T* recv_buffer = new T[recv_buffer_size];
+    std::vector<T> send_buffer(send_buffer_size);
+    std::vector<T> recv_buffer(recv_buffer_size);
 
     // Exchange data
     for (uint i = 1; i < send_data.size(); i++)
@@ -91,8 +93,8 @@ namespace dolfin
         send_buffer[j] = send_data[dest][j];
 
       // Send and receive data
-      const uint num_received = MPI::send_recv(send_buffer, send_data[dest].size(), dest,
-                                               recv_buffer, recv_buffer_size,       source);
+      const uint num_received = MPI::send_recv(&send_buffer[0], send_data[dest].size(), dest,
+                                               &recv_buffer[0], recv_buffer_size,       source);
 
       // Copy data from receive buffer
       assert(num_received <= recv_buffer_size);
@@ -102,10 +104,6 @@ namespace dolfin
         partition.push_back(source);
       }
     }
-
-    // Clean up
-    delete [] send_buffer;
-    delete [] recv_buffer;
   }
 
 }
