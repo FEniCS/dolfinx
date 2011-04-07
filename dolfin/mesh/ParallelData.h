@@ -30,7 +30,8 @@ namespace dolfin
 
     //--- Data for distributed memory parallelism ---
 
-    /// Return true if global indices have been computed for entity of dimension d
+    /// Return true if global indices have been computed for entity of
+    /// dimension d
     bool have_global_entity_indices(uint d) const
     {
       if (_global_entity_indices.find(d) != _global_entity_indices.end())
@@ -54,9 +55,11 @@ namespace dolfin
       return _global_entity_indices.find(d)->second;
     }
 
+    /// FIXME: Add description and use better name
     std::map<uint, std::vector<uint> >& overlap()
     { return _overlap; }
 
+    /// FIXME: Add description and use better name
     const std::map<uint, std::vector<uint> >& overlap() const
     { return _overlap; }
 
@@ -65,6 +68,12 @@ namespace dolfin
 
     const MeshFunction<bool>& exterior_facet() const
     { return _exterior_facet; }
+
+    std::vector<uint>& num_global_entities()
+    { return _num_global_entities; }
+
+    const std::vector<uint>& num_global_entities() const
+    { return _num_global_entities; }
 
     //--- Data for shared memory parallelism (multicore) ---
 
@@ -101,6 +110,8 @@ namespace dolfin
     // Global indices for entity of dimension d
     std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
 
+    // FIXME: Use better name
+    // FIXME: Use unordered map?
     // Maps each shared vertex to a list of the processes sharing
     // the vertex
     std::map<uint, std::vector<uint> > _overlap;

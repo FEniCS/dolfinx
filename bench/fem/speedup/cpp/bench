@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2010-05-03"
+__date__ = "2010-05-03 -- 2011-04-05"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Garth N. Wells, 2011.
+# Modified by Johannes Ring, 2011.
 
 import commands
 
@@ -45,10 +46,13 @@ output = commands.getoutput("mpirun -n %d ./solve-poisson %d" % (NUM_PROCS, SIZE
 solve_t2 = get_time(output)
 print "Parallel solve:", solve_t2
 
-print "BENCH assembly"
+print "assembly"
 for test1, test2  in zip(assembly_t1, assembly_t2):
     print "  ", test1[0] + ":", test1[1]/test2[1]
 
-print "BENCH solve"
+print "solve"
 for test1, test2  in zip(solve_t1, solve_t2):
     print "  ", test1[0] + ":", test1[1]/test2[1]
+
+print "BENCH assembly", assembly_t1[0][1] / assembly_t2[0][1] + assembly_t1[1][1] / assembly_t2[1][1]
+print "BENCH solve", solve_t1[0][1] / solve_t2[0][1]

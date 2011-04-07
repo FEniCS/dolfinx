@@ -23,6 +23,7 @@ tests = {
     "parameter": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"],
+    "adaptivity": ["errorcontrol"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
