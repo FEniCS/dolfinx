@@ -2,18 +2,18 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2011-02-07
-// Last changed: 2011-02-09
+// Last changed: 2011-04-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/IndexSet.h>
-#include "Mesh.h"
-#include "MeshFunction.h"
-#include "Cell.h"
-#include "Edge.h"
-#include "Vertex.h"
-#include "MeshEditor.h"
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "RegularCutRefinement.h"
 
 using namespace dolfin;

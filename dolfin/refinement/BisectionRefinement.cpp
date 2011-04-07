@@ -1,20 +1,20 @@
 // Copyright (C) 2006 Johan Hoffman.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2009.
+// Modified by Anders Logg, 2009-2011.
 // Modified by Garth N. Wells, 2010-2011.
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-11-01
-// Last changed: 2011-03-18
+// Last changed: 2011-04-07
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
-#include "Mesh.h"
-#include "Facet.h"
-#include "Cell.h"
-#include "MeshFunction.h"
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include "RivaraRefinement.h"
 #include "BisectionRefinement.h"
 
