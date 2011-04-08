@@ -74,8 +74,6 @@ namespace dolfin
     // Allocate memory for send and receive buffers
     // assert(send_buffer_size > 0);
     // assert(recv_buffer_size > 0);
-    //T* send_buffer = new T[send_buffer_size];
-    //T* recv_buffer = new T[recv_buffer_size];
     std::vector<T> send_buffer(send_buffer_size);
     std::vector<T> recv_buffer(recv_buffer_size);
 

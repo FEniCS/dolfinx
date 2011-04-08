@@ -175,8 +175,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
                            shared_entity_processes, ignored_entity_indices,
                            ignored_entity_processes);
 
-
-
   /// --- Mark exterior facets
 
   // Create mesh markers for exterior facets
@@ -191,28 +189,22 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   /// ---- Offset
 
   // Communicate number of entities to number
-  std::vector<uint> num_entities_to_number(num_processes);
-  std::fill(num_entities_to_number.begin(), num_entities_to_number.end(), 0);
+  std::vector<uint> num_entities_to_number(num_processes, 0);
   num_entities_to_number[process_number] = owned_entity_indices.size() + shared_entity_indices.size();
   MPI::gather(num_entities_to_number);
 
   // Compute offset
-  uint offset = 0;
-  for (uint i = 0; i < process_number; ++i)
-    offset += num_entities_to_number[i];
+  uint offset = std::accumulate(num_entities_to_number.begin(), num_entities_to_number.begin() + process_number, 0);
 
   // Compute number of global entities
-  uint num_global = offset;
-  for (uint i = process_number; i < num_processes; ++i)
-    num_global += num_entities_to_number[i];
+  const uint num_global = std::accumulate(num_entities_to_number.begin() + process_number, num_entities_to_number.end(), offset);
 
   // Store number of global entities
   std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
   num_global_entities[d] = num_global;
 
   // Prepare list of entity numbers. Check later that nothing is -1
-  std::vector<int> entity_indices(mesh.size(d));
-  std::fill(entity_indices.begin(), entity_indices.end(), -1);
+  std::vector<int> entity_indices(mesh.size(d), -1);
 
   // Number owned entities
   for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin();
@@ -256,11 +248,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     }
   }
 
-  // Clean up no longer needed data structures
-  //entity_processes.clear();
-  //shared_entity_indices.clear();
-  //shared_entity_processes.clear();
-
   // Send data
   MPI::distribute(values, partition);
 
@@ -275,7 +262,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
       entity.push_back(values[i++]);
 
     // Sanity check, should not receive an entity we don't need
-    if (ignored_entity_indices.count(entity) == 0)
+    if (ignored_entity_indices.find(entity) == ignored_entity_indices.end())
     {
       std::stringstream msg;
       msg << "Process " << MPI::process_number() << " received illegal entity given by ";
@@ -443,8 +430,9 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
 
     // Check if it is an entity (in which case it will be in ignored or
     // shared entities)
-    bool is_entity = 0;
-    if (ignored_entity_indices.count(entity) > 0  || shared_entity_indices.count(entity) > 0 )
+    uint is_entity = 0;
+    if (ignored_entity_indices.find(entity) != ignored_entity_indices.end()
+          || shared_entity_indices.find(entity) != shared_entity_indices.end())
     {
       is_entity = 1;
     }
@@ -488,7 +476,7 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
   {
     const std::vector<uint> entity = it->first;
     const uint local_entity_index = it->second;
-    if (entity_processes.count(entity) > 0)
+    if (entity_processes.find(entity) != entity_processes.end())
     {
       std::vector<uint> common_processes = entity_processes[entity];
       assert(common_processes.size() > 0);
@@ -527,7 +515,7 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
   {
     const std::vector<uint>& entity = it->first;
     const uint local_entity_index = it->second;
-    if (entity_processes.count(entity) == 0)
+    if (entity_processes.find(entity) == entity_processes.end())
     {
       // Move from shared to owned
       owned_entity_indices[entity] = local_entity_index;
@@ -664,8 +652,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
 
   // Set index counters to first position in recieve buffers
-  std::vector<uint> index_counters(num_processes);
-  std::fill(index_counters.begin(), index_counters.end(), 0);
+  std::vector<uint> index_counters(num_processes, 0);
 
   // Clear data
   mesh_data.vertex_coordinates.clear();
@@ -795,20 +782,19 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
          intersection.begin());
 
     // Fill shared vertices information
-    for (std::vector<uint>::const_iterator index = intersection.begin();
-        index != intersection_end; ++index)
-    {
+    std::vector<uint>::const_iterator index;
+    for (index = intersection.begin(); index != intersection_end; ++index)
       shared_vertices[*index].push_back(q);
-    }
   }
 }
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
                              const std::map<uint, std::vector<uint> >& shared)
 {
-  for (uint i = 0; i < entity.size(); ++i)
+  std::vector<uint>::const_iterator e;
+  for (e = entity.begin(); e != entity.end(); ++e)
   {
-    if (shared.find(entity[i]) == shared.end())
+    if (shared.find(*e) == shared.end())
       return false;
   }
   return true;
