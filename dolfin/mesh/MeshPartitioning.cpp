@@ -111,20 +111,22 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   if (mesh.parallel_data().have_global_entity_indices(d))
     return;
 
+  // Initialize entities of dimension d
+  mesh.init(d);
+
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
-  // Get global vertex indices and overlap
+  // Get global vertex indices
   MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
-  std::map<uint, std::vector<uint> >& overlap = mesh.parallel_data().overlap();
 
-  // Sort overlap
-  for (std::map<uint, std::vector<uint> >::iterator it = overlap.begin(); it != overlap.end(); ++it)
+  // Get shared vertices
+  std::map<uint, std::vector<uint> >& shared_vertices = mesh.parallel_data().shared_vertices();
+
+  // Sort shared vertices
+  for (std::map<uint, std::vector<uint> >::iterator it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
     std::sort(it->second.begin(), it->second.end());
-
-  // Initialize entities of dimension d
-  mesh.init(d);
 
   // Build entity-to-global-vertex-number information
   std::map<std::vector<uint>, uint> entities;
@@ -154,54 +156,13 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::map<std::vector<uint>, uint> ignored_entity_indices;
   std::map<std::vector<uint>, std::vector<uint> > ignored_entity_processes;
 
-  // Iterate over all entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-  {
-    const std::vector<uint>& entity = it->first;
-    const uint local_entity_index = it->second;
+  compute_preliminary_entity_ownership(entities, shared_vertices,
+                           owned_entity_indices, shared_entity_indices,
+                           shared_entity_processes, ignored_entity_indices,
+                           ignored_entity_processes);
 
-    // Compute which processes entity is shared with
-    std::vector<uint> entity_processes;
-    if (in_overlap(entity, overlap))
-    {
-      std::vector<uint> intersection = overlap[entity[0]];
-      std::vector<uint>::iterator intersection_end = intersection.end();
 
-      for (uint i = 1; i < entity.size(); ++i)
-      {
-        const uint v = entity[i];
-        intersection_end = std::set_intersection(intersection.begin(),
-                                   intersection_end, overlap[v].begin(),
-                                   overlap[v].end(), intersection.begin());
-      }
-      entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
-    }
 
-    // Check if entity is ignored (shared with lower ranked process)
-    bool ignore = false;
-    for (uint i = 0; i < entity_processes.size(); ++i)
-    {
-      if (entity_processes[i] < process_number)
-      {
-        ignore = true;
-        break;
-      }
-    }
-
-    // Check cases
-    if (entity_processes.size() == 0)
-      owned_entity_indices[entity] = local_entity_index;
-    else if (ignore)
-    {
-      ignored_entity_indices[entity] = local_entity_index;
-      ignored_entity_processes[entity] = entity_processes;
-    }
-    else
-    {
-      shared_entity_indices[entity] = local_entity_index;
-      shared_entity_processes[entity] = entity_processes;
-    }
-  }
 
   // Qualify boundary entities. We need to find out if the ignored
   // (shared with lower ranked process) entities are entities of a
@@ -350,7 +311,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Remove ignored entities that should not be ignored
-  for (uint i=0; i < unignore_entities.size(); ++i)
+  for (uint i = 0; i < unignore_entities.size(); ++i)
   {
     ignored_entity_indices.erase(unignore_entities[i]);
     ignored_entity_processes.erase(unignore_entities[i]);
@@ -384,6 +345,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
   unshare_entities.clear();
 
+
+  /// --- Mark exterior facets
+
   // Create mesh markers for exterior facets
   if (d == (mesh.topology().dim() - 1))
   {
@@ -392,6 +356,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     mark_nonshared(entities, shared_entity_indices, ignored_entity_indices,
                    exterior_facets);
   }
+
+  /// ---- Offset
 
   // Communicate number of entities to number
   std::vector<uint> num_entities_to_number(num_processes);
@@ -508,6 +474,72 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     assert(entity_indices[i] >= 0);
     assert(i < global_entity_indices.size());
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::compute_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
+  std::map<uint, std::vector<uint> >& shared_vertices,
+  std::map<std::vector<uint>, uint>& owned_entity_indices,
+  std::map<std::vector<uint>, uint>& shared_entity_indices,
+  std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
+  std::map<std::vector<uint>, uint>& ignored_entity_indices,
+  std::map<std::vector<uint>, std::vector<uint> >& ignored_entity_processes)
+{
+  owned_entity_indices.clear();
+  shared_entity_indices.clear();
+  shared_entity_processes.clear();
+  ignored_entity_indices.clear();
+  ignored_entity_processes.clear();
+
+  const uint process_number = MPI::process_number();
+
+  // Iterate over all entities
+  for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+  {
+    const std::vector<uint>& entity = it->first;
+    const uint local_entity_index = it->second;
+
+    // Compute which processes entity is shared with
+    std::vector<uint> entity_processes;
+    if (in_overlap(entity, shared_vertices))
+    {
+      std::vector<uint> intersection = shared_vertices[entity[0]];
+      std::vector<uint>::iterator intersection_end = intersection.end();
+
+      for (uint i = 1; i < entity.size(); ++i)
+      {
+        const uint v = entity[i];
+        intersection_end = std::set_intersection(intersection.begin(),
+                                   intersection_end, shared_vertices[v].begin(),
+                                   shared_vertices[v].end(), intersection.begin());
+      }
+      entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
+    }
+
+    // Check if entity is ignored (shared with lower ranked process)
+    bool ignore = false;
+    for (uint i = 0; i < entity_processes.size(); ++i)
+    {
+      if (entity_processes[i] < process_number)
+      {
+        ignore = true;
+        break;
+      }
+    }
+
+    // Check cases
+    if (entity_processes.size() == 0)
+      owned_entity_indices[entity] = local_entity_index;
+    else if (ignore)
+    {
+      ignored_entity_indices[entity] = local_entity_index;
+      ignored_entity_processes[entity] = entity_processes;
+    }
+    else
+    {
+      shared_entity_indices[entity] = local_entity_index;
+      shared_entity_processes[entity] = entity_processes;
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -734,9 +766,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Recieve buffer
   std::vector<uint> global_vertex_recv(max_boundary_size);
 
-  // Create overlap: mapping from shared vertices to list of neighboring processes
-  std::map<uint, std::vector<uint> >& overlap = mesh.parallel_data().overlap();
-  overlap.clear();
+  // Create shared_vertices data structure: mapping from shared vertices to list of neighboring processes
+  std::map<uint, std::vector<uint> >& shared_vertices = mesh.parallel_data().shared_vertices();
+  shared_vertices.clear();
 
   // Distribute boundaries and build mappings
   for (uint i = 1; i < num_processes; ++i)
@@ -757,21 +789,21 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
          &global_vertex_recv[0], &global_vertex_recv[0] + boundary_sizes[q],
          intersection.begin());
 
-    // Fill overlap information
+    // Fill shared vertices information
     for (std::vector<uint>::const_iterator index = intersection.begin();
         index != intersection_end; ++index)
     {
-      overlap[*index].push_back(q);
+      shared_vertices[*index].push_back(q);
     }
   }
 }
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
-                             const std::map<uint, std::vector<uint> >& overlap)
+                             const std::map<uint, std::vector<uint> >& shared)
 {
   for (uint i = 0; i < entity.size(); ++i)
   {
-    if (overlap.find(entity[i]) == overlap.end())
+    if (shared.find(entity[i]) == shared.end())
       return false;
   }
   return true;
@@ -799,7 +831,7 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
       exterior[*facet] = true;
   }
 
-  // Remove all entities in the overlap
+  // Remove all entities on internal partition boundaries
   std::map<std::vector<uint>, uint>::const_iterator it;
   for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
     exterior[entities.find(it->first)->second] = false;

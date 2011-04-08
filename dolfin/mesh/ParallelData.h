@@ -56,12 +56,12 @@ namespace dolfin
     }
 
     /// FIXME: Add description and use better name
-    std::map<uint, std::vector<uint> >& overlap()
-    { return _overlap; }
+    std::map<uint, std::vector<uint> >& shared_vertices()
+    { return _shared_vertices; }
 
     /// FIXME: Add description and use better name
-    const std::map<uint, std::vector<uint> >& overlap() const
-    { return _overlap; }
+    const std::map<uint, std::vector<uint> >& shared_vertices() const
+    { return _shared_vertices; }
 
     MeshFunction<bool>& exterior_facet()
     { return _exterior_facet; }
@@ -113,9 +113,10 @@ namespace dolfin
     // FIXME: Use better name
     // FIXME: Use unordered map?
     // FIXME: Use std::set instead of std::vector (the vector is sorted at some point in the code)
+
     // Maps each shared vertex to a list of the processes sharing
     // the vertex
-    std::map<uint, std::vector<uint> > _overlap;
+    std::map<uint, std::vector<uint> > _shared_vertices;
 
     std::vector<uint> _num_global_entities;
 
