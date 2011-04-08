@@ -199,32 +199,28 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Compute number of global entities
   const uint num_global = std::accumulate(num_entities_to_number.begin() + process_number, num_entities_to_number.end(), offset);
 
+  /// ---- Numbering
+
   // Store number of global entities
-  std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
-  num_global_entities[d] = num_global;
+  mesh.parallel_data().num_global_entities()[d] = num_global;
 
   // Prepare list of entity numbers. Check later that nothing is -1
   std::vector<int> entity_indices(mesh.size(d), -1);
 
+  std::map<std::vector<uint>, uint>::const_iterator it;
+
   // Number owned entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin();
-      it != owned_entity_indices.end(); ++it)
-  {
+  for (it = owned_entity_indices.begin();  it != owned_entity_indices.end(); ++it)
     entity_indices[it->second] = offset++;
-  }
 
   // Number shared entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin();
-        it != shared_entity_indices.end(); ++it)
-  {
+  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
     entity_indices[it->second] = offset++;
-  }
 
   // Communicate indices for shared entities and get indices for ignored
   std::vector<uint> values;
   std::vector<uint> partition;
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin();
-        it != shared_entity_indices.end(); ++it)
+  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
     // Get entity index
     const uint local_entity_index = it->second;
@@ -272,16 +268,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
       error(msg.str());
     }
 
-    const uint local_entity_index = ignored_entity_indices[entity];
+    const uint local_entity_index = ignored_entity_indices.find(entity)->second;
     assert(entity_indices[local_entity_index] == -1);
     entity_indices[local_entity_index] = global_index;
   }
-
-  // Clean up no longer needed data structures
-  values.clear();
-  partition.clear();
-  ignored_entity_indices.clear();
-  ignored_entity_processes.clear();
 
   // Create mesh data
   MeshFunction<unsigned int>& global_entity_indices = mesh.parallel_data().global_entity_indices(d);
@@ -289,8 +279,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   {
     if (entity_indices[i] < 0)
       log(WARNING, "Missing global number for local entity (%d, %d).", d, i);
+
     assert(entity_indices[i] >= 0);
     assert(i < global_entity_indices.size());
+
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
   }
 }
@@ -370,11 +362,12 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
 {
   const uint process_number = MPI::process_number();
 
+  std::map<std::vector<uint>, std::vector<uint> >::const_iterator it;
+
   // Communicate common entities, starting with the entities we think should be ignored
   std::vector<uint> common_entity_values;
   std::vector<uint> common_entity_partition;
-  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = ignored_entity_processes.begin();
-       it != ignored_entity_processes.end(); ++it)
+  for (it = ignored_entity_processes.begin(); it != ignored_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = it->first;
@@ -393,8 +386,7 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
   }
 
   // Communicate common entities, add the entities we think should be shared as well
-  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = shared_entity_processes.begin();
-        it != shared_entity_processes.end(); ++it)
+  for (it = shared_entity_processes.begin(); it != shared_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = it->first;
