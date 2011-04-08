@@ -171,179 +171,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // responsible for communicating values to the higher ranked
   // processes (if any).
 
-  // Communicate common entities, starting with the entities we think should be ignored
-  std::vector<uint> common_entity_values;
-  std::vector<uint> common_entity_partition;
-  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = ignored_entity_processes.begin();
-       it != ignored_entity_processes.end(); ++it)
-  {
-    // Get entity vertices (global vertex indices)
-    const std::vector<uint>& entity = it->first;
+  compute_final_entity_ownership(owned_entity_indices, shared_entity_indices,
+                           shared_entity_processes, ignored_entity_indices,
+                           ignored_entity_processes);
 
-    // Get entity processes (processes might sharing the entity)
-    const std::vector<uint>& entity_processes = it->second;
-
-    // Prepare data for sending
-    for (uint j = 0; j < entity_processes.size(); ++j)
-    {
-      const uint p = entity_processes[j];
-      common_entity_values.push_back(entity.size());
-      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
-      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
-    }
-  }
-
-  // Communicate common entities, add the entities we think should be shared as well
-  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = shared_entity_processes.begin();
-        it != shared_entity_processes.end(); ++it)
-  {
-    // Get entity vertices (global vertex indices)
-    const std::vector<uint>& entity = it->first;
-
-    // Get entity processes (processes might sharing the entity)
-    const std::vector<uint>& entity_processes = it->second;
-
-    // Prepare data for sending
-    for (uint j = 0; j < entity_processes.size(); ++j)
-    {
-      const uint p = entity_processes[j];
-      assert(process_number < p);
-      common_entity_values.push_back(entity.size());
-      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
-      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
-    }
-  }
-
-  // Communicate common entities
-  MPI::distribute(common_entity_values, common_entity_partition);
-
-  // Check if entities received are really entities
-  std::vector<uint> is_entity_values;
-  std::vector<uint> is_entity_partition;
-  for (uint i = 0; i < common_entity_values.size();)
-  {
-    // Get entity
-    const uint p = common_entity_partition[i];
-    const uint entity_size = common_entity_values[i++];
-    std::vector<uint> entity;
-    for (uint j = 0; j < entity_size; ++j)
-      entity.push_back(common_entity_values[i++]);
-
-    // Check if it is an entity (in which case it will be in ignored or
-    // shared entities)
-    uint is_entity = 0;
-    if (ignored_entity_indices.count(entity) > 0  || shared_entity_indices.count(entity) > 0 )
-    {
-      is_entity = 1;
-    }
-
-    // Add information about entity (whether it's actually an entity) to send
-    // to other processes
-    is_entity_values.push_back(entity_size);
-    is_entity_partition.push_back(p);
-    for (uint j = 0; j < entity_size; ++j)
-    {
-      is_entity_values.push_back(entity[j]);
-      is_entity_partition.push_back(p);
-    }
-    is_entity_values.push_back(is_entity);
-    is_entity_partition.push_back(p);
-  }
-
-  // Clean up no longer needed data structures
-  common_entity_values.clear();
-  common_entity_partition.clear();
-
-  // Send data back (list of requested entities that are really entities)
-  MPI::distribute(is_entity_values, is_entity_partition);
-
-  // Create map from entities to processes where it is an entity
-  std::map<std::vector<uint>, std::vector<uint> > entity_processes;
-  for (uint i = 0; i < is_entity_values.size();)
-  {
-    const uint p = is_entity_partition[i];
-    const uint entity_size = is_entity_values[i++];
-    std::vector<uint> entity;
-    for (uint j = 0; j < entity_size; ++j)
-      entity.push_back(is_entity_values[i++]);
-    const uint is_entity = is_entity_values[i++];
-    if (is_entity == 1)
-    {
-      // Add entity since it is actually an entity for process p
-      entity_processes[entity].push_back(p);
-    }
-  }
-
-  // Clean up no longer needed data structures
-  is_entity_values.clear();
-  is_entity_partition.clear();
-
-  // Fix the list of entities we ignore (numbered by lower ranked process)
-  std::vector<std::vector<uint> > unignore_entities;
-  for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
-  {
-    const std::vector<uint> entity = it->first;
-    const uint local_entity_index = it->second;
-    if (entity_processes.count(entity) > 0)
-    {
-      std::vector<uint> common_processes = entity_processes[entity];
-      assert(common_processes.size() > 0);
-      const uint min_proc = *(std::min_element(common_processes.begin(), common_processes.end()));
-
-      if (process_number < min_proc)
-      {
-        // Move from ignored to shared
-        shared_entity_indices[entity] = local_entity_index;
-        shared_entity_processes[entity] = common_processes;
-
-        // Add entity to list of entities that should be removed from the ignored entity list.
-        unignore_entities.push_back(entity);
-      }
-    }
-    else
-    {
-      // Move from ignored to owned
-      owned_entity_indices[entity] = local_entity_index;
-
-      // Add entity to list of entities that should be removed from the ignored entity list
-      unignore_entities.push_back(entity);
-    }
-  }
-
-  // Remove ignored entities that should not be ignored
-  for (uint i = 0; i < unignore_entities.size(); ++i)
-  {
-    ignored_entity_indices.erase(unignore_entities[i]);
-    ignored_entity_processes.erase(unignore_entities[i]);
-  }
-  unignore_entities.clear();
-
-  // Fix the list of entities we share
-  std::vector<std::vector<uint> > unshare_entities;
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
-  {
-    const std::vector<uint>& entity = it->first;
-    const uint local_entity_index = it->second;
-    if (entity_processes.count(entity) == 0)
-    {
-      // Move from shared to owned
-      owned_entity_indices[entity] = local_entity_index;
-      unshare_entities.push_back(entity);
-    }
-    else
-    {
-      // Update processor list of shared entities
-      shared_entity_processes[entity] = entity_processes[entity];
-    }
-  }
-
-  // Remove shared entities that should not be shared
-  for (uint i=0; i < unshare_entities.size(); ++i)
-  {
-    shared_entity_indices.erase(unshare_entities[i]);
-    shared_entity_processes.erase(unshare_entities[i]);
-  }
-  unshare_entities.clear();
 
 
   /// --- Mark exterior facets
@@ -426,9 +257,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Clean up no longer needed data structures
-  entity_processes.clear();
-  shared_entity_indices.clear();
-  shared_entity_processes.clear();
+  //entity_processes.clear();
+  //shared_entity_indices.clear();
+  //shared_entity_processes.clear();
 
   // Send data
   MPI::distribute(values, partition);
@@ -477,8 +308,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::compute_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
-  std::map<uint, std::vector<uint> >& shared_vertices,
+void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
+  const std::map<uint, std::vector<uint> >& shared_vertices,
   std::map<std::vector<uint>, uint>& owned_entity_indices,
   std::map<std::vector<uint>, uint>& shared_entity_indices,
   std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
@@ -503,15 +334,16 @@ void MeshPartitioning::compute_entity_ownership(const std::map<std::vector<uint>
     std::vector<uint> entity_processes;
     if (in_overlap(entity, shared_vertices))
     {
-      std::vector<uint> intersection = shared_vertices[entity[0]];
+      std::vector<uint> intersection = shared_vertices.find(entity[0])->second;
       std::vector<uint>::iterator intersection_end = intersection.end();
 
       for (uint i = 1; i < entity.size(); ++i)
       {
         const uint v = entity[i];
+        const std::vector<uint>& shared_vertices_v = shared_vertices.find(v)->second;
         intersection_end = std::set_intersection(intersection.begin(),
-                                   intersection_end, shared_vertices[v].begin(),
-                                   shared_vertices[v].end(), intersection.begin());
+                                   intersection_end, shared_vertices_v.begin(),
+                                   shared_vertices_v.end(), intersection.begin());
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -540,6 +372,179 @@ void MeshPartitioning::compute_entity_ownership(const std::map<std::vector<uint>
       shared_entity_indices[entity] = local_entity_index;
       shared_entity_processes[entity] = entity_processes;
     }
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>, uint>& owned_entity_indices,
+          std::map<std::vector<uint>, uint>& shared_entity_indices,
+          std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
+          std::map<std::vector<uint>, uint>& ignored_entity_indices,
+          std::map<std::vector<uint>, std::vector<uint> >& ignored_entity_processes)
+{
+  const uint process_number = MPI::process_number();
+
+  // Communicate common entities, starting with the entities we think should be ignored
+  std::vector<uint> common_entity_values;
+  std::vector<uint> common_entity_partition;
+  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = ignored_entity_processes.begin();
+       it != ignored_entity_processes.end(); ++it)
+  {
+    // Get entity vertices (global vertex indices)
+    const std::vector<uint>& entity = it->first;
+
+    // Get entity processes (processes might sharing the entity)
+    const std::vector<uint>& entity_processes = it->second;
+
+    // Prepare data for sending
+    for (uint j = 0; j < entity_processes.size(); ++j)
+    {
+      const uint p = entity_processes[j];
+      common_entity_values.push_back(entity.size());
+      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
+      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
+    }
+  }
+
+  // Communicate common entities, add the entities we think should be shared as well
+  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = shared_entity_processes.begin();
+        it != shared_entity_processes.end(); ++it)
+  {
+    // Get entity vertices (global vertex indices)
+    const std::vector<uint>& entity = it->first;
+
+    // Get entity processes (processes might sharing the entity)
+    const std::vector<uint>& entity_processes = it->second;
+
+    // Prepare data for sending
+    for (uint j = 0; j < entity_processes.size(); ++j)
+    {
+      const uint p = entity_processes[j];
+      assert(process_number < p);
+      common_entity_values.push_back(entity.size());
+      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
+      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
+    }
+  }
+
+  // Communicate common entities
+  MPI::distribute(common_entity_values, common_entity_partition);
+
+  // Check if entities received are really entities
+  std::vector<uint> is_entity_values;
+  std::vector<uint> is_entity_partition;
+  for (uint i = 0; i < common_entity_values.size();)
+  {
+    // Get entity
+    const uint p = common_entity_partition[i];
+    const uint entity_size = common_entity_values[i++];
+    std::vector<uint> entity;
+    for (uint j = 0; j < entity_size; ++j)
+      entity.push_back(common_entity_values[i++]);
+
+    // Check if it is an entity (in which case it will be in ignored or
+    // shared entities)
+    bool is_entity = 0;
+    if (ignored_entity_indices.count(entity) > 0  || shared_entity_indices.count(entity) > 0 )
+    {
+      is_entity = 1;
+    }
+
+    // Add information about entity (whether it's actually an entity) to send
+    // to other processes
+    is_entity_values.push_back(entity_size);
+    is_entity_partition.push_back(p);
+    for (uint j = 0; j < entity_size; ++j)
+    {
+      is_entity_values.push_back(entity[j]);
+      is_entity_partition.push_back(p);
+    }
+    is_entity_values.push_back(is_entity);
+    is_entity_partition.push_back(p);
+  }
+
+  // Send data back (list of requested entities that are really entities)
+  MPI::distribute(is_entity_values, is_entity_partition);
+
+  // Create map from entities to processes where it is an entity
+  std::map<std::vector<uint>, std::vector<uint> > entity_processes;
+  for (uint i = 0; i < is_entity_values.size();)
+  {
+    const uint p = is_entity_partition[i];
+    const uint entity_size = is_entity_values[i++];
+    std::vector<uint> entity;
+    for (uint j = 0; j < entity_size; ++j)
+      entity.push_back(is_entity_values[i++]);
+    const uint is_entity = is_entity_values[i++];
+    if (is_entity == 1)
+    {
+      // Add entity since it is actually an entity for process p
+      entity_processes[entity].push_back(p);
+    }
+  }
+
+  // Fix the list of entities we ignore (numbered by lower ranked process)
+  std::vector<std::vector<uint> > unignore_entities;
+  for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
+  {
+    const std::vector<uint> entity = it->first;
+    const uint local_entity_index = it->second;
+    if (entity_processes.count(entity) > 0)
+    {
+      std::vector<uint> common_processes = entity_processes[entity];
+      assert(common_processes.size() > 0);
+      const uint min_proc = *(std::min_element(common_processes.begin(), common_processes.end()));
+
+      if (process_number < min_proc)
+      {
+        // Move from ignored to shared
+        shared_entity_indices[entity] = local_entity_index;
+        shared_entity_processes[entity] = common_processes;
+
+        // Add entity to list of entities that should be removed from the ignored entity list.
+        unignore_entities.push_back(entity);
+      }
+    }
+    else
+    {
+      // Move from ignored to owned
+      owned_entity_indices[entity] = local_entity_index;
+
+      // Add entity to list of entities that should be removed from the ignored entity list
+      unignore_entities.push_back(entity);
+    }
+  }
+
+  // Remove ignored entities that should not be ignored
+  for (uint i = 0; i < unignore_entities.size(); ++i)
+  {
+    ignored_entity_indices.erase(unignore_entities[i]);
+    ignored_entity_processes.erase(unignore_entities[i]);
+  }
+
+  // Fix the list of entities we share
+  std::vector<std::vector<uint> > unshare_entities;
+  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+  {
+    const std::vector<uint>& entity = it->first;
+    const uint local_entity_index = it->second;
+    if (entity_processes.count(entity) == 0)
+    {
+      // Move from shared to owned
+      owned_entity_indices[entity] = local_entity_index;
+      unshare_entities.push_back(entity);
+    }
+    else
+    {
+      // Update processor list of shared entities
+      shared_entity_processes[entity] = entity_processes[entity];
+    }
+  }
+
+  // Remove shared entities that should not be shared
+  for (uint i = 0; i < unshare_entities.size(); ++i)
+  {
+    shared_entity_indices.erase(unshare_entities[i]);
+    shared_entity_processes.erase(unshare_entities[i]);
   }
 }
 //-----------------------------------------------------------------------------

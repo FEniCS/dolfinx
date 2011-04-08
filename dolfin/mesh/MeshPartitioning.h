@@ -74,9 +74,17 @@ namespace dolfin
 
   private:
 
+    // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
-          std::map<uint, std::vector<uint> >& shared_vertices,
+          const std::map<uint, std::vector<uint> >& shared_vertices,
           std::map<std::vector<uint>, uint>& owned_entity_indices,
+          std::map<std::vector<uint>, uint>& shared_entity_indices,
+          std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
+          std::map<std::vector<uint>, uint>& ignored_entity_indices,
+          std::map<std::vector<uint>, std::vector<uint> >& ignored_entity_processes);
+
+    // Communicate with other processes to finalise entity ownership
+    static void compute_final_entity_ownership(std::map<std::vector<uint>, uint>& owned_entity_indices,
           std::map<std::vector<uint>, uint>& shared_entity_indices,
           std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
           std::map<std::vector<uint>, uint>& ignored_entity_indices,
