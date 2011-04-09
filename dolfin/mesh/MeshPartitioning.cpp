@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
