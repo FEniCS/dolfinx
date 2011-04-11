@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-03-17
+// Last changed: 2011-04-11
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -57,7 +57,7 @@ namespace dolfin
     std::ostream& get_output_stream() { return *logstream; }
 
     /// Turn logging on or off
-    void logging(bool active);
+    void set_log_active(bool active);
 
     /// Return true iff logging is active
     inline bool is_active() { return active; }
