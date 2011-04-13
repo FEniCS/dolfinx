@@ -18,16 +18,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(const FunctionSpace& V, const Point& p)
-  : V(reference_to_no_delete_pointer(V)), p(p)
+PointSource::PointSource(const FunctionSpace& V,
+                         const Point& p,
+                         double magnitude)
+  : V(reference_to_no_delete_pointer(V)), p(p), magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(V);
 }
 //-----------------------------------------------------------------------------
 PointSource::PointSource(boost::shared_ptr<const FunctionSpace> V,
-                         const Point& p)
-  : V(V), p(p)
+                         const Point& p,
+                         double magnitude)
+  : V(V), p(p), magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(*V);
@@ -56,10 +59,14 @@ void PointSource::apply(GenericVector& b)
   Cell cell(mesh, static_cast<uint>(cell_index));
   UFCCell ufc_cell(cell);
 
-  // Evaluate all basis functions at the point
+  // Evaluate all basis functions at the point()
   assert(V->element().value_rank() == 0);
   boost::scoped_array<double> values(new double[V->element().space_dimension()]);
   V->element().evaluate_basis_all(values.get(), p.coordinates(), ufc_cell);
+
+  // Scale by magnitude
+  for (uint i = 0; i < V->element().space_dimension(); i++)
+    values[i] *= magnitude;
 
   // Compute local-to-global mapping
   boost::scoped_array<uint> dofs(new uint[V->dofmap().cell_dimension(cell.index())]);

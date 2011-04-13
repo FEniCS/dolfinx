@@ -24,11 +24,15 @@ namespace dolfin
   {
   public:
 
-    /// Create point source at given point
-    PointSource(const FunctionSpace& V, const Point& p);
+    /// Create point source at given point of given magnitude
+    PointSource(const FunctionSpace& V,
+                const Point& p,
+                double magnitude=1.0);
 
-    /// Create point source at given point
-    PointSource(boost::shared_ptr<const FunctionSpace> V, const Point& p);
+    /// Create point source at given point of given magnitude
+    PointSource(boost::shared_ptr<const FunctionSpace> V,
+                const Point& p,
+                double magnitude=1.0);
 
     /// Destructor
     ~PointSource();
@@ -46,6 +50,9 @@ namespace dolfin
 
     // The point
     Point p;
+
+    // Magnitude
+    double magnitude;
 
   };
 
