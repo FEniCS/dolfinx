@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-03-17
+// Last changed: 2011-04-11
 
 #include <iomanip>
 #include <iostream>
@@ -109,7 +109,7 @@ void Logger::set_output_stream(std::ostream& ostream)
   logstream = &ostream;
 }
 //-----------------------------------------------------------------------------
-void Logger::logging(bool active)
+void Logger::set_log_active(bool active)
 {
   this->active = active;
 }

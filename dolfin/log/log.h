@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-03-17
+// Last changed: 2011-04-11
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -26,7 +26,7 @@ namespace dolfin
   ///
   /// Only messages with a debug level higher than or equal to the current
   /// log level are printed (the default being zero). Logging may also be
-  /// turned off by calling logging(false).
+  /// turned off by calling set_log_active(false).
 
   /// Print message
   void info(std::string msg, ...);
@@ -61,7 +61,10 @@ namespace dolfin
   /// End task (decrease indentation level)
   void end();
 
-  /// Turn logging on or off
+  /// Turn logging on or off (deprecated)
+  void set_log_active(bool active=true);
+
+  /// Turn logging on or off (deprecated, will be removed)
   void logging(bool active=true);
 
   /// Set log level

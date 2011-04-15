@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-02-23
+// Last changed: 2011-04-13
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -72,6 +72,8 @@ namespace dolfin
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const;
+
+    // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
     /// Return the dimension of the local finite element function space on a
     // cell

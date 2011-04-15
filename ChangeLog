@@ -1,3 +1,5 @@
+ - Add support for point sources (class PointSource)
+ - Rename logging --> set_log_active
  - Add parameter "clear_on_write" to TimeSeries
  - Add support for input/output of nested parameter sets
  - Check for dimensions in linear solvers

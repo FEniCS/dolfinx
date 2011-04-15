@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-03-17
+// Last changed: 2011-04-13
 
 #include <boost/assign/list_of.hpp>
 
