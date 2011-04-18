@@ -23,7 +23,7 @@ import re
 import warnings
 import os.path
 
-from dolfin.mesh import meshconvert
+from dolfin_utils import meshconvert
 
 def main(argv):
     "Main function"
