@@ -5,7 +5,7 @@ import unittest
 import os
 import tempfile
 
-from dolfin import meshconvert
+from dolfin_utils import meshconvert
 from dolfin_utils.meshconvert import DataHandler
 
 class TestCase(_TestCase):
