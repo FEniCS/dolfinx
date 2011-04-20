@@ -10,6 +10,7 @@ from dolfin import *
 
 class AbstractBaseTest(object):
     count = 0
+    backend = "default"
     def setUp(self):
         if self.backend != "default":
             parameters.linear_algebra_backend = self.backend
@@ -271,7 +272,7 @@ class AbstractBaseTest(object):
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
-class DataTester(AbstractBaseTest):
+class DataTester:
     def test_vector_data(self):
         # Test for ordinary Vector
         v = Vector(301)
@@ -284,7 +285,7 @@ class DataTester(AbstractBaseTest):
         data = v.data()
         self.assertTrue((data==array).all())
 
-class DataNotWorkingTester(AbstractBaseTest):
+class DataNotWorkingTester:
     def test_vector_data(self):
         v = Vector(301)
         self.assertRaises(RuntimeError, v.data)
@@ -295,31 +296,31 @@ class DataNotWorkingTester(AbstractBaseTest):
         self.assertRaises(AttributeError,no_attribute)
 
 if MPI.num_processes() == 1:
-    class uBLASSparseTester(DataTester, unittest.TestCase):
+    class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, unittest.TestCase):
+    class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
 
     if has_la_backend("MTL4"):
-        class MTL4Tester(DataTester, unittest.TestCase):
+        class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
 
 if has_la_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
 
 if has_la_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output
-    logging(False)
+    set_log_active(False)
 
     print ""
-    print "Testing DOLFIN Vector class"
+    print "Testing DOLFIN Vector classes"
     print "------------------------------------------------"
     unittest.main()

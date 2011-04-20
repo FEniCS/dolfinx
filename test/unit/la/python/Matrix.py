@@ -42,16 +42,74 @@ class AbstractBaseTest(object):
         else:
             return assemble(a), assemble(b)
 
-    #def assemble_vectors(self):
-    #    mesh = UnitSquare(3,3)
-    #
-    #    V = FunctionSpace(mesh, "Lagrange", 2)
-    #    W = FunctionSpace(mesh, "Lagrange", 1)
+    def test_basic_la_operations(self, use_backend=False):
+        from numpy import ndarray, array, ones, sum
+        A,B = self.assemble_matrices(use_backend)
+        unit_norm = A.norm('frobenius')
 
-    #    v = TestFunction(V)
-    #    t = TestFunction(W)
+        def wrong_getitem(type):
+            if type == 0:
+                A["0,1"]
+            elif type == 1:
+                A[0]
+            elif type == 2:
+                A[0, 0, 0]
 
-    #    return assemble(v*dx), assemble(t*dx)
+        # Test wrong getitem
+        self.assertRaises(TypeError,wrong_getitem,0)
+        self.assertRaises(TypeError,wrong_getitem,1)
+        self.assertRaises(TypeError,wrong_getitem,2)
+
+        # Test __imul__ operator
+        A *= 2
+        self.assertAlmostEqual(A.norm('frobenius'), 2*unit_norm)
+
+        # Test __idiv__ operator
+        A /= 2
+        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
+
+        # Test __mul__ operator
+        C = 4*A
+        self.assertAlmostEqual(C.norm('frobenius'), 4*unit_norm)
+
+        # Test __iadd__ operator
+        A += C
+        self.assertAlmostEqual(A.norm('frobenius'), 5*unit_norm)
+
+        # Test __isub__ operator
+        A -= C
+        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
+
+        # Test __mul__ and __add__ operator
+        D = (C+A)*0.2
+        self.assertAlmostEqual(D.norm('frobenius'), unit_norm)
+
+        # Test __div__ and __sub__ operator
+        F = (C-A)/3
+        self.assertAlmostEqual(F.norm('frobenius'), unit_norm)
+
+        # Test axpy
+        A.axpy(10,C,True)
+        self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
+
+        # Test to NumPy array
+        if MPI.num_processes() == 1:
+            A2 = A.array()
+            self.assertTrue(isinstance(A2,ndarray))
+            self.assertEqual(A2.shape, (2021, 2021))
+            self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
+
+        # Test expected size of rectangular array
+        self.assertEqual(A.size(0), B.size(0))
+        self.assertEqual(B.size(1), 528)
+
+        # Test setitem/getitem
+        #A[5,5] = 15
+        #self.assertEqual(A[5,5],15)
+
+
+    def test_basic_la_operations_with_backend(self):
+        self.test_basic_la_operations(True)
 
     #def create_sparsity_pattern(self):
     #    "Create a sparsity pattern"
@@ -109,7 +167,7 @@ class AbstractBaseTest(object):
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
-class DataTester(AbstractBaseTest):
+class DataTester:
     def test_matrix_data(self):
         """ Test for ordinary Matrix"""
         A, B = self.assemble_matrices()
@@ -128,7 +186,7 @@ class DataTester(AbstractBaseTest):
             for k in xrange(rows[row], rows[row+1]):
                 self.assertEqual(array[row,cols[k]], values[k])
 
-class DataNotWorkingTester(AbstractBaseTest):
+class DataNotWorkingTester:
     def test_matrix_data(self):
         A, B = self.assemble_matrices()
         self.assertRaises(RuntimeError, A.data)
@@ -137,31 +195,31 @@ class DataNotWorkingTester(AbstractBaseTest):
         self.assertRaises(RuntimeError, A.data)
 
 if MPI.num_processes() == 1:
-    class uBLASSparseTester(DataTester, unittest.TestCase):
+    class uBLASSparseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, unittest.TestCase):
+    class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
 
     if has_la_backend("MTL4"):
-        class MTL4Tester(DataTester, unittest.TestCase):
+        class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
 
 if has_la_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, unittest.TestCase):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
 
 if has_la_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, unittest.TestCase):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output
-    logging(False)
+    set_log_active(False)
 
     print ""
-    print "Testing DOLFIN Vector class"
+    print "Testing DOLFIN Matrix classes"
     print "------------------------------------------------"
     unittest.main()

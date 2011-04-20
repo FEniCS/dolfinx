@@ -1,7 +1,7 @@
 """Unit tests for the linear algebra interface"""
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2008-09-30 -- 2011-01-28"
+__date__ = "2008-09-30 -- 2011-04-20"
 __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -52,78 +52,6 @@ class AbstractBaseTest(object):
         t = TestFunction(W)
 
         return assemble(v*dx), assemble(t*dx)
-
-    def run_matrix_test(self,use_backend):
-        from numpy import ndarray, array, ones, sum
-        A,B = self.assemble_matrices(use_backend)
-        unit_norm = A.norm('frobenius')
-
-        def wrong_getitem(type):
-            if type == 0:
-                A["0,1"]
-            elif type == 1:
-                A[0]
-            elif type == 2:
-                A[0, 0, 0]
-
-        # Test wrong getitem
-        self.assertRaises(TypeError,wrong_getitem,0)
-        self.assertRaises(TypeError,wrong_getitem,1)
-        self.assertRaises(TypeError,wrong_getitem,2)
-
-        # Test __imul__ operator
-        A *= 2
-        self.assertAlmostEqual(A.norm('frobenius'), 2*unit_norm)
-
-        # Test __idiv__ operator
-        A /= 2
-        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
-
-        # Test __mul__ operator
-        C = 4*A
-        self.assertAlmostEqual(C.norm('frobenius'), 4*unit_norm)
-
-        # Test __iadd__ operator
-        A += C
-        self.assertAlmostEqual(A.norm('frobenius'), 5*unit_norm)
-
-        # Test __isub__ operator
-        A -= C
-        self.assertAlmostEqual(A.norm('frobenius'), unit_norm)
-
-        # Test __mul__ and __add__ operator
-        D = (C+A)*0.2
-        self.assertAlmostEqual(D.norm('frobenius'), unit_norm)
-
-        # Test __div__ and __sub__ operator
-        F = (C-A)/3
-        self.assertAlmostEqual(F.norm('frobenius'), unit_norm)
-
-        # Test axpy
-        A.axpy(10,C,True)
-        self.assertAlmostEqual(A.norm('frobenius'), 41*unit_norm)
-
-        # Test to NumPy array
-        if MPI.num_processes() == 1:
-            A2 = A.array()
-            self.assertTrue(isinstance(A2,ndarray))
-            self.assertEqual(A2.shape,(49,49))
-            self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
-
-        # Test expected size of rectangular array
-        self.assertEqual(A.size(0), B.size(0))
-        self.assertEqual(B.size(1), 16)
-
-        # Test setitem/getitem
-        #A[5,5] = 15
-        #self.assertEqual(A[5,5],15)
-
-
-    def test_matrix_with_backend(self):
-        self.run_matrix_test(True)
-
-    def test_matrix_without_backend(self):
-        self.run_matrix_test(False)
 
     def test_vector(self):
         from numpy import ndarray, linspace, array, fromiter
