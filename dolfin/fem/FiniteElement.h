@@ -183,6 +183,15 @@ namespace dolfin
       _ufc_element->evaluate_basis(i, values, x, ufc_cell);
     }
 
+    /// Evaluate all basis functions at given point in cell
+    void evaluate_basis_all(double* values, const double* coordinates,
+			    const Cell& cell) const
+    {
+      assert(_ufc_element);
+      UFCCell ufc_cell(cell);
+      _ufc_element->evaluate_basis_all(values, coordinates, ufc_cell);
+    }
+
     /// Create a new finite element for sub element i (for a mixed element)
     boost::shared_ptr<const FiniteElement> create_sub_element(uint i) const
     {
