@@ -108,28 +108,19 @@ namespace dolfin
     const FunctionSpace& test_space() const;
 
     /// Return the bilinear form
-    const Form& bilinear_form() const;
+    boost::shared_ptr<const Form> bilinear_form() const;
 
-    /// Return the bilinear form (shared_ptr version)
-    boost::shared_ptr<const Form> bilinear_form_shared_ptr() const;
+    /// Return form_0
+    boost::shared_ptr<const Form> form_0() const;
 
-    /// Return form_0 (shared_ptr version)
-    boost::shared_ptr<const Form> form_0_shared_ptr() const;
-
-    /// Return form_1 (shared_ptr version)
-    boost::shared_ptr<const Form> form_1_shared_ptr() const;
+    /// Return form_1
+    boost::shared_ptr<const Form> form_1() const;
 
     /// Return the linear form
-    const Form& linear_form() const;
-
-    /// Return the linear form (shared_ptr version)
-    boost::shared_ptr<const Form> linear_form_shared_ptr() const;
-
-    /// Return the list of boundary conditions
-    const std::vector<const BoundaryCondition*> bcs() const;
+    boost::shared_ptr<const Form> linear_form() const;
 
     /// Return the list of boundary conditions (shared_ptr version)
-    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs_shared_ptr() const;
+    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs() const;
 
     /// Default parameter values
     static Parameters default_parameters()

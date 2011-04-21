@@ -253,10 +253,9 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
   }
 
   // Get data
-  boost::shared_ptr<const Form> form_0 = problem.form_0_shared_ptr();
-  boost::shared_ptr<const Form> form_1 = problem.form_1_shared_ptr();
-  std::vector<boost::shared_ptr<const BoundaryCondition> >
-    bcs = problem.bcs_shared_ptr();
+  boost::shared_ptr<const Form> form_0 = problem.form_0();
+  boost::shared_ptr<const Form> form_1 = problem.form_1();
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
 
   // Refine forms
   adapt(*form_0, refined_mesh);
