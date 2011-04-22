@@ -166,7 +166,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
 {
   assert(w);
 
-  // Evaluate each dof to get the expansion coefficients
+  // Evaluate dofs to get the expansion coefficients
   element.evaluate_dofs(w, *this, ufc_cell);
 }
 //-----------------------------------------------------------------------------
