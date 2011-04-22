@@ -80,7 +80,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const MeshFunction<uint> > sub_domains,
+                         const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -89,7 +89,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 {
   check();
   parameters = default_parameters();
-  init_from_mesh_function(*sub_domains, sub_domain);
+  init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
@@ -120,7 +120,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(reference_to_no_delete_pointer(g)), _method(method), facets(markers)
+    g(reference_to_no_delete_pointer(g)), _method(method),
+    facets(markers)
 {
   check();
   parameters = default_parameters();
