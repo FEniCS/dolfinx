@@ -55,7 +55,7 @@ namespace dolfin
 %ignore dolfin::GenericFunction::operator();
 
 //-----------------------------------------------------------------------------
-// Rename eval(val, data) method
+// Rename eval(val, x, cell) method
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
