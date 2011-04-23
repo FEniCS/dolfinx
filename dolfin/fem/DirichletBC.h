@@ -108,7 +108,7 @@ namespace dolfin
     /// Create boundary condition for subdomain specified by index
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
-                const MeshFunction<unsigned int>& sub_domains,
+                boost::shared_ptr<const MeshFunction<unsigned int> > sub_domains,
                 uint sub_domain,
                 std::string method="topological");
 
