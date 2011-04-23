@@ -126,13 +126,6 @@ namespace dolfin
 
     /// Create boundary condition for subdomain by boundary markers
     /// (cells, local facet numbers)
-    //DirichletBC(const FunctionSpace& V,
-    //            const GenericFunction& g,
-    //            const std::vector<std::pair<uint, uint> >& markers,
-    //            std::string method="topological");
-
-    /// Create boundary condition for subdomain by boundary markers
-    /// (cells, local facet numbers)
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 const std::vector<std::pair<uint, uint> >& markers,
