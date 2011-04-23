@@ -144,7 +144,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     if (component.size() == 0)
     {
       // Create corresponding boundary condition for extrapolation
-      DirichletBC e_bc(*_E, bc.value(), bc.markers());
+      DirichletBC e_bc(_E, bc.value(), bc.markers());
       e_bc.homogenize();
 
       // Apply boundary condition to extrapolation
@@ -153,7 +153,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     }
 
     // Create Subspace of _Ez_h
-    SubSpace S(*_E, component);
+    boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
 
     // Create corresponding boundary condition for extrapolation
     DirichletBC e_bc(S, bc.value(), bc.markers());
