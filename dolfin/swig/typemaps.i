@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-02-09
+// Last changed: 2011-04-27
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -56,13 +56,6 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
   //return SWIG_AsVal_unsigned_SS_int(in, &value);
 }
 %}
-//-----------------------------------------------------------------------------
-// Apply the builtin out-typemap for int to dolfin::uint
-//-----------------------------------------------------------------------------
-%typemap(out) dolfin::uint
-{
-  $result = SWIG_From_unsigned_SS_int($1);
-}
 
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::real
@@ -83,9 +76,9 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
   $1 = dolfin::to_real(PyFloat_AsDouble($input));
 }
 
-%typemap(out) dolfin::real
+%typemap(out, fragment=SWIG_From_frag(double)) dolfin::real
 {
-  $result = SWIG_From_double(dolfin::to_double($1));
+  $result = SWIG_From(double)(dolfin::to_double($1));
 }
 
 //-----------------------------------------------------------------------------
@@ -95,15 +88,15 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 // The typecheck (dolfin::uint)
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint
+%typecheck(SWIG_TYPECHECK_INTEGER) unsigned int
 {
   $1 = PyInteger_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
-// The typemap (dolfin::uint)
+// The typemaps unsigned int
 //-----------------------------------------------------------------------------
-%typemap(in) dolfin::uint
+%typemap(in) unsigned int
 {
   if (PyInteger_Check($input))
   {
@@ -115,6 +108,12 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
   }
   else
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+}
+
+%typemap(out, fragment=SWIG_From_frag(unsigned int)) unsigned int
+{
+  // Typemap unsigned int
+  $result = SWIG_From(unsigned int)($1);
 }
 
 //-----------------------------------------------------------------------------
