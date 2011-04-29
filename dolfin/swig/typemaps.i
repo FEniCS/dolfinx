@@ -7,11 +7,15 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-04-27
+// Last changed: 2011-02-09
 
 //=============================================================================
 // General typemaps for PyDOLFIN
 //=============================================================================
+
+// Ensure typefragments
+%ensure_type_fragments(double)
+%ensure_type_fragments(unsigned int)
 
 //-----------------------------------------------------------------------------
 // A home brewed type check for checking integers
@@ -40,7 +44,6 @@ SWIGINTERNINLINE bool Py_int_convert(PyObject* in, int& value)
   long tmp = static_cast<long>(PyInt_AsLong(in));
   value = static_cast<dolfin::uint>(tmp);
   return true;
-  //return SWIG_AsVal_int(in, &value);
 }
 
 // A check for int and converter for uint
@@ -53,10 +56,11 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
     return false;
   value = static_cast<dolfin::uint>(tmp);
   return true;
-  //return SWIG_AsVal_unsigned_SS_int(in, &value);
 }
 %}
-
+//-----------------------------------------------------------------------------
+// Apply the builtin out-typemap for int to dolfin::uint
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::real
 // We do not pass any high precision values here. This might change in future
@@ -86,7 +90,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// The typecheck (dolfin::uint)
+// The typecheck (unsigned int)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_INTEGER) unsigned int
 {
@@ -94,7 +98,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 }
 
 //-----------------------------------------------------------------------------
-// The typemaps unsigned int
+// The typemap (unsigned int)
 //-----------------------------------------------------------------------------
 %typemap(in) unsigned int
 {
@@ -102,7 +106,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
   {
     long tmp = static_cast<long>(PyInt_AsLong($input));
     if (tmp>=0)
-      $1 = static_cast<dolfin::uint>(tmp);
+      $1 = static_cast<unsigned int>(tmp);
     else
       SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
   }
