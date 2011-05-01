@@ -36,7 +36,12 @@ void AdaptiveVariationalSolver::solve(Function& u,
 {
 
   // Extract error control view from goal functional
-  M.update_ec(problem.bilinear_form(), problem.linear_form());
+  boost::shared_ptr<const Form> a = problem.bilinear_form();
+  assert(a);
+  boost::shared_ptr<const Form> L = problem.linear_form();
+  assert(L);
+
+  M.update_ec(*a, *L);
   ErrorControl& ec(*(M._ec));
 
   AdaptiveVariationalSolver::solve(u, problem, tol, M, ec, parameters);
@@ -79,8 +84,7 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
     //--- Stage 1: Estimate error ---
     begin("Stage %d.1: Computing error estimate...", i);
-    const double error_estimate = ec.estimate_error(u,
-                                                    problem.bcs_shared_ptr());
+    const double error_estimate = ec.estimate_error(u, problem.bcs());
 
     // Evaluate functional value
     if (!problem.is_nonlinear())

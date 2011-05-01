@@ -1,3 +1,5 @@
+ - Moved meshconverter to dolfin_utils
+ - Add support for conversion of material markers for Gmsh meshes
  - Add support for point sources (class PointSource)
  - Rename logging --> set_log_active
  - Add parameter "clear_on_write" to TimeSeries

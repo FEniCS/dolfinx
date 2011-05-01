@@ -145,52 +145,28 @@ const FunctionSpace& VariationalProblem::test_space() const
   return *_bilinear_form->function_space(0);
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::bilinear_form() const
-{
-  assert(_bilinear_form);
-  return *_bilinear_form;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Form>
-VariationalProblem::bilinear_form_shared_ptr() const
+boost::shared_ptr<const dolfin::Form> VariationalProblem::bilinear_form() const
 {
   return _bilinear_form;
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::linear_form() const
-{
-  assert(_linear_form);
-  return *_linear_form;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Form>
-VariationalProblem::linear_form_shared_ptr() const
+boost::shared_ptr<const dolfin::Form> VariationalProblem::linear_form() const
 {
   return _linear_form;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Form>
-VariationalProblem::form_0_shared_ptr() const
+boost::shared_ptr<const dolfin::Form> VariationalProblem::form_0() const
 {
   return (_is_nonlinear ? _linear_form : _bilinear_form);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const dolfin::Form>
-VariationalProblem::form_1_shared_ptr() const
+boost::shared_ptr<const dolfin::Form> VariationalProblem::form_1() const
 {
   return (_is_nonlinear ? _bilinear_form : _linear_form);
 }
 //-----------------------------------------------------------------------------
-const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const
-{
-  std::vector<const BoundaryCondition*> bcs;
-  for (uint i = 0; i < _bcs.size(); i++)
-    bcs.push_back(_bcs[i].get());
-  return bcs;
-}
-//-----------------------------------------------------------------------------
 const std::vector<boost::shared_ptr<const BoundaryCondition> >
-VariationalProblem::bcs_shared_ptr() const
+VariationalProblem::bcs() const
 {
   return _bcs;
 }

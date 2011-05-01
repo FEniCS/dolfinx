@@ -35,14 +35,22 @@ void LinearVariationalSolver::solve(Function& u,
   boost::scoped_ptr<GenericMatrix> A(u.vector().factory().create_matrix());
   boost::scoped_ptr<GenericVector> b(u.vector().factory().create_vector());
 
+  // Get bilinear and linear forms
+  boost::shared_ptr<const Form> a = problem.bilinear_form();
+  boost::shared_ptr<const Form> L = problem.linear_form();
+  assert(a);
+  assert(L);
+
+
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
   {
     // Need to cast to DirichletBC to use assemble_system
     std::vector<const DirichletBC*> bcs;
-    for (uint i = 0; i < problem.bcs().size(); i++)
+    const std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs = problem.bcs();
+    for (uint i = 0; i < _bcs.size(); i++)
     {
-      const DirichletBC* bc = dynamic_cast<const DirichletBC*>(problem.bcs()[i]);
+      const DirichletBC* bc = dynamic_cast<const DirichletBC*>(_bcs[i].get());
       if (!bc)
         error("Only Dirichlet boundary conditions may be used for assembly of symmetric system.");
       bcs.push_back(bc);
@@ -50,8 +58,8 @@ void LinearVariationalSolver::solve(Function& u,
 
     // Assemble linear system and apply boundary conditions
     assemble_system(*A, *b,
-                    problem.bilinear_form(),
-                    problem.linear_form(),
+                    *a,
+                    *L,
                     bcs,
                     0, 0, 0,
                     0,
@@ -60,8 +68,8 @@ void LinearVariationalSolver::solve(Function& u,
   else
   {
     // Assemble linear system
-    assemble(*A, problem.bilinear_form());
-    assemble(*b, problem.linear_form());
+    assemble(*A, *a);
+    assemble(*b, *L);
 
     // Apply boundary conditions
     for (uint i = 0; i < problem.bcs().size(); i++)

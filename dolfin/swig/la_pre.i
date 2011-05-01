@@ -10,7 +10,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2011-01-21
+// Last changed: 2011-04-20
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -212,6 +212,7 @@ LA_PRE_FACTORY(MTL4Factory)
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
+%feature("director") dolfin::PETScUserPreconditioner;
 %feature("director") dolfin::PETScKrylovMatrix;
 %feature("director") dolfin::uBLASKrylovMatrix;
 

@@ -71,3 +71,12 @@ file << sub_domains
 
 file_double = File("subdomains_double.xml")
 file_double << sub_domains_double
+
+# Save sub domains to VTK files
+file = File("subdomains.pvd")
+file << sub_domains
+
+file = File("subdomains_double.pvd")
+file << sub_domains_double
+
+

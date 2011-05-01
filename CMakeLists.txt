@@ -554,6 +554,7 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.py"
     PATTERN "*.xml*"
     PATTERN "*.inp"
+    PATTERN "*.msh"
     PATTERN "*.supp"
     PATTERN "CMakeFiles" EXCLUDE)
 

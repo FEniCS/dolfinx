@@ -55,8 +55,12 @@ _NonlinearProblem::~_NonlinearProblem()
 void NonlinearVariationalSolver::
 _NonlinearProblem::F(GenericVector& b, const GenericVector& x)
 {
+  // Get F (linear form)
+  boost::shared_ptr<const Form> _F = problem.linear_form();
+  assert(_F);
+
   // Assemble right-hand side
-  assemble(b, problem.linear_form());
+  assemble(b, *_F);
 
   // Apply boundary conditions
   for (uint i = 0; i < problem.bcs().size(); i++)
@@ -74,8 +78,12 @@ _NonlinearProblem::J(GenericMatrix& A, const GenericVector& x)
   // Check if Jacobian matrix sparsity pattern should be reset
   bool reset_sparsity = !(parameters["reset_jacobian"] && jacobian_initialized);
 
+  // Get J (Jacobian, bilinear form)
+  boost::shared_ptr<const Form> _J = problem.bilinear_form();
+  assert(_J);
+
   // Assemble left-hand side
-  assemble(A, problem.bilinear_form(), reset_sparsity);
+  assemble(A, *_J, reset_sparsity);
 
   // Remember that Jacobian has been initialized
   jacobian_initialized = true;

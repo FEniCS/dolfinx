@@ -5,8 +5,8 @@ import unittest
 import os
 import tempfile
 
-from dolfin.mesh import meshconvert
-from dolfin.mesh.meshconvert import DataHandler
+from dolfin_utils import meshconvert
+from dolfin_utils.meshconvert import DataHandler
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):
@@ -180,6 +180,62 @@ a, 0, 0, 0""")
         # Non-existent element set
         convert(fname, """*MATERIAL, NAME=MAT
 *SOLID SECTION, ELSET=NONE, MATERIAL=MAT""", error=True)
+
+    def __convert(self, fname):
+        handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)
+        if not os.path.isabs(fname):
+            fname = os.path.join("data", fname)
+        meshconvert.convert(fname, handler)
+        return handler
+
+class GmshTest(_ConverterTest):
+    """ Test Gmsh convertor.
+    """
+    def test_success(self):
+        """ Test success case.
+        """
+        handler = self.__convert("gmsh.msh")
+        # Verify vertices
+        self.assertEqual(handler.vertices, [
+            (0,    0,    0),
+            (1,    0,    1),
+            (-0,    0.8,  0.6),
+            (0.3,  0.8, -0.1),
+            (0.6,  0.3, -0.4),
+            (0.5,  0,    0.5),
+            (0.5,  0.4,  0.8),
+            (0.76, 0.26, 0.63),
+            (0.53, 0.53, 0.26),
+            (0.8,  0.15, 0.3)
+            ])
+        self.assert_(handler.vertices_ended)
+
+        # Verify cells
+        self.assertEqual(handler.cells, [
+            (9, 5, 1, 7),
+            (4, 8, 0, 9),
+            (8, 5, 0, 9),
+            (8, 5, 9, 7),
+            (8, 3, 4, 0),
+            (8, 2, 3, 0),
+            (7, 5, 6, 8),
+            (5, 2, 6, 8),
+            (1, 7, 5, 6),
+            (5, 2, 8, 0)
+            ])
+        self.assert_(handler.cells_ended)
+
+        # Verify physical regions
+        self.assertEqual(handler.functions.keys(), ["physical_region"])
+        dim, sz, entries, ended = handler.functions["physical_region"]
+        self.assertEqual(dim, 3)
+        self.assertEqual(sz, 10)        # There are 10 cells
+        # Cells 0 thru 4 should be in region 1000, cells 5 thru 9 in
+        # region 2000
+        self.assertEqual(entries, [1000]*5 + [2000]*5)
+        self.assert_(ended)
+        self.assert_(handler.closed)
+
 
     def __convert(self, fname):
         handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)

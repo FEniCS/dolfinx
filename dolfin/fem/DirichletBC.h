@@ -101,13 +101,15 @@ namespace dolfin
     /// Create boundary condition for subdomain specified by index
     DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
-                const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
+                const MeshFunction<unsigned int>& sub_domains,
+                uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
-                const MeshFunction<unsigned int>& sub_domains, uint sub_domain,
+                boost::shared_ptr<const MeshFunction<unsigned int> > sub_domains,
+                uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
@@ -120,13 +122,6 @@ namespace dolfin
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 uint sub_domain,
-                std::string method="topological");
-
-    /// Create boundary condition for subdomain by boundary markers
-    /// (cells, local facet numbers)
-    DirichletBC(const FunctionSpace& V,
-                const GenericFunction& g,
-                const std::vector<std::pair<uint, uint> >& markers,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain by boundary markers
@@ -179,14 +174,10 @@ namespace dolfin
     const std::vector<std::pair<uint, uint> >& markers() const;
 
     /// Return boundary value g
-    const GenericFunction& value() const;
-
-    /// Return shared pointer to boundary value g
-    /// Testing multiline comment
-    boost::shared_ptr<const GenericFunction> value_ptr() const;
+    boost::shared_ptr<const GenericFunction> value() const;
 
     //// Return shared pointer to sub-domain
-    boost::shared_ptr<const SubDomain> user_sub_domain_ptr() const;
+    boost::shared_ptr<const SubDomain> user_sub_domain() const;
 
     /// Check if given function is compatible with boundary condition
     /// (checking only vertex values)
@@ -264,7 +255,7 @@ namespace dolfin
     static const std::set<std::string> methods;
 
     // User defined sub domain
-    boost::shared_ptr<const SubDomain> user_sub_domain;
+    boost::shared_ptr<const SubDomain> _user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector<std::pair<uint, uint> > facets;

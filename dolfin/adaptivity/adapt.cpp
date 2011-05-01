@@ -253,10 +253,9 @@ const dolfin::VariationalProblem& dolfin::adapt(const VariationalProblem& proble
   }
 
   // Get data
-  boost::shared_ptr<const Form> form_0 = problem.form_0_shared_ptr();
-  boost::shared_ptr<const Form> form_1 = problem.form_1_shared_ptr();
-  std::vector<boost::shared_ptr<const BoundaryCondition> >
-    bcs = problem.bcs_shared_ptr();
+  boost::shared_ptr<const Form> form_0 = problem.form_0();
+  boost::shared_ptr<const Form> form_1 = problem.form_1();
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
 
   // Refine forms
   adapt(*form_0, refined_mesh);
@@ -324,7 +323,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
 
   // Extract value
-  const Function* g = dynamic_cast<const Function*>(bc.value_ptr().get());
+  const Function* g = dynamic_cast<const Function*>(bc.value().get());
 
   // Create refined boundary condition
   boost::shared_ptr<DirichletBC> refined_bc;
@@ -335,7 +334,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
                                      refined_markers));
   }
   else
-    refined_bc.reset(new DirichletBC(V, bc.value_ptr(), refined_markers));
+    refined_bc.reset(new DirichletBC(V, bc.value(), refined_markers));
 
   // Set parent / child
   set_parent_child(bc, refined_bc);

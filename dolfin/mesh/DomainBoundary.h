@@ -7,6 +7,7 @@
 #ifndef __DOMAIN_BOUNDARY_H
 #define __DOMAIN_BOUNDARY_H
 
+#include <dolfin/common/Array.h>
 #include "SubDomain.h"
 
 namespace dolfin
@@ -27,7 +28,8 @@ namespace dolfin
     virtual ~DomainBoundary() {}
 
     /// Return true for points on the boundary
-    virtual bool inside(const Array<double>& x, bool on_boundary) const { return on_boundary; }
+    virtual bool inside(const Array<double>& x, bool on_boundary) const
+    { return on_boundary; }
 
   };
 

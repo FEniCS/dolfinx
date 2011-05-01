@@ -45,11 +45,11 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
     g(reference_to_no_delete_pointer(g)),
-    _method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
+    _method(method), _user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
   parameters = default_parameters();
-  init_from_sub_domain(user_sub_domain);
+  init_from_sub_domain(_user_sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
@@ -58,11 +58,11 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(g), _method(method), user_sub_domain(sub_domain)
+    g(g), _method(method), _user_sub_domain(sub_domain)
 {
   check();
   parameters = default_parameters();
-  init_from_sub_domain(user_sub_domain);
+  init_from_sub_domain(_user_sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
@@ -80,7 +80,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         const MeshFunction<uint>& sub_domains,
+                         boost::shared_ptr<const MeshFunction<uint> > sub_domains,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -89,7 +89,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 {
   check();
   parameters = default_parameters();
-  init_from_mesh_function(sub_domains, sub_domain);
+  init_from_mesh_function(*sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
@@ -113,18 +113,6 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
   check();
   parameters = default_parameters();
   init_from_mesh(sub_domain);
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         const std::vector<std::pair<uint, uint> >& markers,
-                         std::string method)
-  : BoundaryCondition(V),
-    Hierarchical<DirichletBC>(*this),
-    g(reference_to_no_delete_pointer(g)), _method(method),
-    facets(markers)
-{
-  check();
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
@@ -159,7 +147,7 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _function_space = bc._function_space;
   g = bc.g;
   _method = bc._method;
-  user_sub_domain = bc.user_sub_domain;
+  _user_sub_domain = bc._user_sub_domain;
   facets = bc.facets;
 
   // Call assignment operator for base class
@@ -311,21 +299,14 @@ const std::vector<std::pair<dolfin::uint, dolfin::uint> >& DirichletBC::markers(
   return facets;
 }
 //-----------------------------------------------------------------------------
-const GenericFunction& DirichletBC::value() const
-{
-  return *g;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericFunction> DirichletBC::value_ptr() const
+boost::shared_ptr<const GenericFunction> DirichletBC::value() const
 {
   return g;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain_ptr() const
+boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
 {
-  if (!user_sub_domain)
-    error("No user subdomain defined");
-  return user_sub_domain;
+  return _user_sub_domain;
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::is_compatible(GenericFunction& v) const
@@ -775,7 +756,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 {
   assert(_function_space);
   assert(g);
-  assert(user_sub_domain);
+  assert(_user_sub_domain);
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
@@ -801,7 +782,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       // Check if the coordinates are part of the sub domain (calls user-defined 'indside' function)
-      if (!user_sub_domain->inside(data.array_coordinates[i], false))
+      if (!_user_sub_domain->inside(data.array_coordinates[i], false))
         continue;
 
       if (!already_interpolated)

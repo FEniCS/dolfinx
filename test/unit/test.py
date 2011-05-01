@@ -14,7 +14,7 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem": ["test", "Assembly"],
+    "fem": ["test", "Assembly", "DirichletBC"],
     "function": ["test", "function"],
     "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],

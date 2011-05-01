@@ -19,7 +19,7 @@
 %pythoncode %{
 def function_space(self):
     "Return the FunctionSpace"
-    from dolfin.function.functionspace import FunctionSpaceFromCpp
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
