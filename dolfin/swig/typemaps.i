@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2011-02-09
+// Last changed: 2011-05-02
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -21,43 +21,50 @@
 // A home brewed type check for checking integers
 // Needed due to problems with PyInt_Check from python 2.6 and NumPy
 //-----------------------------------------------------------------------------
-%{
-SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
-{
-  return  PyInt_Check(in) || (PyArray_CheckScalar(in) &&
-			      PyArray_IsScalar(in,Integer));
-}
-%}
-
-%wrapper%{
-// A check for float and converter for double
-SWIGINTERNINLINE bool Py_float_convert(PyObject* in, double& value)
-{
-  return SWIG_AsVal_double(in, &value);
+%fragment("PyInteger_Check", "header") {
+  SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
+  {
+    return  PyInt_Check(in) || (PyArray_CheckScalar(in) &&
+  			      PyArray_IsScalar(in,Integer));
+  }
 }
 
-// A check for int and converter for int
-SWIGINTERNINLINE bool Py_int_convert(PyObject* in, int& value)
-{
-  if (!PyInteger_Check(in))
-    return false;
-  long tmp = static_cast<long>(PyInt_AsLong(in));
-  value = static_cast<dolfin::uint>(tmp);
-  return true;
+#define Py_convert_frag(Type) "Py_convert_" {Type}
+
+%fragment("Py_convert_double", "header") {
+  // A check for float and converter for double
+  SWIGINTERNINLINE bool Py_convert_double(PyObject* in, double& value)
+  {
+    return SWIG_AsVal(double)(in, &value);
+  }
 }
 
-// A check for int and converter for uint
-SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
-{
-  if (!PyInteger_Check(in))
-    return false;
-  long tmp = static_cast<long>(PyInt_AsLong(in));
-  if (tmp<=0)
-    return false;
-  value = static_cast<dolfin::uint>(tmp);
-  return true;
+%fragment("Py_convert_int", "header", fragment="PyInteger_Check") {
+  // A check for int and converter for int
+  SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
+  {
+    if (!PyInteger_Check(in))
+      return false;
+    long tmp = static_cast<long>(PyInt_AsLong(in));
+    value = static_cast<dolfin::uint>(tmp);
+    return true;
+  }
 }
-%}
+
+%fragment("Py_convert_uint", "header", fragment="PyInteger_Check") {
+  // A check for int and converter to uint
+  SWIGINTERNINLINE bool Py_convert_uint(PyObject* in, dolfin::uint& value)
+  {
+    if (!PyInteger_Check(in))
+      return false;
+    long tmp = static_cast<long>(PyInt_AsLong(in));
+    if (tmp<=0)
+      return false;
+    value = static_cast<dolfin::uint>(tmp);
+    return true;
+  }
+}
+
 //-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
@@ -75,7 +82,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
   $1 = PyFloat_Check($input) ? 1 : 0;
 }
 
-%typemap(in) dolfin::real
+%typemap(in, fragment=SWIG_AsVal_frag(double)) dolfin::real
 {
   $1 = dolfin::to_real(PyFloat_AsDouble($input));
 }
@@ -100,7 +107,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 // The typemap (unsigned int)
 //-----------------------------------------------------------------------------
-%typemap(in) unsigned int
+%typemap(in, fragment="PyInteger_Check") unsigned int
 {
   if (PyInteger_Check($input))
   {
@@ -131,7 +138,7 @@ SWIGINTERNINLINE bool Py_uint_convert(PyObject* in, dolfin::uint& value)
 //-----------------------------------------------------------------------------
 // The typemap (int)
 //-----------------------------------------------------------------------------
-%typemap(in) int
+%typemap(in, fragment="PyInteger_Check") int
 {
   if (PyInteger_Check($input))
   {

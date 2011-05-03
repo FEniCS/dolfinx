@@ -6,7 +6,7 @@
 // Modified by Anders logg, 2009.
 //
 // First added:  2007-12-16
-// Last changed: 2009-09-24
+// Last changed: 2011-04-29
 
 //-----------------------------------------------------------------------------
 // Add numpy typemaps and macro for numpy typemaps
@@ -27,12 +27,16 @@
 //              'dolfin::uint'
 // DESCR      : The char descriptor of the NumPy type
 //-----------------------------------------------------------------------------
+
+#define convert_numpy_to_array_no_check(Type) "convert_numpy_to_array_no_check_" {Type} 
+
 %define UNSAFE_NUMPY_TYPEMAPS(TYPE,TYPE_UPPER,NUMPY_TYPE,TYPE_NAME,DESCR)
-%{
+
+%fragment(convert_numpy_to_array_no_check(TYPE_NAME), "header") {
 //-----------------------------------------------------------------------------
 // Typemap function (Reducing wrapper code size)
 //-----------------------------------------------------------------------------
-SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* input, TYPE*& ret)
+SWIGINTERN bool convert_numpy_to_array_no_check_ ## TYPE_NAME(PyObject* input, TYPE*& ret)
 {
   if (PyArray_Check(input)) 
   {
@@ -46,7 +50,7 @@ SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* inpu
   PyErr_SetString(PyExc_TypeError,"numpy array of 'TYPE_NAME' expected. Make sure that the numpy array use dtype='DESCR'.");
   return false;
 }
-%}
+}
 
 //-----------------------------------------------------------------------------
 // The typecheck
@@ -59,9 +63,9 @@ SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* inpu
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in) TYPE *
+%typemap(in, fragment=convert_numpy_to_array_no_check(TYPE_NAME)) TYPE *
 {
-if (!convert_numpy_to_ ## TYPE_NAME ## _array_no_check($input,$1))
+if (!convert_numpy_to_array_no_check_ ## TYPE_NAME($input,$1))
     return NULL;
 }
 
@@ -83,12 +87,14 @@ if (!convert_numpy_to_ ## TYPE_NAME ## _array_no_check($input,$1))
 //              'dolfin::uint'
 // DESCR      : The char descriptor of the NumPy type
 //-----------------------------------------------------------------------------
+#define convert_numpy_to_array_with_check(Type) "convert_numpy_to_array_with_check_" {Type}
 %define SAFE_NUMPY_TYPEMAPS(TYPE,TYPE_UPPER,NUMPY_TYPE,TYPE_NAME,DESCR)
-%{
+
+%fragment(convert_numpy_to_array_with_check(TYPE_NAME), "header") {
 //-----------------------------------------------------------------------------
 // Typemap function (Reducing wrapper code size)
 //-----------------------------------------------------------------------------
-SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_with_check(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
+SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
 {
   if (PyArray_Check(input)) 
   {
@@ -103,7 +109,7 @@ SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_with_check(PyObject* in
   PyErr_SetString(PyExc_TypeError,"numpy array of 'TYPE_NAME' expected. Make sure that the numpy array use dtype='DESCR'.");
   return false;
 }
-%}
+}
 
 //-----------------------------------------------------------------------------
 // The typecheck
@@ -116,9 +122,9 @@ SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_with_check(PyObject* in
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in) (dolfin::uint _array_dim, TYPE* _array)
+%typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (dolfin::uint _array_dim, TYPE* _array)
 {
-  if (!convert_numpy_to_ ## TYPE_NAME ## _array_with_check($input,$1,$2))
+  if (!convert_numpy_to_array_with_check_ ## TYPE_NAME($input,$1,$2))
     return NULL;
 }
 %enddef

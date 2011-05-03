@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2011-03-23
+// Last changed: 2011-05-02
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -93,10 +93,10 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       }
       else
       {
-	      // If failed with normal pointer conversion then
-	      // try with shared_ptr conversion
-	      newmem = 0;
-	      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+	// If failed with normal pointer conversion then
+	// try with shared_ptr conversion
+	newmem = 0;
+	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
         if (SWIG_IsOK(res))
         {
           // If we need to release memory
@@ -306,7 +306,7 @@ const std::vector<TYPE>&  ARG_NAME
   $1 = PySequence_Check($input) ? 1 : 0;
 }
 
-%typemap (in) std::vector<TYPE> ARG_NAME (std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
+%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) std::vector<TYPE> ARG_NAME (std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
 {
   // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME, SEQ_LENGTH)
@@ -326,7 +326,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     item = PySequence_GetItem($input, i);
 
-    if(!SWIG_IsOK(Py_ ## TYPE_NAME ## _convert(item, value)))
+    if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
       SWIG_exception(SWIG_TypeError, "expected items of sequence to be of type "\
 		     "\"TYPE_NAME\" in argument $argnum");
     tmp_vec.push_back(value);
@@ -353,7 +353,7 @@ const std::vector<TYPE>&  ARG_NAME
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum");
 
-  int size = PyList_Size($input);
+  int size = PyList_Size($input); 
   int res = 0;
   PyObject * py_item = 0;
   void * itemp = 0;
@@ -393,4 +393,4 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_typ
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, float, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
