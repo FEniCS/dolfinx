@@ -150,6 +150,30 @@ int main()
       endif()
     endif()
   endforeach()
+
+  # If program still does not run, try adding GFortran library
+  if(NOT ARMADILLO_TEST_RUNS)
+    find_program(GFORTRAN_EXECUTABLE gfortran)
+
+    if (GFORTRAN_EXECUTABLE)
+      execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
+	OUTPUT_VARIABLE GFORTRAN_LIBRARY
+	RESULT_VARIABLE RESULT)
+      
+      # Strip off leading and trailing spaces
+      string(STRIP "${GFORTRAN_LIBRARY}" GFORTRAN_LIBRARY)
+
+      if (EXISTS "${GFORTRAN_LIBRARY}")
+	list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
+	check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_GFORTRAN_TEST_RUNS)
+
+	if (ARMADILLO_GFORTRAN_TEST_RUNS)
+	  list(APPEND ARMADILLO_LIBRARIES ${GFORTRAN_LIBRARY})
+	  set(ARMADILLO_TEST_RUNS TRUE)
+	endif()
+      endif()
+    endif()
+  endif()
 endif()
 
 # Standard package handling
