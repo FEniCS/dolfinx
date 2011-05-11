@@ -4,9 +4,25 @@ in Dolfin using Epetra matrices, the AztecOO CG solver and ML
 AMG preconditioner
 """
 
-__author__ = "Kent-Andre Mardal (kent-and@simula.no)"
-__date__ = "2008-04-24"
-__copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
+# Copyright (C) 2008 Kent-Andre Mardal
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2008-04-24
+# Last changed: 2008-04-24
 
 # Test for Trilinos:
 try:

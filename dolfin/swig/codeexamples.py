@@ -3,11 +3,24 @@
 The idea is to substitute the code examples from the *.h files, which uses the
 C++ syntax, with code snippets from this dictionary."""
 
-__author__ = "Kristian B. Oelgaard (k.b.oelgaard@gmail.com)"
-__date__ = "2010-10-14"
-__copyright__ = "Copyright (C) 2010 Kristian B. Oelgaard"
-__license__  = "GNU LGPL Version 2.1"
-
+# Copyright (C) 2010 Kristian B. Oelgaard
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2010-10-14
 # Last changed: 2010-10-19
 
 codesnippets = {

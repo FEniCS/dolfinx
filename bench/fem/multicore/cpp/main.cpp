@@ -1,12 +1,26 @@
-// Copyright (C) 2010 Anders Logg.
-// Licensed under the GNU LGPL Version 2.1.
+// Copyright (C) 2010 Anders Logg
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+//
+// First added:  2010-11-11
+// Last changed: 2010-11-29
 //
 // If run without command-line arguments, this benchmark iterates from
 // zero to MAX_NUM_THREADS. If a command-line argument --num_threads n
 // is given, the benchmark is run with the specified number of threads.
-//
-// First added:  2010-11-11
-// Last changed: 2010-11-29
 
 #include <cstdlib>
 

@@ -2,12 +2,27 @@
 """This demo program solves the equations of static linear elasticity
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
-__author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2010-09-05"
-__copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
-__license__  = "GNU LGPL Version 2.1"
-
+# Copyright (C) 2007 Kristian B. Oelgaard
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+#
 # Modified by Anders Logg, 2008.
+#
+# First added:  2007-11-14
+# Last changed: 2010-09-05
 
 from dolfin import *
 

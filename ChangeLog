@@ -1,3 +1,4 @@
+ - Change license from LGPL v2.1 to LGPL v3 or later
  - Moved meshconverter to dolfin_utils
  - Add support for conversion of material markers for Gmsh meshes
  - Add support for point sources (class PointSource)
