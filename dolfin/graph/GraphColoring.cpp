@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2011.
+//
 // First added:  2011-02-21
-// Last changed:
+// Last changed: 2011-05-11
 
 #include <string>
 #include <dolfin/common/Array.h>
@@ -43,7 +45,7 @@ dolfin::uint GraphColoring::compute_local_vertex_coloring(const Graph& graph,
     return ZoltanInterface::compute_local_vertex_coloring(graph, colors);
   else
   {
-    error("Mesh colorer type unkown. Possible options are \"Boost\" or \"Zoltan\".");
+    error("Mesh colorer type unknown. Possible options are \"Boost\" or \"Zoltan\".");
     return 0;
   }
 }

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008-2010.
 //
 // First added:  2008-04-21
-// Last changed: 2011-01-14
+// Last changed: 2011-05-11
 
 #ifdef HAS_TRILINOS
 
@@ -101,7 +101,7 @@ void EpetraVector::resize(uint N)
     resize(range, ghost_indices);
   }
   else
-    error("Epetra vector type unkown.");
+    error("Epetra vector type unknown.");
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::pair<uint, uint> range)

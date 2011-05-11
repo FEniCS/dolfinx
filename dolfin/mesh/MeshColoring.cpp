@@ -16,9 +16,10 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg, 2010.
+// Modified by Johannes Ring, 2011.
 //
 // First added:  2010-11-15
-// Last changed: 2011-01-29
+// Last changed: 2011-05-11
 
 #include <map>
 #include <utility>
@@ -140,7 +141,7 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
   // Check that coloring type is valid
   if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
   {
-    error("Coloring type '%s' unkown. Options are \"vertex\", \"edge\" or \"facet\".",
+    error("Coloring type '%s' unknown. Options are \"vertex\", \"edge\" or \"facet\".",
           coloring_type.c_str());
   }
 

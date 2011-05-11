@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells 2005-2010.
 // Modified by Martin Sandve Alnes 2008
+// Modified by Johannes Ring, 2011.
 //
 // First added:  2004
-// Last changed: 2011-01-14
+// Last changed: 2011-05-11
 
 #ifdef HAS_PETSC
 
@@ -61,7 +62,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
 PETScVector::PETScVector(std::string type)
 {
   if (type != "global" && type != "local")
-    error("PETSc vector type unkown.");
+    error("PETSc vector type unknown.");
 
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
