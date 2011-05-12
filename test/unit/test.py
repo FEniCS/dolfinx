@@ -20,7 +20,7 @@
 # Modified by Johannes Ring 2009, 2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-03-22
+# Last changed: 2011-05-12
 
 import sys, os, re
 import platform
@@ -38,7 +38,8 @@ tests = {
     "parameter": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"],
-    "adaptivity": ["errorcontrol"]
+    "adaptivity": ["errorcontrol"],
+    "jit": ["test"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
