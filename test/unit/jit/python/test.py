@@ -31,11 +31,15 @@ class JIT(unittest.TestCase):
         # from FIAT if the JIT caching does not recognize that the two
         # forms are different
 
-        M1 = assemble(Constant(1.0)*dx, mesh=UnitSquare(4, 4))
-        M2 = assemble(Constant(1.0)*dx, mesh=UnitCube(4, 4, 4))
+        for representation in ["tensor", "quadrature"]:
 
-        self.assertAlmostEqual(M1, 1.0)
-        self.assertAlmostEqual(M2, 1.0)
+            parameters["form_compiler"]["representation"] = representation
+
+            M1 = assemble(Constant(1.0)*dx, mesh=UnitSquare(4, 4))
+            M2 = assemble(Constant(1.0)*dx, mesh=UnitCube(4, 4, 4))
+
+            self.assertAlmostEqual(M1, 1.0)
+            self.assertAlmostEqual(M2, 1.0)
 
 if __name__ == "__main__":
     print ""
