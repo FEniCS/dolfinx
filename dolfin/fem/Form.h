@@ -92,6 +92,10 @@ namespace dolfin
     /// Return number of coefficients
     uint num_coefficients() const;
 
+    /// Return coloring type for colored (multi-threaded) assembly of form
+    /// over a mesh entity of a given dimension
+    std::vector<uint> coloring(uint entity_dim) const;
+
     /// Set mesh, necessary for functionals when there are no function spaces
     void set_mesh(boost::shared_ptr<const Mesh> mesh);
 

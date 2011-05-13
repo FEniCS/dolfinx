@@ -126,9 +126,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   if (domains && domains->size() > 0)
     error("Sub-domains not yet handled by OpenMpAssembler.");
 
-  // Extract mesh and color
+  // Extract mesh
   const Mesh& mesh = a.mesh();
-  mesh.color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
   // Dummy UFC object since each thread needs to created its own UFC object
@@ -150,10 +149,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // FIXME: Pass or determine coloring type
   // Define graph type
-  std::vector<uint> coloring_type;
-  coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(0);
-  coloring_type.push_back(mesh.topology().dim());
+  std::vector<uint> coloring_type = a.coloring(mesh.topology().dim());
+  mesh.color(coloring_type);
 
   // Get coloring data
   std::map<const std::vector<uint>,
@@ -173,7 +170,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   {
     // Get the array of cell indices of current color
     const std::vector<uint>& colored_cells = entities_of_color[color];
-
     // Number of cells of current color
     const uint num_cells = colored_cells.size();
 
@@ -243,9 +239,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // Set number of OpenMP threads (from parameter systems)
   omp_set_num_threads(parameters["num_threads"]);
 
-  // Extract mesh and colors
+  // Extract mesh
   const Mesh& mesh = a.mesh();
-  mesh.color("vertex");
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();
@@ -273,10 +268,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // FIXME: Pass or determine coloring type
   // Define graph type
-  std::vector<uint> coloring_type;
-  coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(0);
-  coloring_type.push_back(mesh.topology().dim());
+  std::vector<uint> coloring_type = a.coloring(mesh.topology().dim());
+  mesh.color(coloring_type);
 
   // Get coloring data
   std::map<const std::vector<uint>,
@@ -404,12 +397,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Color mesh
-  std::vector<dolfin::uint> coloring_type;
-  coloring_type.push_back(mesh.topology().dim() - 1);
-  coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(0);
-  coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(mesh.topology().dim()-1);
+  std::vector<uint> coloring_type = a.coloring(mesh.topology().dim() - 1);
   mesh.color(coloring_type);
 
   // Dummy UFC object since each thread needs to created its own UFC object
@@ -502,8 +490,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       const Cell& cell1 = cells.second;
 
       // Get local index of facet with respect to each cell
-      uint local_facet0 = cell0.index(facet);
-      uint local_facet1 = cell1.index(facet);
+      const uint local_facet0 = cell0.index(facet);
+      const uint local_facet1 = cell1.index(facet);
 
       // Update to current pair of cells
       ufc.update(cell0, local_facet0, cell1, local_facet1);

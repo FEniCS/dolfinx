@@ -74,6 +74,32 @@ dolfin::uint Form::num_coefficients() const
   return _ufc_form->num_coefficients();
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
+{
+  warning("Form::coloring does not properly consider for type.");
+  const uint cell_dim = _mesh->topology().dim();
+  std::vector<uint> _coloring;
+
+  if (entity_dim == cell_dim)
+  {
+    _coloring.push_back(cell_dim);
+    _coloring.push_back(0);
+    _coloring.push_back(cell_dim);
+  }
+  else if (entity_dim == cell_dim - 1)
+  {
+    _coloring.push_back(cell_dim - 1);
+    _coloring.push_back(cell_dim);
+    _coloring.push_back(0);
+    _coloring.push_back(cell_dim);
+    _coloring.push_back(cell_dim - 1);
+  }
+  else
+    error("Coloring for other than cell or facet assembly not supported.");
+
+  return _coloring;
+}
+//-----------------------------------------------------------------------------
 void Form::set_mesh(boost::shared_ptr<const Mesh> mesh)
 {
   _mesh = mesh;
