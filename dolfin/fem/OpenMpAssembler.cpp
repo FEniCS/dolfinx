@@ -149,13 +149,18 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // FIXME: Pass or determine coloring type
   // Define graph type
+  cout << "Get color type" << endl;
   std::vector<uint> coloring_type = a.coloring(mesh.topology().dim());
+  cout << "Start color mesh" << endl;
   mesh.color(coloring_type);
+  cout << "End color mesh" << endl;
 
   // Get coloring data
   std::map<const std::vector<uint>,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  cout << "Get coloring" << endl;
   mesh_coloring = mesh.data().coloring.find(coloring_type);
+  cout << "End coloring" << endl;
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.data().coloring.end())
