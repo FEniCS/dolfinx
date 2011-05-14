@@ -29,10 +29,11 @@
 #include <dolfin/common/utils.h>
 #include "Cell.h"
 #include "Mesh.h"
-#include "MeshData.h"
+//#include "MeshData.h"
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshRenumbering.h"
+#include "ParallelData.h"
 
 using namespace dolfin;
 
@@ -51,10 +52,10 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
     error("MeshRenumbering::renumber_by_color supports cell colorings only.");
 
   // Get coloring
-  MeshColoringIterator mesh_coloring = mesh.data().coloring.find(coloring_type);
+  MeshColoringIterator mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
-  if (mesh_coloring == mesh.data().coloring.end())
+  if (mesh_coloring == mesh.parallel_data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot renumber");
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
@@ -167,7 +168,7 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
 
   // Set new coloring mesh data
   std::pair<MeshColoringIterator, bool> insert
-    = mesh.data().coloring.insert(std::make_pair(coloring_type, std::make_pair(colors, entities_of_color)));
+    = mesh.parallel_data().coloring.insert(std::make_pair(coloring_type, std::make_pair(colors, entities_of_color)));
 
   // Check that coloring was successfully inserted
   assert(insert.second);

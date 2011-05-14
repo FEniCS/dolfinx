@@ -103,9 +103,6 @@ void MeshData::clear()
   for (mvec_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
     delete it->second;
   vector_mappings.clear();
-
-  // Remove coloring data
-  coloring.clear();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(std::string name)

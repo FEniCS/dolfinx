@@ -272,6 +272,14 @@ void Mesh::renumber_by_color()
   MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
+/*
+dolfin::Mesh Mesh::renumber_by_color_new(std::vector<uint> coloring_type) const
+{
+  // Renumber by color
+  MeshRenumbering::renumber_by_color(*this, coloring_type);
+}
+*/
+//-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {
   ALE::move(*this, boundary, method);
@@ -319,9 +327,9 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::vector<uint> coloring
   // Find color data
   std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
            std::vector<std::vector<uint> > > >::const_iterator coloring_data;
-  coloring_data = this->data().coloring.find(coloring_type);
+  coloring_data = this->parallel_data().coloring.find(coloring_type);
 
-  if (coloring_data != this->data().coloring.end())
+  if (coloring_data != this->parallel_data().coloring.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
     return coloring_data->second.first;

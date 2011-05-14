@@ -62,7 +62,7 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
   info("Coloring mesh.");
 
   // Get mesh data
-  MeshData& data = mesh.data();
+  ParallelData& data = mesh.parallel_data();
 
   // Create empty coloring data
   ColorData _color_data;

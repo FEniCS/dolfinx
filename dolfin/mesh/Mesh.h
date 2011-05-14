@@ -351,6 +351,7 @@ namespace dolfin
     /// assumed that the mesh has already been colored and that only
     /// cell-vertex connectivity exists as part of the mesh.
     void renumber_by_color();
+    //Mesh renumber_by_color_new(std::vector<uint> coloring_type) const;
 
     /// Check if mesh is ordered according to the UFC numbering convention.
     ///

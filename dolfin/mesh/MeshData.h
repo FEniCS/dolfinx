@@ -160,16 +160,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    //--- Coloring data ---
-
-    /// First vector is (colored entity dim - dim0 - .. -  colored entity dim).
-    /// MeshFunction stores mesh entity colors and the vector<vector> a list
-    /// of all mesh entity indices of the same color,
-    /// e.g. vector<vector>[color][i] is the index of the ith entity of
-    /// color 'color'.
-    std::map<const std::vector<uint>,
-             std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
-
     /// Friends
     friend class XMLFile;
     friend class XMLMeshData;

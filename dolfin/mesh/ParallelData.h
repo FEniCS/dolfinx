@@ -91,30 +91,13 @@ namespace dolfin
 
     //--- Data for shared memory parallelism (multicore) ---
 
-    /*
-    /// Return the number of colors for entities of dimension D
-    /// colored by entities of dimension d and coloring distance rho.
-    uint num_colors(uint D, uint d, uint rho) const;
-
-    /// Return colors for entities of dimension D colored by entities
-    /// of dimension d and coloring distance rho (const version).
-    MeshFunction<uint>& entity_colors(uint D, uint d, uint rho);
-
-    /// Return colors for entities of dimension D colored by entities
-    /// of dimension d and coloring distance rho (const version).
-    const MeshFunction<uint>& entity_colors(uint D, uint d, uint rho) const;
-
-    /// Return an array of colored entities for each color in the
-    /// range 0, 1, ..., num_colors -1 for entities of dimension D
-    /// colored by entities of dimension d and coloring distance rho.
-    std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho);
-
-    /// Return an array of colored entities for each color in the
-    /// range 0, 1, ..., num_colors for entities of dimension D
-    /// colored by entities of dimension d and coloring distance rho
-    /// (const version).
-    const std::vector<std::vector<uint > >& colored_entities(uint D, uint d, uint rho) const;
-    */
+    /// First vector is (colored entity dim - dim0 - .. -  colored entity dim).
+    /// MeshFunction stores mesh entity colors and the vector<vector> is a list
+    /// of all mesh entity indices of the same color,
+    /// e.g. vector<vector>[col][i] is the index of the ith entity of
+    /// color 'col'.
+    std::map<const std::vector<uint>,
+             std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 
