@@ -52,7 +52,6 @@ namespace dolfin
   class ParallelData;
   class SubDomain;
   class XMLMesh;
-  class ParallelData;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -350,8 +349,7 @@ namespace dolfin
     /// renumbered to improve the locality within each color. It is
     /// assumed that the mesh has already been colored and that only
     /// cell-vertex connectivity exists as part of the mesh.
-    void renumber_by_color();
-    //Mesh renumber_by_color_new(std::vector<uint> coloring_type) const;
+    Mesh renumber_by_color(std::vector<uint> coloring_type) const;
 
     /// Check if mesh is ordered according to the UFC numbering convention.
     ///

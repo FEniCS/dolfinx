@@ -104,9 +104,12 @@ int main(int argc, char* argv[])
   //parameters["linear_algebra_backend"] = "Epetra";
 
   // Create mesh
-  UnitCube mesh(SIZE, SIZE, SIZE);
-  mesh.color("vertex");
-  mesh.renumber_by_color();
+  UnitCube old_mesh(SIZE, SIZE, SIZE);
+  old_mesh.color("vertex");
+
+  std::vector<unsigned int> coloring_type;
+  coloring_type.push_back(3); coloring_type.push_back(0); coloring_type.push_back(3);
+  Mesh mesh = old_mesh.renumber_by_color(coloring_type);
 
   // Test cases
   std::vector<std::string> forms;

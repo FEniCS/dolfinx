@@ -154,11 +154,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Get coloring data
   std::map<const std::vector<uint>,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  cout << "Get coloring" << endl;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-  cout << "End coloring" << endl;
-
-  // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
 
@@ -171,6 +167,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   {
     // Get the array of cell indices of current color
     const std::vector<uint>& colored_cells = entities_of_color[color];
+
     // Number of cells of current color
     const uint num_cells = colored_cells.size();
 
@@ -276,8 +273,6 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   std::map<const std::vector<uint>,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-
-  // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
 

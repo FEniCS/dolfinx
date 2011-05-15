@@ -52,18 +52,18 @@ namespace dolfin
     const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
     /// Return total number of connections
-    inline uint size() const { return _size; }
+    uint size() const { return _size; }
 
     /// Return number of connections for given entity
-    inline uint size(uint entity) const
+    uint size(uint entity) const
     { return (entity < num_entities ? offsets[entity + 1] - offsets[entity] : 0); }
 
     /// Return array of connections for given entity
-    inline const uint* operator() (uint entity) const
+    const uint* operator() (uint entity) const
     { return (entity < num_entities ? connections + offsets[entity] : 0); }
 
     /// Return contiguous array of connections for all entities
-    inline const uint* operator() () const { return connections; }
+    const uint* operator() () const { return connections; }
 
     /// Clear all data
     void clear();

@@ -83,17 +83,15 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   mesh._topology.init(tdim);
 
   // Initialize temporary storage for local cell data
-  vertices.reserve(mesh.type().num_vertices(tdim));
-  for (uint i = 0; i < mesh.type().num_vertices(tdim); i++)
-    vertices.push_back(0);
+  vertices.resize(mesh.type().num_vertices(tdim));
+  std::fill(vertices.begin(), vertices.end(), 0);
 
   // in the future, could set a string in MeshGeometry that indicates the type of
   //      higher order mesh... for now we assume P2 triangle!
 
   // Initialize temporary storage for local higher order cell data
-  higher_order_cell_data.reserve(6); // assume P2 triangle!
-  for (uint i = 0; i < 6; i++)
-    higher_order_cell_data.push_back(0);
+  higher_order_cell_data.resize(6); // assume P2 triangle!
+  std::fill(higher_order_cell_data.begin(), higher_order_cell_data.end(), 0);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)

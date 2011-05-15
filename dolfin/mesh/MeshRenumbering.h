@@ -25,11 +25,12 @@
 
 #include <vector>
 #include "dolfin/common/types.h"
+#include "Mesh.h"
 
 namespace dolfin
 {
 
-  class Mesh;
+  //class Mesh;
 
   /// This class implements renumbering algorithms for meshes.
 
@@ -47,7 +48,19 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         Mesh to be renumbered.
-    static void renumber_by_color(Mesh& mesh, std::vector<uint> coloring);
+    ///     coloring (_std::vector<uint>_)
+    ///         Mesh coloring type.
+    /// *Returns*
+    ///     _Mesh_
+    static Mesh renumber_by_color(const Mesh& mesh, std::vector<uint> coloring);
+
+  private:
+
+    static void compute_renumbering(const Mesh& mesh,
+                                    const std::vector<uint>& coloring,
+                                    std::vector<double>& coordinates,
+                                    std::vector<uint>& connectivity);
+
 
   };
 

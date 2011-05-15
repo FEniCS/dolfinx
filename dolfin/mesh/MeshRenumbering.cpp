@@ -29,7 +29,7 @@
 #include <dolfin/common/utils.h>
 #include "Cell.h"
 #include "Mesh.h"
-//#include "MeshData.h"
+#include "MeshEditor.h"
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshRenumbering.h"
@@ -38,11 +38,125 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshRenumbering::renumber_by_color(Mesh& mesh,
-                                        std::vector<uint> coloring_type)
+dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
+                                 const std::vector<unsigned int> coloring_type)
 {
+  // Start timer
+  Timer timer("Renumber mesh by color");
+
+  // Get some some mesh
+  const uint tdim = mesh.topology().dim();
+  const uint gdim = mesh.geometry().dim();
+  const uint num_vertices = mesh.num_vertices();
+  const uint num_cells = mesh.num_cells();
+
+  // Check that requested coloring is a cell coloring
+  if (coloring_type[0] != tdim)
+    error("MeshRenumbering::renumber_by_color supports cell colorings only.");
+
+  // Compute renumbering
+  std::vector<double> new_coordinates;
+  std::vector<uint> new_connections;
+  MeshRenumbering::compute_renumbering(mesh, coloring_type, new_coordinates,
+                                       new_connections);
+
+  // Create new mesh
+  Mesh new_mesh;
+
+  // Create mesh editor
+  MeshEditor editor;
+  editor.open(new_mesh, mesh.type().cell_type(), tdim, gdim);
+  editor.init_cells(num_cells);
+  editor.init_vertices(num_vertices);
+
+  // Add vertices
+  assert(new_coordinates.size() == num_vertices*gdim);
+  for (uint i = 0; i < num_vertices; ++i)
+  {
+    const Point p(gdim, &new_coordinates[i*gdim]);
+    editor.add_vertex(i, p);
+  }
+
+  // Add cells
+  assert(new_coordinates.size() == num_vertices*gdim);
+  const uint vertices_per_cell = mesh.type().num_entities(0);
+  for (uint i = 0; i < num_cells; ++i)
+  {
+    std::vector<uint> c(vertices_per_cell);
+    std::copy(new_connections.begin() + i*vertices_per_cell,
+              new_connections.begin() + i*vertices_per_cell + vertices_per_cell, c.begin());
+    editor.add_cell(i, c);
+  }
+
+  editor.close();
+
+  // Initialise coloring data
   typedef std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
-           std::vector<std::vector<uint> > > >::const_iterator MeshColoringIterator;
+           std::vector<std::vector<uint> > > >::const_iterator ConstMeshColoringData;
+
+  // Get old coloring
+  ConstMeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.parallel_data().coloring.end())
+    error("Requested mesh coloring has not been computed. Cannot renumber");
+
+  // Get old coloring data
+  const MeshFunction<uint>& colors = mesh_coloring->second.first;
+  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  assert(colors.size() == num_cells);
+  assert(entities_of_color.size() > 0);
+  const uint num_colors = entities_of_color.size();
+
+  // New coloring data
+  assert(new_mesh.parallel_data().coloring.size() == 0);
+  MeshFunction<uint> new_colors(mesh, tdim);
+  std::vector<std::vector<uint> > new_entities_of_color(num_colors);
+
+  uint current_cell = 0;
+  for (uint color = 0; color < num_colors; color++)
+  {
+    // Get the array of cell indices of current color
+    const std::vector<uint>& colored_cells = entities_of_color[color];
+    std::vector<uint>& new_colored_cells = new_entities_of_color[color];
+
+    // Update cell color data
+    for (uint i = 0; i < colored_cells.size(); i++)
+    {
+      new_colored_cells.push_back(current_cell);
+      new_colors[current_cell] = color;
+      current_cell++;
+    }
+  }
+
+  // Set new coloring mesh data
+  std::pair<ConstMeshColoringData, bool> insert
+    = new_mesh.parallel_data().coloring.insert(std::make_pair(coloring_type,
+                          std::make_pair(new_colors, new_entities_of_color)));
+  assert(insert.second);
+
+  return new_mesh;
+}
+//-----------------------------------------------------------------------------
+void MeshRenumbering::compute_renumbering(const Mesh& mesh,
+                                          const std::vector<dolfin::uint>& coloring_type,
+                                          std::vector<double>& new_coordinates,
+                                          std::vector<uint>& new_connections)
+{
+  // Get some some mesh
+  const uint tdim = mesh.topology().dim();
+  const uint gdim = mesh.geometry().dim();
+  const uint num_vertices = mesh.num_vertices();
+  const uint num_cells = mesh.num_cells();
+
+  // Resize vectors
+  const MeshConnectivity& connectivity = mesh.topology()(tdim, 0);
+  const uint connections_size = connectivity.size();
+  new_connections.resize(connections_size);
+
+  const uint coordinates_size = mesh.geometry().size()*mesh.geometry().dim();
+  new_coordinates.resize(coordinates_size);
+
+  typedef std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
+           std::vector<std::vector<uint> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");
   info(mesh);
@@ -52,61 +166,32 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
     error("MeshRenumbering::renumber_by_color supports cell colorings only.");
 
   // Get coloring
-  MeshColoringIterator mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+  MeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot renumber");
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
-  MeshFunction<uint> colors = mesh_coloring->second.first;
-  std::vector<std::vector<uint> > entities_of_color = mesh_coloring->second.second;
-  assert(colors.size() == mesh.num_cells());
-  assert(entities_of_color.size() > 0);
+  const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
+  const std::vector<std::vector<uint> >& entities_of_color_old = mesh_coloring->second.second;
+  assert(colors_old.size() == num_cells);
+  assert(entities_of_color_old.size() > 0);
 
-  // Get mesh topology and geometry
-  MeshTopology& topology = mesh.topology();
-  MeshGeometry& geometry = mesh.geometry();
-
-  // Issue warning if connectivity other than cell-vertex exists
-  const uint D = topology.dim();
-  for (uint d0 = 0; d0 <= D; d0++)
-    for (uint d1 = 0; d1 <= D; d1++)
-      if (!(d0 == D && d1 == 0) && topology(d0, d1).size() > 0)
-        warning("Clearing connectivity data %d - %d.", d0, d1);
-
-  // Clean connectivity since it may be invalid after renumbering
-  mesh.clean();
-
-  // Clear MeshData since it may be invalid after renumbering
-  mesh.data().clear();
-
-  // Start timer
-  Timer timer("Renumber mesh");
-
-  // Get connectivity and coordinates
-  MeshConnectivity& connectivity = topology(D, 0);
-  uint* connections = connectivity.connections;
-  double* coordinates = geometry.coordinates;
-
-  // Allocate temporary arrays, used for copying data
-  const uint connections_size = connectivity._size;
-  const uint coordinates_size = geometry.size()*geometry.dim();
-  boost::scoped_array<uint> new_connections(new uint[connections_size]);
-  boost::scoped_array<double> new_coordinates(new double[coordinates_size]);
+  // Get coordinates
+  const double* coordinates = mesh.geometry().coordinates;
 
   // New vertex indices, -1 if not yet renumbered
-  std::vector<int> new_vertex_indices(mesh.num_vertices());
-  std::fill(new_vertex_indices.begin(), new_vertex_indices.end(), -1);
+  std::vector<int> new_vertex_indices(num_vertices, -1);
 
   // Iterate over colors
-  const uint num_colors = entities_of_color.size();
+  const uint num_colors = entities_of_color_old.size();
   uint connections_offset = 0;
   uint current_vertex = 0;
-  for (uint color = 0; color < num_colors; color++)
+  for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
-    std::vector<uint>& colored_cells = entities_of_color[color];
+    const std::vector<uint>& colored_cells = entities_of_color_old[color];
 
     // Iterate over cells for current color
     for (uint i = 0; i < colored_cells.size(); i++)
@@ -121,15 +206,15 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
       // Iterate over cell vertices
       for (uint j = 0; j < num_vertices; j++)
       {
+        // Get vertex index
         const uint vertex_index = cell_vertices[j];
 
-        // Renumber and copy coordinate data
+        // Renumber and copy coordinate data if vertex is not yet renumbered
         if (new_vertex_indices[vertex_index] == -1)
         {
-          const uint d = mesh.geometry().dim();
-          std::copy(coordinates + vertex_index*d,
-                    coordinates + (vertex_index + 1)*d,
-                    new_coordinates.get() + current_vertex*d);
+          std::copy(coordinates + vertex_index*gdim,
+                    coordinates + (vertex_index + 1)*gdim,
+                    new_coordinates.begin() + current_vertex*gdim);
           new_vertex_indices[vertex_index] = current_vertex++;
         }
 
@@ -143,34 +228,9 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh,
 
   // Check that all vertices have been renumbered
   for (uint i = 0; i < new_vertex_indices.size(); i++)
+  {
     if (new_vertex_indices[i] == -1)
       error("Failed to renumber mesh, not all vertices renumbered.");
-
-  // Copy data
-  std::copy(new_connections.get(), new_connections.get() + connections_size, connections);
-  std::copy(new_coordinates.get(), new_coordinates.get() + coordinates_size, coordinates);
-
-  // Update renumbering data
-  uint current_cell = 0;
-  for (uint color = 0; color < num_colors; color++)
-  {
-    // Get the array of cell indices of current color
-    std::vector<uint>& colored_cells = entities_of_color[color];
-
-    // Update cell color data
-    for (uint i = 0; i < colored_cells.size(); i++)
-    {
-      colored_cells[i] = current_cell;
-      colors[current_cell] = color;
-      current_cell++;
-    }
   }
-
-  // Set new coloring mesh data
-  std::pair<MeshColoringIterator, bool> insert
-    = mesh.parallel_data().coloring.insert(std::make_pair(coloring_type, std::make_pair(colors, entities_of_color)));
-
-  // Check that coloring was successfully inserted
-  assert(insert.second);
 }
 //-----------------------------------------------------------------------------

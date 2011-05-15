@@ -260,25 +260,10 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-void Mesh::renumber_by_color()
+dolfin::Mesh Mesh::renumber_by_color(std::vector<uint> coloring_type) const
 {
-  // Define graph type
-  std::vector<uint> coloring_type;
-  coloring_type.push_back(topology().dim());
-  coloring_type.push_back(0);
-  coloring_type.push_back(topology().dim());
-
-  // Renumber by color
-  MeshRenumbering::renumber_by_color(*this, coloring_type);
+  return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
-//-----------------------------------------------------------------------------
-/*
-dolfin::Mesh Mesh::renumber_by_color_new(std::vector<uint> coloring_type) const
-{
-  // Renumber by color
-  MeshRenumbering::renumber_by_color(*this, coloring_type);
-}
-*/
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {
