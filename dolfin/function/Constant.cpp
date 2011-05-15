@@ -16,10 +16,10 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Martin Sandve Alnes, 2008.
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2011.
 //
 // First added:  2006-02-09
-// Last changed: 2009-10-05
+// Last changed: 2011-05-15
 
 #include <dolfin/log/log.h>
 #include "Constant.h"
@@ -110,8 +110,7 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Array<double>& values, const Array<double>& x,
-                    const ufc::cell& cell) const
+void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
   for (uint j = 0; j < _values.size(); j++)

@@ -97,9 +97,7 @@ namespace dolfin
           s << i << ": " << (*this)[i] << std::endl;
       }
       else
-      {
         s << "<Array<T> of size " << size() << ">";
-      }
 
       return s.str();
     }
