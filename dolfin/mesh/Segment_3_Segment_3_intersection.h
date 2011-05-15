@@ -21,6 +21,14 @@
 #ifndef  segment_3_segment_3_intersection_INC
 #define  segment_3_segment_3_intersection_INC
 
+#include <CGAL/version.h>
+
+///@file This file contains some small extension to the CGAL library, for
+//instance unifying their do_intersect functions to also deal with Segment_3
+//and Primitive intersections or some additional intersection collision test.
+// It is not required for CGAL_VERSION >= 3.8
+
+#if CGAL_VERSION_NR < 1030801000
 
 #include <CGAL/Segment_3.h>
 #include <CGAL/Object.h>
@@ -28,10 +36,6 @@
 #include <dolfin/log/log.h>
 
 using dolfin::error;
-
-///@file This file contains some small extension to the CGAL library, for
-//instance unifying their do_intersect functions to also deal with Segment_3
-//and Primitive intersections or some additional intersection collision test.
 
 CGAL_BEGIN_NAMESPACE
 
@@ -43,7 +47,7 @@ namespace internal {
 
 
   template <class K >
-  inline bool do_intersect(const typename K::Segment_3 & s1, 
+  inline bool do_intersect(const typename K::Segment_3 & s1,
                            const typename K::Segment_3 & s2,
                            const K & k)
   {
@@ -55,8 +59,8 @@ namespace internal {
   template <class K>
   inline
   Object
-  intersection(const typename K::Segment_3 &s1, 
-               const typename K::Segment_3 &s2, 
+  intersection(const typename K::Segment_3 &s1,
+               const typename K::Segment_3 &s2,
                const K&)
   {
     //throw exception
@@ -90,5 +94,7 @@ intersection(const Segment_3<K> &s1, const Segment_3<K> &s2)
 
 CGAL_END_NAMESPACE
 
+
+#endif
 
 #endif   /* ----- #ifndef segment_3_segment_3_intersection_INC  ----- */
