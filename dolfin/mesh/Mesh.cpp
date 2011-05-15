@@ -260,8 +260,11 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-dolfin::Mesh Mesh::renumber_by_color(std::vector<uint> coloring_type) const
+dolfin::Mesh Mesh::renumber_by_color() const
 {
+  std::vector<uint> coloring_type;
+  const uint D = topology().dim();
+  coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------

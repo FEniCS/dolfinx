@@ -43,6 +43,36 @@ class Assembly(unittest.TestCase):
         parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(M, mesh=mesh), 4.0)
 
+    def test_colored_cell_assembly(self):
+
+        # Create mesh, then color and renumber
+        old_mesh = UnitCube(4, 4, 4)
+        old_mesh.color("vertex")
+        mesh = old_mesh.renumber_by_color()
+
+        V = VectorFunctionSpace(mesh, "DG", 1)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant((10, 20, 30))
+        def epsilon(v):
+            return 0.5*(grad(v) + grad(v).T)
+        a = inner(epsilon(v), epsilon(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm =  4.3969686527582512
+        b_l2_norm = 0.95470326978246278
+
+        # Assemble A and b separately
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b separately (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
 if __name__ == "__main__":
     print ""
     print "Testing basic DOLFIN assembly operations"

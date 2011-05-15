@@ -106,10 +106,7 @@ int main(int argc, char* argv[])
   // Create mesh
   UnitCube old_mesh(SIZE, SIZE, SIZE);
   old_mesh.color("vertex");
-
-  std::vector<unsigned int> coloring_type;
-  coloring_type.push_back(3); coloring_type.push_back(0); coloring_type.push_back(3);
-  Mesh mesh = old_mesh.renumber_by_color(coloring_type);
+  Mesh mesh = old_mesh.renumber_by_color();
 
   // Test cases
   std::vector<std::string> forms;
