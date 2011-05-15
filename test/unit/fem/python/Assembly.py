@@ -45,6 +45,10 @@ class Assembly(unittest.TestCase):
 
     def test_colored_cell_assembly(self):
 
+        # Coloring and renumbering not supported in parallel
+        if MPI.num_processes() != 1:
+            return
+
         # Create mesh, then color and renumber
         old_mesh = UnitCube(4, 4, 4)
         old_mesh.color("vertex")
@@ -68,10 +72,9 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         # Assemble A and b separately (multi-threaded)
-        if MPI.num_processes() == 1:
-            parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
-            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+        parameters["num_threads"] = 4
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
 if __name__ == "__main__":
     print ""
