@@ -53,7 +53,7 @@
 
 // Macro to declare Hierarchical base class
 %define DECLARE_HIERACHIAL_SHARED_PTR(NAME)
-%shared_ptr(dolfin::Hierarchical<NAME >)
+%shared_ptr(dolfin::Hierarchical<NAME>)
 %shared_ptr(NAME)
 %enddef
 
@@ -111,6 +111,53 @@
 
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
+
+// mesh
+%shared_ptr(dolfin::LocalMeshData)
+%shared_ptr(dolfin::MeshData)
+
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<bool> >)
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<double> >)
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<int> >)
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<unsigned int> >)
+
+%shared_ptr(dolfin::MeshFunction<bool>)
+%shared_ptr(dolfin::MeshFunction<double>)
+%shared_ptr(dolfin::MeshFunction<int>)
+%shared_ptr(dolfin::MeshFunction<dolfin::uint>)
+%shared_ptr(dolfin::MeshFunction<unsigned int>)
+
+
+%shared_ptr(dolfin::CellFunction<bool>)
+%shared_ptr(dolfin::CellFunction<double>)
+%shared_ptr(dolfin::CellFunction<int>)
+%shared_ptr(dolfin::CellFunction<dolfin::uint>)
+%shared_ptr(dolfin::CellFunction<unsigned int>)
+
+%shared_ptr(dolfin::EdgeFunction<bool>)
+%shared_ptr(dolfin::EdgeFunction<double>)
+%shared_ptr(dolfin::EdgeFunction<int>)
+%shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
+%shared_ptr(dolfin::EdgeFunction<unsigned int>)
+
+%shared_ptr(dolfin::FaceFunction<bool>)
+%shared_ptr(dolfin::FaceFunction<double>)
+%shared_ptr(dolfin::FaceFunction<int>)
+%shared_ptr(dolfin::FaceFunction<dolfin::uint>)
+%shared_ptr(dolfin::FaceFunction<unsigned int>)
+
+%shared_ptr(dolfin::FacetFunction<bool>)
+%shared_ptr(dolfin::FacetFunction<double>)
+%shared_ptr(dolfin::FacetFunction<int>)
+%shared_ptr(dolfin::FacetFunction<dolfin::uint>)
+%shared_ptr(dolfin::FacetFunction<unsigned int>)
+
+%shared_ptr(dolfin::VertexFunction<bool>)
+%shared_ptr(dolfin::VertexFunction<double>)
+%shared_ptr(dolfin::VertexFunction<int>)
+%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
+%shared_ptr(dolfin::VertexFunction<unsigned int>)
 
 // la
 %shared_ptr(dolfin::GenericTensor)
@@ -176,47 +223,6 @@
 // log
 %shared_ptr(dolfin::Table)
 
-// mesh
-%shared_ptr(dolfin::LocalMeshData)
-%shared_ptr(dolfin::MeshData)
-
-
-DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<bool>)
-DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<double>)
-DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<int>)
-DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<dolfin::uint>)
-DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<unsigned int>)
-
-%shared_ptr(dolfin::CellFunction<bool>)
-%shared_ptr(dolfin::CellFunction<double>)
-%shared_ptr(dolfin::CellFunction<int>)
-%shared_ptr(dolfin::CellFunction<dolfin::uint>)
-%shared_ptr(dolfin::CellFunction<unsigned int>)
-
-%shared_ptr(dolfin::EdgeFunction<bool>)
-%shared_ptr(dolfin::EdgeFunction<double>)
-%shared_ptr(dolfin::EdgeFunction<int>)
-%shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
-%shared_ptr(dolfin::EdgeFunction<unsigned int>)
-
-%shared_ptr(dolfin::FaceFunction<bool>)
-%shared_ptr(dolfin::FaceFunction<double>)
-%shared_ptr(dolfin::FaceFunction<int>)
-%shared_ptr(dolfin::FaceFunction<dolfin::uint>)
-%shared_ptr(dolfin::FaceFunction<unsigned int>)
-
-%shared_ptr(dolfin::FacetFunction<bool>)
-%shared_ptr(dolfin::FacetFunction<double>)
-%shared_ptr(dolfin::FacetFunction<int>)
-%shared_ptr(dolfin::FacetFunction<dolfin::uint>)
-%shared_ptr(dolfin::FacetFunction<unsigned int>)
-
-%shared_ptr(dolfin::VertexFunction<bool>)
-%shared_ptr(dolfin::VertexFunction<double>)
-%shared_ptr(dolfin::VertexFunction<int>)
-%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
-%shared_ptr(dolfin::VertexFunction<unsigned int>)
-
 // math
 %shared_ptr(dolfin::Lagrange)
 
@@ -244,81 +250,11 @@ DECLARE_HIERACHIAL_SHARED_PTR(dolfin::MeshFunction<unsigned int>)
 
 
 //-----------------------------------------------------------------------------
-// Macro that exposes the Variable interface for the derived classes
-// This is a hack to get around the problem that Variable is not declared
-// as a shared_ptr class.
-//
-// Ideally we would like to make Variable a shared_ptr type, but we do not want
-// to make all derived classes shared_ptr types. This means we need to implement
-// the Variable interface for derived types of Variable.
-//-----------------------------------------------------------------------------
-%define IMPLEMENT_VARIABLE_INTERFACE(DERIVED_TYPE)
-%ignore dolfin::DERIVED_TYPE::str;
-
-%extend dolfin::DERIVED_TYPE
-{
-  void rename(const std::string name, const std::string label)
-  {
-    self->rename(name, label);
-  }
-
-  const std::string& name() const
-  {
-    return self->name();
-  }
-
-  const std::string& label() const
-  {
-    return self->label();
-  }
-
-  std::string __str__() const
-  {
-    return self->str(false);
-  }
-
-  std::string _str(bool verbose) const
-  {
-    return self->str(verbose);
-  }
-
-  dolfin::Parameters& _get_parameters()
-  {
-    return self->parameters;
-  }
-
-%pythoncode %{
-    def str(self, verbose):
-        "Return a string representation of it self"
-        return self._str(verbose)
-
-    def _get_parameters(self):
-        return _cpp. ## DERIVED_TYPE ## __get_parameters(self)
-
-    parameters = property(_get_parameters)
-%}
-
-}
-
-%enddef
-
-//-----------------------------------------------------------------------------
 // Include knowledge of the NoDeleter template, used in macros below
 //-----------------------------------------------------------------------------
 %{
 #include <dolfin/common/NoDeleter.h>
 %}
-
-//-----------------------------------------------------------------------------
-// Run the macros on derived classes of Variable that is defined shared_ptr
-//-----------------------------------------------------------------------------
-//IMPLEMENT_VARIABLE_INTERFACE(GenericFunction)
-//IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
-//IMPLEMENT_VARIABLE_INTERFACE(Mesh)
-//IMPLEMENT_VARIABLE_INTERFACE(GenericDofMap)
-//IMPLEMENT_VARIABLE_INTERFACE(GenericTensor)
-//IMPLEMENT_VARIABLE_INTERFACE(VariationalProblem)
-
 
 //-----------------------------------------------------------------------------
 // Macros for defining in and out typemaps for foreign types that DOLFIN
