@@ -107,8 +107,11 @@ class Eval(unittest.TestCase):
           s1 = norm(interpolate(e1, V))
           s2 = norm(interpolate(e2, V))
 
-          self.assertAlmostEqual(s0, s1)
-          self.assertAlmostEqual(s0, s2)
+          ref = 0.36557637568519191
+          self.assertAlmostEqual(s0, ref)
+          self.assertAlmostEqual(s1, ref)
+          self.assertAlmostEqual(s2, ref)
+
 
      def testWrongEval(self):
           # Test wrong evaluation

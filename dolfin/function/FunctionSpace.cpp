@@ -133,7 +133,9 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
 
   // Initialize vector of expansion coefficients
-  expansion_coefficients.resize(_dofmap->global_dimension());
+  //expansion_coefficients.resize(_dofmap->global_dimension());
+  if (expansion_coefficients.size() != _dofmap->global_dimension())
+    error("Vector has wrong size in  FunctionSpace::interpolate. Please pass correct size vector.");
   expansion_coefficients.zero();
 
   // Initialize local arrays
@@ -150,7 +152,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     v.restrict(&cell_coefficients[0], this->element(), *cell, ufc_cell);
 
     // Tabulate dofs
-    const std::vector<uint>& cell_dofs =  _dofmap->cell_dofs(cell->index());
+    const std::vector<uint>& cell_dofs = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set(&cell_coefficients[0],
