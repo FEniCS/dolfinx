@@ -56,7 +56,7 @@ Function::Function(const FunctionSpace& V)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Initialize vector
   init_vector();
@@ -68,7 +68,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 {
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Initialize vector
   init_vector();
@@ -82,7 +82,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
@@ -108,11 +108,11 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
@@ -125,7 +125,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Initialize vector
   init_vector();
@@ -146,7 +146,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing FunctionSpace");
+    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Create vector
   DefaultFactory factory;

@@ -17,12 +17,12 @@
 //
 // Modified by Kristoffer Selim, 2008.
 // Modified by Martin Alnes, 2008.
-// Modified by Garth N. Wells, 2008-2009.
+// Modified by Garth N. Wells, 2008-2011.
 // Modified by Kent-Andre Mardal, 2009.
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2011-02-03
+// Last changed: 2011-05-15
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/MPI.h>
@@ -202,6 +202,12 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 
     return new_sub_space;
   }
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
+{
+  boost::unordered_map<uint, uint> collapsed_dofs;
+  return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>

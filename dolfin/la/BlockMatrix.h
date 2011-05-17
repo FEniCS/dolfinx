@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     // Constructor
-    BlockMatrix(uint m = 0, uint n = 0);
+    BlockMatrix(uint m=0, uint n=0);
 
     // Destructor
     ~BlockMatrix();
@@ -69,7 +69,7 @@ namespace dolfin
 
     /// Create a crude explicit Schur approximation of S = D - C A^-1 B of (A B; C D)
     /// If symmetry != 0, then the caller promises that B = symmetry * transpose(C).
-    boost::shared_ptr<GenericMatrix> schur_approximation(double symmetry=1) const;
+    boost::shared_ptr<GenericMatrix> schur_approximation(bool symmetry=true) const;
 
   private:
 

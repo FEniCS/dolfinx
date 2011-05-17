@@ -27,7 +27,6 @@ from numpy  import array, zeros
 
 mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
-
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Eval(unittest.TestCase):

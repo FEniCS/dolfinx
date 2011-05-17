@@ -76,8 +76,8 @@ dolfin::uint BlockMatrix::size(uint dim) const
 //-----------------------------------------------------------------------------
 void BlockMatrix::zero()
 {
-  for(uint i = 0; i < matrices.size(); i++)
-    for(uint j = 0; j < matrices[i].size(); j++)
+  for(uint i = 0; i < matrices.shape()[0]; i++)
+    for(uint j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->zero();
 }
 //-----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   assert(matrices[0][0]);
   boost::scoped_ptr<GenericVector> z_tmp(matrices[0][0]->factory().create_vector());
 
-  // Loop of block rows
+  // Loop over block rows
   for(uint row = 0; row < matrices.shape()[0]; row++)
   {
     // RHS sub-vector
@@ -146,13 +146,12 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(double symmetry) const
+boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry) const
 {
   // Currently returns [diag(C * diag(A)^-1 * B) - D]
-  if (symmetry==0)
-  {
+  if (!symmetry)
     error("only implemented for symmetry != 0");
-  }
+
   assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);
 
   GenericMatrix &A = *matrices[0][0];
