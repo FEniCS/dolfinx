@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Garth N. Wells
+// Copyright (C) 2009-2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-08-11
+// Last changed: 2011-05-17
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -47,7 +47,7 @@ namespace dolfin
   {
   public:
 
-    // Create empty array
+    /// Create empty array
     Array() : _size(0), x(0) {}
 
     /// Create array of size N
@@ -63,14 +63,29 @@ namespace dolfin
     /// Construct array from a pointer. Array will not take ownership.
     Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter())) {}
 
-    /// Destructor
-    ~Array() {}
-
     /// Assignment operator
     const Array& operator= (const Array& x)
     {
-      _size = x._size;
-      this->x = x.x;
+      // Resize if necessary
+      if (x.size() == 0 && !x.x)
+      {
+        this->x.reset();
+        this->_size = 0;
+      }
+      else if (this->_size != x.size())
+      {
+        this->x.reset(new T[x.size()]);
+        this->_size = x.size();
+      }
+
+      // Copy data
+      if (_size > 0)
+      {
+        assert(this->x);
+        assert(x.x);
+        std::copy(&x.x[0], &x.x[_size], &this->x[0]);
+      }
+
       return *this;
     }
 
@@ -126,30 +141,35 @@ namespace dolfin
 
     /// Zero array
     void zero()
-    { std::fill(x.get(), x.get() + _size, 0.0); }
+    { assert(x); std::fill(&x[0], &x[_size], 0.0); }
 
     /// Set entries which meet (abs(x[i]) < eps) to zero
     void zero_eps(double eps=DOLFIN_EPS);
 
     /// Return minimum value of array
     T min() const
-    { return *std::min_element(x.get(), x.get() + _size); }
+    { assert(x); return *std::min_element(&x[0], &x[_size]); }
 
     /// Return maximum value of array
     T max() const
-    { return *std::max_element(x.get(), x.get() + _size);  }
+    { assert(x); return *std::max_element(&x[0], &x[_size]); }
 
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
-    { assert(i < _size); return x[i]; }
+    { assert(x); assert(i < _size); return x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    { assert(i < _size); return x[i]; }
+    {
+      assert(x);
+      assert(i < _size);
+      return x[i];
+    }
 
     /// Assign value to all entries
     const Array<T>& operator= (T& x)
     {
+      assert(this->x);
       for (uint i = 0; i < _size; ++i)
         this->x[i] = x;
       return *this;
@@ -182,6 +202,7 @@ namespace dolfin
   template <>
   inline void Array<double>::zero_eps(double eps)
   {
+    assert(x);
     for (uint i = 0; i < _size; ++i)
     {
       if (std::abs(x[i]) < eps)
