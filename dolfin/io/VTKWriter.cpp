@@ -55,7 +55,6 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   // For brevity
   const Mesh& mesh = u.function_space().mesh();
   const GenericDofMap& dofmap = u.function_space().dofmap();
-
   const uint num_cells = mesh.num_cells();
 
   std::string encode_string;
@@ -70,9 +69,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
-  uint data_dim = 1;
-  for (uint i = 0; i < rank; i++)
-    data_dim *= u.value_dimension(i);
+  const uint data_dim = u.value_size();
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
@@ -181,46 +178,25 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
                                         uint data_dim, uint rank, bool compress)
 {
   const uint num_cells = mesh.num_cells();
-  const uint size = num_cells*data_dim;
 
-  std::vector<float> data;
+  // Number of zero paddings per point
+  uint padding_per_point = 0;
   if (rank == 1 && data_dim == 2)
-    data.resize(size + size/2);
+    padding_per_point = 1;
   else if (rank == 2 && data_dim == 4)
-    data.resize(size + 4*size/5);
-  else
-    data.resize(size);
+    padding_per_point = 5;
+
+  // Number of data entries per point and total number
+  const uint num_data_per_point = data_dim + padding_per_point;
+  const uint num_total_data_points = num_cells*num_data_per_point;
 
   std::vector<uint>::const_iterator cell_offset = offset.begin();
-  std::vector<float>::iterator entry = data.begin();
+  std::vector<float> data(num_total_data_points, 0);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (rank == 1 && data_dim == 2)
-    {
-      // Append 0.0 to 2D vectors to make them 3D
-      *entry++ = values[*cell_offset];
-      *entry++ = values[*cell_offset + 1];
-      *entry++ = 0.0;
-    }
-    else if (rank == 2 && data_dim == 4)
-    {
-      // Pad with 0.0 to 2D tensors to make them 3D
-      for(uint i = 0; i < 2; i++)
-      {
-        *entry++ = values[*cell_offset + 2*i];
-        *entry++ = values[*cell_offset + 2*i+1];
-        *entry++ = 0.0;
-      }
-      *entry++ = 0.0;
-      *entry++ = 0.0;
-      *entry++ = 0.0;
-    }
-    else
-    {
-      // Write all components
-      for (uint i = 0; i < data_dim; i++)
-        *entry++ = values[*cell_offset + i];
-    }
+    const uint index = cell->index();
+    for(uint i = 0; i < data_dim; i++)
+      data[index*num_data_per_point + i] = values[*cell_offset + i];
     ++cell_offset;
   }
 
@@ -300,7 +276,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
   std::vector<float>::iterator vertex_entry = vertex_data.begin();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    Point p = v->point();
+    const Point p = v->point();
     *vertex_entry++ = p.x();
     *vertex_entry++ = p.y();
     *vertex_entry++ = p.z();

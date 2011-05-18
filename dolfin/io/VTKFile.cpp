@@ -164,7 +164,7 @@ std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
                                       ".vtu");
   clear_file(vtu_filename);
 
-  // Number of cell
+  // Number of cells
   const uint num_cells = mesh.topology().size(cell_dim);
 
   // Write headers
@@ -214,9 +214,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
-    dim *= u.value_dimension(i);
+  const uint dim = u.value_size();
 
   // Check that function type can be handled
   if (rank == 1)
@@ -247,17 +245,16 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
                                std::string vtu_filename) const
 {
   const uint rank = u.value_rank();
+  const uint num_vertices = mesh.num_vertices();
 
   // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
-    dim *= u.value_dimension(i);
+  const uint dim = u.value_size();
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
   // Allocate memory for function values at vertices
-  const uint size = mesh.num_vertices()*dim;
+  const uint size = num_vertices*dim;
   Array<double> values(size);
 
   // Get function values at vertices and zero any small values
@@ -290,7 +287,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i = 0; i < 2; i++)
-          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + i*num_vertices];
         ss << " " << 0.0;
       }
       else if (rank == 2 && dim == 4)
@@ -298,8 +295,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad 2D tensors with 0.0 to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
-          ss << " " << values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i + 0)*num_vertices];
+          ss << " " << values[vertex->index() + (2*i + 1)*num_vertices];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -310,7 +307,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       {
         // Write all components
         for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + i*num_vertices];
       }
       ss << std::endl;
     }
@@ -320,43 +317,23 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<float> data;
+    // Number of zero paddings per point
+    uint padding_per_point = 0;
     if (rank == 1 && dim == 2)
-      data.resize(size + size/2);
+      padding_per_point = 1;
     else if (rank == 2 && dim == 4)
-      data.resize(size + 5*size/4);
-    else
-      data.resize(size);
+      padding_per_point = 5;
 
-    std::vector<float>::iterator entry = data.begin();
+    // Number of data entries per point and total number
+    const uint num_data_per_point = dim + padding_per_point;
+    const uint num_total_data_points = num_vertices*num_data_per_point;
+
+    std::vector<float> data(num_total_data_points, 0);
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
-      if(rank == 1 && dim == 2)
-      {
-        // Append 0.0 to 2D vectors to make them 3D
-        for(uint i = 0; i < dim; i++)
-          *(entry++) = values[vertex->index() + i*mesh.num_vertices()];
-        *(entry++) = 0.0;
-      }
-      else if (rank == 2 && dim == 4)
-      {
-        // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i = 0; i < 2; i++)
-        {
-          *entry++ = values[vertex->index() + (2*i + 0)*mesh.num_vertices()];
-          *entry++ = values[vertex->index() + (2*i + 1)*mesh.num_vertices()];
-          *entry++ = 0.0;
-        }
-        *entry++ = 0.0;
-        *entry++ = 0.0;
-        *entry++ = 0.0;
-      }
-      else
-      {
-        // Write all components
-        for(uint i = 0; i < dim; i++)
-          *entry++ = values[vertex->index() + i*mesh.num_vertices()];
-      }
+      const uint index = vertex->index();
+      for(uint i = 0; i < dim; i++)
+        data[index*num_data_per_point + i] = values[index + i*num_vertices];
     }
 
     // Create encoded stream
@@ -420,7 +397,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
   pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
-  for(uint i = 0; i< MPI::num_processes(); i++)
+  for(uint i = 0; i < MPI::num_processes(); i++)
   {
     std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pvtu_file << "<Piece Source=\"" << tmp_string << "\"/>" << std::endl;
@@ -446,9 +423,7 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
-    dim *= element.value_dimension(i);
+  const uint dim = u.value_size();
 
   // Test for cell-based element type
   uint cell_based_dim = 1;
