@@ -103,7 +103,7 @@ problem.parameters["symmetric"] = True
 u = problem.solve()
 
 # Save solution to VTK format
-File("elasticity.pvd") << u
+File("elasticity.pvd", "compressed") << u
 
 # Save colored mesh partitions in VTK format if running in parallel
 if MPI.num_processes() > 1:
