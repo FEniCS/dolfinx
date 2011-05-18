@@ -324,7 +324,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     if (rank == 1 && dim == 2)
       data.resize(size + size/2);
     else if (rank == 2 && dim == 4)
-      data.resize(size + 4*size/5);
+      data.resize(size + 5*size/4);
     else
       data.resize(size);
 
@@ -420,7 +420,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
   pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
-  for(uint i=0; i< MPI::num_processes(); i++)
+  for(uint i = 0; i< MPI::num_processes(); i++)
   {
     std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pvtu_file << "<Piece Source=\"" << tmp_string << "\"/>" << std::endl;
@@ -459,7 +459,6 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
 
   // Write file
   pvtu_results_write(dim, rank, data_type, u.name(), pvtu_filename);
-
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_results_write(uint dim, uint rank, std::string data_type,
@@ -492,6 +491,9 @@ void VTKFile::pvtu_results_write(uint dim, uint rank, std::string data_type,
       pvtu_file << "<PCellData  Tensors=\"" << name << "\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
+    else
+      error("Don't know how to write function of this rank to VTK file.");
+
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PCellData> " << std::endl;
   }
@@ -504,14 +506,21 @@ void VTKFile::pvtu_results_write(uint dim, uint rank, std::string data_type,
     }
     else if (rank == 1)
     {
+      if (!(dim == 2 || dim == 3))
+        error("Do not know what to do with vector function with dim other than 2 or 3.");
       pvtu_file << "<PPointData  Vectors=\"" << name << "\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
+      if(!(dim == 4 || dim == 9))
+        error("Don't know what to do with tensor function with dim other than 4 or 9.");
       pvtu_file << "<PPointData  Tensors=\"" << name << "\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
+    else
+      error("Don't know how to write function of this rank to VTK file.");
+
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
   }
@@ -524,20 +533,20 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  if ( !file.is_open() )
+  if (!file.is_open())
     error("Unable to open file %s", filename.c_str());
 
   // Figure out endianness of machine
   std::string endianness = "";
   if (encode_string == "binary")
   {
-  #if defined BOOST_LITTLE_ENDIAN
+    #if defined BOOST_LITTLE_ENDIAN
     endianness = "byte_order=\"LittleEndian\"";
-  #elif defined BOOST_BIG_ENDIAN
+    #elif defined BOOST_BIG_ENDIAN
     endianness = "byte_order=\"BigEndian\"";;
-  #else
+    #else
     error("Unable to determine the endianness of the machine for VTK binary output.");
-  #endif
+    #endif
   }
 
   // Compression string

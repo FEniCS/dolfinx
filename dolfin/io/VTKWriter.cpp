@@ -85,11 +85,15 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   }
   else if (rank == 1)
   {
+    if(!(data_dim == 2 || data_dim == 3))
+      error("Don't know what to do with vector function with dim other than 2 or 3.");
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
   }
   else if (rank == 2)
   {
+    if(!(data_dim == 4 || data_dim == 9))
+      error("Don't know what to do with tensor function with dim other than 4 or 9.");
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
   }

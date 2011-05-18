@@ -1,3 +1,4 @@
+ - Fix compressed VTK output for tensors in 2D
 0.9.11 [2011-05-16]
  - Change license from LGPL v2.1 to LGPL v3 or later
  - Moved meshconverter to dolfin_utils
