@@ -23,9 +23,11 @@
 import unittest
 from dolfin import *
 
+# VTK file options
 file_options = ["ascii", "base64", "compressed"]
 
 class VTK_Mesh_Output(unittest.TestCase):
+    """Test output of Meshes to VTK files"""
 
     def test_save_1d_mesh(self):
         if MPI.num_processes() == 1:
@@ -48,6 +50,7 @@ class VTK_Mesh_Output(unittest.TestCase):
 
 
 class VTK_Point_Function_Output(unittest.TestCase):
+    """Test output of point-based Functions to VTK files"""
 
     def test_save_1d_scalar(self):
         if MPI.num_processes() == 1:
