@@ -28,10 +28,11 @@ file_options = ["ascii", "base64", "compressed"]
 class VTK_Mesh_Output(unittest.TestCase):
 
     def test_save_1d_mesh(self):
-        mesh = UnitInterval(32)
-        File("mesh.pvd") << mesh
-        for file_option in file_options:
-            File("mesh.pvd", file_option) << mesh
+        if MPI.num_processes() == 1:
+            mesh = UnitInterval(32)
+            File("mesh.pvd") << mesh
+            for file_option in file_options:
+                File("mesh.pvd", file_option) << mesh
 
     def test_save_2d_mesh(self):
         mesh = UnitSquare(32, 32)
@@ -49,12 +50,13 @@ class VTK_Mesh_Output(unittest.TestCase):
 class VTK_Point_Function_Output(unittest.TestCase):
 
     def test_save_1d_scalar(self):
-        mesh = UnitInterval(32)
-        u = Function(FunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.pvd") << u
-        for file_option in file_options:
-            File("u.pvd", file_option) << u
+        if MPI.num_processes() == 1:
+            mesh = UnitInterval(32)
+            u = Function(FunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.pvd") << u
+            for file_option in file_options:
+                File("u.pvd", file_option) << u
 
     def test_save_2d_scalar(self):
         mesh = UnitSquare(16, 16)
