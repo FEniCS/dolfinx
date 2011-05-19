@@ -74,5 +74,57 @@ class VTK_Point_Function_Output(unittest.TestCase):
         for file_option in file_options:
             File("u.pvd", file_option) << u
 
+    # FFC fails for vector spaces in 1D
+    #def test_save_1d_vector(self):
+    #    if MPI.num_processes() == 1:
+    #        mesh = UnitInterval(32)
+    #        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+    #        u.vector()[:] = 1.0
+    #        File("u.pvd") << u
+    #        for file_option in file_options:
+    #            File("u.pvd", file_option) << u
+
+    def test_save_2d_vector(self):
+        mesh = UnitSquare(16, 16)
+        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
+
+    def test_save_3d_vector(self):
+        mesh = UnitCube(8, 8, 8)
+        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
+
+    # FFC fails for tensor spaces in 1D
+    #def test_save_1d_tensor(self):
+    #    if MPI.num_processes() == 1:
+    #        mesh = UnitInterval(32)
+    #        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    #        u.vector()[:] = 1.0
+    #        File("u.pvd") << u
+    #        for file_option in file_options:
+    #            File("u.pvd", file_option) << u
+
+    def test_save_2d_tensor(self):
+        mesh = UnitSquare(16, 16)
+        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
+
+    def test_save_3d_tensor(self):
+        mesh = UnitCube(8, 8, 8)
+        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.pvd") << u
+        for file_option in file_options:
+            File("u.pvd", file_option) << u
+
 if __name__ == "__main__":
     unittest.main()
