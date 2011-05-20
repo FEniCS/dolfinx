@@ -60,6 +60,11 @@ class Eval(unittest.TestCase):
           u21 = f2(0.31, 0.32, 0.33)
           self.assertAlmostEqual(u20[0], u21)
 
+          # Test Point evaluation
+          p0 = Point(0.31, 0.32, 0.33)
+          u21 = f2(p0)
+          self.assertAlmostEqual(u20[0], u21)
+
           same_result = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
           self.assertAlmostEqual(u00[0], same_result)
           self.assertAlmostEqual(u11, same_result)
@@ -86,6 +91,8 @@ class Eval(unittest.TestCase):
               u3 = f3(x)
               u4 = g(x)
               self.assertAlmostEqual(u3, u4, places=5)
+              self.assertRaises(TypeError, g, [0,0,0,0])
+              self.assertRaises(TypeError, g, Point(0,0))
 
      def testOverLoadAndCallBack(self):
           class F0(Expression):
