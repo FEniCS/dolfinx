@@ -1,0 +1,449 @@
+.. Documentation for the incompressible Navier-Stokes demo from DOLFIN.
+
+.. _demos_pde_navier_stokes_cpp_documentation:
+
+Incompressible Navier-Stokes equations
+======================================
+
+.. include:: ../common.txt
+
+Implementation
+--------------
+
+The implementation is split in four files: three form files containing the
+definition of the variational forms expressed in UFL and a C++ file
+containing the actual solver.
+
+Running this demo requires the files: :download:`main.cpp`,
+:download:`TentativeVelocity.ufl`, :download:`VelocityUpdate.ufl`,
+:download:`PressureUpdate.ufl` and :download:`CMakeLists.txt`.
+
+UFL form files
+^^^^^^^^^^^^^^
+
+The variational forms for the three steps of Chorin's method are
+implemented in three separate UFL form files.
+
+The variational problem for the tentative velocity is implemented as
+follows:
+
+.. code-block:: python
+
+    # Define function spaces (P2-P1)
+    V = VectorElement("CG", triangle, 2)
+    Q = FiniteElement("CG", triangle, 1)
+
+    # Define trial and test functions
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+    # Define coefficients
+    k  = Constant(triangle)
+    u0 = Coefficient(V)
+    f  = Coefficient(V)
+    nu = 0.01
+
+    # Define bilinear and linear forms
+    F = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
+        nu*inner(grad(u), grad(v))*dx - inner(f, v)*dx
+    a = lhs(F)
+    L = rhs(F)
+
+The variational problem for the pressure update is implemented as
+follows:
+
+.. code-block:: python
+
+    # Define function spaces (P2-P1)
+    V = VectorElement("CG", triangle, 2)
+    Q = FiniteElement("CG", triangle, 1)
+
+    # Define trial and test functions
+    p = TrialFunction(Q)
+    q = TestFunction(Q)
+
+    # Define coefficients
+    k  = Constant(triangle)
+    u1 = Coefficient(V)
+
+    # Define bilinear and linear forms
+    a = inner(grad(p), grad(q))*dx
+    L = -(1/k)*div(u1)*q*dx
+
+The variational problem for the velocity update is implemented as
+follows:
+
+.. code-block:: python
+
+    # Define function spaces (P2-P1)
+    V = VectorElement("CG", triangle, 2)
+    Q = FiniteElement("CG", triangle, 1)
+
+    # Define trial and test functions
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+    # Define coefficients
+    k  = Constant(triangle)
+    u1 = Coefficient(V)
+    p1 = Coefficient(Q)
+
+    # Define bilinear and linear forms
+    a = inner(u, v)*dx
+    L = inner(u1, v)*dx - k*inner(grad(p1), v)*dx
+
+Before the form files can be used in the C++ program, they must be
+compiled using FFC:
+
+.. code-block:: sh
+
+    ffc -l dolfin TentativeVelocity.ufl
+    ffc -l dolfin VelocityUpdate.ufl
+    ffc -l dolfin PressureUpdate.ufl
+
+Note the flag ``-l dolfin`` which tells FFC to generate
+DOLFIN-specific wrappers that make it easy to access the generated
+code from within DOLFIN.
+
+C++ program
+^^^^^^^^^^^
+
+In the C++ program, :download:`main.cpp`, we start by including
+``dolfin.h`` and the generated header files:
+
+.. code-block:: cpp
+
+    #include <dolfin.h>
+    #include "TentativeVelocity.h"
+    #include "PressureUpdate.h"
+    #include "VelocityUpdate.h"
+
+To be able to use classes and functions from the DOLFIN namespace
+directly, we write
+
+.. code-block:: cpp
+
+    using namespace dolfin;
+
+Next, we define the subdomains that we will use to specify boundary
+conditions. We do this by defining subclasses of
+:cpp:class:`SubDomain` and overloading the function ``inside``:
+
+.. code-block:: cpp
+
+    // Define noslip domain
+    class NoslipDomain : public SubDomain
+    {
+      bool inside(const Array<double>& x, bool on_boundary) const
+      {
+        return on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS;
+      }
+    };
+
+    // Define inflow domain
+    class InflowDomain : public SubDomain
+    {
+      bool inside(const Array<double>& x, bool on_boundary) const
+      {
+        return x[1] > 1.0 - DOLFIN_EPS;
+      }
+    };
+
+    // Define inflow domain
+    class OutflowDomain : public SubDomain
+    {
+      bool inside(const Array<double>& x, bool on_boundary) const
+      {
+        return x[0] > 1.0 - DOLFIN_EPS;
+      }
+    };
+
+We also define a subclass of :cpp:class:`Expression` which we will use
+to specify the time-dependent boundary value for the pressure at the
+inflow.
+
+.. code-block:: cpp
+
+    // Define pressure boundary value at inflow
+    class InflowPressure : public Expression
+    {
+    public:
+
+      // Constructor
+      InflowPressure() : t(0) {}
+
+      // Evaluate pressure at inflow
+      void eval(Array<double>& values, const Array<double>& x) const
+      {
+        values[0] = sin(3.0*t);
+      }
+
+      // Current time
+      double t;
+
+    };
+
+Note that the member variable ``t`` is not automatically updated
+during time-stepping, so we must remember to manually update the value
+of the current time in each time step.
+
+Once we have defined all classes we will use to write our program, we
+start our C++ program by writing
+
+.. code-block:: cpp
+
+    int main()
+    {
+
+We then load the mesh for the L-shaped domain from file and refine it
+once to obtain a finer mesh:
+
+.. code-block:: cpp
+
+    // Load mesh from file
+    Mesh mesh("lshape.xml.gz");
+
+    // Refine mesh
+    mesh = refine(mesh);
+
+We next define a pair of function spaces :math:`V` and :math:`Q` for
+the velocity and pressure, and test and trial functions on these
+spaces:
+
+.. code-block:: cpp
+
+    // Create function spaces
+    VelocityUpdate::FunctionSpace V(mesh);
+    PressureUpdate::FunctionSpace Q(mesh);
+
+The time step and the length of the interval are defined by:
+
+.. code-block:: cpp
+
+    // Set parameter values
+    double dt = 0.01;
+    double T = 3;
+
+We next define the time-dependent pressure boundary value, and zero
+scalar and vector constants that will be used for boundary conditions
+below.
+
+.. code-block:: cpp
+
+    // Define values for boundary conditions
+    InflowPressure p_in;
+    Constant zero(0);
+    Constant zero_vector(0, 0);
+
+Before we can define our boundary conditions, we also need to
+instantiate the classes we defined above for the boundary subdomains:
+
+.. code-block:: cpp
+
+    // Define boundary conditions
+    DirichletBC noslip(V, zero_vector, noslip_domain);
+    DirichletBC inflow(Q, p_in, inflow_domain);
+    DirichletBC outflow(Q, zero, outflow_domain);
+    std::vector<DirichletBC*> bcu;
+    bcu.push_back(&noslip);
+    std::vector<DirichletBC*> bcp;
+    bcp.push_back(&inflow);
+    bcp.push_back(&outflow);
+
+We may now define the boundary conditions for the velocity and
+pressure. We define one no-slip boundary condition for the velocity
+and a pair of boundary conditions for the pressure at the inflow and
+outflow boundaries:
+
+.. code-block:: cpp
+
+    // Define boundary conditions
+    DirichletBC noslip(V, zero_vector, noslip_domain);
+    DirichletBC inflow(Q, p_in, inflow_domain);
+    DirichletBC outflow(Q, zero, outflow_domain);
+    std::vector<DirichletBC*> bcu;
+    bcu.push_back(&noslip);
+    std::vector<DirichletBC*> bcp;
+    bcp.push_back(&inflow);
+    bcp.push_back(&outflow);
+
+We collect the boundary conditions in the two arrays ``bcu`` and
+``bcp`` so that we may easily iterate over them below when we apply
+the boundary conditions. This makes it easy to add new boundary
+conditions or use this demo program to solve the Navier-Stokes
+equations on other geometries.
+
+We next define the functions and the coefficients that will be used
+below:
+
+.. code-block:: cpp
+
+    // Create functions
+    Function u0(V);
+    Function u1(V);
+    Function p1(Q);
+
+    // Create coefficients
+    Constant k(dt);
+    Constant f(0, 0);
+
+The next step is now to define the variational problems for the three
+steps of Chorin's method. We do this by instantiating the classes
+generated from our UFL form files:
+
+.. code-block:: cpp
+
+   // Create forms
+   TentativeVelocity::BilinearForm a1(V, V);
+   TentativeVelocity::LinearForm L1(V);
+   PressureUpdate::BilinearForm a2(Q, Q);
+   PressureUpdate::LinearForm L2(Q);
+   VelocityUpdate::BilinearForm a3(V, V);
+   VelocityUpdate::LinearForm L3(V);
+
+Since the forms depend on coefficients, we have to attach the
+coefficients defined above to the appropriate forms:
+
+.. code-block:: cpp
+
+  // Set coefficients
+  a1.k = k; L1.k = k; L1.u0 = u0; L1.f = f;
+  L2.k = k; L2.u1 = u1;
+  L3.k = k; L3.u1 = u1; L3.p1 = p1;
+
+Since the bilinear forms do not depend on any coefficients that change
+during time-stepping, the corresponding matrices remain constant. We
+may therefore assemble these before the time-stepping begins:
+
+.. code-block:: cpp
+
+    // Assemble matrices
+    Matrix A1, A2, A3;
+    assemble(A1, a1);
+    assemble(A2, a2);
+    assemble(A3, a3);
+
+    // Create vectors
+    Vector b1, b2, b3;
+
+We also created the vectors that will be used below to assemble
+right-hand sides.
+
+During time-stepping, we will store the solution in VTK format
+(readable by MayaVi and Paraview). We therefore create a pair of files
+that can be used to store the solution. Specifying the ``.pvd`` suffix
+signals that the solution should be stored in VTK format:
+
+.. code-block:: cpp
+
+    // Create files for storing solution
+    File ufile("velocity.pvd");
+    File pfile("pressure.pvd");
+
+The time-stepping loop is now implemented as follows:
+
+.. code-block:: cpp
+
+    // Time-stepping
+    double t = dt;
+    Progress p("Time-stepping");
+    while (t < T + DOLFIN_EPS)
+    {
+      // Update pressure boundary condition
+      p_in.t = t;
+
+We use the :cpp:class:`Progress` class to display a progress bar
+during the computation. We also remember to update the current time
+for the time-dependent pressure boundary value.
+
+For each of the three steps of Chorin's method, we assemble the
+right-hand side, apply boundary conditions, and solve a linear
+system. Note the different use of preconditioners. Incomplete LU
+factorization is used for the computation of the tentative velocity
+and the velocity update, while algebraic multigrid is used for the
+pressure equation:
+
+.. code-block:: cpp
+
+    // Compute tentative velocity step
+    begin("Computing tentative velocity");
+    assemble(b1, L1);
+    for (dolfin::uint i = 0; i < bcu.size(); i++)
+      bcu[i]->apply(A1, b1);
+    solve(A1, u1.vector(), b1, "gmres", "ilu");
+    end();
+
+    // Pressure correction
+    begin("Computing pressure correction");
+    assemble(b2, L2);
+    for (dolfin::uint i = 0; i < bcp.size(); i++)
+      bcp[i]->apply(A2, b2);
+    solve(A2, p1.vector(), b2, "gmres", "amg_hypre");
+    end();
+
+    // Velocity correction
+    begin("Computing velocity correction");
+    assemble(b3, L3);
+    for (dolfin::uint i = 0; i < bcu.size(); i++)
+      bcu[i]->apply(A3, b3);
+    solve(A3, u1.vector(), b3, "gmres", "ilu");
+    end();
+
+Note the use of ``begin`` and ``end``; these improve the readability
+of the output from the program by adding indentation to diagnostic
+messages.
+
+At the end of the time-stepping loop, we store the solution to file
+and update values for the next time step:
+
+.. code-block:: cpp
+
+    // Save to file
+    ufile << u1;
+    pfile << p1;
+
+    // Move to next time step
+    u0 = u1;
+    p = t / T;
+    t += dt;
+
+Finally, we plot the solution and the program is finished:
+
+.. code-block:: cpp
+
+    // Plot solution
+    plot(p1, "Pressure");
+    plot(u1, "Velocity");
+
+    return 0;
+  }
+
+
+
+Complete code
+-------------
+
+Complete UFL files
+^^^^^^^^^^^^^^^^^^
+
+.. literalinclude:: TentativeVelocity.ufl
+   :start-after: # Compile
+   :language: python
+
+
+.. literalinclude:: VelocityUpdate.ufl
+   :start-after: # Compile
+   :language: python
+
+
+.. literalinclude:: PressureUpdate.ufl
+   :start-after: # Compile
+   :language: python
+
+Complete main file
+^^^^^^^^^^^^^^^^^^
+
+.. literalinclude:: main.cpp
+   :start-after: // Begin demo
+   :language: c++
+
