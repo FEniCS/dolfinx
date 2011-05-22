@@ -45,8 +45,8 @@ block_source =  {"cpp":     {"c++": ".cpp", "python": ".ufl"},
 
 def verify_blocks(rst_file, source_files, source_dict):
     """Check that any code blocks in the rst file is present in at
-    least one of the source files. Returns False if any block is not
-    present, True otherwise."""
+    least one of the source files. Returns (False, block) if any block
+    is not present, True otherwise."""
 
     for block_type, source_type in source_dict.items():
         # Extract code blocks from rst file.
@@ -58,9 +58,9 @@ def verify_blocks(rst_file, source_files, source_dict):
             # Check if block is in the list of files of correct type.
             in_source = block_in_source(line, block, sources)
             if not in_source:
-                return False
+                return (False, block)
 
-    return True
+    return (True, None)
 
 def get_blocks(rst_file, block_type):
     "Extract any code blocks of given type from the rst file."
@@ -162,10 +162,11 @@ if __name__ == "__main__":
                                   (".py", ".ufl", ".cpp")]
                 # Loop files, check if code blocks are present in source files.
                 for rst_file in rst_files:
-                    ok = verify_blocks(rst_file, source_files,
-                                       block_source[directory])
+                    (ok, block) = verify_blocks(rst_file, source_files,
+                                                block_source[directory])
                     if not ok:
                         stderr.write(", " + "failed.\n")
+                        stderr.write("\nFailing block: %s\n" % block)
                         failed += [demo]
                     else:
                         stderr.write(", " + "OK.\n")
