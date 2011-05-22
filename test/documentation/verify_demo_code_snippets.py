@@ -175,4 +175,3 @@ if __name__ == "__main__":
         chdir(pardir)
 
     sys.exit(len(failed))
-    #print "\nOK.\n"
