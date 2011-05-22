@@ -1,6 +1,4 @@
-"Run all tests"
-
-# Copyright (C) 2007-2009 Anders Logg
+# Copyright (C) 2011 Marie E. Rognes
 #
 # This file is part of DOLFIN.
 #
@@ -17,33 +15,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2007-06-09
+# First added:  2011-05-22
 # Last changed: 2011-05-22
 
-import re, sys, os
+import sys
+from dolfin_utils.commands import getstatusoutput
 
-pwd = os.path.dirname(os.path.abspath(__file__))
-
-# Tests to run
-tests = ["unit", "regression", "system", "documentation"]
-
-# Check if we should enable memory testing
-if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
-    tests.append("memory")
+tests = ["verify_demo_code_snippets.py"]
 
 failed = []
-
-# Command to run
-command = "python test.py" + " " + " ".join(sys.argv[1:])
-
-# Run tests
 for test in tests:
-    print "Running tests: %s" % test
-    print "----------------------------------------------------------------------"
-    os.chdir(os.path.join(pwd, test))
-    fail = os.system(command)
+    command = "python %s" % test
+    fail, output = getstatusoutput(command)
+
     if fail:
         failed.append(fail)
-    print ""
+        print "*** %s failed" % test
+        print output
+    else:
+        print "OK"
 
 sys.exit(len(failed))
