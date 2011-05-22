@@ -71,9 +71,9 @@ class AbstractBaseTest(object):
                 A[0, 0, 0]
 
         # Test wrong getitem
-        self.assertRaises(TypeError,wrong_getitem,0)
-        self.assertRaises(TypeError,wrong_getitem,1)
-        self.assertRaises(TypeError,wrong_getitem,2)
+        self.assertRaises(TypeError, wrong_getitem, 0)
+        self.assertRaises(TypeError, wrong_getitem, 1)
+        self.assertRaises(TypeError, wrong_getitem, 2)
 
         # Test __imul__ operator
         A *= 2
@@ -193,6 +193,14 @@ class DataTester:
             for col in xrange(rows[row], rows[row+1]):
                 self.assertEqual(array[row, cols[col]],values[i])
                 i += 1
+        
+        # Test none writeable of a shallow copy of the data
+        rows, cols, values = A.data(False)
+        def write_data(data):
+            data[0] = 1
+        self.assertRaises(RuntimeError, write_data, rows)
+        self.assertRaises(RuntimeError, write_data, cols)
+        self.assertRaises(RuntimeError, write_data, values)
 
         # Test for down_casted Matrix
         A = down_cast(A)

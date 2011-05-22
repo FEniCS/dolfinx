@@ -434,9 +434,27 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             A[i, column] = values
         return A
 
-    def data(self):
-        """Return arrays to underlying compresssed row/column storage data """
-        return self._data()
+    def data(self, deepcopy=True):
+        """
+        Return arrays to underlying compresssed row/column storage data
+
+        This method is only available for the uBLAS and MTL4 linear algebra
+        backends.
+        
+        *Arguments*
+            deepcopy
+                Return a copy of the data. If set to False a reference
+                to the Matrix need to be kept, otherwise the data will be
+                destroyed together with the destruction of the Matrix
+        """
+        rows, cols, values = self._data()
+        if deepcopy:
+            rows, cols, values = rows.copy(), cols.copy(), values.copy()
+        else:
+            rows.flags.writeable = False
+            cols.flags.writeable = False
+            values.flags.writeable = False
+        return rows, cols, values
 
     # FIXME: Getting matrix entries need to be carefully examined, especially for
     #        parallel objects.
