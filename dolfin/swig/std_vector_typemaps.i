@@ -17,7 +17,7 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-05-02
+// Last changed: 2011-05-22
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -76,12 +76,6 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 {
   $1 = PyList_Check($input) ? 1 : 0;
 }
-
-//-----------------------------------------------------------------------------
-// Instantiate the dummy template, making SWIG aware of the type
-// FIXME: Is this needed?
-//-----------------------------------------------------------------------------
-//%template () std::vector<dolfin::TYPE *>;
 
 //-----------------------------------------------------------------------------
 // The typemap
@@ -224,7 +218,13 @@ const std::vector<TYPE>&  ARG_NAME
         const unsigned int size = PyArray_DIM(xa, 0);
         temp.resize(size);
         TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
-        std::copy(array, array + size, temp.begin());
+	if (PyArray_ISCONTIGUOUS(xa))
+	  std::copy(array, array + size, temp.begin());
+	else {
+	  const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
+	  for (int i=0; i<size; i++)
+	    temp[i] = array[i*strides];
+	}
         $1 = &temp;
       }
      else
@@ -263,7 +263,7 @@ const std::vector<TYPE>&  ARG_NAME
 //-----------------------------------------------------------------------------
 // Argout typemap, returning a NumPy array for the std::vector<TYPE>
 //-----------------------------------------------------------------------------
-%typemap(argout) std::vector<TYPE> & ARG_NAME
+%typemap(argout) std::vector<TYPE>& ARG_NAME
 {
   PyObject* o0 = 0;
   PyObject* o1 = 0;

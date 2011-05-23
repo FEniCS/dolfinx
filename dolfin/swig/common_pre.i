@@ -17,7 +17,7 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-22
-// Last changed: 2011-01-31
+// Last changed: 2011-05-22
 
 //=============================================================================
 // SWIG directives for the DOLFIN real kernel module (pre)
@@ -68,46 +68,11 @@ namespace dolfin
 %ignore dolfin::Set::operator[];
 
 //-----------------------------------------------------------------------------
-// Macro for defining an in-typemap for NumPy array -> dolfin::Array for the
-// Array constructor
-//
-// TYPE       : The pointer type
-// TYPECHECK  : The SWIG specific name of the type used in the array type checks values
-//              SWIG use: INT32 for integer, DOUBLE for double aso.
-// NUMPYTYPE  : The NumPy type that is going to be checked for
-// TYPENAME   : The name of the pointer type, 'double' for 'double', 'uint' for
-//              'dolfin::uint'
-// DESCR      : The char descriptor of the NumPy type
+// Copy Array construction typemaps from NumPy typemaps
 //-----------------------------------------------------------------------------
-%define ARRAY_CONSTRUCTOR_TYPEMAP(TYPE, TYPECHECK, NUMPYTYPE, TYPENAME, DESCR)
-
-%typecheck(SWIG_TYPECHECK_ ## TYPECHECK ## _ARRAY) (dolfin::uint N, TYPE* x){
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-%typemap(in) (dolfin::uint N, TYPE* x){
-
-  // Check input object
-  if (!PyArray_Check($input))
-    SWIG_exception(SWIG_TypeError, "numpy array of 'TYPENAME' expected. Make sure that the numpy array use dtype='DESCR'.");
-
-  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-  if (PyArray_TYPE(xa) != NUMPYTYPE )
-    SWIG_exception(SWIG_TypeError, "numpy array of 'TYPENAME' expected. Make sure that the numpy array use dtype='DESCR'.");
-
-  $1 = PyArray_DIM(xa, 0);
-  $2 = static_cast<TYPE*>(PyArray_DATA(xa));
-}
-
-%enddef
-
-//-----------------------------------------------------------------------------
-// Run Array typemap macros
-//-----------------------------------------------------------------------------
-ARRAY_CONSTRUCTOR_TYPEMAP(double, DOUBLE, NPY_DOUBLE, double, d)
-// We nust use unsigned int here and not dolfin::uint, don't know why
-ARRAY_CONSTRUCTOR_TYPEMAP(unsigned int, INT32, NPY_UINT, uint, I)
-ARRAY_CONSTRUCTOR_TYPEMAP(int, INT32, NPY_INT, int, i)
+%typemap(in) (dolfin::uint N, const dolfin::uint* x) = (dolfin::uint _array_dim, dolfin::uint* _array);
+%typemap(in) (dolfin::uint N, const int* x) = (dolfin::uint _array_dim, int* _array);
+%typemap(in) (dolfin::uint N, const double* x) = (dolfin::uint _array_dim, double* _array);
 
 //-----------------------------------------------------------------------------
 // Ignores for Hierarchical

@@ -1,3 +1,4 @@
+ - Prevent the use of non contiguous NumPy arrays for most typemaps
  - Point can now be used to evaluate a Function or Expression in Python
  - Fixed dimension check for Function and Expression eval in Python
  - Fix compressed VTK output for tensors in 2D

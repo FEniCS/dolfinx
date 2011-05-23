@@ -55,13 +55,13 @@ SWIGINTERN bool convert_numpy_to_array_no_check_ ## TYPE_NAME(PyObject* input, T
   if (PyArray_Check(input)) 
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
-    if ( PyArray_TYPE(xa) == NUMPY_TYPE )
+    if (PyArray_ISCONTIGUOUS(xa) && PyArray_TYPE(xa) == NUMPY_TYPE)
     {
       ret  = static_cast<TYPE*>(PyArray_DATA(xa));
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"numpy array of 'TYPE_NAME' expected. Make sure that the numpy array use dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous and uses dtype='DESCR'.");
   return false;
 }
 }
@@ -113,14 +113,14 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
   if (PyArray_Check(input)) 
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
-    if ( PyArray_TYPE(xa) == NUMPY_TYPE )
+    if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
       _array_dim = static_cast<dolfin::uint>(PyArray_DIM(xa,0));
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"numpy array of 'TYPE_NAME' expected. Make sure that the numpy array use dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous and uses dtype='DESCR'.");
   return false;
 }
 }
@@ -153,8 +153,8 @@ UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,i)
 
 SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,I)
-//SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
-//SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,i)
+SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
+SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,i)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double
