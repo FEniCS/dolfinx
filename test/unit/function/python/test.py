@@ -223,10 +223,10 @@ class Interpolate(unittest.TestCase):
 class Constants(unittest.TestCase):
      
      def testConstantInit(self):
-          mesh_intervals = UnitInterval(2)
-          mesh_triangles = UnitSquare(2,2)
-          mesh_tetrahedrons = UnitCube(2,2,2)
-
+          mesh_intervals = UnitInterval(10)
+          mesh_triangles = UnitSquare(10,10)
+          mesh_tetrahedrons = UnitCube(10,10,10)
+          
           c0 = Constant(1.)
           c1 = Constant([2,3], mesh_intervals)
           c2 = Constant([[2,3], [3,4]], mesh_triangles)
