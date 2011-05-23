@@ -192,7 +192,6 @@ class Instantiation(unittest.TestCase):
           #self.assertRaises(ValueError, wrongElement)
           self.assertRaises(DeprecationWarning, deprecationWarning)
 
-
 class Interpolate(unittest.TestCase):
 
     def testInterpolation(self):
@@ -220,6 +219,39 @@ class Interpolate(unittest.TestCase):
             f = Function(W)
             f.interpolate(f1)
             self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
+
+class Constants(unittest.TestCase):
+     
+     def testConstantInit(self):
+          mesh_intervals = UnitInterval(2)
+          mesh_triangles = UnitSquare(2,2)
+          mesh_tetrahedrons = UnitCube(2,2,2)
+
+          c0 = Constant(1.)
+          c1 = Constant([2,3], mesh_intervals)
+          c2 = Constant([[2,3], [3,4]], mesh_triangles)
+          c3 = Constant(array([2,3]), mesh_tetrahedrons)
+
+          self.assertTrue(c0.cell().is_undefined())
+          self.assertTrue(c1.cell() == interval)
+          self.assertTrue(c2.cell() == triangle)
+          self.assertTrue(c3.cell() == tetrahedron)
+          
+          self.assertTrue(c0.shape() == ())
+          self.assertTrue(c1.shape() == (2,))
+          self.assertTrue(c2.shape() == (2,2))
+          self.assertTrue(c3.shape() == (2,))
+
+     def testGrad(self):
+          import ufl
+          zero = ufl.constantvalue.Zero((2,3))
+          mesh_tetrahedrons = UnitCube(2,2,2)
+          c0 = Constant(1.)
+          c3 = Constant(array([2,3]), mesh_tetrahedrons)
+          def gradient(c):
+               return grad(c)
+          self.assertRaises(UFLException, gradient, c0)
+          self.assertEqual(zero, gradient(c3))
 
 if __name__ == "__main__":
     unittest.main()
