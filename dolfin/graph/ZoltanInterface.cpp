@@ -58,19 +58,16 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   zoltan.Set_Edge_List_Multi_Fn(ZoltanInterface::ZoltanGraphInterface::get_all_edges, &zoltan_graph);
 
   // Create array for global ids that should be renumbered
-  ZOLTAN_ID_PTR  global_ids = new ZOLTAN_ID_TYPE[graph.size()];
-  for (uint i = 0; i < graph.size(); ++i)
+  std::vector<ZOLTAN_ID_TYPE> global_ids(graph.size());
+  for (uint i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
   // Call Zoltan function to compute coloring
   int num_id = 1;
-  int rc = zoltan.Color(num_id, graph.size(), global_ids,
+  int rc = zoltan.Color(num_id, graph.size(), &global_ids[0],
                         reinterpret_cast<int*>(colors.data().get()));
   if (rc != ZOLTAN_OK)
     error("Zoltan coloring failed");
-
-  // Clean up
-  delete global_ids;
 
   // Compute number of colors
   boost::unordered_set<uint> colors_set;

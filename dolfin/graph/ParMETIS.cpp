@@ -56,22 +56,22 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   MPI::gather(num_cells);
 
   // Build elmdist array with cell offsets for all processors
-  int* elmdist = new int[num_processes + 1];
+  std::vector<int> elmdist(num_processes + 1);
   elmdist[0] = 0;
   for (uint i = 1; i < num_processes + 1; ++i)
     elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
   // Build eptr and eind arrays storing cell-vertex connectivity
-  int* eptr = new int[num_local_cells + 1];
-  int* eind = new int[num_local_cells * num_cell_vertices];
+  std::vector<int> eptr(num_local_cells + 1);
+  std::vector<int> eind(num_local_cells*num_cell_vertices);
   for (uint i = 0; i < num_local_cells; i++)
   {
     assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
-    eptr[i] = i * num_cell_vertices;
+    eptr[i] = i*num_cell_vertices;
     for (uint j = 0; j < num_cell_vertices; j++)
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
   }
-  eptr[num_local_cells] = num_local_cells * num_cell_vertices;
+  eptr[num_local_cells] = num_local_cells*num_cell_vertices;
 
   // Number of nodes shared for dual graph (partition along facets)
   int ncommonnodes = num_cell_vertices - 1;
@@ -81,12 +81,8 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Strange weight arrays needed by ParMETIS
   int ncon = 1;
-  float* tpwgts = new float[ncon*nparts];
-  for (int i = 0; i < ncon*nparts; i++)
-    tpwgts[i] = 1.0 / static_cast<float>(nparts);
-  float* ubvec = new float[ncon];
-  for (int i = 0; i < ncon; i++)
-    ubvec[i] = 1.05;
+  std::vector<float> tpwgts(ncon*nparts, 1.0/static_cast<float>(nparts));
+  std::vector<float> ubvec(ncon, 1.05);
 
   // Options for ParMETIS, use default
   int options[3];
@@ -95,7 +91,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   options[2] = 15;
 
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
-  int* part = new int[num_local_cells];
+  std::vector<int> part(num_local_cells);
 
   // Prepare remaining arguments for ParMETIS
   int* elmwgt = 0;
@@ -107,11 +103,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   MPICommunicator comm;
 
   // Call ParMETIS to partition mesh
-  ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
+  ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
-                           tpwgts, ubvec, options,
-                           &edgecut, part, &(*comm));
+                           &tpwgts[0], &ubvec[0], options,
+                           &edgecut, &part[0], &(*comm));
   info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
@@ -119,14 +115,6 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   cell_partition.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; i++)
     cell_partition.push_back(static_cast<uint>(part[i]));
-
-  // Cleanup
-  delete [] elmdist;
-  delete [] eptr;
-  delete [] eind;
-  delete [] tpwgts;
-  delete [] ubvec;
-  delete [] part;
 }
 //-----------------------------------------------------------------------------
 #else

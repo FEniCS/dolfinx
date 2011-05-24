@@ -21,6 +21,8 @@
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
 
+#include <vector>
+
 #include <dolfin/log/Event.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
@@ -85,18 +87,18 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-  private:    
+  private:
+
     void init();
 
     unsigned int q;
-    unsigned int n;
 
     // Counts the number of time set has been called to determine when
     // init should be called
     uint counter;
 
-    real* points;
-    real* constants;
+    std::vector<real> points;
+    std::vector<real> constants;
 
     Event instability_detected;
   };
