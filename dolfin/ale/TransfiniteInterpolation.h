@@ -48,50 +48,55 @@ namespace dolfin
   private:
 
     // Transfinite meanvalue interpolation
-    static void mean_value(double* new_x, uint dim, const BoundaryMesh& new_boundary,
-                          Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          const Vertex& vertex, double** ghat, InterpolationType type);
+    static void mean_value(double* new_x, uint dim,
+                           const BoundaryMesh& new_boundary,
+                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
+                           const Vertex& vertex,
+                           double** ghat, InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights2D(double* w, double** u, double* d,
-                                 uint dim, uint num_vertices);
+    static void computeWeights2D(std::vector<double>& w, const double* const* u,
+                                 const std::vector<double>& d,
+                                 uint num_vertices);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights3D(double* w, double** u, double* d,
+    static void computeWeights3D(std::vector<double>& w, const double* const* u,
+                                 const std::vector<double>& d,
                                  uint dim, uint num_vertices);
 
     static void normals(double** dfdn, uint dim, const Mesh& new_boundary,
                         Mesh& mesh, const MeshFunction<uint>& vertex_map,
                         const MeshFunction<uint>& cell_map);
 
-    static void hermite_function(double** ghat, uint dim, const BoundaryMesh& new_boundary,
-                                 Mesh& mesh,
+    static void hermite_function(double** ghat, uint dim,
+                                 const BoundaryMesh& new_boundary, Mesh& mesh,
                                  const MeshFunction<uint>& vertex_map,
                                  const MeshFunction<uint>& cell_map);
 
-    static void integral(double* new_x, uint dim, const BoundaryMesh& new_boundary,
-                    Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    const Vertex& vertex);
+    static void integral(double* new_x, uint dim,
+                         const BoundaryMesh& new_boundary,
+                          Mesh& mesh, const MeshFunction<uint>& vertex_map,
+                          const Vertex& vertex);
 
 
     // Return sign
-    inline static double sgn(double v)
+    static double sgn(double v)
     { return (v < 0.0 ? -1.0 : 1.0); }
 
     // Return determinant 2D
-    inline static double det(double* u, double* v)
+    static double det(const double* u, const double* v)
     { return (u[0]*v[1] - u[1]*v[0]); }
 
     // Return determinant 3D
-    inline static double det(double* u, double* v, double* w)
+    static double det(const double* u, const double* v, const double* w)
     { return (u[0]*(v[1]*w[2] - v[2]*w[1]) - u[1]*(v[0]*w[2] - v[2]*w[0]) + u[2]*(v[0]*w[1] - v[1]*w[0])); }
 
     // Return next index
-    inline static uint next(uint i, uint dim)
+    static uint next(uint i, uint dim)
     { return (i == dim - 1 ? 0 : i + 1); }
 
     // Return previous index
-    inline static uint previous(uint i, uint dim)
+    static uint previous(uint i, uint dim)
     { return (i == 0 ? dim - 1 : i - 1); }
 
     // Return distance
