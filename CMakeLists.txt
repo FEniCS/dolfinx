@@ -41,8 +41,8 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
+option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 
-#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 
 #------------------------------------------------------------------------------
@@ -425,6 +425,7 @@ set(DOLFIN_INCLUDE_DIR "include" CACHE PATH "C/C++ header installation directory
 set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installation directory.")
 set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
 set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
+#set(DOLFIN_DOC_DIR "share/doc" CACHE PATH "Programmer's reference doc directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
@@ -511,6 +512,25 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 
 # Install meshes (data directory)
 install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
+
+#------------------------------------------------------------------------------
+# Generate documentation from code
+if (DOLFIN_ENABLE_DOCS)
+  message(STATUS "Enabling generation of documentation")
+
+  # Copy doc generation scripts to build directory
+  file(COPY doc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILES_MATCHING
+    PATTERN "*.py"
+    PATTERN "CMakeFiles" EXCLUDE)
+
+  # Make target doc_source (runs .rst generating script)
+  message(STATUS "Enabling Programmer's Reference generation")
+  add_custom_target(doc_source
+    COMMAND ${PYTHON_EXECUTABLE} "generate_api_doc.py" "${DOLFIN_SOURCE_DIR}" "api/" "${DOLFIN_VERSION}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
+
+endif()
 
 #------------------------------------------------------------------------------
 # Add tests and benchmarks
