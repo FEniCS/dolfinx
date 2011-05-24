@@ -114,7 +114,7 @@ void TransfiniteInterpolation::mean_value(Point& new_x, uint dim,
   std::vector<double> w(num_vertices, 0.0);
   std::vector<double> d_cell(num_vertices, 0.0);
   std::vector<double> herm(num_vertices, 0.0);
-  double const** new_p = new double const * [num_vertices];
+  std::vector<Point> new_p(num_vertices);
   std::vector<Point> u_cell(num_vertices);
   std::vector<Point> ghat_cell(num_vertices);
 
@@ -126,7 +126,7 @@ void TransfiniteInterpolation::mean_value(Point& new_x, uint dim,
     for (VertexIterator v(*c); !v.end(); ++v)
     {
       const uint ind = v.pos();
-      new_p[ind] = v->x();
+      new_p[ind] = v->point();
       u_cell[ind] = u[v->index()];
       d_cell[ind] = d[v->index()];
       if (method == interpolation_hermite)
@@ -165,9 +165,6 @@ void TransfiniteInterpolation::mean_value(Point& new_x, uint dim,
     for (uint i = 0; i < dim; i++)
       new_x[i] = new_x[i]/totalW + herm[i]/(totalW*totalW);
   }
-
-  // Free memory for local arrays
-  delete [] new_p;
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::computeWeights2D(std::vector<double>& w,
@@ -187,7 +184,6 @@ void TransfiniteInterpolation::computeWeights3D(std::vector<double>& w,
   std::vector<double> ell(num_vertices);
   std::vector<double> theta(num_vertices);
   double h = 0.0;
-
   for (uint i = 0; i < num_vertices; i++)
   {
     const uint ind1 = next(i, num_vertices);
@@ -205,22 +201,21 @@ void TransfiniteInterpolation::computeWeights3D(std::vector<double>& w,
   {
     const uint ind1 = next(i, num_vertices);
     const uint ind2 = previous(i, num_vertices);
-    c[i] = (2*sin(h)*sin(h - theta[i])) / (sin(theta[ind1])*sin(theta[ind2])) - 1;
+    c[i] = (2*std::sin(h)*std::sin(h - theta[i])) / (std::sin(theta[ind1])*std::sin(theta[ind2])) - 1;
     const double sinus= 1.0 - c[i]*c[i];
     if (sinus < 0 || sqrt(sinus) < DOLFIN_EPS)
     {
-      for (uint i = 0; i < num_vertices; i++)
-        w[i]=0;
+      std::fill(w.begin(), w.end(), 0.0);
       return;
     }
-    s[i] = sgn(det(u[0], u[1], u[2]))*sqrt(sinus);
+    s[i] = sgn(det(u[0], u[1], u[2]))*std::sqrt(sinus);
   }
 
   for (uint i = 0; i < num_vertices; i++)
   {
     const uint ind1 = next(i, num_vertices);
     const uint ind2 = previous(i, num_vertices);
-    w[i]=(theta[i]-c[ind1]*theta[ind2]-c[ind2]*theta[ind1])/(d[i]*sin(theta[ind1])*s[ind2]);
+    w[i] = (theta[i]-c[ind1]*theta[ind2] - c[ind2]*theta[ind1])/(d[i]*sin(theta[ind1])*s[ind2]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -230,7 +225,7 @@ void TransfiniteInterpolation::hermite_function(std::vector<Point>& ghat, uint d
                                                 const MeshFunction<uint>& vertex_map,
 			                                          const MeshFunction<uint>& cell_map)
 {
-  double** dfdn = new double * [new_boundary.num_vertices()];
+  std::vector<Point> dfdn(new_boundary.num_vertices());
   normals(dfdn, dim, new_boundary, mesh, vertex_map, cell_map);
 
   double c = 0.0;
@@ -244,31 +239,21 @@ void TransfiniteInterpolation::hermite_function(std::vector<Point>& ghat, uint d
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
     integral(ghat[v->index()], dim, new_boundary, mesh, vertex_map, *v);
-    for (uint i=0; i<dim;i++)
+    for (uint i = 0; i < dim; i++)
       ghat[v->index()][i] = c*dfdn[v->index()][i] - ghat[v->index()][i];
   }
-
-  for (uint i=0; i<new_boundary.num_vertices(); i++)
-    delete [] dfdn[i];
-  delete [] dfdn;
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::normals(double** dfdn, uint dim,
+void TransfiniteInterpolation::normals(std::vector<Point>& dfdn, uint dim,
                                        const Mesh& new_boundary,
 		                                   Mesh& mesh,
                                        const MeshFunction<uint>& vertex_map,
 		                                   const MeshFunction<uint>& cell_map)
 {
-  double** p = new double* [dim];
-  double* n  = new double[dim];
-
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
     const uint ind = v.pos();
-    dfdn[ind] = new double[dim];
-    for (uint i = 0; i < dim; i++)
-      dfdn[ind][i] = 0;
-
+    std::fill(dfdn[ind].coordinates(), dfdn[ind].coordinates() + 3, 0.0);
     for (CellIterator c(new_boundary); !c.end(); ++c)
     {
       for (VertexIterator w(*c); !w.end(); ++w)
@@ -278,7 +263,7 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim,
           Facet mesh_facet(mesh, cell_map[*c]);
           Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
           const uint facet_index = mesh_cell.index(mesh_facet);
-          Point n=mesh_cell.normal(facet_index);
+          const Point n = mesh_cell.normal(facet_index);
 
           for (uint j = 0; j < dim; j++)
             dfdn[ind][j] -= n[j];
@@ -286,14 +271,11 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim,
         }
       }
     }
-    double len = length(dfdn[ind], dim);
+    const double len = length(dfdn[ind]);
 
     for (uint i = 0; i < dim; i++)
       dfdn[ind][i] /= len;
   }
-
-  delete [] p;
-  delete [] n;
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::integral(Point& new_x, uint dim,
@@ -309,7 +291,7 @@ void TransfiniteInterpolation::integral(Point& new_x, uint dim,
   // Compute distance d and direction vector u from x to all p
   for (VertexIterator v(new_boundary);  !v.end(); ++v)
   {
-    uint ind=v->index();
+    const uint ind = v->index();
     if(ind != vertex.index())
     {
       // Old position of point x
@@ -336,7 +318,7 @@ void TransfiniteInterpolation::integral(Point& new_x, uint dim,
   // Local arrays
   const uint num_vertices = new_boundary.topology().dim() + 1;
   std::vector<double> w(num_vertices, 0.0);
-  double const** new_p = new double const* [num_vertices];
+  std::vector<Point> new_p(num_vertices);
   std::vector<double> d_cell(num_vertices, 0.0);
   std::vector<Point> u_cell(num_vertices);
 
@@ -352,7 +334,7 @@ void TransfiniteInterpolation::integral(Point& new_x, uint dim,
         in_cell = 1;
       else
       {
-        new_p[ind] = v->x();
+        new_p[ind] = v->point();
         u_cell[ind] = u[v->index()];
         d_cell[ind] = d[v->index()];
       }
@@ -374,9 +356,6 @@ void TransfiniteInterpolation::integral(Point& new_x, uint dim,
       }
     }
   }
-
-  // Free memory for local arrays
-  delete [] new_p;
 }
 //-----------------------------------------------------------------------------
 double TransfiniteInterpolation::dist(const Point& x, const Point& y, uint dim)
@@ -384,14 +363,11 @@ double TransfiniteInterpolation::dist(const Point& x, const Point& y, uint dim)
   double s = 0.0;
   for (uint i = 0; i < dim; i++)
     s += (x[i] - y[i])*(x[i] - y[i]);
-  return sqrt(s);
+  return std::sqrt(s);
 }
 //-----------------------------------------------------------------------------
-double TransfiniteInterpolation::length(const double* x, uint dim)
+double TransfiniteInterpolation::length(const Point& x)
 {
-  double s = 0.0;
-  for (uint i = 0; i < dim; i++)
-    s += x[i]*x[i];
-  return sqrt(s);
+  return x.norm();
 }
 //-----------------------------------------------------------------------------

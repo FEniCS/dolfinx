@@ -68,7 +68,8 @@ namespace dolfin
                                  const std::vector<double>& d,
                                  uint dim, uint num_vertices);
 
-    static void normals(double** dfdn, uint dim, const Mesh& new_boundary,
+    static void normals(std::vector<Point>& dfdn, uint dim,
+                        const Mesh& new_boundary,
                         Mesh& mesh, const MeshFunction<uint>& vertex_map,
                         const MeshFunction<uint>& cell_map);
 
@@ -107,7 +108,7 @@ namespace dolfin
     static double dist(const Point& x, const Point& y, uint dim);
 
     // Return length
-    static double length(const double* x, uint dim);
+    static double length(const Point& x);
   };
 
 }
