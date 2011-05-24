@@ -21,6 +21,7 @@
 #include <string.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -36,7 +37,7 @@ using namespace dolfin;
 void TransfiniteInterpolation::move(Mesh& mesh, const BoundaryMesh& new_boundary,
                                     InterpolationType method)
 {
-  // Only implemented in 2D and 3D so far
+  // Only implemented in 2D and 3D
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
     error("Mesh interpolation only implemented in 2D and 3D so far.");
 
@@ -45,39 +46,34 @@ void TransfiniteInterpolation::move(Mesh& mesh, const BoundaryMesh& new_boundary
   const MeshFunction<unsigned int>& cell_map   = new_boundary.cell_map();
 
   // Extract old coordinates
-  const uint dim = mesh.geometry().dim();
-  const uint size = mesh.num_vertices()*dim;
-  std::vector<double> new_x(size);
-  double** ghat = new double* [new_boundary.num_vertices()];;
+  const uint gdim = mesh.geometry().dim();
+  const uint num_vertices = mesh.num_vertices();
+  std::vector<Point> new_x(num_vertices);
+  std::vector<Point> ghat(new_boundary.num_vertices());
 
   // If hermite, create dgdn
   if (method == interpolation_hermite)
-    hermite_function(ghat, dim, new_boundary, mesh, vertex_map, cell_map);
+    hermite_function(ghat, gdim, new_boundary, mesh, vertex_map, cell_map);
 
   // Iterate over coordinates in mesh
   for (VertexIterator v(mesh); !v.end(); ++v)
-    mean_value(&new_x[0] + v->index()*dim, dim, new_boundary, mesh, vertex_map,
+  {
+    mean_value(new_x[v->index()], gdim, new_boundary, mesh, vertex_map,
                *v, ghat, method);
+  }
 
   // Update mesh coordinates
   MeshGeometry& geometry = mesh.geometry();
   for (uint i = 0; i < geometry.size(); i++)
-    memcpy(geometry.x(i), &new_x[0] + i*dim, dim*sizeof(double));
-
-  if (method == interpolation_hermite)
-  {
-    for (uint i=0; i < new_boundary.num_vertices(); i++)
-      delete [] ghat[i];
-  }
-  delete [] ghat;
+    std::copy(new_x[i].coordinates(), new_x[i].coordinates() + gdim, geometry.x(i));
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::mean_value(double* new_x, uint dim,
+void TransfiniteInterpolation::mean_value(Point& new_x, uint dim,
                                           const BoundaryMesh& new_boundary,
                                           Mesh& mesh,
                                           const MeshFunction<uint>& vertex_map,
                                           const Vertex& vertex,
-                                          double** ghat,
+                                          const std::vector<Point>& ghat,
                                           InterpolationType method)
 {
   // Check if the point is on the boundary (no need to compute new coordinate)
@@ -85,31 +81,30 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim,
   {
     if (vertex_map[*v] == vertex.index())
     {
-      memcpy(new_x, v->x(), dim*sizeof(double));
+      std::copy(v->x(), v->x() + dim, new_x.coordinates());
       return;
     }
   }
 
-  const uint size = new_boundary.num_vertices();
-  std::vector<double> d(size);
-  double** u = new double* [size];
+  const uint num_boundary_vertices = new_boundary.num_vertices();
+  std::vector<double> d(num_boundary_vertices);
+  std::vector<Point> u(num_boundary_vertices);
 
   // Compute distance d and direction vector u from x to all p
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
     // Old position of point x
-    const double* x = vertex.x();
+    const Point x = vertex.point();
 
     // Old position of vertex v in boundary
-    const double* p = mesh.geometry().x(vertex_map[*v]);
+    const Point p = mesh.geometry().point(vertex_map[*v]);
 
     // Distance from x to each point at the boundary
     d[v->index()] = dist(p, x, dim);
 
-    // Compute direction vector for p-x
-    u[v->index()] = new double[dim];
+    // Compute direction vector for p - x
     for (uint i = 0; i < dim; i++)
-      u[v->index()][i]=(p[i] - x[i]) / d[v->index()];
+      u[v->index()][i] = (p[i] - x[i]) / d[v->index()];
   }
 
   // FIXME: explain this
@@ -120,8 +115,8 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim,
   std::vector<double> d_cell(num_vertices, 0.0);
   std::vector<double> herm(num_vertices, 0.0);
   double const** new_p = new double const * [num_vertices];
-  double** u_cell    = new double* [num_vertices];
-  double** ghat_cell = new double* [num_vertices];
+  std::vector<Point> u_cell(num_vertices);
+  std::vector<Point> ghat_cell(num_vertices);
 
   // Iterate over all cells in boundary
   double totalW = 0.0;
@@ -135,7 +130,7 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim,
       u_cell[ind] = u[v->index()];
       d_cell[ind] = d[v->index()];
       if (method == interpolation_hermite)
-        ghat_cell[ind]= ghat[v->index()];
+        ghat_cell[ind] = ghat[v->index()];
     }
 
     // Compute weights w
@@ -171,18 +166,12 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim,
       new_x[i] = new_x[i]/totalW + herm[i]/(totalW*totalW);
   }
 
-  // Free memory for u
-  for (uint i = 0; i < size; ++i)
-    delete [] u[i];
-  delete [] u;
-
   // Free memory for local arrays
   delete [] new_p;
-  delete [] u_cell;
-  delete [] ghat_cell;
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::computeWeights2D(std::vector<double>& w, const double* const * u,
+void TransfiniteInterpolation::computeWeights2D(std::vector<double>& w,
+                                                const std::vector<Point>& u,
                                                 const std::vector<double>& d,
                                                 uint num_vertices)
 {
@@ -191,7 +180,7 @@ void TransfiniteInterpolation::computeWeights2D(std::vector<double>& w, const do
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::computeWeights3D(std::vector<double>& w,
-                                                const double* const* u,
+                                                const std::vector<Point>& u,
                                                 const std::vector<double>& d,
                                                 uint dim, uint num_vertices)
 {
@@ -212,7 +201,6 @@ void TransfiniteInterpolation::computeWeights3D(std::vector<double>& w,
 
   std::vector<double> c(num_vertices);
   std::vector<double> s(num_vertices);
-
   for (uint i = 0; i < num_vertices; i++)
   {
     const uint ind1 = next(i, num_vertices);
@@ -236,7 +224,7 @@ void TransfiniteInterpolation::computeWeights3D(std::vector<double>& w,
   }
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::hermite_function(double** ghat, uint dim,
+void TransfiniteInterpolation::hermite_function(std::vector<Point>& ghat, uint dim,
                                                 const BoundaryMesh& new_boundary,
 		  	                                        Mesh& mesh,
                                                 const MeshFunction<uint>& vertex_map,
@@ -255,10 +243,9 @@ void TransfiniteInterpolation::hermite_function(double** ghat, uint dim,
   //FAKTOREN c før dfdn, HVA VELGER VI DER?
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
-    ghat[v->index()] = new double [dim];
     integral(ghat[v->index()], dim, new_boundary, mesh, vertex_map, *v);
     for (uint i=0; i<dim;i++)
-      ghat[v->index()][i]=c*dfdn[v->index()][i]-ghat[v->index()][i];
+      ghat[v->index()][i] = c*dfdn[v->index()][i] - ghat[v->index()][i];
   }
 
   for (uint i=0; i<new_boundary.num_vertices(); i++)
@@ -309,15 +296,15 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim,
   delete [] n;
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::integral(double* new_x, uint dim,
+void TransfiniteInterpolation::integral(Point& new_x, uint dim,
                                         const BoundaryMesh& new_boundary,
                                         Mesh& mesh,
                                         const MeshFunction<uint>& vertex_map,
                                         const Vertex& vertex)
 {
-  const uint size = new_boundary.num_vertices();
-  std::vector<double> d(size);
-  double** u = new double * [size];
+  const uint num_boundary_vertices = new_boundary.num_vertices();
+  std::vector<double> d(num_boundary_vertices);
+  std::vector<Point> u(num_boundary_vertices);
 
   // Compute distance d and direction vector u from x to all p
   for (VertexIterator v(new_boundary);  !v.end(); ++v)
@@ -326,25 +313,23 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim,
     if(ind != vertex.index())
     {
       // Old position of point x
-      const double* x = mesh.geometry().x(vertex_map[vertex]);
+      const Point x = mesh.geometry().point(vertex_map[vertex]);
 
       // Old position of vertex v in boundary
-      const double* p = mesh.geometry().x(vertex_map[*v]);
+      const Point p = mesh.geometry().point(vertex_map[*v]);
 
       // Distance from x to each point at the boundary
       d[ind] = dist(p, x, dim);
 
       // Compute direction vector for p-x
-      u[ind] = new double[dim];
-      for (uint i=0; i<dim; i++)
-        u[ind][i]=(p[i] - x[i]) / d[ind];
+      for (uint i = 0; i < dim; i++)
+        u[ind][i] = (p[i] - x[i]) / d[ind];
     }
     else
     {
       d[ind] = 0.0;
-      u[ind] = new double[dim];
-      for (uint i=0; i < dim; i++)
-        u[ind][i]=0;
+      for (uint i = 0; i < dim; i++)
+        u[ind][i] = 0.0;
     }
   }
 
@@ -353,7 +338,7 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim,
   std::vector<double> w(num_vertices, 0.0);
   double const** new_p = new double const* [num_vertices];
   std::vector<double> d_cell(num_vertices, 0.0);
-  double** u_cell = new double * [num_vertices];
+  std::vector<Point> u_cell(num_vertices);
 
   // Iterate over all cells in boundary
   for (CellIterator c(new_boundary); !c.end(); ++c)
@@ -383,22 +368,18 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim,
 
       // Compute new position
       for (uint j = 0; j < dim; j++)
+      {
         for (uint i=0; i < num_vertices; i++)
           new_x[j] += w[i]*(new_p[i][j]-vertex.x()[j]);
+      }
     }
   }
 
-  // Free memory for u
-  for (uint i = 0; i < size; ++i)
-    delete [] u[i];
-  delete [] u;
-
   // Free memory for local arrays
   delete [] new_p;
-  delete [] u_cell;
 }
 //-----------------------------------------------------------------------------
-double TransfiniteInterpolation::dist(const double* x, const double* y, uint dim)
+double TransfiniteInterpolation::dist(const Point& x, const Point& y, uint dim)
 {
   double s = 0.0;
   for (uint i = 0; i < dim; i++)

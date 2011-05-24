@@ -48,19 +48,23 @@ namespace dolfin
   private:
 
     // Transfinite meanvalue interpolation
-    static void mean_value(double* new_x, uint dim,
+    static void mean_value(Point& new_x, uint dim,
                            const BoundaryMesh& new_boundary,
-                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
+                           Mesh& mesh,
+                           const MeshFunction<uint>& vertex_map,
                            const Vertex& vertex,
-                           double** ghat, InterpolationType type);
+                           const std::vector<Point>& ghat,
+                           InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights2D(std::vector<double>& w, const double* const* u,
+    static void computeWeights2D(std::vector<double>& w,
+                                 const std::vector<Point>& u,
                                  const std::vector<double>& d,
                                  uint num_vertices);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights3D(std::vector<double>& w, const double* const* u,
+    static void computeWeights3D(std::vector<double>& w,
+                                 const std::vector<Point>& u,
                                  const std::vector<double>& d,
                                  uint dim, uint num_vertices);
 
@@ -68,12 +72,12 @@ namespace dolfin
                         Mesh& mesh, const MeshFunction<uint>& vertex_map,
                         const MeshFunction<uint>& cell_map);
 
-    static void hermite_function(double** ghat, uint dim,
+    static void hermite_function(std::vector<Point>& ghat, uint dim,
                                  const BoundaryMesh& new_boundary, Mesh& mesh,
                                  const MeshFunction<uint>& vertex_map,
                                  const MeshFunction<uint>& cell_map);
 
-    static void integral(double* new_x, uint dim,
+    static void integral(Point& new_x, uint dim,
                          const BoundaryMesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
                           const Vertex& vertex);
@@ -84,11 +88,11 @@ namespace dolfin
     { return (v < 0.0 ? -1.0 : 1.0); }
 
     // Return determinant 2D
-    static double det(const double* u, const double* v)
+    static double det(const Point& u, const Point& v)
     { return (u[0]*v[1] - u[1]*v[0]); }
 
     // Return determinant 3D
-    static double det(const double* u, const double* v, const double* w)
+    static double det(const Point& u, const Point& v, const Point& w)
     { return (u[0]*(v[1]*w[2] - v[2]*w[1]) - u[1]*(v[0]*w[2] - v[2]*w[0]) + u[2]*(v[0]*w[1] - v[1]*w[0])); }
 
     // Return next index
@@ -100,7 +104,7 @@ namespace dolfin
     { return (i == 0 ? dim - 1 : i - 1); }
 
     // Return distance
-    static double dist(const double* x, const double* y, uint dim);
+    static double dist(const Point& x, const Point& y, uint dim);
 
     // Return length
     static double length(const double* x, uint dim);
