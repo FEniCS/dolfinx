@@ -32,7 +32,6 @@
 #include <utility>
 #include <boost/scoped_ptr.hpp>
 
-#include <dolfin/ale/ALEType.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
@@ -363,11 +362,7 @@ namespace dolfin
     /// *Arguments*
     ///     boundary (_BoundaryMesh_)
     ///         A mesh containing just the boundary cells.
-    ///
-    ///     method (enum)
-    ///         Method which defines how the coordinates should be
-    ///         moved, default is *hermite*.
-    void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
+    void move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.
@@ -375,11 +370,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
-    ///
-    ///     method (enum)
-    ///         Method which defines how the coordinates should be
-    ///         moved, default is *hermite*.
-    void move(Mesh& mesh, dolfin::ALEType method=hermite);
+    void move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///

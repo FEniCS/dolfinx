@@ -178,7 +178,6 @@
 %include "dolfin/quadrature/BarycenterQuadrature.h"
 
 // DOLFIN headers included from ale
-%include "dolfin/ale/ALEType.h"
 %include "dolfin/ale/ALE.h"
 
 // DOLFIN headers included from fem

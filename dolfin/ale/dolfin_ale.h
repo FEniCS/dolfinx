@@ -3,7 +3,6 @@
 
 // DOLFIN ALE interface
 
-#include <dolfin/ale/ALEType.h>
 #include <dolfin/ale/ALE.h>
 
 #endif

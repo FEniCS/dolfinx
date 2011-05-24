@@ -177,7 +177,7 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
 {
   // Select smoothing of interior vertices
   if (harmonic_smoothing)
-    ALE::move(mesh, boundary, harmonic);
+    ALE::move(mesh, boundary);
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
