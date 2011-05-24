@@ -62,7 +62,7 @@ namespace dolfin
 
   private:
 
-    uint n;
+    const uint n;
     real cache_x;
     std::vector<real> cache;
 

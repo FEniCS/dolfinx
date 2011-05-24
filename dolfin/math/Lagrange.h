@@ -57,9 +57,6 @@ namespace dolfin
     /// Copy constructor
     Lagrange(const Lagrange& p);
 
-    /// Destructor
-    ~Lagrange();
-
     /// Specify point
     void set(unsigned int i, real x);
 
@@ -91,7 +88,7 @@ namespace dolfin
 
     void init();
 
-    unsigned int q;
+    const unsigned int q;
 
     // Counts the number of time set has been called to determine when
     // init should be called

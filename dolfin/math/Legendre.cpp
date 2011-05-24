@@ -34,8 +34,7 @@ Legendre::Legendre(uint n) : n(n), cache_x(0.0), cache(n + 1)
   cache[0] = 1.0; //constant value
 
   // eval to initialize cache
-  real tmp = eval(n, -1.0);
-  tmp++; //avoid compiler warning
+  eval(n, -1.0);
 }
 //-----------------------------------------------------------------------------
 real Legendre::operator() (real x)

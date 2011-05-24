@@ -43,11 +43,6 @@ Lagrange::Lagrange(const Lagrange& p)
     init();
 }
 //-----------------------------------------------------------------------------
-Lagrange::~Lagrange()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void Lagrange::set(unsigned int i, real x)
 {
   assert(i <= q);
