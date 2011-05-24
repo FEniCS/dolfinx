@@ -168,14 +168,6 @@ class Instantiation(unittest.TestCase):
                          pass
                e = WrongArgs(V)
 
-          def wrongElement():
-               class WrongElement(Expression):
-                    def eval(self, values, x):
-                         pass
-                    def value_shape(self):
-                         return (2,)
-               e = WrongElement(element=V.ufl_element())
-
           def deprecationWarning():
                class Deprecated(Expression):
                     def eval(self, values, x):
@@ -189,8 +181,58 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(TypeError, wrongEvalAttribute)
           self.assertRaises(TypeError, wrongEvalDataAttribute)
           self.assertRaises(TypeError, wrongArgs)
-          #self.assertRaises(ValueError, wrongElement)
           self.assertRaises(DeprecationWarning, deprecationWarning)
+
+     def testElementInstantiation(self):
+          class F0(Expression):
+               def eval(self, values, x):
+                    values[0] = 1.0
+          class F1(Expression):
+               def eval(self, values, x):
+                    values[0] = 1.0
+                    values[1] = 1.0
+               def value_shape(self):
+                    return (2,)
+
+          class F2(Expression):
+               def eval(self, values, x):
+                    values[0] = 1.0
+                    values[1] = 1.0
+                    values[2] = 1.0
+                    values[3] = 1.0
+               def value_shape(self):
+                    return (2,2)
+
+          e0 = Expression("1")
+          self.assertTrue(e0.ufl_element().cell().is_undefined())
+          
+          e1 = Expression("1", cell=triangle)
+          self.assertFalse(e1.ufl_element().cell().is_undefined())
+
+          e2 = Expression("1", cell=triangle, degree=2)
+          self.assertEqual(e2.ufl_element().degree(), 2)
+          
+          e3 = Expression(["1", "1"], cell=triangle)
+          self.assertTrue(isinstance(e3.ufl_element(), VectorElement))
+          
+          e4 = Expression((("1", "1"), ("1", "1")), cell=triangle)
+          self.assertTrue(isinstance(e4.ufl_element(), TensorElement))
+          
+          f0 = F0()
+          self.assertTrue(f0.ufl_element().cell().is_undefined())
+          
+          f1 = F0(cell=triangle)
+          self.assertFalse(f1.ufl_element().cell().is_undefined())
+
+          f2 = F0(cell=triangle, degree=2)
+          self.assertEqual(f2.ufl_element().degree(), 2)
+          
+          f3 = F1(cell=triangle)
+          self.assertTrue(isinstance(f3.ufl_element(), VectorElement))
+          
+          f4 = F2(cell=triangle)
+          self.assertTrue(isinstance(f4.ufl_element(), TensorElement))
+          
 
 class Interpolate(unittest.TestCase):
 
