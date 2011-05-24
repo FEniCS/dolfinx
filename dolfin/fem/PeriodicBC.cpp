@@ -105,10 +105,7 @@ PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 PeriodicBC::~PeriodicBC()
 {
-  delete [] master_dofs;
-  delete [] slave_dofs;
-  delete [] rhs_values_master;
-  delete [] rhs_values_slave;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
@@ -148,28 +145,21 @@ void PeriodicBC::rebuild()
   std::vector<std::pair<uint, uint> > dof_pairs;
   extract_dof_pairs(*_function_space, dof_pairs);
 
-  // Delete old arrays if necessary
-  delete [] master_dofs;
-  delete [] slave_dofs;
-  delete [] rhs_values_master;
-  delete [] rhs_values_slave;
-
-  // Initialize arrays
+  // Resize arrays
   num_dof_pairs = dof_pairs.size();
-  master_dofs = new uint[num_dof_pairs];
-  slave_dofs = new uint[num_dof_pairs];
-  rhs_values_master = new double[num_dof_pairs];
-  rhs_values_slave = new double[num_dof_pairs];
+  master_dofs.resize(num_dof_pairs);
+  slave_dofs.resize(num_dof_pairs);
+  rhs_values_master.resize(num_dof_pairs);
+  rhs_values_slave.resize(num_dof_pairs);
 
   // Store master and slave dofs
   for (uint i = 0; i < dof_pairs.size(); ++i)
   {
-    // Store dofs
     master_dofs[i] = dof_pairs[i].first;
     slave_dofs[i] = dof_pairs[i].second;
-    rhs_values_master[i] = 0.0;
-    rhs_values_slave[i] = 0.0;
   }
+  std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
+  std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix* A,
@@ -177,10 +167,6 @@ void PeriodicBC::apply(GenericMatrix* A,
                        const GenericVector* x) const
 {
   assert(num_dof_pairs > 0);
-  assert(master_dofs);
-  assert(slave_dofs);
-  assert(rhs_values_master);
-  assert(rhs_values_slave);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
 
@@ -214,7 +200,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   if (A)
   {
     // Zero out slave rows
-    A->zero(num_dof_pairs, slave_dofs);
+    A->zero(num_dof_pairs, &slave_dofs[0]);
     A->apply("insert");
 
     // Insert 1 and -1
@@ -233,21 +219,18 @@ void PeriodicBC::apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems
   if (x)
   {
-    x->get(rhs_values_master, num_dof_pairs, master_dofs);
-    x->get(rhs_values_slave,  num_dof_pairs, slave_dofs);
+    x->get(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
+    x->get(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
     for (uint i = 0; i < num_dof_pairs; i++)
       rhs_values_slave[i] = rhs_values_master[i] - rhs_values_slave[i];
   }
   else
-  {
-    for (uint i = 0; i < num_dof_pairs; i++)
-      rhs_values_slave[i] = 0.0;
-  }
+    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
   // Zero slave rows in right-hand side
   if (b)
   {
-    b->set(rhs_values_slave, num_dof_pairs, slave_dofs);
+    b->set(&rhs_values_slave[0], num_dof_pairs, &slave_dofs[0]);
     b->apply("insert");
   }
 }
@@ -303,11 +286,11 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs and coordinates on cell
-    dofmap.tabulate_dofs(data.cell_dofs, cell);
+    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
     dofmap.tabulate_coordinates(data.coordinates, cell);
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
+    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], local_facet);
 
     // Iterate over facet dofs
     for (uint i = 0; i < dofmap.num_facet_dofs(); ++i)

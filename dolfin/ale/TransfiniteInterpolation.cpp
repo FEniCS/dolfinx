@@ -47,7 +47,7 @@ void TransfiniteInterpolation::move(Mesh& mesh, const BoundaryMesh& new_boundary
   // Extract old coordinates
   const uint dim = mesh.geometry().dim();
   const uint size = mesh.num_vertices()*dim;
-  double* new_x = new double[size];
+  std::vector<double> new_x(size);
   double ** ghat = new double * [new_boundary.num_vertices()];;
 
   // If hermite, create dgdn
@@ -58,14 +58,13 @@ void TransfiniteInterpolation::move(Mesh& mesh, const BoundaryMesh& new_boundary
 
   // Iterate over coordinates in mesh
   for (VertexIterator v(mesh); !v.end(); ++v)
-    mean_value(new_x + v->index()*dim, dim, new_boundary, mesh, vertex_map, *v, ghat, method);
+    mean_value(&new_x[0] + v->index()*dim, dim, new_boundary, mesh, vertex_map, *v, ghat, method);
 
   // Update mesh coordinates
   MeshGeometry& geometry = mesh.geometry();
   for (uint i = 0; i < geometry.size(); i++)
-    memcpy(geometry.x(i), new_x + i*dim, dim*sizeof(double));
+    memcpy(geometry.x(i), &new_x[0] + i*dim, dim*sizeof(double));
 
-  delete [] new_x;
   if (method == interpolation_hermite)
   {
     for (uint i=0; i < new_boundary.num_vertices(); i++)
@@ -89,7 +88,7 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim, const Boundar
   }
 
   const uint size = new_boundary.num_vertices();
-  double * d = new double[size];
+  std::vector<double> d(size);
   double ** u = new double * [size];
 
   // Compute distance d and direction vector u from x to all p
@@ -182,9 +181,6 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim, const Boundar
   }
 
   //cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
-
-  // Free memory for d
-  delete [] d;
 
   // Free memory for u
   for (uint i = 0; i < size; ++i)
