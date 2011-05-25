@@ -522,6 +522,8 @@ if (DOLFIN_ENABLE_DOCS)
   file(COPY doc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILES_MATCHING
     PATTERN "*.py"
+    PATTERN "*.rst"
+    PATTERN "Makefile"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Make target doc_source (runs .rst generating script)
