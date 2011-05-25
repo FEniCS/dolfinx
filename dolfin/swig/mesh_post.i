@@ -204,3 +204,22 @@ CellFunction = type("CellFunction", (),\
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
+
+//-----------------------------------------------------------------------------
+// Extend Mesh interface with ufl cell method
+//-----------------------------------------------------------------------------
+%extend dolfin::Mesh {
+%pythoncode
+%{
+def ufl_cell(self):
+    """
+    Returns the ufl cell of the mesh
+
+    The cell corresponds to the topological dimension of the mesh.
+    """
+    import ufl
+    cells = { 1: ufl.interval, 2: ufl.triangle, 3: ufl.tetrahedron }
+    return cells[self.topology().dim()]
+
+%}
+}

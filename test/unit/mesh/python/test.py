@@ -24,26 +24,47 @@ import unittest
 import numpy.random
 from dolfin import *
 
+class MeshConstruction(unittest.TestCase):
+
+    def setUp(self):
+        self.intervall = UnitInterval(10)
+        self.circle = UnitCircle(5)
+        self.square = UnitSquare(5,5)
+        self.rectangle = Rectangle(0,0,2,2,5,5)
+        self.cube = UnitCube(3,3,3)
+        self.sphere = UnitSphere(5)
+        self.box = Box(0,0,0,2,2,2,2,2,5)
+    
+    def testUFLCell(self):
+        import ufl
+        self.assertEqual(ufl.interval, self.intervall.ufl_cell())
+        self.assertEqual(ufl.triangle, self.circle.ufl_cell())
+        self.assertEqual(ufl.triangle, self.square.ufl_cell())
+        self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())
+        self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
+        self.assertEqual(ufl.tetrahedron, self.sphere.ufl_cell())
+        self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
+
 class MeshEditorTest(unittest.TestCase):
 
     def testTriangle(self):
         # Create mesh object and open editor
         mesh = Mesh()
         editor = MeshEditor()
-        editor.open(mesh, 2, 2);
-        editor.init_vertices(3);
-        editor.init_cells(1);
+        editor.open(mesh, 2, 2)
+        editor.init_vertices(3)
+        editor.init_cells(1)
 
         # Add vertices
-        p = Point(0.0, 0.0);
-        editor.add_vertex(0, p);
-        p = Point(1.0, 0.0);
-        editor.add_vertex(1, p);
-        p = Point(0.0, 1.0);
-        editor.add_vertex(2, p);
+        p = Point(0.0, 0.0)
+        editor.add_vertex(0, p)
+        p = Point(1.0, 0.0)
+        editor.add_vertex(1, p)
+        p = Point(0.0, 1.0)
+        editor.add_vertex(2, p)
 
         # Add cell
-        editor.add_cell(0, 0, 1, 2);
+        editor.add_cell(0, 0, 1, 2)
 
         # Close editor
         editor.close()

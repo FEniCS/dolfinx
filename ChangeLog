@@ -1,3 +1,4 @@
+ - Added ufl_cell as a method to Mesh in Python interface
  - Fix memory leak in Zoltan interface
  - Remove some 'new' for arrays in favour of std::vector
  - Added cell as an optional argument to Constant
