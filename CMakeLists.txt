@@ -521,7 +521,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Generate documentation from code
 if (DOLFIN_ENABLE_DOCS)
-  message(STATUS "Enabling generation of documentation enab")
+  message(STATUS "Enabling generation of documentation.")
 
   # Copy doc generation scripts to build directory
   file(COPY doc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
