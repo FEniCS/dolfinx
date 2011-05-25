@@ -74,6 +74,7 @@ list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
+#list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -277,6 +278,10 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
 endif()
 
+# Check for Sphinx
+#if (DOLFIN_ENABLE_DOCS)
+#  find_package(Sphinx)
+#endif()
 #------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 
@@ -516,7 +521,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Generate documentation from code
 if (DOLFIN_ENABLE_DOCS)
-  message(STATUS "Enabling generation of documentation")
+  message(STATUS "Enabling generation of documentation enab")
 
   # Copy doc generation scripts to build directory
   file(COPY doc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
@@ -526,11 +531,38 @@ if (DOLFIN_ENABLE_DOCS)
     PATTERN "Makefile"
     PATTERN "CMakeFiles" EXCLUDE)
 
-  # Make target doc_source (runs .rst generating script)
-  message(STATUS "Enabling Programmer's Reference generation")
+  # MER: Probably way better way of doing the below. Will find out.
+  # Add target doc_source (runs .rst generating script)
   add_custom_target(doc_source
     COMMAND ${PYTHON_EXECUTABLE} "generate_api_doc.py" "${DOLFIN_SOURCE_DIR}" "api/" "${DOLFIN_VERSION}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
+
+  # Add target copy_doc_source copying over the generated files
+  add_custom_target(copy_doc_source
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      api/cpp/programmers-reference
+      sphinx-cpp/source/programmers-reference
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      api/python/programmers-reference
+      sphinx-python/source/programmers-reference
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
+  add_dependencies(copy_doc_source doc_source)
+
+  # Add target doc_cpp|py_html running sphinx-generated Makefile for
+  # cpp|py doc
+  add_custom_target(doc_cpp_html
+    COMMAND ${MAKE_PROGRAM} "html"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-cpp")
+  add_dependencies(doc_cpp_html doc_source copy_doc_source)
+
+  add_custom_target(doc_python_html
+    COMMAND ${MAKE_PROGRAM} "html"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-python")
+  add_dependencies(doc_python_html doc_source copy_doc_source)
+
+  # Add html doing all of the above
+  add_custom_target(html)
+  add_dependencies(html doc_cpp_html doc_python_html)
 
 endif()
 
