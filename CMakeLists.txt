@@ -74,7 +74,7 @@ list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
-#list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -279,9 +279,12 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 endif()
 
 # Check for Sphinx
-#if (DOLFIN_ENABLE_DOCS)
-#  find_package(Sphinx)
-#endif()
+if (DOLFIN_ENABLE_DOCS)
+  find_package(Sphinx)
+  if (${SPHINX_VERSION} LESS 1.0.7)
+    message(STATUS "WARNING: DOLFIN documentation requires Sphinx version 1.0.7 or greater. You have Sphinx version ${SPHINX_VERSION}. Proceed at own risk.")
+  endif()
+endif()
 #------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 
@@ -550,19 +553,22 @@ if (DOLFIN_ENABLE_DOCS)
 
   # Add target doc_cpp|py_html running sphinx-generated Makefile for
   # cpp|py doc
-  add_custom_target(doc_cpp_html
-    COMMAND ${MAKE_PROGRAM} "html"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-cpp")
-  add_dependencies(doc_cpp_html doc_source copy_doc_source)
+  if (SPHINX_FOUND)
+    message(STATUS "Have sphinx: enabling html generation")
+    add_custom_target(doc_cpp_html
+      COMMAND ${MAKE_PROGRAM} "html"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-cpp")
+    add_dependencies(doc_cpp_html doc_source copy_doc_source)
 
-  add_custom_target(doc_python_html
-    COMMAND ${MAKE_PROGRAM} "html"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-python")
-  add_dependencies(doc_python_html doc_source copy_doc_source)
+    add_custom_target(doc_python_html
+      COMMAND ${MAKE_PROGRAM} "html"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-python")
+    add_dependencies(doc_python_html doc_source copy_doc_source)
 
-  # Add html doing all of the above
-  add_custom_target(html)
-  add_dependencies(html doc_cpp_html doc_python_html)
+    # Add html doing all of the above
+    add_custom_target(html)
+    add_dependencies(html doc_cpp_html doc_python_html)
+  endif()
 
 endif()
 
