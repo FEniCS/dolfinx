@@ -265,14 +265,10 @@ class Interpolate(unittest.TestCase):
 class Constants(unittest.TestCase):
      
      def testConstantInit(self):
-          mesh_intervals = UnitInterval(10)
-          mesh_triangles = UnitSquare(10,10)
-          mesh_tetrahedrons = UnitCube(10,10,10)
-          
           c0 = Constant(1.)
-          c1 = Constant([2,3], mesh_intervals)
-          c2 = Constant([[2,3], [3,4]], mesh_triangles)
-          c3 = Constant(array([2,3]), mesh_tetrahedrons)
+          c1 = Constant([2,3], interval)
+          c2 = Constant([[2,3], [3,4]], triangle)
+          c3 = Constant(array([2,3]), tetrahedron)
 
           self.assertTrue(c0.cell().is_undefined())
           self.assertTrue(c1.cell() == interval)
@@ -287,9 +283,8 @@ class Constants(unittest.TestCase):
      def testGrad(self):
           import ufl
           zero = ufl.constantvalue.Zero((2,3))
-          mesh_tetrahedrons = UnitCube(2,2,2)
           c0 = Constant(1.)
-          c3 = Constant(array([2,3]), mesh_tetrahedrons)
+          c3 = Constant(array([2,3]), tetrahedron)
           def gradient(c):
                return grad(c)
           self.assertRaises(UFLException, gradient, c0)
