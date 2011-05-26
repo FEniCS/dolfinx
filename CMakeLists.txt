@@ -526,11 +526,11 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 if (DOLFIN_ENABLE_DOCS)
   message(STATUS "Enabling generation of documentation.")
 
-  # Copy doc generation scripts to build directory
+  # Copy most of doc directory to build directory
   file(COPY doc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILES_MATCHING
-    PATTERN "*.py"
     PATTERN "*.rst"
+    PATTERN "*.py"
     PATTERN "Makefile"
     PATTERN "CMakeFiles" EXCLUDE)
 
@@ -548,6 +548,7 @@ if (DOLFIN_ENABLE_DOCS)
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       api/python/programmers-reference
       sphinx-python/source/programmers-reference
+    COMMAND ${PYTHON_EXECUTABLE} "copy_and_split_demo_doc.py" "${DOLFIN_SOURCE_DIR}/demo" "sphinx-cpp/source/demo/" "sphinx-python/source/demo"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
   add_dependencies(copy_doc_source doc_source)
 
