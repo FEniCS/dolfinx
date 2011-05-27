@@ -92,16 +92,16 @@ namespace dolfin
       ~LocalData();
 
       // Local dimension
-      uint n;
+      const uint n;
 
       // Coefficients
-      double* w;
+      std::vector<double> w;
 
       // Cell dofs
-      uint* cell_dofs;
+      std::vector<uint> cell_dofs;
 
       // Facet dofs
-      uint* facet_dofs;
+      std::vector<uint> facet_dofs;
 
       // Coordinates for dofs
       double** coordinates;

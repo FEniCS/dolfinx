@@ -29,19 +29,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Legendre::Legendre(uint n) : n(n), cache_x(0.0)
+Legendre::Legendre(uint n) : n(n), cache_x(0.0), cache(n + 1)
 {
-  cache = new real[n+1];
   cache[0] = 1.0; //constant value
-  
-  //eval to initialize cache
-  real tmp = eval(n, -1.0);
-  tmp++; //avoid compiler warning
-}
-//-----------------------------------------------------------------------------
-Legendre::~Legendre() 
-{
-  delete [] cache;
+
+  // eval to initialize cache
+  eval(n, -1.0);
 }
 //-----------------------------------------------------------------------------
 real Legendre::operator() (real x)
@@ -64,46 +57,44 @@ real Legendre::eval(uint nn, real x)
   //recursive formula, BETA page 254
   //return ( (2.0*nn-1.0)*x*eval(nn-1, x) - (nn-1.0)*eval(nn-2, x) ) / nn;
 
-
   //The special cases
-  if (n == 0) return 1.0;
-  if (n == 1) return x;
-  
-  //check cache
-  if (x != cache_x) 
-  {
-  
-    cache[1] = x;
+  if (n == 0)
+    return 1.0;
+  else if (n == 1)
+    return x;
 
-    for (uint i = 2; i <= n; ++i) 
+  //check cache
+  if (x != cache_x)
+  {
+    cache[1] = x;
+    for (uint i = 2; i <= n; ++i)
     {
       real ii(i);
       cache[i] = ( (2.0*ii-1.0)*x*cache[i-1] - (ii-1.0)*cache[i-2] ) / ii;
     }
     cache_x = x;
   }
-  
+
   return cache[nn];
 }
 //-----------------------------------------------------------------------------
 real Legendre::ddx(uint n, real x)
 {
-  // Special case n = 0
+  // Special cases
   if (n == 0)
     return 0.0;
-
-  // Special case n = 1
-  if (n == 1)
+  else if (n == 1)
     return 1.0;
 
   // Avoid division by zero
   if (real_abs(x - 1.0) < real_epsilon())
     x -= 2.0*real_epsilon();
+
   if (real_abs(x + 1.0) < real_epsilon())
     x += 2.0*real_epsilon();
 
   // Formula, BETA page 254
-  real nn = real(n);
+  const real nn = real(n);
   return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);
 }
 //-----------------------------------------------------------------------------
@@ -124,7 +115,7 @@ real Legendre::d2dx(uint, real x)
     x += 2.0*real_epsilon();
 
   // Formula, BETA page 254
-  real nn = real(n);
+  const real nn = real(n);
   return (2.0*x*ddx(n, x) - nn*(nn+1)*eval(n, x)) / (1.0-x*x);
 }
 //-----------------------------------------------------------------------------

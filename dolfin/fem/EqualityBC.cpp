@@ -99,10 +99,6 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
   }
 
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
-  uint* rows = new uint[1];
-  uint* cols = new uint[1];
-  double* vals = new double[1];
-  double* zero = new double[1];
 
   // First dof is our reference
   const int dof0 = equal_dofs[0];
@@ -120,42 +116,36 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
       continue;
 
     // Set x_0 - x_i = 0
-    rows[0] =  dof0;
-    cols[0] =  dof1;
-    vals[0] = -1.0;
-    zero[0] =  0.0;
+    const uint rows = dof0;
+    const uint cols = dof1;
+    const double vals = -1.0;
+    const double zero =  0.0;
 
     std::vector<uint> columns;
     std::vector<double> values;
 
     // Add slave-dof-row to master-dof-row
     A.getrow(dof0, columns, values);
-    A.add(&values[0], 1, &cols[0], columns.size(), &columns[0]);
+    A.add(&values[0], 1, &cols, columns.size(), &columns[0]);
 
     // Add slave-dof-entry to master-dof-entry
     values.resize(1);
-    b.get(&values[0], 1, &rows[0]);
-    b.add(&values[0], 1, &cols[0]);
+    b.get(&values[0], 1, &rows);
+    b.add(&values[0], 1, &cols);
 
     // Apply changes before using set
     A.apply("add");
     b.apply("add");
 
     // Replace slave-dof equation by relation enforcing equality
-    A.ident(1, rows);
-    A.set(vals, 1, rows, 1, cols);
-    b.set(zero, 1, rows);
+    A.ident(1, &rows);
+    A.set(&vals, 1, &rows, 1, &cols);
+    b.set(&zero, 1, &rows);
 
     // Apply changes
     A.apply("insert");
     b.apply("insert");
   }
-
-  // Cleanup
-  delete [] rows;
-  delete [] cols;
-  delete [] vals;
-  delete [] zero;
 }
 //-----------------------------------------------------------------------------
 void EqualityBC::apply(GenericVector& b, const GenericVector& x) const
@@ -200,13 +190,13 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, cell);
+    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
 
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
+    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], local_facet);
 
     // Iterate over facet dofs
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
@@ -271,13 +261,13 @@ void EqualityBC::init_from_mesh(uint sub_domain)
     const uint local_facet = (*facet_numbers)[i];
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, cell);
+    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
 
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
+    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], local_facet);
 
     // Iterate over facet dofs
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)

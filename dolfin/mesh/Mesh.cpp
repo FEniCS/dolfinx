@@ -268,14 +268,14 @@ dolfin::Mesh Mesh::renumber_by_color() const
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(BoundaryMesh& boundary, ALEType method)
+void Mesh::move(BoundaryMesh& boundary)
 {
-  ALE::move(*this, boundary, method);
+  ALE::move(*this, boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& mesh, ALEType method)
+void Mesh::move(Mesh& mesh)
 {
-  ALE::move(*this, mesh, method);
+  ALE::move(*this, mesh);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(const Function& displacement)

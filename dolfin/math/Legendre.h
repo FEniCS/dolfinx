@@ -21,6 +21,7 @@
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 
@@ -42,7 +43,6 @@ namespace dolfin
   public:
 
     Legendre(uint n);
-    ~Legendre();
 
     /// Evaluation at given point
     real operator() (real x);
@@ -61,12 +61,10 @@ namespace dolfin
 
 
   private:
-    
 
-    uint n;
-
+    const uint n;
     real cache_x;
-    real* cache;
+    std::vector<real> cache;
 
   };
 

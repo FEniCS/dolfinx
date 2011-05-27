@@ -109,26 +109,12 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(0), w(0), cell_dofs(0), facet_dofs(0),
+  : n(V.dofmap().max_cell_dimension()),
+    w(V.dofmap().max_cell_dimension(), 0.0),
+    cell_dofs(V.dofmap().max_cell_dimension(), 0),
+    facet_dofs(V.dofmap().num_facet_dofs(), 0),
     array_coordinates(V.dofmap().max_cell_dimension())
 {
-  // Create array for coefficients
-  n = V.dofmap().max_cell_dimension();
-  w = new double[n];
-  for (uint i = 0; i < n; i++)
-    w[i] = 0.0;
-
-  // Create array for cell dofs
-  cell_dofs = new uint[n];
-  for (uint i = 0; i < n; i++)
-    cell_dofs[i] = 0;
-
-  // Create array for facet dofs
-  const uint m = V.dofmap().num_facet_dofs();
-  facet_dofs = new uint[m];
-  for (uint i = 0; i < m; i++)
-    facet_dofs[i] = 0;
-
   // Create local coordinate data
   coordinates = new double*[n];
   for (uint i = 0; i < n; i++)
@@ -146,9 +132,5 @@ BoundaryCondition::LocalData::~LocalData()
   for (uint i = 0; i < n; i++)
     delete [] coordinates[i];
   delete [] coordinates;
-
-  delete [] w;
-  delete [] cell_dofs;
-  delete [] facet_dofs;
 }
 //-----------------------------------------------------------------------------

@@ -23,37 +23,18 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include "TransfiniteInterpolation.h"
 #include "HarmonicSmoothing.h"
 #include "ALE.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary, ALEType method)
+void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
-  switch (method)
-  {
-  case lagrange:
-    cout << "Updating mesh coordinates using transfinite mean value interpolation (Lagrange)." << endl;
-    TransfiniteInterpolation::move(mesh, new_boundary,
-                                   TransfiniteInterpolation::interpolation_lagrange);
-    break;
-  case hermite:
-    cout << "Updating mesh coordinates using transfinite mean value interpolation (Hermite)." << endl;
-    TransfiniteInterpolation::move(mesh, new_boundary,
-                                   TransfiniteInterpolation::interpolation_hermite);
-    break;
-  case harmonic:
-    cout << "Updating mesh coordinates using harmonic smoothing." << endl;
-    HarmonicSmoothing::move(mesh, new_boundary);
-    break;
-  default:
-    error("Unknown method for ALE mesh smoothing.");
-  }
+  HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh0, const Mesh& mesh1, ALEType method)
+void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0);

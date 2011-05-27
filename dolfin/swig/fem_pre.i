@@ -84,6 +84,48 @@
 %ignore dolfin::Form::interior_facet_domains;
 
 //-----------------------------------------------------------------------------
+// Ignore dolfin::Cell versions of signatures as these now are handled by 
+// a typemap
+//-----------------------------------------------------------------------------
+%ignore dolfin::FiniteElement::evaluate_basis(uint i, 
+					      double* values, 
+					      const double* x,
+					      const Cell& cell) const;
+
+%ignore dolfin::FiniteElement::evaluate_basis_all(double* values, 
+						  const double* coordinates,
+						  const Cell& cell) const;
+
+//%ignore dolfin::DofMap::tabulate_coordinates(double** coordinates, 
+//					     const Cell& cell) const;
+
+%ignore dolfin::GenericDofMap::tabulate_coordinates(double** coordinates, 
+						    const Cell& cell) const;
+
+//-----------------------------------------------------------------------------
+// Add a greedy typemap for dolfin::Cell to ufc::cell
+//-----------------------------------------------------------------------------
+%typemap(in) const ufc::cell& (void *argp) 
+{
+  // const ufc::cell& cell Typemap
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(dolfin::Cell*), 0);
+  if (!SWIG_IsOK(res))
+    SWIG_exception(SWIG_TypeError, "expected a dolfin.Cell");
+  
+  $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
+}
+
+%typemap(freearg) const ufc::cell& 
+{
+  delete $1;
+}
+
+%typecheck(SWIG_TYPECHECK_POINTER) const ufc::cell& {
+  int res = SWIG_ConvertPtr($input, 0, $descriptor(dolfin::Cell*), 0);
+  $1 = SWIG_CheckState(res);
+}
+
+//-----------------------------------------------------------------------------
 // Instantiate Hierarchical Form
 //-----------------------------------------------------------------------------
 namespace dolfin

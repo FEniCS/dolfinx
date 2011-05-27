@@ -79,6 +79,10 @@ namespace dolfin
     { return _x[2]; }
 
     /// Return coordinate array
+    double* coordinates()
+    { return _x; }
+
+    /// Return coordinate array
     const double* coordinates() const
     { return _x; }
 

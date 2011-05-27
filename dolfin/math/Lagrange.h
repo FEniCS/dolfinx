@@ -21,6 +21,8 @@
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
 
+#include <vector>
+
 #include <dolfin/log/Event.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
@@ -55,9 +57,6 @@ namespace dolfin
     /// Copy constructor
     Lagrange(const Lagrange& p);
 
-    /// Destructor
-    ~Lagrange();
-
     /// Specify point
     void set(unsigned int i, real x);
 
@@ -85,18 +84,18 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-  private:    
+  private:
+
     void init();
 
-    unsigned int q;
-    unsigned int n;
+    const unsigned int q;
 
     // Counts the number of time set has been called to determine when
     // init should be called
     uint counter;
 
-    real* points;
-    real* constants;
+    std::vector<real> points;
+    std::vector<real> constants;
 
     Event instability_detected;
   };

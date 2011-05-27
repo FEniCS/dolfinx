@@ -1,4 +1,7 @@
- - Added mesh as an optional argument to Constant. Used to define the cell.
+ - Added ufl_cell as a method to Mesh in Python interface
+ - Fix memory leak in Zoltan interface
+ - Remove some 'new' for arrays in favour of std::vector
+ - Added cell as an optional argument to Constant
  - Prevent the use of non contiguous NumPy arrays for most typemaps
  - Point can now be used to evaluate a Function or Expression in Python
  - Fixed dimension check for Function and Expression eval in Python

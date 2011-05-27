@@ -20,6 +20,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <boost/scoped_array.hpp>
+
 #include "dolfin/log/log.h"
 #include "dolfin/common/MPI.h"
 #include "MatrixRenumbering.h"
@@ -66,28 +68,22 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
   zoltan.Set_Edge_List_Multi_Fn(MatrixRenumbering::get_all_edges, this);
 
   // Create array for global ids that should be renumbered
-  ZOLTAN_ID_PTR  global_ids = new ZOLTAN_ID_TYPE[num_global_objects()];
-  for (int i = 0; i < num_global_objects(); ++i)
+  std::vector<ZOLTAN_ID_TYPE> global_ids(num_global_objects());
+  for (uint i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
   // Create array for renumbered vertices
-  ZOLTAN_ID_PTR new_id = new ZOLTAN_ID_TYPE[num_global_objects()];
+  std::vector<ZOLTAN_ID_TYPE> new_id(num_global_objects());
 
   // Compute re-ordering
-  int rc = zoltan.Order(1, num_global_objects(), global_ids, new_id);
+  int rc = zoltan.Order(1, num_global_objects(), &global_ids[0], &new_id[0]);
 
   // Check for errors
   if (rc != ZOLTAN_OK)
     error("Partitioning failed");
 
-  // Copy renumber into a vector
-  std::vector<uint> map(num_global_objects());
-  for (uint i = 0; i < map.size(); ++i)
-    map[i] = new_id[i];
-
-  // Clean up
-  delete global_ids;
-  delete new_id;
+  // Copy renumber into a vector (in case Zoltan uses something other than uint)
+  std::vector<uint> map(new_id.begin(), new_id.end());
 
   return map;
 }

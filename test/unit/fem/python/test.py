@@ -171,37 +171,93 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
         self.assertAlmostEqual(assemble(a1, mesh=mesh), 1.0)
 
-class DofMap(unittest.TestCase):
+class FiniteElementTest(unittest.TestCase):
 
-    def test_sub_dofmap(self):
+    def setUp(self):
+        self.mesh = UnitSquare(4, 4)
+        self.V = FunctionSpace(self.mesh, "CG", 1)
+        self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
+        self.W = self.V * self.Q
+    
+    def test_evaluate_dofs(self):
+        e = Expression("x[0]+x[1]+x[2]")
+        e2 = Expression(("x[0]+x[1]+x[2]", "x[0]+x[1]+x[2]"))
 
-        if MPI.num_processes() > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
+        coords = numpy.zeros((3, 3), dtype="d")
+        values0 = numpy.zeros(3, dtype="d")
+        values1 = numpy.zeros(3, dtype="d")
+        values2 = numpy.zeros(3, dtype="d")
+        values3 = numpy.zeros(3, dtype="d")
+        values4 = numpy.zeros(6, dtype="d")
+        for cell in cells(self.mesh):
+            self.V.dofmap().tabulate_coordinates(coords, cell)
+            for i, coord in enumerate(coords):
+                values0[i] = e(*coord)
+            self.W.sub(0).element().evaluate_dofs(values1, e, cell)
+            L = self.W.sub(1)
+            L.sub(0).element().evaluate_dofs(values2, e, cell)
+            L.sub(1).element().evaluate_dofs(values3, e, cell)
+            L.element().evaluate_dofs(values4, e2, cell)
 
-        mesh = UnitSquare(1, 1)
-        V = FunctionSpace(mesh, "CG", 1)
-        Q = VectorFunctionSpace(mesh, "CG", 1)
-        W = V * Q
+            for i in range(3):
+                self.assertAlmostEqual(values0[i], values1[i])
+                self.assertAlmostEqual(values0[i], values2[i])
+                self.assertAlmostEqual(values0[i], values3[i])
+                # FIXME: Not working
+                #self.assertAlmostEqual(values4[:3][i], values0[i])
+                #self.assertAlmostEqual(values4[3:][i], values0[i])
 
-        for cell in cells(mesh):
-            dofs0 = numpy.array((0,)*3, dtype="I")
-            dofs1 = numpy.array((0,)*3, dtype="I")
-            dofs2 = numpy.array((0,)*3, dtype="I")
-            dofs3 = numpy.array((0,)*6, dtype="I")
+class DofMapTest(unittest.TestCase):
 
-            W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
+    def setUp(self):
+        self.mesh = UnitSquare(4, 4)
+        self.V = FunctionSpace(self.mesh, "CG", 1)
+        self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
+        self.W = self.V*self.Q
 
-            L = W.sub(1)
+    def test_tabulate_coord(self):
+
+        coord0 = numpy.zeros((3,3), dtype="d")
+        coord1 = numpy.zeros((3,3), dtype="d")
+        coord2 = numpy.zeros((3,3), dtype="d")
+        coord3 = numpy.zeros((3,3), dtype="d")
+        coord4 = numpy.zeros((6,3), dtype="d")
+            
+        for cell in cells(self.mesh):
+            self.V.dofmap().tabulate_coordinates(coord0, cell)
+            self.W.sub(0).dofmap().tabulate_coordinates(coord1, cell)
+            L = self.W.sub(1)
+            L.sub(0).dofmap().tabulate_coordinates(coord2, cell)
+            L.sub(1).dofmap().tabulate_coordinates(coord3, cell)
+            L.dofmap().tabulate_coordinates(coord4, cell)
+            
+            self.assertTrue((coord0 == coord1).all())
+            self.assertTrue((coord0 == coord2).all())
+            self.assertTrue((coord0 == coord3).all())
+            self.assertTrue((coord4[:3] == coord0).all())
+            self.assertTrue((coord4[3:] == coord0).all())
+
+    def test_tabulate_dofs(self):
+
+        dofs0 = numpy.zeros(3, dtype="I")
+        dofs1 = numpy.zeros(3, dtype="I")
+        dofs2 = numpy.zeros(3, dtype="I")
+        dofs3 = numpy.zeros(6, dtype="I")
+
+        for cell in cells(self.mesh):
+
+            self.W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
+
+            L = self.W.sub(1)
             L.sub(0).dofmap().tabulate_dofs(dofs1, cell)
             L.sub(1).dofmap().tabulate_dofs(dofs2, cell)
             L.dofmap().tabulate_dofs(dofs3, cell)
-
+            
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs1)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
-
+            
 if __name__ == "__main__":
     print ""
     print "Testing basic PyDOLFIN fem operations"

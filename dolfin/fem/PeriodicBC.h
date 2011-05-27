@@ -111,14 +111,14 @@ namespace dolfin
     uint num_dof_pairs;
 
     // Array of master dofs (size num_dof_pairs)
-    uint* master_dofs;
+    std::vector<uint> master_dofs;
 
     // Array of slave dofs (size num_dof_pairs)
-    uint* slave_dofs;
+    std::vector<uint> slave_dofs;
 
     // Right-hand side values, used for zeroing entries in right-hand side (size num_dof_pairs)
-    double* rhs_values_master;
-    double* rhs_values_slave;
+    mutable std::vector<double> rhs_values_master;
+    mutable std::vector<double> rhs_values_slave;
 
   };
 

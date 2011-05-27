@@ -29,33 +29,18 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(unsigned int q)
-  :q(q), n(q+1), counter(0), constants(NULL),
+  :q(q), counter(0), points(q + 1, 0.0),
    instability_detected("Warning: Lagrange polynomial is not numerically stable. The degree is too high.")
 {
-  points = new real[n];
-  for (unsigned int i = 0; i < n; i++)
-    points[i] = 0.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(const Lagrange& p)
-  : q(p.q), n(p.n), counter(p.counter), constants(NULL), 
+  : q(p.q), counter(p.counter), points(p.points),
     instability_detected(p.instability_detected)
 {
-  points = new real[p.n];
-  for (unsigned int i = 0; i < p.n; i++)
-    points[i] = p.points[i];
-
   if (counter == size())
     init();
-}
-//-----------------------------------------------------------------------------
-Lagrange::~Lagrange()
-{
-  if ( points )
-    delete [] points;
-
-  if ( constants )
-    delete [] constants;
 }
 //-----------------------------------------------------------------------------
 void Lagrange::set(unsigned int i, real x)
@@ -71,7 +56,7 @@ void Lagrange::set(unsigned int i, real x)
 //-----------------------------------------------------------------------------
 unsigned int Lagrange::size() const
 {
-  return n;
+  return points.size();
 }
 //-----------------------------------------------------------------------------
 unsigned int Lagrange::degree() const
@@ -81,75 +66,61 @@ unsigned int Lagrange::degree() const
 //-----------------------------------------------------------------------------
 real Lagrange::point(unsigned int i) const
 {
-  assert(i <= q);
-
+  assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
 real Lagrange::operator() (unsigned int i, real x)
 {
-  return eval(i,x);
+  return eval(i, x);
 }
 //-----------------------------------------------------------------------------
 real Lagrange::eval(unsigned int i, real x)
 {
-  assert(i <= q);
+  assert(i < points.size());
 
   real product(constants[i]);
-  for (unsigned int j = 0; j < n; j++)
-    if ( j != i )
+  for (unsigned int j = 0; j < points.size(); j++)
+  {
+    if (j != i)
       product *= x - points[j];
+  }
 
   return product;
 }
 //-----------------------------------------------------------------------------
 real Lagrange::ddx(uint i, real x)
 {
-  assert(i <= q);
-  
+  assert(i < points.size());
+
   real s(0.0);
   real prod(1.0);
   bool x_equals_point = false;
 
-  for (uint j = 0; j < n; ++j) 
+  for (uint j = 0; j < points.size(); ++j)
   {
-    if (j != i) 
+    if (j != i)
     {
       real t = x - points[j];
-      if (real_abs(t) < real_epsilon()) 
+      if (real_abs(t) < real_epsilon())
+        x_equals_point = true;
+      else
       {
-	x_equals_point = true;
-      } else 
-      {
-	s += 1/t;
-	prod *= t;
+        s += 1/t;
+        prod *= t;
       }
     }
   }
 
-  if (x_equals_point) return prod*constants[i];
-  else                return prod*constants[i]*s;
-  
-  /*
-  real sum(0);
-  for (uint j = 0; j < n; j++) {
-    if ( j != i ) {
-      real product = 1.0;
-      for (uint k = 0; k < n; k++)
-	if ( k != i && k != j )
-	  product *= x - points[k];
-      sum += product;
-    }
-  }
-
-  return sum * constants[i];
-  */
+  if (x_equals_point)
+    return prod*constants[i];
+  else
+    return prod*constants[i]*s;
 }
 //-----------------------------------------------------------------------------
 real Lagrange::dqdx(unsigned int i)
 {
   real product = constants[i];
-
   for (unsigned int j = 1; j <= q; j++)
     product *= (real) j;
 
@@ -163,14 +134,11 @@ std::string Lagrange::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
-    for (unsigned int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < points.size(); i++)
       s << "  x[" << i << "] = " << to_double(points[i]);
   }
   else
-  {
-    s << "<Lagrange polynomial of degree " << q << " with " << n << " points>";
-  }
+    s << "<Lagrange polynomial of degree " << q << " with " << points.size() << " points>";
 
   return s.str();
 }
@@ -179,31 +147,29 @@ void Lagrange::init()
 {
   // Note: this will be computed when n nodal points have been set, assuming they are
   // distinct. Precomputing the constants has a downside wrt. to numerical stability, since
-  // the constants will decrease as the degree increases (and for high order be less than 
+  // the constants will decrease as the degree increases (and for high order be less than
   // epsilon.
 
-  if (constants == 0)
-    constants = new real[n];
+  constants.resize(points.size());
 
   // Compute constants
-  for (unsigned int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < points.size(); i++)
   {
     real product = 1.0;
-    for (unsigned int j = 0; j < n; j++)
+    for (unsigned int j = 0; j < points.size(); j++)
+    {
       if (j != i)
       {
         if (real_abs(points[i] - points[j]) < real_epsilon())
-        {
           error("Lagrange points not distinct");
-        }
-
         product *= points[i] - points[j];
       }
+    }
 
     if (real_abs(product) < real_epsilon())
       instability_detected();
 
-    constants[i] = 1.0 / product;
+    constants[i] = 1.0/product;
   }
 }
 //-----------------------------------------------------------------------------
