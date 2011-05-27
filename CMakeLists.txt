@@ -531,15 +531,27 @@ if (DOLFIN_ENABLE_DOCS)
     FILES_MATCHING
     PATTERN "*.rst"
     PATTERN "*.py"
+    PATTERN "*.conf"
+    PATTERN "*.html"
+    PATTERN "*.png"
+    PATTERN "*.css*"
     PATTERN "Makefile"
     PATTERN "CMakeFiles" EXCLUDE)
 
-  # Set directories for where sphinx projects and their source are
-  # located
+  # Set directories for where sphinx projects and their source
+  # directories are located
   set(DOLFIN_CPP_SPHINX_DIR "sphinx-cpp")
   set(DOLFIN_CPP_SPHINX_SOURCE_DIR "${DOLFIN_CPP_SPHINX_DIR}/source")
   set(DOLFIN_PYTHON_SPHINX_DIR "sphinx-python")
   set(DOLFIN_PYTHON_SPHINX_SOURCE_DIR "${DOLFIN_PYTHON_SPHINX_DIR}/source")
+
+  # Initialize separate cpp and python projects
+  message(STATUS "Initializing sphinx projects")
+  file(COPY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-common/"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_CPP_SPHINX_DIR}")
+  file(COPY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-common/"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_PYTHON_SPHINX_DIR}")
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/doc/generate_main_index.py" "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_CPP_SPHINX_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}" "${DOLFIN_VERSION}")
 
   # Add target api_doc: generate reST files from code for cpp and
   # python. This takes a while.
