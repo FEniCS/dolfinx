@@ -1,25 +1,18 @@
 .. DOLFIN documentation master file, created by
    sphinx-quickstart on Tue May 24 22:58:54 2011.
 
-.. Modified by Marie
+.. Modified by Marie E. Rognes
 
-Welcome to DOLFIN's documentation!
-==================================
+Documentation for DOLFIN (Python)
+=================================
 
-This is a basic view of the DOLFIN documentation (Python version).
-
-* The :ref:`genindex` allows navigation of the detailed documentation
-  of the DOLFIN Python user interface.
-
-* The module index: :ref:`modindex`
-
-* The demo collection (Python)
-
-* The tutorial
+* :doc:`The demos <demo/index>` (Collection of documented demo programs)
+* :ref:`Programmer's Reference Index <genindex>` (Classes, functions, terms)
+* :ref:`DOLFIN Module Index <modindex>` (Modules)
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
 
    programmers-reference/index.rst
-.. demos/index.rst
+   demo/index.rst
+

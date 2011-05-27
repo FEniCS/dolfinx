@@ -1,21 +1,16 @@
 .. DOLFIN documentation master file, created by
    sphinx-quickstart on Tue May 24 22:58:54 2011.
 
-.. Modified by Marie
+.. Modified by Marie E. Rognes
 
-Welcome to DOLFIN's documentation!
-==================================
+Documentation for DOLFIN (C++)
+==============================
 
-This is a basic view of the DOLFIN documentation (C++ version).
-
-* The :ref:`genindex` allows navigation of the detailed documentation
-  of the DOLFIN C++ user interface.
-
-* The demo collection (C++)
+* :doc:`The demos <demo/index>` (Collection of documented demo programs)
+* :ref:`Programmer's Reference Index <genindex>` (Classes, functions, terms)
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
 
    programmers-reference/index.rst
-.. demos/index.rst
+   demo/index.rst

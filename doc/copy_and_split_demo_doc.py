@@ -20,7 +20,27 @@
 # Utility script for splitting the cpp and python demos into separate
 # directory trees. Ignores cmake files for python.
 
-import sys, shutil
+import sys, os, shutil
+
+index_template = """
+Collection of documented demos
+==============================
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+
+
+   */*/%s/documentation
+"""
+
+def generate_main_index_file(output_dir, language):
+
+    filename = os.path.join(output_dir, "index.rst")
+    file = open(filename, "w")
+    text = index_template % language
+    file.write(text)
+    file.close()
 
 def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
@@ -43,12 +63,19 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
         pass
     shutil.copytree(input_dir, cpp_output_dir, ignore=ignore_python)
 
+    # In addition, generate main index file for navigating demos
+    generate_main_index_file(cpp_output_dir, "cpp")
+
     # Copy demo tree to python_output_dir ignoring cpp demos
     try:
         shutil.rmtree(python_output_dir)
     except:
         pass
     shutil.copytree(input_dir, python_output_dir, ignore=ignore_cpp)
+
+    # In addition, generate main index file for navigating demos
+    generate_main_index_file(python_output_dir, "python")
+
 
 if __name__ == "__main__":
 
