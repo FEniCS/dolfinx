@@ -534,41 +534,56 @@ if (DOLFIN_ENABLE_DOCS)
     PATTERN "Makefile"
     PATTERN "CMakeFiles" EXCLUDE)
 
-  # MER: Probably way better way of doing the below. Will find out.
-  # Add target doc_source (runs .rst generating script)
-  add_custom_target(doc_source
-    COMMAND ${PYTHON_EXECUTABLE} "generate_api_doc.py" "${DOLFIN_SOURCE_DIR}" "api/" "${DOLFIN_VERSION}"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
+  # Set directories for where sphinx projects and their source are
+  # located
+  set(DOLFIN_CPP_SPHINX_DIR "sphinx-cpp")
+  set(DOLFIN_CPP_SPHINX_SOURCE_DIR "${DOLFIN_CPP_SPHINX_DIR}/source")
+  set(DOLFIN_PYTHON_SPHINX_DIR "sphinx-python")
+  set(DOLFIN_PYTHON_SPHINX_SOURCE_DIR "${DOLFIN_PYTHON_SPHINX_DIR}/source")
 
-  # Add target copy_doc_source copying over the generated files
-  add_custom_target(copy_doc_source
+  # Add target api_doc: generate reST files from code for cpp and
+  # python. This takes a while.
+  add_custom_target(api_doc
+    COMMAND ${PYTHON_EXECUTABLE} "generate_api_doc.py" "${DOLFIN_SOURCE_DIR}" "api/" "${DOLFIN_VERSION}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       api/cpp/programmers-reference
-      sphinx-cpp/source/programmers-reference
+      "${DOLFIN_CPP_SPHINX_SOURCE_DIR}/programmers-reference"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       api/python/programmers-reference
-      sphinx-python/source/programmers-reference
-    COMMAND ${PYTHON_EXECUTABLE} "copy_and_split_demo_doc.py" "${DOLFIN_SOURCE_DIR}/demo" "sphinx-cpp/source/demo/" "sphinx-python/source/demo"
+      "${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}/programmers-reference"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
-  add_dependencies(copy_doc_source doc_source)
 
-  # Add target doc_cpp|py_html running sphinx-generated Makefile for
-  # cpp|py doc
+  # Add target demo_doc: copy demo code and doc files into sphinx
+  # projects and add additional index files.
+  add_custom_target(demo_doc
+    COMMAND ${PYTHON_EXECUTABLE} "copy_and_split_demo_doc.py" "${DOLFIN_SOURCE_DIR}/demo" "${DOLFIN_CPP_SPHINX_SOURCE_DIR}/demo" "${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}/demo"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
+
+  # Add target [cpp|python]_html: run sphinx in [cpp|python]
+  # sphinx projects
   if (SPHINX_FOUND)
-    message(STATUS "Have sphinx: enabling html generation")
-    add_custom_target(doc_cpp_html
+    message(STATUS "Enabling generation of html-documentation")
+    add_custom_target(cpp_html
       COMMAND ${MAKE_PROGRAM} "html"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-cpp")
-    add_dependencies(doc_cpp_html doc_source copy_doc_source)
+      WORKING_DIRECTORY
+      "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_CPP_SPHINX_DIR}")
 
-    add_custom_target(doc_python_html
+    add_custom_target(python_html
       COMMAND ${MAKE_PROGRAM} "html"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/sphinx-python")
-    add_dependencies(doc_python_html doc_source copy_doc_source)
+      WORKING_DIRECTORY
+      "${CMAKE_CURRENT_BINARY_DIR}/doc/${DOLFIN_PYTHON_SPHINX_DIR}")
 
-    # Add html doing all of the above
+    # Add target html: run sphinx in both cpp and python
     add_custom_target(html)
-    add_dependencies(html doc_cpp_html doc_python_html)
+    add_dependencies(html cpp_html python_html)
+
+    # Add target doc: Generate all doc (api and demos) and run sphinx
+    # to generate html
+    add_custom_target(all_doc)
+    add_dependencies(all_doc demo_doc api_doc)
+    add_custom_target(doc)
+    add_dependencies(doc all_doc html)
+
   endif()
 
 endif()
