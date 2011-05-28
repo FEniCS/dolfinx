@@ -16,7 +16,7 @@ Implementation
 
 This demo is implemented in the :download:`demo_navier-stokes.py` file.
 
-First, the ``dolfin`` module is imported:
+First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
@@ -60,7 +60,7 @@ viscosity are defined by:
     nu = 0.01
 
 The time-dependent pressure boundary condition can be defined using
-the :py:class:`Expression` class:
+the :py:class:`Expression <dolfin.functions.Expression>` class:
 
 .. code-block:: python
 
@@ -68,9 +68,10 @@ the :py:class:`Expression` class:
     p_in = Expression("sin(3.0*t)")
 
 The variable ``t`` is automatically available as part of an
-:py:class:`Expression`. Note that this variable is not
-automatically updated during time-stepping, so we must remember to
-manually update the value of the current time in each time step.
+:py:class:`Expression <dolfin.functions.Expression>`. Note that this
+variable is not automatically updated during time-stepping, so we must
+remember to manually update the value of the current time in each time
+step.
 
 We may now define the boundary conditions for the velocity and
 pressure. We define one no-slip boundary condition for the velocity
@@ -107,9 +108,9 @@ below:
     f = Constant((0, 0))
 
 Note that one may use the time step ``dt`` directly in the
-form. However, by using the :py:class:`Constant` class, we may freely
-change the size of the time step without triggering regeneration of
-code.
+form. However, by using the :py:class:`Constant
+<dolfin.functions.Constant>` class, we may freely change the size of
+the time step without triggering regeneration of code.
 
 The next step is now to define the variational problems for the three
 steps of Chorin's method. We do this by defining a pair of bilinear
@@ -165,9 +166,9 @@ The time-stepping loop is now implemented as follows:
         # Update pressure boundary condition
         p_in.t = t
 
-We use the :py:class:`Progress` class to display a progress bar
-during the computation. We also remember to update the current time
-for the time-dependent pressure boundary value.
+We use the :py:class:`Progress <dolfin.cpp.Progress>` class to display
+a progress bar during the computation. We also remember to update the
+current time for the time-dependent pressure boundary value.
 
 For each of the three steps of Chorin's method, we assemble the
 right-hand side, apply boundary conditions and solve a linear

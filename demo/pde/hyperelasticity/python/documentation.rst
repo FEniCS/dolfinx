@@ -17,18 +17,17 @@ Implementation
 This demo is implemented in the :download:`demo_hyperelasticity.py`
 file.
 
-First, the ``dolfin`` module is imported:
+First, the :py:mod:`dolfin` module is imported:
 
 .. literalinclude:: demo_hyperelasticity.py
-   :lines: 13
-
+   :lines: 28
 
 The behavior of the form compiler FFC can be adjusted by prescribing
 various parameters. Here, we want to use some of the optimization
 features.
 
 .. literalinclude:: demo_hyperelasticity.py
-   :lines: 15-20
+   :lines: 30-35
 
 The first line tells the form compiler to use C++ compiler optimizations when
 compiling the generated code. The remainder is a dictionary of options which
@@ -44,12 +43,13 @@ space of continuous piecewise linear vector polynomials (a Lagrange
 vector element space):
 
 .. literalinclude:: demo_hyperelasticity.py
-   :lines: 23-24
+   :lines: 38-39
 
-Note that ``VectorFunctionSpace`` creates a function space of vector
-fields. The dimension of the vector field (the number of components)
-is assumed to be the same as the spatial dimension, unless otherwise
-specified.
+Note that :py:class:`VectorFunctionSpace
+<dolfin.functions.VectorFunctionSpace>` creates a function space of
+vector fields. The dimension of the vector field (the number of
+components) is assumed to be the same as the spatial dimension, unless
+otherwise specified.
 
 .. index:: compiled subdomain
 
@@ -130,19 +130,26 @@ Directional derivatives are now computed of :math:`\Pi` and :math:`L`
 .. literalinclude:: demo_hyperelasticity.py
    :lines: 66-70
 
+.. index::
+   single: VariationalProblem; (in Hyperelasticity demo)
+
 The functional ``L`` and its Jacobian ``a``, together with the list of
 Dirichlet boundary conditions ``[bcl, bcr]``, are used to construct an
-nonlinear variational problem. This problem is then solved:
+nonlinear variational problem. Note that for nonlinear variational
+problems, the linear form ``L`` is given as the first argument and the
+bilinear form ``a`` is given as the second argument. When so is the
+case, the VariationalProblem identifies this as a nonlinear problem
+and uses a Newton iteration to solve the problem when calling
+:py:func:`solve <dolfin.fem.VariationalProblem.solve>`:
 
-.. index:: VariationalProblem, form compiler parameters
+.. index::
+   single: form compiler parameters; (in Hyperelasticity demo)
 
 .. literalinclude:: demo_hyperelasticity.py
    :lines: 72-74
 
-The argument ``nonlinear = True`` indicates that the problem is
-nonlinear and that a Newton solver should be used. The dictionary of
-form compiler options, which were defined initially, is supplied using
-``form_compiler_parameters = ffc_options``.
+The dictionary of form compiler options, which were defined initially,
+is supplied using ``form_compiler_parameters = ffc_options``.
 
 Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the deformed mesh is plotted

@@ -18,15 +18,15 @@ Implementation
 This demo is implemented in the :download:`demo_mixed-poisson.py`
 file.
 
-First, the ``dolfin`` module is imported:
+First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
     from dolfin import *
 
-Then, we need to create a ``mesh`` covering the unit square. In this
-example, we will let the mesh consist of 32 x 32 squares with each
-square divided into two triangles:
+Then, we need to create a :py:class:`Mesh <dolfin.cpp.Mesh>` covering
+the unit square. In this example, we will let the mesh consist of 32 x
+32 squares with each square divided into two triangles:
 
 .. code-block:: python
 
@@ -48,12 +48,12 @@ combining these into a mixed function space:
     DG = FunctionSpace(mesh, "DG", 0)
     W = BDM * DG
 
-The second argument to :py:class:`FunctionSpace` specifies the type of
-finite element family, while the third argument specifies the
-polynomial degree. The UFL user manual contains a list of all
-available finite element families and more details.  The * operator
-creates a mixed (product) space ``W`` from the two separate spaces
-``BDM`` and ``DG``. Hence,
+The second argument to :py:class:`FunctionSpace
+<dolfin.functions.FunctionSpace>` specifies the type of finite element
+family, while the third argument specifies the polynomial degree. The
+UFL user manual contains a list of all available finite element
+families and more details.  The * operator creates a mixed (product)
+space ``W`` from the two separate spaces ``BDM`` and ``DG``. Hence,
 
 .. math::
 
@@ -69,7 +69,8 @@ test functions on this space. This can be done as follows
     (tau, v) = TestFunctions(W)
 
 In order to define the variational form, it only remains to define the
-source function :math:`f`. This is done just as for the Poisson demo:
+source function :math:`f`. This is done just as for the :ref:`Poisson
+demo <demo_pde_poisson_python_documentation>`:
 
 .. code-block:: python
 
@@ -86,16 +87,19 @@ side vanishes.
     a = (dot(sigma, tau) + div(tau)*u + div(sigma)*v)*dx
     L = - f*v*dx
 
-
 It only remains to prescribe the boundary condition for the
 flux. Essential boundary conditions are specified through the class
-:py:class:`DirichletBC` which takes three arguments: the function
-space the boundary condition is supposed to be applied to, the data
-for the boundary condition, and the relevant part of the boundary.
+:py:class:`DirichletBC <dolfin.fem.DirichletBC>` which takes three
+arguments: the function space the boundary condition is supposed to be
+applied to, the data for the boundary condition, and the relevant part
+of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
-mixed space. This space can be accessed by ``W.sub(0)``. (Do *not* use
-the separate space ``BDM`` as this would mess up the numbering.)
+mixed space. Subspaces of a :py:class:`MixedFunctionSpace
+<dolfin.functions.MixedFunctionSpace>` can be accessed by the method
+:py:func:`sub <dolfin.functions.FunctionSpaceBase.sub>`. In our case,
+this reads ``W.sub(0)``. (Do *not* use the separate space ``BDM`` as
+this would mess up the numbering.)
 
 Next, we need to construct the data for the boundary condition. An
 essential boundary condition is handled by replacing degrees of
@@ -105,12 +109,14 @@ the degrees of freedom act on vector-valued objects. The effect is
 that the user is required to construct a :math:`G` such that :math:`G
 \cdot n = g`.  Such a :math:`G` can be constructed by letting :math:`G
 = g n`. In particular, it can be created by subclassing the
-:py:class:`Expression` class. Overloading the ``eval_cell`` method
-(instead of the usual ``eval``) allows us to extract more geometry
-information such as the facet normals. Since this is a vector-valued
-expression, we need to overload the ``value_shape`` method.
+:py:class:`Expression <dolfin.functions.Expression>`
+class. Overloading the ``eval_cell`` method (instead of the usual
+``eval``) allows us to extract more geometry information such as the
+facet normals. Since this is a vector-valued expression, we also need
+to overload the ``value_shape`` method.
 
-.. index:: Expression
+.. index::
+   single: Expression; (in Mixed Poisson demo)
 
 .. code-block:: python
 
@@ -146,14 +152,17 @@ boundary condition:
 
     bc = DirichletBC(W.sub(0), G, boundary)
 
-To compute the solution, a :py:class:`VariationalProblem` object is
-created using the bilinear and linear forms, and the boundary
-condition.  The ``solve`` function is then called, yielding the full
-solution. The separate components ``sigma`` and ``u`` of the solution
-can be extracted by calling the ``split`` function. Finally, we plot
-the solutions to examine the result.
+.. index::
+   single: VariationalProblem; (in Mixed Poisson demo)
 
-.. index:: split functions
+To compute the solution, a :py:class:`VariationalProblem
+<dolfin.fem.VariationalProblem>` object is created using the bilinear
+and linear forms, and the boundary condition.  The :py:func:`solve
+<dolfin.fem.VariationalProblem.solve>` function is then called,
+yielding the full solution. The separate components ``sigma`` and
+``u`` of the solution can be extracted by calling the :py:func:`split
+<dolfin.functions.Function.split>` function. Finally, we plot the
+solutions to examine the result.
 
 .. code-block:: python
 
