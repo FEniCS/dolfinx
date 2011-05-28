@@ -104,7 +104,7 @@ void dolfin::info_stream(std::ostream& out, std::string msg)
   LogManager::logger.set_output_stream(old_out);
 }
 //-----------------------------------------------------------------------------
-void dolfin::info_underline(std:: string msg, ...)
+void dolfin::info_underline(std::string msg, ...)
 {
   if (!LogManager::logger.is_active())
     return; // optimization

@@ -1,6 +1,6 @@
 .. Documentation for the Cahn-Hilliard demo from DOLFIN.
 
-.. _demos_pde_cahn_hilliard_cpp_documentation:
+.. _demo_pde_cahn_hilliard_cpp_documentation:
 
 Cahn-Hilliard equation
 ======================
@@ -236,7 +236,7 @@ and functions associated with the problem. It is a templated function
 so that the 2D and 3D cases can be handled with the same code.
 Firstly, a shared pointer to a :cpp:class:`FunctionSpace` (``X``) is
 created. Then two shared pointers ``_u`` and ``_u0`` are set to point
-to :cpp:class:`Function`s from the space ``V``.  A shared pointer is
+to :cpp:class:`Function` s from the space ``V``.  A shared pointer is
 used so that the function space is not destroyed when the constructor
 exits. (The function space will not be destroyed until there are no
 more Functions or Forms that point to it.)  Using the function space

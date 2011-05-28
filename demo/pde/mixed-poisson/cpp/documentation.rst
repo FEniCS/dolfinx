@@ -1,6 +1,6 @@
 .. Documentation for the mixed Poisson demo from DOLFIN.
 
-.. _demos_pde_mixed-poisson_cpp_documentation:
+.. _demo_pde_mixed-poisson_cpp_documentation:
 
 Mixed formulation for Poisson equation
 ======================================
@@ -83,10 +83,10 @@ include the DOLFIN namespace.
 
 .. code-block:: c++
 
- #include <dolfin.h>
- #include "MixedPoisson.h"
+   #include <dolfin.h>
+   #include "MixedPoisson.h"
 
- using namespace dolfin;
+   using namespace dolfin;
 
 Then follows the definition of the coefficient functions (for
 :math:`f` and :math:`G`), which are derived from the DOLFIN
@@ -94,42 +94,43 @@ Then follows the definition of the coefficient functions (for
 
 .. code-block:: c++
 
- // Source term (right-hand side)
- class Source : public Expression
- {
-   void eval(Array<double>& values, const Array<double>& x) const
+   // Source term (right-hand side)
+   class Source : public Expression
    {
-     double dx = x[0] - 0.5;
-     double dy = x[1] - 0.5;
-     values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
-   }
- };
+     void eval(Array<double>& values, const Array<double>& x) const
+     {
+       double dx = x[0] - 0.5;
+       double dy = x[1] - 0.5;
+       values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+     }
+   };
 
-// Boundary source for flux boundary condition
-class BoundarySource : public Expression
-{
-public:
+   // Boundary source for flux boundary condition
+   class BoundarySource : public Expression
+   {
+   public:
 
-  BoundarySource(const Mesh& mesh) : Expression(2), mesh(mesh) {}
+     BoundarySource(const Mesh& mesh) : Expression(2), mesh(mesh) {}
 
-  void eval(Array<double>& values, const Array<double>& x,
-            const ufc::cell& ufc_cell) const
-  {
-    assert(ufc_cell.local_facet >= 0);
+     void eval(Array<double>& values, const Array<double>& x,
+               const ufc::cell& ufc_cell) const
+     {
+       assert(ufc_cell.local_facet >= 0);
 
-    Cell cell(mesh, ufc_cell.index);
-    Point n = cell.normal(ufc_cell.local_facet);
+       Cell cell(mesh, ufc_cell.index);
+       Point n = cell.normal(ufc_cell.local_facet);
 
-    const double g = sin(5*x[0]);
-    values[0] = g*n[0];
-    values[1] = g*n[1];
-  }
+       const double g = sin(5*x[0]);
+       values[0] = g*n[0];
+       values[1] = g*n[1];
+     }
 
-private:
+    private:
 
-  const Mesh& mesh;
+      const Mesh& mesh;
 
-};
+    };
+
 
 Then follows the definition of the essential boundary part of the
 boundary of the domain, which is derived from the
@@ -137,14 +138,14 @@ boundary of the domain, which is derived from the
 
 .. code-block:: c++
 
- // Sub domain for essential boundary condition
- class EssentialBoundary : public SubDomain
- {
-   bool inside(const Array<double>& x, bool on_boundary) const
-   {
-     return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS;
-   }
- };
+    // Sub domain for essential boundary condition
+    class EssentialBoundary : public SubDomain
+    {
+      bool inside(const Array<double>& x, bool on_boundary) const
+      {
+        return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS;
+      }
+    };
 
 Inside the ``main()`` function we first create the ``mesh`` and then
 we define the (mixed) function space for the variational
@@ -153,18 +154,18 @@ formulation. We also define the bilinear form ``a`` and linear form
 
 .. code-block:: c++
 
-  // Construct function space
-  MixedPoisson::FunctionSpace W(mesh);
-  MixedPoisson::BilinearForm a(W, W);
-  MixedPoisson::LinearForm L(W);
+    // Construct function space
+    MixedPoisson::FunctionSpace W(mesh);
+    MixedPoisson::BilinearForm a(W, W);
+    MixedPoisson::LinearForm L(W);
 
 Then we create the source (:math:`f`) and assign it to the linear form.
 
 .. code-block:: c++
 
-  // Create source and assign to L
-  Source f;
-  L.f = f;
+    // Create source and assign to L
+    Source f;
+    L.f = f;
 
 It only remains to prescribe the boundary condition for the
 flux. Essential boundary conditions are specified through the class
@@ -188,11 +189,11 @@ defined above does.
 
 .. code-block:: c++
 
-  // Define boundary condition
-  SubSpace W0(W, 0);
-  BoundarySource G(mesh);
-  EssentialBoundary boundary;
-  DirichletBC bc(W0, G, boundary);
+    // Define boundary condition
+    SubSpace W0(W, 0);
+    BoundarySource G(mesh);
+    EssentialBoundary boundary;
+    DirichletBC bc(W0, G, boundary);
 
 To compute the solution we use the ``VariationalProblem`` class with
 the bilinear and linear forms, and the boundary condition. The (full)
@@ -202,12 +203,12 @@ computation is performed by calling ``solve``.
 
 .. code-block:: c++
 
-  // Define variational problem
-  VariationalProblem problem(a, L, bc);
+    // Define variational problem
+    VariationalProblem problem(a, L, bc);
 
-  // Compute (full) solution
-  Function w(W);
-  problem.solve(w);
+    // Compute (full) solution
+    Function w(W);
+    problem.solve(w);
 
 Now, the separate components ``sigma`` and ``u`` of the solution can
 be extracted by taking components. These can easily be visualized by
@@ -215,13 +216,13 @@ calling ``plot``.
 
 .. code-block:: c++
 
-  // Extract sub functions (function views)
-  Function& sigma = w[0];
-  Function& u = w[1];
+    // Extract sub functions (function views)
+    Function& sigma = w[0];
+    Function& u = w[1];
 
-  // Plot solutions
-  plot(u);
-  plot(sigma);
+    // Plot solutions
+    plot(u);
+    plot(sigma);
 
 
 Complete code

@@ -204,6 +204,8 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
+# Parameters affecting the LaTeX PNGs in the HTML files
+pngmath_latex_preamble = r" \usepackage{stmaryrd} "
 
 # -- Options for manual page output --------------------------------------------
 

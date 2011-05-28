@@ -1,6 +1,6 @@
 .. Documentation for the biharmonic demo from DOLFIN.
 
-.. _demos_pde_biharmonic_python_documentation:
+.. _demo_pde_biharmonic_python_documentation:
 
 Biharmonic equation
 ===================

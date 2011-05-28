@@ -1,6 +1,6 @@
 .. Documentation for the incompressible Navier-Stokes demo from DOLFIN.
 
-.. _demos_pde_navier_stokes_python_documentation:
+.. _demo_pde_navier_stokes_python_documentation:
 
 Incompressible Navier-Stokes equations
 ======================================

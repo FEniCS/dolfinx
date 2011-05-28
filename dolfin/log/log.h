@@ -55,7 +55,7 @@ namespace dolfin
   void info_stream(std::ostream& out, std::string msg);
 
   /// Print underlined message
-  void info_underline(std:: string msg, ...);
+  void info_underline(std::string msg, ...);
 
   /// Print warning
   void warning(std::string msg, ...);
