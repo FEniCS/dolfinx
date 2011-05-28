@@ -5,8 +5,9 @@
 Biharmonic equation
 ===================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_biharmonic.py`, which contains both the variational
+forms and the solver.
 
 .. include:: ../common.txt
 
@@ -14,7 +15,7 @@ which contains both the variational forms and the solver.
 Implementation
 --------------
 
-This demo is implemented in the :download:`demo.py` file.
+This demo is implemented in the :download:`demo_biharmonic.py` file.
 
 First, the ``dolfin`` module is imported:
 
@@ -129,5 +130,5 @@ the screen.
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_biharmonic.py
    :start-after: # Begin demo

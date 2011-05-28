@@ -5,15 +5,16 @@
 Cahn-Hilliard equation
 ======================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_cahn-hilliard.py`, which contains both the variational
+forms and the solver.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-This demo is implemented in the :download:`demo.py` file.
+This demo is implemented in the :download:`demo_cahn-hilliard.py` file.
 
 First, the Python module ``random`` and the ``dolfin`` module are imported:
 
@@ -45,7 +46,7 @@ parallel, the random number generator is seeded using the process
 number to ensure a different sequence of numbers on each process.  The
 function ``eval`` returns values for a function of dimension two.  For
 the first component of the function, a randomized value is returned.
-The method ``value_shape`` declares that the ``Expression`` is vector  
+The method ``value_shape`` declares that the ``Expression`` is vector
 valued with dimension two.
 
 .. index:: NonlinearProblem
@@ -284,6 +285,6 @@ The line ``interactive()`` holds the plot (waiting for a keyboard action).
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_cahn-hilliard.py
    :start-after: # Begin demo
 

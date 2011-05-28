@@ -5,8 +5,9 @@
 Poisson equation
 ================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_poisson.py`, which contains both the variational forms
+and the solver.
 
 .. include:: ../common.txt
 
@@ -14,7 +15,7 @@ Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo.py`) of a solver for the above described Poisson
+:download:`demo_poisson.py`) of a solver for the above described Poisson
 equation step-by-step.
 
 First, the ``dolfin`` module is imported:
@@ -149,5 +150,5 @@ visualization and also plot it using the ``plot`` command:
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_poisson.py
    :start-after: # Begin demo

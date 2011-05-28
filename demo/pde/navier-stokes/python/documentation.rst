@@ -5,15 +5,16 @@
 Incompressible Navier-Stokes equations
 ======================================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_navier-stokes.py`, which contains both the variational
+forms and the solver.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-This demo is implemented in the :download:`demo.py` file.
+This demo is implemented in the :download:`demo_navier-stokes.py` file.
 
 First, the ``dolfin`` module is imported:
 
@@ -227,5 +228,5 @@ rotate) the solution.
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_navier-stokes.py
    :start-after: # Begin demo
