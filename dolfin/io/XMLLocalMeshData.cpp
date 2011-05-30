@@ -16,13 +16,12 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-28
-// Last changed: 2011-03-30
+// Last changed: 2011-05-30
 //
 // Modified by Anders Logg, 2008.
 // Modified by Kent-Andre Mardal, 2011.
 
 #include <boost/assign/list_of.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -108,22 +107,22 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
       read_array(name, attrs);
       state = INSIDE_ARRAY;
     }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0) 
+    else if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
     {
-      read_data_entry(name, attrs); 
-      state = INSIDE_DATA_ENTRY; 
+      read_data_entry(name, attrs);
+      state = INSIDE_DATA_ENTRY;
     }
 
-    break; 
+    break;
 
-  case INSIDE_DATA_ENTRY: 
-    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0) 
+  case INSIDE_DATA_ENTRY:
+    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
-      read_array(name, attrs); 
-      state = INSIDE_ARRAY; 
+      read_array(name, attrs);
+      state = INSIDE_ARRAY;
     }
 
-    break; 
+    break;
 
   default:
     error("Inconsistent state in XML reader: %d.", state);
@@ -180,8 +179,8 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
     }
 
     break;
-  
-  case INSIDE_DATA_ENTRY: 
+
+  case INSIDE_DATA_ENTRY:
 
     if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
     {
@@ -387,40 +386,26 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   std::string array_type = parse_string(name, attrs, "type");
   uint size = parse_uint(name, attrs, "size");
 
-  XMLArray* xml_array = 0;
-
-  if ( array_type.compare("int") == 0 )
+  if (array_type.compare("int") == 0)
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<int>* ux = new std::vector<int>();
-    if ( xml_array ) {
-      delete xml_array;
-      xml_array = 0; 
-    }
-    xml_array = new XMLArray(*ux, parser, size);
+    xml_array.reset(new XMLArray(*ux, parser, size));
     xml_array->handle();
   }
-  else if ( array_type.compare("uint") == 0 )
+  else if (array_type.compare("uint") == 0)
   {
-    //FIXME this is uint 
+    //FIXME: this is uint
     std::vector<unsigned int>* ux = new std::vector<unsigned int>();
-    if ( xml_array ) {
-      delete xml_array;
-      xml_array = 0; 
-    }
-    xml_array = new XMLArray(*ux, parser, size);
+    xml_array.reset(new XMLArray(*ux, parser, size));
     xml_array->handle();
-    mesh_data.arrays[data_entry_name] = ux; 
+    mesh_data.arrays[data_entry_name] = ux;
   }
-  else if ( array_type.compare("double") == 0 )
+  else if (array_type.compare("double") == 0)
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<double>* dx = new std::vector<double>();
-    if ( xml_array ) {
-      delete xml_array;
-      xml_array = 0; 
-    }
-    xml_array = new XMLArray(*dx, parser, size);
+    xml_array.reset(new XMLArray(*dx, parser, size));
     xml_array->handle();
   }
 }
