@@ -16,19 +16,21 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-10
-// Last changed: 2011-03-30
+// Last changed: 2011-05-30
 // Modified by Kent-Andre Mardal, 2011.
 
 #ifndef __XMLLOCALMESHDATA_H
 #define __XMLLOCALMESHDATA_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "XMLHandler.h"
 
-
 namespace dolfin
 {
+
   class LocalMeshData;
+  class XMLArray;
 
   /// Documentation of class XMLLocalMeshData
 
@@ -87,10 +89,14 @@ namespace dolfin
     // Result object to build
     LocalMeshData& mesh_data;
 
-    // name of the array
-    std::string data_entry_name; 
+    // Name of the array
+    std::string data_entry_name;
 
+    // State of parser
     ParserState state;
+
+    // Use for reading embedded array data
+    boost::scoped_ptr<XMLArray> xml_array;
 
   };
 
