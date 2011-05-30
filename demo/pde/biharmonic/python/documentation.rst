@@ -17,7 +17,7 @@ Implementation
 
 This demo is implemented in the :download:`demo_biharmonic.py` file.
 
-First, the ``dolfin`` module is imported:
+First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
@@ -39,8 +39,9 @@ A mesh is created, and a quadratic finite element function space:
     mesh = UnitSquare(32, 32)
     V = FunctionSpace(mesh, "CG", 2)
 
-A subclass of ``SubDomain``, ``DirichletBoundary`` is created for later
-defining the boundary of the domian:
+A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,
+``DirichletBoundary`` is created for later defining the boundary of
+the domian:
 
 .. code-block:: python
 
@@ -49,8 +50,8 @@ defining the boundary of the domian:
         def inside(self, x, on_boundary):
             return on_boundary
 
-A subclass of ``Expression``, ``Source`` is created for the source
-term :math:`f`:
+A subclass of :py:class:`Expression <dolfin.functions.Expression>`,
+``Source`` is created for the source term :math:`f`:
 
 .. code-block:: python
 
@@ -74,13 +75,14 @@ On the finite element space ``V``, trial and test functions are created:
     u = TrialFunction(V)
     v = TestFunction(V)
 
-A function for the cell size :math:`h` is created, as is a function for
-the average size of cells that share a facet (``h_avg``).  The UFL syntax
-``('+')`` and ``('-')`` restricts a function to the ``('+')`` and ``('-')``
-sides of a facet, respectively. The unit outward normal to cell boundaries (``n``)
-is created, as is the source term ``f`` and the penalty parameter ``alpha``. The
-penalty parameters is made a ``Constant`` so that it can be changed without needing
-to regenerate code.
+A function for the cell size :math:`h` is created, as is a function
+for the average size of cells that share a facet (``h_avg``).  The UFL
+syntax ``('+')`` and ``('-')`` restricts a function to the ``('+')``
+and ``('-')`` sides of a facet, respectively. The unit outward normal
+to cell boundaries (``n``) is created, as is the source term ``f`` and
+the penalty parameter ``alpha``. The penalty parameters is made a
+:py:class:`Constant <dolfin.functions.Constant>` so that it can be
+changed without needing to regenerate code.
 
 .. code-block:: python
 

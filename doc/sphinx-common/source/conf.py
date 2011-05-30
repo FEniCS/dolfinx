@@ -219,3 +219,7 @@ man_pages = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+# Use docstrings both from __init__ and class when using autodoc for
+# Python classes
+autoclass_content = "both"
