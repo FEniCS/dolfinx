@@ -184,6 +184,7 @@ class FiniteElementTest(unittest.TestCase):
         e2 = Expression(("x[0]+x[1]+x[2]", "x[0]+x[1]+x[2]"))
 
         coords = numpy.zeros((3, 3), dtype="d")
+        coord = numpy.zeros(3, dtype="d")
         values0 = numpy.zeros(3, dtype="d")
         values1 = numpy.zeros(3, dtype="d")
         values2 = numpy.zeros(3, dtype="d")
@@ -191,7 +192,8 @@ class FiniteElementTest(unittest.TestCase):
         values4 = numpy.zeros(6, dtype="d")
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(coords, cell)
-            for i, coord in enumerate(coords):
+            for i in xrange(coords.shape[0]):
+                coord[:] = coords[i,:]
                 values0[i] = e(*coord)
             self.W.sub(0).element().evaluate_dofs(values1, e, cell)
             L = self.W.sub(1)
