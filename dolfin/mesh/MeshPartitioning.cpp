@@ -846,7 +846,7 @@ void MeshPartitioning::distribute_data(Mesh& mesh, const LocalMeshData& local_me
 const std::vector<uint>& gci)
 
 {
-   // Make global to local mapping 
+   // Make global to local mapping lci (inverse of gci) 
    std::map<uint,uint> lci; 
    uint cell_index=0; 
    for (uint i=0; i< gci.size(); i++) 

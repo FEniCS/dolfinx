@@ -113,7 +113,7 @@ namespace dolfin
     static void distribute_vertices(LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc);
 
-    // Distribute data 
+    // Distribute boundary indicators 
     static void distribute_data(Mesh& mesh, const LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc,
                                     const std::vector<uint>& gci);
