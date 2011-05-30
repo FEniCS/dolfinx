@@ -1,21 +1,23 @@
 .. Documentation for the Cahn-Hilliard demo from DOLFIN.
 
-.. _demos_pde_cahn_hilliard_python_documentation:
+.. _demo_pde_cahn_hilliard_python_documentation:
 
 Cahn-Hilliard equation
 ======================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_cahn-hilliard.py`, which contains both the variational
+forms and the solver.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-This demo is implemented in the :download:`demo.py` file.
+This demo is implemented in the :download:`demo_cahn-hilliard.py` file.
 
-First, the Python module ``random`` and the ``dolfin`` module are imported:
+First, the Python module :py:mod:`random` and the :py:mod:`dolfin`
+module are imported:
 
 .. code-block:: python
 
@@ -39,19 +41,22 @@ created:
         def value_shape(self):
             return (2,)
 
-It is a subclass of ``Expression``. In the constructor (``__init__``),
-the random number generator is seeded. If the program is run in
-parallel, the random number generator is seeded using the process
-number to ensure a different sequence of numbers on each process.  The
-function ``eval`` returns values for a function of dimension two.  For
-the first component of the function, a randomized value is returned.
-The method ``value_shape`` declares that the ``Expression`` is vector  
-valued with dimension two.
+It is a subclass of :py:class:`Expression
+<dolfin.functions.Expression>`. In the constructor (``__init__``), the
+random number generator is seeded. If the program is run in parallel,
+the random number generator is seeded using the process number to
+ensure a different sequence of numbers on each process.  The function
+``eval`` returns values for a function of dimension two.  For the
+first component of the function, a randomized value is returned.  The
+method ``value_shape`` declares that the :py:class:`Expression
+<dolfin.functions.Expression>` is vector valued with dimension two.
 
-.. index:: NonlinearProblem
+.. index::
+   single: NonlinearProblem; (in Cahn-Hilliard demo)
 
-A class which will represent the Cahn-Hilliard in an abstract from for use
-in the Newton solver is now defined. It is a subclass of ``NonlinearProblem``.
+A class which will represent the Cahn-Hilliard in an abstract from for
+use in the Newton solver is now defined. It is a subclass of
+:py:class:`NonlinearProblem <dolfin.cpp.NonlinearProblem>`.
 
 .. code-block:: python
 
@@ -72,7 +77,8 @@ The constructor (``__init__``) stores references to the bilinear
 (``a``) and linear (``L``) forms. These will used to compute the
 Jacobian matrix and the residual vector, respectively, for use in a
 Newton solver.  The function ``F`` and ``J`` are virtual member
-functions of ``NonlinearProblem``. The function ``F`` computes the
+functions of :py:class:`NonlinearProblem
+<dolfin.cpp.NonlinearProblem>`. The function ``F`` computes the
 residual vector ``b``, and the function ``J`` computes the Jacobian
 matrix ``A``. For the Cahn-Hilliard equation, the pattern of non-zero
 values in the Jacobian matrix ``A`` will remain fixed, so the argument
@@ -91,7 +97,8 @@ Next, various model parameters are defined:
     theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
 
-.. index:: form compiler options
+.. index::
+   singe: form compiler options; (in Cahn-Hilliard demo)
 
 It is possible to pass arguments that control aspects of the generated
 code to the form compiler. The lines
@@ -110,8 +117,10 @@ depending on the equation), but it may take considerably longer to generate
 the code and the generation phase may use considerably more memory).
 
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
-created, and on this mesh a ``FunctionSpace`` :math:`V` and a
-``MixedFunctionSpace`` space :math:`ME = V \times V` are defined:
+created, and on this mesh a :py:class:`FunctionSpace
+<dolfin.functions.FunctionSpace>` :math:`V` and a
+:py:class:`MixedFunctionSpace <dolfin.functions.MixedFunctionSpace>`
+space :math:`ME = V \times V` are defined:
 
 .. code-block:: python
 
@@ -133,12 +142,14 @@ Trial and test functions of the space ``ME`` are now defined:
 
 .. index:: split functions
 
-For the test functions, ``TestFunctions`` (note the 's' at the end) is
-used to define the scalar test functions ``q`` and ``v``. The trial
-function ``du`` has dimension two. Some mixed ``Functions`` on ``ME``
-are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and
-:math:`u0 = (c_{n}, \mu_{n})`, and these are then split into
-sub-functions:
+For the test functions, :py:func:`TestFunctions
+<dolfin.functions.TestFunctions>` (note the 's' at the end) is used to
+define the scalar test functions ``q`` and ``v``. The
+:py:class:`TrialFunction <dolfin.functions.TrialFunction>` ``du`` has
+dimension two. Some mixed objects of the :py:class:`Function
+<dolfin.functions.Function>` class on ``ME`` are defined to represent
+:math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0 = (c_{n}, \mu_{n})`,
+and these are then split into sub-functions:
 
 .. code-block:: python
 
@@ -155,7 +166,8 @@ The line ``c, mu = split(u)`` permits direct access to the components
 of a mixed function. Note that ``c`` and ``mu`` are references for
 components of ``u``, and not copies.
 
-.. index:: interpolating functions
+.. index::
+   single: interpolating functions; (in Cahn-Hilliard demo)
 
 Initial conditions are created by using the class defined at the
 beginning of the demo and then interpolating the initial conditions
@@ -219,14 +231,17 @@ form which represents the Jacobian matrix:
     # Compute directional derivative about u in the direction of du (Jacobian)
     a = derivative(L, u, du)
 
-.. index:: Newton solver
+.. index::
+   single: Newton solver; (in Cahn-Hilliard demo)
 
-The DOLFIN Newton solver requires a ``NonlinearProblem`` object to
-solve a system of nonlinear equations. Here, we are using the class
-``CahnHilliardEquation``, which was declared at the beginning of the
-file, and which is a sub-class of ``NonlinearProblem``. We need to
-instantiate objects of both ``CahnHilliardEquation`` and
-``NewtonSolver``:
+The DOLFIN Newton solver requires a :py:class:`NonlinearProblem
+<dolfin.cpp.NonlinearProblem>` object to solve a system of nonlinear
+equations. Here, we are using the class ``CahnHilliardEquation``,
+which was declared at the beginning of the file, and which is a
+sub-class of :py:class:`NonlinearProblem
+<dolfin.cpp.NonlinearProblem>`. We need to instantiate objects of both
+``CahnHilliardEquation`` and :py:class:`NewtonSolver
+<dolfin.cpp.NewtonSolver>`:
 
 .. code-block:: python
 
@@ -266,10 +281,11 @@ The string ``"compressed"`` indicates that the output data should be
 compressed to reduce the file size. Within the time stepping loop, the
 solution vector associated with ``u`` is copied to ``u0`` at the
 beginning of each time step, and the nonlinear problem is solved by
-calling ``solver.solve(problem, u.vector())``, with the new solution
-vector returned in ``u.vector()``. The ``c`` component of the solution
-(the first component of ``u``) is then written to file at every time
-step.
+calling :py:func:`solver.solve(problem, u.vector())
+<dolfin.cpp.NewtonSolver.solve>`, with the new solution vector
+returned in :py:func:`u.vector() <dolfin.cpp.Function.vector>`. The
+``c`` component of the solution (the first component of ``u``) is then
+written to file at every time step.
 
 Finally, the last computed solution for :math:`c` is plotted to the screen:
 
@@ -284,6 +300,6 @@ The line ``interactive()`` holds the plot (waiting for a keyboard action).
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_cahn-hilliard.py
    :start-after: # Begin demo
 

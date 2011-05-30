@@ -1,12 +1,13 @@
 .. Documentation for the Poisson demo from DOLFIN.
 
-.. _demos_pde_poisson_python_documentation:
+.. _demo_pde_poisson_python_documentation:
 
 Poisson equation
 ================
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_poisson.py`, which contains both the variational forms
+and the solver.
 
 .. include:: ../common.txt
 
@@ -14,23 +15,22 @@ Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo.py`) of a solver for the above described Poisson
+:download:`demo_poisson.py`) of a solver for the above described Poisson
 equation step-by-step.
 
-First, the ``dolfin`` module is imported:
+First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
     from dolfin import *
 
-.. index:: FunctionSpace, UnitSquare
 
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. As the unit square is
 a very standard domain, we can use a built-in mesh provided by the
-class :py:class:`UnitSquare`. In order to create a mesh consisting of
-32 x 32 squares with each square divided into two triangles, we do as
-follows
+class :py:class:`UnitSquare <dolfin.cpp.UnitSquare>`. In order to create a mesh
+consisting of 32 x 32 squares with each square divided into two
+triangles, we do as follows
 
 .. code-block:: python
 
@@ -38,11 +38,12 @@ follows
     mesh = UnitSquare(32, 32)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
-The second argument to :py:class:`FunctionSpace` is the finite element family,
-while the third argument specifies the polynomial degree. Thus, in
-this case, our space ``V`` consists of first-order, continuous
-Lagrange finite element functions (or in order words, continuous
-piecewise linear polynomials).
+The second argument to :py:class:`FunctionSpace
+<dolfin.functions.FunctionSpace>` is the finite element family, while
+the third argument specifies the polynomial degree. Thus, in this
+case, our space ``V`` consists of first-order, continuous Lagrange
+finite element functions (or in order words, continuous piecewise
+linear polynomials).
 
 Next, we want to consider the Dirichlet boundary condition. A simple
 Python function, returning a boolean, can be used to define the
@@ -62,17 +63,16 @@ small number (such as machine precision).)
         return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 
-.. index:: DirichletBC
-
 Now, the Dirichlet boundary condition can be created using the class
-:py:class:`DirichletBC`. A :py:class:`DirichletBC` takes three
+:py:class:`DirichletBC <dolfin.fem.DirichletBC>`. A
+:py:class:`DirichletBC <dolfin.fem.DirichletBC>` takes three
 arguments: the function space the boundary condition applies to, the
 value of the boundary condition, and the part of the boundary on which
 the condition applies. In our example, the function space is ``V``,
 the value of the boundary condition (0.0) can represented using a
-:py:class:`Constant` and the Dirichlet boundary is defined
-immediately above. The definition of the Dirichlet boundary condition
-then looks as follows:
+:py:class:`Constant <dolfin.functions.Constant>` and the Dirichlet
+boundary is defined immediately above. The definition of the Dirichlet
+boundary condition then looks as follows:
 
 .. code-block:: python
 
@@ -80,21 +80,22 @@ then looks as follows:
     u0 = Constant(0.0)
     bc = DirichletBC(V, u0, boundary)
 
-.. index:: Expression, TestFunction, TrialFunction
-
 Next, we want to express the variational problem.  First, we need to
 specify the trial function :math:`u` and the test function :math:`v`,
 both living in the function space :math:`V`. We do this by defining a
-:py:class:`TrialFunction` and a :py:class:`TestFunction` on the
-previously defined :py:class:`FunctionSpace` ``V``.
+:py:class:`TrialFunction <dolfin.functions.TrialFunction>` and a
+:py:class:`TestFunction <dolfin.functions.TrialFunction>` on the
+previously defined :py:class:`FunctionSpace
+<dolfin.functions.FunctionSpace>` ``V``.
 
 Further, the source :math:`f` and the boundary normal derivative
 :math:`g` are involved in the variational forms, and hence we must
 specify these. Both :math:`f` and :math:`g` are given by simple
 mathematical formulas, and can be easily declared using the
-:py:class:`Expression` class.  Note that the strings defining ``f``
-and ``g`` use C++ syntax since, for efficiency, DOLFIN will generate
-and compile C++ code for these expressions at run-time.
+:py:class:`Expression <dolfin.functions.Expression>` class.  Note that
+the strings defining ``f`` and ``g`` use C++ syntax since, for
+efficiency, DOLFIN will generate and compile C++ code for these
+expressions at run-time.
 
 With these ingredients, we can write down the bilinear form ``a`` and
 the linear form ``L`` (using UFL operators). In summary, this reads
@@ -109,14 +110,16 @@ the linear form ``L`` (using UFL operators). In summary, this reads
   a = inner(grad(u), grad(v))*dx
   L = f*v*dx + g*v*ds
 
-.. index:: VariationalProblem
+.. index::
+   single: VariationalProblem; (in Poisson demo)
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem.  First, a
-:py:class:`VariationalProblem` object is created using the bilinear
-and linear forms, and the Dirichlet boundary condition.  Then, to
-solve the problem, the ``solve`` function is called, and the solution
-is returned in ``u``.
+:py:class:`VariationalProblem <dolfin.fem.VariationalProblem>` object
+is created using the bilinear and linear forms, and the Dirichlet
+boundary condition.  Then, to solve the problem, the :py:func:`solve
+<dolfin.fem.VariationalProblem.solve>` function is called, and the
+solution is returned in ``u``.
 
 .. code-block:: python
 
@@ -128,14 +131,17 @@ The default settings for solving a variational problem have been
 used. However, various parameters can be used to control aspects of
 the solution process.
 
-The solution ``u`` is a :py:class:`Function` object, which represents
-a function living in a finite element function space. A
-:py:class:`Function` can be manipulated in various ways, in
+.. index::
+   single: File; (in Poisson demo)
+
+The solution ``u`` is a :py:class:`Function
+<dolfin.functions.Function>` object, which represents a function
+living in a finite element function space. A :py:class:`Function
+<dolfin.functions.Function>` can be manipulated in various ways, in
 particular, it can be plotted and saved to file. Here, we output the
 solution to a ``VTK`` file (using the suffix ``.pvd``) for later
-visualization and also plot it using the ``plot`` command:
-
-.. index:: File, plot
+visualization and also plot it using the :py:func:`plot
+<dolfin.common.plot>` command:
 
 .. code-block:: python
 
@@ -149,5 +155,5 @@ visualization and also plot it using the ``plot`` command:
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_poisson.py
    :start-after: # Begin demo

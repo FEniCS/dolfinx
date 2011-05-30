@@ -1,6 +1,6 @@
 .. Documentation for the Poisson demo from DOLFIN.
 
-.. _demos_pde_poisson_cpp_documentation:
+.. _demo_pde_poisson_cpp_documentation:
 
 
 Poisson equation

@@ -8,20 +8,18 @@ A simple eigenvalue solver
 We recommend that you are familiar with demo for the Poisson equation
 before looking at this demo.
 
-
 .. include:: ../common.txt
-
 
 If you want a more complex problem, we suggest that you look at the
 other eigenvalue demo.
 
 
-
 Implementation
 --------------
 
-This demo is implemented in a single Python file, :download:`demo.py`,
-which contains both the variational forms and the solver.
+This demo is implemented in a single Python file,
+:download:`demo_eigenvalue.py`, which contains both the variational
+forms and the solver.
 
 The eigensolver functionality in DOLFIN relies on the library SLEPc
 which in turn relies on the linear algebra library PETSc. Therefore,
@@ -115,8 +113,9 @@ and in particular plotted:
   plot(u)
   interactive()
 
+
 Complete code
 -------------
 
-.. literalinclude:: demo.py
+.. literalinclude:: demo_eigenvalue.py
    :start-after: # Begin demo

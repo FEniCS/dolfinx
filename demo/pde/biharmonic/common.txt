@@ -25,15 +25,16 @@ boundary value problem, the biharmonic equation must be complemented by
 suitable boundary conditions.
 
 Multiplying the biharmonic equation by a test function and integrating
-by parts twice leads to a problem second-order derivatives, which would
-requires :math:`H^{2}` conforming (roughly :math:`C^{0}` continuous) basis
-functions.  To solve the biharmonic equation using Lagrange finite element
-basis functions, the biharmonic equation can be split into two second-order
-equations (see :ref:`demos_pde_mixed-poisson_python` for a mixed method for
-the Poisson equation), or a variational formulation can be constructed that
-imposes weak continuity of normal derivatives between finite element cells.
-The demo uses a discontinuous Galerkin approach to impose continuity of the
-normal derivative weakly.
+by parts twice leads to a problem second-order derivatives, which
+would requires :math:`H^{2}` conforming (roughly :math:`C^{0}`
+continuous) basis functions.  To solve the biharmonic equation using
+Lagrange finite element basis functions, the biharmonic equation can
+be split into two second-order equations (see the Mixed Poisson demo
+for a mixed method for the Poisson equation), or a variational
+formulation can be constructed that imposes weak continuity of normal
+derivatives between finite element cells.  The demo uses a
+discontinuous Galerkin approach to impose continuity of the normal
+derivative weakly.
 
 Consider a triangulation :math:`\mathcal{T}` of the domain :math:`\Omega`,
 where the union of interior facets is denoted by :math:`\Gamma`.

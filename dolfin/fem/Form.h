@@ -53,10 +53,13 @@ namespace dolfin
   /// corresponding tensor (matrix). In other words, the test space is
   /// numbered 0 and the trial space is numbered 1. However, in order
   /// to have a notation that agrees with most existing finite element
-  /// literature, the spaces are numbered from right to left:
+  /// literature, in particular
+  ///
+  ///     a = a(u, v)
+  ///
+  /// the spaces are numbered from right to left:
   ///
   ///    a : V_1 x V_0 --> R
-  ///    a |--> a(u, v)
   ///
   /// This is reflected in the ordering of the spaces that should be
   /// supplied to generated subclasses. In particular, when a bilinear
