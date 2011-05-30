@@ -8,10 +8,7 @@ class Test(unittest.TestCase):
 
 	mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
 	V = FunctionSpace(mesh, "CG", 1)
-
 	mf =  mesh.data().mesh_function("exterior_facet_domains")
-	print mf
-	print mf.size()
 
 	u = TrialFunction(V)
 	v = TestFunction(V)
@@ -24,19 +21,15 @@ class Test(unittest.TestCase):
 	bc1 = DirichletBC(V, u1, mf, 1)
 	bc2 = DirichletBC(V, u2, mf, 2)
 	bc3 = DirichletBC(V, u3, mf, 3)
-
 	bcs = [bc1, bc2, bc3]
 
 	a = inner(grad(u), grad(v))*dx 
 	L = f*v*dx  
 
-
 	problem = VariationalProblem(a, L, bcs)
 	u = problem.solve()
 
-
 	norm = u.vector().norm("l2")
-        print norm
         self.assertAlmostEqual(norm,  140.112465672, 9)
 
 
