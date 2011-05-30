@@ -25,6 +25,7 @@
 #define __MESH_PARTITIONING_H
 
 #include <map>
+#include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
 
@@ -89,6 +90,11 @@ namespace dolfin
 
   private:
 
+    // Compute and return (number of global entities, process offset)
+    static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,
+                                                     uint num_processes,
+                                                     uint process_number);
+
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
           const std::map<uint, std::vector<uint> >& shared_vertices,
@@ -113,7 +119,7 @@ namespace dolfin
     static void distribute_vertices(LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc);
 
-    // Distribute boundary indicators 
+    // Distribute boundary indicators
     static void distribute_data(Mesh& mesh, const LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc,
                                     const std::vector<uint>& gci);

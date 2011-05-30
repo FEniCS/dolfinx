@@ -203,23 +203,19 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
                    exterior_facets);
   }
 
-  /// ---- Offset
-
-  // Communicate number of entities to number
-  std::vector<uint> num_entities_to_number(num_processes, 0);
-  num_entities_to_number[process_number] = owned_entity_indices.size() + shared_entity_indices.size();
-  MPI::gather(num_entities_to_number);
-
-  // Compute offset
-  uint offset = std::accumulate(num_entities_to_number.begin(), num_entities_to_number.begin() + process_number, 0);
-
-  // Compute number of global entities
-  const uint num_global = std::accumulate(num_entities_to_number.begin() + process_number, num_entities_to_number.end(), offset);
-
-  /// ---- Numbering
+  // Compute global number of entities and process offset
+  const uint num_local_entities = owned_entity_indices.size() + shared_entity_indices.size();
+  const std::pair<uint, uint> num_global_entities = compute_num_global_entities(num_local_entities,
+                                                     num_processes,
+                                                     process_number);
+  // Extract offset
+  uint offset = num_global_entities.second;
 
   // Store number of global entities
-  mesh.parallel_data().num_global_entities()[d] = num_global;
+  mesh.parallel_data().num_global_entities()[d] = num_global_entities.first;
+
+
+  /// ---- Numbering
 
   // Prepare list of entity numbers. Check later that nothing is -1
   std::vector<int> entity_indices(mesh.size(d), -1);
@@ -302,6 +298,27 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
   }
+}
+//-----------------------------------------------------------------------------
+std::pair<unsigned int, unsigned int>
+  MeshPartitioning::compute_num_global_entities(uint num_local_entities,
+                                                uint num_processes,
+                                                uint process_number)
+{
+  // Communicate number of local entities
+  std::vector<uint> num_entities_to_number(num_processes, 0);
+  num_entities_to_number[process_number] = num_local_entities;
+  MPI::gather(num_entities_to_number);
+
+  // Compute offset
+  const uint offset = std::accumulate(num_entities_to_number.begin(),
+                           num_entities_to_number.begin() + process_number, 0);
+
+  // Compute number of global entities
+  const uint num_global = std::accumulate(num_entities_to_number.begin(),
+                                          num_entities_to_number.end(), 0);
+
+  return std::make_pair(num_global, offset);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
