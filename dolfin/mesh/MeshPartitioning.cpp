@@ -731,7 +731,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   for(uint i = 0; i < gci.size(); ++i)
     global_cell_indices[i] = gci[i];
 
-  // distribute data 
+  // distribute data
   distribute_data(mesh, mesh_data, glob2loc, gci);
 
   // Close mesh: Note that this must be done after creating the global vertex map or
@@ -842,48 +842,39 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     exterior[entities.find(it->first)->second] = false;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_data(Mesh& mesh, const LocalMeshData& local_mesh_data, std::map<uint, uint>& glob2loc,
-const std::vector<uint>& gci)
-
+void MeshPartitioning::distribute_data(Mesh& mesh,
+                                       const LocalMeshData& local_mesh_data,
+                                       std::map<uint, uint>& glob2loc,
+                                       const std::vector<uint>& gci)
 {
-   // Make global to local mapping lci (inverse of gci) 
-   std::map<uint,uint> lci; 
-   uint cell_index=0; 
-   for (uint i=0; i< gci.size(); i++) 
-   { 
-     lci[gci[i]] = i; 
-   }
+   // Make global to local mapping lci (inverse of gci)
+   std::map<uint,uint> lci;
+   for (uint i=0; i< gci.size(); i++)
+     lci[gci[i]] = i;
 
    // Loop through the arrays
-   const uint num_processes = MPI::num_processes();
-   const uint process_number = MPI::process_number();
-   std::map<std::string, std::vector<uint>* >::const_iterator it; 
-   for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)   
+   std::map<std::string, std::vector<uint>* >::const_iterator it;
+   for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)
    {
-     const std::string name = it->first;  
-     const std::vector<uint>* array = it->second; 
-     if (name == "boundary_facet_cells") 
-     { 
-       std::vector<uint>* non_const_array = (std::vector<uint>*)  array; 
-       std::vector<uint>* cell_array = new std::vector<uint>(array->size()); 
-       for (uint i=0; i< array->size(); i++)  
-       { 
-         if (lci.find((*array)[i]) != lci.end())
-         {
-           (*cell_array)[i] = lci[(*array)[i]];  
-         } 
-         else 
-         {
-            (*cell_array)[i] = 0;  
-         }
-       }
-       mesh.data().arrays[name] = cell_array; 
-     } 
-     else 
+     const std::string name = it->first;
+     const std::vector<uint>* array = it->second;
+     if (name == "boundary_facet_cells")
      {
-       std::vector<uint>* non_const_array = (std::vector<uint>*)  array; 
-       mesh.data().arrays[name] = non_const_array; 
+       std::vector<uint>* cell_array = new std::vector<uint>(array->size());
+       for (uint i=0; i< array->size(); i++)
+       {
+         if (lci.find((*array)[i]) != lci.end())
+           (*cell_array)[i] = lci[(*array)[i]];
+         else
+            (*cell_array)[i] = 0;
+       }
+       mesh.data().arrays[name] = cell_array;
      }
-  } 
+     else
+     {
+       std::vector<uint>* non_const_array = (std::vector<uint>*)  array;
+       mesh.data().arrays[name] = non_const_array;
+     }
+  }
 }
 //-----------------------------------------------------------------------------
