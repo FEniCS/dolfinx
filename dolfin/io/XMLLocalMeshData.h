@@ -16,7 +16,8 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-10
-// Last changed: 2009-09-08
+// Last changed: 2011-03-30
+// Modified by Kent-Andre Mardal, 2011.
 
 #ifndef __XMLLOCALMESHDATA_H
 #define __XMLLOCALMESHDATA_H
@@ -49,6 +50,7 @@ namespace dolfin
     enum ParserState {OUTSIDE,
                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
                       INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
+                      INSIDE_DATA_ENTRY,
                       DONE};
 
     // Callbacks for reading XML data
@@ -62,6 +64,7 @@ namespace dolfin
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_array        (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
+    void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
 
     // Number of local vertices
     uint num_local_vertices() const;
@@ -83,6 +86,9 @@ namespace dolfin
 
     // Result object to build
     LocalMeshData& mesh_data;
+
+    // name of the array
+    std::string data_entry_name; 
 
     ParserState state;
 

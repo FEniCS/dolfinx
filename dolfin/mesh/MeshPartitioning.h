@@ -16,9 +16,10 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2010
+// Modified by Kent-Andre Mardal, 2011
 //
 // First added:  2008-12-01
-// Last changed: 2010-02-05
+// Last changed: 2010-04-04
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -111,6 +112,11 @@ namespace dolfin
     // Distribute vertices
     static void distribute_vertices(LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc);
+
+    // Distribute data 
+    static void distribute_data(Mesh& mesh, const LocalMeshData& data,
+                                    std::map<uint, uint>& glob2loc,
+                                    const std::vector<uint>& gci);
 
     // Build mesh
     static void build_mesh(Mesh& mesh, const LocalMeshData& data,

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Kent-Andre Mardal, 2011
+//
 // First added:  2008-12-01
-// Last changed: 2011-03-17
+// Last changed: 2011-04-04
 
 #include <algorithm>
 #include <iterator>
@@ -729,6 +731,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   for(uint i = 0; i < gci.size(); ++i)
     global_cell_indices[i] = gci[i];
 
+  // distribute data 
+  distribute_data(mesh, mesh_data, glob2loc, gci);
+
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
   editor.close();
@@ -835,5 +840,50 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     exterior[entities.find(it->first)->second] = false;
   for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
     exterior[entities.find(it->first)->second] = false;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::distribute_data(Mesh& mesh, const LocalMeshData& local_mesh_data, std::map<uint, uint>& glob2loc,
+const std::vector<uint>& gci)
+
+{
+   // Make global to local mapping 
+   std::map<uint,uint> lci; 
+   uint cell_index=0; 
+   for (uint i=0; i< gci.size(); i++) 
+   { 
+     lci[gci[i]] = i; 
+   }
+
+   // Loop through the arrays
+   const uint num_processes = MPI::num_processes();
+   const uint process_number = MPI::process_number();
+   std::map<std::string, std::vector<uint>* >::const_iterator it; 
+   for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)   
+   {
+     const std::string name = it->first;  
+     const std::vector<uint>* array = it->second; 
+     if (name == "boundary_facet_cells") 
+     { 
+       std::vector<uint>* non_const_array = (std::vector<uint>*)  array; 
+       std::vector<uint>* cell_array = new std::vector<uint>(array->size()); 
+       for (uint i=0; i< array->size(); i++)  
+       { 
+         if (lci.find((*array)[i]) != lci.end())
+         {
+           (*cell_array)[i] = lci[(*array)[i]];  
+         } 
+         else 
+         {
+            (*cell_array)[i] = 0;  
+         }
+       }
+       mesh.data().arrays[name] = cell_array; 
+     } 
+     else 
+     {
+       std::vector<uint>* non_const_array = (std::vector<uint>*)  array; 
+       mesh.data().arrays[name] = non_const_array; 
+     }
+  } 
 }
 //-----------------------------------------------------------------------------

@@ -163,6 +163,7 @@ namespace dolfin
     /// Friends
     friend class XMLFile;
     friend class XMLMeshData;
+    friend class MeshPartitioning; 
 
   private:
 

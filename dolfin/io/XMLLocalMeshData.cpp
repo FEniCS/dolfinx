@@ -16,9 +16,10 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-28
-// Last changed: 2009-09-14
+// Last changed: 2011-03-30
 //
 // Modified by Anders Logg, 2008.
+// Modified by Kent-Andre Mardal, 2011.
 
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -27,6 +28,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
 #include "XMLLocalMeshData.h"
+#include "XMLArray.h"
 
 using namespace dolfin;
 
@@ -106,8 +108,22 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
       read_array(name, attrs);
       state = INSIDE_ARRAY;
     }
+    else if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0) 
+    {
+      read_data_entry(name, attrs); 
+      state = INSIDE_DATA_ENTRY; 
+    }
 
-    break;
+    break; 
+
+  case INSIDE_DATA_ENTRY: 
+    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0) 
+    {
+      read_array(name, attrs); 
+      state = INSIDE_ARRAY; 
+    }
+
+    break; 
 
   default:
     error("Inconsistent state in XML reader: %d.", state);
@@ -164,13 +180,27 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
     }
 
     break;
+  
+  case INSIDE_DATA_ENTRY: 
+
+    if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
+    {
+      state = INSIDE_DATA;
+    }
+
 
   case INSIDE_ARRAY:
 
     if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
+      state = INSIDE_DATA_ENTRY;
+    }
+
+    if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
+    {
       state = INSIDE_DATA;
     }
+
 
     break;
 
@@ -354,12 +384,45 @@ void XMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** a
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
 {
-  error("Local mesh data can not read arrays.");
+  std::string array_type = parse_string(name, attrs, "type");
+  uint size = parse_uint(name, attrs, "size");
+
+  XMLArray* xml_array;
+
+  if ( array_type.compare("int") == 0 )
+  {
+    // FIXME: Add support for more types in MeshData?
+    std::vector<int>* ux = new std::vector<int>();
+    delete xml_array;
+    xml_array = new XMLArray(*ux, parser, size);
+    xml_array->handle();
+  }
+  else if ( array_type.compare("uint") == 0 )
+  {
+    //FIXME this is uint 
+    std::vector<unsigned int>* ux = new std::vector<unsigned int>();
+    delete xml_array;
+    xml_array = new XMLArray(*ux, parser, size);
+    xml_array->handle();
+    mesh_data.arrays[data_entry_name] = ux; 
+  }
+  else if ( array_type.compare("double") == 0 )
+  {
+    // FIXME: Add support for more types in MeshData?
+    std::vector<double>* dx = new std::vector<double>();
+    delete xml_array;
+    xml_array = new XMLArray(*dx, parser, size);
+    xml_array->handle();
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
 {
-  not_working_in_parallel("Reading auxiliary mesh data");
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)
+{
+  data_entry_name = parse_string(name, attrs, "name");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshData::num_local_vertices() const
