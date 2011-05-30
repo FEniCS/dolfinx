@@ -387,13 +387,16 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   std::string array_type = parse_string(name, attrs, "type");
   uint size = parse_uint(name, attrs, "size");
 
-  XMLArray* xml_array;
+  XMLArray* xml_array = 0;
 
   if ( array_type.compare("int") == 0 )
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<int>* ux = new std::vector<int>();
-    delete xml_array;
+    if ( xml_array ) {
+      delete xml_array;
+      xml_array = 0; 
+    }
     xml_array = new XMLArray(*ux, parser, size);
     xml_array->handle();
   }
@@ -401,7 +404,10 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   {
     //FIXME this is uint 
     std::vector<unsigned int>* ux = new std::vector<unsigned int>();
-    delete xml_array;
+    if ( xml_array ) {
+      delete xml_array;
+      xml_array = 0; 
+    }
     xml_array = new XMLArray(*ux, parser, size);
     xml_array->handle();
     mesh_data.arrays[data_entry_name] = ux; 
@@ -410,7 +416,10 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   {
     // FIXME: Add support for more types in MeshData?
     std::vector<double>* dx = new std::vector<double>();
-    delete xml_array;
+    if ( xml_array ) {
+      delete xml_array;
+      xml_array = 0; 
+    }
     xml_array = new XMLArray(*dx, parser, size);
     xml_array->handle();
   }
