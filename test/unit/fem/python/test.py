@@ -248,15 +248,24 @@ class DofMapTest(unittest.TestCase):
         dofs2 = numpy.zeros(3, dtype="I")
         dofs3 = numpy.zeros(6, dtype="I")
 
-        for cell in cells(self.mesh):
-
+        for i, cell in enumerate(cells(self.mesh)):
+            
             self.W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
-
+            
             L = self.W.sub(1)
             L.sub(0).dofmap().tabulate_dofs(dofs1, cell)
             L.sub(1).dofmap().tabulate_dofs(dofs2, cell)
             L.dofmap().tabulate_dofs(dofs3, cell)
-
+            
+            self.assertTrue(numpy.array_equal(dofs0, \
+                                self.W.sub(0).dofmap().cell_dofs(i)))
+            self.assertTrue(numpy.array_equal(dofs1,
+                                L.sub(0).dofmap().cell_dofs(i)))
+            self.assertTrue(numpy.array_equal(dofs2,
+                                L.sub(1).dofmap().cell_dofs(i)))
+            self.assertTrue(numpy.array_equal(dofs3,
+                                L.dofmap().cell_dofs(i)))
+            
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs1)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)

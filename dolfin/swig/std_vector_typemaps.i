@@ -17,7 +17,7 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-05-22
+// Last changed: 2011-05-30
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -352,9 +352,21 @@ const std::vector<TYPE>&  ARG_NAME
 %enddef
 
 //-----------------------------------------------------------------------------
-// Out typemap for const std::vector<TYPE>&
+// Macro for out typemaps of primitives of const std::vector<TYPE>& It returns
+// readonly NumPy array
+//
+// TYPE      : The primitive type
+// TYPE_NAME : The name of the pointer type, 'double' for 'double', 'uint' for
+//             'dolfin::uint'
 //-----------------------------------------------------------------------------
+%define READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
 
+%typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) const std::vector<TYPE>& {
+  // READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
+  $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), false);
+}
+
+%enddef
 
 //-----------------------------------------------------------------------------
 // Typemap for const std::vector<dolfin::Point>& used in IntersectionOperator
@@ -368,7 +380,6 @@ const std::vector<TYPE>&  ARG_NAME
 %typemap (in) const std::vector<dolfin::Point>& (std::vector<dolfin::Point> tmp_vec)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTS
-
   // A first sequence test
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum");
@@ -414,3 +425,8 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape,
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
+
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
