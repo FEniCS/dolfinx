@@ -31,9 +31,9 @@ file(COPY "${CMAKE_CURRENT_BINARY_DIR}/sphinx-common/"
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/generate_main_index.py" "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_CPP_SPHINX_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}" "${DOLFIN_VERSION}")
 
-# Add target api_doc: generate reST files from code for cpp and
+# Add target doc_api: generate reST files from code for cpp and
 # python. This takes a while.
-add_custom_target(api_doc
+add_custom_target(doc_api
   COMMAND ${PYTHON_EXECUTABLE} generate_api_doc.py
     "${DOLFIN_SOURCE_DIR}" api "${DOLFIN_VERSION}"
   COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -44,40 +44,39 @@ add_custom_target(api_doc
     "${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}/programmers-reference"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
-# Add target demo_doc: copy demo code and doc files into sphinx
+# Add target doc_demo: copy demo code and doc files into sphinx
 # projects and add additional index files.
-add_custom_target(demo_doc
+add_custom_target(doc_demo
   COMMAND ${PYTHON_EXECUTABLE} copy_and_split_demo_doc.py
     "${DOLFIN_SOURCE_DIR}/demo"
     "${DOLFIN_CPP_SPHINX_SOURCE_DIR}/demo"
     "${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}/demo"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
-# Add target [cpp|python]_html: run sphinx in [cpp|python]
-# sphinx projects
+# Add target doc_html_[cpp|python]: run sphinx in [cpp|python] sphinx
+# projects
 if (SPHINX_FOUND)
   message(STATUS "Enabling generation of html-documentation")
-  add_custom_target(cpp_html
+  add_custom_target(doc_html_cpp
     COMMAND ${MAKE_PROGRAM} html
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_CPP_SPHINX_DIR}")
 
-  add_custom_target(python_html
+  add_custom_target(doc_html_python
     COMMAND ${MAKE_PROGRAM} html
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_PYTHON_SPHINX_DIR}")
 
-  # Add target html: run sphinx in both cpp and python
-  add_custom_target(html)
-  add_dependencies(html cpp_html python_html)
+  # Add target doc_html: run sphinx in both cpp and python
+  add_custom_target(doc_html)
+  add_dependencies(doc_html doc_html_cpp doc_html_python)
 
-  # Add target doc: Generate all doc (api and demos) and run sphinx
-  # to generate html
-  add_custom_target(all_doc)
-  add_dependencies(all_doc demo_doc api_doc)
+  # Add target doc_generate_all: Generate all doc (api and demos)
+  add_custom_target(doc_generate_all)
+  add_dependencies(doc_generate_all doc_demo doc_api)
 
-  # FIXME: Need to run all_doc before html (order of targets not
-  # respected)
+  # FIXME: Want to run doc_generate_all before doc_html, but the order
+  # of the targets is necessarily respected here.
   add_custom_target(doc)
-  add_dependencies(doc all_doc html)
+  add_dependencies(doc doc_generate_all doc_html)
 
   # Add target: doc_install Copy generated sphinx projects to
   # DOLFIN_DOC_DIR
