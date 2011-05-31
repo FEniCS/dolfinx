@@ -289,6 +289,34 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
+void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const ufc::cell& ufc_cell) const
+{
+  // FIXME: This is a hack because UFC wants a double pointer for coordinates
+
+  // FIXME: check dimensions
+
+  const uint num_points = coordinates.size();
+  double** coords = new double*[num_points];
+
+  // Set vertex coordinates
+  for (uint i = 0; i < num_points; ++i)
+    coords[i] = &(coordinates[i][0]);
+
+  // Tabulate
+  _ufc_dofmap->tabulate_coordinates(coords, ufc_cell);
+
+  // Clean up
+  delete [] coords;
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const Cell& cell) const
+{
+  UFCCell ufc_cell(cell);
+  tabulate_coordinates(coordinates, ufc_cell);
+}
+//-----------------------------------------------------------------------------
 DofMap* DofMap::copy(const Mesh& mesh) const
 {
   boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create());

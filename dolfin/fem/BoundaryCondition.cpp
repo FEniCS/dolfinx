@@ -113,24 +113,26 @@ BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
     w(V.dofmap().max_cell_dimension(), 0.0),
     cell_dofs(V.dofmap().max_cell_dimension(), 0),
     facet_dofs(V.dofmap().num_facet_dofs(), 0),
+    coordinates(boost::extents[n][V.mesh().geometry().dim()]),
     array_coordinates(V.dofmap().max_cell_dimension())
 {
+
   // Create local coordinate data
-  coordinates = new double*[n];
+  _coordinates = new double*[n];
   for (uint i = 0; i < n; i++)
   {
-    coordinates[i] = new double[V.mesh().geometry().dim()];
+    _coordinates[i] = new double[V.mesh().geometry().dim()];
     for (uint j = 0; j < V.mesh().geometry().dim(); j++)
-      coordinates[i][j] = 0.0;
+      _coordinates[i][j] = 0.0;
 
-    array_coordinates[i].update(V.mesh().geometry().dim(), coordinates[i]);
+    array_coordinates[i].update(V.mesh().geometry().dim(), _coordinates[i]);
   }
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()
 {
   for (uint i = 0; i < n; i++)
-    delete [] coordinates[i];
-  delete [] coordinates;
+    delete [] _coordinates[i];
+  delete [] _coordinates;
 }
 //-----------------------------------------------------------------------------

@@ -743,7 +743,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
         {
           // Check if the coordinates are on current facet and thus on boundary
-          if (!on_facet(data.coordinates[i], facet))
+          //if (!on_facet(data.coordinates[i], facet))
+          if (!on_facet(&(data.coordinates[i][0]), facet))
             continue;
 
           if (!interpolated)

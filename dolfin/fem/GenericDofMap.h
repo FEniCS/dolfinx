@@ -24,6 +24,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -91,6 +92,14 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     virtual void tabulate_coordinates(double** coordinates,
+                                      const Cell& cell) const = 0;
+
+    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
+    virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                      const ufc::cell& ufc_cell) const = 0;
+
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const Cell& cell) const = 0;
 
     /// Create a copy of the dof map

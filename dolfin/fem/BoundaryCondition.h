@@ -25,7 +25,9 @@
 #define __BOUNDARY_CONDITION_H
 
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
@@ -104,7 +106,8 @@ namespace dolfin
       std::vector<uint> facet_dofs;
 
       // Coordinates for dofs
-      double** coordinates;
+      double** _coordinates;
+      boost::multi_array<double, 2> coordinates;
 
       std::vector<Array<double> > array_coordinates;
 

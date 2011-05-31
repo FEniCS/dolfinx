@@ -29,6 +29,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -134,6 +135,14 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
+
+    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
+    void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                      const ufc::cell& ufc_cell) const;
+
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
+                                      const Cell& cell) const;
 
     /// Create a copy of the dof map
     DofMap* copy(const Mesh& mesh) const;

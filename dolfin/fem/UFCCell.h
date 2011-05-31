@@ -204,12 +204,12 @@ namespace dolfin
       if (global_entities[D])
         entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
 
-      /// Set vertex coordinates
+      // Set vertex coordinates
       const uint* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
 
-      /// Set higher order vertex coordinates
+      // Set higher order vertex coordinates
       if (num_higher_order_vertices > 0)
       {
         const uint current_cell_index = cell.index();
