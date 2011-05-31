@@ -49,7 +49,6 @@ UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
 //-----------------------------------------------------------------------------
 UFC::~UFC()
 {
-  //const uint rank = this->form.rank();
   const uint num_coefficients = this->form.num_coefficients();
 
   // Delete coefficients
@@ -103,14 +102,14 @@ void UFC::init(const Form& form)
   uint num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
     num_entries *= max_local_dimension[i];
-  A.reset(new double[num_entries]);
-  A_facet.reset(new double[num_entries]);
+  A.resize(num_entries);
+  A_facet.resize(num_entries);
 
   // Initialize local tensor for macro element
   num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
     num_entries *= max_macro_local_dimension[i];
-  macro_A.reset(new double[num_entries]);
+  macro_A.resize(num_entries);
 
   // Initialize coefficients
   w = new double*[this->form.num_coefficients()];

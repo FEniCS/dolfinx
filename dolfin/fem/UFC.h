@@ -24,7 +24,7 @@
 #define __UFC_DATA_H
 
 #include <vector>
-#include <boost/scoped_array.hpp>
+#include <boost/shared_ptr.hpp>
 #include <ufc.h>
 #include "UFCCell.h"
 #include "UFCMesh.h"
@@ -101,13 +101,13 @@ namespace dolfin
     UFCCell cell1;
 
     // Local tensor
-    boost::scoped_array<double> A;
+    std::vector<double> A;
 
     // Local tensor
-    boost::scoped_array<double> A_facet;
+    std::vector<double> A_facet;
 
     // Local tensor for macro element
-    boost::scoped_array<double> macro_A;
+    std::vector<double> macro_A;
 
     // Coefficients
     double** w;

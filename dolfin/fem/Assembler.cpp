@@ -222,14 +222,14 @@ void Assembler::assemble_cells(GenericTensor& A,
       dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
+    integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
     if (values && ufc.form.rank() == 0)
       (*values)[cell->index()] = ufc.A[0];
     else
-      A.add(ufc.A.get(), dofs);
+      A.add(&ufc.A[0], dofs);
 
     p++;
   }
@@ -309,10 +309,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
-    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
+    integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell, local_facet);
 
     // Add entries to global tensor
-    A.add(ufc.A.get(), dofs);
+    A.add(&ufc.A[0], dofs);
 
     p++;
   }
@@ -414,11 +414,11 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w, ufc.cell0, ufc.cell1,
+    integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w, ufc.cell0, ufc.cell1,
                               local_facet0, local_facet1);
 
     // Add entries to global tensor
-    A.add(ufc.macro_A.get(), macro_dofs);
+    A.add(&ufc.macro_A[0], macro_dofs);
 
     p++;
   }

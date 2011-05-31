@@ -96,12 +96,6 @@
 						  const double* coordinates,
 						  const Cell& cell) const;
 
-%ignore dolfin::DofMap::tabulate_coordinates(double** coordinates,
-					     const Cell& cell) const;
-
-%ignore dolfin::GenericDofMap::tabulate_coordinates(double** coordinates,
-						    const Cell& cell) const;
-
 %ignore dolfin::DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
 					                                   const Cell& cell) const;
 
