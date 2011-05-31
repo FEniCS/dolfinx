@@ -777,11 +777,15 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   const Mesh& mesh = _function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
+  // Geometric dim
+  const uint gdim = mesh.geometry().dim();
+
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
+  Array<double> x(gdim);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
@@ -797,7 +801,9 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       // Check if the coordinates are part of the sub domain (calls user-defined 'indside' function)
-      if (!_user_sub_domain->inside(data.array_coordinates[i], false))
+      for (uint j = 0; j < gdim; ++j)
+        x[j] = data.coordinates[i][j];
+      if (!_user_sub_domain->inside(x, false))
         continue;
 
       if (!already_interpolated)

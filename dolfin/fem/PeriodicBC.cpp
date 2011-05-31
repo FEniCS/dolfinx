@@ -279,6 +279,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
 
   // Iterate over all facets of the mesh (not only the boundary)
   Progress p("Applying periodic boundary conditions", mesh.size(tdim - 1));
+  Array<double> x(gdim);
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell (there may be two, but pick first) and local facet index
@@ -298,7 +299,9 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = data.cell_dofs[local_dof];
-      const Array<double>& x = data.array_coordinates[local_dof];
+      //const Array<double>& x = data.array_coordinates[local_dof];
+      for (uint j = 0; j < gdim; ++j)
+        x[j] = data.coordinates[local_dof][j];
 
       // Set y = x
       for (uint j = 0; j < gdim; ++j)

@@ -168,6 +168,9 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
   const Mesh& mesh = _function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
+  // Geometric dim
+  const uint gdim = mesh.geometry().dim();
+
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
 
@@ -180,6 +183,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
   UFCCell ufc_cell(mesh);
 
   // Iterate over the facets of the mesh
+  Array<double> x(gdim);
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell to which facet belongs (there may be two, but pick first)
@@ -205,9 +209,12 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = data.cell_dofs[local_dof];
 
+      for (uint j = 0; j < gdim; ++j)
+        x[j] = data.coordinates[local_dof][j];
+
       // Check if coordinate is inside the domain
       const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain.inside(data.array_coordinates[local_dof], on_boundary))
+      if (sub_domain.inside(x, on_boundary))
         equal_dofs.push_back(global_dof);
     }
   }

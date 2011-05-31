@@ -90,9 +90,6 @@ namespace dolfin
       // Constructor
       LocalData(const FunctionSpace& V);
 
-      // Destructor
-      ~LocalData();
-
       // Local dimension
       const uint n;
 
@@ -106,10 +103,9 @@ namespace dolfin
       std::vector<uint> facet_dofs;
 
       // Coordinates for dofs
-      double** _coordinates;
       boost::multi_array<double, 2> coordinates;
 
-      std::vector<Array<double> > array_coordinates;
+      //std::vector<Array<double> > array_coordinates;
 
     };
 
