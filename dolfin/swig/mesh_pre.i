@@ -32,86 +32,55 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Macro for constructing a NumPy array from a data ponter
-//-----------------------------------------------------------------------------
-%define MAKE_ARRAY(dim_size, m, n, dataptr, TYPE)
-        npy_intp adims[dim_size];
-
-        adims[0] = m;
-        if (dim_size == 2)
-            adims[1] = n;
-
-        PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(dim_size, adims, TYPE, (char *)(dataptr)));
-        if ( array == NULL ) return NULL;
-%enddef
-
-//-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
     PyObject* coordinates() {
-        int m = self->num_vertices();
-        int n = self->geometry().dim();
-
-        MAKE_ARRAY(2, m, n, self->coordinates(), NPY_DOUBLE)
-
-        return reinterpret_cast<PyObject*>(array);
+      return %make_numpy_array(2, double)(self->num_vertices(),
+					  self->geometry().dim(),
+					  self->coordinates(), true);
     }
-
+    
     PyObject* cells() {
-        int m = self->num_cells();
-        int n = 0;
-
-        if(self->topology().dim() == 1)
-          n = 2;
-        else if(self->topology().dim() == 2)
-          n = 3;
-        else
-          n = 4;
-
-        MAKE_ARRAY(2, m, n, self->cells(), NPY_INT)
-
-        return reinterpret_cast<PyObject*>(array);
+      int n = 4;
+      
+      if(self->topology().dim() == 1)
+	n = 2;
+      else if(self->topology().dim() == 2)
+	n = 3;
+      
+      return %make_numpy_array(2, uint)(self->num_cells(),
+					n, self->cells(), false);
     }
 }
 
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshFunction.values
 //-----------------------------------------------------------------------------
-%define ALL_VALUES(name, TYPE)
+%define ALL_VALUES(name, TYPE_NAME)
 %extend name {
-    PyObject* values()
-    {
-        dolfin::warning("MeshFunction.values() is depricated and will be removed."\
-			" Use MeshFunction.array() instead.");
-        int m = self->size();
-        int n = 0;
+PyObject* values()
+{
+  dolfin::warning("MeshFunction.values() is depricated and will be removed." \
+		  " Use MeshFunction.array() instead.");
+  return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);
+}
 
-        MAKE_ARRAY(1, m, n, self->values(), TYPE)
-
-        return reinterpret_cast<PyObject*>(array);
-    }
-
-    PyObject* array()
-  	{
-        int m = self->size();
-        int n = 0;
-
-        MAKE_ARRAY(1, m, n, self->values(), TYPE)
-
-        return reinterpret_cast<PyObject*>(array);
-    }
+PyObject* array()
+{
+  return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);
+}
 }
 %enddef
 
 //-----------------------------------------------------------------------------
 // Run the macros
 //-----------------------------------------------------------------------------
-ALL_VALUES(dolfin::MeshFunction<double>, NPY_DOUBLE)
-ALL_VALUES(dolfin::MeshFunction<int>, NPY_INT)
-ALL_VALUES(dolfin::MeshFunction<bool>, NPY_BOOL)
-ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
-ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
+ALL_VALUES(dolfin::MeshFunction<double>, double)
+ALL_VALUES(dolfin::MeshFunction<int>, int)
+ALL_VALUES(dolfin::MeshFunction<bool>, bool)
+ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, uint)
+ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -165,21 +134,11 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
 %extend dolfin::MeshConnectivity {
   PyObject* __call__() {
-    int m = self->size();
-    int n = 0;
-
-    MAKE_ARRAY(1, m, n, (*self)(), NPY_UINT)
-
-    return reinterpret_cast<PyObject*>(array);
+    return %make_numpy_array(1, uint)(self->size(), (*self)(), false);
   }
 
   PyObject* __call__(dolfin::uint entity) {
-    int m = self->size(entity);
-    int n = 0;
-
-    MAKE_ARRAY(1, m, n, (*self)(entity), NPY_UINT)
-
-    return reinterpret_cast<PyObject*>(array);
+    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
   }
 }
 

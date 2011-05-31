@@ -83,7 +83,7 @@ class Eval(unittest.TestCase):
           # Projection requires CGAL
           if not has_cgal():
                return
-
+          
           # FIXME: eval does not work in parallel yet
           if MPI.num_processes() == 1:
               V2 = FunctionSpace(mesh, 'CG', 2)
@@ -119,7 +119,6 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(s1, ref)
           self.assertAlmostEqual(s2, ref)
 
-
      def testWrongEval(self):
           # Test wrong evaluation
           class F0(Expression):
@@ -139,6 +138,16 @@ class Eval(unittest.TestCase):
                self.assertRaises(TypeError, f, 0.3, 0.2, {})
                self.assertRaises(TypeError, f, zeros(3), values = zeros(4))
                self.assertRaises(TypeError, f, zeros(4), values = zeros(3))
+
+     def testNoWriteToConstArray(self):
+          class F1(Expression):
+               def eval(self, values, x):
+                    x[0] = 1.0
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+
+          mesh = UnitCube(3,3,3)
+          f1 = F1()
+          self.assertRaises(RuntimeError, lambda : assemble(f1*dx, mesh=mesh))
 
 class Instantiation(unittest.TestCase):
 

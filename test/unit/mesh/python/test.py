@@ -21,7 +21,7 @@
 # Last changed: 2011-03-23
 
 import unittest
-import numpy.random
+import numpy
 from dolfin import *
 
 class MeshConstruction(unittest.TestCase):
@@ -74,25 +74,71 @@ class MeshIterators(unittest.TestCase):
     def testVertexIterators(self):
         """Iterate over vertices."""
         mesh = UnitCube(5, 5, 5)
+
+        # Test connectivity
+        cons = [(i, mesh.topology()(0,i)) for i in xrange(4)]
+
+        # Test writability
+        for i, con in cons:
+            def assign(con, i):
+                con(i)[0] = 1
+            self.assertRaises(RuntimeError, assign, con, i)
+        
         n = 0
-        for v in vertices(mesh):
+        for i, v in enumerate(vertices(mesh)):
             n += 1
+            for j, con in cons:
+                self.assertTrue(numpy.all(con(i) == v.entities(j)))
+        
         self.assertEqual(n, mesh.num_vertices())
+        
+        # Check coordinate assignment
+        end_point = numpy.array([v.x(0), v.x(1), v.x(2)])
+        mesh.coordinates()[:]+=2
+        self.assertEqual(end_point[0] + 2, mesh.coordinates()[-1,0])
+        self.assertEqual(end_point[1] + 2, mesh.coordinates()[-1,1])
+        self.assertEqual(end_point[2] + 2, mesh.coordinates()[-1,2])
 
     def testEdgeIterators(self):
         """Iterate over edges."""
         mesh = UnitCube(5, 5, 5)
+
+        # Test connectivity
+        cons = [(i, mesh.topology()(1,i)) for i in xrange(4)]
+        
+        # Test writability
+        for i, con in cons:
+            def assign(con, i):
+                con(i)[0] = 1
+            self.assertRaises(RuntimeError, assign, con, i)
+        
         n = 0
-        for e in edges(mesh):
+        for i, e in enumerate(edges(mesh)):
             n += 1
+            for j, con in cons:
+                self.assertTrue(numpy.all(con(i) == e.entities(j)))
+        
         self.assertEqual(n, mesh.num_edges())
 
     def testFaceIterators(self):
         """Iterate over faces."""
         mesh = UnitCube(5, 5, 5)
+
+        # Test connectivity
+        cons = [(i, mesh.topology()(2,i)) for i in xrange(4)]
+        
+        # Test writability
+        for i, con in cons:
+            def assign(con, i):
+                con(i)[0] = 1
+            self.assertRaises(RuntimeError, assign, con, i)
+        
         n = 0
-        for f in faces(mesh):
+        for i, f in enumerate(faces(mesh)):
             n += 1
+            for j, con in cons:
+                self.assertTrue(numpy.all(con(i) == f.entities(j)))
+        
         self.assertEqual(n, mesh.num_faces())
 
     def testFacetIterators(self):
@@ -106,9 +152,22 @@ class MeshIterators(unittest.TestCase):
     def testCellIterators(self):
         """Iterate over cells."""
         mesh = UnitCube(5, 5, 5)
+
+        # Test connectivity
+        cons = [(i, mesh.topology()(3,i)) for i in xrange(4)]
+        
+        # Test writability
+        for i, con in cons:
+            def assign(con, i):
+                con(i)[0] = 1
+            self.assertRaises(RuntimeError, assign, con, i)
+        
         n = 0
-        for c in cells(mesh):
+        for i, c in enumerate(cells(mesh)):
             n += 1
+            for j, con in cons:
+                self.assertTrue(numpy.all(con(i) == c.entities(j)))
+        
         self.assertEqual(n, mesh.num_cells())
 
     def testMixedIterators(self):
@@ -119,47 +178,6 @@ class MeshIterators(unittest.TestCase):
             for v in vertices(c):
                 n += 1
         self.assertEqual(n, 4*mesh.num_cells())
-
-class NamedMeshFunctions(unittest.TestCase):
-
-    def setUp(self):
-        #self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        #self.tps = ['int', 'uint', 'bool', 'double']
-        self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        self.tps = ['int', 'uint', 'bool', 'double']
-        self.mesh = UnitCube(3, 3, 3)
-        self.funcs = {}
-        for tp in self.tps:
-            for name in self.names:
-                self.funcs[(tp, name)] = eval("%sFunction('%s', self.mesh)"%\
-                                              (name, tp))
-
-    def test_size(self):
-        for tp in self.tps:
-            for name in self.names:
-                if name is "Vertex":
-                    a = self.funcs[(tp, name)].size()
-                    b = self.mesh.num_vertices()
-                    self.assertEqual(a, b)
-                else:
-                    a = self.funcs[(tp, name)].size()
-                    b = getattr(self.mesh, "num_%ss"%name.lower())()
-                    self.assertEqual(a, b)
-
-    def test_access_type(self):
-        type_dict = dict(int=int, uint=int, double=float, bool=bool)
-        for tp in self.tps:
-            for name in self.names:
-                self.assertTrue(isinstance(self.funcs[(tp, name)][0], \
-                                           type_dict[tp]))
-
-    def test_numpy_access(self):
-        for tp in self.tps:
-            for name in self.names:
-                values = self.funcs[(tp, name)].array()
-                values[:] = numpy.random.rand(len(values))
-                test = all(values[i]==self.funcs[(tp, name)][i] for i in xrange(len(values)))
-                self.assertTrue(test)
 
 # FIXME: The following test breaks in parallel
 if MPI.num_processes() == 1:

@@ -23,8 +23,72 @@
 // Last changed: 2011-04-29
 
 //-----------------------------------------------------------------------------
-// Add numpy typemaps and macro for numpy typemaps
+// Help defines for using the generated numpy array wrappers
 //-----------------------------------------------------------------------------
+#define %make_numpy_array(dim, type_name) make_ ## dim ## d_numpy_array_ ## type_name
+#define make_numpy_array_frag(dim, type_name) "make_" %str(dim) "d_numpy_array_" %str(type_name)
+
+//-----------------------------------------------------------------------------
+// A fragment function which takes a PyArray as a PyObject, check conversion and
+// set the writable flags
+//-----------------------------------------------------------------------------
+%fragment("return_py_array", "header") {
+SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
+{
+  PyArrayObject* array = reinterpret_cast<PyArrayObject*>(obj);
+  if ( obj == NULL )
+  {
+    PyErr_SetString(PyExc_TypeError, "NumPy conversion error");
+    return NULL;
+  }
+ 
+  // Set writable flag on numpy array
+  if ( !writable )
+    array->flags &= ~NPY_WRITEABLE;
+  return reinterpret_cast<PyObject*>(array);
+}
+}
+
+//-----------------------------------------------------------------------------
+// Macro for generating fragments to constructing NumPys array from data ponters
+// The macro generates two functions, one for 1D and one for 2D arrays
+//
+// TYPE       : The pointer type
+// NUMPY_TYPE : The NumPy type that is going to be checked for
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
+//-----------------------------------------------------------------------------
+%define NUMPY_ARRAY_FRAGMENTS(TYPE, NUMPY_TYPE, TYPE_NAME)
+
+%fragment(make_numpy_array_frag(2, TYPE_NAME), "header", 
+	  fragment="return_py_array") {
+SWIGINTERNINLINE PyObject* %make_numpy_array(2, TYPE_NAME)
+  (int m, int n, const TYPE* dataptr, bool writable = true)
+{
+  npy_intp adims[2] = {m, n};
+  return return_py_array(PyArray_SimpleNewFromData(2, adims, NUMPY_TYPE, 
+						   (char *)(dataptr)), writable);
+}
+ 
+}
+
+%fragment(make_numpy_array_frag(1, TYPE_NAME), "header", 
+	  fragment="return_py_array") {
+SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
+  (int m, const TYPE* dataptr, bool writable = true)
+{
+  npy_intp adims[1] = {m};
+  return return_py_array(PyArray_SimpleNewFromData(1, adims, NUMPY_TYPE, 
+						   (char *)(dataptr)), writable);
+}
+
+}
+
+// Force the fragments to be instantiated
+%fragment(make_numpy_array_frag(1, TYPE_NAME));
+%fragment(make_numpy_array_frag(2, TYPE_NAME));
+
+%enddef
 
 //-----------------------------------------------------------------------------
 // Macro for defining an unsafe in-typemap for NumPy arrays -> c arrays 
@@ -155,6 +219,12 @@ UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
 SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,I)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,i)
+
+NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
+NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
+NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
+NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
+NUMPY_ARRAY_FRAGMENTS(unsigned long, NPY_ULONG, ulong)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double

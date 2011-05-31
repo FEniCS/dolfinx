@@ -17,7 +17,7 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-12-10
-// Last changed: 2011-05-22
+// Last changed: 2011-05-30
 
 //=============================================================================
 // In this file we declare some typemaps for the dolfin::Array type
@@ -62,9 +62,10 @@
 // Macro for defining an out-typemap for dolfin::Array -> NumPy array
 //
 // TYPE       : The primitive type
-// NUMPYTYPE  : The NumPy type that is going to be checked for
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
 //-----------------------------------------------------------------------------
-%define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, NUMPYTYPE)
+%define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPE_NAME)
 
 %typemap(out) dolfin::Array<TYPE> {
 
@@ -73,18 +74,16 @@
   SWIG_array = SWIG_NewPointerObj(SWIG_as_voidptr(new dolfin::Array< TYPE >(*(&$1))), $descriptor(dolfin::Array< TYPE >*), SWIG_POINTER_OWN |  0 );
 
   // Create NumPy array
-  npy_intp dims[1];
-  dims[0] = (&$1)->size();
-  PyArrayObject* numpy_array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, dims, NUMPYTYPE, (char *)((&$1)->data().get())));
+  PyObject* numpy_array = %make_numpy_array(1, TYPE_NAME)((&$1)->size(), (&$1)->data().get(), true);
 
-  // Attach SWIG wrapped array to the numpy_array
-  numpy_array->base = SWIG_array;
-  
   if ( numpy_array == NULL ) 
     SWIG_exception(SWIG_TypeError, "Error in conversion of dolfin::Array< TYPE > to NumPy array.");
 
+  // Attach SWIG wrapped array to the numpy_array
+  reinterpret_cast<PyArrayObject*>(numpy_array)->base = SWIG_array;
+  
   // Return the NumPy array
-  $result = reinterpret_cast<PyObject*>(numpy_array);
+  $result = numpy_array;
 }
 %enddef
 
@@ -92,15 +91,11 @@
 // Director typemaps for dolfin::Array
 //-----------------------------------------------------------------------------
 %typemap(directorin) const dolfin::Array<double>& {
-  npy_intp dims[1] = {$1_name.size()};
-  double * data = const_cast<double*>($1_name.data().get());
-  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(data));
+  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data().get(), false);
  }
 
 %typemap(directorin) dolfin::Array<double>& {
-  npy_intp dims[1] = {$1_name.size()};
-  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE,
-				     reinterpret_cast<char *>($1_name.data().get()));
+  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data().get(), true);
  }
 
 //-----------------------------------------------------------------------------
@@ -118,7 +113,6 @@ IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, , const
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, , const)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, i, , const)
 
-
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, NPY_UINT)
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, uint)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, int)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, double)

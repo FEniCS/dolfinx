@@ -394,25 +394,21 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   }
 
   PyObject* _data() {
-    npy_intp rowdims[1];
-    rowdims[0] = self->size(0)+1;
 
-    PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
-    if ( rows == NULL ) return NULL;
+    PyObject* rows = %make_numpy_array(1, ulong)(self->size(0)+1, 
+						 std::tr1::get<0>(self->data()), 
+						 false);
+    PyObject* cols = %make_numpy_array(1, ulong)(std::tr1::get<3>(self->data()),
+						 std::tr1::get<1>(self->data()),
+						 false);
+    PyObject* values = %make_numpy_array(1, double)(std::tr1::get<3>(self->data()),
+						    std::tr1::get<2>(self->data()),
+						    false);
+    
+    if ( rows == NULL || cols == NULL || values == NULL) 
+      return NULL;
 
-    npy_intp coldims[1];
-    coldims[0] = std::tr1::get<3>(self->data());
-
-    PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
-    if ( cols == NULL ) return NULL;
-
-    npy_intp valuedims[1];
-    valuedims[0] = std::tr1::get<3>(self->data());
-
-    PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
-    if ( values == NULL ) return NULL;
-
-    return Py_BuildValue("NNN",rows, cols, values);
+    return Py_BuildValue("NNN", rows, cols, values);
   }
 // ---------------------------------------------------------------------------
   %pythoncode
@@ -450,10 +446,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         rows, cols, values = self._data()
         if deepcopy:
             rows, cols, values = rows.copy(), cols.copy(), values.copy()
-        else:
-            rows.flags.writeable = False
-            cols.flags.writeable = False
-            values.flags.writeable = False
+
         return rows, cols, values
 
     # FIXME: Getting matrix entries need to be carefully examined, especially for
@@ -667,11 +660,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 {
   PyObject* _data()
   {
-    npy_intp valuedims[1];
-    valuedims[0] = self->size();
-    PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(self->data())));
-    if ( values == NULL ) return NULL;
-    return reinterpret_cast<PyObject*>(values);
+    return %make_numpy_array(1, double)(self->size(), self->data(), false);
   }
 
   %pythoncode
@@ -692,8 +681,6 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         ret = self._data()
         if deepcopy:
             ret = ret.copy()
-        else:
-            ret.flags.writeable = False
             
         return ret
   %}

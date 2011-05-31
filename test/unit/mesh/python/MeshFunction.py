@@ -50,20 +50,20 @@ class NamedMeshFunctions(unittest.TestCase):
                     b = getattr(self.mesh, "num_%ss"%name.lower())()
                     self.assertEqual(a, b)
 
-    #def test_access_type(self):
-    #    type_dict = dict(int=int, uint=int, double=float, bool=bool)
-    #    for tp in self.tps:
-    #        for name in self.names:
-    #            self.assertTrue(isinstance(self.funcs[(tp, name)][0], \
-    #                                       type_dict[tp]))
+    def test_access_type(self):
+        type_dict = dict(int=int, uint=int, double=float, bool=bool)
+        for tp in self.tps:
+            for name in self.names:
+                self.assertTrue(isinstance(self.funcs[(tp, name)][0], \
+                                           type_dict[tp]))
 
-    #def test_numpy_access(self):
-    #    for tp in self.tps:
-    #        for name in self.names:
-    #            values = self.funcs[(tp, name)].array()
-    #            values[:] = numpy.random.rand(len(values))
-    #            self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
-    #                                for i in xrange(len(values))))
+    def test_numpy_access(self):
+        for tp in self.tps:
+            for name in self.names:
+                values = self.funcs[(tp, name)].array()
+                values[:] = numpy.random.rand(len(values))
+                self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
+                                    for i in xrange(len(values))))
 
 class MeshFunctions(unittest.TestCase):
 
