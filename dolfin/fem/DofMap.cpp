@@ -283,12 +283,6 @@ void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
-{
-  UFCCell ufc_cell(cell);
-  tabulate_coordinates(coordinates, ufc_cell);
-}
-//-----------------------------------------------------------------------------
 void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const ufc::cell& ufc_cell) const
 {

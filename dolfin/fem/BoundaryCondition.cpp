@@ -113,13 +113,8 @@ BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
     w(n, 0.0),
     cell_dofs(n, 0),
     facet_dofs(V.dofmap().num_facet_dofs(), 0),
-    coordinates(boost::extents[n][V.mesh().geometry().dim()])//,
-    //array_coordinates(n)
+    coordinates(boost::extents[n][V.mesh().geometry().dim()])
 {
-  //const uint gdim = V.mesh().geometry().dim();
-
-  // Create local coordinate data
-  //for (uint i = 0; i < n; i++)
-  //  array_coordinates[i].update(gdim, &coordinates[i][0]);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------

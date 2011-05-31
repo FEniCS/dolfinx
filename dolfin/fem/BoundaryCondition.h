@@ -105,8 +105,6 @@ namespace dolfin
       // Coordinates for dofs
       boost::multi_array<double, 2> coordinates;
 
-      //std::vector<Array<double> > array_coordinates;
-
     };
 
     // The function space (possibly a sub function space)

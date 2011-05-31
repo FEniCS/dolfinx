@@ -129,14 +129,6 @@ namespace dolfin
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
-    void tabulate_coordinates(double** coordinates,
-                              const ufc::cell& ufc_cell) const
-    { _ufc_dofmap->tabulate_coordinates(coordinates, ufc_cell); }
-
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
-    void tabulate_coordinates(double** coordinates, const Cell& cell) const;
-
-    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const;
 
