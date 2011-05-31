@@ -59,7 +59,6 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
 //              'dolfin::uint'
 //-----------------------------------------------------------------------------
 %define NUMPY_ARRAY_FRAGMENTS(TYPE, NUMPY_TYPE, TYPE_NAME)
-
 %fragment(make_numpy_array_frag(2, TYPE_NAME), "header", 
 	  fragment="return_py_array") {
 SWIGINTERNINLINE PyObject* %make_numpy_array(2, TYPE_NAME)
@@ -68,9 +67,7 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(2, TYPE_NAME)
   npy_intp adims[2] = {m, n};
   return return_py_array(PyArray_SimpleNewFromData(2, adims, NUMPY_TYPE, 
 						   (char *)(dataptr)), writable);
-}
- 
-}
+}}
 
 %fragment(make_numpy_array_frag(1, TYPE_NAME), "header", 
 	  fragment="return_py_array") {
@@ -80,9 +77,7 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
   npy_intp adims[1] = {m};
   return return_py_array(PyArray_SimpleNewFromData(1, adims, NUMPY_TYPE, 
 						   (char *)(dataptr)), writable);
-}
-
-}
+}}
 
 // Force the fragments to be instantiated
 %fragment(make_numpy_array_frag(1, TYPE_NAME));
