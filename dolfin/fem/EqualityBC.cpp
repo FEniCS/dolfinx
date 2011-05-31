@@ -208,9 +208,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
       // Check if coordinate is inside the domain
       const bool on_boundary = facet->num_entities(D) == 1;
       if (sub_domain.inside(data.array_coordinates[local_dof], on_boundary))
-      {
         equal_dofs.push_back(global_dof);
-      }
     }
   }
 }

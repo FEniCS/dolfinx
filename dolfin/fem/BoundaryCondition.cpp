@@ -110,22 +110,24 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
   : n(V.dofmap().max_cell_dimension()),
-    w(V.dofmap().max_cell_dimension(), 0.0),
-    cell_dofs(V.dofmap().max_cell_dimension(), 0),
+    w(n, 0.0),
+    cell_dofs(n, 0),
     facet_dofs(V.dofmap().num_facet_dofs(), 0),
     coordinates(boost::extents[n][V.mesh().geometry().dim()]),
-    array_coordinates(V.dofmap().max_cell_dimension())
+    array_coordinates(n)
 {
+  const uint gdim = V.mesh().geometry().dim();
 
   // Create local coordinate data
   _coordinates = new double*[n];
   for (uint i = 0; i < n; i++)
   {
-    _coordinates[i] = new double[V.mesh().geometry().dim()];
-    for (uint j = 0; j < V.mesh().geometry().dim(); j++)
+    _coordinates[i] = new double[gdim];
+    for (uint j = 0; j < gdim; j++)
       _coordinates[i][j] = 0.0;
 
-    array_coordinates[i].update(V.mesh().geometry().dim(), _coordinates[i]);
+    //array_coordinates[i].update(gdim, _coordinates[i]);
+    array_coordinates[i].update(gdim, &coordinates[i][0]);
   }
 }
 //-----------------------------------------------------------------------------
