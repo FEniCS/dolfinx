@@ -290,18 +290,14 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
 
   // FIXME: check dimensions
 
-  const uint num_points = coordinates.size();
-  double** coords = new double*[num_points];
-
   // Set vertex coordinates
+  const uint num_points = coordinates.size();
+  std::vector<double*> coords(num_points);
   for (uint i = 0; i < num_points; ++i)
     coords[i] = &(coordinates[i][0]);
 
-  // Tabulate
-  _ufc_dofmap->tabulate_coordinates(coords, ufc_cell);
-
-  // Clean up
-  delete [] coords;
+  // Tabulate coordinates
+  _ufc_dofmap->tabulate_coordinates(&coords[0], ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
