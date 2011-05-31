@@ -219,6 +219,7 @@ class DofMapTest(unittest.TestCase):
         self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
         self.W = self.V*self.Q
 
+    """
     def test_tabulate_coord(self):
 
         coord0 = numpy.zeros((3,3), dtype="d")
@@ -240,6 +241,7 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue((coord0 == coord3).all())
             self.assertTrue((coord4[:3] == coord0).all())
             self.assertTrue((coord4[3:] == coord0).all())
+    """
 
     def test_tabulate_dofs(self):
 
@@ -249,14 +251,14 @@ class DofMapTest(unittest.TestCase):
         dofs3 = numpy.zeros(6, dtype="I")
 
         for i, cell in enumerate(cells(self.mesh)):
-            
+
             self.W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
-            
+
             L = self.W.sub(1)
             L.sub(0).dofmap().tabulate_dofs(dofs1, cell)
             L.sub(1).dofmap().tabulate_dofs(dofs2, cell)
             L.dofmap().tabulate_dofs(dofs3, cell)
-            
+
             self.assertTrue(numpy.array_equal(dofs0, \
                                 self.W.sub(0).dofmap().cell_dofs(i)))
             self.assertTrue(numpy.array_equal(dofs1,
@@ -265,7 +267,7 @@ class DofMapTest(unittest.TestCase):
                                 L.sub(1).dofmap().cell_dofs(i)))
             self.assertTrue(numpy.array_equal(dofs3,
                                 L.dofmap().cell_dofs(i)))
-            
+
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs1)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
