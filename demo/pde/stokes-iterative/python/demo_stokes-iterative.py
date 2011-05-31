@@ -21,6 +21,8 @@ Note that the sign for the pressure has been flipped for symmetry."""
 # First added:  2010-08-08
 # Last changed: 2010-08-08
 
+# Begin demo
+
 from dolfin import *
 
 # Test for PETSc and SLEPc
