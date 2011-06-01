@@ -192,7 +192,7 @@ namespace dolfin
   protected:
 
     /// Parse filtered options (everything except PETSc options)
-    void parse_dolfin(int argc, char* argv[]);
+    void parse_common(int argc, char* argv[]);
 
     /// Parse filtered options (only PETSc options)
     void parse_petsc(int argc, char* argv[]);

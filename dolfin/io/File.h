@@ -74,7 +74,7 @@ namespace dolfin
     /// Write Function to file (with time)
     void operator<<(const std::pair<const Function*, double> u);
 
-    /// Write to file
+    /// Write object to file
     template<class T> void operator<<(const T& t)
     {
       file->write();
