@@ -76,6 +76,51 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
+
+    def test_subdomains_assembly(self):
+        """
+        Test assembly with sub-domains specified in a form directly
+        and of derived forms.
+        """
+
+        # Define some haphazardly chosen cell/facet function
+        mesh = UnitSquare(4, 4)
+        domains = CellFunction("uint", mesh)
+        domains.set_all(0)
+        domains[0] = 1
+        domains[1] = 1
+
+        boundaries = FacetFunction("uint", mesh)
+        boundaries.set_all(0)
+        boundaries[0] = 1
+        boundaries[1] = 1
+
+        V = FunctionSpace(mesh, "CG", 2)
+        f = Expression("x[0]")
+        g = Expression("x[1]")
+
+        f = interpolate(f, V)
+        g = interpolate(g, V)
+
+        #ds = ds[domains]
+        #dx = dx[boundaries]
+        M = f*f*dx(0) + g*f*dx(1) + f*f*ds(0)
+
+        reference = 0.3330078125
+        #self.assertAlmostEqual(assemble(M), reference, 8)
+
+        # Take action of derivative of M on f
+        df = TestFunction(V)
+        L = derivative(M, f, df)
+        dg = TrialFunction(V)
+        F = derivative(L, g, dg)
+        b = action(F, f)
+
+        reference = 0.00390625
+        #self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+
+
+
 if __name__ == "__main__":
     print ""
     print "Testing basic DOLFIN assembly operations"
