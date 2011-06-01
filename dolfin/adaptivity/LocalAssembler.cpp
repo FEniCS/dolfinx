@@ -81,7 +81,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   ufc.update(cell);
 
   // Tabulate cell tensor
-  integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell);
+  integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
   // Stuff a_ufc.A into A
   const uint M = A.n_rows;
@@ -124,7 +124,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   ufc.update(cell, local_facet);
 
   // Tabulate exterior facet tensor
-  integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell, local_facet);
+  integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
 
   // Stuff a_ufc.A into A
   const uint M = A.n_rows;
@@ -166,7 +166,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
   ufc.update(cell, local_facet, cell, local_facet);
 
   // Tabulate interior facet tensor on macro element
-  integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w,
+  integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
                             ufc.cell0, ufc.cell1,
                             local_facet, local_facet);
 

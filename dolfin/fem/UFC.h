@@ -71,6 +71,14 @@ namespace dolfin
     void update(const Cell& cell0, uint local_facet0,
                 const Cell& cell1, uint local_facet1);
 
+    /// Pointer to coefficient data. Used to support UFC interface.
+    const double* const * w() const
+    { return &w_pointer[0]; }
+
+    /// Pointer to macro element coefficient data. Used to support UFC interface.
+    const double* const * macro_w() const
+    { return &macro_w_pointer[0]; }
+
     private:
 
     // Finite elements for coefficients
@@ -109,15 +117,17 @@ namespace dolfin
     // Local tensor for macro element
     std::vector<double> macro_A;
 
-    // Coefficients
-    double** w;
-
-    // Coefficients on macro element
-    double** macro_w;
-
   private:
 
-    // Coefficients
+    // Coefficients (std::vector<double*> is used to interface with UFC)
+    std::vector<std::vector<double> > _w;
+    std::vector<double*> w_pointer;
+
+    // Coefficients on macro element (std::vector<double*> is used to interface with UFC)
+    std::vector<std::vector<double> > _macro_w;
+    std::vector<double*> macro_w_pointer;
+
+    // Coefficient functions
     const std::vector<boost::shared_ptr<const GenericFunction> > coefficients;
 
     // The form

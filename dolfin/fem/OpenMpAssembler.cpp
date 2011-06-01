@@ -204,7 +204,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
         dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell);
+      integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
       // Add entries to global tensor
       if (values && form_rank == 0)
@@ -325,7 +325,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
-      cell_integral->tabulate_tensor(&ufc.A[0], ufc.w, ufc.cell);
+      cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
       // Get number of entries in cell tensor
       uint dim = 1;
@@ -351,7 +351,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         ufc.update(cell, local_facet);
 
         // Tabulate tensor
-        facet_integral->tabulate_tensor(&ufc.A_facet[0], ufc.w, ufc.cell, local_facet);
+        facet_integral->tabulate_tensor(&ufc.A_facet[0], ufc.w(), ufc.cell, local_facet);
 
         // Add facet contribution
         for (uint i = 0; i < dim; ++i)
@@ -509,7 +509,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       }
 
       // Tabulate exterior interior facet tensor on macro element
-      integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w,
+      integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
                                 ufc.cell0, ufc.cell1,
                                 local_facet0, local_facet1);
 

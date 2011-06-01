@@ -75,20 +75,20 @@ void PointSource::apply(GenericVector& b)
 
   // Evaluate all basis functions at the point()
   assert(V->element().value_rank() == 0);
-  boost::scoped_array<double> values(new double[V->element().space_dimension()]);
-  V->element().evaluate_basis_all(values.get(), p.coordinates(), ufc_cell);
+  std::vector<double> values(V->element().space_dimension());
+  V->element().evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
 
   // Scale by magnitude
   for (uint i = 0; i < V->element().space_dimension(); i++)
     values[i] *= magnitude;
 
   // Compute local-to-global mapping
-  boost::scoped_array<uint> dofs(new uint[V->dofmap().cell_dimension(cell.index())]);
-  V->dofmap().tabulate_dofs(dofs.get(), cell);
+  std::vector<uint> dofs(V->dofmap().cell_dimension(cell.index()));
+  V->dofmap().tabulate_dofs(&dofs[0], cell);
 
   // Add values to vector
   assert(V->element().space_dimension() == V->dofmap().cell_dimension(cell.index()));
-  b.set(values.get(), V->element().space_dimension(), dofs.get());
+  b.set(&values[0], V->element().space_dimension(), &dofs[0]);
   b.apply("add");
 }
 //-----------------------------------------------------------------------------

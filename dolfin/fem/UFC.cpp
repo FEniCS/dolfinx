@@ -49,17 +49,7 @@ UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
 //-----------------------------------------------------------------------------
 UFC::~UFC()
 {
-  const uint num_coefficients = this->form.num_coefficients();
-
-  // Delete coefficients
-  for (uint i = 0; i < num_coefficients; i++)
-    delete [] w[i];
-  delete [] w;
-
-  // Delete macro coefficients
-  for (uint i = 0; i < num_coefficients; i++)
-    delete [] macro_w[i];
-  delete [] macro_w;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void UFC::init(const Form& form)
@@ -112,16 +102,22 @@ void UFC::init(const Form& form)
   macro_A.resize(num_entries);
 
   // Initialize coefficients
-  w = new double*[this->form.num_coefficients()];
+  _w.resize(this->form.num_coefficients());
+  w_pointer.resize(this->form.num_coefficients());
   for (uint i = 0; i < this->form.num_coefficients(); i++)
-    w[i] = new double[coefficient_elements[i].space_dimension()];
+  {
+    _w[i].resize(coefficient_elements[i].space_dimension());
+    w_pointer[i] = &_w[i][0];
+  }
 
   // Initialize coefficients on macro element
-  macro_w = new double*[this->form.num_coefficients()];
+  _macro_w.resize(this->form.num_coefficients());
+  macro_w_pointer.resize(this->form.num_coefficients());
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
     const uint n = 2*coefficient_elements[i].space_dimension();
-    macro_w[i] = new double[n];
+    _macro_w[i].resize(n);
+    macro_w_pointer[i] = &_macro_w[i][0];
   }
 }
 //-----------------------------------------------------------------------------
@@ -132,7 +128,7 @@ void UFC::update(const Cell& cell)
 
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
+    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
@@ -142,7 +138,7 @@ void UFC::update(const Cell& cell, uint local_facet)
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
+    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell0, uint local_facet0,
@@ -156,9 +152,9 @@ void UFC::update(const Cell& cell0, uint local_facet0,
   for (uint i = 0; i < coefficients.size(); ++i)
   {
     const uint offset = coefficient_elements[i].space_dimension();
-    coefficients[i]->restrict(macro_w[i], coefficient_elements[i],
+    coefficients[i]->restrict(&_macro_w[i][0], coefficient_elements[i],
                               cell0, this->cell0);
-    coefficients[i]->restrict(macro_w[i] + offset, coefficient_elements[i],
+    coefficients[i]->restrict(&_macro_w[i][0] + offset, coefficient_elements[i],
                               cell1, this->cell1);
   }
 }
