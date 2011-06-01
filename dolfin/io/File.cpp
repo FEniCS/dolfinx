@@ -119,6 +119,20 @@ File::~File()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void File::operator<<(const Function& u)
+{
+  u.gather();
+  file->write();
+  *file << u;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const Function*, double> u)
+{
+  u.first->gather();
+  file->write();
+  *file << u;
+}
+//-----------------------------------------------------------------------------
 bool File::exists(std::string filename)
 {
   std::ifstream file(filename.c_str());
