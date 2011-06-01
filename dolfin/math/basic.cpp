@@ -35,11 +35,6 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-double dolfin::sqr(double x)
-{
-  return x*x;
-}
-//-----------------------------------------------------------------------------
 dolfin::uint dolfin::ipow(uint a, uint n)
 {
   uint p = a;
@@ -50,7 +45,7 @@ dolfin::uint dolfin::ipow(uint a, uint n)
 //-----------------------------------------------------------------------------
 double dolfin::rand()
 {
-  if ( !rand_seeded )
+  if (!rand_seeded)
   {
     unsigned int s = static_cast<long int>(time(0));
     std::srand(s);
@@ -66,12 +61,3 @@ void dolfin::seed(unsigned int s)
   rand_seeded = true;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::near(double x, double x0)
-{
-  return dolfin::between(x0, x, x0);
-}
-//-----------------------------------------------------------------------------
-bool dolfin::between(double x0, double x, double x1)
-{
-  return (x0-DOLFIN_EPS < x && x < x1+DOLFIN_EPS);
-}

@@ -72,10 +72,9 @@ void GaussianQuadrature::compute_weights()
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
   {
-    Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
     {
-      A_real[i + n*j] = p(points[j]);
+      A_real[i + n*j] = Legendre::eval(i, points[j]);
       _A(i, j) = to_double(A_real[i + n*j]);
       _b[i] = 0.0;
       b_real[i] = 0.0;
@@ -118,11 +117,12 @@ bool GaussianQuadrature::check(unsigned int q) const
   // value of the integral of the Legendre polynomial of degree q.
   // This value should be zero for q > 0 and 2 for q = 0
 
-  Legendre p(q);
+  //Legendre p(q);
+  Legendre p;
 
   real sum = 0.0;
   for (unsigned int i = 0; i < points.size(); i++)
-    sum += weights[i]*p(points[i]);
+    sum += weights[i]*p.eval(q, points[i]);
 
   //info("Checking quadrature weights: %.2e.", fabs(sum));
 

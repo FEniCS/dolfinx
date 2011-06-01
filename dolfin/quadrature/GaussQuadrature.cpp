@@ -33,14 +33,13 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   init();
 
-  if (!check(2*n-1))
+  if (!check(2*n - 1))
     error("Gauss quadrature not ok, check failed.");
 }
 //-----------------------------------------------------------------------------
 std::string GaussQuadrature::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -59,9 +58,7 @@ std::string GaussQuadrature::str(bool verbose) const
     }
   }
   else
-  {
     s << "<GaussQuadrature with " << points.size() << " points on [-1, 1]>";
-  }
 
   return s.str();
 }
@@ -80,26 +77,24 @@ void GaussQuadrature::compute_points()
     return;
   }
 
-  Legendre p(n);
   real x, dx;
 
   // Compute the points by Newton's method
-  for (unsigned int i = 0; i <= ((n-1)/2); i++)
+  for (unsigned int i = 0; i <= ((n - 1)/2); i++)
   {
-
     // Initial guess
-    x = cos(DOLFIN_PI*(double(i+1)-0.25)/(double(n)+0.5));
+    x = cos(DOLFIN_PI*(double(i + 1) - 0.25)/(double(n) + 0.5));
 
     // Newton's method
     do
     {
-      dx = - p(x) / p.ddx(x);
+      dx = -Legendre::eval(n, x)/Legendre::ddx(n, x);
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 
     // Save the value using the symmetry of the points
-    points[i] = - x;
-    points[n-1-i] = x;
+    points[i] = -x;
+    points[n - 1 - i] = x;
   }
 
   // Set middle node

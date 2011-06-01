@@ -89,7 +89,8 @@ void LobattoQuadrature::compute_points()
     return;
   }
 
-  Legendre p(n - 1);
+  //Legendre p(n - 1);
+  Legendre p;
   real x, dx;
 
   // Set the first and last nodal points which are 0 and 1
@@ -106,7 +107,7 @@ void LobattoQuadrature::compute_points()
     // Newton's method
     do
     {
-      dx = -p.ddx(x)/p.d2dx(x);
+      dx = -p.ddx(n - 1, x)/p.d2dx(n - 1, x);
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 

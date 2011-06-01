@@ -80,7 +80,6 @@ void RadauQuadrature::compute_points()
     return;
   }
 
-  Legendre p(n);
   real x, dx, step, sign;
 
   // Set size of stepping for seeking starting points
@@ -93,20 +92,20 @@ void RadauQuadrature::compute_points()
   x = -1.0 + step;
 
   // Set the sign at -1 + epsilon
-  sign = ((p.eval(n - 1, x) + p(x)) > 0 ? 1.0 : -1.0);
+  sign = (Legendre::eval(n - 1, x) + Legendre::eval(n, x) > 0 ? 1.0 : -1.0);
 
   // Compute the rest of the nodes by Newton's method
   for (unsigned int i = 1; i < n; i++)
   {
 
     // Step to a sign change
-    while ((p.eval(n - 1, x) + p(x))*sign > 0.0)
+    while ((Legendre::eval(n - 1, x) + Legendre::eval(n, x))*sign > 0.0)
       x += step;
 
     // Newton's method
     do
     {
-      dx = -(p.eval(n-1, x) + p(x))/(p.ddx(n - 1, x) + p.ddx(x));
+      dx = -(Legendre::eval(n-1, x) + Legendre::eval(n, x))/(Legendre::ddx(n - 1, x) + Legendre::ddx(n, x));
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 
@@ -114,8 +113,8 @@ void RadauQuadrature::compute_points()
     points[i] = x;
 
     // Fix step so that it's not too large
-    if (step > (points[i] - points[i-1])/10.0)
-      step = (points[i] - points[i-1])/10.0;
+    if (step > (points[i] - points[i - 1])/10.0)
+      step = (points[i] - points[i - 1])/10.0;
 
     // Step forward
     sign = -sign;
