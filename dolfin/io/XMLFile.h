@@ -67,32 +67,34 @@ namespace dolfin
     /// Destructor
     ~XMLFile();
 
-    /// Call appropriate handler for input
-    void operator>> (Mesh& input)                                     { read_xml(input); }
-    void operator>> (LocalMeshData& input)                            { read_xml(input); }
-    void operator>> (GenericMatrix& input)                            { read_xml(input); }
-    void operator>> (GenericVector& input)                            { read_xml(input); }
-    void operator>> (Parameters& input)                               { read_xml(input); }
-    void operator>> (FunctionPlotData&  input)                        { read_xml(input); }
-    void operator>> (MeshFunction<int>&  input)                       { read_xml(input); }
-    void operator>> (MeshFunction<unsigned int>&  input)              { read_xml(input); }
-    void operator>> (MeshFunction<double>&  input)                    { read_xml(input); }
-    void operator>> (std::vector<int>& x)                             { read_xml_array(x); }
-    void operator>> (std::vector<uint>& x)                            { read_xml_array(x); }
-    void operator>> (std::vector<double>& x)                          { read_xml_array(x); }
-    void operator>> (std::map<uint, int>& map)                        { read_xml_map(map); }
-    void operator>> (std::map<uint, uint>& map)                       { read_xml_map(map); }
-    void operator>> (std::map<uint, double>& map)                     { read_xml_map(map); }
-    void operator>> (std::map<uint, std::vector<int> >& array_map)    { read_xml_map(array_map); }
-    void operator>> (std::map<uint, std::vector<uint> >& array_map)   { read_xml_map(array_map); }
-    void operator>> (std::map<uint, std::vector<double> >& array_map) { read_xml_map(array_map); }
+    //--- Mappings from input to correct handler ---
 
-    /// Call appropriate handler for output
+    void operator>> (Mesh& input)                                           { read_xml(input); }
+    void operator>> (LocalMeshData& input)                                  { read_xml(input); }
+    void operator>> (GenericMatrix& input)                                  { read_xml(input); }
+    void operator>> (GenericVector& input)                                  { read_xml(input); }
+    void operator>> (Parameters& input)                                     { read_xml(input); }
+    void operator>> (FunctionPlotData&  input)                              { read_xml(input); }
+    void operator>> (MeshFunction<int>&  input)                             { read_xml(input); }
+    void operator>> (MeshFunction<unsigned int>&  input)                    { read_xml(input); }
+    void operator>> (MeshFunction<double>&  input)                          { read_xml(input); }
+    void operator>> (std::vector<int>& x)                                   { read_xml_array(x); }
+    void operator>> (std::vector<uint>& x)                                  { read_xml_array(x); }
+    void operator>> (std::vector<double>& x)                                { read_xml_array(x); }
+    void operator>> (std::map<uint, int>& map)                              { read_xml_map(map); }
+    void operator>> (std::map<uint, uint>& map)                             { read_xml_map(map); }
+    void operator>> (std::map<uint, double>& map)                           { read_xml_map(map); }
+    void operator>> (std::map<uint, std::vector<int> >& array_map)          { read_xml_map(array_map); }
+    void operator>> (std::map<uint, std::vector<uint> >& array_map)         { read_xml_map(array_map); }
+    void operator>> (std::map<uint, std::vector<double> >& array_map)       { read_xml_map(array_map); }
+
+    //--- Mappings from output to correct handler ---
+
     void operator<< (const Mesh& output)                                    { write_xml(output); }
     void operator<< (const GenericMatrix& output)                           { write_xml(output); }
     void operator<< (const GenericVector& output)                           { write_xml(output); }
     void operator<< (const Parameters& output)                              { write_xml(output); }
-    void operator<< (const FunctionPlotData& output)                        { write_xml(output); }
+    void operator<< (const FunctionPlotData& output)                        { write_xml(output, false); }
     void operator<< (const MeshFunction<int>&  output)                      { write_xml(output); }
     void operator<< (const MeshFunction<unsigned int>&  output)             { write_xml(output); }
     void operator<< (const MeshFunction<double>&  output)                   { write_xml(output); }
@@ -106,26 +108,31 @@ namespace dolfin
     void operator<< (const std::map<uint, std::vector<uint> >& array_map)   { write_xml_map(array_map); }
     void operator<< (const std::map<uint, std::vector<double> >& array_map) { write_xml_map(array_map); }
 
-    // Friends
-    friend void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
-    friend void sax_end_element(void *ctx, const xmlChar *name);
-
+    /// Validate file
     void validate(std::string filename);
 
+    /// Write file
     void write();
 
     /// Parse file
     void parse();
 
+    /// Push handler onto stack
     void push(XMLHandler* handler);
 
+    /// Pop handler from stack
     void pop();
 
+    /// Return handler from top of stack
     XMLHandler* top();
 
   private:
 
-    /// Read XML data
+    // Friends
+    friend void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
+    friend void sax_end_element(void *ctx, const xmlChar *name);
+
+    // Read XML data
     template<class T> void read_xml(T& t)
     {
       typedef typename T::XMLHandler Handler;
@@ -139,8 +146,8 @@ namespace dolfin
         error("Handler stack not empty. Something is wrong!");
     }
 
-    /// Read std::map from XML file (speciliased templated required
-    /// for STL objects)
+    // Read std::map from XML file (speciliased templated required
+    // for STL objects)
     template<class T> void read_xml_map(T& map)
     {
       log(TRACE, "Reading map from file %s.", filename.c_str());
@@ -152,8 +159,8 @@ namespace dolfin
         error("Hander stack not empty. Something is wrong!");
     }
 
-    /// Read std::vector from XML file (speciliased templated required
-    /// for STL objects)
+    // Read std::vector from XML file (speciliased templated required
+    // for STL objects)
     template<class T> void read_xml_array(T& x)
     {
       log(TRACE, "Reading array from file %s.", filename.c_str());
@@ -165,27 +172,23 @@ namespace dolfin
         error("Hander stack not empty. Something is wrong!");
     }
 
-    /// Template function for writing XML
-    template<class T> void write_xml(const T& t)
+    // Template function for writing XML
+    template<class T> void write_xml(const T& t, bool is_distributed=true)
     {
-      // FIXME: Need to pass a flag to XMLFile whether or not output object is
-      //        local or distributed
-      bool distributed = true;
-
       // Open file on process 0 for distributed objects and on all processes
       // for local objects
-      if ( (distributed && MPI::process_number() == 0) || !distributed)
+      if ((is_distributed && MPI::process_number() == 0) || !is_distributed)
         open_file();
 
       // FIXME: 'write' is being called on all processes since collective MPI
-      //        calls might be used. Should use approach to gather data on process 0.
+      // FIXME: calls might be used. Should use approach to gather data on process 0.
 
       // Determine appropriate handler and write
       typedef typename T::XMLHandler Handler;
       Handler::write(t, *outstream, 1);
 
       // Close file
-      if ((distributed && MPI::process_number() == 0) || !distributed)
+      if ((is_distributed && MPI::process_number() == 0) || !is_distributed)
         close_file();
     }
 
