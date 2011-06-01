@@ -16,7 +16,7 @@
 // along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-03-09
-// Last changed: 2011-03-11
+// Last changed: 2011-06-01
 
 #ifndef __DOMAIN_ASSIGNER_H
 #define __DOMAIN_ASSIGNER_H
@@ -31,9 +31,9 @@ namespace dolfin
 
   /// These classes are used for assignment of domains to forms:
   ///
-  ///   a.cell_domains = cell_domains
-  ///   a.exterior_facet_domains = exterior_facet_domains
-  ///   a.interior_facet_domains = interior_facet_domains
+  ///   a.dx = cell_domains
+  ///   a.ds = exterior_facet_domains
+  ///   a.dS = interior_facet_domains
   ///
   /// where the arguments can be either objects/references or
   /// shared pointers to MeshFunctions.

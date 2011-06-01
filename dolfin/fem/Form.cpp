@@ -41,7 +41,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(uint rank, uint num_coefficients)
   : Hierarchical<Form>(*this),
-    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
+    dx(*this), ds(*this), dS(*this),
     _function_spaces(rank), _coefficients(num_coefficients)
 {
   // Do nothing
@@ -51,7 +51,7 @@ Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
            std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
            std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
   : Hierarchical<Form>(*this),
-    cell_domains(*this), exterior_facet_domains(*this), interior_facet_domains(*this),
+    dx(*this), ds(*this), dS(*this),
     _ufc_form(ufc_form), _function_spaces(function_spaces), _coefficients(coefficients)
 {
   // Do nothing
