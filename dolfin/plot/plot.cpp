@@ -21,7 +21,7 @@
 // First added:  2007-05-02
 // Last changed: 2009-10-07
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <sstream>
 
 #include <dolfin/common/MPI.h>
@@ -41,64 +41,42 @@ using namespace dolfin;
 template <class T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
-  cout << "I am process " << dolfin::MPI::process_number() << endl;
-
-  std::string prefix = parameters["plot_filename_prefix"];
-  prefix += std::string("_p") + to_string(dolfin::MPI::process_number());
-  const std::string filename = prefix + ".xml";
-  cout << "filename = " << filename << endl;
-  File file(filename);
-  cout << t << endl;
-  file << t;
-
-
-  //if (system(("touch " + filename).c_str()) != 0)
-  //  cout << "That didn't work" << endl;
-}
-
-template <class T>
-void plot_object_old(const T& t, std::string title, std::string mode)
-{
-
-
-
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    if (dolfin::MPI::process_number() == 0)
-      warning("On screen plotting from C++ not yet working in parallel.");
-    //return;
-  }
-
   info("Plotting %s (%s), press 'q' to continue...",
           t.name().c_str(), t.label().c_str());
+
+  // Don't plot when running in parallel
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Plotting disabled when running in parallel; see \
+https://bugs.launchpad.net/dolfin/+bug/427534");
+    return;
+  }
 
   // Get filename prefix
   std::string prefix = parameters["plot_filename_prefix"];
 
-  for (dolfin::uint p = 0; p < dolfin::MPI::num_processes(); ++p)
+  // Modify prefix and title when running in parallel
+  if (dolfin::MPI::num_processes() > 1)
   {
-
-    if (dolfin::MPI::process_number() == p)
-    {
-      prefix += std::string("_p") + to_string(p);
-      title += " (process " + to_string(p) + ")";
-
-      // Save to file
-      std::string filename = prefix + std::string(".xml");
-      File file(filename);
-      file << t;
-
-      // Plot data from file
-      std::stringstream command;
-      command << "viper --mode=" << mode << " "
-              << "--title=\"" << title << "\" " << filename;
-      if (system(command.str().c_str()) != 0)
-        warning("Unable to plot.");
-    }
-
-    dolfin::MPI::barrier();
-
+    const dolfin::uint p = dolfin::MPI::process_number();
+    prefix += std::string("_p") + to_string(p);
+    title += " (process " + to_string(p) + ")";
   }
+
+  // Save to file
+  std::string filename = prefix + std::string(".xml");
+  File file(filename);
+  file << t;
+
+  // Build command string
+  std::stringstream command;
+  command << "viper --mode=" << mode << " "
+          << "--title=\"" << title
+          << "\" " << filename << " &";
+
+  // Call Viper from command-line
+  if (system(command.str().c_str()) != 0)
+      warning("Unable to plot.");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v,
