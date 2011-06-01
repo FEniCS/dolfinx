@@ -154,8 +154,8 @@ zero = Constant((0.0, 0.0))
 bc = DirichletBC(V, zero, left)
 
 # Attach subdomains
-a.exterior_facet_domains = boundary_subdomains
-L.exterior_facet_domains = boundary_subdomains
+a.ds = boundary_subdomains
+L.ds = boundary_subdomains
 
 # Set up PDE and solve
 problem = VariationalProblem(a, L, bcs=bc)
