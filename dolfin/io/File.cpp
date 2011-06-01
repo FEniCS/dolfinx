@@ -59,7 +59,8 @@ File::File(const std::string filename, std::string encoding)
   if (extension == ".gz")
   {
     // Get suffix after discarding .gz
-    const std::string ext = boost::filesystem::extension(boost::filesystem::basename(path));
+    const std::string ext =
+      boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
       file.reset(new XMLFile(filename, true));
     else
@@ -116,20 +117,6 @@ File::File(std::ostream& outstream)
 File::~File()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const Function& u)
-{
-  u.gather();
-  file->write();
-  *file << u;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const Function*, double> u)
-{
-  u.first->gather();
-  file->write();
-  *file << u;
 }
 //-----------------------------------------------------------------------------
 bool File::exists(std::string filename)
