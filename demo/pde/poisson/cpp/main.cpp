@@ -90,8 +90,8 @@ int main()
   problem.solve(u);
 
   // Save solution in VTK format
-  //File file("poisson.pvd");
-  //file << u;
+  File file("poisson.pvd");
+  file << u;
 
   // Plot solution
   plot(u);
