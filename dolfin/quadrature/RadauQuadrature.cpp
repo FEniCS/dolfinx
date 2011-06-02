@@ -105,7 +105,9 @@ void RadauQuadrature::compute_points()
     // Newton's method
     do
     {
-      dx = -(Legendre::eval(n-1, x) + Legendre::eval(n, x))/(Legendre::ddx(n - 1, x) + Legendre::ddx(n, x));
+      dx = -(Legendre::eval(n-1, x)
+           + Legendre::eval(n, x))/(Legendre::ddx(n - 1, x)
+           + Legendre::ddx(n, x));
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 
