@@ -21,7 +21,6 @@
 // Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/math/dolfin_math.h>
 #include "Dual.h"
 
 using namespace dolfin;

@@ -21,10 +21,10 @@
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/real.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/la/HighPrecision.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "GaussianQuadrature.h"
 
@@ -106,7 +106,8 @@ void GaussianQuadrature::compute_weights()
   A_inv.invert();
 
   // Solve using A_inv as preconditioner
-  HighPrecision::real_solve_precond(n, &A_real[0], &weights[0], &b_real[0], A_inv, real_epsilon());
+  HighPrecision::real_solve_precond(n, &A_real[0], &weights[0], &b_real[0],
+                                    A_inv, real_epsilon());
 
 #endif
 }
@@ -117,12 +118,9 @@ bool GaussianQuadrature::check(unsigned int q) const
   // value of the integral of the Legendre polynomial of degree q.
   // This value should be zero for q > 0 and 2 for q = 0
 
-  //Legendre p(q);
-  Legendre p;
-
   real sum = 0.0;
   for (unsigned int i = 0; i < points.size(); i++)
-    sum += weights[i]*p.eval(q, points[i]);
+    sum += weights[i]*Legendre::eval(q, points[i]);
 
   //info("Checking quadrature weights: %.2e.", fabs(sum));
 

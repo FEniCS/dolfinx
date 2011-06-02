@@ -27,7 +27,6 @@
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/math/dolfin_math.h>
 #include "MTL4Factory.h"
 #include "MTL4Vector.h"
 

@@ -20,7 +20,6 @@
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/timing.h>
-#include <dolfin/math/dolfin_math.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MonoAdaptiveTimeSlab.h"

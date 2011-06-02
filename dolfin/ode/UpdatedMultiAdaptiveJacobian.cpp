@@ -19,7 +19,6 @@
 // Last changed: 2008-04-22
 
 #include <dolfin/common/constants.h>
-#include <dolfin/math/dolfin_math.h>
 #include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "Method.h"

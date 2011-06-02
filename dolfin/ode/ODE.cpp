@@ -23,7 +23,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/math/dolfin_math.h>
 #include "ODESolver.h"
 #include "TimeStepper.h"
 #include "ODE.h"

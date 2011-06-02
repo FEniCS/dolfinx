@@ -38,13 +38,13 @@ real Legendre::eval(uint n, real x)
 //-----------------------------------------------------------------------------
 real Legendre::ddx(uint n, real x)
 {
-  assert((x*x - 1.0) != 0.0);
+  assert(1.0 - x*x > 0.0);
   return -boost::math::legendre_p(n, 1, x)/(std::sqrt(1.0 - x*x));
 }
 //-----------------------------------------------------------------------------
 real Legendre::d2dx(uint n, real x)
 {
-  assert((x*x - 1.0) != 0.0);
+  assert(1.0 - x*x != 0.0);
   return boost::math::legendre_p(n, 2, x)/(1.0 - x*x);
 }
 //-----------------------------------------------------------------------------

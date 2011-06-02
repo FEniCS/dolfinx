@@ -21,7 +21,6 @@
 // Last changed: 2006-03-27
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/math/dolfin_math.h>
 #include <dolfin/math/Lagrange.h>
 #include "Method.h"
 
