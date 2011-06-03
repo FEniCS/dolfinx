@@ -9,11 +9,11 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2005-2009.
 // Modified by Magnus Vikstrom 2007
@@ -74,7 +74,7 @@ namespace dolfin
     /// Write Function to file (with time)
     void operator<<(const std::pair<const Function*, double> u);
 
-    /// Write to file
+    /// Write object to file
     template<class T> void operator<<(const T& t)
     {
       file->write();

@@ -9,14 +9,14 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-06
-// Last changed: 2009-03-17
+// Last changed: 2011-06-01
 
 #ifndef __XMLFUNCTIONPLOTDATA_H
 #define __XMLFUNCTIONPLOTDATA_H
@@ -40,7 +40,9 @@ namespace dolfin
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
-    static void write(const FunctionPlotData& data, std::ostream& outfile, uint indentation_level=0);
+    static void write(const FunctionPlotData& data,
+                      std::ostream& outfile,
+                      uint indentation_level=0);
 
     void read_data_tag(const xmlChar* name, const xmlChar** attrs);
 

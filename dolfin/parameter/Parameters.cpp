@@ -9,11 +9,11 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johan Hake, 2009
 // Modified by Garth N. Wells, 2009
@@ -229,7 +229,7 @@ void Parameters::add(const Parameters& parameters)
 void Parameters::parse(int argc, char* argv[])
 {
   log(TRACE, "Parsing command-line arguments.");
-  parse_dolfin(argc, argv);
+  parse_common(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void Parameters::update(const Parameters& parameters)
@@ -420,7 +420,7 @@ std::string Parameters::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Parameters::parse_dolfin(int argc, char* argv[])
+void Parameters::parse_common(int argc, char* argv[])
 {
   // Add list of allowed options to po::options_description
   po::options_description desc("Allowed options");
@@ -431,10 +431,17 @@ void Parameters::parse_dolfin(int argc, char* argv[])
 
   // Read command-line arguments into po::variables_map
   po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
+  const po::parsed_options parsed
+    = po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
+  po::store(parsed, vm);
   po::notify(vm);
 
-  // FIXME: Should we exit after printing help text?
+  // Collect and report unrecognized options
+  const std::vector<std::string> unrecognized_options
+    = po::collect_unrecognized(parsed.options, po::include_positional);
+  for (uint i = 0; i < unrecognized_options.size(); i++)
+    cout << "Skipping unrecognized option for parameter set \""
+         << name() << "\": " << unrecognized_options[i] << endl;
 
   // Show help text
   if (vm.count("help"))

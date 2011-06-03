@@ -9,11 +9,11 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2005-2010.
 // Modified by Haiko Etzel 2005.
@@ -59,7 +59,8 @@ File::File(const std::string filename, std::string encoding)
   if (extension == ".gz")
   {
     // Get suffix after discarding .gz
-    const std::string ext = boost::filesystem::extension(boost::filesystem::basename(path));
+    const std::string ext =
+      boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
       file.reset(new XMLFile(filename, true));
     else

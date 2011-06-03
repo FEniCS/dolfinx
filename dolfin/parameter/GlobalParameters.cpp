@@ -9,14 +9,14 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-03-17
+// Last changed: 2011-06-01
 
 #include <fstream>
 #include <cstdlib>
@@ -147,7 +147,7 @@ void GlobalParameters::parse(int argc, char* argv[])
   }
 
   // Parse DOLFIN and PETSc options
-  parse_dolfin(args_dolfin.size(), argv_dolfin);
+  parse_common(args_dolfin.size(), argv_dolfin);
   parse_petsc(args_petsc.size(), argv_petsc);
 
   // Cleanup

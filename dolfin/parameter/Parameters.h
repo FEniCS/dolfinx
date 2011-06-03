@@ -9,11 +9,11 @@
 //
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN.  If not, see <http://www.gnu.org/licenses/>.
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johan Hake, 2009
 // Modified by Garth N. Wells, 2009
@@ -192,7 +192,7 @@ namespace dolfin
   protected:
 
     /// Parse filtered options (everything except PETSc options)
-    void parse_dolfin(int argc, char* argv[]);
+    void parse_common(int argc, char* argv[]);
 
     /// Parse filtered options (only PETSc options)
     void parse_petsc(int argc, char* argv[]);
