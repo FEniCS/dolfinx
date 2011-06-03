@@ -21,7 +21,6 @@
 #include <iomanip>
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "GaussQuadrature.h"
@@ -77,7 +76,7 @@ void GaussQuadrature::compute_points()
     return;
   }
 
-  real x, dx;
+  double x, dx;
 
   // Compute the points by Newton's method
   for (unsigned int i = 0; i <= ((n - 1)/2); i++)
@@ -90,7 +89,7 @@ void GaussQuadrature::compute_points()
     {
       dx = -Legendre::eval(n, x)/Legendre::ddx(n, x);
       x  = x + dx;
-    } while (real_abs(dx) > real_epsilon());
+    } while (std::abs(dx) > DOLFIN_EPS);
 
     // Save the value using the symmetry of the points
     points[i] = -x;

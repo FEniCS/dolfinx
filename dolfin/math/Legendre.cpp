@@ -31,18 +31,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-real Legendre::eval(uint n, real x)
+double Legendre::eval(uint n, double x)
 {
   return boost::math::legendre_p(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::ddx(uint n, real x)
+double Legendre::ddx(uint n, double x)
 {
   assert(1.0 - x*x > 0.0);
   return -boost::math::legendre_p(n, 1, x)/(std::sqrt(1.0 - x*x));
 }
 //-----------------------------------------------------------------------------
-real Legendre::d2dx(uint n, real x)
+double Legendre::d2dx(uint n, double x)
 {
   assert(1.0 - x*x != 0.0);
   return boost::math::legendre_p(n, 2, x)/(1.0 - x*x);

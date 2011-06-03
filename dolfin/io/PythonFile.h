@@ -50,7 +50,6 @@ namespace dolfin
 
     // Output
 
-    void operator<< (const Sample& sample);
     void operator<< (const std::pair<real, RealArrayRef>);
 
     std::string filename_t, filename_u, filename_k, filename_r;

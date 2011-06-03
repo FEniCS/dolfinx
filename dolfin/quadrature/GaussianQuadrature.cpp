@@ -20,7 +20,6 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/la/HighPrecision.h>
@@ -63,32 +62,27 @@ void GaussianQuadrature::compute_weights()
 
   uBLASDenseMatrix A(n, n);
   ublas_dense_matrix& _A = A.mat();
-  std::vector<real> A_real(n*n);
+  std::vector<double> A_double(n*n);
 
   uBLASVector b(n);
   ublas_vector& _b = b.vec();
-  std::vector<real> b_real(n);
+  std::vector<double> b_double(n);
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
   {
     for (unsigned int j = 0; j < n; j++)
     {
-      A_real[i + n*j] = Legendre::eval(i, points[j]);
-      _A(i, j) = to_double(A_real[i + n*j]);
+      A_double[i + n*j] = Legendre::eval(i, points[j]);
+      _A(i, j) = A_double[i + n*j];
       _b[i] = 0.0;
-      b_real[i] = 0.0;
+      b_double[i] = 0.0;
     }
   }
   _b[0] = 2.0;
-  b_real[0] = 2.0;
+  b_double[0] = 2.0;
 
-#ifndef HAS_GMP
   // Solve the system of equations
-  // FIXME: Do we get high enough precision?
-  //LU lu;
-  //lu.set("LU report", false);
-  //lu.solve(A, x, b);
   uBLASVector x(n);
   A.solve(x, b);
 
@@ -97,19 +91,6 @@ void GaussianQuadrature::compute_weights()
   // Save the weights
   for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
-
-#else
-  //With extended precision: Use the double precision result as initial guess for the
-  //extended precision linear solver.
-
-  uBLASDenseMatrix A_inv(A);
-  A_inv.invert();
-
-  // Solve using A_inv as preconditioner
-  HighPrecision::real_solve_precond(n, &A_real[0], &weights[0], &b_real[0],
-                                    A_inv, real_epsilon());
-
-#endif
 }
 //-----------------------------------------------------------------------------
 bool GaussianQuadrature::check(unsigned int q) const
@@ -118,7 +99,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   // value of the integral of the Legendre polynomial of degree q.
   // This value should be zero for q > 0 and 2 for q = 0
 
-  real sum = 0.0;
+  double sum = 0.0;
   for (unsigned int i = 0; i < points.size(); i++)
     sum += weights[i]*Legendre::eval(q, points[i]);
 
@@ -126,16 +107,16 @@ bool GaussianQuadrature::check(unsigned int q) const
 
   if (q == 0)
   {
-    if (real_abs(sum - 2.0) < 100.0*real_epsilon())
+    if (std::abs(sum - 2.0) < 100.0*DOLFIN_EPS)
       return true;
   }
   else
   {
-    if (real_abs(sum) < 100.0*real_epsilon())
+    if (std::abs(sum) < 100.0*DOLFIN_EPS)
       return true;
   }
 
-  info("Quadrature check failed: r = %.2e.", to_double(real_abs(sum)));
+  info("Quadrature check failed: r = %.2e.", std::abs(sum));
 
   return false;
 }

@@ -11,7 +11,6 @@ set(DOLFIN_DIRS
   adaptivity
   ale
   common
-  elements
   fem
   function
   graph
@@ -20,11 +19,8 @@ set(DOLFIN_DIRS
   log
   math
   mesh
-  mf
   nls
-  ode
   parameter
-  pde
   plot
   quadrature
   refinement

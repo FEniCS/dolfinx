@@ -229,15 +229,6 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 
-// ode
-%shared_ptr(dolfin::Sample)
-%shared_ptr(dolfin::ODE)
-%shared_ptr(dolfin::DummyComplexODE)
-%shared_ptr(dolfin::ComplexODE)
-%shared_ptr(dolfin::Method)
-%shared_ptr(dolfin::dGqMethod)
-%shared_ptr(dolfin::cGqMethod)
-
 // plot
 %shared_ptr(dolfin::FunctionPlotData)
 

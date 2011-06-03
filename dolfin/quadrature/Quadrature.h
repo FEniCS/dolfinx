@@ -22,7 +22,6 @@
 #define __QUADRATURE_H
 
 #include <vector>
-#include <dolfin/common/real.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
@@ -34,7 +33,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Quadrature(unsigned int n, real m=1.0);
+    Quadrature(unsigned int n, double m=1.0);
 
     /// Destructor
     virtual ~Quadrature();
@@ -43,26 +42,26 @@ namespace dolfin
     int size() const;
 
     /// Return quadrature point
-    real point(unsigned int i) const;
+    double point(unsigned int i) const;
 
     /// Return quadrature weight
-    real weight(unsigned int i) const;
+    double weight(unsigned int i) const;
 
     /// Return sum of weights (length, area, volume)
-    real measure() const;
+    double measure() const;
 
   protected:
 
     // Quadrature points
-    std::vector<real> points;
+    std::vector<double> points;
 
     // Quadrature weights
-    std::vector<real> weights;
+    std::vector<double> weights;
 
   private:
 
     // Sum of weights
-    real m;
+    double m;
 
   };
 

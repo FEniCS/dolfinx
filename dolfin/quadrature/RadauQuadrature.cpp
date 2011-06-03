@@ -20,7 +20,6 @@
 
 #include <iomanip>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "RadauQuadrature.h"
@@ -80,7 +79,7 @@ void RadauQuadrature::compute_points()
     return;
   }
 
-  real x, dx, step, sign;
+  double x, dx, step, sign;
 
   // Set size of stepping for seeking starting points
   step = 1.0/(double(n - 1)*15.0);
@@ -109,7 +108,7 @@ void RadauQuadrature::compute_points()
            + Legendre::eval(n, x))/(Legendre::ddx(n - 1, x)
            + Legendre::ddx(n, x));
       x  = x + dx;
-    } while (real_abs(dx) > real_epsilon());
+    } while (std::abs(dx) > DOLFIN_EPS);
 
     // Set the node value
     points[i] = x;

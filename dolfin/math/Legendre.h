@@ -21,7 +21,6 @@
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
 
-#include <dolfin/common/real.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -34,13 +33,13 @@ namespace dolfin
   public:
 
     /// Evaluate polynomial of order n at point x
-    static real eval(uint n, real x);
+    static double eval(uint n, double x);
 
     /// Evaluate first derivative of polynomial of order n at point x
-    static real ddx(uint n, real x);
+    static double ddx(uint n, double x);
 
     /// Evaluate second derivative of polynomial of order n at point x
-    static real d2dx(uint n, real x);
+    static double d2dx(uint n, double x);
 
   };
 

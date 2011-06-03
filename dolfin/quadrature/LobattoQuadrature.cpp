@@ -20,7 +20,6 @@
 
 #include <iomanip>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "LobattoQuadrature.h"
@@ -91,7 +90,7 @@ void LobattoQuadrature::compute_points()
 
   //Legendre p(n - 1);
   Legendre p;
-  real x, dx;
+  double x, dx;
 
   // Set the first and last nodal points which are 0 and 1
   points[0] = -1.0;
@@ -109,7 +108,7 @@ void LobattoQuadrature::compute_points()
     {
       dx = -p.ddx(n - 1, x)/p.d2dx(n - 1, x);
       x  = x + dx;
-    } while (real_abs(dx) > real_epsilon());
+    } while (std::abs(dx) > DOLFIN_EPS);
 
     // Save the value using the symmetry of the points
     points[i] = -x;

@@ -1,3 +1,5 @@
+ - Use Boost to compute Legendre polynolials
+ - Remove ode code
  - Handle parsing of unrecognized command-line parameters
  - All const std::vector<foo>& now return a readonly NumPy array
  - Make a robust macro for generating a NumPy array from data

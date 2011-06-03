@@ -206,18 +206,6 @@
 %include "dolfin/adaptivity/TimeSeries.h"
 %include "dolfin/adaptivity/adapt.h"
 
-// DOLFIN headers included from ode
-%include "dolfin/swig/ode_pre.i"
-%include "dolfin/ode/Sample.h"
-%include "dolfin/ode/ODE.h"
-%include "dolfin/ode/ODECollection.h"
-%include "dolfin/ode/ComplexODE.h"
-%include "dolfin/ode/Method.h"
-%include "dolfin/ode/cGqMethod.h"
-%include "dolfin/ode/dGqMethod.h"
-%include "dolfin/ode/ODESolution.h"
-%include "dolfin/ode/StabilityAnalysis.h"
-
 // DOLFIN headers included from io
 %include "dolfin/io/File.h"
 %include "dolfin/swig/io_post.i"

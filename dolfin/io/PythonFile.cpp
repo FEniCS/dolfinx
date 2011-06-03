@@ -31,7 +31,6 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/ode/Sample.h>
 #include "PythonFile.h"
 
 using namespace dolfin;
@@ -53,77 +52,8 @@ PythonFile::~PythonFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(const Sample& sample)
-{
-  // First time
-  if ( counter2 == 0 )
-  {
-    std::ofstream fp(filename.c_str());
-    if (!fp.is_open())
-      error("Unable to open file %s", filename.c_str());
-
-    fp << "from numpy import fromfile" << std::endl << std::endl;
-    fp << "t = fromfile('" << filename_t << "', sep=' ')" << std::endl;
-    fp << "u = fromfile('" << filename_u << "', sep=' ')" << std::endl;
-    fp << "k = fromfile('" << filename_k << "', sep=' ')" << std::endl;
-    fp << "r = fromfile('" << filename_r << "', sep=' ')" << std::endl;
-    fp << std::endl;
-    fp << "u.shape = len(u) //" << sample.size() << ", " << sample.size() << std::endl;
-    fp << "k.shape = len(k) //" << sample.size() << ", " << sample.size() << std::endl;
-    fp << "r.shape = len(r) //" << sample.size() << ", " << sample.size() << std::endl;
-    fp << std::endl;
-    fp.close();
-  }
-
-  //sub files filemode:  append unless this is the first sample
-  std::ios_base::openmode filemode = (counter2 == 0 ?
-				        std::ios_base::out :
-				        std::ios_base::out| std::ios_base::app);
-
-  //get precision
-  int prec = real_decimal_prec();
-
-  // Open sub files
-  std::ofstream fp_t(filename_t.c_str(), filemode);
-  if (!fp_t.is_open())
-    error("Unable to open file %s", filename_t.c_str());
-
-  std::ofstream fp_u(filename_u.c_str(), filemode);
-  if (!fp_u.is_open())
-    error("Unable to open file %s", filename_u.c_str());
-
-  std::ofstream fp_k(filename_k.c_str(), filemode);
-  if (!fp_k.is_open())
-    error("Unable to open file %s", filename_k.c_str());
-
-  std::ofstream fp_r(filename_r.c_str(), filemode);
-  if (!fp_r.is_open())
-    error("Unable to open file %s", filename_r.c_str());
-
-  // Save time
-  fp_t << std::setprecision(prec) << sample.t() << std::endl;
-
-  // Save solution
-  for (uint i = 0; i < sample.size(); i++)
-    fp_u << std::setprecision(prec) << sample.u(i) << " ";
-  fp_u << std::endl;
-
-  // Save time steps
-  for (uint i = 0; i < sample.size(); i++)
-    fp_k << std::setprecision(prec) << sample.k(i) << " ";
-  fp_k << std::endl;
-
-  // Save residuals
-  for (uint i = 0; i < sample.size(); i++)
-    fp_r << std::setprecision(prec) << sample.r(i) << " ";
-  fp_r << std::endl;
-
-  // Increase frame counter
-  counter2++;
-}
-//-----------------------------------------------------------------------------
 void PythonFile::operator<<(const std::pair<real, RealArrayRef> sample)
-{  
+{
   const real& t      = sample.first;
   const Array<real>& u = sample.second;
 

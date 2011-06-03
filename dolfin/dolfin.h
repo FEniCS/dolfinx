@@ -19,7 +19,6 @@
 #include <dolfin/ale/dolfin_ale.h>
 #include <dolfin/fem/dolfin_fem.h>
 #include <dolfin/adaptivity/dolfin_adaptivity.h>
-#include <dolfin/ode/dolfin_ode.h>
 #include <dolfin/io/dolfin_io.h>
 
 #endif

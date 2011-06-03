@@ -68,8 +68,6 @@ for s in cppslow:
 # Remove demos that need command-line arguments
 pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
 cppdemos.remove(os.path.join(demodir, 'undocumented', 'quadrature', 'cpp'))
-cppdemos.remove(os.path.join(demodir, 'undocumented', 'method-weights', 'cpp'))
-cppdemos.remove(os.path.join(demodir, 'undocumented', 'stiff', 'cpp'))
 
 failed = []
 timing = []
