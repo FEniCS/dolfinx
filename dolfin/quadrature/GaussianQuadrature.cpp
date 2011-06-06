@@ -22,7 +22,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
-#include <dolfin/la/HighPrecision.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "GaussianQuadrature.h"
@@ -103,21 +102,14 @@ bool GaussianQuadrature::check(unsigned int q) const
   for (unsigned int i = 0; i < points.size(); i++)
     sum += weights[i]*Legendre::eval(q, points[i]);
 
-  //info("Checking quadrature weights: %.2e.", fabs(sum));
-
-  if (q == 0)
-  {
-    if (std::abs(sum - 2.0) < 100.0*DOLFIN_EPS)
-      return true;
-  }
-  else
-  {
-    if (std::abs(sum) < 100.0*DOLFIN_EPS)
-      return true;
-  }
+  bool _check = false;
+  if (q == 0 && std::abs(sum - 2.0) < 100.0*DOLFIN_EPS)
+    _check = true;
+  else if (std::abs(sum - 2.0) < 100.0*DOLFIN_EPS)
+    _check = true;
 
   info("Quadrature check failed: r = %.2e.", std::abs(sum));
 
-  return false;
+  return _check;
 }
 //-----------------------------------------------------------------------------
