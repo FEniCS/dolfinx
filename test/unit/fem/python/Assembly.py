@@ -84,6 +84,10 @@ class Assembly(unittest.TestCase):
         and of derived forms.
         """
 
+        # Skip in parallel
+        if MPI.num_processes() > 1:
+            return
+
         # Define some haphazardly chosen cell/facet function
         mesh = UnitSquare(4, 4)
         domains = CellFunction("uint", mesh)
