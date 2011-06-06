@@ -46,10 +46,10 @@ vector element space):
    :lines: 38-39
 
 Note that :py:class:`VectorFunctionSpace
-<dolfin.functions.VectorFunctionSpace>` creates a function space of
-vector fields. The dimension of the vector field (the number of
-components) is assumed to be the same as the spatial dimension, unless
-otherwise specified.
+<dolfin.functions.functionspace.VectorFunctionSpace>` creates a
+function space of vector fields. The dimension of the vector field
+(the number of components) is assumed to be the same as the spatial
+dimension, unless otherwise specified.
 
 .. index:: compiled subdomain
 

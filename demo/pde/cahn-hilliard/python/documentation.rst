@@ -42,14 +42,15 @@ created:
             return (2,)
 
 It is a subclass of :py:class:`Expression
-<dolfin.functions.Expression>`. In the constructor (``__init__``), the
-random number generator is seeded. If the program is run in parallel,
-the random number generator is seeded using the process number to
-ensure a different sequence of numbers on each process.  The function
-``eval`` returns values for a function of dimension two.  For the
-first component of the function, a randomized value is returned.  The
-method ``value_shape`` declares that the :py:class:`Expression
-<dolfin.functions.Expression>` is vector valued with dimension two.
+<dolfin.functions.expression.Expression>`. In the constructor
+(``__init__``), the random number generator is seeded. If the program
+is run in parallel, the random number generator is seeded using the
+process number to ensure a different sequence of numbers on each
+process.  The function ``eval`` returns values for a function of
+dimension two.  For the first component of the function, a randomized
+value is returned.  The method ``value_shape`` declares that the
+:py:class:`Expression <dolfin.functions.expression.Expression>` is
+vector valued with dimension two.
 
 .. index::
    single: NonlinearProblem; (in Cahn-Hilliard demo)
@@ -118,9 +119,10 @@ the code and the generation phase may use considerably more memory).
 
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 created, and on this mesh a :py:class:`FunctionSpace
-<dolfin.functions.FunctionSpace>` :math:`V` and a
-:py:class:`MixedFunctionSpace <dolfin.functions.MixedFunctionSpace>`
-space :math:`ME = V \times V` are defined:
+<dolfin.functions.functionspace.FunctionSpace>` :math:`V` and a
+:py:class:`MixedFunctionSpace
+<dolfin.functions.functionspace.MixedFunctionSpace>` space :math:`ME =
+V \times V` are defined:
 
 .. code-block:: python
 
@@ -143,13 +145,14 @@ Trial and test functions of the space ``ME`` are now defined:
 .. index:: split functions
 
 For the test functions, :py:func:`TestFunctions
-<dolfin.functions.TestFunctions>` (note the 's' at the end) is used to
-define the scalar test functions ``q`` and ``v``. The
-:py:class:`TrialFunction <dolfin.functions.TrialFunction>` ``du`` has
-dimension two. Some mixed objects of the :py:class:`Function
-<dolfin.functions.Function>` class on ``ME`` are defined to represent
-:math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0 = (c_{n}, \mu_{n})`,
-and these are then split into sub-functions:
+<dolfin.functions.function.TestFunctions>` (note the 's' at the end)
+is used to define the scalar test functions ``q`` and ``v``. The
+:py:class:`TrialFunction <dolfin.functions.function.TrialFunction>`
+``du`` has dimension two. Some mixed objects of the
+:py:class:`Function <dolfin.functions.function.Function>` class on
+``ME`` are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and
+:math:`u0 = (c_{n}, \mu_{n})`, and these are then split into
+sub-functions:
 
 .. code-block:: python
 

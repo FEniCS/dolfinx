@@ -60,8 +60,9 @@ assembling this form. The code is shown below
   assemble(a, tensor=A)
 
 Note that we (in this example) first define the matrix ``A`` as a
-:py:class:`PETScMatrix` and then assemble the form into it. This is
-an easy way to ensure that the matrix has the right type.
+:py:class:`PETScMatrix <dolfin.cpp.PETScMatrix>` and then assemble the
+form into it. This is an easy way to ensure that the matrix has the
+right type.
 
 In order to solve the eigenproblem, we need to define an
 eigensolver. To solve a standard eigenvalue problem, the eigensolver
@@ -72,9 +73,10 @@ is initialized with a single argument, namely the matrix ``A``.
   # Create eigensolver
   eigensolver = SLEPcEigenSolver(A)
 
-Now, we ready solve the eigenproblem by calling the ``solve`` method
-of the eigensolver. Note that eigenvalue problems tend to be
-computationally intensive and may hence take a while.
+Now, we ready solve the eigenproblem by calling the :py:func:`solve
+<dolfin.cpp.SLEPcEigenSolver.solve>` method of the eigensolver. Note
+that eigenvalue problems tend to be computationally intensive and may
+hence take a while.
 
 .. code-block:: python
 
@@ -97,10 +99,11 @@ for the first eigenpair as follows:
 Finally, we want to examine the results. The eigenvalue can easily be
 printed. But, the real part of eigenvector is probably most easily
 visualized by constructing the corresponding eigenfunction. This can
-be done by creating a :py:class:`Function` in the function space
-``V`` with the eigenvector ``rx`` as an additional argument. Then the
-eigenfunction can be manipulated as any other :py:class:`Function`,
-and in particular plotted:
+be done by creating a :py:class:`Function
+<dolfin.functions.function.Function>` in the function space ``V`` with
+the eigenvector ``rx`` as an additional argument. Then the
+eigenfunction can be manipulated as any other :py:class:`Function
+<dolfin.functions.function.Function>`, and in particular plotted:
 
 .. code-block:: python
 

@@ -39,17 +39,17 @@ triangles, we do as follows
     V = FunctionSpace(mesh, "Lagrange", 1)
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.FunctionSpace>` is the finite element family, while
-the third argument specifies the polynomial degree. Thus, in this
-case, our space ``V`` consists of first-order, continuous Lagrange
-finite element functions (or in order words, continuous piecewise
-linear polynomials).
+<dolfin.functions.functionspace.FunctionSpace>` is the finite element
+family, while the third argument specifies the polynomial
+degree. Thus, in this case, our space ``V`` consists of first-order,
+continuous Lagrange finite element functions (or in order words,
+continuous piecewise linear polynomials).
 
 Next, we want to consider the Dirichlet boundary condition. A simple
 Python function, returning a boolean, can be used to define the
 subdomain for the Dirichlet boundary condition (:math:`\Gamma_D`). The
-function should return ``true`` for those points inside the subdomain
-and ``false`` for the points outside. In our case, we want to say that
+function should return ``True`` for those points inside the subdomain
+and ``False`` for the points outside. In our case, we want to say that
 the points :math:`(x, y)` such that :math:`x = 0` or :math:`x = 1` are
 inside on the inside of :math:`\Gamma_D`. (Note that because of
 rounding-off errors, it is often wise to instead specify :math:`x <
@@ -64,15 +64,15 @@ small number (such as machine precision).)
 
 
 Now, the Dirichlet boundary condition can be created using the class
-:py:class:`DirichletBC <dolfin.fem.DirichletBC>`. A
-:py:class:`DirichletBC <dolfin.fem.DirichletBC>` takes three
+:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
+:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
 arguments: the function space the boundary condition applies to, the
 value of the boundary condition, and the part of the boundary on which
 the condition applies. In our example, the function space is ``V``,
 the value of the boundary condition (0.0) can represented using a
-:py:class:`Constant <dolfin.functions.Constant>` and the Dirichlet
-boundary is defined immediately above. The definition of the Dirichlet
-boundary condition then looks as follows:
+:py:class:`Constant <dolfin.functions.constant.Constant>` and the
+Dirichlet boundary is defined immediately above. The definition of the
+Dirichlet boundary condition then looks as follows:
 
 .. code-block:: python
 
@@ -83,18 +83,19 @@ boundary condition then looks as follows:
 Next, we want to express the variational problem.  First, we need to
 specify the trial function :math:`u` and the test function :math:`v`,
 both living in the function space :math:`V`. We do this by defining a
-:py:class:`TrialFunction <dolfin.functions.TrialFunction>` and a
-:py:class:`TestFunction <dolfin.functions.TrialFunction>` on the
-previously defined :py:class:`FunctionSpace
-<dolfin.functions.FunctionSpace>` ``V``.
+:py:class:`TrialFunction <dolfin.functions.function.TrialFunction>`
+and a :py:class:`TestFunction
+<dolfin.functions.function.TrialFunction>` on the previously defined
+:py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` ``V``.
 
 Further, the source :math:`f` and the boundary normal derivative
 :math:`g` are involved in the variational forms, and hence we must
 specify these. Both :math:`f` and :math:`g` are given by simple
 mathematical formulas, and can be easily declared using the
-:py:class:`Expression <dolfin.functions.Expression>` class.  Note that
-the strings defining ``f`` and ``g`` use C++ syntax since, for
-efficiency, DOLFIN will generate and compile C++ code for these
+:py:class:`Expression <dolfin.functions.expression.Expression>` class.
+Note that the strings defining ``f`` and ``g`` use C++ syntax since,
+for efficiency, DOLFIN will generate and compile C++ code for these
 expressions at run-time.
 
 With these ingredients, we can write down the bilinear form ``a`` and
@@ -115,11 +116,12 @@ the linear form ``L`` (using UFL operators). In summary, this reads
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem.  First, a
-:py:class:`VariationalProblem <dolfin.fem.VariationalProblem>` object
-is created using the bilinear and linear forms, and the Dirichlet
-boundary condition.  Then, to solve the problem, the :py:func:`solve
-<dolfin.fem.VariationalProblem.solve>` function is called, and the
-solution is returned in ``u``.
+:py:class:`VariationalProblem
+<dolfin.fem.variationalproblem.VariationalProblem>` object is created
+using the bilinear and linear forms, and the Dirichlet boundary
+condition.  Then, to solve the problem, the :py:func:`solve
+<dolfin.fem.variationalproblem.VariationalProblem.solve>` function is
+called, and the solution is returned in ``u``.
 
 .. code-block:: python
 
@@ -135,13 +137,13 @@ the solution process.
    single: File; (in Poisson demo)
 
 The solution ``u`` is a :py:class:`Function
-<dolfin.functions.Function>` object, which represents a function
-living in a finite element function space. A :py:class:`Function
-<dolfin.functions.Function>` can be manipulated in various ways, in
-particular, it can be plotted and saved to file. Here, we output the
-solution to a ``VTK`` file (using the suffix ``.pvd``) for later
-visualization and also plot it using the :py:func:`plot
-<dolfin.common.plot>` command:
+<dolfin.functions.function.Function>` object, which represents a
+function living in a finite element function space. A
+:py:class:`Function <dolfin.functions.function.Function>` can be
+manipulated in various ways, in particular, it can be plotted and
+saved to file. Here, we output the solution to a ``VTK`` file (using
+the suffix ``.pvd``) for later visualization and also plot it using
+the :py:func:`plot <dolfin.common.plot.plot>` command:
 
 .. code-block:: python
 

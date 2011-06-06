@@ -49,11 +49,12 @@ combining these into a mixed function space:
     W = BDM * DG
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.FunctionSpace>` specifies the type of finite element
-family, while the third argument specifies the polynomial degree. The
-UFL user manual contains a list of all available finite element
-families and more details.  The * operator creates a mixed (product)
-space ``W`` from the two separate spaces ``BDM`` and ``DG``. Hence,
+<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
+finite element family, while the third argument specifies the
+polynomial degree. The UFL user manual contains a list of all
+available finite element families and more details.  The * operator
+creates a mixed (product) space ``W`` from the two separate spaces
+``BDM`` and ``DG``. Hence,
 
 .. math::
 
@@ -89,15 +90,16 @@ side vanishes.
 
 It only remains to prescribe the boundary condition for the
 flux. Essential boundary conditions are specified through the class
-:py:class:`DirichletBC <dolfin.fem.DirichletBC>` which takes three
+:py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` which takes three
 arguments: the function space the boundary condition is supposed to be
 applied to, the data for the boundary condition, and the relevant part
 of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
 mixed space. Subspaces of a :py:class:`MixedFunctionSpace
-<dolfin.functions.MixedFunctionSpace>` can be accessed by the method
-:py:func:`sub <dolfin.functions.FunctionSpaceBase.sub>`. In our case,
+<dolfin.functions.functionspace.MixedFunctionSpace>` can be accessed
+by the method :py:func:`sub
+<dolfin.functions.functionspace.FunctionSpaceBase.sub>`. In our case,
 this reads ``W.sub(0)``. (Do *not* use the separate space ``BDM`` as
 this would mess up the numbering.)
 
@@ -109,7 +111,7 @@ the degrees of freedom act on vector-valued objects. The effect is
 that the user is required to construct a :math:`G` such that :math:`G
 \cdot n = g`.  Such a :math:`G` can be constructed by letting :math:`G
 = g n`. In particular, it can be created by subclassing the
-:py:class:`Expression <dolfin.functions.Expression>`
+:py:class:`Expression <dolfin.functions.expression.Expression>`
 class. Overloading the ``eval_cell`` method (instead of the usual
 ``eval``) allows us to extract more geometry information such as the
 facet normals. Since this is a vector-valued expression, we also need
@@ -156,13 +158,14 @@ boundary condition:
    single: VariationalProblem; (in Mixed Poisson demo)
 
 To compute the solution, a :py:class:`VariationalProblem
-<dolfin.fem.VariationalProblem>` object is created using the bilinear
-and linear forms, and the boundary condition.  The :py:func:`solve
-<dolfin.fem.VariationalProblem.solve>` function is then called,
-yielding the full solution. The separate components ``sigma`` and
-``u`` of the solution can be extracted by calling the :py:func:`split
-<dolfin.functions.Function.split>` function. Finally, we plot the
-solutions to examine the result.
+<dolfin.fem.variationalproblem.VariationalProblem>` object is created
+using the bilinear and linear forms, and the boundary condition.  The
+:py:func:`solve
+<dolfin.fem.variationalproblem.VariationalProblem.solve>` function is
+then called, yielding the full solution. The separate components
+``sigma`` and ``u`` of the solution can be extracted by calling the
+:py:func:`split <dolfin.functions.function.Function.split>`
+function. Finally, we plot the solutions to examine the result.
 
 .. code-block:: python
 

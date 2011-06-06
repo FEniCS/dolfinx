@@ -50,8 +50,9 @@ the domian:
         def inside(self, x, on_boundary):
             return on_boundary
 
-A subclass of :py:class:`Expression <dolfin.functions.Expression>`,
-``Source`` is created for the source term :math:`f`:
+A subclass of :py:class:`Expression
+<dolfin.functions.expression.Expression>`, ``Source`` is created for
+the source term :math:`f`:
 
 .. code-block:: python
 
@@ -81,8 +82,8 @@ syntax ``('+')`` and ``('-')`` restricts a function to the ``('+')``
 and ``('-')`` sides of a facet, respectively. The unit outward normal
 to cell boundaries (``n``) is created, as is the source term ``f`` and
 the penalty parameter ``alpha``. The penalty parameters is made a
-:py:class:`Constant <dolfin.functions.Constant>` so that it can be
-changed without needing to regenerate code.
+:py:class:`Constant <dolfin.functions.constant.Constant>` so that it
+can be changed without needing to regenerate code.
 
 .. code-block:: python
 
