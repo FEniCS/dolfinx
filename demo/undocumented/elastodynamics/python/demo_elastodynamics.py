@@ -134,6 +134,9 @@ boundary_subdomains.set_all(0)
 force_boundary = AutoSubDomain(right)
 force_boundary.mark(boundary_subdomains, 3)
 
+# Define measure for boundary condition integral
+dss = ds[boundary_subdomains]
+
 # Stress tensor
 def sigma(r):
     return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.cell().d)
@@ -147,15 +150,11 @@ L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx \
    + factor_d1*inner(r, u0)*dx + factor_d2*inner(r, v0)*dx \
    + factor_d3*inner(r, a0)*dx \
    - alpha_f*inner(grad(r), sigma(u0))*dx \
-   + inner(r, f)*dx + (1.0-alpha_f)*inner(r, p)*ds(3) + alpha_f*inner(r, p0)*ds(3)
+   + inner(r, f)*dx + (1.0-alpha_f)*inner(r, p)*dss(3) + alpha_f*inner(r, p0)*dss(3)
 
 # Set up boundary condition at left end
 zero = Constant((0.0, 0.0))
 bc = DirichletBC(V, zero, left)
-
-# Attach subdomains
-a.exterior_facet_domains = boundary_subdomains
-L.exterior_facet_domains = boundary_subdomains
 
 # Set up PDE and solve
 problem = VariationalProblem(a, L, bcs=bc)

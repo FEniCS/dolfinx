@@ -79,9 +79,9 @@
 //-----------------------------------------------------------------------------
 // Ignores domain assignment for Form class
 //-----------------------------------------------------------------------------
-%ignore dolfin::Form::cell_domains;
-%ignore dolfin::Form::exterior_facet_domains;
-%ignore dolfin::Form::interior_facet_domains;
+%ignore dolfin::Form::dx;
+%ignore dolfin::Form::ds;
+%ignore dolfin::Form::dS;
 
 //-----------------------------------------------------------------------------
 // Ignore dolfin::Cell versions of signatures as these now are handled by

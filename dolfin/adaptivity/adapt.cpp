@@ -235,19 +235,19 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   if (cell_domains)
   {
     adapt(*cell_domains, refined_mesh);
-    refined_form->cell_domains = cell_domains->child_shared_ptr();
+    refined_form->dx = cell_domains->child_shared_ptr();
   }
   const MeshFunction<uint>* exterior_domains = form.exterior_facet_domains_shared_ptr().get();
   if (exterior_domains)
   {
     adapt(*exterior_domains, refined_mesh);
-    refined_form->exterior_facet_domains = exterior_domains->child_shared_ptr();
+    refined_form->ds = exterior_domains->child_shared_ptr();
   }
   const MeshFunction<uint>* interior_domains = form.interior_facet_domains_shared_ptr().get();
   if (interior_domains)
   {
     adapt(*interior_domains, refined_mesh);
-    refined_form->interior_facet_domains = interior_domains->child_shared_ptr();
+    refined_form->dS = interior_domains->child_shared_ptr();
   }
 
   // Set parent / child

@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Marie E. Rognes, 2011
+#
 # First added:  2011-03-12
 # Last changed: 2011-03-12
 
@@ -75,6 +77,66 @@ class Assembly(unittest.TestCase):
         parameters["num_threads"] = 4
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+    def test_subdomains_assembly(self):
+        """
+        Test assembly with sub-domains specified in a form directly
+        and of derived forms.
+        """
+
+        # Skip in parallel
+        if MPI.num_processes() > 1:
+            return
+
+        # Define some haphazardly chosen cell/facet function
+        mesh = UnitSquare(4, 4)
+        domains = CellFunction("uint", mesh)
+        domains.set_all(0)
+        domains[0] = 1
+        domains[1] = 1
+
+        boundaries = FacetFunction("uint", mesh)
+        boundaries.set_all(0)
+        boundaries[0] = 1
+        boundaries[1] = 1
+        boundaries[2] = 1
+        boundaries[3] = 1
+
+        V = FunctionSpace(mesh, "CG", 2)
+        f = Expression("x[0] + 2")
+        g = Expression("x[1] + 1")
+
+        f = interpolate(f, V)
+        g = interpolate(g, V)
+
+        dxs = dx[domains]
+        dss = ds[boundaries]
+        M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
+
+        # Check that domains are respected
+        reference = 7.33040364583
+        self.assertAlmostEqual(assemble(M), reference, 10)
+
+        # Check that given exterior_facet_domains override
+        new_boundaries = FacetFunction("uint", mesh)
+        new_boundaries.set_all(0)
+        reference2 = 6.2001953125
+        value2 = assemble(M, exterior_facet_domains=new_boundaries)
+        self.assertAlmostEqual(value2, reference2, 10)
+
+        # Check that the form itself assembles as before
+        self.assertAlmostEqual(assemble(M), reference, 10)
+
+        # Take action of derivative of M on f
+        df = TestFunction(V)
+        L = derivative(M, f, df)
+        dg = TrialFunction(V)
+        F = derivative(L, g, dg)
+        b = action(F, f)
+
+        # Check that domain data carries across transformations:
+        reference = 0.0626219513355
+        self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
 
 if __name__ == "__main__":
     print ""

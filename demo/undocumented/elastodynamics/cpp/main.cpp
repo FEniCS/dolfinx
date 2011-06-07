@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-01-22
-// Last changed: 2011-03-11
+// Last changed: 2011-06-01
 
 #include <dolfin.h>
 #include "ElastoDynamics.h"
@@ -187,8 +187,8 @@ int main(int argc, char* argv[])
   L.p0 = p0;
 
   // Attach subdomains
-  a_form.exterior_facet_domains = right_boundary_function;
-  L.exterior_facet_domains = right_boundary_function;
+  a_form.ds = right_boundary_function;
+  L.ds = right_boundary_function;
 
   // Create variational problem
   VariationalProblem pde(a_form, L, bc);

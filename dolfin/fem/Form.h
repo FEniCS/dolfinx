@@ -169,9 +169,9 @@ namespace dolfin
     void check() const;
 
     // Assignment of domains
-    CellDomainAssigner cell_domains;
-    ExteriorFacetDomainAssigner exterior_facet_domains;
-    InteriorFacetDomainAssigner interior_facet_domains;
+    CellDomainAssigner dx;
+    ExteriorFacetDomainAssigner ds;
+    InteriorFacetDomainAssigner dS;
 
   protected:
 

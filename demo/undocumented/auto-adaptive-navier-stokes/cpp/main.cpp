@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-22
+// Last changed: 2011-06-01
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -92,7 +92,7 @@ int main() {
   Outflow outflow;
   MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim()-1, 1);
   outflow.mark(outflow_markers, 0);
-  M.exterior_facet_domains = outflow_markers;
+  M.ds = outflow_markers;
 
   // Give reference and don't plot mesh in each iteration
   pde.parameters("adaptivity")["reference"] = 0.40863917;

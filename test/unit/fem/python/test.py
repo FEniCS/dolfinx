@@ -160,12 +160,11 @@ class Assembly(unittest.TestCase):
 
         # Define forms
         c = Constant(1.0)
-        a0 = c*dx
-        a1 = c*ds
 
-        # Attach subdomains
-        a0.cell_domains = cell_domains
-        a1.exterior_facet_domains = exterior_facet_domains
+        dxs = dx[cell_domains]
+        a0 = c*dxs(0)
+        dss = ds[exterior_facet_domains]
+        a1 = c*dss(0)
 
         parameters["num_threads"] = 0
         self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
