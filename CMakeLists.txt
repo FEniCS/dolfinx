@@ -73,6 +73,7 @@ list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
+list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
@@ -271,6 +272,15 @@ endif()
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
+endif()
+
+# Check for HDF5
+if (DOLFIN_ENABLE_HDF5)
+  find_package(HDF5)
+  if (NOT HDF5_IS_PARALLEL)
+    message(WARNING "HDF5 found, but is not configured to run in parallel.")
+    set(HDF5_FOUND FALSE)
+  endif()
 endif()
 
 # Check for cppunit
