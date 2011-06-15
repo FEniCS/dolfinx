@@ -158,10 +158,7 @@ int main()
     if (GFORTRAN_EXECUTABLE)
       execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
 	OUTPUT_VARIABLE GFORTRAN_LIBRARY
-	RESULT_VARIABLE RESULT)
-      
-      # Strip off leading and trailing spaces
-      string(STRIP "${GFORTRAN_LIBRARY}" GFORTRAN_LIBRARY)
+	OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
 	list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
