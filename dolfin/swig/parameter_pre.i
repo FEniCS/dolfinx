@@ -124,20 +124,18 @@
 // ---------------------------------------------------------------------------
 // Typemaps (argout) for real &min_value, real &max_value
 // ---------------------------------------------------------------------------
-//%typemap(in, numinputs=0) (dolfin::real &min_value, dolfin::real &max_value) ( dolfin::real min_temp, dolfin::real max_temp){
-//  $1 = &min_temp; $2 = &max_temp;
-//}
-
-/*
-%typemap(argout) (dolfin::real &min_value, dolfin::real &max_value)
-{
-  #ifdef HAS_GMP
-  $result = Py_BuildValue("dd", $1->get_d(), $2->get_d());
-  #else
-  $result = Py_BuildValue("dd", *$1, *$2);
-  #endif
+%typemap(in, numinputs=0) (double &min_value, double &max_value) ( double min_temp, double max_temp){
+  $1 = &min_temp; $2 = &max_temp;
 }
-*/
+
+%typemap(argout) (double &min_value, double &max_value)
+{
+  //#ifdef HAS_GMP
+  //$result = Py_BuildValue("dd", $1->get_d(), $2->get_d());
+  //#else
+  $result = Py_BuildValue("dd", *$1, *$2);
+  //#endif
+}
 
 // ---------------------------------------------------------------------------
 // Typemaps (argout) for std::set<std::string>&
