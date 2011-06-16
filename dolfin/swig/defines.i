@@ -17,13 +17,22 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-03
-// Last changed: 2010-01-15
+// Last changed: 2011-06-10
 
 // ===========================================================================
 // SWIG directives for mapping defines to Python
 // ===========================================================================
 
 %inline %{
+bool has_openmp()
+{
+#ifdef HAS_OPENMP
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool has_mpi()
 {
 #ifdef HAS_MPI

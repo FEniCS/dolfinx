@@ -31,6 +31,8 @@
 
 using namespace dolfin;
 
+#if defined(HAS_PETSC) || defined(HAS_TRILINOS)
+
 int main()
 {
   // Sub domain for left-hand side
@@ -151,3 +153,13 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 }
+
+#else
+
+int main()
+{
+  info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.");
+  return 0;
+}
+
+#endif

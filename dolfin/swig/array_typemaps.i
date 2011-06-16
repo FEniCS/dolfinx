@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-12-10
-// Last changed: 2011-05-30
+// Last changed: 2011-06-15
 
 //=============================================================================
 // In this file we declare some typemaps for the dolfin::Array type
@@ -62,28 +62,28 @@
 // Macro for defining an out-typemap for dolfin::Array -> NumPy array
 //
 // TYPE       : The primitive type
-// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
-//              'dolfin::uint'
+// NUMPYTYPE  : The NumPy type that is going to be checked for
 //-----------------------------------------------------------------------------
-%define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPE_NAME)
+%define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, NUMPYTYPE)
 
 %typemap(out) dolfin::Array<TYPE> {
 
-  // Create a swig wrapped Array which are going to be attached to the NumPy array
-  PyObject *SWIG_array = 0;
-  SWIG_array = SWIG_NewPointerObj(SWIG_as_voidptr(new dolfin::Array< TYPE >(*(&$1))), $descriptor(dolfin::Array< TYPE >*), SWIG_POINTER_OWN |  0 );
-
   // Create NumPy array
-  PyObject* numpy_array = %make_numpy_array(1, TYPE_NAME)((&$1)->size(), (&$1)->data().get(), true);
+  npy_intp size = (&$1)->size();
+  PyObject* op = PyArray_SimpleNew(1, &size, NUMPYTYPE);
 
-  if ( numpy_array == NULL ) 
+  if ( op == NULL ) 
     SWIG_exception(SWIG_TypeError, "Error in conversion of dolfin::Array< TYPE > to NumPy array.");
 
-  // Attach SWIG wrapped array to the numpy_array
-  reinterpret_cast<PyArrayObject*>(numpy_array)->base = SWIG_array;
+  // Get data
+  TYPE* data = reinterpret_cast<TYPE*>(PyArray_DATA(op));
+
+  // Set data from Array
+  for (int i = 0; i<(&$1)->size(); i++)
+    data[i] = (&$1)->operator[](i);
   
   // Return the NumPy array
-  $result = numpy_array;
+  $result = op;
 }
 %enddef
 
@@ -113,6 +113,6 @@ IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, , const
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, , const)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, i, , const)
 
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, uint)
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, int)
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, double)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, NPY_UINT)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)

@@ -5,7 +5,7 @@ Contents
   3. Contact
   4. About
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 1. Installation
 
 To build DOLFIN, run
@@ -15,7 +15,7 @@ To build DOLFIN, run
 
 For detailed instructions, see the file INSTALL.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 2. License
 
 DOLFIN is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 3. Contact
 
 For comments and requests, send an email to the DOLFIN mailing list:
@@ -42,7 +42,7 @@ For questions and bug reports, visit the DOLFIN Launchpad page:
 
   http://www.launchpad.net/dolfin
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 4. About
 
 DOLFIN is developed by a group of mathematicians, computational scientists and
@@ -52,4 +52,3 @@ file AUTHORS.
 For more information about DOLFIN, visit
 
   http://www.fenicsproject.org
---------------------------------------------------------------------------------
