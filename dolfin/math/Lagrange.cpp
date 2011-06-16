@@ -22,7 +22,6 @@
 // Last changed: 2009-03-20
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include "Lagrange.h"
 
 using namespace dolfin;
@@ -43,7 +42,7 @@ Lagrange::Lagrange(const Lagrange& p)
     init();
 }
 //-----------------------------------------------------------------------------
-void Lagrange::set(unsigned int i, real x)
+void Lagrange::set(unsigned int i, double x)
 {
   assert(i <= q);
 
@@ -64,22 +63,22 @@ unsigned int Lagrange::degree() const
   return q;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::point(unsigned int i) const
+double Lagrange::point(unsigned int i) const
 {
   assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::operator() (unsigned int i, real x)
+double Lagrange::operator() (unsigned int i, double x)
 {
   return eval(i, x);
 }
 //-----------------------------------------------------------------------------
-real Lagrange::eval(unsigned int i, real x)
+double Lagrange::eval(unsigned int i, double x)
 {
   assert(i < points.size());
 
-  real product(constants[i]);
+  double product(constants[i]);
   for (unsigned int j = 0; j < points.size(); j++)
   {
     if (j != i)
@@ -89,20 +88,20 @@ real Lagrange::eval(unsigned int i, real x)
   return product;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::ddx(uint i, real x)
+double Lagrange::ddx(uint i, double x)
 {
   assert(i < points.size());
 
-  real s(0.0);
-  real prod(1.0);
+  double s(0.0);
+  double prod(1.0);
   bool x_equals_point = false;
 
   for (uint j = 0; j < points.size(); ++j)
   {
     if (j != i)
     {
-      real t = x - points[j];
-      if (real_abs(t) < real_epsilon())
+      double t = x - points[j];
+      if (std::abs(t) < DOLFIN_EPS)
         x_equals_point = true;
       else
       {
@@ -118,11 +117,11 @@ real Lagrange::ddx(uint i, real x)
     return prod*constants[i]*s;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dqdx(unsigned int i)
+double Lagrange::dqdx(unsigned int i)
 {
-  real product = constants[i];
+  double product = constants[i];
   for (unsigned int j = 1; j <= q; j++)
-    product *= (real) j;
+    product *= (double) j;
 
   return product;
 }
@@ -135,7 +134,7 @@ std::string Lagrange::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
     for (unsigned int i = 0; i < points.size(); i++)
-      s << "  x[" << i << "] = " << to_double(points[i]);
+      s << "  x[" << i << "] = " << points[i];
   }
   else
     s << "<Lagrange polynomial of degree " << q << " with " << points.size() << " points>";
@@ -155,18 +154,18 @@ void Lagrange::init()
   // Compute constants
   for (unsigned int i = 0; i < points.size(); i++)
   {
-    real product = 1.0;
+    double product = 1.0;
     for (unsigned int j = 0; j < points.size(); j++)
     {
       if (j != i)
       {
-        if (real_abs(points[i] - points[j]) < real_epsilon())
+        if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
           error("Lagrange points not distinct");
         product *= points[i] - points[j];
       }
     }
 
-    if (real_abs(product) < real_epsilon())
+    if (std::abs(product) < DOLFIN_EPS)
       instability_detected();
 
     constants[i] = 1.0/product;

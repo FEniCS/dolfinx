@@ -24,7 +24,6 @@
 #include <boost/math/special_functions/legendre.hpp>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include "Legendre.h"
 

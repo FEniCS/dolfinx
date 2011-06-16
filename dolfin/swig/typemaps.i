@@ -83,30 +83,6 @@
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Typemaps for dolfin::real
-// We do not pass any high precision values here. This might change in future
-// FIXME: We need to find out what to do with Parameters of real. Now they are
-// treated the same as double, and need to have a different typecheck value than
-// DOUBLE 90!= 95. However this will render real parameters unusefull if we do
-// not pick something else thatn PyFloat_Check in the typecheck.
-//-----------------------------------------------------------------------------
-%typecheck(95) dolfin::real
-{
-  // When implementing high precision type, check for that here.
-  $1 = PyFloat_Check($input) ? 1 : 0;
-}
-
-%typemap(in, fragment=SWIG_AsVal_frag(double)) dolfin::real
-{
-  $1 = dolfin::to_real(PyFloat_AsDouble($input));
-}
-
-%typemap(out, fragment=SWIG_From_frag(double)) dolfin::real
-{
-  $result = SWIG_From(double)(dolfin::to_double($1));
-}
-
-//-----------------------------------------------------------------------------
 // Typemaps for dolfin::uint and int
 //-----------------------------------------------------------------------------
 

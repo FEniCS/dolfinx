@@ -52,10 +52,10 @@ PythonFile::~PythonFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(const std::pair<real, RealArrayRef> sample)
+void PythonFile::operator<<(const std::pair<double, RealArrayRef> sample)
 {
-  const real& t      = sample.first;
-  const Array<real>& u = sample.second;
+  const double& t      = sample.first;
+  const Array<double>& u = sample.second;
 
   // First time
   if ( counter2 == 0 )
@@ -79,7 +79,7 @@ void PythonFile::operator<<(const std::pair<real, RealArrayRef> sample)
 				      std::ios_base::out| std::ios_base::app);
 
   // Get precision
-  const int prec = real_decimal_prec();
+  const int prec = 15;
 
   // Open sub files
   std::ofstream fp_t(filename_t.c_str(), filemode);

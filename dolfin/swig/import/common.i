@@ -2,7 +2,6 @@
 
 %import(module="dolfin.cpp") "dolfin/common/init.h"
 %import(module="dolfin.cpp") "dolfin/common/types.h"
-%import(module="dolfin.cpp") "dolfin/common/real.h"
 %import(module="dolfin.cpp") "dolfin/common/constants.h"
 %import(module="dolfin.cpp") "dolfin/common/timing.h"
 %import(module="dolfin.cpp") "dolfin/common/Array.h"

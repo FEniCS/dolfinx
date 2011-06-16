@@ -4,7 +4,6 @@
 %include "dolfin/swig/common_pre.i"
 %include "dolfin/common/init.h"
 %include "dolfin/common/types.h"
-%include "dolfin/common/real.h"
 %include "dolfin/common/constants.h"
 %include "dolfin/common/timing.h"
 %include "dolfin/common/Array.h"

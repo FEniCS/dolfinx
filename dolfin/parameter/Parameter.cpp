@@ -71,7 +71,7 @@ void Parameter::set_range(int min_value, int max_value)
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void Parameter::set_range(real min_value, real max_value)
+void Parameter::set_range(double min_value, double max_value)
 {
   error("Cannot set real-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
@@ -89,7 +89,7 @@ void Parameter::get_range(int& min_value, int& max_value) const
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void Parameter::get_range(real& min_value, real& max_value) const
+void Parameter::get_range(double& min_value, double& max_value) const
 {
   error("Cannot get double-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
@@ -115,6 +115,7 @@ const Parameter& Parameter::operator= (double value)
   return *this;
 }
 //-----------------------------------------------------------------------------
+/*
 #ifdef HAS_GMP
 const Parameter& Parameter::operator= (real value)
 {
@@ -123,6 +124,7 @@ const Parameter& Parameter::operator= (real value)
   return *this;
 }
 #endif
+*/
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (std::string value)
 {
@@ -180,11 +182,11 @@ Parameter::operator bool() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-real Parameter::get_real() const
+double Parameter::get_real() const
 {
   error("Unable to convert parameter \"%s\" of type %s to real.",
         _key.c_str(), type_str().c_str());
-  return real(0);
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Parameter::check_key(std::string key)
@@ -317,7 +319,7 @@ RealParameter::RealParameter(std::string key)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-RealParameter::RealParameter(std::string key, real value)
+RealParameter::RealParameter(std::string key, double value)
   : Parameter(key), _value(value), _min(0.0), _max(0.0)
 {
   _is_set = true;
@@ -328,25 +330,26 @@ RealParameter::~RealParameter()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void RealParameter::set_range(real min_value, real max_value)
+void RealParameter::set_range(double min_value, double max_value)
 {
   // Check range
   if (min_value > max_value)
     error("Illegal range for double-valued parameter: [%g, %g].",
-          to_double(min_value), to_double(max_value));
+          min_value, max_value);
 
   // Set range
   _min = min_value;
   _max = max_value;
 }
 //-----------------------------------------------------------------------------
-void RealParameter::get_range(real& min_value, real& max_value) const
+void RealParameter::get_range(double& min_value, double& max_value) const
 {
   // Get range
   min_value = _min;
   max_value = _max;
 }
 //-----------------------------------------------------------------------------
+/*
 #ifdef HAS_GMP
 const RealParameter& RealParameter::operator= (real value)
 {
@@ -363,13 +366,14 @@ const RealParameter& RealParameter::operator= (real value)
   return *this;
 }
 #endif
+*/
 //-----------------------------------------------------------------------------
 const RealParameter& RealParameter::operator= (double value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
     error("Parameter value %g for parameter \"%s\" out of range [%g, %g].",
-          to_double(value), key().c_str(), to_double(_min), to_double(_max));
+          value, key().c_str(), _min, _max);
 
   // Set value
   _value = value;
@@ -384,10 +388,10 @@ RealParameter::operator double() const
   if (!_is_set)
     error("Parameter has not been set.");
   _access_count++;
-  return to_double(_value);
+  return _value;
 }
 //-----------------------------------------------------------------------------
-real RealParameter::get_real() const
+double RealParameter::get_real() const
 {
   if (!_is_set)
     error("Parameter has not been set.");

@@ -26,7 +26,6 @@
 #include <string>
 #include <sstream>
 #include <dolfin/common/types.h>
-#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -86,10 +85,12 @@ namespace dolfin
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
-#ifdef HAS_GMP
+    /*
+    #ifdef HAS_GMP
     /// Output for real
     LogStream& operator<< (real a);
-#endif
+    #endif
+    */
 
     void setprecision(uint n);
 

@@ -122,6 +122,7 @@ LogStream& LogStream::operator<< (const Point& point)
   return *this;
 }
 //-----------------------------------------------------------------------------
+/*
 #ifdef HAS_GMP
 LogStream& LogStream::operator<< (real a)
 {
@@ -131,6 +132,7 @@ LogStream& LogStream::operator<< (real a)
   return *this;
 }
 #endif
+*/
 //-----------------------------------------------------------------------------
 void LogStream::setprecision(uint n)
 {

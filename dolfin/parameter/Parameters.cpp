@@ -109,6 +109,7 @@ void Parameters::add(std::string key, int value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
+/*
 #ifdef HAS_GMP
 void Parameters::add(std::string key, real value)
 {
@@ -132,6 +133,7 @@ void Parameters::add(std::string key, real value,
   p->set_range(min_value, max_value);
 }
 #endif
+*/
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value)
 {
@@ -140,19 +142,19 @@ void Parameters::add(std::string key, double value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new RealParameter(key, to_real(value));
+  _parameters[key] = new RealParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
                      double min_value, double max_value)
 {
   // Add parameter
-  add(key, to_real(value));
+  add(key, value);
 
   // Set range
   Parameter* p = find_parameter(key);
   assert(p);
-  p->set_range(to_real(min_value), to_real(max_value));
+  p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value)

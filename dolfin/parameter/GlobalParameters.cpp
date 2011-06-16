@@ -20,6 +20,7 @@
 
 #include <fstream>
 #include <cstdlib>
+#include <iostream>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/KrylovSolver.h>

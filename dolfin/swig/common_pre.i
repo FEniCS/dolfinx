@@ -38,6 +38,7 @@ namespace dolfin
 // Ignore all functions using real*
 // We need to hand an explicit typemap for this type
 //-----------------------------------------------------------------------------
+/*
 %ignore real_set(uint n, real* x, const real* y);
 %ignore real_set(uint n, real* x, const real& value);
 %ignore real_zero(uint n, real* x);
@@ -50,6 +51,7 @@ namespace dolfin
 %ignore real_max_abs(uint n, const real* x);
 %ignore real_norm(uint n, const real* x);
 %ignore real_identity(uint n, real* A, real value=1.0);
+*/
 
 //-----------------------------------------------------------------------------
 // Global modifications to the Array interface

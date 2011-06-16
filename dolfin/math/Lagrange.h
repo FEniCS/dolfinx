@@ -25,7 +25,6 @@
 
 #include <dolfin/log/Event.h>
 #include <dolfin/common/types.h>
-#include <dolfin/common/real.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -58,7 +57,7 @@ namespace dolfin
     Lagrange(const Lagrange& p);
 
     /// Specify point
-    void set(unsigned int i, real x);
+    void set(unsigned int i, double x);
 
     /// Return number of points
     unsigned int size() const;
@@ -67,19 +66,19 @@ namespace dolfin
     unsigned int degree() const;
 
     /// Return point
-    real point(unsigned int i) const;
+    double point(unsigned int i) const;
 
     /// Return value of polynomial i at given point x
-    real operator() (unsigned int i, real x);
+    double operator() (unsigned int i, double x);
 
     /// Return value of polynomial i at given point x
-    real eval(unsigned int i, real x);
+    double eval(unsigned int i, double x);
 
     /// Return derivate of polynomial i at given point x
-    real ddx(unsigned int i, real x);
+    double ddx(unsigned int i, double x);
 
     /// Return derivative q (a constant) of polynomial
-    real dqdx(unsigned int i);
+    double dqdx(unsigned int i);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -94,8 +93,8 @@ namespace dolfin
     // init should be called
     uint counter;
 
-    std::vector<real> points;
-    std::vector<real> constants;
+    std::vector<double> points;
+    std::vector<double> constants;
 
     Event instability_detected;
   };

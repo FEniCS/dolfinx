@@ -25,7 +25,6 @@
 #include <sstream>
 #include <string>
 #include <dolfin/common/types.h>
-#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -61,7 +60,7 @@ namespace dolfin
     virtual void set_range(int min_value, int max_value);
 
     /// Set range for double-valued parameter
-    virtual void set_range(real min_value, real max_value);
+    virtual void set_range(double min_value, double max_value);
 
     /// Set range for string-valued parameter
     virtual void set_range(std::set<std::string> range);
@@ -70,7 +69,7 @@ namespace dolfin
     virtual void get_range(int& min_value, int& max_value) const;
 
     /// Get range for double-valued parameter
-    virtual void get_range(real& min_value, real& max_value) const;
+    virtual void get_range(double& min_value, double& max_value) const;
 
     /// Get range for string-valued parameter
     virtual void get_range(std::set<std::string>& range) const;
@@ -81,10 +80,12 @@ namespace dolfin
     /// Assignment from double
     virtual const Parameter& operator= (double value);
 
-#ifdef HAS_GMP
+    /*
+    #ifdef HAS_GMP
     /// Assignment from GMP type
     virtual const Parameter& operator= (real value);
-#endif
+    #endif
+    */
 
     /// Assignment from string
     virtual const Parameter& operator= (std::string value);
@@ -111,7 +112,7 @@ namespace dolfin
     virtual operator bool() const;
 
     /// Get real value of parameter with (possibly) extended precision
-    virtual real get_real() const;
+    virtual double get_real() const;
 
     /// Return value type string
     virtual std::string type_str() const = 0;
@@ -209,28 +210,30 @@ namespace dolfin
     RealParameter(std::string key);
 
     /// Create double-valued parameter
-    RealParameter(std::string key, real value);
+    RealParameter(std::string key, double value);
 
     /// Destructor
     ~RealParameter();
 
     /// Set range
-    void set_range(real min_value, real max_value);
+    void set_range(double min_value, double max_value);
 
     /// Get range
-    void get_range(real &min_value, real &max_value) const;
+    void get_range(double &min_value, double &max_value) const;
 
     /// Assignment
     const RealParameter& operator= (double value);
-#ifdef HAS_GMP
-    const RealParameter& operator= (real value);
-#endif
+    /*
+    #ifdef HAS_GMP
+    const RealParameter& operator= (double value);
+    #endif
+    */
 
     /// Cast parameter to double
     operator double() const;
 
     /// Get real value (possibly with extended precision)
-    real get_real() const;
+    double get_real() const;
 
     /// Return value type string
     std::string type_str() const;
@@ -247,10 +250,10 @@ namespace dolfin
   private:
 
     /// Parameter value
-    real _value;
+    double _value;
 
     /// Parameter range
-    real _min, _max;
+    double _min, _max;
 
   };
 

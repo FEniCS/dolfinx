@@ -54,8 +54,8 @@ std::string LobattoQuadrature::str(bool verbose) const
     for (uint i = 0; i < points.size(); i++)
     {
       s << i << " "
-        << to_double(points[i]) << " "
-        << to_double(weights[i]) << " "
+        << points[i] << " "
+        << weights[i] << " "
         << std::endl;
     }
   }
