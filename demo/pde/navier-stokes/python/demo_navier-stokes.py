@@ -18,8 +18,10 @@ on an L-shaped domain using Chorin's splitting method."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Mikael Mortensen 2011
+#
 # First added:  2010-08-30
-# Last changed: 2010-08-31
+# Last changed: 2011-06-16
 
 # Begin demo
 
@@ -50,7 +52,8 @@ nu = 0.01
 p_in = Expression("sin(3.0*t)")
 
 # Define boundary conditions
-noslip  = DirichletBC(V, (0, 0), "on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS")
+noslip  = DirichletBC(V, (0, 0), "on_boundary && (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS | \
+                                  (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5-DOLFIN_EPS))")
 inflow  = DirichletBC(Q, p_in, "x[1] > 1.0 - DOLFIN_EPS")
 outflow = DirichletBC(Q, 0, "x[0] > 1.0 - DOLFIN_EPS")
 bcu = [noslip]
