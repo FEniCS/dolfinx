@@ -61,7 +61,7 @@ def generate_dolfin_doc(input_dir, output_dir, version=None):
     api_output_dir = os.path.join(output_dir, "python", "programmers-reference")
     generate_python_api_documentation(module, api_output_dir, version)
 
-    print "Successfully generated API documentation"
+    print "\nSuccessfully generated API documentation.\n"
 
 if __name__ == "__main__":
 
