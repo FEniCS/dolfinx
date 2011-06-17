@@ -38,9 +38,9 @@ tests = {
     "parameter": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"],
-    "adaptivity": ["errorcontrol"],
+    "adaptivity": ["errorcontrol", "timeseries"],
     "jit": ["test"],
-    "bc-indicators" : ["aneurysm"] 
+    "bc-indicators" : ["aneurysm"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
