@@ -289,12 +289,10 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 endif()
 
 # Check for Sphinx
-if (DOLFIN_ENABLE_DOCS)
-  find_package(Sphinx)
-  if ("${SPHINX_VERSION}" VERSION_LESS 1.0.7)
-    message(WARNING "DOLFIN documentation requires Sphinx version 1.0.7 or greater. You have Sphinx version ${SPHINX_VERSION}. Proceed at own risk.")
-  endif()
+if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
+  find_package(Sphinx 1.0.7)
 endif()
+
 #------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 
@@ -533,8 +531,13 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
 # Generate documentation
+
 if (DOLFIN_ENABLE_DOCS)
-  add_subdirectory(doc)
+  if (NOT SPHINX_FOUND)
+    message(WARNING "Disabling generation of documentation because Sphinx is missing.")
+  else()
+    add_subdirectory(doc)
+  endif()
 endif()
 
 #------------------------------------------------------------------------------
