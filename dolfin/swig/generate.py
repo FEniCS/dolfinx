@@ -83,8 +83,8 @@ for (module, module_headers) in headers:
 f.close()
 
 # Create docstrings.i file from docstrings module (only for dolfin.cpp)
-from documentation import generate_docstrings
-generate_docstrings()
+#from documentation import generate_docstrings
+#generate_docstrings()
 
 # Extract all shared_ptr stored classes and store them in a pyton module
 # and place that under dolfin.compilemodeuls.sharedptrclasses.py
