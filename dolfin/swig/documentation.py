@@ -37,7 +37,6 @@ dolfin_dir = (os.path.abspath(os.path.join(
 # Add path to dolfin_utils and import the documentation extractor.
 doc_dir = os.path.abspath(os.path.join(dolfin_dir, "site-packages"))
 sys.path.append(doc_dir)
-print sys.path
 from dolfin_utils.documentation import extract_doc_representation
 from dolfin_utils.documentation import indent, add_links
 from codeexamples import codesnippets
