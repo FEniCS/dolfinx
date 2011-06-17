@@ -145,6 +145,10 @@ namespace dolfin
     virtual void gather(Array<double>& x, const Array<uint>& indices) const
     { vector->gather(x, indices); }
 
+    /// Gather all entries into Array x on process 0
+    virtual void gather_on_zero(Array<double>& x) const
+    { vector->gather_on_zero(x); }
+
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x)
     { vector->axpy(a, x); }

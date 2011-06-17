@@ -428,6 +428,21 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (_y)[0][i];
 }
 //-----------------------------------------------------------------------------
+void EpetraVector::gather_on_zero(Array<double>& x) const
+{
+  // FIXME: Is there an Epetra function for this?
+
+  Array<uint> indices(0);
+  if (MPI::process_number() == 0)
+  {
+    indices.resize(size());
+    for (uint i = 0; i < size(); ++i)
+      indices[i] = i;
+  }
+
+  gather(x, indices);
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_BlockMap& map)
 {
   // Clear ghost data

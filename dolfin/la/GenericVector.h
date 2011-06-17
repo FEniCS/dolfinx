@@ -132,7 +132,7 @@ namespace dolfin
     /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const
     {
-      warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed");
+      warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed.");
       get_local(block, m, rows);
     }
 
@@ -159,6 +159,9 @@ namespace dolfin
 
     /// Gather entries into Array x
     virtual void gather(Array<double>& x, const Array<uint>& indices) const = 0;
+
+    /// Gather all entries into Array x on process 0
+    virtual void gather_on_zero(Array<double>& x) const = 0;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;

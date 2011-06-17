@@ -174,6 +174,13 @@ void uBLASVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
+void uBLASVector::gather_on_zero(Array<double>& x) const
+{
+  not_working_in_parallel("uBLASVector::gather_on_zero)");
+
+  get_local(x);
+}
+//-----------------------------------------------------------------------------
 void uBLASVector::set(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)

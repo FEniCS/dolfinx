@@ -98,6 +98,33 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
     ++indent;
   }
 
+  // Gather entries from process i on process 0
+  Array<double> x;
+  if (MPI::num_processes() >1)
+    vector.gather_on_zero(x);
+  else
+    vector.get_local(x);
+
+  // Write vector entries
+  if (write_to_stream)
+  {
+    for (uint i = 0; i < x.size(); ++i)
+    {
+      outfile << indent()
+        << "<element index=\"" << i
+        << "\" value=\"" << std::setprecision(16) << x[i]
+        << "\"/>" << std::endl;
+    }
+
+    --indent;
+    outfile << indent() << "</array>" << std::endl;
+    --indent;
+
+    // Write vector footer
+    if (write_to_stream)
+      outfile << indent() << "</vector>" << std::endl;
+  }
+  /*
   // Gather entries from process i on process 0 and write to file
   for (uint process  = 0; process < MPI::num_processes(); ++process)
   {
@@ -137,6 +164,7 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
       }
     }
   }
+
   if (write_to_stream)
   {
     --indent;
@@ -144,14 +172,10 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
     --indent;
   }
 
-  // Write array
-  //++indent;
-  //XMLArray::write(vector_values, n0, outfile, indent.level());
-  //--indent;
-
   // Write vector footer
   if (write_to_stream)
     outfile << indent() << "</vector>" << std::endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)

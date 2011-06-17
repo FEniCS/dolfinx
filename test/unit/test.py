@@ -34,7 +34,7 @@ tests = {
     "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],
-    "io": ["test", "vtk"],
+    "io": ["test", "vtk", "xml_vector"],
     "parameter": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"],
