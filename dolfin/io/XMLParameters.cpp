@@ -107,10 +107,9 @@ void XMLParameters::write(const Parameters& parameters,
       outfile << "<parameter key=\"" << parameter.key() << "\" type=\"int\" value=\""
               << static_cast<int>(parameter) << "\"/>" << std::endl;
     }
-    else if (parameter.type_str() == "real")
+    else if (parameter.type_str() == "double")
     {
-      // FIXME: Cast to double here, extended precision lost
-      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"real\" value=\""
+      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"double\" value=\""
               << static_cast<double>(parameter) << "\"/>" << std::endl;
     }
     else if (parameter.type_str() == "bool")
@@ -175,7 +174,7 @@ void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
   const std::string string_value = parse_string(name, attrs, "value");
 
   // Set parameter
-  if (type == "double" || type == "real")
+  if (type == "double")
   {
     std::istringstream ss(string_value);
     double value;

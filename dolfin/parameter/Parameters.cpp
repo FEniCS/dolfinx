@@ -109,32 +109,6 @@ void Parameters::add(std::string key, int value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
-/*
-#ifdef HAS_GMP
-void Parameters::add(std::string key, real value)
-{
-  // Check key name
-  if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
-
-  // Add parameter
-  _parameters[key] = new RealParameter(key, value);
-}
-//-----------------------------------------------------------------------------
-void Parameters::add(std::string key, real value,
-                        real min_value, real max_value)
-{
-  // Add parameter
-  add(key, value);
-
-  // Set range
-  Parameter* p = find_parameter(key);
-  assert(p);
-  p->set_range(min_value, max_value);
-}
-#endif
-*/
-//-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value)
 {
   // Check key name
@@ -142,7 +116,7 @@ void Parameters::add(std::string key, double value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new RealParameter(key, value);
+  _parameters[key] = new DoubleParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
@@ -255,10 +229,8 @@ void Parameters::update(const Parameters& parameters)
     // Set value (will give an error if the type is wrong)
     if (other.type_str() == "int")
       *self = static_cast<int>(other);
-    else if (other.type_str() == "real")
-      // Need to use get_real() here to avoid rounding to double precision.
-      // *self = static_cast<int>(other);
-      *self = other.get_real();
+    else if (other.type_str() == "double")
+      *self = static_cast<double>(other);
     else if (other.type_str() == "bool")
       *self = static_cast<bool>(other);
     else if (other.type_str() == "string")
@@ -337,8 +309,8 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
     Parameter* q = 0;
     if (p.type_str() == "int")
       q = new IntParameter(dynamic_cast<const IntParameter&>(p));
-    else if (p.type_str() == "real")
-      q = new RealParameter(dynamic_cast<const RealParameter&>(p));
+    else if (p.type_str() == "double")
+      q = new DoubleParameter(dynamic_cast<const DoubleParameter&>(p));
     else if (p.type_str() == "bool")
       q = new BoolParameter(dynamic_cast<const BoolParameter&>(p));
     else if (p.type_str() == "string")
@@ -487,7 +459,7 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
       desc.add_options()(param_name.c_str(), po::value<int>(), p.description().c_str());
     else if (p.type_str() == "bool")
       desc.add_options()(param_name.c_str(), po::value<bool>(), p.description().c_str());
-    else if (p.type_str() == "real")
+    else if (p.type_str() == "double")
       desc.add_options()(param_name.c_str(), po::value<double>(), p.description().c_str());
     else if (p.type_str() == "string")
       desc.add_options()(param_name.c_str(), po::value<std::string>(), p.description().c_str());
@@ -519,7 +491,7 @@ void Parameters::read_vm(po::variables_map& vm, Parameters &parameters, std::str
       if (!v.empty())
         p = v.as<bool>();
     }
-    else if (p.type_str() == "real")
+    else if (p.type_str() == "double")
     {
       const po::variable_value& v = vm[param_name];
       if (!v.empty())

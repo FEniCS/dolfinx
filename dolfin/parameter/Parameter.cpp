@@ -73,7 +73,7 @@ void Parameter::set_range(int min_value, int max_value)
 //-----------------------------------------------------------------------------
 void Parameter::set_range(double min_value, double max_value)
 {
-  error("Cannot set real-valued range for parameter \"%s\" of type %s.",
+  error("Cannot set double-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
@@ -114,17 +114,6 @@ const Parameter& Parameter::operator= (double value)
         _key.c_str(), type_str().c_str());
   return *this;
 }
-//-----------------------------------------------------------------------------
-/*
-#ifdef HAS_GMP
-const Parameter& Parameter::operator= (real value)
-{
-  error("Cannot assign real-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
-  return *this;
-}
-#endif
-*/
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (std::string value)
 {
@@ -180,13 +169,6 @@ Parameter::operator bool() const
   error("Unable to convert parameter \"%s\" of type %s to bool.",
         _key.c_str(), type_str().c_str());
   return 0;
-}
-//-----------------------------------------------------------------------------
-double Parameter::get_real() const
-{
-  error("Unable to convert parameter \"%s\" of type %s to real.",
-        _key.c_str(), type_str().c_str());
-  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Parameter::check_key(std::string key)
@@ -311,26 +293,26 @@ std::string IntParameter::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-// class RealParameter
+// class DoubleParameter
 //-----------------------------------------------------------------------------
-RealParameter::RealParameter(std::string key)
+DoubleParameter::DoubleParameter(std::string key)
   : Parameter(key), _min(0.0), _max(0.0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-RealParameter::RealParameter(std::string key, double value)
+DoubleParameter::DoubleParameter(std::string key, double value)
   : Parameter(key), _value(value), _min(0.0), _max(0.0)
 {
   _is_set = true;
 }
 //-----------------------------------------------------------------------------
-RealParameter::~RealParameter()
+DoubleParameter::~DoubleParameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void RealParameter::set_range(double min_value, double max_value)
+void DoubleParameter::set_range(double min_value, double max_value)
 {
   // Check range
   if (min_value > max_value)
@@ -342,33 +324,14 @@ void RealParameter::set_range(double min_value, double max_value)
   _max = max_value;
 }
 //-----------------------------------------------------------------------------
-void RealParameter::get_range(double& min_value, double& max_value) const
+void DoubleParameter::get_range(double& min_value, double& max_value) const
 {
   // Get range
   min_value = _min;
   max_value = _max;
 }
 //-----------------------------------------------------------------------------
-/*
-#ifdef HAS_GMP
-const RealParameter& RealParameter::operator= (real value)
-{
-  // Check value
-  if (_min != _max && (value < _min || value > _max))
-    error("Parameter value %g for parameter \"%s\" out of range [%g, %g].",
-          to_double(value), key().c_str(), to_double(_min), to_double(_max));
-
-  // Set value
-  _value = value;
-  _change_count++;
-  _is_set = true;
-
-  return *this;
-}
-#endif
-*/
-//-----------------------------------------------------------------------------
-const RealParameter& RealParameter::operator= (double value)
+const DoubleParameter& DoubleParameter::operator= (double value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
@@ -383,7 +346,7 @@ const RealParameter& RealParameter::operator= (double value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-RealParameter::operator double() const
+DoubleParameter::operator double() const
 {
   if (!_is_set)
     error("Parameter has not been set.");
@@ -391,20 +354,12 @@ RealParameter::operator double() const
   return _value;
 }
 //-----------------------------------------------------------------------------
-double RealParameter::get_real() const
+std::string DoubleParameter::type_str() const
 {
-  if (!_is_set)
-    error("Parameter has not been set.");
-  _access_count++;
-  return _value;
+  return "double";
 }
 //-----------------------------------------------------------------------------
-std::string RealParameter::type_str() const
-{
-  return "real";
-}
-//-----------------------------------------------------------------------------
-std::string RealParameter::value_str() const
+std::string DoubleParameter::value_str() const
 {
   if (!_is_set)
     error("Parameter has not been set.");
@@ -413,7 +368,7 @@ std::string RealParameter::value_str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string RealParameter::range_str() const
+std::string DoubleParameter::range_str() const
 {
   std::stringstream s;
   if (_min == _max)
@@ -423,7 +378,7 @@ std::string RealParameter::range_str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string RealParameter::str() const
+std::string DoubleParameter::str() const
 {
   if (!_is_set)
     error("Parameter has not been set.");

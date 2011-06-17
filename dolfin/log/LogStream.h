@@ -85,13 +85,6 @@ namespace dolfin
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
-    /*
-    #ifdef HAS_GMP
-    /// Output for real
-    LogStream& operator<< (real a);
-    #endif
-    */
-
     void setprecision(uint n);
 
   private:

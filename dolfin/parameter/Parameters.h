@@ -125,16 +125,6 @@ namespace dolfin
     /// Add double-valued parameter with given range
     void add(std::string key, double value, double min_value, double max_value);
 
-    /*
-    #ifdef HAS_GMP
-    /// Add double-valued parameter
-    void add(std::string key, real value);
-
-    /// Add double-valued parameter with given range
-    void add(std::string key, real value, real min_value, real max_value);
-    #endif
-    */
-
     /// Add string-valued parameter
     void add(std::string key, std::string value);
 
@@ -236,15 +226,8 @@ namespace dolfin
   template<> inline void Parameters::add<int>(std::string key)
   { _parameters[key] = new IntParameter(key); }
 
-  /*
-  #ifdef HAS_GMP
-  template<> inline void Parameters::add<real>(std::string key)
-  { _parameters[key] = new RealParameter(key); }
-  #endif
-  */
-
   template<> inline void Parameters::add<double>(std::string key)
-  { _parameters[key] = new RealParameter(key); }
+  { _parameters[key] = new DoubleParameter(key); }
 
   template<> inline void Parameters::add<std::string>(std::string key)
   { _parameters[key] = new StringParameter(key); }

@@ -29,7 +29,7 @@
 
 namespace dolfin
 {
-  typedef boost::reference_wrapper<Array<double> > RealArrayRef;
+  typedef boost::reference_wrapper<Array<double> > DoubleArrayRef;
 
   class Sample;
 
@@ -49,7 +49,7 @@ namespace dolfin
 
     // Output
 
-    void operator<< (const std::pair<double, RealArrayRef>);
+    void operator<< (const std::pair<double, DoubleArrayRef>);
 
     std::string filename_t, filename_u, filename_k, filename_r;
 

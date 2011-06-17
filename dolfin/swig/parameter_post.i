@@ -48,11 +48,7 @@ def value(self):
         return int(self)
     elif val_type == "bool":
         return bool(self)
-    elif val_type == "real":
-        from logging import DEBUG
-        if get_log_level() <= DEBUG and has_gmp():
-            # FIXME: Is it possible to convert real to some high-precision Python type?
-            self.warn_once("Warning: Converting real-valued parameter '%s' to double, might lose precision."%self.key())
+    elif val_type == "double":
         return float(self)
     else:
         raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
@@ -71,12 +67,9 @@ def get_range(self):
         return local_range
     elif val_type == "bool":
         return
-    elif val_type == "real":
+    elif val_type == "double":
         from logging import DEBUG
-        if get_log_level() <= DEBUG and has_gmp():
-            # FIXME: Is it possible to convert real to some high-precision Python type?
-            self.warn_once("Warning: Converting real-valued parameter '%s' to double, might lose precision."%self.key())
-        local_range = self._get_real_range()
+        local_range = self._get_double_range()
         if local_range[0] == 0 and local_range[0] == local_range[0]:
             return
         return local_range

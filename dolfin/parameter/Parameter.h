@@ -80,13 +80,6 @@ namespace dolfin
     /// Assignment from double
     virtual const Parameter& operator= (double value);
 
-    /*
-    #ifdef HAS_GMP
-    /// Assignment from GMP type
-    virtual const Parameter& operator= (real value);
-    #endif
-    */
-
     /// Assignment from string
     virtual const Parameter& operator= (std::string value);
 
@@ -110,9 +103,6 @@ namespace dolfin
 
     /// Cast parameter to bool
     virtual operator bool() const;
-
-    /// Get real value of parameter with (possibly) extended precision
-    virtual double get_real() const;
 
     /// Return value type string
     virtual std::string type_str() const = 0;
@@ -202,18 +192,18 @@ namespace dolfin
   };
 
   /// Parameter with value type double
-  class RealParameter : public Parameter
+  class DoubleParameter : public Parameter
   {
   public:
 
     /// Create unset double-valued parameter
-    RealParameter(std::string key);
+    DoubleParameter(std::string key);
 
     /// Create double-valued parameter
-    RealParameter(std::string key, double value);
+    DoubleParameter(std::string key, double value);
 
     /// Destructor
-    ~RealParameter();
+    ~DoubleParameter();
 
     /// Set range
     void set_range(double min_value, double max_value);
@@ -222,18 +212,10 @@ namespace dolfin
     void get_range(double &min_value, double &max_value) const;
 
     /// Assignment
-    const RealParameter& operator= (double value);
-    /*
-    #ifdef HAS_GMP
-    const RealParameter& operator= (double value);
-    #endif
-    */
+    const DoubleParameter& operator= (double value);
 
     /// Cast parameter to double
     operator double() const;
-
-    /// Get real value (possibly with extended precision)
-    double get_real() const;
 
     /// Return value type string
     std::string type_str() const;
