@@ -33,10 +33,13 @@ import os, shutil, types, sys
 # Set top DOLFIN directory.
 dolfin_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),\
                                               os.pardir, os.pardir))
+
 # Add path to dolfin_utils and import the documentation extractor.
-doc_dir = os.path.abspath(os.path.join(dolfin_dir, "site-packages"))
+doc_dir = os.path.abspath(os.path.join(dolfin_dir, "site-packages", "dolfin_utils", "documentation"))
 sys.path.append(doc_dir)
-from dolfin_utils.documentation import extract_doc_representation, indent, add_links
+print sys.path
+from extractdocumentation import extract_doc_representation
+from docstringutils import indent, add_links
 from codeexamples import codesnippets
 
 if os.path.isfile("docstrings.i"):
