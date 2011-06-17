@@ -138,11 +138,11 @@ namespace dolfin
 
     //--- Scalar interface ---
 
-    /// Cast to real
+    /// Cast to double
     operator double() const
     { return value; }
 
-    /// Assignment from real
+    /// Assignment from double
     const Scalar& operator= (double value)
     { this->value = value; return *this; }
 

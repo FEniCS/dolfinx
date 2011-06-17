@@ -122,18 +122,6 @@ LogStream& LogStream::operator<< (const Point& point)
   return *this;
 }
 //-----------------------------------------------------------------------------
-/*
-#ifdef HAS_GMP
-LogStream& LogStream::operator<< (real a)
-{
-  char tmp[DOLFIN_LINELENGTH];
-  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.16Fg...", a.get_mpf_t());
-  buffer << tmp;
-  return *this;
-}
-#endif
-*/
-//-----------------------------------------------------------------------------
 void LogStream::setprecision(uint n)
 {
   buffer.precision(n);

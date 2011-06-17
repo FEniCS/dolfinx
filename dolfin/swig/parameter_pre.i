@@ -37,7 +37,7 @@
 %rename (__str__) dolfin::Parameter::operator std::string;
 %rename (_assign) dolfin::Parameter::operator=;
 %rename (_get_int_range) dolfin::Parameter::get_range(int& min_value, int& max_value) const;
-%rename (_get_real_range) dolfin::Parameter::get_range(double& min_value, double& max_value) const;
+%rename (_get_double_range) dolfin::Parameter::get_range(double& min_value, double& max_value) const;
 %rename (_get_string_range) dolfin::Parameter::get_range(std::set<std::string>& range) const;
 %ignore dolfin::Parameter::operator dolfin::uint;
 
@@ -130,11 +130,7 @@
 
 %typemap(argout) (double &min_value, double &max_value)
 {
-  //#ifdef HAS_GMP
-  //$result = Py_BuildValue("dd", $1->get_d(), $2->get_d());
-  //#else
   $result = Py_BuildValue("dd", *$1, *$2);
-  //#endif
 }
 
 // ---------------------------------------------------------------------------

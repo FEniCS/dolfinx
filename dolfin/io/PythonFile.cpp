@@ -52,7 +52,7 @@ PythonFile::~PythonFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(const std::pair<double, RealArrayRef> sample)
+void PythonFile::operator<<(const std::pair<double, DoubleArrayRef> sample)
 {
   const double& t      = sample.first;
   const Array<double>& u = sample.second;
