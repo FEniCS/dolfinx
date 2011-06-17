@@ -668,6 +668,30 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
     sum += x[i]*x[i];
 }
 //-----------------------------------------------------------------------------
+void PETScVector::gather_on_zero(Array<double>& x) const
+{
+  if (MPI::process_number() == 0)
+    x.resize(size());
+  else
+    x.resize(0);
+
+  boost::shared_ptr<Vec> vout(new Vec);
+  VecScatter scatter;
+  VecScatterCreateToZero(*this->x, &scatter, vout.get());
+
+  VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+
+  VecScatterDestroy(scatter);
+
+  // Wrap PETSc vector
+  if (MPI::process_number() == 0)
+  {
+    PETScVector _vout(vout);
+    _vout.get_local(x);
+  }
+}
+//-----------------------------------------------------------------------------
 bool PETScVector::distributed() const
 {
   assert(x);
