@@ -1,0 +1,26 @@
+# Last changed: 2011-06-17
+
+This directory and its subdirectories contain (i) data and scripts for
+generating the DOLFIN library reference and consolidating the DOLFIN
+demo documentation and (ii) man pages for the scripts dolfin-convert,
+dolfin-order, dolfin-plot and dolfin-version.
+
+To generate all reST documentation files from the DOLFIN library and
+the demos: build DOLFIN, make sure that the corresponding dolfin
+module is available, and do
+
+       make doc
+
+in the build directory.
+
+This will run the scripts
+
+    generate_api_doc.py  (which ge
+    copy_and_split_demo_doc.py
+    generate_main_index.py
+
+
+
+
+
+
