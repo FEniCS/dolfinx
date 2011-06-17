@@ -1,4 +1,4 @@
-"""Unit tests for adaptivity"""
+"""Unit tests for error control"""
 
 # Copyright (C) 2011 Marie E. Rognes
 #
@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-04-05
-# Last changed: 2011-04-06
+# Last changed: 2011-06-17
 
 import unittest
 #from unittest import skipIf # Awaiting Python 2.7
