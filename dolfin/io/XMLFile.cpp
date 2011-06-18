@@ -215,6 +215,18 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   close_file();
 }
 //-----------------------------------------------------------------------------
+template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
+                                                  const std::string type) const
+{
+
+}
+//-----------------------------------------------------------------------------
+template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
+                                                  const std::string type) const
+{
+
+}
+//-----------------------------------------------------------------------------
 /*
 void XMLFile::validate(const std::string filename)
 {

@@ -151,7 +151,8 @@ void XMLMeshFunction::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
+void XMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile,
+                            uint indentation_level, bool write_mesh)
 {
   if (write_mesh)
     XMLMesh::write(mf.mesh(), outfile, indentation_level);

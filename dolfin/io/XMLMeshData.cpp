@@ -139,7 +139,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
 
       // Write mesh function (omit mesh)
       ++indent;
-      XMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
+      //XMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
       --indent;
 
       // Write data entry footer
@@ -262,6 +262,8 @@ void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
 {
+  error("XMLMeshData::read_mesh_function need updating.");
+  /*
   std::string mf_type = parse_string(name, attrs, "type");
   uint dim = parse_uint(name, attrs, "dim");
   uint size = parse_uint(name, attrs, "size");
@@ -271,5 +273,6 @@ void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
    boost::shared_ptr<MeshFunction<unsigned int> > mf = data.create_mesh_function(entity_name);
   xml_mesh_function = new XMLMeshFunction(*mf, parser, size, dim);
   xml_mesh_function->handle();
+  */
 }
 //-----------------------------------------------------------------------------
