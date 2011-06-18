@@ -122,6 +122,8 @@ void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)
 {
+  error("XMLFunctionPlotData::read_vector needs updating");
+  /*
   delete xml_vector;
   xml_vector = new XMLVector(data.vertex_values(), parser);
 
@@ -130,5 +132,6 @@ void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs
 
   // Parse the rest of the vector
   xml_vector->handle();
+  */
 }
 //-----------------------------------------------------------------------------

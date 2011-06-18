@@ -39,6 +39,9 @@
 #include "XMLMatrix.h"
 #include "XMLFunctionPlotData.h"
 
+#include "pugixml.hpp"
+#include "XMLVector.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -87,6 +90,41 @@ XMLFile::~XMLFile()
     outfile = 0;
     delete outstream;
   }
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (GenericVector& input)
+{
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_file(filename.c_str());
+
+  // Check that we have a DOLFIN XML file
+  const pugi::xml_node dolfin_node = doc.child("dolfin");
+  if (!dolfin_node)
+    error("Not a DOLFIN XML file");
+
+  // Check that we have a Vector XML file
+  const pugi::xml_node vector_node = dolfin_node.child("vector");
+  if (!vector_node)
+    error("Not a DOLFIN Vector XML file");
+
+  // Fill vector
+  XMLVector::read(input, vector_node);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const GenericVector& output)
+{
+  // Open file on process 0 for distributed objects and on all processes
+  // for local objects
+  if (MPI::process_number() == 0)
+    open_file();
+
+  // Note: 'write' is being called on all processes since collective MPI
+  // calls might be used.
+  XMLVector::write(output,  *outstream, 1);
+
+  // Close file
+  if (MPI::process_number() == 0)
+    close_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::validate(const std::string filename)
