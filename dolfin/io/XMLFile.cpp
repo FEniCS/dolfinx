@@ -218,13 +218,48 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
+  // Create XML parser tools
+  pugi::xml_document doc;
+  pugi::xml_parse_result result;
 
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // Load xml file (unzip if necessary) into parser
+  if (extension == ".gz")
+  {
+    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_decompressor());
+    in.push(file);
+
+    // FIXME: Is this the best way to do it?
+    std::stringstream dst;
+    boost::iostreams::copy(in, dst);
+
+    result = doc.load(dst);
+  }
+  else
+    result = doc.load_file(filename.c_str());
+
+  // Check that we have a DOLFIN XML file
+  const pugi::xml_node dolfin_node = doc.child("dolfin");
+  if (!dolfin_node)
+    error("Not a DOLFIN XML file");
+
+  // Check that we have a MeshFunction XML file
+  const pugi::xml_node mf_node = dolfin_node.child("meshfunction");
+  if (!mf_node)
+    error("Not a DOLFIN MeshFunction XML file");
+
+  XMLMeshFunction::read(t, type, dolfin_node);
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
                                                   const std::string type) const
 {
-
+  XMLMeshFunction::write(t, type, *outstream, 1);
 }
 //-----------------------------------------------------------------------------
 /*

@@ -44,7 +44,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
   Array<double> data(size);
   Array<unsigned int> indices(size);
 
-  // Iterate over array entries and print
+  // Iterate over array entries
   for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
   {
     const unsigned int index = it->attribute("index").as_uint();
