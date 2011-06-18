@@ -70,9 +70,9 @@ namespace dolfin
 
     //--- Mappings from input to correct handler ---
 
-    void operator>> (Mesh& input)                                           { read_xml(input); }
+    void operator>> (Mesh& input);
     void operator>> (LocalMeshData& input)                                  { read_xml(input); }
-    void operator>> (GenericMatrix& input)                                  { read_xml(input); }
+    //void operator>> (GenericMatrix& input)                                  { read_xml(input); }
     void operator>> (GenericVector& input);
     void operator>> (Parameters& input)                                     { read_xml(input); }
     void operator>> (FunctionPlotData&  input)                              { read_xml(input); }
@@ -91,8 +91,8 @@ namespace dolfin
 
     //--- Mappings from output to correct handler ---
 
-    void operator<< (const Mesh& output)                                    { write_xml(output); }
-    void operator<< (const GenericMatrix& output)                           { write_xml(output); }
+    void operator<< (const Mesh& output);
+    //void operator<< (const GenericMatrix& output)                           { write_xml(output); }
     void operator<< (const GenericVector& output);
     void operator<< (const Parameters& output)                              { write_xml(output); }
     void operator<< (const FunctionPlotData& output)                        { write_xml(output, false); }
@@ -110,7 +110,7 @@ namespace dolfin
     //void operator<< (const std::map<uint, std::vector<double> >& array_map) { write_xml_map(array_map); }
 
     /// Validate file
-    void validate(std::string filename);
+    //void validate(std::string filename);
 
     /// Write file
     void write();

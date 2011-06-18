@@ -99,6 +99,46 @@ XMLFile::~XMLFile()
   }
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator>> (Mesh& input_mesh)
+{
+  // Create XML parser tools
+  pugi::xml_document doc;
+  pugi::xml_parse_result result;
+
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // Load xml file (unzip if necessary) into parser
+  if (extension == ".gz")
+  {
+    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_decompressor());
+    in.push(file);
+
+    std::stringstream dst;
+    boost::iostreams::copy(in, dst);
+
+    result = doc.load(dst);
+  }
+  else
+    result = doc.load_file(filename.c_str());
+
+  // Check that we have a DOLFIN XML file
+  const pugi::xml_node dolfin_node = doc.child("dolfin");
+  if (!dolfin_node)
+    error("Not a DOLFIN XML file");
+
+  // Check that we have a Mesh XML file
+  const pugi::xml_node mesh_node = dolfin_node.child("mesh");
+  if (!mesh_node)
+    error("Not a DOLFIN Mesh XML file");
+
+  // Fill vector
+  XMLMesh::read(input_mesh, dolfin_node);
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
 {
   // Create XML parser tools
@@ -122,8 +162,8 @@ void XMLFile::operator>> (GenericVector& input)
     boost::iostreams::copy(in, dst);
 
     result = doc.load(dst);
-    std::cout << "test" << std::endl;
-    std::cout << dst.str() << std::endl;
+    //std::cout << "test" << std::endl;
+    //std::cout << dst.str() << std::endl;
   }
   else
     result = doc.load_file(filename.c_str());
@@ -151,13 +191,31 @@ void XMLFile::operator<< (const GenericVector& output)
 
   // Note: 'write' is being called on all processes since collective MPI
   // calls might be used.
-  XMLVector::write(output,  *outstream, 1);
+  XMLVector::write(output, *outstream, 1);
 
   // Close file
   if (MPI::process_number() == 0)
     close_file();
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Mesh& output_mesh)
+{
+  if (MPI::num_processes() > 1)
+    error("Mesh XML output in parallel not yet supported");
+
+  // Open file on process 0 for distributed objects and on all processes
+  // for local objects
+  open_file();
+
+  // Note: 'write' is being called on all processes since collective MPI
+  // calls might be used.
+  XMLMesh::write(output_mesh, *outstream, 1);
+
+  // Close file
+  close_file();
+}
+//-----------------------------------------------------------------------------
+/*
 void XMLFile::validate(const std::string filename)
 {
   xmlRelaxNGParserCtxtPtr parser;
@@ -185,6 +243,7 @@ void XMLFile::validate(const std::string filename)
 
   xmlRelaxNGFreeValidCtxt(validator);
 }
+*/
 //-----------------------------------------------------------------------------
 void XMLFile::write()
 {

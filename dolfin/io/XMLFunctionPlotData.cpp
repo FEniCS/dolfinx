@@ -18,10 +18,11 @@
 // First added:  2009-03-16
 // Last changed: 2009-10-07
 
-#include <dolfin/io/XMLFile.h>
 #include <dolfin/plot/FunctionPlotData.h>
+#include "XMLFile.h"
 #include "XMLIndent.h"
 #include "XMLMesh.h"
+#include "XMLVector.h"
 #include "XMLFunctionPlotData.h"
 
 using namespace dolfin;
@@ -110,6 +111,8 @@ void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** att
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
+  error("XMLFunctionPlotData::read_mesh needs updating");
+  /*
   delete xml_mesh;
   xml_mesh = new XMLMesh(data.mesh, parser);
 
@@ -118,6 +121,7 @@ void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 
   // Parse the rest of the mesh
   xml_mesh->handle();
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)

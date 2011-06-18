@@ -18,8 +18,8 @@
 // First added:  2003-07-15
 // Last changed: 2006-05-23
 
-#ifndef __NEW_XMLVECTOR_H
-#define __NEW_XMLVECTOR_H
+#ifndef __XMLVECTOR_H
+#define __XMLVECTOR_H
 
 #include <ostream>
 #include <string>

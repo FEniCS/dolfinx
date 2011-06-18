@@ -93,8 +93,8 @@ int main()
   File file("poisson.pvd");
   file << u;
 
-  File xfile("out.xml.gz");
-  xfile >> u.vector();
+  File mfile("mesh.xml");
+  mfile << mesh;
 
   // Plot solution
   //plot(u);
