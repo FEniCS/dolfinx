@@ -101,6 +101,7 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
 {
+  // Create XML parser tools
   pugi::xml_document doc;
   pugi::xml_parse_result result;
 
@@ -108,7 +109,7 @@ void XMLFile::operator>> (GenericVector& input)
   const boost::filesystem::path path(filename);
   const std::string extension = boost::filesystem::extension(path);
 
-  // Load xml file (unzip if necessary)
+  // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
   {
     std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
@@ -120,7 +121,6 @@ void XMLFile::operator>> (GenericVector& input)
     std::stringstream dst;
     boost::iostreams::copy(in, dst);
 
-    // Load pugixml
     result = doc.load(dst);
     std::cout << "test" << std::endl;
     std::cout << dst.str() << std::endl;

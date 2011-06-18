@@ -273,9 +273,7 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  const uint local_size = x->MyLength();
-  if (values.size() != local_size)
-    error("EpetraVector::get_local: length of values array is not equal to local vector size.");
+  values.resize(x->MyLength());
 
   const int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
