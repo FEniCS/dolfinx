@@ -1,4 +1,4 @@
-# Last changed: 2011-06-17
+# Last changed: 2011-06-18
 
 This directory and its subdirectories contain (i) data and scripts for
 generating the DOLFIN library reference and consolidating the DOLFIN
@@ -57,7 +57,8 @@ What 'make doc' does:
 
    generate_api_doc.py ...
 
-       calls dolfin_utils.documentation.generate_dolfin_doc(...)
+       calls generate_[python|cpp]_api_documentation from
+       dolfin_utils.documentation with appropriate arguments
 
    copy_and_split_demo_doc.py ...
 
