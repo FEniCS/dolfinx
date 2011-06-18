@@ -39,6 +39,13 @@
 #include "XMLMatrix.h"
 #include "XMLFunctionPlotData.h"
 
+#include <fstream>
+#include <iostream>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 #include "pugixml.hpp"
 #include "XMLVector.h"
 
@@ -95,7 +102,31 @@ XMLFile::~XMLFile()
 void XMLFile::operator>> (GenericVector& input)
 {
   pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file(filename.c_str());
+  pugi::xml_parse_result result;
+
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // Load xml file (unzip if necessary)
+  if (extension == ".gz")
+  {
+    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_decompressor());
+    in.push(file);
+
+    // FIXME: Is this the best way to do it?
+    std::stringstream dst;
+    boost::iostreams::copy(in, dst);
+
+    // Load pugixml
+    result = doc.load(dst);
+    std::cout << "test" << std::endl;
+    std::cout << dst.str() << std::endl;
+  }
+  else
+    result = doc.load_file(filename.c_str());
 
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = doc.child("dolfin");

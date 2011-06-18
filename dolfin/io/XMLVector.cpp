@@ -42,6 +42,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
   const std::string type  = array.attribute("type").value();
 
   Array<double> data(size);
+  Array<unsigned int> indices(size);
 
   // Iterate over array entries and print
   for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
@@ -49,6 +50,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
     const unsigned int index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_double();
     assert(index < size);
+    indices[index] = index;
     data[index] = value;
 
     //std::cout << "Entry:";
@@ -61,7 +63,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
 
   // Resize vector and add data
   x.resize(size);
-  x.set_local(data);
+  x.set(data.data().get(), size, indices.data().get());
   x.apply("insert");
 
   std::cout << "Using new XML vector reading (b): " << x.norm("l2") << std::endl;
