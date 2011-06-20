@@ -36,7 +36,6 @@
 #include "XMLFile.h"
 #include "XMLMesh.h"
 #include "XMLLocalMeshData.h"
-#include "XMLMatrix.h"
 #include "XMLFunctionPlotData.h"
 
 #include <fstream>
@@ -99,87 +98,36 @@ XMLFile::~XMLFile()
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Mesh& input_mesh)
+void XMLFile::operator>> (Mesh& input_mesh) const
 {
-  // Create XML parser tools
-  pugi::xml_document doc;
-  pugi::xml_parse_result result;
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
-  // Get file path and extension
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-
-  // Load xml file (unzip if necessary) into parser
-  if (extension == ".gz")
-  {
-    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
-    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
-    in.push(boost::iostreams::gzip_decompressor());
-    in.push(file);
-
-    std::stringstream dst;
-    boost::iostreams::copy(in, dst);
-
-    result = doc.load(dst);
-  }
-  else
-    result = doc.load_file(filename.c_str());
-
-  // Check that we have a DOLFIN XML file
-  const pugi::xml_node dolfin_node = doc.child("dolfin");
-  if (!dolfin_node)
-    error("Not a DOLFIN XML file");
-
-  // Check that we have a Mesh XML file
-  const pugi::xml_node mesh_node = dolfin_node.child("mesh");
-  if (!mesh_node)
-    error("Not a DOLFIN Mesh XML file");
-
-  // Fill vector
+  // Read mesh
   XMLMesh::read(input_mesh, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (GenericVector& input)
+void XMLFile::operator>> (GenericVector& input) const
 {
-  // Create XML parser tools
-  pugi::xml_document doc;
-  pugi::xml_parse_result result;
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
-  // Get file path and extension
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
+  // Read vector
+  XMLVector::read(input, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (Parameters& input) const
+{
+  std::cout << "Read XML parameters" << std::endl;
 
-  // Load xml file (unzip if necessary) into parser
-  if (extension == ".gz")
-  {
-    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
-    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
-    in.push(boost::iostreams::gzip_decompressor());
-    in.push(file);
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
-    // FIXME: Is this the best way to do it?
-    std::stringstream dst;
-    boost::iostreams::copy(in, dst);
-
-    result = doc.load(dst);
-    //std::cout << "test" << std::endl;
-    //std::cout << dst.str() << std::endl;
-  }
-  else
-    result = doc.load_file(filename.c_str());
-
-  // Check that we have a DOLFIN XML file
-  const pugi::xml_node dolfin_node = doc.child("dolfin");
-  if (!dolfin_node)
-    error("Not a DOLFIN XML file");
-
-  // Check that we have a Vector XML file
-  const pugi::xml_node vector_node = dolfin_node.child("vector");
-  if (!vector_node)
-    error("Not a DOLFIN Vector XML file");
-
-  // Fill vector
-  XMLVector::read(input, vector_node);
+  // Read paramters
+  XMLParameters::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)
@@ -196,6 +144,11 @@ void XMLFile::operator<< (const GenericVector& output)
   // Close file
   if (MPI::process_number() == 0)
     close_file();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Parameters& output)
+{
+
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
@@ -218,13 +171,31 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
-  // Create XML parser tools
-  pugi::xml_document doc;
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+
+  // Read MeshFunction
+  XMLMeshFunction::read(t, type, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
+                                                  const std::string type) const
+{
+  XMLMeshFunction::write(t, type, *outstream, 1);
+}
+//-----------------------------------------------------------------------------
+const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
+                                                  const std::string filename) const
+{
+  // Create XML parser result
   pugi::xml_parse_result result;
 
   // Get file path and extension
   const boost::filesystem::path path(filename);
   const std::string extension = boost::filesystem::extension(path);
+
+  // FIXME: Check that file exists
 
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
@@ -237,60 +208,18 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // FIXME: Is this the best way to do it?
     std::stringstream dst;
     boost::iostreams::copy(in, dst);
-
-    result = doc.load(dst);
+    result = xml_doc.load(dst);
   }
   else
-    result = doc.load_file(filename.c_str());
+    result = xml_doc.load_file(filename.c_str());
 
   // Check that we have a DOLFIN XML file
-  const pugi::xml_node dolfin_node = doc.child("dolfin");
+  const pugi::xml_node dolfin_node = xml_doc.child("dolfin");
   if (!dolfin_node)
     error("Not a DOLFIN XML file");
 
-  // Check that we have a MeshFunction XML file
-  const pugi::xml_node mf_node = dolfin_node.child("meshfunction");
-  if (!mf_node)
-    error("Not a DOLFIN MeshFunction XML file");
-
-  XMLMeshFunction::read(t, type, dolfin_node);
+  return dolfin_node;
 }
-//-----------------------------------------------------------------------------
-template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
-                                                  const std::string type) const
-{
-  XMLMeshFunction::write(t, type, *outstream, 1);
-}
-//-----------------------------------------------------------------------------
-/*
-void XMLFile::validate(const std::string filename)
-{
-  xmlRelaxNGParserCtxtPtr parser;
-  xmlRelaxNGValidCtxtPtr validator;
-  xmlRelaxNGPtr schema;
-  xmlDocPtr document;
-  document = xmlParseFile(filename.c_str());
-  int ret = 1;
-  parser = xmlRelaxNGNewParserCtxt("http://fenicsproject.org/pub/misc/dolfin.rng");
-  xmlRelaxNGSetParserStructuredErrors(parser,
-                                      (xmlStructuredErrorFunc)rng_parser_error,
-                                      stderr);
-  schema = xmlRelaxNGParse(parser);
-  validator = xmlRelaxNGNewValidCtxt(schema);
-  xmlRelaxNGSetValidStructuredErrors(validator,
-                                     (xmlStructuredErrorFunc)rng_valid_error,
-                                     stderr);
-  ret = xmlRelaxNGValidateDoc(validator, document);
-  if (ret == 0)
-    log(DBG, "%s validates", filename.c_str());
-  else if ( ret < 0 )
-    error("%s failed to load", filename.c_str());
-  else
-    error("%s fails to validate", filename.c_str());
-
-  xmlRelaxNGFreeValidCtxt(validator);
-}
-*/
 //-----------------------------------------------------------------------------
 void XMLFile::write()
 {

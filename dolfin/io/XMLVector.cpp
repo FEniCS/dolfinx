@@ -31,10 +31,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
+void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
+  // Check that we have a XML Vector
+  const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
+  if (!xml_vector_node)
+    error("Not a DOLFIN Mesh file.");
+
   // Get type and size
-  const pugi::xml_node array = xml_vector.child("array");
+  const pugi::xml_node array = xml_vector_node.child("array");
   if (!array)
     std::cout << "Not a DOLFIN Array" << std::endl;
 
@@ -52,21 +57,12 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_vector)
     assert(index < size);
     indices[index] = index;
     data[index] = value;
-
-    //std::cout << "Entry:";
-    //for (pugi::xml_attribute_iterator ait = it->attributes_begin(); ait != it->attributes_end(); ++ait)
-    //  std::cout << " " << ait->name() << "=" << ait->value();
-    //std::cout << std::endl;
   }
-
-  std::cout << "Using new XML vector reading (a): " << x.norm("l2") << std::endl;
 
   // Resize vector and add data
   x.resize(size);
   x.set(data.data().get(), size, indices.data().get());
   x.apply("insert");
-
-  std::cout << "Using new XML vector reading (b): " << x.norm("l2") << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLVector::write(const GenericVector& vector, std::ostream& outfile,

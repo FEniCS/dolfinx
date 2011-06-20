@@ -64,9 +64,13 @@ namespace dolfin
       std::cout << "Not a DOLFIN MeshFunction." << std::endl;
 
     // Get type and size
-    const std::string data_type  = xml_meshfunction.attribute("type").value();
+    const std::string file_data_type = xml_meshfunction.attribute("type").value();
     const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
     const unsigned int size = xml_meshfunction.attribute("size").as_uint();
+
+    // Check that types match
+    if (type != file_data_type)
+      error("Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".", file_data_type.c_str(), type.c_str());
 
     // Initialise MeshFunction
     mesh_function.init(dim, size);
@@ -97,6 +101,15 @@ namespace dolfin
         const unsigned int index = it->attribute("index").as_uint();
         assert(index < size);
         mesh_function[index] = it->attribute("value").as_double();
+      }
+    }
+    else if (type == "bool")
+    {
+      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+      {
+        const unsigned int index = it->attribute("index").as_uint();
+        assert(index < size);
+        mesh_function[index] = it->attribute("value").as_bool();
       }
     }
     else

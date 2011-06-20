@@ -31,8 +31,6 @@ namespace dolfin
 {
   typedef boost::reference_wrapper<Array<double> > DoubleArrayRef;
 
-  class Sample;
-
   // Represents input/output of data in a format readable by Python
   // (Numeric). The data is written to several files (the variable
   // name is appended to the base file name) to enable incremental

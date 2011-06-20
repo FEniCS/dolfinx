@@ -39,7 +39,7 @@ namespace dolfin
   public:
 
     // Read XML vector
-    static void read(GenericVector& x, const pugi::xml_node xml_vector);
+    static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
     static void write(const GenericVector& vector, std::ostream& outfile,

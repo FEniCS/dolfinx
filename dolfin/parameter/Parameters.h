@@ -179,9 +179,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Define XMLHandler for use in new XML reader/writer
-    typedef XMLParameters XMLHandler;
-
   protected:
 
     /// Parse filtered options (everything except PETSc options)
