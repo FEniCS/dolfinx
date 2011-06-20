@@ -19,8 +19,49 @@
 #
 # Utility script for generating .rst documentation for DOLFIN
 
-import sys
-from dolfin_utils.documentation import generate_dolfin_doc
+import os, sys
+
+dolfin_import_error_msg = """
+Unable to import the %s module
+Error: %s
+Did you forget to update your PYTHONPATH variable?"""
+
+try:
+    import dolfin_utils
+except Exception as what:
+    raise ImportError(dolfin_import_error_msg % ("dolfin_utils", what))
+
+from dolfin_utils.documentation import generate_cpp_api_documentation
+from dolfin_utils.documentation import generate_python_api_documentation
+
+def generate_dolfin_doc(input_dir, output_dir, version=None):
+
+    if version is None:
+        version = "dev"
+
+    # Make output directory (or use current if existing)
+    try:
+        os.makedirs(output_dir)
+    except:
+        pass
+
+    # Generate .rst for C++ documentation
+    api_output_dir = os.path.join(output_dir, "cpp", "programmers-reference")
+    generate_cpp_api_documentation(input_dir, api_output_dir, version)
+
+    # Try to import DOLFIN Python module
+    module_name = "dolfin"
+    try:
+        exec("import %s" % module_name)
+        exec("module = %s" % module_name)
+    except Exception as what:
+        raise ImportError(dolfin_import_error_msg % (module_name, what))
+
+    # Generate .rst for Python documentation
+    api_output_dir = os.path.join(output_dir, "python", "programmers-reference")
+    generate_python_api_documentation(module, api_output_dir, version)
+
+    print "\nSuccessfully generated API documentation.\n"
 
 if __name__ == "__main__":
 

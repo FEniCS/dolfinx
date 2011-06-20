@@ -1,26 +1,76 @@
-# Last changed: 2011-06-17
+# Last changed: 2011-06-18
 
 This directory and its subdirectories contain (i) data and scripts for
 generating the DOLFIN library reference and consolidating the DOLFIN
 demo documentation and (ii) man pages for the scripts dolfin-convert,
 dolfin-order, dolfin-plot and dolfin-version.
 
-To generate all reST documentation files from the DOLFIN library and
-the demos: build DOLFIN, make sure that the corresponding dolfin
-module is available, and do
+How to generate documentation:
+------------------------------
+
+In order to generate the documentation, Sphinx must be installed and
+enabled.
+
+To generate all .rst and .html documentation files for the DOLFIN
+library and the demos, follow these steps
+
+1. Build DOLFIN
+
+2. Make sure that the corresponding dolfin and dolfin_utils modules
+   are available
+
+3. Run
 
        make doc
 
-in the build directory.
+   in the build directory.
 
-This will run the scripts
+The DOLFIN documentation will be generated in two Sphinx projects:
 
-    generate_api_doc.py  (which ge
-    copy_and_split_demo_doc.py
-    generate_main_index.py
+    build/doc/sphinx-cpp
+    build/doc/sphinx-python
+
+providing documentation for the C++ library and demos, and the Python
+module and demos, respectively.
+
+The subdirectory sphinx-common acts as a template for these Sphinx
+projects.
+
+How to generate and install documentation:
+------------------------------------------
+
+To generate the documentation and install the generated Sphinx
+projects under /share/dolfin/doc, do
+
+       make doc_install
 
 
+What 'make doc' does:
+---------------------
 
+'make doc' will
 
+1. Copy sphinx-common into separate sphinx-cpp and sphinx-python
 
+2. Fill these Sphinx projects with suitable contents by running the
+   scripts
+
+   generate_api_doc.py ...
+
+       calls generate_[python|cpp]_api_documentation from
+       dolfin_utils.documentation with appropriate arguments
+
+   copy_and_split_demo_doc.py ...
+
+        copies documentation.rst from demo directories into the
+        suitable Sphinx projects and generates a .rst index file for
+        each tree
+
+   generate_main_index.py ...
+
+       generates a (version-dependent) main index.rst file for each
+       Sphinx project
+
+3. Use Sphinx to generate .html files from .rst files by running 'make
+   html' in the Sphinx projects
 
