@@ -32,11 +32,13 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include "XMLArray.h"
-#include "XMLMap.h"
 #include "XMLFile.h"
-#include "XMLMesh.h"
-#include "XMLLocalMeshData.h"
 #include "XMLFunctionPlotData.h"
+#include "XMLLocalMeshData.h"
+#include "XMLMap.h"
+#include "XMLMesh.h"
+#include "XMLMeshFunction.h"
+#include "XMLParameters.h"
 
 #include <fstream>
 #include <iostream>
@@ -108,6 +110,23 @@ void XMLFile::operator>> (Mesh& input_mesh) const
   XMLMesh::read(input_mesh, dolfin_node);
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Mesh& output_mesh)
+{
+  if (MPI::num_processes() > 1)
+    error("Mesh XML output in parallel not yet supported");
+
+  // Open file on process 0 for distributed objects and on all processes
+  // for local objects
+  open_file();
+
+  // Note: 'write' is being called on all processes since collective MPI
+  // calls might be used.
+  XMLMesh::write(output_mesh, *outstream, 1);
+
+  // Close file
+  close_file();
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input) const
 {
   // Create XML doc and get DOLFIN node
@@ -116,18 +135,6 @@ void XMLFile::operator>> (GenericVector& input) const
 
   // Read vector
   XMLVector::read(input, dolfin_node);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>> (Parameters& input) const
-{
-  std::cout << "Read XML parameters" << std::endl;
-
-  // Create XML doc and get DOLFIN node
-  pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
-
-  // Read paramters
-  XMLParameters::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)
@@ -146,26 +153,25 @@ void XMLFile::operator<< (const GenericVector& output)
     close_file();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Parameters& output)
+void XMLFile::operator>> (Parameters& input) const
 {
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
+  // Read paramters
+  XMLParameters::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Mesh& output_mesh)
+void XMLFile::operator<< (const Parameters& output)
 {
-  if (MPI::num_processes() > 1)
-    error("Mesh XML output in parallel not yet supported");
+  if (MPI::process_number() == 0)
+    open_file();
 
-  // Open file on process 0 for distributed objects and on all processes
-  // for local objects
-  open_file();
+  XMLParameters::write(output, *outstream, 1);
 
-  // Note: 'write' is being called on all processes since collective MPI
-  // calls might be used.
-  XMLMesh::write(output_mesh, *outstream, 1);
-
-  // Close file
-  close_file();
+  if (MPI::process_number() == 0)
+    close_file();
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,

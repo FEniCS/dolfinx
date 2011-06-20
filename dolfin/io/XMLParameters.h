@@ -43,6 +43,8 @@ namespace dolfin
 
   private:
 
+    static void read_parameter_nest(Parameters& p, const pugi::xml_node xml_node);
+
     template<class T>
     static void add_parameter(Parameters& p, const std::string& key, T value);
 

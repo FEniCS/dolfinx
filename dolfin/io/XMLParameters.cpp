@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Ola Skavhaug and Anders Logg
+// Copyright (C) 2004-2011 Ola Skavhaug, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Last changed: 2011-03-28
 
 #include "pugixml.hpp"
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/parameter/Parameter.h>
 #include "XMLIndent.h"
@@ -35,33 +35,16 @@ void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
   if (!xml_parameters)
     error("Not a DOLFIN Parameters file.");
 
-  // FIXME: Nest parameters not yet supported
-  // Check for nested parameters
+  // Check that there is only one root parameters set
   if (xml_dolfin.first_child().next_sibling())
-    error("Reading of nested parameters from XML files is not yet supported.");
+    error("Two parameter sets (not nested) are defined in XML file.");
 
-  // Get name of parameters ad rename paramter set
+  // Get name of root parameters and rename paramter set
   const std::string name = xml_parameters.attribute("name").value();
   p.rename(name);
 
-  // Iterate over parameters
-  for (pugi::xml_node_iterator it = xml_parameters.begin(); it != xml_parameters.end(); ++it)
-  {
-    const std::string key = it->attribute("key").value();
-    const std::string type = it->attribute("type").value();
-    const pugi::xml_attribute value = it->attribute("value");
-
-    if (type == "double")
-      XMLParameters::add_parameter(p, key, value.as_double());
-    else if (type == "int")
-      XMLParameters::add_parameter(p, key, value.as_int());
-    else if (type == "bool")
-      XMLParameters::add_parameter(p, key, value.as_bool());
-    else if (type == "string")
-      XMLParameters::add_parameter(p, key, value.value());
-    else
-      error("Parameter type unknown in XMLParameters::read.");
-  }
+  // Read parameters
+  read_parameter_nest(p, xml_parameters);
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::write(const Parameters& parameters,
@@ -120,6 +103,44 @@ void XMLParameters::write(const Parameters& parameters,
 
   // Write parameters footer
   outfile << indent() << "</parameters>" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_node)
+{
+  // Iterate over parameters
+  for (pugi::xml_node_iterator it = xml_node.begin(); it != xml_node.end(); ++it)
+  {
+    // Get name (parameters or parameter)
+    const std::string node_name = it->name();
+    if (node_name == "parameters")
+    {
+      // Get name of parameters set
+      const std::string name = it->attribute("name").value();
+
+      // Create set, add set and then read parameters
+      Parameters nested_parameters(name);
+      p.add(nested_parameters);
+      read_parameter_nest(p(name), *it);
+    }
+    else if (node_name == "parameter")
+    {
+      const std::string key = it->attribute("key").value();
+      const std::string type = it->attribute("type").value();
+      const pugi::xml_attribute value = it->attribute("value");
+      if (type == "double")
+        XMLParameters::add_parameter(p, key, value.as_double());
+      else if (type == "int")
+        XMLParameters::add_parameter(p, key, value.as_int());
+      else if (type == "bool")
+        XMLParameters::add_parameter(p, key, value.as_bool());
+      else if (type == "string")
+        XMLParameters::add_parameter(p, key, value.value());
+      else
+        error("Parameter type \"%s\" unknown in XMLParameters::read.", type.c_str());
+    }
+    else
+      error("Unknown field in XML Parameter file");
+  }
 }
 //-----------------------------------------------------------------------------
 template<class T>

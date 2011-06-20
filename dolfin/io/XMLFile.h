@@ -33,20 +33,15 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/plot/FunctionPlotData.h>
-#include <dolfin/parameter/Parameters.h>
 #include "GenericFile.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
-#include "XMLMesh.h"
-#include "XMLMeshFunction.h"
 #include "XMLLocalMeshData.h"
-#include "XMLParameters.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLDolfin.h"
 #include "XMLHandler.h"
@@ -60,6 +55,9 @@ namespace pugi
 
 namespace dolfin
 {
+
+  class GenericVector;
+  class Parameters;
 
   class XMLFile: public GenericFile
   {
