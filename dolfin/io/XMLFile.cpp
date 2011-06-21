@@ -235,6 +235,7 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
   {
+    // Decompress file
     std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
     in.push(boost::iostreams::gzip_decompressor());
@@ -243,6 +244,8 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
     // FIXME: Is this the best way to do it?
     std::stringstream dst;
     boost::iostreams::copy(in, dst);
+
+    // Load data
     result = xml_doc.load(dst);
   }
   else

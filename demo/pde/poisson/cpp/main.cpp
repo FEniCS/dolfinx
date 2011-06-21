@@ -93,16 +93,8 @@ int main()
   File file("poisson.pvd");
   file << u;
 
-  //File mfile("mesh.xml");
-  //mfile << mesh;
-
-  Mesh mesh2;
-  File mfile2("mesh.xml");
-  mfile2 >> mesh2;
-
   // Plot solution
   plot(u);
-  //plot(mesh);
 
   return 0;
 }
