@@ -36,7 +36,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   // Check that we have a XML Vector
   const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
   if (!xml_vector_node)
-    error("Not a DOLFIN Mesh file.");
+    error("Not a DOLFIN Vector file.");
 
   // Get type and size
   const pugi::xml_node array = xml_vector_node.child("array");

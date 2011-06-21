@@ -102,8 +102,6 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
-  std::cout  << "******Mesh input" << std::endl;
-
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
@@ -161,7 +159,7 @@ void XMLFile::operator>> (Parameters& input)
   pugi::xml_document xml_doc;
   const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
-  // Read paramters
+  // Read parameters
   XMLParameters::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
@@ -171,6 +169,27 @@ void XMLFile::operator<< (const Parameters& output)
     open_file();
 
   XMLParameters::write(output, *outstream, 1);
+
+  if (MPI::process_number() == 0)
+    close_file();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (FunctionPlotData& input)
+{
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+
+  // Read plot data
+  XMLFunctionPlotData::read(input, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const FunctionPlotData& output)
+{
+  if (MPI::process_number() == 0)
+    open_file();
+
+  XMLFunctionPlotData::write(output, *outstream, 1);
 
   if (MPI::process_number() == 0)
     close_file();

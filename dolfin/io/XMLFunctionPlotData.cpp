@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ola Skavhaug
+// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-16
-// Last changed: 2009-10-07
+// First added:  2002-12-06
+// Last changed: 2011-06-21
 
-#include <dolfin/plot/FunctionPlotData.h>
-#include "XMLFile.h"
+#include "pugixml.hpp"
+
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/log/log.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/plot/FunctionPlotData.h"
 #include "XMLIndent.h"
 #include "XMLMesh.h"
 #include "XMLVector.h"
@@ -28,114 +32,47 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFunctionPlotData::XMLFunctionPlotData(FunctionPlotData& data, XMLFile& parser)
-  : XMLHandler(parser), data(data), state(OUTSIDE), xml_mesh(0), xml_vector(0)
+void XMLFunctionPlotData::read(FunctionPlotData& plot_data,
+                               const pugi::xml_node xml_mesh)
 {
-  // Do nothing
+  const pugi::xml_node xml_plot_node = xml_mesh.child("function_plot_data");
+  if (!xml_plot_node)
+    error("Not a DOLFIN FunctionPlotData file.");
+
+  // Get rank
+  const unsigned int rank = xml_plot_node.attribute("rank").as_uint();
+  plot_data.rank = rank;
+
+  // Read mesh
+  Mesh& mesh = plot_data.mesh;
+  XMLMesh::read(mesh, xml_plot_node);
+
+  // Read vector
+  GenericVector& vector = plot_data.vertex_values();
+  XMLVector::read(vector, xml_plot_node);
 }
 //-----------------------------------------------------------------------------
-XMLFunctionPlotData::~XMLFunctionPlotData()
-{
-  delete xml_mesh;
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::start_element(const xmlChar* name, const xmlChar** attrs)
-{
-  switch ( state )
-  {
-  case OUTSIDE:
-    if ( xmlStrcasecmp(name, (xmlChar *) "function_plot_data") == 0 )
-      read_data_tag(name, attrs);
-
-    break;
-
-  case INSIDE:
-    if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
-      read_mesh(name, attrs);
-    else if( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
-      read_vector(name, attrs);
-
-    break;
-
-  default:
-    ;
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::end_element(const xmlChar* name)
-{
-  switch ( state )
-  {
-  case INSIDE:
-    if ( xmlStrcasecmp(name, (xmlChar *) "function_plot_data") == 0 )
-    {
-      state = DONE;
-      release();
-    }
-
-    break;
-
-  default:
-    ;
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::write(const FunctionPlotData& data,
-                                std::ostream& outfile, uint indentation_level)
+void XMLFunctionPlotData::write(const FunctionPlotData& plot_data,
+                                std::ostream& outfile,
+                                uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
   // Write Function plot data header
   outfile << indent();
-  outfile << "<function_plot_data rank=\"" << data.rank << "\">" << std::endl;
+  outfile << "<function_plot_data rank=\"" << plot_data.rank << "\">" << std::endl;
 
   ++indent;
 
   // Write mesh
-  XMLMesh::write(data.mesh, outfile, indent.level());
+  XMLMesh::write(plot_data.mesh, outfile, indent.level());
 
   // Write vector
-  XMLVector::write(data.vertex_values(), outfile, indent.level());
+  XMLVector::write(plot_data.vertex_values(), outfile, indent.level());
 
   --indent;
 
   // Write Function plot data footer
   outfile << indent() << "</function_plot_data>" << std::endl;
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** attrs)
-{
-  state = INSIDE;
-  data.rank = parse_uint(name, attrs, "rank");
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
-{
-  error("XMLFunctionPlotData::read_mesh needs updating");
-  /*
-  delete xml_mesh;
-  xml_mesh = new XMLMesh(data.mesh, parser);
-
-  // Let the xml mesh read its own the mesh tag
-  xml_mesh->read_mesh_tag(name, attrs);
-
-  // Parse the rest of the mesh
-  xml_mesh->handle();
-  */
-}
-//-----------------------------------------------------------------------------
-void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)
-{
-  error("XMLFunctionPlotData::read_vector needs updating");
-  /*
-  delete xml_vector;
-  xml_vector = new XMLVector(data.vertex_values(), parser);
-
-  // Let the xml vector read its own the vector tag
-  xml_vector->read_vector_tag(name, attrs);
-
-  // Parse the rest of the vector
-  xml_vector->handle();
-  */
 }
 //-----------------------------------------------------------------------------

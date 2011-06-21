@@ -84,8 +84,7 @@ namespace dolfin
 
     void operator>> (Parameters& input);
 
-    void operator>> (FunctionPlotData& input)
-    { read_xml(input); }
+    void operator>> (FunctionPlotData& input);
 
     void operator>> (MeshFunction<int>& input)
     { read_mesh_function(input, "int"); }
@@ -117,8 +116,7 @@ namespace dolfin
 
     void operator<< (const Parameters& output);
 
-    void operator<< (const FunctionPlotData& output)
-    { write_xml(output, false); }
+    void operator<< (const FunctionPlotData& output);
 
     void operator<< (const MeshFunction<int>& output)
     { write_mesh_function(output, "int"); }
