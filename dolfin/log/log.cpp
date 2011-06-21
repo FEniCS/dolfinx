@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-04-11
+// Last changed: 2011-06-21
 
 #include <cstdarg>
 #include <cstdlib>
@@ -125,6 +125,14 @@ void dolfin::error(std::string msg, ...)
 {
   read(buffer.get(), msg);
   LogManager::logger.error(buffer.get());
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_error(std::string location,
+                          std::string task,
+                          std::string reason, ...)
+{
+  read(buffer.get(), reason);
+  LogManager::logger.dolfin_error(location, task, buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)

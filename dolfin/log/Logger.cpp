@@ -84,6 +84,42 @@ void Logger::error(std::string msg) const
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
+void Logger::dolfin_error(std::string location,
+                          std::string task,
+                          std::string reason) const
+{
+  std::stringstream s;
+  s << std::endl << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl
+    << "*** DOLFIN encountered an error. If you are not able to resolve this issue"
+    << std::endl
+    << "*** using the information listed below, you can ask for help at"
+    << std::endl
+    << "***" << std::endl
+    << "***     https://answers.launchpad.net/dolfin"
+    << std::endl
+    << "***" << std::endl
+    << "*** Remember to include the error message listed below and, if possible,"
+    << std::endl
+    << "*** include a *minimal* running example to reproduce the error."
+    << std::endl
+    << "***" << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl
+    << "*** " << "Unable to " << task << "." << std::endl
+    << "*** " << "Reason: " << reason << std::endl
+    << "*** " << "This error was encountered inside " << location << "."
+    << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl;
+
+  throw std::runtime_error(s.str());
+}
+//-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)
 {
   // Write a message

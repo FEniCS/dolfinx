@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-04-11
+// Last changed: 2011-06-21
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -62,6 +62,11 @@ namespace dolfin
 
   /// Print error message and throw an exception
   void error(std::string msg, ...);
+
+  /// Print error message, prefer this to the above generic error message
+  void dolfin_error(std::string location,
+                    std::string task,
+                    std::string reason, ...);
 
   /// Print message at given debug level
   void log(int debug_level, std::string msg, ...);
