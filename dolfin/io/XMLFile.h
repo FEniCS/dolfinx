@@ -77,7 +77,7 @@ namespace dolfin
     void operator>> (LocalMeshData& input)
     {
       OldXMLFile xml_file(filename);
-      xml_file << input;
+      xml_file >> input;
     }
 
     // Vector
