@@ -96,6 +96,10 @@ int main()
   //File mfile("mesh.xml");
   //mfile << mesh;
 
+  Mesh mesh2;
+  File mfile2("mesh.xml");
+  mfile2 >> mesh2;
+
   // Plot solution
   plot(u);
   //plot(mesh);

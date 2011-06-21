@@ -207,9 +207,15 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
-                                                  const std::string type) const
+                                                  const std::string type)
 {
+  if (MPI::process_number() == 0)
+    open_file();
+
   XMLMeshFunction::write(t, type, *outstream, 1);
+
+  if (MPI::process_number() == 0)
+    close_file();
 }
 //-----------------------------------------------------------------------------
 const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
@@ -223,6 +229,8 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
   const std::string extension = boost::filesystem::extension(path);
 
   // FIXME: Check that file exists
+  if (!boost::filesystem::is_regular_file(filename))
+    error("File \"%s\" does not exist or is not a regular file. Cannot be read by XML parser.", filename.c_str());
 
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")

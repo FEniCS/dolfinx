@@ -73,30 +73,46 @@ namespace dolfin
     /// Destructor
     ~XMLFile();
 
-    //--- Mappings from input to correct handler ---
+    // Input/output handling
 
+    // Mesh
     void operator>> (Mesh& input);
+    void operator<< (const Mesh& output);
 
     void operator>> (LocalMeshData& input)
     { read_xml(input); }
 
+    // Vector
     void operator>> (GenericVector& input);
+    void operator<< (const GenericVector& output);
 
+    // Parameters
     void operator>> (Parameters& input);
+    void operator<< (const Parameters& output);
 
+    // FunctionPlotData
     void operator>> (FunctionPlotData& input);
+    void operator<< (const FunctionPlotData& output);
 
     void operator>> (MeshFunction<int>& input)
     { read_mesh_function(input, "int"); }
+    void operator<< (const MeshFunction<int>& output)
+    { write_mesh_function(output, "int"); }
 
     void operator>> (MeshFunction<unsigned int>& input)
     { read_mesh_function(input, "uint"); }
+    void operator<< (const MeshFunction<unsigned int>& output)
+    { write_mesh_function(output, "uint"); }
 
     void operator>> (MeshFunction<double>& input)
     { read_mesh_function(input, "double"); }
+    void operator<< (const MeshFunction<double>& output)
+    { write_mesh_function(output, "double"); }
 
     void operator>> (MeshFunction<bool>& input)
     { read_mesh_function(input, "bool"); }
+    void operator<< (const MeshFunction<bool>& input)
+    { write_mesh_function(input, "bool"); }
 
     //void operator>> (std::vector<int>& x)                                   { read_xml_array(x); }
     //void operator>> (std::vector<uint>& x)                                  { read_xml_array(x); }
@@ -110,22 +126,6 @@ namespace dolfin
 
     //--- Mappings from output to correct handler ---
 
-    void operator<< (const Mesh& output);
-
-    void operator<< (const GenericVector& output);
-
-    void operator<< (const Parameters& output);
-
-    void operator<< (const FunctionPlotData& output);
-
-    void operator<< (const MeshFunction<int>& output)
-    { write_mesh_function(output, "int"); }
-
-    void operator<< (const MeshFunction<unsigned int>& output)
-    { write_mesh_function(output, "uint"); }
-
-    void operator<< (const MeshFunction<double>& output)
-    { write_mesh_function(output, "double"); }
 
     //void operator<< (const std::vector<int>& x)                             { write_xml_array(x); }
     //void operator<< (const std::vector<uint>& x)                            { write_xml_array(x); }
@@ -160,7 +160,7 @@ namespace dolfin
 
     // Read MeshFunction
     template<class T> void write_mesh_function(const MeshFunction<T>& t,
-                                               const std::string type) const;
+                                               const std::string type);
 
     // Get DOLFIN XML node
     const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
