@@ -57,6 +57,7 @@ namespace dolfin
 {
 
   class GenericVector;
+  class Mesh;
   class Parameters;
 
   class XMLFile: public GenericFile
@@ -74,28 +75,28 @@ namespace dolfin
 
     //--- Mappings from input to correct handler ---
 
-    void operator>> (Mesh& input) const;
+    void operator>> (Mesh& input);
 
     void operator>> (LocalMeshData& input)
     { read_xml(input); }
 
-    void operator>> (GenericVector& input) const;
+    void operator>> (GenericVector& input);
 
-    void operator>> (Parameters& input) const;
+    void operator>> (Parameters& input);
 
     void operator>> (FunctionPlotData& input)
     { read_xml(input); }
 
-    void operator>> (MeshFunction<int>& input) const
+    void operator>> (MeshFunction<int>& input)
     { read_mesh_function(input, "int"); }
 
-    void operator>> (MeshFunction<unsigned int>& input) const
+    void operator>> (MeshFunction<unsigned int>& input)
     { read_mesh_function(input, "uint"); }
 
-    void operator>> (MeshFunction<double>& input) const
+    void operator>> (MeshFunction<double>& input)
     { read_mesh_function(input, "double"); }
 
-    void operator>> (MeshFunction<bool>& input) const
+    void operator>> (MeshFunction<bool>& input)
     { read_mesh_function(input, "bool"); }
 
     //void operator>> (std::vector<int>& x)                                   { read_xml_array(x); }
@@ -156,10 +157,12 @@ namespace dolfin
   private:
 
     // Write MeshFunction
-    template<class T> void read_mesh_function(MeshFunction<T>& t, const std::string type) const;
+    template<class T> void read_mesh_function(MeshFunction<T>& t,
+                                              const std::string type) const;
 
     // Read MeshFunction
-    template<class T> void write_mesh_function(const MeshFunction<T>& t, const std::string type) const;
+    template<class T> void write_mesh_function(const MeshFunction<T>& t,
+                                               const std::string type) const;
 
     // Get DOLFIN XML node
     const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
@@ -184,6 +187,7 @@ namespace dolfin
         error("Handler stack not empty. Something is wrong!");
     }
 
+    /*
     // Read std::map from XML file (speciliased templated required
     // for STL objects)
     template<class T> void read_xml_map(T& map)
@@ -196,6 +200,7 @@ namespace dolfin
       if ( !handlers.empty() )
         error("Hander stack not empty. Something is wrong!");
     }
+    */
 
     // Read std::vector from XML file (speciliased templated required
     // for STL objects)
@@ -230,6 +235,7 @@ namespace dolfin
         close_file();
     }
 
+    /*
     template<class T> void write_xml_map(const T& map)
     {
       // FIXME: Should we support distributed std::map?
@@ -237,10 +243,10 @@ namespace dolfin
       XMLMap::write(map, *outstream, 1);
       close_file();
     }
+    */
 
     template<class T> void write_xml_array(const T& x)
     {
-      // FIXME: Should we support distributed std::vector?
       open_file();
       XMLArray::write(x, 0, *outstream, 1);
       close_file();

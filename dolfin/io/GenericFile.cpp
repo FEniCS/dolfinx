@@ -42,12 +42,12 @@ GenericFile::GenericFile(const std::string filename) : filename(filename),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (Mesh& mesh) const
+void GenericFile::operator>> (Mesh& mesh)
 {
   read_not_impl("Mesh");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (GenericVector& x) const
+void GenericFile::operator>> (GenericVector& x)
 {
   read_not_impl("Vector");
 }
@@ -62,27 +62,27 @@ void GenericFile::operator>> (LocalMeshData& data)
   read_not_impl("LocalMeshData");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<int>& meshfunction) const
+void GenericFile::operator>> (MeshFunction<int>& meshfunction)
 {
   read_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<unsigned int>& meshfunction) const
+void GenericFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 {
   read_not_impl("MeshFunction<unsigned int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<double>& meshfunction) const
+void GenericFile::operator>> (MeshFunction<double>& meshfunction)
 {
   read_not_impl("MeshFunction<double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<bool>& meshfunction) const
+void GenericFile::operator>> (MeshFunction<bool>& meshfunction)
 {
   read_not_impl("MeshFunction<bool>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (Parameters& parameters) const
+void GenericFile::operator>> (Parameters& parameters)
 {
   read_not_impl("Parameters");
 }

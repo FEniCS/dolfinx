@@ -100,8 +100,10 @@ XMLFile::~XMLFile()
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Mesh& input_mesh) const
+void XMLFile::operator>> (Mesh& input_mesh)
 {
+  std::cout  << "******Mesh input" << std::endl;
+
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
@@ -127,7 +129,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   close_file();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (GenericVector& input) const
+void XMLFile::operator>> (GenericVector& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
@@ -153,7 +155,7 @@ void XMLFile::operator<< (const GenericVector& output)
     close_file();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Parameters& input) const
+void XMLFile::operator>> (Parameters& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

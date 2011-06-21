@@ -49,15 +49,15 @@ namespace dolfin
     GenericFile(const std::string filename);
 
     // Input
-    virtual void operator>> (Mesh& mesh) const;
-    virtual void operator>> (GenericVector& x) const;
+    virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
     virtual void operator>> (LocalMeshData& data);
-    virtual void operator>> (MeshFunction<int>& meshfunction) const;
-    virtual void operator>> (MeshFunction<unsigned int>& meshfunction) const;
-    virtual void operator>> (MeshFunction<double>& meshfunction) const;
-    virtual void operator>> (MeshFunction<bool>& meshfunction) const;
-    virtual void operator>> (Parameters& parameters) const;
+    virtual void operator>> (MeshFunction<int>& meshfunction);
+    virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
+    virtual void operator>> (MeshFunction<double>& meshfunction);
+    virtual void operator>> (MeshFunction<bool>& meshfunction);
+    virtual void operator>> (Parameters& parameters);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
     virtual void operator>> (std::vector<uint>& x);
