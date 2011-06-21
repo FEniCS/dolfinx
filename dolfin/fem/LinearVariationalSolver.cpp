@@ -55,7 +55,6 @@ void LinearVariationalSolver::solve(Function& u,
   assert(a);
   assert(L);
 
-
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
   {

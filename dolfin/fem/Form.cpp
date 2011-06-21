@@ -319,3 +319,16 @@ void Form::check() const
   */
 }
 //-----------------------------------------------------------------------------
+Equation Form::operator==(const Form& rhs) const
+{
+  Equation equation(reference_to_no_delete_pointer(*this),
+                    reference_to_no_delete_pointer(rhs));
+  return equation;
+}
+//-----------------------------------------------------------------------------
+Equation Form::operator==(int rhs) const
+{
+  Equation equation(reference_to_no_delete_pointer(*this), 0);
+  return equation;
+}
+//-----------------------------------------------------------------------------

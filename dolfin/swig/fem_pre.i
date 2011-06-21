@@ -77,11 +77,12 @@
 %rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
 
 //-----------------------------------------------------------------------------
-// Ignores domain assignment for Form class
+// Ignores domain assignment and operator== for Form class
 //-----------------------------------------------------------------------------
 %ignore dolfin::Form::dx;
 %ignore dolfin::Form::ds;
 %ignore dolfin::Form::dS;
+%ignore dolfin::Form::operator==;
 
 //-----------------------------------------------------------------------------
 // Ignore dolfin::Cell versions of signatures as these now are handled by

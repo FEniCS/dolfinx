@@ -5,6 +5,7 @@
 
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/Equation.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/BoundaryCondition.h>
