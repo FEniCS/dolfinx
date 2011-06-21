@@ -29,19 +29,20 @@ namespace dolfin
 {
 
   template<class T> class Array;
+  class OldXMLFile;
 
   class XMLArray : public XMLHandler
   {
   public:
 
-    XMLArray(std::vector<int>& ix, XMLFile& parser, bool distributed = false);
-    XMLArray(std::vector<int>& ix, XMLFile& parser, uint size, bool distributed = false);
+    XMLArray(std::vector<int>& ix, OldXMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<int>& ix, OldXMLFile& parser, uint size, bool distributed = false);
 
-    XMLArray(std::vector<uint>& ux, XMLFile& parser, bool distributed = false);
-    XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size, bool distributed = false);
+    XMLArray(std::vector<uint>& ux, OldXMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<uint>& ux, OldXMLFile& parser, uint size, bool distributed = false);
 
-    XMLArray(std::vector<double>& dx, XMLFile& parser, bool distributed = false);
-    XMLArray(std::vector<double>& dx, XMLFile& parser, uint size, bool distributed = false);
+    XMLArray(std::vector<double>& dx, OldXMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<double>& dx, OldXMLFile& parser, uint size, bool distributed = false);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);

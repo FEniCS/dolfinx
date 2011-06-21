@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser)
+XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, OldXMLFile& parser)
   : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
 {
   // Do nothing

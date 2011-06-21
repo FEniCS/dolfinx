@@ -30,19 +30,19 @@
 namespace dolfin
 {
 
-  class XMLFile;
+  class OldXMLFile;
   class XMLArray;
 
   class XMLMap : public XMLHandler
   {
   public:
 
-    XMLMap(std::map<uint, int>& im, XMLFile& parser);
-    XMLMap(std::map<uint, uint>& um, XMLFile& parser);
-    XMLMap(std::map<uint, double>& dm, XMLFile& parser);
-    XMLMap(std::map<uint, std::vector<int> >& iam, XMLFile& parser);
-    XMLMap(std::map<uint, std::vector<uint> >& uam, XMLFile& parser);
-    XMLMap(std::map<uint, std::vector<double> >& dam, XMLFile& parser);
+    XMLMap(std::map<uint, int>& im, OldXMLFile& parser);
+    XMLMap(std::map<uint, uint>& um, OldXMLFile& parser);
+    XMLMap(std::map<uint, double>& dm, OldXMLFile& parser);
+    XMLMap(std::map<uint, std::vector<int> >& iam, OldXMLFile& parser);
+    XMLMap(std::map<uint, std::vector<uint> >& uam, OldXMLFile& parser);
+    XMLMap(std::map<uint, std::vector<double> >& dam, OldXMLFile& parser);
 
     // Callbacks
     void start_element (const xmlChar *name, const xmlChar **attrs);

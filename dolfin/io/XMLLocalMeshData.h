@@ -24,6 +24,7 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/mesh/LocalMeshData.h>
+#include "OldXMLFile.h"
 #include "XMLHandler.h"
 
 namespace dolfin
@@ -39,7 +40,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser);
+    XMLLocalMeshData(LocalMeshData& mesh_data, OldXMLFile& parser);
 
     /// Destructor
     ~XMLLocalMeshData();

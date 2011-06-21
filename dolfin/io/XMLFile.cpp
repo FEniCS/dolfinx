@@ -20,26 +20,6 @@
 // First added:  2009-03-03
 // Last changed: 2011-03-31
 
-#include <libxml/relaxng.h>
-
-#include <dolfin/common/types.h>
-#include <dolfin/common/constants.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/plot/FunctionPlotData.h>
-#include "XMLArray.h"
-#include "XMLFile.h"
-#include "XMLFunctionPlotData.h"
-#include "XMLLocalMeshData.h"
-#include "XMLMap.h"
-#include "XMLMesh.h"
-#include "XMLMeshFunction.h"
-#include "XMLParameters.h"
-
 #include <fstream>
 #include <iostream>
 #include <boost/filesystem.hpp>
@@ -48,56 +28,39 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "pugixml.hpp"
+
+#include <dolfin/common/types.h>
+#include <dolfin/common/constants.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/plot/FunctionPlotData.h>
+#include "XMLArray.h"
+#include "XMLFunctionPlotData.h"
+#include "XMLLocalMeshData.h"
+#include "XMLMap.h"
+#include "XMLMesh.h"
+#include "XMLMeshFunction.h"
+#include "XMLParameters.h"
 #include "XMLVector.h"
+#include "XMLFile.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename, bool gzip)
-               : GenericFile(filename), sax(0), outstream(0), gzip(gzip)
+XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
+                                               outstream(new std::ofstream)
 {
-  // Set up the output stream (to file)
-  outstream = new std::ofstream();
-
-  // Set up the sax handler.
-  sax = new xmlSAXHandler();
-
-  // Set up handlers for parser events
-  sax->startDocument = sax_start_document;
-  sax->endDocument   = sax_end_document;
-  sax->startElement  = sax_start_element;
-  sax->endElement    = sax_end_element;
-  sax->warning       = sax_warning;
-  sax->error         = sax_error;
-  sax->fatalError    = sax_fatal_error;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(std::ostream& s) : GenericFile(""), sax(0), outstream(&s)
+XMLFile::XMLFile(std::ostream& s) : GenericFile(""), outstream(&s, NoDeleter())
 {
-  // Set up the sax handler.
-  sax = new xmlSAXHandler();
-
-  // Set up handlers for parser events
-  sax->startDocument = sax_start_document;
-  sax->endDocument   = sax_end_document;
-  sax->startElement  = sax_start_element;
-  sax->endElement    = sax_end_element;
-  sax->warning       = sax_warning;
-  sax->error         = sax_error;
-  sax->fatalError    = sax_fatal_error;
-}
-//-----------------------------------------------------------------------------
-XMLFile::~XMLFile()
-{
-  delete sax;
-
-  // Only delete outstream if it is an 'ofstream'
-  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if (outfile)
-  {
-    outfile = 0;
-    delete outstream;
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
@@ -259,49 +222,10 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
   return dolfin_node;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::write()
-{
-  if (gzip)
-    error("Unable to write XML data, gzipped XML (.xml.gz) not supported for output.");
-}
-//-----------------------------------------------------------------------------
-void XMLFile::parse()
-{
-  // Parse file
-  xmlSAXUserParseFile(sax, (void *) this, filename.c_str());
-}
-//-----------------------------------------------------------------------------
-void XMLFile::push(XMLHandler* handler)
-{
-  handlers.push(handler);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::pop()
-{
-  assert(!handlers.empty());
-  handlers.pop();
-}
-//-----------------------------------------------------------------------------
-XMLHandler* XMLFile:: top()
-{
-  assert(!handlers.empty());
-  return handlers.top();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::start_element(const xmlChar *name, const xmlChar **attrs)
-{
-  handlers.top()->start_element(name, attrs);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::end_element(const xmlChar *name)
-{
-  handlers.top()->end_element(name);
-}
-//-----------------------------------------------------------------------------
 void XMLFile::open_file()
 {
   // Convert to ofstream
-  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
+  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream.get());
   if (outfile)
   {
     // Open file
@@ -317,95 +241,19 @@ void XMLFile::close_file()
 {
   XMLDolfin::write_end(*outstream);
 
-  // Convert to ofstream
-  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if (outfile)
-    outfile->close();
-}
-//-----------------------------------------------------------------------------
-// Callback functions for the SAX interface
-//-----------------------------------------------------------------------------
-void dolfin::sax_start_document(void *ctx)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_end_document(void *ctx)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_start_element(void *ctx, const xmlChar *name,
-                               const xmlChar **attrs)
-{
-  ( (XMLFile*) ctx )->start_element(name, attrs);
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_end_element(void *ctx, const xmlChar *name)
-{
-  ( (XMLFile*) ctx )->end_element(name);
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_warning(void *ctx, const char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  char buffer[DOLFIN_LINELENGTH];
-  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
-  warning("Incomplete XML data: " + std::string(buffer));
-  va_end(args);
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_error(void *ctx, const char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  char buffer[DOLFIN_LINELENGTH];
-  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
-  error("Illegal XML data: " + std::string(buffer));
-  va_end(args);
-}
-//-----------------------------------------------------------------------------
-void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  char buffer[DOLFIN_LINELENGTH];
-  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
-  error("Illegal XML data: " + std::string(buffer));
-  va_end(args);
-}
-//-----------------------------------------------------------------------------
-void dolfin::rng_parser_error(void *user_data, xmlErrorPtr error)
-{
-  char *file = error->file;
-  char *message = error->message;
-  int line = error->line;
-  xmlNodePtr node;
-  node = (xmlNode*)error->node;
-  std::string buffer;
-  buffer = message;
-  int length = buffer.length();
-  buffer.erase(length-1);
-  if (node != NULL)
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+  if (extension == ".gz")
   {
-    warning("%s:%d: element %s: Relax-NG parser error: %s",
-            file, line, node->name, buffer.c_str());
+    error("Compressed XML output not yet supported.");
   }
-}
-//-----------------------------------------------------------------------------
-void dolfin::rng_valid_error(void *user_data, xmlErrorPtr error)
-{
-  char *file = error->file;
-  char *message = error->message;
-  int line = error->line;
-  xmlNodePtr node;
-  node = (xmlNode*)error->node;
-  std::string buffer;
-  buffer = message;
-  int length = buffer.length();
-  buffer.erase(length-1);
-  warning("%s:%d: element %s: Relax-NG validity error: %s",
-          file, line, node->name, buffer.c_str());
+  else
+  {
+    // Convert to ofstream
+    std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream.get());
+    if (outfile)
+      outfile->close();
+  }
 }
 //-----------------------------------------------------------------------------

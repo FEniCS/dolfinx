@@ -31,14 +31,14 @@
 namespace dolfin
 {
 
-  class XMLFile;
+  class OldXMLFile;
 
   class XMLHandler
   {
   public:
 
     /// Constructor
-    XMLHandler(XMLFile& parser);
+    XMLHandler(OldXMLFile& parser);
 
     /// Destructor
     virtual ~XMLHandler();
@@ -84,7 +84,7 @@ namespace dolfin
     bool parse_bool(const xmlChar* name, const xmlChar** attrs,
                     const char* attribute);
 
-    XMLFile& parser;
+    OldXMLFile& parser;
     std::ofstream outfile;
 
   };

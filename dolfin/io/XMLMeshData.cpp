@@ -23,12 +23,13 @@
 #include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
+#include "OldXMLFile.h"
 #include "XMLMeshData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMeshData::XMLMeshData(MeshData& data, XMLFile& parser, bool inside)
+XMLMeshData::XMLMeshData(MeshData& data, OldXMLFile& parser, bool inside)
   : XMLHandler(parser), data(data), state(OUTSIDE), type(UNSET), entity_name(""),
     xml_array(0), xml_map(0), xml_mesh_function(0),
     im(0), um(0), dm(0), iam(0), uam(0), dam(0)

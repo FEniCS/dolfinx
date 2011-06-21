@@ -32,13 +32,14 @@ namespace dolfin
   class XMLMeshFunction;
   class XMLArray;
   class XMLMap;
+  class OldXMLFile;
 
   class XMLMeshData: public XMLHandler
   {
   public:
 
     /// Constructor
-    XMLMeshData(MeshData& data, XMLFile& parser, bool inside=false);
+    XMLMeshData(MeshData& data, OldXMLFile& parser, bool inside=false);
 
     /// Destructor
     ~XMLMeshData();

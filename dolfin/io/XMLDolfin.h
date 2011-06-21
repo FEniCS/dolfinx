@@ -26,6 +26,8 @@
 namespace dolfin
 {
 
+  class OldXMLFile;
+
   /// This class is responsible for the outer <dolfin> xml namespace,
   /// and dispatches the correct reader in start_element. It is needed
   /// when we store more than one data type pr file.
@@ -34,7 +36,7 @@ namespace dolfin
   {
   public:
 
-    XMLDolfin(XMLHandler& dispatch, XMLFile& parser);
+    XMLDolfin(XMLHandler& dispatch, OldXMLFile& parser);
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);

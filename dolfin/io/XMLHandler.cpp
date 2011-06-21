@@ -28,7 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLHandler::XMLHandler(XMLFile& parser) : parser(parser)
+XMLHandler::XMLHandler(OldXMLFile& parser) : parser(parser)
 {
   // Do nothing
 }

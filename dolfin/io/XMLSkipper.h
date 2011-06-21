@@ -29,7 +29,7 @@ namespace dolfin
   class XMLSkipper: public XMLHandler
   {
     public:
-      XMLSkipper(std::string name, XMLFile& parser);
+      XMLSkipper(std::string name, OldXMLFile& parser);
       void start_element(const xmlChar* name, const xmlChar** attrs) {/* Do nothing */}
       void end_element(const xmlChar* name);
 

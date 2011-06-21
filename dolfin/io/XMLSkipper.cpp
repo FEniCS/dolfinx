@@ -23,8 +23,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLSkipper::XMLSkipper(std::string name, XMLFile& parser) 
-  : XMLHandler(parser), name(name) 
+XMLSkipper::XMLSkipper(std::string name, OldXMLFile& parser)
+  : XMLHandler(parser), name(name)
 {
   // Do nothing
 }
