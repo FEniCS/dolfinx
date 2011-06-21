@@ -24,20 +24,57 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
 #include "assemble.h"
+#include "Form.h"
 #include "VariationalProblem.h"
 #include "NonlinearVariationalSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::solve(Function& u,
-                                       const VariationalProblem& problem,
-                                       const Parameters& parameters)
+NonlinearVariationalSolver::
+NonlinearVariationalSolver(const Form& F,
+                           const Form& J,
+                           Function& u,
+                           std::vector<const BoundaryCondition*> bcs)
+  : F(reference_to_no_delete_pointer(F)),
+    J(reference_to_no_delete_pointer(J)),
+    u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    this->bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
+
+  // Set parameters
+  parameters = default_parameters();
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalSolver::
+NonlinearVariationalSolver(boost::shared_ptr<const Form> F,
+                           boost::shared_ptr<const Form> J,
+                           boost::shared_ptr<Function> u,
+                           std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+  : F(F), J(J), u(u)
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    this->bcs.push_back(bcs[i]);
+
+  // Set parameters
+  parameters = default_parameters();
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+void NonlinearVariationalSolver::solve()
 {
   begin("Solving nonlinear variational problem.");
 
   // Create nonlinear problem
-  _NonlinearProblem nonlinear_problem(problem, parameters);
+  _NonlinearProblem nonlinear_problem(*this);
 
   // Create Newton solver and set parameters
   NewtonSolver newton_solver(parameters["linear_solver"],
@@ -45,17 +82,33 @@ void NonlinearVariationalSolver::solve(Function& u,
   newton_solver.parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
-  newton_solver.solve(nonlinear_problem, u.vector());
+  newton_solver.solve(nonlinear_problem, u->vector());
 
   end();
+}
+//-----------------------------------------------------------------------------
+void NonlinearVariationalSolver::check_forms() const
+{
+  // Check rank of residual F
+  if (F->rank() != 1)
+    dolfin_error("NonlinearVariationalSolver.cpp",
+                 "create nonlinear variational solver for F(u; v) = 0 for all v",
+                 "expecting the residual F to be a linear form (not rank %d).",
+                 F->rank());
+
+  // Check rank of Jacobian J
+  if (J->rank() != 2)
+    dolfin_error("NonlinearVariationalSolver.cpp",
+                 "create nonlinear variational solver for F(u; v) = 0 for all v",
+                 "expecting the Jacobian to be a bilinear form (not rank %d).",
+                 J->rank());
 }
 //-----------------------------------------------------------------------------
 // Implementation of _NonlinearProblem
 //-----------------------------------------------------------------------------
 NonlinearVariationalSolver::
-_NonlinearProblem::_NonlinearProblem(const VariationalProblem& problem,
-                                     const Parameters& parameters)
-  : problem(problem), parameters(parameters), jacobian_initialized(false)
+_NonlinearProblem::_NonlinearProblem(const NonlinearVariationalSolver& solver)
+  : solver(solver), jacobian_initialized(false)
 {
   // Do nothing
 }
@@ -69,19 +122,16 @@ _NonlinearProblem::~_NonlinearProblem()
 void NonlinearVariationalSolver::
 _NonlinearProblem::F(GenericVector& b, const GenericVector& x)
 {
-  // Get F (linear form)
-  boost::shared_ptr<const Form> _F = problem.linear_form();
-  assert(_F);
-
   // Assemble right-hand side
-  assemble(b, *_F);
+  assert(solver.F);
+  assemble(b, *solver.F);
 
   // Apply boundary conditions
-  for (uint i = 0; i < problem.bcs().size(); i++)
-    problem.bcs()[i]->apply(b, x);
+  for (uint i = 0; i < solver.bcs.size(); i++)
+    solver.bcs[i]->apply(b, x);
 
   // Print vector
-  const bool print_rhs = parameters["print_rhs"];
+  const bool print_rhs = solver.parameters["print_rhs"];
   if (print_rhs == true)
     info(b, true);
 }
@@ -90,24 +140,22 @@ void NonlinearVariationalSolver::
 _NonlinearProblem::J(GenericMatrix& A, const GenericVector& x)
 {
   // Check if Jacobian matrix sparsity pattern should be reset
-  bool reset_sparsity = !(parameters["reset_jacobian"] && jacobian_initialized);
-
-  // Get J (Jacobian, bilinear form)
-  boost::shared_ptr<const Form> _J = problem.bilinear_form();
-  assert(_J);
+  bool reset_sparsity = !(solver.parameters["reset_jacobian"] &&
+                          jacobian_initialized);
 
   // Assemble left-hand side
-  assemble(A, *_J, reset_sparsity);
+  assert(solver.J);
+  assemble(A, *solver.J, reset_sparsity);
 
   // Remember that Jacobian has been initialized
   jacobian_initialized = true;
 
   // Apply boundary conditions
-  for (uint i = 0; i < problem.bcs().size(); i++)
-    problem.bcs()[i]->apply(A);
+  for (uint i = 0; i < solver.bcs.size(); i++)
+    solver.bcs[i]->apply(A);
 
   // Print matrix
-  const bool print_matrix = parameters["print_matrix"];
+  const bool print_matrix = solver.parameters["print_matrix"];
   if (print_matrix == true)
     info(A, true);
 }

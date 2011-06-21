@@ -25,16 +25,52 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "assemble.h"
+#include "Form.h"
 #include "VariationalProblem.h"
 #include "LinearVariationalSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void LinearVariationalSolver::solve(Function& u,
-                                    const VariationalProblem& problem,
-                                    const Parameters& parameters)
+LinearVariationalSolver::
+LinearVariationalSolver(const Form& a,
+                        const Form& L,
+                        Function& u,
+                        std::vector<const BoundaryCondition*> bcs)
+  : a(reference_to_no_delete_pointer(a)),
+    L(reference_to_no_delete_pointer(L)),
+    u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    this->bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 
+  // Set parameters
+  parameters = default_parameters();
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+LinearVariationalSolver::
+LinearVariationalSolver(boost::shared_ptr<const Form> a,
+                        boost::shared_ptr<const Form> L,
+                        boost::shared_ptr<Function> u,
+                        std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+  : a(a), L(L), u(u)
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    this->bcs.push_back(bcs[i]);
+
+  // Set parameters
+  parameters = default_parameters();
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+void LinearVariationalSolver::solve()
 {
   begin("Solving linear variational problem.");
 
@@ -42,38 +78,32 @@ void LinearVariationalSolver::solve(Function& u,
   std::string solver_type   = parameters["linear_solver"];
   const std::string pc_type = parameters["preconditioner"];
   const bool print_rhs      = parameters["print_rhs"];
-  const bool symmetric      = problem.parameters["symmetric"];
+  const bool symmetric      = parameters["symmetric"];
   const bool print_matrix   = parameters["print_matrix"];
 
   // Create matrix and vector
-  boost::scoped_ptr<GenericMatrix> A(u.vector().factory().create_matrix());
-  boost::scoped_ptr<GenericVector> b(u.vector().factory().create_vector());
-
-  // Get bilinear and linear forms
-  boost::shared_ptr<const Form> a = problem.bilinear_form();
-  boost::shared_ptr<const Form> L = problem.linear_form();
-  assert(a);
-  assert(L);
+  boost::scoped_ptr<GenericMatrix> A(u->vector().factory().create_matrix());
+  boost::scoped_ptr<GenericVector> b(u->vector().factory().create_vector());
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
   {
     // Need to cast to DirichletBC to use assemble_system
-    std::vector<const DirichletBC*> bcs;
-    const std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs = problem.bcs();
-    for (uint i = 0; i < _bcs.size(); i++)
+    std::vector<const DirichletBC*> _bcs;
+    for (uint i = 0; i < bcs.size(); i++)
     {
-      const DirichletBC* bc = dynamic_cast<const DirichletBC*>(_bcs[i].get());
-      if (!bc)
-        error("Only Dirichlet boundary conditions may be used for assembly of symmetric system.");
-      bcs.push_back(bc);
+      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
+      if (!_bc)
+        dolfin_error("LinearVariationalSolver.cpp",
+                     "apply boundary condition in linear variational solver",
+                     "only Dirichlet boundary conditions may be used for symmetric systems");
+      _bcs.push_back(_bc);
     }
 
     // Assemble linear system and apply boundary conditions
     assemble_system(*A, *b,
-                    *a,
-                    *L,
-                    bcs,
+                    *a, *L,
+                    _bcs,
                     0, 0, 0,
                     0,
                     true, false);
@@ -85,8 +115,8 @@ void LinearVariationalSolver::solve(Function& u,
     assemble(*b, *L);
 
     // Apply boundary conditions
-    for (uint i = 0; i < problem.bcs().size(); i++)
-      problem.bcs()[i]->apply(*A, *b);
+    for (uint i = 0; i < bcs.size(); i++)
+      bcs[i]->apply(*A, *b);
   }
 
   // Print vector/matrix
@@ -109,15 +139,32 @@ void LinearVariationalSolver::solve(Function& u,
   {
     LUSolver solver;
     solver.parameters.update(parameters("lu_solver"));
-    solver.solve(*A, u.vector(), *b);
+    solver.solve(*A, u->vector(), *b);
   }
   else
   {
     KrylovSolver solver(solver_type, pc_type);
     solver.parameters.update(parameters("krylov_solver"));
-    solver.solve(*A, u.vector(), *b);
+    solver.solve(*A, u->vector(), *b);
   }
 
   end();
+}
+//-----------------------------------------------------------------------------
+void LinearVariationalSolver::check_forms() const
+{
+  // Check rank of bilinear form a
+  if (a->rank() != 2)
+    dolfin_error("LinearVariationalSolver.cpp",
+                 "create linear variational solver for a(u, v) == L(v) for all v",
+                 "expecting the left-hand side to be a bilinear form (not rank %d).",
+                 a->rank());
+
+  // Check rank of linear form L
+  if (L->rank() != 1)
+    dolfin_error("LinearVariationalSolver.cpp",
+                 "create linear variational solver for a(u, v) = L(v) for all v",
+                 "expecting the right-hand side to be a linear form (not rank %d).",
+                 a->rank());
 }
 //-----------------------------------------------------------------------------

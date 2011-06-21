@@ -35,14 +35,24 @@ namespace dolfin
 
   /// This class implements a solver for linear variational problems.
 
-  class LinearVariationalSolver
+  class LinearVariationalSolver : public Variable
   {
   public:
 
+    /// Create linear variational solver
+    LinearVariationalSolver(const Form& a,
+                            const Form& L,
+                            Function& u,
+                            std::vector<const BoundaryCondition*> bcs);
+
+    /// Create linear variational solver
+    LinearVariationalSolver(boost::shared_ptr<const Form> a,
+                            boost::shared_ptr<const Form> L,
+                            boost::shared_ptr<Function> u,
+                            std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+
     /// Solve variational problem
-    static void solve(Function& u,
-                      const VariationalProblem& problem,
-                      const Parameters& parameters);
+    void solve();
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -62,6 +72,23 @@ namespace dolfin
 
       return p;
     }
+
+  private:
+
+    // Check forms
+    void check_forms() const;
+
+    // The bilinear form
+    boost::shared_ptr<const Form> a;
+
+    // The linear form
+    boost::shared_ptr<const Form> L;
+
+    // The solution
+    boost::shared_ptr<Function> u;
+
+    // The boundary conditions
+    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs;
 
   };
 
