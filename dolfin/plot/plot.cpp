@@ -41,7 +41,7 @@ using namespace dolfin;
 template <class T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
-  info("Plotting %s (%s), press 'q' to continue...",
+  info("Plotting %s (%s).",
           t.name().c_str(), t.label().c_str());
 
   // Don't plot when running in parallel
