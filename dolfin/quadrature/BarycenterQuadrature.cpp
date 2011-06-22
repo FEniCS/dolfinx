@@ -116,8 +116,7 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
       double b0, b1, db;
       double a0_2, b0_2;
       double a0_3, b0_3;
-      double a0_4, b0_4;
-      double a1_2, b1_2;
+      double a1_2;
       double C1, Ca, Caa, Cb, Cbb, Cab;
       double Kab;
       double P1, Pa, Pb, Paa, Pbb, Pab;
@@ -156,14 +155,11 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
 	          da = a1 - a0;
 	          db = b1 - b0;
 
-	          a0_2 = a0 * a0;
-	          a0_3 = a0_2 * a0;
-	          a0_4 = a0_3 * a0;
-	          a1_2 = a1 * a1;
-	          b0_2 = b0 * b0;
-	          b0_3 = b0_2 * b0;
-	          b0_4 = b0_3 * b0;
-	          b1_2 = b1 * b1;
+	          a0_2 = a0*a0;
+	          a0_3 = a0_2*a0;
+	          a1_2 = a1*a1;
+	          b0_2 = b0*b0;
+	          b0_3 = b0_2*b0;
 
 	          C1 = a1 + a0;
 	          Ca = a1*C1 + a0_2;
