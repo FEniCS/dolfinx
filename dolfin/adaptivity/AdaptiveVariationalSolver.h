@@ -20,8 +20,8 @@
 // First added:  2010-08-19
 // Last changed: 2011-03-31
 
-#ifndef __ADAPTIVE_SOLVER_H
-#define __ADAPTIVE_SOLVER_H
+#ifndef __ADAPTIVE_VARIATIONAL_SOLVER_H
+#define __ADAPTIVE_VARIATIONAL_SOLVER_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -33,27 +33,29 @@ namespace dolfin
 
   class Function;
   class FunctionSpace;
-  class VariationalProblem;
+  class LinearVariationalProblem;
+  class NonlinearVariationalProblem;
   class ErrorControl;
   class GoalFunctional;
   class Form;
 
-  /// An _AdaptiveVariationalSolver_ solves a _VariationalProblem_ adaptively to
-  /// within a given error tolerance with respect to the error in a
-  /// given _GoalFunctional_.
+  /// An _AdaptiveVariationalSolver_ solves a
+  /// _LinearVariationalProblem_ or a _NonlinearVariationalProblem_
+  /// adaptively to within a given error tolerance with respect to the
+  /// error in a given _GoalFunctional_.
 
   class AdaptiveVariationalSolver
   {
   public:
 
-    /// Solve given _VariationalProblem_ with respect to given
+    /// Solve given _LinearVariationalProblem_ with respect to given
     /// _GoalFunctional_
     ///
     /// *Arguments*
     ///     u (_Function_)
     ///         the solution
     ///
-    ///     problem (_VariationalProblem_)
+    ///     problem (_LinearVariationalProblem_)
     ///         the variational problem
     ///
     ///     M (_GoalFunctional_)
@@ -61,14 +63,40 @@ namespace dolfin
     ///
     ///     tol (double)
     ///         the prescribed tolerance
-    static void solve(Function& u,
-                      const VariationalProblem& problem,
+    static void solve(const LinearVariationalProblem& problem,
                       const double tol,
                       GoalFunctional& M,
                       const Parameters& parameters);
 
-    static void solve(Function& w,
-                      const VariationalProblem& pde,
+    /// Solve given _NonlinearVariationalProblem_ with respect to given
+    /// _GoalFunctional_
+    ///
+    /// *Arguments*
+    ///     u (_Function_)
+    ///         the solution
+    ///
+    ///     problem (_NonlinearVariationalProblem_)
+    ///         the variational problem
+    ///
+    ///     M (_GoalFunctional_)
+    ///         a goal functional
+    ///
+    ///     tol (double)
+    ///         the prescribed tolerance
+    static void solve(const NonlinearVariationalProblem& problem,
+                      const double tol,
+                      GoalFunctional& M,
+                      const Parameters& parameters);
+
+    /// FIXME: Documentation is missing for this function
+    static void solve(const LinearVariationalProblem& pde,
+                      const double tol,
+                      Form& goal,
+                      ErrorControl& control,
+                      const Parameters& parameters);
+
+    /// FIXME: Documentation is missing for this function
+    static void solve(const NonlinearVariationalProblem& pde,
                       const double tol,
                       Form& goal,
                       ErrorControl& control,

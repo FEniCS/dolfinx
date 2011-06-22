@@ -18,12 +18,13 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-15
+// Last changed: 2011-06-22
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Table.h>
-#include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/fem/LinearVariationalProblem.h>
+#include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -42,8 +43,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void AdaptiveVariationalSolver::solve(Function& u,
-                                      const VariationalProblem& problem,
+void AdaptiveVariationalSolver::solve(const LinearVariationalProblem& problem,
                                       const double tol,
                                       GoalFunctional& M,
                                       const Parameters& parameters)
@@ -55,19 +55,44 @@ void AdaptiveVariationalSolver::solve(Function& u,
   boost::shared_ptr<const Form> L = problem.linear_form();
   assert(L);
 
+  // Initialize goal functional and error control
   M.update_ec(*a, *L);
   ErrorControl& ec(*(M._ec));
 
-  AdaptiveVariationalSolver::solve(u, problem, tol, M, ec, parameters);
+  // Call solver
+  AdaptiveVariationalSolver::solve(problem, tol, M, ec, parameters);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveVariationalSolver::solve(Function& w,
-                                      const VariationalProblem& pde,
+void AdaptiveVariationalSolver::solve(const NonlinearVariationalProblem& problem,
+                                      const double tol,
+                                      GoalFunctional& M,
+                                      const Parameters& parameters)
+{
+
+  // Extract error control view from goal functional
+  boost::shared_ptr<const Form> F = problem.residual_form();
+  assert(F);
+  //boost::shared_ptr<const Form> L = problem.linear_form();
+  //assert(L);
+
+  // Initialize goal functional and error control
+  //M.update_ec(*a, *L);
+  //ErrorControl& ec(*(M._ec));
+
+  // Call solver
+  //AdaptiveVariationalSolver::solve(problem, tol, M, ec, parameters);
+}
+//-----------------------------------------------------------------------------
+void AdaptiveVariationalSolver::solve(const LinearVariationalProblem& pde,
                                       const double tol,
                                       Form& goal,
                                       ErrorControl& control,
                                       const Parameters& parameters)
 {
+  error("Adaptive solver needs to be updated after change to variational problem interface.");
+
+  /*
+
   // Set tolerance parameter if not set
   //if (parameters["tolerance"].change_count() == 0)
   //  parameters["tolerance"] = tol;
@@ -160,6 +185,17 @@ void AdaptiveVariationalSolver::solve(Function& w,
 
   summary(data, parameters);
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.", maxiter);
+  */
+}
+//-----------------------------------------------------------------------------
+void AdaptiveVariationalSolver::solve(const NonlinearVariationalProblem& pde,
+                                      const double tol,
+                                      Form& goal,
+                                      ErrorControl& control,
+                                      const Parameters& parameters)
+{
+  // FIXME: Is there a way to implement this without needing to repeat
+  // FIXME: the implementation for linear problems?
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
@@ -214,3 +250,4 @@ void AdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
   info(indent(table.str(true)));
   info("");
 }
+//-----------------------------------------------------------------------------
