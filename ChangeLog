@@ -1,3 +1,4 @@
+ - Add has_openmp as utility function in Python interface
  - Use Boost to compute Legendre polynolials
  - Remove ode code
  - Handle parsing of unrecognized command-line parameters
