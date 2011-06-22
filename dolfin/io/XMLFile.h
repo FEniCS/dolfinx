@@ -37,7 +37,7 @@
 #include "GenericFile.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
-#include "XMLLocalMeshData.h"
+#include "XMLLocalMeshDataDistributed.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLDolfin.h"
 #include "XMLHandler.h"

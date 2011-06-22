@@ -20,16 +20,9 @@
 // First added:  2009-03-03
 // Last changed: 2011-03-31
 
-//#include <libxml/relaxng.h>
-
 #include <fstream>
 #include <iostream>
 #include <boost/filesystem.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-
-#include "pugixml.hpp"
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
@@ -42,7 +35,7 @@
 #include <dolfin/plot/FunctionPlotData.h>
 #include "XMLArray.h"
 #include "XMLFunctionPlotData.h"
-#include "XMLLocalMeshData.h"
+#include "XMLLocalMeshDataDistributed.h"
 #include "XMLMap.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"

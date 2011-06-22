@@ -19,8 +19,8 @@
 // Last changed: 2011-05-30
 // Modified by Kent-Andre Mardal, 2011.
 
-#ifndef __XMLLOCALMESHDATA_H
-#define __XMLLOCALMESHDATA_H
+#ifndef __XMLLOCALMESHDATADISTRIBUTED_H
+#define __XMLLOCALMESHDATADISTRIBUTED_H
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -35,15 +35,15 @@ namespace dolfin
 
   /// Documentation of class XMLLocalMeshData
 
-  class XMLLocalMeshData: public XMLHandler
+  class XMLLocalMeshDataDistributed: public XMLHandler
   {
   public:
 
     /// Constructor
-    XMLLocalMeshData(LocalMeshData& mesh_data, OldXMLFile& parser);
+    XMLLocalMeshDataDistributed(LocalMeshData& mesh_data, OldXMLFile& parser);
 
     /// Destructor
-    ~XMLLocalMeshData();
+    ~XMLLocalMeshDataDistributed();
 
     void start_element(const xmlChar* name, const xmlChar** attrs);
     void end_element(const xmlChar* name);

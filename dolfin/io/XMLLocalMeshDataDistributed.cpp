@@ -26,24 +26,24 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
-#include "XMLLocalMeshData.h"
+#include "XMLLocalMeshDataDistributed.h"
 #include "XMLArray.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, OldXMLFile& parser)
-  : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
+XMLLocalMeshDataDistributed::XMLLocalMeshDataDistributed(LocalMeshData& mesh_data,
+   OldXMLFile& parser) : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLLocalMeshData::~XMLLocalMeshData()
+XMLLocalMeshDataDistributed::~XMLLocalMeshDataDistributed()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::start_element(const xmlChar* name, const xmlChar** attrs)
 {
   switch (state)
   {
@@ -129,7 +129,7 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::end_element(const xmlChar* name)
+void XMLLocalMeshDataDistributed::end_element(const xmlChar* name)
 {
   switch (state)
   {
@@ -209,7 +209,7 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
 
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
   // Clear all data
   mesh_data.clear();
@@ -227,7 +227,7 @@ void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   mesh_data.gdim = gdim;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global vertices
   const uint num_global_vertices = parse_uint(name, attrs, "size");
@@ -241,7 +241,7 @@ void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
   mesh_data.vertex_coordinates.reserve(num_local_vertices());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name, const xmlChar** attrs)
 {
   // Read vertex index
   const uint v = parse_uint(name, attrs, "index");
@@ -282,7 +282,7 @@ void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global cells
   const uint num_global_cells = parse_uint(name, attrs, "size");
@@ -298,7 +298,7 @@ void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
   mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 1)
@@ -323,7 +323,7 @@ void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 2)
@@ -349,7 +349,7 @@ void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 3)
@@ -376,12 +376,12 @@ void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **att
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
 {
   error("Local mesh data can not read mesh functions.");
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_array(const xmlChar* name, const xmlChar** attrs)
 {
   std::string array_type = parse_string(name, attrs, "type");
   uint size = parse_uint(name, attrs, "size");
@@ -410,21 +410,21 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
 {
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_data_entry(const xmlChar* name, const xmlChar** attrs)
 {
   data_entry_name = parse_string(name, attrs, "name");
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshData::num_local_vertices() const
+dolfin::uint XMLLocalMeshDataDistributed::num_local_vertices() const
 {
   return vertex_range.second - vertex_range.first;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshData::num_local_cells() const
+dolfin::uint XMLLocalMeshDataDistributed::num_local_cells() const
 {
   return cell_range.second - cell_range.first;
 }
