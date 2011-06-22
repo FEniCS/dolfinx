@@ -40,7 +40,7 @@ namespace dolfin
              Function& u,
              const BoundaryCondition& bc);
 
-  /// Solve variational problem a == L or F == 0 with list of boundary conditions
+  /// Solve variational problem a == L or F == 0 with a list of boundary conditions
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs);

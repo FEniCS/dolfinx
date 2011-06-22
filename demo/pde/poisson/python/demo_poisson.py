@@ -57,8 +57,9 @@ a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
 # Compute solution
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+u = Function(V)
+problem = LinearVariationalProblem(a, L, u, bc)
+#u = problem.solve()
 
 # Save solution in VTK format
 file = File("poisson.pvd")

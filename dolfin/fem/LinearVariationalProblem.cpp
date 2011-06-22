@@ -30,6 +30,38 @@ LinearVariationalProblem::
 LinearVariationalProblem(const Form& a,
                          const Form& L,
                          Function& u,
+                         const BoundaryCondition& bc)
+  : Hierarchical<LinearVariationalProblem>(*this),
+    _a(reference_to_no_delete_pointer(a)),
+    _L(reference_to_no_delete_pointer(L)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary condition
+  _bcs.push_back(reference_to_no_delete_pointer(bc));
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+LinearVariationalProblem::
+LinearVariationalProblem(boost::shared_ptr<const Form> a,
+                         boost::shared_ptr<const Form> L,
+                         boost::shared_ptr<Function> u,
+                         boost::shared_ptr<const BoundaryCondition> bc)
+  : Hierarchical<LinearVariationalProblem>(*this),
+    _a(a), _L(L), _u(u)
+{
+  // Store boundary condition
+  _bcs.push_back(bc);
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+LinearVariationalProblem::
+LinearVariationalProblem(const Form& a,
+                         const Form& L,
+                         Function& u,
                          std::vector<const BoundaryCondition*> bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),

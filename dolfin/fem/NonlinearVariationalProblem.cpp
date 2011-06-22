@@ -30,6 +30,37 @@ NonlinearVariationalProblem::
 NonlinearVariationalProblem(const Form& F,
                             int rhs,
                             Function& u,
+                            const BoundaryCondition& bc)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(reference_to_no_delete_pointer(F)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary condition
+  _bcs.push_back(reference_to_no_delete_pointer(bc));
+
+  // Check forms
+  check_forms(rhs);
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
+                            int rhs,
+                            boost::shared_ptr<Function> u,
+                            boost::shared_ptr<const BoundaryCondition> bc)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(F), _u(u)
+{
+  // Store boundary condition
+  _bcs.push_back(bc);
+
+  // Check forms
+  check_forms(rhs);
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(const Form& F,
+                            int rhs,
+                            Function& u,
                             std::vector<const BoundaryCondition*> bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),

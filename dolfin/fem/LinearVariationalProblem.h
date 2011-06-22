@@ -45,13 +45,27 @@ namespace dolfin
   {
   public:
 
-    /// Create linear variational problem
+    /// Create linear variational problem with a single boundary condition
+    LinearVariationalProblem(const Form& a,
+                             const Form& L,
+                             Function& u,
+                             const BoundaryCondition& bc);
+
+    /// Create linear variational problem with a single boundary condition
+    /// (shared pointer version)
+    LinearVariationalProblem(boost::shared_ptr<const Form> a,
+                             boost::shared_ptr<const Form> L,
+                             boost::shared_ptr<Function> u,
+                             boost::shared_ptr<const BoundaryCondition> bc);
+
+    /// Create linear variational problem with a list of boundary conditions
     LinearVariationalProblem(const Form& a,
                              const Form& L,
                              Function& u,
                              std::vector<const BoundaryCondition*> bcs);
 
-    /// Create linear variational problem (shared pointer version)
+    /// Create linear variational problem with a list of boundary conditions
+    /// (shared pointer version)
     LinearVariationalProblem(boost::shared_ptr<const Form> a,
                              boost::shared_ptr<const Form> L,
                              boost::shared_ptr<Function> u,

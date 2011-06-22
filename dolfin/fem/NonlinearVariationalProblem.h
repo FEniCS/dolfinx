@@ -51,13 +51,27 @@ namespace dolfin
     // checks of arguments to be performed in a single place (not also
     // in the Equation class).
 
-    /// Create linear variational problem
+    /// Create nonlinear variational problem with a single boundary condition
+    NonlinearVariationalProblem(const Form& F,
+                                int rhs,
+                                Function& u,
+                                const BoundaryCondition& bc);
+
+    /// Create nonlinear variational problem with a single boundary condition
+    /// (shared pointer version)
+    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
+                                int rhs,
+                                boost::shared_ptr<Function> u,
+                                boost::shared_ptr<const BoundaryCondition> bc);
+
+    /// Create nonlinear variational problem with a list of boundary conditions
     NonlinearVariationalProblem(const Form& F,
                                 int rhs,
                                 Function& u,
                                 std::vector<const BoundaryCondition*> bcs);
 
-    /// Create linear variational problem (shared pointer version)
+    /// Create nonlinear variational problem with a list of boundary conditions
+    /// (shared pointer version)
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
                                 int rhs,
                                 boost::shared_ptr<Function> u,
