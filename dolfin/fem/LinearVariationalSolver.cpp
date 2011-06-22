@@ -37,14 +37,16 @@ LinearVariationalSolver::
 LinearVariationalSolver(LinearVariationalProblem& problem)
   : problem(reference_to_no_delete_pointer(problem))
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
 LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
   : problem(problem)
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 void LinearVariationalSolver::solve()

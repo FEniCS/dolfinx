@@ -84,16 +84,9 @@ int main()
   L.f = f;
   L.g = g;
 
+  // Solve variational problem
   Function u(V);
   solve(a == L, u, bc);
-
-  // FIXME: Clean up here when everything works
-  //a == L;
-
-  // Compute solution
-  //VariationalProblem problem(a, L, bc);
-  //Function u(V);
-  //problem.solve(u);
 
   // Save solution in VTK format
   File file("poisson.pvd");

@@ -36,14 +36,16 @@ NonlinearVariationalSolver::
 NonlinearVariationalSolver(NonlinearVariationalProblem& problem)
   : problem(reference_to_no_delete_pointer(problem))
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalSolver::
 NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem)
   : problem(problem)
 {
-  // Do nothing
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalSolver::solve()
