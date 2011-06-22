@@ -441,7 +441,7 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
   assert(v.x);
 
   if (size() != v.size())
-    error("The vectors must be of the same size.");
+    error("The vectors must be of the same for point-wise multiplication size.");
 
   VecPointwiseMult(*x,*x,*v.x);
   return *this;
@@ -477,7 +477,7 @@ void PETScVector::axpy(double a, const GenericVector& y)
   assert(_y.x);
 
   if (size() != _y.size())
-    error("The vectors must be of the same size.");
+    error("The vectors must be of the same size for addition.");
 
   VecAXPY(*x, a, *(_y.x));
 }

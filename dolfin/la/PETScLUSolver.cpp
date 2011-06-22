@@ -161,8 +161,9 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   if (A->size(0) != b.size())
     error("Cannot LU factorize non-square PETSc matrix.");
 
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A->size(1));
+  // Initialize solution vector if required
+  if (A->size(1) != x.size())
+    A->resize(x, 1);
 
   // Set PETSc operators (depends on factorization re-use options);
   set_petsc_operators();

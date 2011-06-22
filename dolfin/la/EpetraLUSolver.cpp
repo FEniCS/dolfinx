@@ -132,8 +132,12 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   if (N != b.size())
     error("Non-matching dimensions for linear system.");
 
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(M);
+  // Initialize solution vector
+  if (x.size() != M)
+  {
+    this->A->resize(x, 1);
+    x.zero();
+  }
 
   // Set LHS and RHS vectors
   linear_problem->SetRHS(_b.vec().get());

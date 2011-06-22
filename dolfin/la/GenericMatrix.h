@@ -99,7 +99,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel
     /// case, size and layout are important.
     virtual void resize(GenericVector& y, uint dim) const = 0;
 
