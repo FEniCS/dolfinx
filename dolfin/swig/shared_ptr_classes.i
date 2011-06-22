@@ -71,7 +71,12 @@
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)
 
-%shared_ptr(dolfin::Hierarchical<dolfin::VariationalProblem>)
+%shared_ptr(dolfin::Hierarchical<dolfin::LinearVariationalProblem>)
+%shared_ptr(dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>)
+%shared_ptr(dolfin::LinearVariationalProblem)
+%shared_ptr(dolfin::NonlinearVariationalProblem)
+%shared_ptr(dolfin::LinearVariationalSolver)
+%shared_ptr(dolfin::NonlinearVariationalSolver)
 %shared_ptr(dolfin::VariationalProblem)
 
 %shared_ptr(dolfin::BoundaryCondition)

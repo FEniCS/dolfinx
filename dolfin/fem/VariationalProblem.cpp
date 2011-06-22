@@ -29,71 +29,41 @@ using namespace dolfin;
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1)
 {
-
+  error_message();
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1,
                                        const BoundaryCondition& bc)
 {
-
+  error_message();
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1,
                                        const std::vector<const BoundaryCondition*>& bcs)
 {
-
+  error_message();
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(boost::shared_ptr<const Form> form_0,
                                        boost::shared_ptr<const Form> form_1,
                                        std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
-
-
-
+  error_message();
 }
 //-----------------------------------------------------------------------------
-VariationalProblem::~VariationalProblem()
-{
-
-}
-//-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u) const
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u0, Function& u1) const
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u0, Function& u1, Function& u2) const
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u,
-                               const double tolerance,
-                               GoalFunctional& M) const
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void VariationalProblem::solve(Function& u,
-                               const double tolerance,
-                               Form& M,
-                               ErrorControl& ec) const
-{
-  // Do nothing
-}
+VariationalProblem::~VariationalProblem() {}
+void VariationalProblem::solve(Function& u) const {}
+void VariationalProblem::solve(Function& u0, Function& u1) const {}
+void VariationalProblem::solve(Function& u0, Function& u1, Function& u2) const {}
+void VariationalProblem::solve(Function& u, const double tolerance, GoalFunctional& M) const {}
+void VariationalProblem::solve(Function& u, const double tolerance, Form& M, ErrorControl& ec) const {}
 //-----------------------------------------------------------------------------
 void VariationalProblem::error_message() const
 {
   dolfin_error("VariationalProblem.cpp",
-               "FIXME",
-               "FIXME");
+               "create variational problem",
+               "The VariationalProblem class has been removed. Use solve(a == L).");
 }
 //-----------------------------------------------------------------------------

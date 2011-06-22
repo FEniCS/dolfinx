@@ -23,6 +23,7 @@
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 
 namespace dolfin

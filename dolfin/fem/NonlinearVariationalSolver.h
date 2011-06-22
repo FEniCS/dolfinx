@@ -18,7 +18,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-01-15
+// Last changed: 2011-06-22
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H
@@ -27,13 +27,10 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
+#include "NonlinearVariationalProblem.h"
 
 namespace dolfin
 {
-
-  class Function;
-  class VariationalProblem;
-  class Parameters;
 
   /// This class implements a solver for nonlinear variational problems.
 
@@ -41,17 +38,11 @@ namespace dolfin
   {
   public:
 
-    /// Create linear variational solver
-    NonlinearVariationalSolver(const Form& F,
-                               const Form& J,
-                               Function& u,
-                               std::vector<const BoundaryCondition*> bcs);
+    /// Create nonlinear variational solver for given problem
+    NonlinearVariationalSolver(NonlinearVariationalProblem& problem);
 
-    /// Create linear variational solver
-    NonlinearVariationalSolver(boost::shared_ptr<const Form> F,
-                               boost::shared_ptr<const Form> J,
-                               boost::shared_ptr<Function> u,
-                               std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+    /// Create nonlinear variational solver for given problem (shared pointer version)
+    NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
 
     /// Solve variational problem
     void solve();
@@ -78,31 +69,17 @@ namespace dolfin
 
   private:
 
-    // Check forms
-    void check_forms() const;
-
-    // The residual form
-    boost::shared_ptr<const Form> F;
-
-    // The Jacobian form
-    boost::shared_ptr<const Form> J;
-
-    // The solution
-    boost::shared_ptr<Function> u;
-
-    // The boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs;
-
     // Nonlinear (algebraic) problem
-    class _NonlinearProblem : public NonlinearProblem
+    class NonlinearDiscreteProblem : public NonlinearProblem
     {
     public:
 
       // Constructor
-      _NonlinearProblem(const NonlinearVariationalSolver& solver);
+      NonlinearDiscreteProblem(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                               boost::shared_ptr<NonlinearVariationalSolver> solver);
 
       // Destructor
-      ~_NonlinearProblem();
+      ~NonlinearDiscreteProblem();
 
       // Compute F at current point x
       virtual void F(GenericVector& b, const GenericVector& x);
@@ -112,17 +89,17 @@ namespace dolfin
 
     private:
 
-      // Reference to variational solver
-      const NonlinearVariationalSolver& solver;
+      // Problem and solver objects
+      boost::shared_ptr<NonlinearVariationalProblem> problem;
+      boost::shared_ptr<NonlinearVariationalSolver> solver;
 
       // True if Jacobian has been initialized
       bool jacobian_initialized;
 
     };
 
-    // The Newton problem is a friend
-    friend class _NonlinearProblem;
-
+    // The nonlinear problem
+    boost::shared_ptr<NonlinearVariationalProblem> problem;
 
   };
 

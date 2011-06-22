@@ -18,8 +18,15 @@
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
-#include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/fem/LinearVariationalProblem.h>
+#include <dolfin/fem/LinearVariationalSolver.h>
+#include <dolfin/fem/NonlinearVariationalProblem.h>
+#include <dolfin/fem/NonlinearVariationalSolver.h>
 
+// Move up when ready or merge with Assembler.h
 #include <dolfin/fem/OpenMpAssembler.h>
+
+// Remove when no longer needed, here to give deprecation warning
+#include <dolfin/fem/VariationalProblem.h>
 
 #endif

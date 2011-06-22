@@ -18,20 +18,20 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem)
-// Last changed: 2011-01-14
+// Last changed: 2011-06-22
 
 #ifndef __LINEAR_VARIATIONAL_SOLVER_H
 #define __LINEAR_VARIATIONAL_SOLVER_H
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 
 namespace dolfin
 {
 
-  class Function;
-  class VariationalProblem;
-  class Parameters;
+  // Forward declarations
+  class LinearVariationalProblem;
 
   /// This class implements a solver for linear variational problems.
 
@@ -39,17 +39,11 @@ namespace dolfin
   {
   public:
 
-    /// Create linear variational solver
-    LinearVariationalSolver(const Form& a,
-                            const Form& L,
-                            Function& u,
-                            std::vector<const BoundaryCondition*> bcs);
+    /// Create linear variational solver for given problem
+    LinearVariationalSolver(LinearVariationalProblem& problem);
 
-    /// Create linear variational solver
-    LinearVariationalSolver(boost::shared_ptr<const Form> a,
-                            boost::shared_ptr<const Form> L,
-                            boost::shared_ptr<Function> u,
-                            std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+    /// Create linear variational solver for given problem (shared pointer version)
+    LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
 
     /// Solve variational problem
     void solve();
@@ -75,20 +69,8 @@ namespace dolfin
 
   private:
 
-    // Check forms
-    void check_forms() const;
-
-    // The bilinear form
-    boost::shared_ptr<const Form> a;
-
-    // The linear form
-    boost::shared_ptr<const Form> L;
-
-    // The solution
-    boost::shared_ptr<Function> u;
-
-    // The boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs;
+    // The linear problem
+    boost::shared_ptr<LinearVariationalProblem> problem;
 
   };
 

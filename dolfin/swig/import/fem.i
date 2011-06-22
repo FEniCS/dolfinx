@@ -2,6 +2,7 @@
 
 %import(module="dolfin.cpp") "dolfin/fem/GenericDofMap.h"
 %import(module="dolfin.cpp") "dolfin/fem/DofMap.h"
+%import(module="dolfin.cpp") "dolfin/fem/Equation.h"
 %import(module="dolfin.cpp") "dolfin/fem/FiniteElement.h"
 %import(module="dolfin.cpp") "dolfin/fem/BasisFunction.h"
 %import(module="dolfin.cpp") "dolfin/fem/BoundaryCondition.h"
@@ -14,5 +15,9 @@
 %import(module="dolfin.cpp") "dolfin/fem/Assembler.h"
 %import(module="dolfin.cpp") "dolfin/fem/SparsityPatternBuilder.h"
 %import(module="dolfin.cpp") "dolfin/fem/SystemAssembler.h"
-%import(module="dolfin.cpp") "dolfin/fem/VariationalProblem.h"
+%import(module="dolfin.cpp") "dolfin/fem/LinearVariationalProblem.h"
+%import(module="dolfin.cpp") "dolfin/fem/LinearVariationalSolver.h"
+%import(module="dolfin.cpp") "dolfin/fem/NonlinearVariationalProblem.h"
+%import(module="dolfin.cpp") "dolfin/fem/NonlinearVariationalSolver.h"
 %import(module="dolfin.cpp") "dolfin/fem/OpenMpAssembler.h"
+%import(module="dolfin.cpp") "dolfin/fem/VariationalProblem.h"
