@@ -18,11 +18,13 @@
 // First added:  2002-12-06
 // Last changed: 2006-10-16
 
+#include <map>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "pugixml.hpp"
 
@@ -32,78 +34,35 @@
 #include "dolfin/mesh/Cell.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshData.h"
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
 #include "XMLIndent.h"
+#include "XMLMeshFunction.h"
 #include "XMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_mesh)
+void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 {
-  const pugi::xml_node xml_mesh_node = xml_mesh.child("mesh");
-  if (!xml_mesh_node)
+  const pugi::xml_node xml_mesh = xml_dolfin.child("mesh");
+  if (!xml_mesh)
     error("Not a DOLFIN Mesh file.");
 
-  // Get cell type and geometric dimension
-  const std::string cell_type_str = xml_mesh_node.attribute("celltype").value();
-  const unsigned int gdim = xml_mesh_node.attribute("dim").as_uint();
+  // Read mesh
+  read_mesh(mesh, xml_mesh);
 
-  // Get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  const unsigned int tdim = cell_type->dim();
+  // Read any mesh data
+  read_data(mesh.data(), xml_mesh);
 
-  // Create mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, cell_type_str, tdim, gdim);
 
-  // Get vertices node
-  pugi::xml_node xml_vertices = xml_mesh_node.child("vertices");
-  assert(xml_vertices);
-
-  // Get number of vertices and init editor
-  const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
-  editor.init_vertices(num_vertices);
-
-  // Iterate over vertices and add to mesh
-  Point p;
-  for (pugi::xml_node_iterator it = xml_vertices.begin(); it != xml_vertices.end(); ++it)
-  {
-    const unsigned int index = it->attribute("index").as_uint();
-    p[0] = it->attribute("x").as_double();
-    p[1] = it->attribute("y").as_double();
-    p[2] = it->attribute("z").as_double();
-    editor.add_vertex(index, p);
-  }
-
-  // Get cells node
-  pugi::xml_node xml_cells = xml_mesh_node.child("cells");
-  assert(xml_cells);
-
-  // Get number of cels and init editor
-  const unsigned int num_cells = xml_cells.attribute("size").as_uint();
-  editor.init_cells(num_cells);
-
-  // Create list of vertex index attribute names
-  const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
-  std::vector<std::string> v_str(num_vertices_per_cell);
-  for (uint i = 0; i < num_vertices_per_cell; ++i)
-    v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
-
-  // Iterate over cells and add to mesh
-  std::vector<unsigned int> v(num_vertices_per_cell);
-  for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
-  {
-    const unsigned int index = it->attribute("index").as_uint();
-    for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
-      v[i] = it->attribute(v_str[i].c_str()).as_uint();
-    editor.add_cell(index, v);
-  }
-
-  // Close mesh editor
-  editor.close();
+  // Check
+  if (mesh.data().array("boundary facet cells"))
+    std::cout << "!!! Yes" << std::endl;
+  else
+    std::cout << "!!! No" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
@@ -182,12 +141,265 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
   outfile << indent() << "</cells>" << std::endl;
 
   // Write mesh data
-  //++indent;
-  //XMLMeshData::write(mesh.data(), outfile, indent.level());
-  //--indent;
+  ++indent;
+  write_data(mesh.data(), outfile, indent.level());
+  --indent;
 
   // Write mesh footer
   --indent;
   outfile << indent() << "</mesh>" << std::endl;
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
+{
+  // Get cell type and geometric dimension
+  const std::string cell_type_str = xml_mesh.attribute("celltype").value();
+  const unsigned int gdim = xml_mesh.attribute("dim").as_uint();
+
+  // Get topological dimension
+  boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  const unsigned int tdim = cell_type->dim();
+
+  // Create mesh for editing
+  MeshEditor editor;
+  editor.open(mesh, cell_type_str, tdim, gdim);
+
+  // Get vertices node
+  pugi::xml_node xml_vertices = xml_mesh.child("vertices");
+  assert(xml_vertices);
+
+  // Get number of vertices and init editor
+  const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
+  editor.init_vertices(num_vertices);
+
+  // Iterate over vertices and add to mesh
+  Point p;
+  for (pugi::xml_node_iterator it = xml_vertices.begin(); it != xml_vertices.end(); ++it)
+  {
+    const unsigned int index = it->attribute("index").as_uint();
+    p[0] = it->attribute("x").as_double();
+    p[1] = it->attribute("y").as_double();
+    p[2] = it->attribute("z").as_double();
+    editor.add_vertex(index, p);
+  }
+
+  // Get cells node
+  pugi::xml_node xml_cells = xml_mesh.child("cells");
+  assert(xml_cells);
+
+  // Get number of cels and init editor
+  const unsigned int num_cells = xml_cells.attribute("size").as_uint();
+  editor.init_cells(num_cells);
+
+  // Create list of vertex index attribute names
+  const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
+  std::vector<std::string> v_str(num_vertices_per_cell);
+  for (uint i = 0; i < num_vertices_per_cell; ++i)
+    v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
+
+  // Iterate over cells and add to mesh
+  std::vector<unsigned int> v(num_vertices_per_cell);
+  for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
+  {
+    const unsigned int index = it->attribute("index").as_uint();
+    for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
+      v[i] = it->attribute(v_str[i].c_str()).as_uint();
+    editor.add_cell(index, v);
+  }
+
+  // Close mesh editor
+  editor.close();
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
+{
+  // Check if we have any mesh data
+  const pugi::xml_node xml_data = xml_mesh.child("data");
+  if (!xml_data)
+    return;
+
+  // Iterate over data
+  for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
+  {
+    // Check node is data_entry
+    const std::string node_name = it->name();
+    if (node_name != "data_entry")
+      error("Expecting XML node called \"data_entry\", but go \"%s\".", node_name.c_str());
+
+    // Get name of data set
+    const std::string data_set_name = it->attribute("name").value();
+    //std::cout << "MeshData name:" << data_set_name << "." << std::endl;
+
+    // Check that there is only one data set
+    if (it->first_child().next_sibling())
+      error("XML file contains too many data sets.");
+
+    // Get type of data set
+    pugi::xml_node data_set = it->first_child();
+    const std::string data_set_type = data_set.name();
+    //std::cout << "  Data set type: " << data_set_type << std::endl;
+    if (data_set_type == "array")
+    {
+      // Get type
+      const std::string data_type = data_set.attribute("type").value();
+      //std::cout << "  Data set type: " << data_type << std::endl;
+      if (data_type == "uint")
+      {
+        // Get vector from MeshData
+        std::vector<unsigned int>* array = data.array(data_set_name);
+        if (!array)
+          array = data.create_array(data_set_name);
+        assert(array);
+
+        // Read vector
+        read_array_uint(*array, data_set);
+      }
+      else
+        error("Only reading of MeshData uint Arrays are supported at present.");
+    }
+    else if (data_set_type == "meshfunction")
+    {
+      // Get MeshFunction from MeshData
+      const std::string data_type = data_set.attribute("type").value();
+      boost::shared_ptr<MeshFunction<unsigned int> > mf = data.mesh_function(data_set_name);
+      if (!mf)
+        mf = data.create_mesh_function(data_set_name);
+      assert(mf);
+
+      // Read  MeshFunction
+      XMLMeshFunction::read(*mf, data_type, *it);
+    }
+    else
+      error("Reading of MeshData \"%s\" not yet supported", data_set_type.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
+                              const pugi::xml_node xml_array)
+{
+  // Check that we have an array
+  const std::string name = xml_array.name();
+  if (name != "array")
+    error("Expecting an XML array node.");
+
+  // Check type is unit
+  const std::string type = xml_array.attribute("type").value();
+  if (type != "uint")
+    error("Expecting an XML array node.");
+
+  // Get size and resize vector
+  const unsigned int size = xml_array.attribute("size").as_uint();
+  array.resize(size);
+
+  // Iterate over array entries
+  for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end(); ++it)
+  {
+    const unsigned int index = it->attribute("index").as_uint();
+    const double value = it->attribute("value").as_uint();
+    assert(index < size);
+    array[index] = value;
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
+                         unsigned int indentation_level)
+{
+  //if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
+  //{
+    XMLIndent indent(indentation_level);
+
+    // Write mesh data header
+    outfile << indent();
+    outfile << "<data>" << std::endl;
+
+    // Increment level for data_entries
+    ++indent;
+
+    // Write mesh functions
+    typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >::const_iterator mf_iter;
+    for (mf_iter it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write mesh function (omit mesh)
+      ++indent;
+      XMLMeshFunction::write(*(it->second), "uint", outfile, indent.level(), false);
+      --indent;
+
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    typedef std::map<std::string, std::vector<uint>*>::const_iterator arr_iter;
+    for (arr_iter it = data.arrays.begin(); it != data.arrays.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      assert(it->second);
+      const std::vector<unsigned int>& v = *it->second;
+      ++indent;
+      outfile << indent() << "<array type=\"uint\" size=\"" << v.size() << "\">" << std::endl;
+      ++indent;
+      for (uint i = 0; i < v.size(); ++i)
+        outfile << indent() << "<element index=\"" << i << "\" value=\"" << v[i] << "\"/>" << std::endl;
+      --indent;
+      outfile << indent() << "</array>" << std::endl;
+      --indent;
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    /*
+    typedef std::map<std::string, std::map<uint,uint>* >::const_iterator map_iter;
+    for (map_iter it = data.mappings.begin(); it != data.mappings.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      ++indent;
+      XMLMap::write(*(it->second), outfile, indent.level());
+      --indent;
+
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    typedef std::map<std::string, std::map<uint, std::vector<uint> >* >::const_iterator vec_map_iter;
+    for (vec_map_iter it = data.vector_mappings.begin(); it != data.vector_mappings.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      ++indent;
+      XMLMap::write(*(it->second), outfile, indent.level());
+      --indent;
+
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+    */
+
+    // Done with entries, decrement level
+    --indent;
+
+    // Write mesh data footer
+    outfile << indent();
+    outfile << "</data>" << std::endl;
+  //}
+}
+//-----------------------------------------------------------------------------
+
+

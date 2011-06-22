@@ -33,17 +33,35 @@ namespace dolfin
 {
 
   class Mesh;
+  class MeshData;
 
   class XMLMesh
   {
   public:
 
-    // Read XML vector
+    /// Read XML vector
     static void read(Mesh& mesh, const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
     static void write(const Mesh& mesh, std::ostream& outfile,
                       unsigned int indentation_level=0);
+
+
+  private:
+
+    // Read mesh
+    static void read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh);
+
+    // Read mesh data
+    static void read_data(MeshData& data, const pugi::xml_node xml_mesh);
+
+    // Read array
+    static void read_array_uint(std::vector<unsigned int>& array,
+                                const pugi::xml_node xml_array);
+
+    // Write the MeshData
+    static void write_data(const MeshData& data, std::ostream& outfile,
+                           unsigned int indentation_level=0);
 
   };
 

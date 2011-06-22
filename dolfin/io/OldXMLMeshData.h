@@ -18,8 +18,8 @@
 // First added:  2009-03-09
 // Last changed: 2009-03-11
 
-#ifndef __XMLMESHDATA_H
-#define __XMLMESHDATA_H
+#ifndef __OLDXMLMESHDATA_H
+#define __OLDXMLMESHDATA_H
 
 #include <map>
 #include <vector>
@@ -34,15 +34,15 @@ namespace dolfin
   class XMLMap;
   class OldXMLFile;
 
-  class XMLMeshData: public XMLHandler
+  class OldXMLMeshData: public XMLHandler
   {
   public:
 
     /// Constructor
-    XMLMeshData(MeshData& data, OldXMLFile& parser, bool inside=false);
+    OldXMLMeshData(MeshData& data, OldXMLFile& parser, bool inside=false);
 
     /// Destructor
-    ~XMLMeshData();
+    ~OldXMLMeshData();
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);

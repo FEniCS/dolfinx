@@ -24,12 +24,12 @@
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "OldXMLFile.h"
-#include "XMLMeshData.h"
+#include "OldXMLMeshData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMeshData::XMLMeshData(MeshData& data, OldXMLFile& parser, bool inside)
+OldXMLMeshData::OldXMLMeshData(MeshData& data, OldXMLFile& parser, bool inside)
   : XMLHandler(parser), data(data), state(OUTSIDE), type(UNSET), entity_name(""),
     xml_array(0), xml_map(0), xml_mesh_function(0),
     im(0), um(0), dm(0), iam(0), uam(0), dam(0)
@@ -38,7 +38,7 @@ XMLMeshData::XMLMeshData(MeshData& data, OldXMLFile& parser, bool inside)
     state = INSIDE_DATA;
 }
 //-----------------------------------------------------------------------------
-XMLMeshData::~XMLMeshData()
+OldXMLMeshData::~OldXMLMeshData()
 {
   delete im;
   delete um;
@@ -51,7 +51,7 @@ XMLMeshData::~XMLMeshData()
   delete xml_mesh_function;
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
+void OldXMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
 {
   switch (state)
   {
@@ -88,7 +88,7 @@ void XMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::end_element (const xmlChar* name)
+void OldXMLMeshData::end_element (const xmlChar* name)
 {
   switch (state)
   {
@@ -116,7 +116,7 @@ void XMLMeshData::end_element (const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
+void OldXMLMeshData::write(const MeshData& data, std::ostream& outfile,
                         uint indentation_level)
 {
   if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
@@ -208,12 +208,12 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)
+void OldXMLMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)
 {
   entity_name = parse_string(name, attrs, "name");
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
+void OldXMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
 {
   std::string array_type = parse_string(name, attrs, "type");
   uint size = parse_uint(name, attrs, "size");
@@ -242,7 +242,7 @@ void XMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
+void OldXMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
 {
   std::string key_type = parse_string(name, attrs, "key_type");
   std::string value_type = parse_string(name, attrs, "value_type");
@@ -261,7 +261,7 @@ void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
     error("Unknown map type '%s'.", value_type.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
+void OldXMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
 {
   error("XMLMeshData::read_mesh_function need updating.");
   /*
