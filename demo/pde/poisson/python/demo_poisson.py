@@ -58,6 +58,8 @@ L = f*v*dx + g*v*ds
 
 # Compute solution
 u = Function(V)
+solve(a == L, u, bc)
+
 #problem = LinearVariationalProblem(a, L, u, bc)
 #solver = LinearVariationalSolver(problem)
 #solver.solve()
