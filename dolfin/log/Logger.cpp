@@ -109,8 +109,8 @@ void Logger::dolfin_error(std::string location,
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl
-    << "*** " << "Unable to " << task << "." << std::endl
-    << "*** " << "Reason: " << reason << std::endl
+    << "*** " << "Error:  Unable to " << task << "." << std::endl
+    << "*** " << "Reason: " << reason << "." << std::endl
     << "*** " << "This error was encountered inside " << location << "."
     << std::endl
     << "*** "

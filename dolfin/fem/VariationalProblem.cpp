@@ -64,6 +64,6 @@ void VariationalProblem::error_message() const
 {
   dolfin_error("VariationalProblem.cpp",
                "create variational problem",
-               "The VariationalProblem class has been removed. Use solve(a == L).");
+               "the VariationalProblem class has been removed, use solve(a == L)");
 }
 //-----------------------------------------------------------------------------
