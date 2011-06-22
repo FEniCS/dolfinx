@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2011-06-21
+// Last changed: 2011-06-22
 //
 // This demo program solves Poisson's equation
 //
@@ -84,13 +84,19 @@ int main()
   L.f = f;
   L.g = g;
 
+  std::vector<BoundaryCondition&> bcs;
+  bcs.push_back(&bc);
+
+  Function u(V);
+  solve(a == L, u, bcs);
+
   // FIXME: Clean up here when everything works
-  a == L;
+  //a == L;
 
   // Compute solution
-  VariationalProblem problem(a, L, bc);
-  Function u(V);
-  problem.solve(u);
+  //VariationalProblem problem(a, L, bc);
+  //Function u(V);
+  //problem.solve(u);
 
   // Save solution in VTK format
   File file("poisson.pvd");

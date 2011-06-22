@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,32 +15,26 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug 2008.
-//
-// First added:  2007-04-30
-// Last changed: 2008-08-25
+// First added:  2011-06-22
+// Last changed: 2011-06-22
 
-#ifndef __SOLVE_LA_H
-#define __SOLVE_LA_H
+#ifndef __SOLVE_FEM_H
+#define __SOLVE_FEM_H
 
-#include <dolfin/common/types.h>
+#include <vector>
 
 namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
-  class GenericVector;
+  class Equation;
+  class Function;
+  class BoundaryCondition;
 
-  /// Solve linear system Ax = b
-  void solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-             std::string solver_type = "lu", std::string pc_type = "default");
-
-  /// Compute residual ||Ax - b||
-  double residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
-
-  /// Normalize vector according to given normalization type
-  double normalize(GenericVector& x, std::string normalization_type = "average");
+  /// Solve variational problem a == L or F == 0
+  void solve(const Equation& equation,
+             Function& u,
+             std::vector<const BoundaryCondition*> bcs);
 
 }
 

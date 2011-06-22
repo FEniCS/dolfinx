@@ -14,6 +14,7 @@
 #include <dolfin/fem/EqualityBC.h>
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/assemble.h>
+#include <dolfin/fem/solve.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>

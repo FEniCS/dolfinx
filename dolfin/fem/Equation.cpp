@@ -27,43 +27,15 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Equation::Equation(boost::shared_ptr<const Form> a,
                    boost::shared_ptr<const Form> L)
-  : _lhs(a), _rhs(L), _is_linear(true)
+  : _lhs(a), _rhs(L), _rhs_int(0), _is_linear(true)
 {
-  assert(a);
-  assert(L);
-
-  // Check rank of bilinear form a
-  if (a->rank() != 2)
-    dolfin_error("Equation.cpp",
-                 "define linear variational problem a == L",
-                 "expecting the left-hand side to be a bilinear form (not rank %d).",
-                 a->rank());
-
-  // Check rank of linear form L
-  if (L->rank() != 1)
-    dolfin_error("Equation.cpp",
-                 "define linear variational problem a == L",
-                 "expecting the right-hand side to be a linear form (not rank %d).",
-                 a->rank());
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Equation::Equation(boost::shared_ptr<const Form> F, int rhs)
-  : _lhs(F), _is_linear(false)
+  : _lhs(F), _rhs_int(rhs), _is_linear(false)
 {
-  assert(F);
-
-  // Check rank of residual F
-  if (F->rank() != 1)
-    dolfin_error("Equation.cpp",
-                 "define nonlinear variational problem F == 0",
-                 "expecting the left-hand side to be a linear form (not rank %d).",
-                 F->rank());
-
-  // Check value of right-hand side
-  if (rhs != 0)
-    dolfin_error("Equation.cpp",
-                 "define nonlinear variational problem F == 0",
-                 "expecting the right-hand side to be zero");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Equation::~Equation()
@@ -86,5 +58,10 @@ boost::shared_ptr<const Form> Equation::rhs() const
 {
   assert(_rhs);
   return _rhs;
+}
+//-----------------------------------------------------------------------------
+int Equation::rhs_int() const
+{
+  return _rhs_int;
 }
 //-----------------------------------------------------------------------------

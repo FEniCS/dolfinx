@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-21
-// Last changed: 2011-06-21
+// Last changed: 2011-06-22
 
 #ifndef __EQUATION_H
 #define __EQUATION_H
@@ -60,11 +60,19 @@ namespace dolfin
     /// Return form for right-hand side
     boost::shared_ptr<const Form> rhs() const;
 
+    /// Return value for right-hand side
+    int rhs_int() const;
+
   private:
 
-    // The two forms
+    // Left-hand side form
     boost::shared_ptr<const Form> _lhs;
+
+    // Right-hand side form
     boost::shared_ptr<const Form> _rhs;
+
+    // Right-hand side value (should be zero)
+    int _rhs_int;
 
     // Flag for whether equation is linear
     bool _is_linear;
