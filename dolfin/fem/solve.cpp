@@ -27,11 +27,31 @@
 
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
+                   Function& u)
+{
+  // Create empty list of boundary conditions
+  std::vector<const BoundaryCondition*> bcs;
+
+  // Call common solve function
+  solve(equation, u, bcs);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   const BoundaryCondition& bc)
+{
+  // Create list containing single boundary condition
+  std::vector<const BoundaryCondition*> bcs;
+  bcs.push_back(&bc);
+
+  // Call common solve function
+  solve(equation, u, bcs);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
                    Function& u,
                    std::vector<const BoundaryCondition*> bcs)
 {
-  // FIXME: Some sorting out of shared_ptrs necessary here
-
   // Solve linear problem
   if (equation.is_linear())
   {

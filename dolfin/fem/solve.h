@@ -31,7 +31,16 @@ namespace dolfin
   class Function;
   class BoundaryCondition;
 
-  /// Solve variational problem a == L or F == 0
+  /// Solve variational problem a == L or F == 0 without boundary conditions
+  void solve(const Equation& equation,
+             Function& u);
+
+  /// Solve variational problem a == L or F == 0 with a single boundary condition
+  void solve(const Equation& equation,
+             Function& u,
+             const BoundaryCondition& bc);
+
+  /// Solve variational problem a == L or F == 0 with list of boundary conditions
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs);

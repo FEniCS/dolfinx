@@ -84,11 +84,8 @@ int main()
   L.f = f;
   L.g = g;
 
-  std::vector<BoundaryCondition&> bcs;
-  bcs.push_back(&bc);
-
   Function u(V);
-  solve(a == L, u, bcs);
+  solve(a == L, u, bc);
 
   // FIXME: Clean up here when everything works
   //a == L;
