@@ -58,8 +58,9 @@ L = f*v*dx + g*v*ds
 
 # Compute solution
 u = Function(V)
-problem = LinearVariationalProblem(a, L, u, bc)
-#u = problem.solve()
+#problem = LinearVariationalProblem(a, L, u, bc)
+#solver = LinearVariationalSolver(problem)
+#solver.solve()
 
 # Save solution in VTK format
 file = File("poisson.pvd")
