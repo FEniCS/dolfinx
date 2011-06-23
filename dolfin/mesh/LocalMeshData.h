@@ -116,6 +116,9 @@ namespace dolfin
     /// Global number of cells
     uint num_global_cells;
 
+    /// Number of vertices per cell
+    uint num_vertices_per_cell;
+
     /// Geometrical dimension
     uint gdim;
 
@@ -126,6 +129,7 @@ namespace dolfin
     std::map<std::string, std::vector<uint>* > arrays;
 
     // Friends
+    friend class XMLLocalMeshData;
     friend class XMLLocalMeshDataDistributed;
     friend class MeshPartitioning;
     friend class GraphBuilder;

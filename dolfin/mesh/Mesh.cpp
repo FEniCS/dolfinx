@@ -92,8 +92,12 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
     file >> local_data;
     timer.stop();
 
+    cout << "---Have mesh data. Start parition" << endl;
+
     // Partition data
     MeshPartitioning::partition(*this, local_data);
+
+    cout << "---Finish parition" << endl;
   }
   else
   {
