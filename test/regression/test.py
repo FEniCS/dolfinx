@@ -26,6 +26,7 @@
 
 import sys, os, re
 import platform
+import instant
 from time import time
 from dolfin_utils.commands import getstatusoutput
 from dolfin import has_mpi, has_parmetis
@@ -142,8 +143,7 @@ for prefix in prefixes:
                 print output
 
                 # Add contents from Instant's compile.log to output
-                instant_error_dir = os.getenv("INSTANT_ERROR_DIR", os.path.expanduser("~/.instant/error"))
-                instant_compile_log = os.path.join(instant_error_dir, "compile.log")
+                instant_compile_log = os.path.join(instant.get_error_dir(), "compile.log")
                 if os.path.isfile(instant_compile_log):
                     instant_error = file(instant_compile_log).read()
                     output += "\n\nInstant compile.log for %s:\n\n" % demo
