@@ -20,11 +20,11 @@
 // First added:  2008-11-28
 // Last changed: 2011-03-17
 
-#include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
+#include "Cell.h"
 #include "Mesh.h"
 #include "Vertex.h"
-#include "Cell.h"
 #include "LocalMeshData.h"
 
 using namespace dolfin;
@@ -167,6 +167,7 @@ void LocalMeshData::broadcast_mesh_data()
   dolfin_debug("check");
   // Broadcast simple scalar data
   {
+    /*
     std::vector<std::vector<uint> > values(num_processes);
     for (uint p = 0; p < num_processes; p++)
     {
@@ -177,6 +178,16 @@ void LocalMeshData::broadcast_mesh_data()
       values[p].push_back(num_vertices_per_cell);
     }
     MPI::scatter(values);
+    */
+
+    std::vector<uint> values;
+    values.push_back(gdim);
+    values.push_back(tdim);
+    values.push_back(num_global_vertices);
+    values.push_back(num_global_cells);
+    values.push_back(num_vertices_per_cell);
+    MPI::broadcast(values);
+
   }
 
   dolfin_debug("check");
@@ -238,6 +249,7 @@ void LocalMeshData::receive_mesh_data()
   dolfin_debug("check");
   // Receive simple scalar data
   {
+    /*
     std::vector<std::vector<uint> > values;
     MPI::scatter(values);
     assert(values[0].size() == 5);
@@ -246,6 +258,17 @@ void LocalMeshData::receive_mesh_data()
     num_global_vertices = values[0][2];
     num_global_cells = values[0][3];
     num_vertices_per_cell = values[0][4];
+    */
+
+    std::vector<uint> values;
+    MPI::broadcast(values);
+    assert(values.size() == 5);
+    gdim = values[0];
+    tdim = values[1];
+    num_global_vertices = values[2];
+    num_global_cells = values[3];
+    num_vertices_per_cell = values[4];
+
   }
 
   dolfin_debug("check");

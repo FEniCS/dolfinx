@@ -70,45 +70,34 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     error("XMLLocalMeshData::read must read from root process only.");
 
   // Get geometric and topological dimensions and broadcast from root
-  uint tdim = 0;
-  uint gdim = 0;
-  uint num_global_vertices = 0;
-  uint num_global_cells = 0;
-  uint num_vertices_per_cell = 0;
   if (xml_mesh)
   {
     // Get cell type and geometric dimension
     const std::string cell_type_str = xml_mesh.attribute("celltype").value();
-    gdim = xml_mesh.attribute("dim").as_uint();
+    mesh_data.gdim = xml_mesh.attribute("dim").as_uint();
 
     // Get topological dimension and number of vertices per cell
     boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
-    tdim = cell_type->dim();
-    num_vertices_per_cell = cell_type->num_entities(0);
+    mesh_data.tdim = cell_type->dim();
+    mesh_data.num_vertices_per_cell = cell_type->num_entities(0);
 
     // Read number of global vertices
     pugi::xml_node xml_vertices = xml_mesh.child("vertices");
     assert(xml_vertices);
-    num_global_vertices = xml_vertices.attribute("size").as_uint();
+    mesh_data.num_global_vertices = xml_vertices.attribute("size").as_uint();
 
     // Read number of global cells
     pugi::xml_node xml_cells = xml_mesh.child("cells");
     assert(xml_vertices);
-    num_global_cells = xml_cells.attribute("size").as_uint();
+    mesh_data.num_global_cells = xml_cells.attribute("size").as_uint();
   }
-  gdim = MPI::broadcast(gdim, 0);
-  tdim = MPI::broadcast(tdim, 0);
-  num_global_vertices = MPI::broadcast(num_global_vertices, 0);
-  num_global_cells = MPI::broadcast(num_global_cells, 0);
-  num_vertices_per_cell = MPI::broadcast(num_vertices_per_cell, 0);
+  MPI::broadcast(mesh_data.gdim, 0);
+  MPI::broadcast(mesh_data.tdim, 0);
+  MPI::broadcast(mesh_data.num_global_vertices, 0);
+  MPI::broadcast(mesh_data.num_global_cells, 0);
+  MPI::broadcast(mesh_data.num_vertices_per_cell, 0);
 
-  mesh_data.gdim = gdim;
-  mesh_data.tdim = tdim;
-  mesh_data.num_global_vertices = num_global_vertices;
-  mesh_data.num_global_cells = num_global_cells;
-  mesh_data.num_vertices_per_cell = num_vertices_per_cell;
-
-  cout << "Dims: " << gdim << "  " << tdim <<  endl;
+  cout << "Dims: " << mesh_data.gdim << "  " << mesh_data.tdim <<  endl;
 
   // Read vertex data
   if (xml_mesh)
@@ -127,7 +116,7 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     {
       const unsigned int index = it->attribute("index").as_uint();
       std::vector<double> coordinate;
-      switch (gdim)
+      switch (mesh_data.gdim)
       {
       case 1:
         coordinate = boost::assign::list_of(it->attribute("x").as_double());
@@ -153,7 +142,7 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     mesh_data.vertex_indices.clear();
     mesh_data.vertex_coordinates.clear();
   }
-  cout << "Finished vertex input " << tdim <<  endl;
+  cout << "Finished vertex input " << mesh_data.tdim <<  endl;
 
   // Read cells data
   if (xml_mesh)
@@ -168,7 +157,7 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     // Get cell type and geometric dimension
     const std::string cell_type_str = xml_mesh.attribute("celltype").value();
     boost::scoped_ptr<const CellType> cell_type(CellType::create(cell_type_str));
-    const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
+    const unsigned int num_vertices_per_cell = cell_type->num_vertices(0);
 
     mesh_data.cell_vertices.reserve(num_cells);
     mesh_data.global_cell_indices.reserve(num_cells);
@@ -195,7 +184,7 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     mesh_data.cell_vertices.clear();
     mesh_data.global_cell_indices.clear();
   }
-  cout << "Finsihed cell input " << tdim <<  endl;
+  cout << "Finished cell input " << mesh_data.tdim <<  endl;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::write(const LocalMeshData& mesh_data, std::ostream& outfile,
@@ -204,4 +193,3 @@ void XMLLocalMeshData::write(const LocalMeshData& mesh_data, std::ostream& outfi
   error("Writing of mesh LocalData to XML files is not supported.");
 }
 //-----------------------------------------------------------------------------
-

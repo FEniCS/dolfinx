@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2011.
 // Modified by Ola Skavhaug, 2008-2009.
 // Modified by Anders Logg, 2008-2009.
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2010-11-09
+// Last changed: 2011-06-23
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -30,7 +30,7 @@
 #include <dolfin/common/types.h>
 
 #ifdef HAS_MPI
-//#include <boost/mpi.hpp>
+#include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
 
@@ -88,9 +88,13 @@ namespace dolfin
     /// Distribute local arrays on all processors according to given partition
     static void distribute(std::vector<double>& values, std::vector<uint>& partition);
 
-    /// Broadcast value from broadcaster_rank to all processes
-    static uint broadcast(uint broadcast_value, uint broadcaster_rank);
-    static double broadcast(double broadcast_value, uint broadcaster_rank);
+    /// Broadcast value(s) from broadcaster process to all processes
+    template<class T> static void broadcast(T& value, uint broadcaster=0)
+    {
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::broadcast(comm, value, broadcaster);
+    }
 
     // FIXME: Use common template function for uint and double scatter below
 

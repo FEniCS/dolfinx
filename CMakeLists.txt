@@ -164,7 +164,7 @@ endif()
 # Check for Boost
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0)
-find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
+find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi REQUIRED)
 
 # Check for required packages
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
@@ -214,7 +214,7 @@ endif()
 if (DOLFIN_ENABLE_MPI)
   find_package(MPI)
 
-  # FIXME: Should be set CMake to use the MPI compiler wrappers?
+  # FIXME: Should we set CMake to use the MPI compiler wrappers?
 
   # Check for ParMETIS
   if (MPI_FOUND AND DOLFIN_ENABLE_PARMETIS)
