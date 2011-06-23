@@ -85,8 +85,8 @@ if only_python:
 
 # Build prefix list
 prefixes = [""]
-if "RUN_UNIT_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
-    prefixes.append("mpirun -n 3 ")
+if "RUN_REGRESSION_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
+    prefixes.append("mpirun -np 3 ")
 else:
     print "Not running regression tests in parallel."
 
