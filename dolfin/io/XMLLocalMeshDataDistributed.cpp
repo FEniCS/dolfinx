@@ -225,6 +225,9 @@ void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name, const xmlChar**
   // Get number of entities for topological dimension 0
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
+
+  // Get number of vertices per cell
+  mesh_data.num_vertices_per_cell = cell_type->num_entities(0);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name, const xmlChar** attrs)
@@ -234,7 +237,11 @@ void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name, const xmlCh
   mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
-  vertex_range = MPI::local_range(num_global_vertices);
+  //vertex_range = MPI::local_range(num_global_vertices);
+  if (MPI::process_number() == 0)
+    vertex_range = std::make_pair<uint, uint>(0, num_global_vertices);
+  else
+    vertex_range = std::make_pair<uint, uint>(0, 0);
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data.vertex_indices.reserve(num_local_vertices());
@@ -258,7 +265,7 @@ void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name, const xmlChar
       const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"));
       mesh_data.vertex_coordinates.push_back(coordinate);
     }
-  break;
+    break;
   case 2:
     {
       const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"))
@@ -290,6 +297,10 @@ void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name, const xmlChar*
 
   // Compute cell range
   cell_range = MPI::local_range(num_global_cells);
+  if (MPI::process_number() == 0)
+    cell_range = std::make_pair<uint, uint>(0, num_global_cells);
+  else
+    cell_range = std::make_pair<uint, uint>(0, 0);
 
   // Reserve space for cells
   mesh_data.cell_vertices.reserve(num_local_cells());

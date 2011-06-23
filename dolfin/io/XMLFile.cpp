@@ -41,6 +41,7 @@
 #include <dolfin/plot/FunctionPlotData.h>
 #include "XMLArray.h"
 #include "XMLFunctionPlotData.h"
+#include "XMLLocalMeshData.h"
 #include "XMLLocalMeshDataDistributed.h"
 #include "XMLMap.h"
 #include "XMLMesh.h"
@@ -48,6 +49,8 @@
 #include "XMLParameters.h"
 #include "XMLVector.h"
 #include "XMLFile.h"
+
+#include "OldXMLFile.h"
 
 using namespace dolfin;
 
@@ -88,6 +91,31 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 
   // Close file
   close_file();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (LocalMeshData& input_data)
+{
+  //OldXMLFile xml_file(filename);
+  //xml_file >> input_data;
+
+  std::cout << "Read local mesh data" << std::endl;
+
+  if (MPI::process_number() == 0)
+  {
+    pugi::xml_document xml_doc;
+    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+    XMLLocalMeshData::read(input_data, dolfin_node);
+  }
+  else
+  {
+    const pugi::xml_node dolfin_node(0);
+    XMLLocalMeshData::read(input_data, dolfin_node);
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const LocalMeshData& output_data)
+{
+  error("Output of LocalMeshData not supported");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)

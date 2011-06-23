@@ -32,7 +32,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include "GenericFile.h"
 #include "XMLArray.h"
@@ -42,7 +41,6 @@
 #include "XMLDolfin.h"
 #include "XMLHandler.h"
 
-#include "OldXMLFile.h"
 
 namespace pugi
 {
@@ -55,6 +53,7 @@ namespace dolfin
 {
 
   class GenericVector;
+  class LocalMeshData;
   class Mesh;
   class Parameters;
 
@@ -74,11 +73,8 @@ namespace dolfin
     void operator>> (Mesh& input);
     void operator<< (const Mesh& output);
 
-    void operator>> (LocalMeshData& input)
-    {
-      OldXMLFile xml_file(filename);
-      xml_file >> input;
-    }
+    void operator>> (LocalMeshData& input);
+    void operator<< (const LocalMeshData& output);
 
     // Vector
     void operator>> (GenericVector& input);

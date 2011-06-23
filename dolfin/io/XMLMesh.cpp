@@ -56,13 +56,6 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 
   // Read any mesh data
   read_data(mesh.data(), xml_mesh);
-
-
-  // Check
-  if (mesh.data().array("boundary facet cells"))
-    std::cout << "!!! Yes" << std::endl;
-  else
-    std::cout << "!!! No" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
@@ -164,7 +157,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
   MeshEditor editor;
   editor.open(mesh, cell_type_str, tdim, gdim);
 
-  // Get vertices node
+  // Get vertices xml node
   pugi::xml_node xml_vertices = xml_mesh.child("vertices");
   assert(xml_vertices);
 
