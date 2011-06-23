@@ -78,14 +78,14 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Number of local graph vertices (cells)
   const int vertlocnbr = local_graph.size();
 
-  // Data structures for graph input to SCOTCH
+  // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
   std::vector<int> vertloctab;
   vertloctab.reserve(local_graph.size() + 1);
   std::vector<int> edgeloctab;
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
-  //  number of local edges + edges connecting to ghost vertices)
+  // number of local edges + edges connecting to ghost vertices)
   int edgelocnbr = 0;
   vertloctab.push_back(0);
   std::vector<std::set<uint> >::const_iterator vertex;
@@ -95,6 +95,10 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
     vertloctab.push_back(vertloctab.back() + vertex->size());
     edgeloctab.insert(edgeloctab.end(), vertex->begin(), vertex->end());
   }
+
+  // Handle case that local graph size is zero
+  if (edgeloctab.size() == 0)
+    edgeloctab.resize(1);
 
   // Global data ---------------------------------
 
@@ -191,11 +195,18 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   //std::string strategy = "b{sep=m{asc=b{bnd=q{strat=f},org=q{strat=f}},low=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}},seq=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}},seq=b{job=t,map=t,poli=S,sep=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}}";
   //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
 
-  // Resize vector to hold cell partition indices
-  cell_partition.resize(vertlocnbr);
-  int* _cell_partition = reinterpret_cast<int*>(&cell_partition[0]);
+  // Resize vector to hold cell partition indices (ugly to handle vertlocnbr = 0 case)
+  int _cell_dummy = 0;
+  int* _cell_partition = 0;
+  if (vertlocnbr > 0)
+  {
+    cell_partition.resize(vertlocnbr);
+    _cell_partition = reinterpret_cast<int*>(&cell_partition[0]);
+  }
+  else
+    _cell_partition = &_cell_dummy;
 
-  // Reset SCOTCH random number generator to produce determinstic partitions
+  // Reset SCOTCH random number generator to produce deterministic partitions
   SCOTCH_randomReset();
 
   // Partition graph
