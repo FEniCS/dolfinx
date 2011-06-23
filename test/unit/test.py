@@ -20,7 +20,7 @@
 # Modified by Johannes Ring 2009, 2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-05-12
+# Last changed: 2011-06-23
 
 import sys, os, re
 import platform
@@ -93,6 +93,14 @@ for prefix in prefixes:
                     num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
                     print "OK (%d tests)" % num_tests
                 else:
+                    # Add contents from Instant's compile.log to output
+                    instant_error_dir = os.getenv("INSTANT_ERROR_DIR", os.path.expanduser("~/.instant/error"))
+                    instant_compile_log = os.path.join(instant_error_dir, "compile.log")
+                    if os.path.isfile(instant_compile_log):
+                        instant_error = file(instant_compile_log).read()
+                        output += "\n\nInstant compile.log for %s:\n\n" % test
+                        output += instant_error
+
                     print "*** Failed"
                     failed += [(test, subtest, "Python", output)]
             else:

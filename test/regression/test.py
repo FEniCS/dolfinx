@@ -22,7 +22,7 @@
 # Modified by Johan Hake, 2009.
 #
 # First added:  2008-04-08
-# Last changed: 2011-03-03
+# Last changed: 2011-06-23
 
 import sys, os, re
 import platform
@@ -126,17 +126,25 @@ for prefix in prefixes:
         demofile = 'demo_' + demo.split(os.path.sep)[-2] + '.py'
         if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
-            output = getstatusoutput("cd %s && %s python %s" % (demo, prefix, demofile))
+            status, output = getstatusoutput("cd %s && %s python %s" % (demo, prefix, demofile))
             t2 = time()
             timing += [(t2 - t1, demo)]
-            if output[0] == 0:
+            if status == 0:
                 print "OK"
-            elif output[0] == 10: # Failing but exiting gracefully
+            elif status == 10: # Failing but exiting gracefully
                 print "ok (graceful exit on fail)"
             else:
                 print "*** Failed"
-                print output[1]
-                failed += [(demo, "Python", prefix, output[1])]
+                print output
+
+                # Add contents from Instant's compile.log to output
+                instant_error_dir = os.getenv("INSTANT_ERROR_DIR", os.path.expanduser("~/.instant/error"))
+                instant_compile_log = os.path.join(instant_error_dir, "compile.log")
+                if os.path.isfile(instant_compile_log):
+                    instant_error = file(instant_compile_log).read()
+                    output += "\n\nInstant compile.log for %s:\n\n" % demo
+                    output += instant_error
+                failed += [(demo, "Python", prefix, output)]
         else:
             print "*** Warning: missing demo"
 
