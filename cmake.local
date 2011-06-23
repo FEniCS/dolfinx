@@ -1,11 +1,13 @@
 #!/bin/sh
 
 # Configure for a local install. Build files will be generated in the
-# directory $toplevel/local and installation will go in the directory
-# $toplevel/build.
+# directory $toplevel/build and installation will go in the directory
+# $toplevel/local.
 #
 # This is useful to be able to run demos from within the source tree
 # without needing to specify an installation directory.
+
+CMAKE_EXTRA_ARGS=$@
 
 INSTALLDIR=`pwd`"/local"
 
@@ -17,6 +19,9 @@ cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_BENCHMARKS=true \
       -DDOLFIN_ENABLE_GMP=true \
       -DDOLFIN_ENABLE_CGAL=true \
-      -DCMAKE_BUILD_TYPE=Developer ..
+      -DCMAKE_BUILD_TYPE=Developer \
+      $CMAKE_EXTRA_ARGS \
+      ..
+
 make -j3
 make install -j3
