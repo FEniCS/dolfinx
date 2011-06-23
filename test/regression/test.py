@@ -69,6 +69,10 @@ for s in cppslow:
 pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
 cppdemos.remove(os.path.join(demodir, 'undocumented', 'quadrature', 'cpp'))
 
+# Remove C++ coloring demo on Windows until #797640 is fixed
+if platform.system() == 'Windows':
+    cppdemos.remove(os.path.join(demodir, 'undocumented', 'coloring', 'cpp'))
+
 failed = []
 timing = []
 
