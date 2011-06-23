@@ -88,6 +88,10 @@ namespace dolfin
     /// Distribute local arrays on all processors according to given partition
     static void distribute(std::vector<double>& values, std::vector<uint>& partition);
 
+    /// Broadcast value from broadcaster_rank to all processes
+    static uint broadcast(uint broadcast_value, uint broadcaster_rank);
+    static double broadcast(double broadcast_value, uint broadcaster_rank);
+
     // FIXME: Use common template function for uint and double scatter below
 
     /// Scatter values, one to each process

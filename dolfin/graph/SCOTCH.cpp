@@ -53,24 +53,15 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
 
   // Compute local dual graph
-  MPI::barrier();
   info("Compute dual graph.");
-  MPI::barrier();
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
-  MPI::barrier();
   info("End compute dual graph.");
-  cout << "++++++++++++++ End grah" << endl;
-  MPI::barrier();
 
   // Compute partitions
-  MPI::barrier();
   info("Start to compute partitions using SCOTCH");
-  MPI::barrier();
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
-  MPI::barrier();
   info("Finished computing partitions using SCOTCH");
-  MPI::barrier();
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,

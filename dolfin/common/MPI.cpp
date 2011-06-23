@@ -93,6 +93,20 @@ void dolfin::MPI::distribute(std::vector<double>& values,
   dolfin::distribute(values, partition);
 }
 //-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::broadcast(uint broadcast_value, uint broadcaster_rank)
+{
+  MPICommunicator comm;
+  MPI_Bcast(&broadcast_value, 1, MPI_UNSIGNED, broadcaster_rank, *comm);
+  return broadcast_value;
+}
+//-----------------------------------------------------------------------------
+double dolfin::MPI::broadcast(double broadcast_value, uint broadcaster_rank)
+{
+  MPICommunicator comm;
+  MPI_Bcast(&broadcast_value, 1, MPI_DOUBLE, broadcaster_rank, *comm);
+  return broadcast_value;
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
 {
   // Prepare receive buffer (size 1)

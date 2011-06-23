@@ -30,16 +30,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LocalMeshData::LocalMeshData()
-  : num_global_vertices(0), num_global_cells(0),
-    gdim(0), tdim(0)
+LocalMeshData::LocalMeshData() : num_global_vertices(0), num_global_cells(0),
+                                 num_vertices_per_cell(0), gdim(0), tdim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-LocalMeshData::LocalMeshData(const Mesh& mesh)
-  : num_global_vertices(0), num_global_cells(0),
-    gdim(0), tdim(0)
+LocalMeshData::LocalMeshData(const Mesh& mesh) : num_global_vertices(0),
+               num_global_cells(0), num_vertices_per_cell(0), gdim(0), tdim(0)
 {
   // Extract data on main process and split among processes
   if (MPI::is_broadcaster())
@@ -48,9 +46,7 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
     broadcast_mesh_data();
   }
   else
-  {
     receive_mesh_data();
-  }
 }
 //-----------------------------------------------------------------------------
 LocalMeshData::~LocalMeshData()
@@ -130,6 +126,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   tdim = mesh.topology().dim();
   num_global_vertices = mesh.num_vertices();
   num_global_cells = mesh.num_cells();
+  num_vertices_per_cell = mesh.type().num_entities(0);
 
   /// Get coordinates for all vertices stored on local processor
   vertex_coordinates.reserve(mesh.num_vertices());
@@ -154,9 +151,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
     global_cell_indices.push_back((*cell).index());
     std::vector<uint> vertices(cell->num_entities(0));
     for (uint i = 0; i < cell->num_entities(0); ++i)
-    {
       vertices[i] = cell->entities(0)[i];
-    }
     cell_vertices.push_back(vertices);
   }
 
@@ -179,6 +174,7 @@ void LocalMeshData::broadcast_mesh_data()
       values[p].push_back(tdim);
       values[p].push_back(num_global_vertices);
       values[p].push_back(num_global_cells);
+      values[p].push_back(num_vertices_per_cell);
     }
     MPI::scatter(values);
   }
@@ -244,11 +240,12 @@ void LocalMeshData::receive_mesh_data()
   {
     std::vector<std::vector<uint> > values;
     MPI::scatter(values);
-    assert(values[0].size() == 4);
+    assert(values[0].size() == 5);
     gdim = values[0][0];
     tdim = values[0][1];
     num_global_vertices = values[0][2];
     num_global_cells = values[0][3];
+    num_vertices_per_cell = values[0][4];
   }
 
   dolfin_debug("check");

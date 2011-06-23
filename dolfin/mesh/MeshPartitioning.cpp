@@ -598,7 +598,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   if (mesh_data.cell_vertices.size() > 0)
   {
     if (mesh_data.cell_vertices[0].size() != num_cell_vertices)
-      error("Size mismatch in MeshPartitioning::distribute_cells.");
+      error("Size mismatch in MeshPartitioning::distribute_cells on process %d.", MPI::process_number());
   }
 
   // Build array of cell-vertex connectivity and partition vector

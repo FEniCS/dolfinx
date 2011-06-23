@@ -95,11 +95,11 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  //OldXMLFile xml_file(filename);
-  //xml_file >> input_data;
+  OldXMLFile xml_file(filename);
+  xml_file >> input_data;
 
+  /*
   std::cout << "Read local mesh data" << std::endl;
-
   if (MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
@@ -111,6 +111,7 @@ void XMLFile::operator>> (LocalMeshData& input_data)
     const pugi::xml_node dolfin_node(0);
     XMLLocalMeshData::read(input_data, dolfin_node);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const LocalMeshData& output_data)

@@ -48,8 +48,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
-  //const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
-  const uint num_cell_vertices = 3;
+  const uint num_cell_vertices = mesh_data.num_vertices_per_cell;
+
+  // Check that number of local graph nodes (cells) is > 0
+  if (num_local_cells == 0)
+    error("ParMETIS cannot partition graphs if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead.");
 
   // Communicate number of cells between all processors
   std::vector<uint> num_cells(num_processes);
@@ -63,7 +66,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Build eptr and eind arrays storing cell-vertex connectivity
   std::vector<int> eptr(num_local_cells + 1, 0);
-  std::vector<int> eind(num_local_cells*num_cell_vertices + 1, 0);
+  std::vector<int> eind(num_local_cells*num_cell_vertices, 0);
   for (uint i = 0; i < num_local_cells; i++)
   {
     assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
@@ -91,7 +94,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   options[2] = 15;
 
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
-  std::vector<int> part(num_local_cells + 1);
+  std::vector<int> part(num_local_cells);
 
   // Prepare remaining arguments for ParMETIS
   int* elmwgt = 0;
@@ -102,10 +105,6 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
-  MPI::barrier();
-  cout << "Start METIS partitioning" << endl;
-  MPI::barrier();
-
   // Call ParMETIS to partition mesh
   ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
                            elmwgt, &wgtflag, &numflag, &ncon,
@@ -113,10 +112,6 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
                            &tpwgts[0], &ubvec[0], options,
                            &edgecut, &part[0], &(*comm));
   info("Partitioned mesh, edge cut is %d.", edgecut);
-
-  MPI::barrier();
-  cout << "End  METIS partitioning" << endl;
-  MPI::barrier();
 
   // Copy mesh_data
   cell_partition.clear();

@@ -69,8 +69,6 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
   if (xml_dolfin && MPI::process_number() != 0)
     error("XMLLocalMeshData::read must read from root process only.");
 
-  cout << "Get dimensions" << endl;
-
   // Get geometric and topological dimensions and broadcast from root
   uint tdim = 0;
   uint gdim = 0;
