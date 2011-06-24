@@ -30,14 +30,10 @@
 
 namespace dolfin
 {
-
-  class Function;
-  class FunctionSpace;
+  // Forward declarations
   class LinearVariationalProblem;
   class NonlinearVariationalProblem;
-  class ErrorControl;
   class GoalFunctional;
-  class Form;
 
   /// An _AdaptiveVariationalSolver_ solves a
   /// _LinearVariationalProblem_ or a _NonlinearVariationalProblem_
@@ -48,95 +44,96 @@ namespace dolfin
   {
   public:
 
+    /// Create adaptive variational solver for given linear variaional
+    /// problem
+    AdaptiveVariationalSolver(LinearVariationalProblem& problem);
+
+    /// Create adaptive variational solver for given nonlinear
+    /// variaional problem
+    AdaptiveVariationalSolver(NonlinearVariationalProblem& problem);
+
     /// Solve given _LinearVariationalProblem_ with respect to given
-    /// _GoalFunctional_
+    /// _GoalFunctional_ to within the given tolerance
     ///
     /// *Arguments*
-    ///     u (_Function_)
-    ///         the solution
     ///
-    ///     problem (_LinearVariationalProblem_)
-    ///         the variational problem
+    ///     tol (double)
+    ///         a prescribed error tolerance
     ///
     ///     M (_GoalFunctional_)
     ///         a goal functional
     ///
-    ///     tol (double)
-    ///         the prescribed tolerance
-    static void solve(const LinearVariationalProblem& problem,
-                      const double tol,
-                      GoalFunctional& M,
-                      const Parameters& parameters);
+    void solve(const double tol, GoalFunctional& M);
 
-    /// Solve given _NonlinearVariationalProblem_ with respect to given
-    /// _GoalFunctional_
-    ///
-    /// *Arguments*
-    ///     u (_Function_)
-    ///         the solution
-    ///
-    ///     problem (_NonlinearVariationalProblem_)
-    ///         the variational problem
-    ///
-    ///     M (_GoalFunctional_)
-    ///         a goal functional
-    ///
-    ///     tol (double)
-    ///         the prescribed tolerance
-    static void solve(const NonlinearVariationalProblem& problem,
-                      const double tol,
-                      GoalFunctional& M,
-                      const Parameters& parameters);
+    // /// Solve given _NonlinearVariationalProblem_ with respect to given
+    // /// _GoalFunctional_
+    // ///
+    // /// *Arguments*
+    // ///     u (_Function_)
+    // ///         the solution
+    // ///
+    // ///     problem (_NonlinearVariationalProblem_)
+    // ///         the variational problem
+    // ///
+    // ///     M (_GoalFunctional_)
+    // ///         a goal functional
+    // ///
+    // ///     tol (double)
+    // ///         the prescribed tolerance
+    // static void solve(const NonlinearVariationalProblem& problem,
+    //                   const double tol,
+    //                   GoalFunctional& M,
+    //                   const Parameters& parameters);
 
-    /// FIXME: Documentation is missing for this function
-    static void solve(const LinearVariationalProblem& pde,
-                      const double tol,
-                      Form& goal,
-                      ErrorControl& control,
-                      const Parameters& parameters);
+    // /// FIXME: Documentation is missing for this function
+    // static void solve(const LinearVariationalProblem& pde,
+    //                   const double tol,
+    //                   Form& goal,
+    //                   ErrorControl& control,
+    //                   const Parameters& parameters);
 
-    /// FIXME: Documentation is missing for this function
-    static void solve(const NonlinearVariationalProblem& pde,
-                      const double tol,
-                      Form& goal,
-                      ErrorControl& control,
-                      const Parameters& parameters);
+    // /// FIXME: Documentation is missing for this function
+    // static void solve(const NonlinearVariationalProblem& pde,
+    //                   const double tol,
+    //                   Form& goal,
+    //                   ErrorControl& control,
+    //                   const Parameters& parameters);
 
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("adaptive_solver");
+    // /// Default parameter values
+    // static Parameters default_parameters()
+    // {
+    //   Parameters p("adaptive_solver");
 
-      // Set default adaptive parameters
-      p.add("max_iterations", 20);
-      p.add("max_dimension", 0);
-      //p.add("tolerance", 0.0);
+    //   // Set default adaptive parameters
+    //   p.add("max_iterations", 20);
+    //   p.add("max_dimension", 0);
+    //   //p.add("tolerance", 0.0);
 
-      // Set generic adaptive parameters
-      p.add("plot_mesh", true);
-      p.add("reference", 0.0);
+    //   // Set generic adaptive parameters
+    //   p.add("plot_mesh", true);
+    //   p.add("reference", 0.0);
 
-      // Set parameters for mesh marking
-      p.add("marking_strategy", "dorfler");
-      p.add("marking_fraction", 0.5, 0.0, 1.0);
+    //   // Set parameters for mesh marking
+    //   p.add("marking_strategy", "dorfler");
+    //   p.add("marking_fraction", 0.5, 0.0, 1.0);
 
-      return p;
-    }
+    //   return p;
+    // }
 
   private:
 
-    // Check if stopping criterion is satisfied
-    static bool stop(const FunctionSpace& V,
-                     const double error_estimate,
-                     const double tolerance,
-                     const Parameters& parameters);
+    // // Check if stopping criterion is satisfied
+    // static bool stop(const FunctionSpace& V,
+    //                  const double error_estimate,
+    //                  const double tolerance,
+    //                  const Parameters& parameters);
 
-    // Present summary of adaptive data
-    static void summary(const std::vector<AdaptiveDatum>& data,
-                        const Parameters& parameters);
+    // // Present summary of adaptive data
+    // static void summary(const std::vector<AdaptiveDatum>& data,
+    //                     const Parameters& parameters);
 
-    // Present summary of adaptive data
-    static void summary(const AdaptiveDatum& data);
+    // // Present summary of adaptive data
+    // static void summary(const AdaptiveDatum& data);
 
   };
 
