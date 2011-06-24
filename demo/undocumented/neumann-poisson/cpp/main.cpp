@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Last changed: 2011-01-17
+// Modified by Johannes Ring, 2011
+//
+// Last changed: 2011-06-23
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -83,7 +85,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L);
-  problem.parameters("solver")["linear_solver"] = "iterative";
+  //problem.parameters("solver")["linear_solver"] = "iterative";
   Function w(V);
   problem.solve(w);
 
