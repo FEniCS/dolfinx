@@ -27,7 +27,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
 #include "XMLLocalMeshDataDistributed.h"
-#include "XMLArray.h"
 
 using namespace dolfin;
 
@@ -102,24 +101,10 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name, const xmlCh
       read_mesh_function(name, attrs);
       state = INSIDE_MESH_FUNCTION;
     }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
-    {
-      read_array(name, attrs);
-      state = INSIDE_ARRAY;
-    }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
     {
       read_data_entry(name, attrs);
       state = INSIDE_DATA_ENTRY;
-    }
-
-    break;
-
-  case INSIDE_DATA_ENTRY:
-    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
-    {
-      read_array(name, attrs);
-      state = INSIDE_ARRAY;
     }
 
     break;
@@ -390,35 +375,6 @@ void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name, const xm
 void XMLLocalMeshDataDistributed::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
 {
   error("Local mesh data can not read mesh functions.");
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_array(const xmlChar* name, const xmlChar** attrs)
-{
-  std::string array_type = parse_string(name, attrs, "type");
-  uint size = parse_uint(name, attrs, "size");
-
-  if (array_type.compare("int") == 0)
-  {
-    // FIXME: Add support for more types in MeshData?
-    std::vector<int>* ux = new std::vector<int>();
-    xml_array.reset(new XMLArray(*ux, parser, size));
-    xml_array->handle();
-  }
-  else if (array_type.compare("uint") == 0)
-  {
-    //FIXME: this is uint
-    std::vector<unsigned int>* ux = new std::vector<unsigned int>();
-    xml_array.reset(new XMLArray(*ux, parser, size));
-    xml_array->handle();
-    mesh_data.arrays[data_entry_name] = ux;
-  }
-  else if (array_type.compare("double") == 0)
-  {
-    // FIXME: Add support for more types in MeshData?
-    std::vector<double>* dx = new std::vector<double>();
-    xml_array.reset(new XMLArray(*dx, parser, size));
-    xml_array->handle();
-  }
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::read_mesh_data(const xmlChar* name, const xmlChar** attrs)

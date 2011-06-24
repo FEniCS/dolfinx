@@ -34,7 +34,6 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include "GenericFile.h"
-#include "XMLArray.h"
 #include "XMLLocalMeshDataDistributed.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLDolfin.h"

@@ -33,7 +33,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/plot/FunctionPlotData.h>
-#include "XMLArray.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshDataDistributed.h"
 #include "XMLMesh.h"

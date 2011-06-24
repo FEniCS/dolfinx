@@ -31,7 +31,6 @@ namespace dolfin
 {
 
   class LocalMeshData;
-  class XMLArray;
 
   /// Documentation of class XMLLocalMeshData
 
@@ -65,7 +64,6 @@ namespace dolfin
     void read_triangle    (const xmlChar* name, const xmlChar** attrs);
     void read_tetrahedron (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
-    void read_array        (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
     void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
 
@@ -95,9 +93,6 @@ namespace dolfin
 
     // State of parser
     ParserState state;
-
-    // Use for reading embedded array data
-    boost::scoped_ptr<XMLArray> xml_array;
 
   };
 
