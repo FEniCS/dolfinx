@@ -349,42 +349,6 @@ void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
       outfile << "</data_entry>" << std::endl;
     }
 
-    /*
-    typedef std::map<std::string, std::map<uint,uint>* >::const_iterator map_iter;
-    for (map_iter it = data.mappings.begin(); it != data.mappings.end(); ++it)
-    {
-      // Write data entry header
-      outfile << indent();
-      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
-
-      // Write array
-      ++indent;
-      XMLMap::write(*(it->second), outfile, indent.level());
-      --indent;
-
-      // Write data entry footer
-      outfile << indent();
-      outfile << "</data_entry>" << std::endl;
-    }
-
-    typedef std::map<std::string, std::map<uint, std::vector<uint> >* >::const_iterator vec_map_iter;
-    for (vec_map_iter it = data.vector_mappings.begin(); it != data.vector_mappings.end(); ++it)
-    {
-      // Write data entry header
-      outfile << indent();
-      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
-
-      // Write array
-      ++indent;
-      XMLMap::write(*(it->second), outfile, indent.level());
-      --indent;
-
-      // Write data entry footer
-      outfile << indent();
-      outfile << "</data_entry>" << std::endl;
-    }
-    */
-
     // Done with entries, decrement level
     --indent;
 
@@ -394,5 +358,3 @@ void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
   //}
 }
 //-----------------------------------------------------------------------------
-
-

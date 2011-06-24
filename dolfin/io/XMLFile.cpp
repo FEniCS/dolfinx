@@ -43,7 +43,6 @@
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshData.h"
 #include "XMLLocalMeshDataDistributed.h"
-#include "XMLMap.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
 #include "XMLParameters.h"
