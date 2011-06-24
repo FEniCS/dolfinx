@@ -31,6 +31,8 @@
 namespace dolfin
 {
   // Forward declarations
+  class Parameters;
+  class FunctionSpace;
   class LinearVariationalProblem;
   class NonlinearVariationalProblem;
   class GoalFunctional;
@@ -41,7 +43,7 @@ namespace dolfin
   /// adaptively to within a given error tolerance with respect to the
   /// error in a given _GoalFunctional_.
 
-  class AdaptiveLinearVariationalSolver
+  class AdaptiveLinearVariationalSolver : public Variable
   {
   public:
 
@@ -82,81 +84,43 @@ namespace dolfin
     ///
     void solve(const double tol, GoalFunctional& M, ErrorControl& ec);
 
-    /// FIXME: Add doc
-    void solve_primal();
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("adaptive_linear_variational_solver");
 
-    // /// Solve given _NonlinearVariationalProblem_ with respect to given
-    // /// _GoalFunctional_
-    // ///
-    // /// *Arguments*
-    // ///     u (_Function_)
-    // ///         the solution
-    // ///
-    // ///     problem (_NonlinearVariationalProblem_)
-    // ///         the variational problem
-    // ///
-    // ///     M (_GoalFunctional_)
-    // ///         a goal functional
-    // ///
-    // ///     tol (double)
-    // ///         the prescribed tolerance
-    // static void solve(const NonlinearVariationalProblem& problem,
-    //                   const double tol,
-    //                   GoalFunctional& M,
-    //                   const Parameters& parameters);
+      // Set default adaptive parameters
+      p.add("max_iterations", 20);
+      p.add("max_dimension", 0);
 
-    // /// FIXME: Documentation is missing for this function
-    // static void solve(const LinearVariationalProblem& pde,
-    //                   const double tol,
-    //                   Form& goal,
-    //                   ErrorControl& control,
-    //                   const Parameters& parameters);
+      // Set generic adaptive parameters
+      p.add("plot_mesh", false); // Very useful for debugging
+      p.add("reference", 0.0);
 
-    // /// FIXME: Documentation is missing for this function
-    // static void solve(const NonlinearVariationalProblem& pde,
-    //                   const double tol,
-    //                   Form& goal,
-    //                   ErrorControl& control,
-    //                   const Parameters& parameters);
+      // Set parameters for mesh marking
+      p.add("marking_strategy", "dorfler");
+      p.add("marking_fraction", 0.5, 0.0, 1.0);
 
-    // /// Default parameter values
-    // static Parameters default_parameters()
-    // {
-    //   Parameters p("adaptive_solver");
-
-    //   // Set default adaptive parameters
-    //   p.add("max_iterations", 20);
-    //   p.add("max_dimension", 0);
-    //   //p.add("tolerance", 0.0);
-
-    //   // Set generic adaptive parameters
-    //   p.add("plot_mesh", true);
-    //   p.add("reference", 0.0);
-
-    //   // Set parameters for mesh marking
-    //   p.add("marking_strategy", "dorfler");
-    //   p.add("marking_fraction", 0.5, 0.0, 1.0);
-
-    //   return p;
-    // }
+      return p;
+    }
 
   private:
 
     // The problem
     boost::shared_ptr<LinearVariationalProblem> problem;
 
-    // // Check if stopping criterion is satisfied
-    // static bool stop(const FunctionSpace& V,
-    //                  const double error_estimate,
-    //                  const double tolerance,
-    //                  const Parameters& parameters);
+    // Check if stopping criterion is satisfied
+    bool stop(const FunctionSpace& V,
+              const double error_estimate,
+              const double tolerance,
+              const Parameters& parameters);
 
-    // // Present summary of adaptive data
-    // static void summary(const std::vector<AdaptiveDatum>& data,
-    //                     const Parameters& parameters);
+    // Present summary of adaptive data
+    void summary(const std::vector<AdaptiveDatum>& data,
+                 const Parameters& parameters);
 
-    // // Present summary of adaptive data
-    // static void summary(const AdaptiveDatum& data);
+    // Present summary of adaptive data
+    void summary(const AdaptiveDatum& data);
 
   };
 
