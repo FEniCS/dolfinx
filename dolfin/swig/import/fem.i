@@ -7,7 +7,6 @@
 %import(module="dolfin.cpp") "dolfin/fem/BoundaryCondition.h"
 %import(module="dolfin.cpp") "dolfin/fem/DirichletBC.h"
 %import(module="dolfin.cpp") "dolfin/fem/PeriodicBC.h"
-%import(module="dolfin.cpp") "dolfin/fem/EqualityBC.h"
 %import(module="dolfin.cpp") "dolfin/fem/PointSource.h"
 %import(module="dolfin.cpp") "dolfin/fem/assemble.h"
 %import(module="dolfin.cpp") "dolfin/fem/Form.h"
