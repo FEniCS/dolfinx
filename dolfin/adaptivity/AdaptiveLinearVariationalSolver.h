@@ -20,8 +20,8 @@
 // First added:  2010-08-19
 // Last changed: 2011-03-31
 
-#ifndef __ADAPTIVE_VARIATIONAL_SOLVER_H
-#define __ADAPTIVE_VARIATIONAL_SOLVER_H
+#ifndef __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
+#define __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -34,23 +34,24 @@ namespace dolfin
   class LinearVariationalProblem;
   class NonlinearVariationalProblem;
   class GoalFunctional;
+  class ErrorControl;
 
-  /// An _AdaptiveVariationalSolver_ solves a
+  /// An _AdaptiveLinearVariationalSolver_ solves a
   /// _LinearVariationalProblem_ or a _NonlinearVariationalProblem_
   /// adaptively to within a given error tolerance with respect to the
   /// error in a given _GoalFunctional_.
 
-  class AdaptiveVariationalSolver
+  class AdaptiveLinearVariationalSolver
   {
   public:
 
     /// Create adaptive variational solver for given linear variaional
     /// problem
-    AdaptiveVariationalSolver(LinearVariationalProblem& problem);
+    AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
 
     /// Create adaptive variational solver for given nonlinear
     /// variaional problem
-    AdaptiveVariationalSolver(NonlinearVariationalProblem& problem);
+    AdaptiveLinearVariationalSolver(NonlinearVariationalProblem& problem);
 
     /// Solve given _LinearVariationalProblem_ with respect to given
     /// _GoalFunctional_ to within the given tolerance
@@ -64,6 +65,25 @@ namespace dolfin
     ///         a goal functional
     ///
     void solve(const double tol, GoalFunctional& M);
+
+    /// Solve given _LinearVariationalProblem_ with respect to given
+    /// _GoalFunctional_ to within the given tolerance
+    ///
+    /// *Arguments*
+    ///
+    ///     tol (double)
+    ///         a prescribed error tolerance
+    ///
+    ///     M (_GoalFunctional_)
+    ///         a goal functional
+    ///
+    ///     ec (_ErrorControl_)
+    ///         an ErrorController object
+    ///
+    void solve(const double tol, GoalFunctional& M, ErrorControl& ec);
+
+    /// FIXME: Add doc
+    void solve_primal();
 
     // /// Solve given _NonlinearVariationalProblem_ with respect to given
     // /// _GoalFunctional_
@@ -121,6 +141,9 @@ namespace dolfin
     // }
 
   private:
+
+    // The problem
+    boost::shared_ptr<LinearVariationalProblem> problem;
 
     // // Check if stopping criterion is satisfied
     // static bool stop(const FunctionSpace& V,

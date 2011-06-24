@@ -85,7 +85,7 @@ int main()
   double tol = 1.e-5;
 
   // Compute solution (adaptively) with accuracy to within tol
-  AdaptiveVariationalSolver solver(pde);
+  AdaptiveLinearVariationalSolver solver(pde);
   solver.solve(tol, M);
 
   summary();

@@ -33,79 +33,83 @@
 // #include <dolfin/mesh/MeshFunction.h>
 // #include <dolfin/plot/plot.h>
 // #include "adapt.h"
-// #include "ErrorControl.h"
 // #include "marking.h"
 
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
-#include "AdaptiveVariationalSolver.h"
+#include <dolfin/fem/LinearVariationalSolver.h>
+
+#include "AdaptiveLinearVariationalSolver.h"
 #include "GoalFunctional.h"
+#include "ErrorControl.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-AdaptiveVariationalSolver::
-AdaptiveVariationalSolver(LinearVariationalProblem& problem)
+AdaptiveLinearVariationalSolver::
+AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
+  : problem(reference_to_no_delete_pointer(problem))
 {
-  // Do nothing
+  // Set parameters
 }
 //-----------------------------------------------------------------------------
-AdaptiveVariationalSolver::
-AdaptiveVariationalSolver(NonlinearVariationalProblem& problem)
+void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
 {
-  // Do nothing
+  // Initialize goal functional
+  boost::shared_ptr<const Form> a = problem->bilinear_form();
+  boost::shared_ptr<const Form> L = problem->linear_form();
+  M.update_ec(*a, *L);
 
+  // Extract error control from goal functional
+  ErrorControl& ec(*(M._ec));
+
+  // Call solve with given error control
+  AdaptiveLinearVariationalSolver::solve(tol, M, ec);
 }
- //-----------------------------------------------------------------------------
-void AdaptiveVariationalSolver::solve(const double tol, GoalFunctional& M)
+//-----------------------------------------------------------------------------
+void AdaptiveLinearVariationalSolver::
+solve(const double tol, GoalFunctional& M, ErrorControl& ec)
 {
-  // Do nothing
+
+  // A list of adaptive data
+  std::vector<AdaptiveDatum> data;
+
+  // Start adaptive loop
+  const uint max_iterations = 10;//parameters["max_iterations"];
+
+  // Iterate over a series of meshes
+  for (uint i = 0; i < max_iterations; i++)
+  {
+    // Deal with problem, goal and error control on current mesh
+    //const VariationalProblem& this_problem = problem.fine();
+    //Form& this_goal = M.fine();
+    //ErrorControl& this_ec = ec.fine();
+
+    // Solve primal problem ---
+    begin("Stage %d.0: Solving primal problem ...", i);
+    solve_primal();
+    end();
+
+    //--- Stage 1: Estimate error ---
+    begin("Stage %d.1: Computing error estimate...", i);
+    const double error_estimate = ec.estimate_error(*(problem->solution()),
+                                                    problem->bcs());
+    std::cout << "eta_h = " << error_estimate << std::endl;
+    end();
+
+  }
 }
- //-----------------------------------------------------------------------------
-
+//-----------------------------------------------------------------------------
+void AdaptiveLinearVariationalSolver::solve_primal()
+{
+  //LinearVariationalSolver solver(*this_problem);
+  LinearVariationalSolver solver(*problem);
+  solver.solve();
+}
+//-----------------------------------------------------------------------------
 
 // //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::solve(const LinearVariationalProblem& problem,
-//                                       const double tol,
-//                                       GoalFunctional& M,
-//                                       const Parameters& parameters)
-// {
-
-//   // Extract error control view from goal functional
-//   boost::shared_ptr<const Form> a = problem.bilinear_form();
-//   assert(a);
-//   boost::shared_ptr<const Form> L = problem.linear_form();
-//   assert(L);
-
-//   // Initialize goal functional and error control
-//   M.update_ec(*a, *L);
-//   ErrorControl& ec(*(M._ec));
-
-//   // Call solver
-//   AdaptiveVariationalSolver::solve(problem, tol, M, ec, parameters);
-// }
-// //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::solve(const NonlinearVariationalProblem& problem,
-//                                       const double tol,
-//                                       GoalFunctional& M,
-//                                       const Parameters& parameters)
-// {
-
-//   // Extract error control view from goal functional
-//   boost::shared_ptr<const Form> F = problem.residual_form();
-//   assert(F);
-//   //boost::shared_ptr<const Form> L = problem.linear_form();
-//   //assert(L);
-
-//   // Initialize goal functional and error control
-//   //M.update_ec(*a, *L);
-//   //ErrorControl& ec(*(M._ec));
-
-//   // Call solver
-//   //AdaptiveVariationalSolver::solve(problem, tol, M, ec, parameters);
-// }
-// //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::solve(const LinearVariationalProblem& pde,
+// void AdaptiveLinearVariationalSolver::solve(const LinearVariationalProblem& pde,
 //                                       const double tol,
 //                                       Form& goal,
 //                                       ErrorControl& control,
@@ -210,7 +214,7 @@ void AdaptiveVariationalSolver::solve(const double tol, GoalFunctional& M)
 //   */
 // }
 // //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::solve(const NonlinearVariationalProblem& pde,
+// void AdaptiveLinearVariationalSolver::solve(const NonlinearVariationalProblem& pde,
 //                                       const double tol,
 //                                       Form& goal,
 //                                       ErrorControl& control,
@@ -220,7 +224,7 @@ void AdaptiveVariationalSolver::solve(const double tol, GoalFunctional& M)
 //   // FIXME: the implementation for linear problems?
 // }
 // //-----------------------------------------------------------------------------
-// bool AdaptiveVariationalSolver::stop(const FunctionSpace& V,
+// bool AdaptiveLinearVariationalSolver::stop(const FunctionSpace& V,
 //                                      const double error_estimate,
 //                                      const double tolerance,
 //                                      const Parameters& parameters)
@@ -241,7 +245,7 @@ void AdaptiveVariationalSolver::solve(const double tol, GoalFunctional& M)
 //     return false;
 // }
 // //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
+// void AdaptiveLinearVariationalSolver::summary(const std::vector<AdaptiveDatum>& data,
 //                                         const Parameters& parameters)
 // {
 //   // Show parameters used
@@ -261,7 +265,7 @@ void AdaptiveVariationalSolver::solve(const double tol, GoalFunctional& M)
 //   info("");
 // }
 // //-----------------------------------------------------------------------------
-// void AdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
+// void AdaptiveLinearVariationalSolver::summary(const AdaptiveDatum& datum)
 // {
 //   // Show summary for all iterations
 //   info("");

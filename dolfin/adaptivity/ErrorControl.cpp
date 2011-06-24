@@ -31,7 +31,8 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
-#include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/fem/LinearVariationalProblem.h>
+#include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
@@ -115,8 +116,9 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
-  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
 
+  // Create dual boundary conditions by homogenizing
+  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
   for (uint i = 0; i < bcs.size(); i++)
   {
     // Only handle DirichletBCs
@@ -134,8 +136,13 @@ void ErrorControl::compute_dual(Function& z,
     dual_bcs.push_back(dual_bc_ptr);
   }
 
-  VariationalProblem dual(_a_star, _L_star, dual_bcs);
-  dual.solve(z);
+  // Create shared_ptr to dual solution (FIXME: missing interface ...)
+  boost::shared_ptr<Function> dual(reference_to_no_delete_pointer(z));
+
+  // Solve dual problem
+  LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
+  LinearVariationalSolver solver(dual_problem);
+  solver.solve();
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
