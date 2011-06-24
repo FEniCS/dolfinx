@@ -83,10 +83,12 @@ namespace dolfin
     //        need to do with MPI... :-)
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<uint>& values, std::vector<uint>& partition);
+    static void distribute(std::vector<uint>& values,
+                           std::vector<uint>& partition);
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<double>& values, std::vector<uint>& partition);
+    static void distribute(std::vector<double>& values,
+                           std::vector<uint>& partition);
 
     /// Broadcast value(s) from broadcaster process to all processes
     template<class T> static void broadcast(T& value, uint broadcaster=0)
@@ -102,10 +104,12 @@ namespace dolfin
     static void scatter(std::vector<uint>& values, uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<uint> >& values, uint sending_process=0);
+    static void scatter(std::vector<std::vector<uint> >& values,
+                        uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<double> >& values, uint sending_process=0);
+    static void scatter(std::vector<std::vector<double> >& values,
+                        uint sending_process=0);
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)
     static std::vector<uint> gather(uint value);
@@ -132,13 +136,27 @@ namespace dolfin
     }
     */
 
-    /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as
-    /// reduction op)
-    static uint global_maximum(uint size);
+    /// Return global max value
+    template<class T> static T max(const T& value)
+    { return all_reduce(value, boost::mpi::maximum<T>()); }
+
+    /// Return global min value
+    template<class T> static T min(const T& value)
+    { return all_reduce(value, boost::mpi::minimum<T>()); }
 
     /// Sum values and return sum
-    static double sum(double value);
-    static uint sum(uint value);
+    template<class T> static T sum(const T& value)
+    { return all_reduce(value, std::plus<T>()); }
+
+    /// All reduce
+    template<class T, class X> static T all_reduce(const T& value, X op)
+    {
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      T out;
+      boost::mpi::all_reduce(comm, value, out, op);
+      return out;
+    }
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)
@@ -158,13 +176,11 @@ namespace dolfin
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process,
-                                             uint N);
+    static std::pair<uint, uint> local_range(uint process, uint N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process,
-                                             uint N,
+    static std::pair<uint, uint> local_range(uint process, uint N,
                                              uint num_processes);
 
     /// Return which process owns index (inverse of local_range)
