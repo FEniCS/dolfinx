@@ -235,10 +235,64 @@ class GmshTest(_ConverterTest):
         self.assertEqual(entries, [1000]*5 + [2000]*5)
         self.assert_(ended)
         self.assert_(handler.closed)
+    
+    def test_2D_facet_markings_1 (self):
+        """
+        Test to see if the 2D facet markings behave as expected.
+        1 edge marked
+        """
+        marked_facets = [7]
+        self._facet_marker_driver(1, marked_facets, 8)
+    
+    def test_2D_facet_markings_2 (self):
+        """
+        Test to see if the 2D facet markings behave as expected.
+        2 edges marked
+        """
+        marked_facets = [2,5]
+        self._facet_marker_driver(2, marked_facets, 8)
+        
+    def test_2D_facet_markings_3 (self):
+        """
+        Test to see if the 2D facet markings behave as expected.
+        3 edges marked
+        """
+        marked_facets = [5,6,7]
+        self._facet_marker_driver(3, marked_facets, 8)
+        
+    def test_2D_facet_markings_4 (self):
+        """
+        Test to see if the 2D facet markings behave as expected.
+        4 edges marked
+        """
+        marked_facets = [2,5,6,7]
+        self._facet_marker_driver(4, marked_facets, 8)
+    
+    def _facet_marker_driver (self, id, marked_facets, size ):
+        handler = self.__convert("gmsh_test_facet_regions_2D_%d.msh" % id, DataHandler.CellType_Triangle, 2)
+        
+        free_facets = range(size)
 
-
-    def __convert(self, fname):
-        handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)
+        for i in marked_facets:
+            free_facets.remove(i)
+        
+        dim, sz, entries, ended = handler.functions["facet_region"]
+        
+        # the dimension of the meshfunction should be 1
+        self.assertEqual(dim, 1)
+        # There should be 8 edges in the mesh function
+        self.assertEqual(len(entries), size)
+        self.assertEqual(sz, size)
+        # marked
+        self.assert_( all ( entries[i] == 999 for i in marked_facets ) )
+        # all other edges should be zero
+        self.assert_( all ( entries[i] == 0 for i in free_facets ) )
+        
+        self.assert_(ended)
+        self.assert_(handler.closed)
+        
+    def __convert(self, fname, cell_type=DataHandler.CellType_Tetrahedron, dim=3):
+        handler = _TestHandler(cell_type, dim, self)
         if not os.path.isabs(fname):
             fname = os.path.join("data", fname)
         meshconvert.convert(fname, handler)
