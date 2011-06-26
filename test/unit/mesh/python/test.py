@@ -272,16 +272,16 @@ if MPI.num_processes() == 1:
                 return x[0] >= 0.5
             sd1 = AutoSubDomain(inside1)
             sd2 = AutoSubDomain(inside2)
-            cf = CellFunction('int', self.mesh)
+            cf = CellFunction('uint', self.mesh)
             cf.set_all(0)
             sd1.mark(cf, 1)
             sd2.mark(cf, 2)
 
-            #for i in range(3):
-            #    num = 0
-            #    for e in SubsetIterator(cf, i):
-            #        num += 1
-            #    self.assertEqual(num, 6)
+            for i in range(3):
+                num = 0
+                for e in SubsetIterator(cf, i):
+                    num += 1
+                self.assertEqual(num, 6)
 
 
     class InputOutput(unittest.TestCase):
