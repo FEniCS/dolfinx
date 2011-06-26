@@ -95,7 +95,7 @@ for prefix in prefixes:
                     print "OK (%d tests)" % num_tests
                 else:
                     # Add contents from Instant's compile.log to output
-                    instant_compile_log = os.path.join(instant.get_error_dir(), "compile.log")
+                    instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
                     if os.path.isfile(instant_compile_log):
                         instant_error = file(instant_compile_log).read()
                         output += "\n\nInstant compile.log for %s:\n\n" % test

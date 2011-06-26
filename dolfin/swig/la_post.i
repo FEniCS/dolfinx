@@ -15,13 +15,6 @@
 %template(uBLASDenseFactory) dolfin::uBLASFactory<boost::numeric::ublas::matrix<double> >;
 
 // ---------------------------------------------------------------------------
-// Define names for uBLAS matrix types
-// These are needed so returned uBLASMatrices from down_cast get correctly wrapped
-// ---------------------------------------------------------------------------
-%typedef dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix> uBLASSparseMatrix;
-%typedef dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>  uBLASDenseMatrix;
-
-// ---------------------------------------------------------------------------
 // SLEPc specific extension code
 // ---------------------------------------------------------------------------
 #ifdef HAS_SLEPC
