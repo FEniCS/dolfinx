@@ -27,7 +27,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/fem/assemble.h>
 #include <dolfin/plot/plot.h>
 
 #include "GenericAdaptiveVariationalSolver.h"
@@ -40,8 +39,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::solve(const double tol,
-                                             GoalFunctional& M,
-                                             ErrorControl& ec)
+                                             GoalFunctional& goal,
+                                             ErrorControl& control)
 {
   // A list of adaptive data
   std::vector<AdaptiveDatum> data;
@@ -54,8 +53,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
   {
     // Deal with problem, goal and error control on current mesh
     //const VariationalProblem& this_problem = problem.fine();
-    //Form& this_goal = M.fine();
-    //ErrorControl& this_ec = ec.fine();
+    Form& M = goal.fine();
+    ErrorControl& ec = control.fine();
 
     //--- Stage 0: Solve primal problem
     begin("Stage %d.0: Solving primal problem ...", i);
@@ -68,8 +67,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
 
     // Evaluate functional value
-    M.set_coefficient(M.num_coefficients() - 1, u);
-    const double functional_value = assemble(M);
+    const double functional_value = evaluate_goal(M, *u);
 
     // Initialize adaptive data
     const FunctionSpace& V = u->function_space();
@@ -111,9 +109,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
-    //adapt(problem, mesh.fine_shared_ptr());
-    //adapt(M, mesh.fine_shared_ptr());
-    //adapt(ec, mesh.fine_shared_ptr());
+    adapt_problem(mesh.fine_shared_ptr());
+    adapt(M, mesh.fine_shared_ptr());
+    adapt(ec, mesh.fine_shared_ptr());
     end();
   }
 

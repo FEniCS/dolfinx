@@ -20,11 +20,16 @@
 // First added:  2010-08-19
 // Last changed: 2011-06-22
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
+#include <dolfin/fem/assemble.h>
+#include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
 
 #include "AdaptiveLinearVariationalSolver.h"
 #include "GoalFunctional.h"
+#include "adapt.h"
 
 using namespace dolfin;
 
@@ -57,14 +62,31 @@ void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
 boost::shared_ptr<const Function>
 AdaptiveLinearVariationalSolver::solve_primal()
 {
-  LinearVariationalSolver solver(problem);
+  LinearVariationalProblem& current = problem->fine();
+  LinearVariationalSolver solver(current);
   solver.solve();
-  return problem->solution();
+  return current.solution();
 }
 // ----------------------------------------------------------------------------
 std::vector<boost::shared_ptr<const BoundaryCondition> >
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
-  return problem->bcs();
+  const LinearVariationalProblem& current = problem->fine();
+  return current.bcs();
+}
+// ----------------------------------------------------------------------------
+const double AdaptiveLinearVariationalSolver::
+evaluate_goal(Form& M, const Function& u) const
+{
+  boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
+  M.set_coefficient(M.num_coefficients() - 1, _u);
+  return assemble(M);
+}
+// ----------------------------------------------------------------------------
+void AdaptiveLinearVariationalSolver::
+adapt_problem(boost::shared_ptr<const Mesh> mesh)
+{
+  const LinearVariationalProblem& current = problem->fine();
+  adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------

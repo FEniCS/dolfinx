@@ -43,13 +43,17 @@ namespace dolfin
   {
   public:
 
-    void solve(const double tol, GoalFunctional& M, ErrorControl& ec);
+    void solve(const double tol, GoalFunctional& goal, ErrorControl& control);
 
     virtual void solve(const double tol, GoalFunctional& M) = 0;
 
     virtual boost::shared_ptr<const Function> solve_primal() = 0;
 
     virtual std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const = 0;
+
+    virtual const double evaluate_goal(Form& M, const Function& u) const = 0;
+
+    virtual void adapt_problem(boost::shared_ptr<const Mesh>) = 0;
 
     /// Default parameter values
     static Parameters default_parameters()

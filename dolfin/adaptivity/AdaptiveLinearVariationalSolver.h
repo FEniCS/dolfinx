@@ -34,6 +34,7 @@ namespace dolfin
   class Function;
   class LinearVariationalProblem;
   class GoalFunctional;
+  class Mesh;
 
   class AdaptiveLinearVariationalSolver
     : public GenericAdaptiveVariationalSolver
@@ -49,6 +50,11 @@ namespace dolfin
     boost::shared_ptr<const Function> solve_primal();
 
     std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const;
+
+    const double evaluate_goal(Form& M, const Function& u) const;
+
+    void adapt_problem(boost::shared_ptr<const Mesh> mesh);
+
 
   private:
 
