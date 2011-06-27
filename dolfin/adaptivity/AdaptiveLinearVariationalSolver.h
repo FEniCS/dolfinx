@@ -45,6 +45,9 @@ namespace dolfin
     /// problem
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
 
+    /// Destructor
+    ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
+
     void solve(const double tol, GoalFunctional& M);
 
     boost::shared_ptr<const Function> solve_primal();

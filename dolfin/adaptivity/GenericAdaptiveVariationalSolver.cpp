@@ -39,7 +39,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::solve(const double tol,
-                                             GoalFunctional& goal,
+                                             Form& goal,
                                              ErrorControl& control)
 {
   // A list of adaptive data
@@ -51,8 +51,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
   // Iterate over a series of meshes
   for (uint i = 0; i < max_iterations; i++)
   {
-    // Deal with problem, goal and error control on current mesh
-    //const VariationalProblem& this_problem = problem.fine();
+    // Deal with goal and error control on current mesh
     Form& M = goal.fine();
     ErrorControl& ec = control.fine();
 

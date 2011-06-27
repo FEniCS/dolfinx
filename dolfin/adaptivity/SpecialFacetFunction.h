@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-13
-// Last changed: 2011-01-04
+// Last changed: 2011-06-27
 
 #ifndef __SPECIAL_FACET_FUNCTION_H
 #define __SPECIAL_FACET_FUNCTION_H
@@ -47,14 +47,14 @@ namespace dolfin
     /// Create (scalar-valued) SpecialFacetFunction
     ///
     /// *Arguments*
-    ///     f_e (std::vector<_Function_*>)
+    ///     f_e (std::vector<_Function_>)
     ///        Separate _Function_s for each facet
     SpecialFacetFunction(std::vector<Function>& f_e);
 
     /// Create (vector-valued) SpecialFacetFunction
     ///
     /// *Arguments*
-    ///     f_e (std::vector<_Function_*>)
+    ///     f_e (std::vector<_Function_>)
     ///        Separate _Function_s for each facet
     ///
     ///     dim (int)

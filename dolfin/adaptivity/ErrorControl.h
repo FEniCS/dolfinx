@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-23
+// Last changed: 2011-06-27
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -70,7 +70,7 @@ namespace dolfin
     ///     u (_Function_)
     ///        the primal approximation
     ///
-    ///     bcs (std::vector<const _BoundaryCondition_*>)
+    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
     ///         the primal boundary conditions
     ///
     /// *Returns*
@@ -140,7 +140,7 @@ namespace dolfin
     ///     z (_Function_)
     ///         the dual approximation (to be computed)
     ///
-    ///     bcs (std::vector<const _BoundaryCondition_*>)
+    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
@@ -151,7 +151,7 @@ namespace dolfin
     ///     z (_Function_)
     ///         the extrapolated function (to be computed)
     ///
-    ///     bcs (std::vector<const _BoundaryCondition_*>)
+    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);

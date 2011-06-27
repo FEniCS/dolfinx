@@ -35,12 +35,26 @@ f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)",
 g = Expression("sin(5*x[0])", degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
-problem = VariationalProblem(a, L, bc)
 
-# Define goal (quantity of interest)
-u = Function(V) # FIXME
+# Define unknown function:
+u = Function(V)
+problem = LinearVariationalProblem(a, L, u, bc)
+
+# Define goal (quantity of interest) in terms of the unknown:
 M = u*dx
 
 # Compute solution (adaptively) with accuracy to within tol
 tol = 1.e-5
-problem.solve(u, tol, M)
+
+# Define adaptive solver
+solver = AdaptiveLinearVariationalSolver(problem)
+solver.solve(tol, M)
+
+# Extract the coarsest and finest (final) solutions
+coarse = problem.solution().coarse()
+fine = problem.solution().fine()
+
+# Plot
+plot(coarse, title="Solution on initial mesh")
+plot(fine, title="Solution on final mesh")
+interactive()

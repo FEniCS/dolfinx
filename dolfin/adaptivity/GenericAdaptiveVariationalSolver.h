@@ -43,7 +43,7 @@ namespace dolfin
   {
   public:
 
-    void solve(const double tol, GoalFunctional& goal, ErrorControl& control);
+    void solve(const double tol, Form& goal, ErrorControl& control);
 
     virtual void solve(const double tol, GoalFunctional& M) = 0;
 

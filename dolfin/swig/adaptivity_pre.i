@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-23
-// Last changed: 2011-02-23
+// Last changed: 2011-06-27
 
 // ===========================================================================
 // SWIG directives for the DOLFIN adaptivity kernel module (pre)
@@ -31,3 +31,5 @@ namespace dolfin {
 }
 
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
+
+%ignore dolfin::GoalFunctional::_ec;

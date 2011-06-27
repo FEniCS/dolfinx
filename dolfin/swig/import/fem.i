@@ -11,6 +11,7 @@
 %import(module="dolfin.cpp") "dolfin/fem/EqualityBC.h"
 %import(module="dolfin.cpp") "dolfin/fem/PointSource.h"
 %import(module="dolfin.cpp") "dolfin/fem/assemble.h"
+%import(module="dolfin.cpp") "dolfin/fem/solve.h"
 %import(module="dolfin.cpp") "dolfin/fem/Form.h"
 %import(module="dolfin.cpp") "dolfin/fem/Assembler.h"
 %import(module="dolfin.cpp") "dolfin/fem/SparsityPatternBuilder.h"

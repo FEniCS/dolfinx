@@ -59,6 +59,9 @@
 
 // adaptivity
 %shared_ptr(dolfin::TimeSeries)
+%shared_ptr(dolfin::GenericAdaptiveVariationalSolver)
+%shared_ptr(dolfin::AdaptiveLinearVariationalSolver)
+%shared_ptr(dolfin::AdaptiveNonlinearVariationalSolver)
 
 // common
 %shared_ptr(dolfin::Variable)
