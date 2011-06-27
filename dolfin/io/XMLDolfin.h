@@ -45,7 +45,7 @@ namespace dolfin
 
     enum parser_state { OUTSIDE_DOLFIN, INSIDE_DOLFIN};
 
-    void read_entry  (const xmlChar* name, const xmlChar** attrs);
+    void read_entry(const xmlChar* name, const xmlChar** attrs);
 
     parser_state state;
     XMLHandler& dispatch;

@@ -119,12 +119,20 @@ void XMLFile::operator<< (const LocalMeshData& output_data)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
 {
-  // Create XML doc and get DOLFIN node
-  pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  // Create XML doc and get DOLFIN node (on root process)
+  //pugi::xml_node dolfin_node(0);
+  //if (MPI::process_number() == 0)
+  //{
+    pugi::xml_document xml_doc;
+    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
 
-  // Read vector
-  XMLVector::read(input, dolfin_node);
+    // Read vector
+    XMLVector::read(input, dolfin_node);
+  //}
+  //else
+  //  XMLVector::read(input, dolfin_node);
+
+  input.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)

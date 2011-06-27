@@ -42,22 +42,20 @@ XMLLocalMeshDataDistributed::~XMLLocalMeshDataDistributed()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::start_element(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
+                                                const xmlChar** attrs)
 {
   switch (state)
   {
   case OUTSIDE:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
     {
       read_mesh(name, attrs);
       state = INSIDE_MESH;
     }
-
     break;
 
   case INSIDE_MESH:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
       read_vertices(name, attrs);
@@ -73,29 +71,23 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name, const xmlCh
       state = INSIDE_DATA;
       read_mesh_data(name, attrs);
     }
-
     break;
 
   case INSIDE_VERTICES:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "vertex") == 0)
       read_vertex(name, attrs);
-
     break;
 
   case INSIDE_CELLS:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
       read_interval(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
       read_triangle(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
       read_tetrahedron(name, attrs);
-
     break;
 
   case INSIDE_DATA:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       read_mesh_function(name, attrs);
@@ -106,7 +98,6 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name, const xmlCh
       read_data_entry(name, attrs);
       state = INSIDE_DATA_ENTRY;
     }
-
     break;
 
   default:
@@ -118,7 +109,6 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar* name)
 {
   switch (state)
   {
-
   case INSIDE_MESH:
 
     if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
@@ -126,25 +116,20 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar* name)
       state = DONE;
       release();
     }
-
     break;
 
   case INSIDE_VERTICES:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
       state = INSIDE_MESH;
     }
-
     break;
 
   case INSIDE_CELLS:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
     {
       state = INSIDE_MESH;
     }
-
     break;
 
   case INSIDE_DATA:
@@ -153,25 +138,20 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar* name)
     {
       state = INSIDE_MESH;
     }
-
     break;
 
   case INSIDE_MESH_FUNCTION:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       state = INSIDE_DATA;
     }
-
     break;
 
   case INSIDE_DATA_ENTRY:
-
     if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
     {
       state = INSIDE_DATA;
     }
-
 
   case INSIDE_ARRAY:
 
@@ -185,16 +165,15 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar* name)
       state = INSIDE_DATA;
     }
 
-
     break;
 
   default:
     error("Closing XML tag '%s', but state is %d.", name, state);
   }
-
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name,
+                                            const xmlChar** attrs)
 {
   // Clear all data
   mesh_data.clear();
@@ -215,7 +194,8 @@ void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name, const xmlChar**
   mesh_data.num_vertices_per_cell = cell_type->num_entities(0);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name,
+                                                const xmlChar** attrs)
 {
   // Parse the number of global vertices
   const uint num_global_vertices = parse_uint(name, attrs, "size");
@@ -233,7 +213,8 @@ void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name, const xmlCh
   mesh_data.vertex_coordinates.reserve(num_local_vertices());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name,
+                                              const xmlChar** attrs)
 {
   // Read vertex index
   const uint v = parse_uint(name, attrs, "index");
@@ -274,7 +255,8 @@ void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name, const xmlChar
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name,
+                                             const xmlChar** attrs)
 {
   // Parse the number of global cells
   const uint num_global_cells = parse_uint(name, attrs, "size");
@@ -294,7 +276,8 @@ void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name, const xmlChar*
   mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name,
+                                                const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 1)
@@ -319,7 +302,8 @@ void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name, const xmlCh
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name,
+                                                const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 2)
@@ -345,7 +329,8 @@ void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name, const xmlCh
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name,
+                                                   const xmlChar **attrs)
 {
   // Check dimension
   if (tdim != 3)
@@ -372,16 +357,19 @@ void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name, const xm
   mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh_function(const xmlChar* name,
+                                                     const xmlChar** attrs)
 {
   error("Local mesh data can not read mesh functions.");
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_mesh_data(const xmlChar* name,
+                                                 const xmlChar** attrs)
 {
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_data_entry(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshDataDistributed::read_data_entry(const xmlChar* name,
+                                                  const xmlChar** attrs)
 {
   data_entry_name = parse_string(name, attrs, "name");
 }

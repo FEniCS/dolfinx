@@ -34,11 +34,11 @@ XMLDolfin::XMLDolfin(XMLHandler& dispatch, OldXMLFile& parser)
 //-----------------------------------------------------------------------------
 void XMLDolfin::start_element(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state )
+  switch (state)
   {
   case OUTSIDE_DOLFIN:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "dolfin") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "dolfin") == 0)
     {
       state = INSIDE_DOLFIN;
       dispatch.handle();
@@ -52,11 +52,11 @@ void XMLDolfin::start_element(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLDolfin::end_element(const xmlChar *name)
 {
-  switch ( state )
+  switch (state)
   {
   case INSIDE_DOLFIN:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "dolfin") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "dolfin") == 0)
     {
       state = OUTSIDE_DOLFIN;
       release();
@@ -68,4 +68,3 @@ void XMLDolfin::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-

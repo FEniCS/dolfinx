@@ -46,10 +46,9 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   const unsigned int size = array.attribute("size").as_uint();
   const std::string type  = array.attribute("type").value();
 
+  // Iterate over array entries
   Array<double> data(size);
   Array<unsigned int> indices(size);
-
-  // Iterate over array entries
   for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
   {
     const unsigned int index = it->attribute("index").as_uint();
@@ -60,9 +59,13 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   }
 
   // Resize vector and add data
-  x.resize(size);
+  if (MPI::num_processes() > 1 && (x.size() != size))
+    warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
+  if (x.size() != size)
+    x.resize(size);
+
+  // Set data (GenericVector::apply will be called be calling function)
   x.set(data.data().get(), size, indices.data().get());
-  x.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
@@ -88,7 +91,7 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
 
   // Gather entries from process i on process 0
   Array<double> x;
-  if (MPI::num_processes() >1)
+  if (MPI::num_processes() > 1)
     vector.gather_on_zero(x);
   else
     vector.get_local(x);
