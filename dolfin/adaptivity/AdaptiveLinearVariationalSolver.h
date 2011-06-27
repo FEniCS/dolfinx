@@ -23,27 +23,20 @@
 #ifndef __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 
-#include <vector>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/Variable.h>
-#include <dolfin/adaptivity/AdaptiveDatum.h>
+#include <dolfin/fem/BoundaryCondition.h>
+
+#include "GenericAdaptiveVariationalSolver.h"
 
 namespace dolfin
 {
   // Forward declarations
-  class Parameters;
-  class FunctionSpace;
+  class Function;
   class LinearVariationalProblem;
-  class NonlinearVariationalProblem;
   class GoalFunctional;
-  class ErrorControl;
 
-  /// An _AdaptiveLinearVariationalSolver_ solves a
-  /// _LinearVariationalProblem_ or a _NonlinearVariationalProblem_
-  /// adaptively to within a given error tolerance with respect to the
-  /// error in a given _GoalFunctional_.
-
-  class AdaptiveLinearVariationalSolver : public Variable
+  class AdaptiveLinearVariationalSolver
+    : public GenericAdaptiveVariationalSolver
   {
   public:
 
@@ -51,76 +44,16 @@ namespace dolfin
     /// problem
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
 
-    /// Create adaptive variational solver for given nonlinear
-    /// variaional problem
-    AdaptiveLinearVariationalSolver(NonlinearVariationalProblem& problem);
-
-    /// Solve given _LinearVariationalProblem_ with respect to given
-    /// _GoalFunctional_ to within the given tolerance
-    ///
-    /// *Arguments*
-    ///
-    ///     tol (double)
-    ///         a prescribed error tolerance
-    ///
-    ///     M (_GoalFunctional_)
-    ///         a goal functional
-    ///
     void solve(const double tol, GoalFunctional& M);
 
-    /// Solve given _LinearVariationalProblem_ with respect to given
-    /// _GoalFunctional_ to within the given tolerance
-    ///
-    /// *Arguments*
-    ///
-    ///     tol (double)
-    ///         a prescribed error tolerance
-    ///
-    ///     M (_GoalFunctional_)
-    ///         a goal functional
-    ///
-    ///     ec (_ErrorControl_)
-    ///         an ErrorController object
-    ///
-    void solve(const double tol, GoalFunctional& M, ErrorControl& ec);
+    boost::shared_ptr<const Function> solve_primal();
 
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("adaptive_linear_variational_solver");
-
-      // Set default adaptive parameters
-      p.add("max_iterations", 20);
-      p.add("max_dimension", 0);
-
-      // Set generic adaptive parameters
-      p.add("plot_mesh", false); // Very useful for debugging
-      p.add("reference", 0.0);
-
-      // Set parameters for mesh marking
-      p.add("marking_strategy", "dorfler");
-      p.add("marking_fraction", 0.5, 0.0, 1.0);
-
-      return p;
-    }
+    std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const;
 
   private:
 
     // The problem
     boost::shared_ptr<LinearVariationalProblem> problem;
-
-    // Check if stopping criterion is satisfied
-    bool stop(const FunctionSpace& V,
-              const double error_estimate,
-              const double tolerance,
-              const Parameters& parameters);
-
-    // Present summary of adaptive data
-    void summary(const std::vector<AdaptiveDatum>& data,
-                 const Parameters& parameters);
-
-    // Present summary of adaptive data
-    void summary(const AdaptiveDatum& data);
 
   };
 

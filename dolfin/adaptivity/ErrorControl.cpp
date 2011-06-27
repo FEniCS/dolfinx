@@ -224,6 +224,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   // Take absolute value of indicators
   indicators.abs();
 }
+
 //-----------------------------------------------------------------------------
 void ErrorControl::residual_representation(Function& R_T,
                                            SpecialFacetFunction& R_dT,
@@ -311,11 +312,9 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   // Extract mesh
   const Mesh& mesh(V.mesh());
-  //const int q = mesh.topology().dim();
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  //const int n = _C->element().space_dimension();
   const int local_cone_dim = _C->element().space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
