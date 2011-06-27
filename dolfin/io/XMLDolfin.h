@@ -41,11 +41,6 @@ namespace dolfin
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
-
-    /// Write to file
-    static void write_start(std::ostream& outfile, uint indentation_level=0);
-    static void write_end(std::ostream& outfile, uint indentation_level=0);
-
   private:
 
     enum parser_state { OUTSIDE_DOLFIN, INSIDE_DOLFIN};

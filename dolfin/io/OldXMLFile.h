@@ -64,6 +64,7 @@ namespace dolfin
     /// Destructor
     ~OldXMLFile();
 
+    // Read file
     void operator>> (LocalMeshData& input)
     { read_xml(input); }
 
@@ -106,13 +107,9 @@ namespace dolfin
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
 
-    void open_file();
-    void close_file();
-
   };
 
   // Callback functions for the SAX interface
-
   void sax_start_document (void *ctx);
   void sax_end_document   (void *ctx);
   void sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
@@ -123,7 +120,6 @@ namespace dolfin
   void sax_fatal_error (void *ctx, const char *msg, ...);
 
   // Callback functions for Relax-NG Schema
-
   void rng_parser_error(void *user_data, xmlErrorPtr error);
   void rng_valid_error (void *user_data, xmlErrorPtr error);
 

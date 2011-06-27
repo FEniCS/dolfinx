@@ -36,9 +36,6 @@
 #include "GenericFile.h"
 #include "XMLLocalMeshDataDistributed.h"
 #include "XMLFunctionPlotData.h"
-#include "XMLDolfin.h"
-#include "XMLHandler.h"
-
 
 namespace pugi
 {
@@ -132,6 +129,11 @@ namespace dolfin
     */
 
   private:
+
+    /// Write xml start/close tags
+    static void write_start(std::ostream& outfile, uint indentation_level=0);
+    static void write_end(std::ostream& outfile, uint indentation_level=0);
+
 
     // Write MeshFunction
     template<class T> void read_mesh_function(MeshFunction<T>& t,

@@ -124,41 +124,6 @@ void OldXMLFile::end_element(const xmlChar *name)
   handlers.top()->end_element(name);
 }
 //-----------------------------------------------------------------------------
-void OldXMLFile::open_file()
-{
-  // Convert to ofstream
-  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if (outfile)
-  {
-    // Open file
-    outfile->open(filename.c_str());
-
-    // Go to end of file
-    outfile->seekp(0, std::ios::end);
-  }
-  XMLDolfin::write_start(*outstream);
-}
-//-----------------------------------------------------------------------------
-void OldXMLFile::close_file()
-{
-  XMLDolfin::write_end(*outstream);
-
-  // Get file path and extension
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-  if (extension == ".gz")
-  {
-    error("Compressed XML output not yet supported.");
-  }
-  else
-  {
-    // Convert to ofstream
-    std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-    if (outfile)
-      outfile->close();
-  }
-}
-//-----------------------------------------------------------------------------
 // Callback functions for the SAX interface
 //-----------------------------------------------------------------------------
 void dolfin::sax_start_document(void *ctx)

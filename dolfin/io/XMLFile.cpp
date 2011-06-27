@@ -185,6 +185,19 @@ void XMLFile::operator<< (const FunctionPlotData& output)
     close_file();
 }
 //-----------------------------------------------------------------------------
+void XMLFile::write_start(std::ostream& outfile, uint indentation_level)
+{
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl << std::endl;
+  outfile << indent() << "<dolfin xmlns:dolfin=\"http://www.fenicsproject.org\">" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::write_end(std::ostream& outfile, uint indentation_level)
+{
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "</dolfin>" << std::endl;
+}
+//-----------------------------------------------------------------------------
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
@@ -261,12 +274,12 @@ void XMLFile::open_file()
     // Go to end of file
     outfile->seekp(0, std::ios::end);
   }
-  XMLDolfin::write_start(*outstream);
+  XMLFile::write_start(*outstream);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::close_file()
 {
-  XMLDolfin::write_end(*outstream);
+  XMLFile::write_end(*outstream);
 
   // Get file path and extension
   const boost::filesystem::path path(filename);
