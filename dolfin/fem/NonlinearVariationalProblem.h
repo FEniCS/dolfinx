@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-22
+// Last changed: 2011-06-28
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
@@ -98,10 +98,10 @@ namespace dolfin
     /// Return test space
     boost::shared_ptr<const FunctionSpace> test_space() const;
 
-    /// Set Jacobian
+    /// Set Jacobian form
     void set_jacobian(const Form& J);
 
-    /// Set Jacobian (shared pointer version)
+    /// Set Jacobian form (shared pointer version)
     void set_jacobian(boost::shared_ptr<const Form> J);
 
     /// Check whether Jacobian has been defined

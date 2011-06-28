@@ -12,9 +12,9 @@ and boundary conditions given by
      u(x, y)     = 1  for x = 0
      du/dn(x, y) = 0  otherwise
 
-This is equivalent to solving
+This is equivalent to solving the variational problem
 
-    F(u) = (grad(v), (1 + u^2)*grad(u)) - (v, f) = 0
+    F(u) = ((1 + u^2)*grad(u), grad(v)) - (f, v) = 0
 
 """
 
@@ -68,11 +68,10 @@ u = Function(V)
 v  = TestFunction(V)
 du = TrialFunction(V)
 F  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
-dF  = derivative(F, u, du)
+J  = derivative(F, u, du)
 
 # Solve nonlinear variational problem
-problem = VariationalProblem(F, dF, bc)
-problem.solve(u)
+solve(F == 0, u, bc, J=J)
 
 # Plot solution and solution gradient
 plot(u, title="Solution")
