@@ -41,7 +41,7 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other paramters
+  // Set other parameters
   // FIXME
 }
 // ----------------------------------------------------------------------------
@@ -78,8 +78,8 @@ AdaptiveNonlinearVariationalSolver::extract_bcs() const
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
-const double AdaptiveNonlinearVariationalSolver::
-evaluate_goal(Form& M, const Function& u) const
+double AdaptiveNonlinearVariationalSolver::
+evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 {
   return assemble(M);
 }

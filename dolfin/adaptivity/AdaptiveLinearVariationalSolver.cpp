@@ -41,8 +41,8 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other paramters
-
+  // Set other parameters
+  // FIXME
 }
 // ----------------------------------------------------------------------------
 void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
@@ -50,10 +50,13 @@ void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
   // Initialize goal functional
   boost::shared_ptr<const Form> a = problem->bilinear_form();
   boost::shared_ptr<const Form> L = problem->linear_form();
+  assert(a);
+  assert(L);
   M.update_ec(*a, *L);
 
   // Extract error control from goal functional
-  ErrorControl& ec(*(M._ec));
+  assert(M._ec);
+  ErrorControl& ec(*M._ec);
 
   // Call solve with given error control
   GenericAdaptiveVariationalSolver::solve(tol, M, ec);
@@ -75,11 +78,10 @@ AdaptiveLinearVariationalSolver::extract_bcs() const
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
-const double AdaptiveLinearVariationalSolver::
-evaluate_goal(Form& M, const Function& u) const
+double AdaptiveLinearVariationalSolver::
+evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 {
-  boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
-  M.set_coefficient(M.num_coefficients() - 1, _u);
+  M.set_coefficient(M.num_coefficients() - 1, u);
   return assemble(M);
 }
 // ----------------------------------------------------------------------------

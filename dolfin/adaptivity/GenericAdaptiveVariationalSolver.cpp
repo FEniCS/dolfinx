@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010-2011.
+// Modified by Anders Logg 2010-2011
 //
 // First added:  2010-08-19
 // Last changed: 2011-06-22
@@ -58,6 +58,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     //--- Stage 0: Solve primal problem
     begin("Stage %d.0: Solving primal problem ...", i);
     boost::shared_ptr<const Function> u = solve_primal();
+    assert(u);
     end();
 
     //--- Stage 1: Estimate error
@@ -66,9 +67,10 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
 
     // Evaluate functional value
-    const double functional_value = evaluate_goal(M, *u);
+    const double functional_value = evaluate_goal(M, u);
 
     // Initialize adaptive data
+    assert(u);
     const FunctionSpace& V = u->function_space();
     const Mesh& mesh = V.mesh();
     AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
@@ -88,6 +90,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     //--- Stage 2: Compute error indicators
     begin("Stage %d.2: Computing error indicators...", i);
     Vector indicators(mesh.num_cells());
+    assert(u);
     ec.compute_indicators(indicators, *u);
     end();
 

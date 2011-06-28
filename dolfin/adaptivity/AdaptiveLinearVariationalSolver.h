@@ -30,6 +30,7 @@
 
 namespace dolfin
 {
+
   // Forward declarations
   class Function;
   class LinearVariationalProblem;
@@ -40,6 +41,8 @@ namespace dolfin
     : public GenericAdaptiveVariationalSolver
   {
   public:
+
+    // FIXME: Missing documentation strings for functions
 
     /// Create adaptive variational solver for given linear variaional
     /// problem
@@ -54,7 +57,9 @@ namespace dolfin
 
     std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const;
 
-    const double evaluate_goal(Form& M, const Function& u) const;
+    // Evaluate goal functional
+    double evaluate_goal(Form& M,
+                         boost::shared_ptr<const Function> u) const;
 
     void adapt_problem(boost::shared_ptr<const Mesh> mesh);
 
