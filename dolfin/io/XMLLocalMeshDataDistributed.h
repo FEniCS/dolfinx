@@ -45,13 +45,19 @@ namespace dolfin
 
   public:
 
-    static void read(LocalMeshData& mesh_data, const std::string filename);
+    XMLLocalMeshDataDistributed(LocalMeshData& mesh_data,
+                                const std::string filename);
+
+
+    void read();
 
   /*
     void start_element(const xmlChar* name, const xmlChar** attrs);
     void end_element(const xmlChar* name);
   */
 
+
+    void start_element(const xmlChar *name, const xmlChar **attrs);
 
   private:
 
@@ -105,9 +111,12 @@ namespace dolfin
     //LocalMeshData& mesh_data;
 
     // State of parser
-    //ParserState state;
+    ParserState state;
 
     //SaxHandler sax_handler;
+
+    LocalMeshData& mesh_data;
+    const std::string filename;
 
   };
 
@@ -118,6 +127,9 @@ namespace dolfin
     void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
     void sax_end_element(void *ctx, const xmlChar *name);
 
+    void sax_warning     (void *ctx, const char *msg, ...);
+    void sax_error       (void *ctx, const char *msg, ...);
+    void sax_fatal_error (void *ctx, const char *msg, ...);
 
 
 }

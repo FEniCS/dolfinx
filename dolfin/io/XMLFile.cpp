@@ -93,7 +93,8 @@ void XMLFile::operator>> (LocalMeshData& input_data)
 {
   //XMLLocalMeshDataDistributed::read(input_data, filename);
 
-  XMLLocalMeshDataDistributed::read(input_data, filename);
+  XMLLocalMeshDataDistributed xml_object(input_data, filename);
+  xml_object.read();
 
   /*
   std::cout << "Read local mesh data" << std::endl;
