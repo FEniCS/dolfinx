@@ -58,7 +58,7 @@ bcs = [bcl, bcr]
 du = TrialFunction(V)            # Incremental displacement
 v  = TestFunction(V)             # Test function
 u  = Function(V)                 # Displacement from previous iteration
-B  = Constant((0.0, -0.5, 0.0))  # Body force per unit mass
+B  = Constant((0.0, -0.5, 0.0))  # Body force per unit volume
 T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
 
 # Kinematics
