@@ -34,9 +34,9 @@
 //     u(x, y)     = 1  for x = 0
 //     du/dn(x, y) = 0  otherwise
 //
-// This is equivalent to solving
+// This is equivalent to solving the variational problem
 //
-//    F(u) = (grad(v), (1 + u^2)*grad(u)) - (v, f) = 0
+//    F(u) = ((1 + u^2)*grad(u), grad(v)) - (f, v) = 0
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
@@ -90,13 +90,12 @@ int main()
   NonlinearPoisson::LinearForm F(V);
   F.u = u; F.f = f;
 
-  // Create jacobian dF = F' (for use in nonlinear solver).
-  NonlinearPoisson::BilinearForm dF(V, V);
-  dF.u = u;
+  // Create jacobian J = F' (for use in nonlinear solver).
+  NonlinearPoisson::BilinearForm J(V, V);
+  J.u = u;
 
   // Solve nonlinear variational problem
-  VariationalProblem problem(F, dF, bc);
-  problem.solve(u);
+  solve(F == 0, u, bc, J);
 
   // Plot solution
   plot(u);

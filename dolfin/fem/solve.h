@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-22
+// Last changed: 2011-06-28
 
 #ifndef __SOLVE_FEM_H
 #define __SOLVE_FEM_H
@@ -31,19 +31,49 @@ namespace dolfin
   class Function;
   class BoundaryCondition;
 
-  /// Solve variational problem a == L or F == 0 without boundary conditions
+  //--- Linear / nonlinear problems (no Jacobian specified) ---
+
+  /// Solve linear variational problem a(u, v) == L(v) or nonlinear
+  /// variational problem F(u; v) = 0 without boundary conditions
   void solve(const Equation& equation,
              Function& u);
 
-  /// Solve variational problem a == L or F == 0 with a single boundary condition
+  /// Solve linear variational problem a(u, v) == L(v) or nonlinear
+  /// variational problem F(u; v) = 0 with a single boundary condition
   void solve(const Equation& equation,
              Function& u,
              const BoundaryCondition& bc);
 
-  /// Solve variational problem a == L or F == 0 with a list of boundary conditions
+  /// Solve linear variational problem a(u, v) == L(v) or nonlinear
+  /// variational problem F(u; v) = 0 with a list of boundary conditions
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs);
+
+  //--- Nonlinear problems (Jacobian specified) ---
+
+  /// Solve nonlinear variational problem F(u; v) == 0 without boundary
+  /// conditions. The argument J should provide the Jacobian bilinear
+  /// form F' = dF/du.
+  void solve(const Equation& equation,
+             Function& u,
+             const Form& J);
+
+  /// Solve nonlinear variational problem F(u; v) == 0 with a single
+  /// boundary condition. The argument J should provide the Jacobian
+  /// bilinear form F' = dF/du.
+  void solve(const Equation& equation,
+             Function& u,
+             const BoundaryCondition& bc,
+             const Form& J);
+
+  /// Solve nonlinear variational problem F(u; v) == 0 with a list of
+  /// boundary conditions.The argument J should provide the Jacobian
+  /// bilinear form F'.
+  void solve(const Equation& equation,
+             Function& u,
+             std::vector<const BoundaryCondition*> bcs,
+             const Form& J);
 
 }
 

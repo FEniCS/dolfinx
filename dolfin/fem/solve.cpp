@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-22
+// Last changed: 2011-06-28
 
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -67,5 +67,47 @@ void dolfin::solve(const Equation& equation,
     NonlinearVariationalSolver solver(problem);
     solver.solve();
   }
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   const Form& J)
+{
+  // Create empty list of boundary conditions
+  std::vector<const BoundaryCondition*> bcs;
+
+  // Call common solve function
+  solve(equation, u, bcs, J);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   const BoundaryCondition& bc,
+                   const Form& J)
+{
+  // Create list containing single boundary condition
+  std::vector<const BoundaryCondition*> bcs;
+  bcs.push_back(&bc);
+
+  // Call common solve function
+  solve(equation, u, bcs, J);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   std::vector<const BoundaryCondition*> bcs,
+                   const Form& J)
+{
+  // Check that the problem is linear
+  if (equation.is_linear())
+    dolfin_error("solve.cpp",
+                 "Solve nonlinear variational problem",
+                 "Variational problem is linear");
+
+  // Solve nonlinear problem
+  NonlinearVariationalProblem problem(*equation.lhs(), equation.rhs_int(), u, bcs);
+  problem.set_jacobian(J);
+  NonlinearVariationalSolver solver(problem);
+  solver.solve();
 }
 //-----------------------------------------------------------------------------
