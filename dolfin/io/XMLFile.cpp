@@ -48,8 +48,6 @@
 #include "XMLVector.h"
 #include "XMLFile.h"
 
-#include "OldXMLFile.h"
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -93,8 +91,9 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  OldXMLFile xml_file(filename);
-  xml_file >> input_data;
+  //XMLLocalMeshDataDistributed::read(input_data, filename);
+
+  XMLLocalMeshDataDistributed::read(input_data, filename);
 
   /*
   std::cout << "Read local mesh data" << std::endl;

@@ -22,10 +22,16 @@
 #ifndef __XMLLOCALMESHDATADISTRIBUTED_H
 #define __XMLLOCALMESHDATADISTRIBUTED_H
 
+#include <string>
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/mesh/LocalMeshData.h>
-#include "OldXMLFile.h"
-#include "XMLHandler.h"
+#include "SaxHandler.h"
+
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/parserInternals.h>
+#include <libxml/xmlreader.h>
+
 
 namespace dolfin
 {
@@ -34,18 +40,18 @@ namespace dolfin
 
   /// Documentation of class XMLLocalMeshData
 
-  class XMLLocalMeshDataDistributed: public XMLHandler
+  class XMLLocalMeshDataDistributed
   {
+
   public:
 
-    /// Constructor
-    XMLLocalMeshDataDistributed(LocalMeshData& mesh_data, OldXMLFile& parser);
+    static void read(LocalMeshData& mesh_data, const std::string filename);
 
-    /// Destructor
-    ~XMLLocalMeshDataDistributed();
-
+  /*
     void start_element(const xmlChar* name, const xmlChar** attrs);
     void end_element(const xmlChar* name);
+  */
+
 
   private:
 
@@ -54,6 +60,10 @@ namespace dolfin
                       INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
                       INSIDE_DATA_ENTRY,
                       DONE};
+
+
+
+    /*
 
     // Callbacks for reading XML data
     void read_mesh        (const xmlChar* name, const xmlChar** attrs);
@@ -85,16 +95,30 @@ namespace dolfin
     // Range for cells
     std::pair<uint, uint> cell_range;
 
-    // Result object to build
-    LocalMeshData& mesh_data;
 
     // Name of the array
     std::string data_entry_name;
 
+    */
+
+    // Result object to build
+    //LocalMeshData& mesh_data;
+
     // State of parser
-    ParserState state;
+    //ParserState state;
+
+    //SaxHandler sax_handler;
 
   };
+
+
+    void sax_start_document(void *ctx);
+    void sax_end_document(void *ctx);
+
+    void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
+    void sax_end_element(void *ctx, const xmlChar *name);
+
+
 
 }
 #endif
