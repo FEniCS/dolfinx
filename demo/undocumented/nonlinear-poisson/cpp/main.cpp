@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2005-2008.
+// Modified by Anders Logg, 2005-2011.
 //
 // First added:  2005
-// Last changed: 2011-01-05
+// Last changed: 2011-06-28
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
