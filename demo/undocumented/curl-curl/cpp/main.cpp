@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-30
-// Last changed: 2010-01-27
+// Last changed: 2011-06-28
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -91,26 +91,24 @@ int main()
   DirichletBoundary boundary;
   DirichletBC bc(V, zero, boundary);
 
-  // Use forms to define variational problem
+  // Define variational problem for T
   EddyCurrents::BilinearForm a(V,V);
   EddyCurrents::LinearForm L(V);
   L.dbdt = dbdt;
-  VariationalProblem problem (a, L,  bc);
 
-  // Solve problem using default solver
+  // Compute solution
   Function T(V);
-  problem.solve(T);
+  solve(a == L, T, bc);
 
-  // Define variational problem for current density (J)
+  // Define variational problem for J
   CurrentDensity::FunctionSpace V1(mesh);
   CurrentDensity::BilinearForm a1(V1,V1);
   CurrentDensity::LinearForm L1(V1);
   L1.T = T;
-  VariationalProblem problem1(a1, L1);
 
   // Solve problem using default solver
   Function J(V1);
-  problem1.solve(J);
+  solve(a1 == L1, J);
 
   // Plot solution
   plot(J);

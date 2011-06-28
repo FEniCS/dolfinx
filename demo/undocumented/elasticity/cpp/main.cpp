@@ -125,27 +125,28 @@ int main()
   Constant mu(E / (2*(1 + nu)));
   Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
-  // Set up PDE (symmetric)
+  // Define variational problem
   Elasticity::BilinearForm a(V, V);
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
   L.f = f;
-
-  VariationalProblem problem(a, L, bcs);
-  problem.parameters["symmetric"] = true;
-
-  // Solve PDE (using direct solver)
   Function u(V);
-  problem.parameters("solver")["linear_solver"] = "direct";
-  problem.solve(u);
+  LinearVariationalProblem problem(a, L, u, bcs);
 
+  // Compute solution
+  LinearVariationalSolver solver(problem);
+  solver.parameters["symmetric"] = true;
+  solver.parameters("solver")["linear_solver"] = "direct";
+  solver.solve();
+
+  // Extract solution components
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
   std::cout << "Norm (u): " << u.vector().norm("l2") << std::endl;
   std::cout << "Norm (ux, uy, uz): " << ux.vector().norm("l2") << "  "
-                                   << uy.vector().norm("l2") << "  "
-                                   << uz.vector().norm("l2") << std::endl;
+            << uy.vector().norm("l2") << "  "
+            << uz.vector().norm("l2") << std::endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");

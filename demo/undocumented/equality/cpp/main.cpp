@@ -93,12 +93,9 @@ int main()
   bcs.push_back(&bc0);
   bcs.push_back(&bc1);
 
-  // Define PDE
-  VariationalProblem pde(a, L, bcs);
-
-  // Solve PDE
+  // Compute solution
   Function u(V);
-  pde.solve(u);
+  solve(a == L, u, bcs);
 
   // Plot solution
   plot(u);
