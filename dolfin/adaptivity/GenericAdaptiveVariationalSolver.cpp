@@ -56,18 +56,20 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     ErrorControl& ec = control.fine();
 
     //--- Stage 0: Solve primal problem
-    begin("Stage %d.0: Solving primal problem ...", i);
+    begin("Stage %d.0: Solving primal problem...", i);
     boost::shared_ptr<const Function> u = solve_primal();
     assert(u);
+
+    // Evaluate goal functional
+    info("Evaluating goal functional.");
+    const double functional_value = evaluate_goal(M, u);
+    info("Value of goal functional is %g.", functional_value);
     end();
 
     //--- Stage 1: Estimate error
     begin("Stage %d.1: Computing error estimate...", i);
     const double error_estimate = ec.estimate_error(*u, extract_bcs());
     end();
-
-    // Evaluate functional value
-    const double functional_value = evaluate_goal(M, u);
 
     // Initialize adaptive data
     assert(u);

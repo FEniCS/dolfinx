@@ -83,9 +83,10 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+  const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
+  assert(_a_star);
   Function z_h(_a_star->function_space(1));
   compute_dual(z_h, bcs);
 
@@ -107,6 +108,7 @@ double ErrorControl::estimate_error(const Function& u,
   }
 
   // Assemble error estimate
+  info("Assembling error estimate.");
   const double error_estimate = assemble(*_residual);
 
   // Return estimate
@@ -116,6 +118,7 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
+  info("Solving dual problem.");
 
   // Create dual boundary conditions by homogenizing
   std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
@@ -148,6 +151,8 @@ void ErrorControl::compute_dual(Function& z,
 void ErrorControl::compute_extrapolation(const Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
+  info("Extrapolating dual solution.");
+
   // Extrapolate
   _Ez_h.reset(new Function(_E));
   _Ez_h->extrapolate(z);
@@ -230,7 +235,7 @@ void ErrorControl::residual_representation(Function& R_T,
                                            SpecialFacetFunction& R_dT,
                                            const Function& u)
 {
-  begin("Computing residual representation");
+  begin("Computing residual representation.");
 
   // Compute cell residual
   Timer timer("Computation of residual representation");
@@ -245,7 +250,7 @@ void ErrorControl::residual_representation(Function& R_T,
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
-  begin("Computing cell residual representation");
+  begin("Computing cell residual representation.");
 
   // Attach primal approximation to left-hand side form (residual) if
   // necessary
@@ -304,7 +309,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& u,
                                           const Function& R_T)
 {
-  begin("Computing facet residual representation");
+  begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
   const FunctionSpace& V = R_dT[0].function_space();

@@ -81,6 +81,7 @@ AdaptiveLinearVariationalSolver::extract_bcs() const
 double AdaptiveLinearVariationalSolver::
 evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 {
+  assert(M.num_coefficients() > 0);
   M.set_coefficient(M.num_coefficients() - 1, u);
   return assemble(M);
 }
