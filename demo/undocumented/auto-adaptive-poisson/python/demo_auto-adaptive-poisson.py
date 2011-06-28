@@ -14,6 +14,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2010-08-19
+# Last changed: 2011-06-28
 
 # Begin demo
 
@@ -36,16 +39,15 @@ g = Expression("sin(5*x[0])", degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
-M = u*dx # Define goal (FIXME)
+# Define goal functional
+M = u*dx # FIXME
 
-# Define unknown function:
+# Define variational problem
 u = Function(V)
 problem = LinearVariationalProblem(a, L, u, bc)
 
-# Compute solution (adaptively) with accuracy to within tol
+# Compute solution (adaptively to within accuracy)
 tol = 1.e-5
-
-# Define adaptive solver
 solver = AdaptiveLinearVariationalSolver(problem)
 solver.solve(tol, M)
 
@@ -53,7 +55,10 @@ solver.solve(tol, M)
 coarse = problem.solution().coarse()
 fine = problem.solution().fine()
 
-# Plot
+# Plot solution(s)
 plot(coarse, title="Solution on initial mesh")
 plot(fine, title="Solution on final mesh")
 interactive()
+
+# Write a summary
+summary()

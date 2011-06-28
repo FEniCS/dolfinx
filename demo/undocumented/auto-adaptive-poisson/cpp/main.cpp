@@ -54,7 +54,7 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  // Create mesh and function space
+  // Create mesh and define function space
   UnitSquare mesh(8, 8);
   AdaptivePoisson::BilinearForm::TrialSpace V(mesh);
 
@@ -71,22 +71,20 @@ int main()
   L.f = f;
   L.g = g;
 
-  // Define function for solution
-  Function u(V);
-
   // Define variational problem
+  Function u(V);
   LinearVariationalProblem problem(a, L, u, bc);
 
   // Define goal functional (quantity of interest)
   AdaptivePoisson::GoalFunctional M(mesh);
 
-  // Define tolerance for error in goal functional
-  double tol = 1.e-5;
-
   // Compute solution (adaptively to within accuracy)
+  double tol = 1.e-5;
   AdaptiveLinearVariationalSolver solver(problem);
   solver.solve(tol, M);
 
+  // Write a summary
   summary();
+
   return 0;
 }
