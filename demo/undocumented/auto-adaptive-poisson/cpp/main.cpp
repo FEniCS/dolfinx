@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-24
+// Last changed: 2011-06-28
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -74,18 +74,17 @@ int main()
   // Define function for solution
   Function u(V);
 
-  // Define variational problem from the forms, the solution and the
-  // boundary conditions
-  LinearVariationalProblem pde(a, L, u, bc);
+  // Define variational problem
+  LinearVariationalProblem problem(a, L, u, bc);
 
-  // Define goal (quantity of interest)
+  // Define goal functional (quantity of interest)
   AdaptivePoisson::GoalFunctional M(mesh);
 
-  // Define tolerance (absolute error in goal allowed)
+  // Define tolerance for error in goal functional
   double tol = 1.e-5;
 
-  // Compute solution (adaptively) with accuracy to within tol
-  AdaptiveLinearVariationalSolver solver(pde);
+  // Compute solution (adaptively to within accuracy)
+  AdaptiveLinearVariationalSolver solver(problem);
   solver.solve(tol, M);
 
   summary();

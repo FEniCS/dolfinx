@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2011-06-22
+// Last changed: 2011-06-28
 //
 // This demo program solves Poisson's equation
 //
@@ -84,7 +84,7 @@ int main()
   L.f = f;
   L.g = g;
 
-  // Solve variational problem
+  // Compute solution
   Function u(V);
   solve(a == L, u, bc);
 
