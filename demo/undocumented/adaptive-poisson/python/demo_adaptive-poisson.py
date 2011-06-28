@@ -29,10 +29,10 @@ edge (jump) terms and the size of the interpolation constant.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008-2011
 #
 # First added:  2008-04-03
-# Last changed: 2009-10-08
+# Last changed: 2011-06-28
 
 from dolfin import *
 from numpy import array, sqrt
@@ -70,8 +70,8 @@ for level in xrange(MAX_ITER):
     bc = DirichletBC(V, u0, DomainBoundary())
 
     # Compute solution
-    problem = VariationalProblem(a, L, bc)
-    u = problem.solve()
+    u = Function(V)
+    solve(a == L, u, bc)
 
     # Compute error indicators
     h = array([c.diameter() for c in cells(mesh)])

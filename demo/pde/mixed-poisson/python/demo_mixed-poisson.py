@@ -34,9 +34,10 @@ Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Marie E. Rognes 2010
+# Modified by Anders Logg 2011
 #
 # First added:  2007-11-14
-# Last changed: 2010-08-31
+# Last changed: 2011-06-28
 
 # Begin demo
 
@@ -83,8 +84,9 @@ def boundary(x):
 bc = DirichletBC(W.sub(0), G, boundary)
 
 # Compute solution
-problem = VariationalProblem(a, L, bc)
-(sigma, u) = problem.solve().split()
+w = Function(W)
+solve(a == L, w, bc)
+(sigma, u) = w.split()
 
 # Plot sigma and u
 plot(sigma)

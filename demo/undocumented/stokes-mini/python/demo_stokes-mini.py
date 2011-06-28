@@ -61,8 +61,8 @@ a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
 L = inner(f, v)*dx
 
 # Compute solution
-problem = VariationalProblem(a, L, bcs)
-U = problem.solve()
+w = Function(Mini)
+solve(a == L, w, bcs)
 
 # Split the mixed solution using deepcopy
 # (needed for further computation on coefficient vector)

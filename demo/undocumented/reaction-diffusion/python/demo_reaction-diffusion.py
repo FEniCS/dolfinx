@@ -9,7 +9,7 @@ This demo is also available in more compact form in short.py,
 the world's maybe shortest PDE solver.
 """
 
-# Copyright (C) 2009 Anders Logg
+# Copyright (C) 2009-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -27,7 +27,7 @@ the world's maybe shortest PDE solver.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-06-15
-# Last changed: 2009-10-07
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -40,7 +40,9 @@ f = Expression("sin(x[0])*sin(x[1])")
 a = dot(grad(u), grad(v))*dx + u*v*dx
 L = f*v*dx
 
-# Compute and plot solution
-problem = VariationalProblem(a, L)
-u = problem.solve()
+# Compute solution
+u = Function(V)
+solve(a == L, u)
+
+# Plo solution
 plot(u, interactive=True)

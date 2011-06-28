@@ -28,8 +28,10 @@ elements.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2009-04-02
-# Last changed: 2009-04-02
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -60,15 +62,11 @@ class DirichletBoundary(SubDomain):
 # Boundary condition
 bc = DirichletBC(PN, zero, DirichletBoundary())
 
-# Eddy currents equation (using potential T)
-Teqn = inner(curl(v0), curl(u0))*dx, -inner(v0, dbdt)*dx
-Tproblem = VariationalProblem(Teqn[0], Teqn[1], bc)
-T = Tproblem.solve()
+# Solve eddy currents equation (using potential T)
+solve(inner(curl(v0), curl(u0))*dx == -inner(v0, dbdt)*dx, T, bc)
 
-# Current density equation
-Jeqn = inner(v1, u1)*dx, dot(v1, curl(T))*dx
-Jproblem = VariationalProblem(Jeqn[0], Jeqn[1])
-J = Jproblem.solve()
+# Solve density equation
+solve(inner(v1, u1)*dx == dot(v1, curl(T))*dx, J)
 
 # Plot solution
 plot(J)

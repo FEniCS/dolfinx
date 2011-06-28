@@ -1,4 +1,3 @@
-
 """This demo program solves an elastodynamics problem."""
 
 # Copyright (C) 2010 Garth N. Wells
@@ -18,10 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008-2011
+# Modified by Anders Logg 2008-2011
 #
 # First added:  2010-04-30
-# Last changed: 2010-04-30
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -156,9 +155,10 @@ L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx \
 zero = Constant((0.0, 0.0))
 bc = DirichletBC(V, zero, left)
 
-# Set up PDE and solve
-problem = VariationalProblem(a, L, bcs=bc)
+# FIXME: This demo needs some improved commenting
 
+# Time-stepping
+u = Function(V)
 vtk_file = File("elasticity.pvd")
 while t <= T:
 
@@ -167,8 +167,8 @@ while t <= T:
 
     p.t = t
     p0.t = t
-    # Solve and update functions
-    u = problem.solve()
+
+    solve(a == L, u, bc)
     update(u, u0, v0, a0, beta, gamma, dt)
 
     # Save solution to VTK format

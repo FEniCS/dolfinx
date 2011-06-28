@@ -39,8 +39,10 @@ and the above constraint.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2010-05-10
-# Last changed: 2010-05-10
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -61,8 +63,9 @@ a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
 L = f*v*dx + g*v*ds
 
 # Compute solution
-problem = VariationalProblem(a, L)
-(u, c) = problem.solve()
+w = Function(W)
+solve(a == L, w)
+(u, c) = w.split()
 
 # Plot solution
 plot(u, interactive=True)

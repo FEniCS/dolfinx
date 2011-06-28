@@ -14,6 +14,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# Modified by Anders Logg 2011
+#
+# First added:  2010
+# Last changed: 2011-06-28
 
 from dolfin import *
 import time

@@ -33,8 +33,10 @@ variational formulation.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2010-03-05
-# Last changed: 2010-03-05
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -66,8 +68,8 @@ a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
 # Compute solution
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution in VTK format
 file = File("spatial-coordinates.pvd")
