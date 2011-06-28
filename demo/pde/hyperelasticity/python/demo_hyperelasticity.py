@@ -47,7 +47,7 @@ c = Expression(("0.0", "0.0", "0.0"))
 r = Expression(("scale*0.0",
                 "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])",
                 "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"),
-                defaults = dict(scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3))
+                scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3)
 
 bcl = DirichletBC(V, c, left)
 bcr = DirichletBC(V, r, right)
