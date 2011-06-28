@@ -72,9 +72,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Define XMLHandler for use in new XML reader/writer
-    typedef XMLLocalMeshDataDistributed XMLHandler;
-
   private:
 
     /// Clear all data

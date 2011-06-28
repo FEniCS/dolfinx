@@ -53,6 +53,21 @@ namespace dolfin
   {
   public:
 
+    // Parse an integer value
+    static int parse_int(const xmlChar* name, const xmlChar** attrs,
+			                   const char* attribute);
+
+    // Parse an unsigned integer value
+    static unsigned int parse_uint(const xmlChar* name, const xmlChar** attrs,
+                    const char *attribute);
+
+    // Parse a double value
+    static double parse_float(const xmlChar* name, const xmlChar** attrs,
+                       const char* attribute);
+
+    // Parse a string
+    static  std::string parse_string(const xmlChar* name, const xmlChar** attrs,
+                             const char* attribute);
 
   private:
 

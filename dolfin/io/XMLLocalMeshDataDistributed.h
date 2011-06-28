@@ -23,15 +23,11 @@
 #define __XMLLOCALMESHDATADISTRIBUTED_H
 
 #include <string>
-#include <boost/scoped_ptr.hpp>
-#include <dolfin/mesh/LocalMeshData.h>
-#include "SaxHandler.h"
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>
 #include <libxml/xmlreader.h>
-
 
 namespace dolfin
 {
@@ -48,16 +44,10 @@ namespace dolfin
     XMLLocalMeshDataDistributed(LocalMeshData& mesh_data,
                                 const std::string filename);
 
-
     void read();
 
-  /*
     void start_element(const xmlChar* name, const xmlChar** attrs);
     void end_element(const xmlChar* name);
-  */
-
-
-    void start_element(const xmlChar *name, const xmlChar **attrs);
 
   private:
 
@@ -67,10 +57,15 @@ namespace dolfin
                       INSIDE_DATA_ENTRY,
                       DONE};
 
+    static void sax_start_document(void *ctx);
+    static void sax_end_document(void *ctx);
 
     static void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
+    static void sax_end_element(void *ctx, const xmlChar *name);
 
-    /*
+    static void sax_warning     (void *ctx, const char *msg, ...);
+    static void sax_error       (void *ctx, const char *msg, ...);
+    static void sax_fatal_error (void *ctx, const char *msg, ...);
 
     // Callbacks for reading XML data
     void read_mesh        (const xmlChar* name, const xmlChar** attrs);
@@ -80,9 +75,12 @@ namespace dolfin
     void read_interval    (const xmlChar* name, const xmlChar** attrs);
     void read_triangle    (const xmlChar* name, const xmlChar** attrs);
     void read_tetrahedron (const xmlChar* name, const xmlChar** attrs);
+    /*
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
     void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
+
+    */
 
     // Number of local vertices
     uint num_local_vertices() const;
@@ -99,38 +97,23 @@ namespace dolfin
     // Range for vertices
     std::pair<uint, uint> vertex_range;
 
+
     // Range for cells
     std::pair<uint, uint> cell_range;
 
 
+    /*
     // Name of the array
     std::string data_entry_name;
-
     */
-
-    // Result object to build
-    //LocalMeshData& mesh_data;
 
     // State of parser
     ParserState state;
 
-    //SaxHandler sax_handler;
-
     LocalMeshData& mesh_data;
-    const std::string filename;
+    std::string filename;
 
   };
-
-
-    void sax_start_document(void *ctx);
-    void sax_end_document(void *ctx);
-
-    void sax_end_element(void *ctx, const xmlChar *name);
-
-    void sax_warning     (void *ctx, const char *msg, ...);
-    void sax_error       (void *ctx, const char *msg, ...);
-    void sax_fatal_error (void *ctx, const char *msg, ...);
-
 
 }
 #endif
