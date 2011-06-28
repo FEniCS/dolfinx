@@ -47,7 +47,7 @@ T = 3
 nu = 0.01
 
 # Define time-dependent pressure boundary condition
-p_in = Expression("sin(3.0*t)")
+p_in = Expression("sin(3.0*t)", t=0.0)
 
 # Define boundary conditions
 noslip  = DirichletBC(V, (0, 0), "on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS")

@@ -37,9 +37,10 @@ class Eval(unittest.TestCase):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
           f0 = F0()
-          f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
-          f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                              "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
+          f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
+                          degree=2, a=1.)
+          f2, f3 = Expressions("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
+                    dict(a=1.), "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
 
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
@@ -185,12 +186,24 @@ class Instantiation(unittest.TestCase):
                          return 2
                e = Deprecated()
 
+          def noDefaultValues():
+               Expression("a")
+
+          def noMemberValues():
+               Expression("1", a=1.0)
+
+          def wrongDefaultType():
+               Expression("a", a="1")
+               
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
           self.assertRaises(TypeError, wrongEvalDataAttribute)
           self.assertRaises(TypeError, wrongArgs)
           self.assertRaises(DeprecationWarning, deprecationWarning)
+          self.assertRaises(RuntimeError, noDefaultValues)
+          self.assertRaises(RuntimeError, noMemberValues)
+          self.assertRaises(TypeError, wrongDefaultType)
 
      def testElementInstantiation(self):
           class F0(Expression):
