@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-06-28
+# Last changed: 2011-06-29
 
 # Begin demo
 
@@ -39,12 +39,12 @@ g = Expression("sin(5*x[0])", degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
-# Define goal functional
-M = u*dx # FIXME
-
 # Define variational problem
 u = Function(V)
 problem = LinearVariationalProblem(a, L, u, bc)
+
+# Define goal functional (quantity of interest)
+M = u*dx
 
 # Compute solution (adaptively to within accuracy)
 tol = 1.e-5

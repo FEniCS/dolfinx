@@ -69,6 +69,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     //--- Stage 1: Estimate error
     begin("Stage %d.1: Computing error estimate...", i);
     const double error_estimate = ec.estimate_error(*u, extract_bcs());
+    info("Error estimate is %g (tol = %g).", error_estimate, tol);
     end();
 
     // Initialize adaptive data

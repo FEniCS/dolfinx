@@ -177,8 +177,6 @@ std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() con
 void Form::set_coefficient(uint i,
                            boost::shared_ptr<const GenericFunction> coefficient)
 {
-  cout << "i = " << i << endl;
-  cout << "num_coefficients = " << _coefficients.size() << endl;
   assert(i < _coefficients.size());
   _coefficients[i] = coefficient;
 }

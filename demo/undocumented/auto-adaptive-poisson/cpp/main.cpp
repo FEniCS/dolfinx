@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
