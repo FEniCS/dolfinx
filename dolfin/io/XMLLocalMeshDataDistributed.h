@@ -68,6 +68,7 @@ namespace dolfin
                       DONE};
 
 
+    static void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
 
     /*
 
@@ -124,7 +125,6 @@ namespace dolfin
     void sax_start_document(void *ctx);
     void sax_end_document(void *ctx);
 
-    void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
     void sax_end_element(void *ctx, const xmlChar *name);
 
     void sax_warning     (void *ctx, const char *msg, ...);

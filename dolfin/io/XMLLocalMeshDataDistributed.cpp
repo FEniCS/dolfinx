@@ -48,7 +48,7 @@ void XMLLocalMeshDataDistributed::read()
   sax_handler.startDocument = sax_start_document;
   sax_handler.endDocument   = sax_end_document;
 
-  sax_handler.startElement  = sax_start_element;
+  sax_handler.startElement  = XMLLocalMeshDataDistributed::sax_start_element;
   sax_handler.endElement    = sax_end_element;
 
   //xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
@@ -79,7 +79,7 @@ void dolfin::sax_end_document(void *ctx)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void dolfin::sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs)
+void XMLLocalMeshDataDistributed::sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs)
 {
   std::cout << "***sax_start element" << std::endl;
   ((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs);
