@@ -59,7 +59,7 @@ F = a - L
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
 # Define variational problem
-pde = NonlinearVariationalProblem(F, 0, w, bc)
+pde = NonlinearVariationalProblem(F, 0, w_h, bc)
 
 outflow = Outflow()
 outflow_markers = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
