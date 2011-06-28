@@ -36,12 +36,11 @@ g = Expression("sin(5*x[0])", degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
+M = u*dx # Define goal (FIXME)
+
 # Define unknown function:
 u = Function(V)
 problem = LinearVariationalProblem(a, L, u, bc)
-
-# Define goal (quantity of interest) in terms of the unknown:
-M = u*dx
 
 # Compute solution (adaptively) with accuracy to within tol
 tol = 1.e-5
