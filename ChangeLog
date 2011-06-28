@@ -1,3 +1,4 @@
+ - Default argument to variables in Expression are passed as kwargs in the Python interface
  - Add has_openmp as utility function in Python interface
  - Use Boost to compute Legendre polynolials
  - Remove ode code
