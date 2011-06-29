@@ -22,8 +22,10 @@
 
 import unittest
 #from unittest import skipIf # Awaiting Python 2.7
-from dolfin import *
 from ufl.algorithms import replace
+
+from dolfin import *
+from dolfin.fem.adaptivesolving import *
 
 #@skipIf("Skipping error control test in parallel", MPI.num_processes() > 1)
 class ErrorControlTest(unittest.TestCase):
@@ -33,7 +35,7 @@ class ErrorControlTest(unittest.TestCase):
         # Define variational problem
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
-        bc = DirichletBC(V, 0.0, "x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS")
+        bc = [DirichletBC(V, 0.0, "x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS")]
 
         u = TrialFunction(V)
         v = TestFunction(V)
@@ -41,22 +43,19 @@ class ErrorControlTest(unittest.TestCase):
         g = Expression("std::sin(5*x[0])", degree=1)
         a = inner(grad(u), grad(v))*dx
         L = f*v*dx + g*v*ds
-        problem = VariationalProblem(a, L, bc)
+
+        # Define solution function
+        u = Function(V)
+
+        # Define LinearVariationalProblem
+        problem = LinearVariationalProblem(a, L, u, bc)
 
         # Define goal
-        u = Function(V)
         M = u*dx
         self.goal = M
 
-        # Generate error control forms
-        ufl_forms = problem.generate_error_control_forms(u, M)
-
-        # Compile generated forms
-        forms = [Form(form) for form in ufl_forms]
-
-        # Initialize error control object
-        forms += [problem.is_linear]
-        ec = cpp.ErrorControl(*forms)
+        # Generate ErrorControl object
+        ec = generate_error_control(problem, M, True)
 
         # Store created stuff
         self.problem = problem
@@ -69,7 +68,8 @@ class ErrorControlTest(unittest.TestCase):
             return
 
         # Solve variational problem once
-        self.problem.solve(self.u)
+        solver = LinearVariationalSolver(self.problem)
+        solver.solve()
 
         # Compute error estimate
         error_estimate = self.ec.estimate_error(self.u, self.problem.bcs)
@@ -84,7 +84,8 @@ class ErrorControlTest(unittest.TestCase):
             return
 
         # Solve variational problem once
-        self.problem.solve(self.u)
+        solver = LinearVariationalSolver(self.problem)
+        solver.solve()
 
         # Compute error indicators
         indicators = Vector(self.u.function_space().mesh().num_cells())
@@ -100,9 +101,9 @@ class ErrorControlTest(unittest.TestCase):
             return
 
         # Solve problem adaptively
-        self.problem.parameters["adaptivity"]["plot_mesh"] = False
+        solver = AdaptiveLinearVariationalSolver(self.problem)
         tol = 0.00087
-        self.problem.solve(self.u, tol, self.goal)
+        solver.solve(tol, self.goal)
 
         # Extract solution and update goal
         w = Function(self.u.fine().function_space())
