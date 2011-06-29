@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 #ifdef HAS_MPI
 #include <boost/mpi.hpp>
@@ -37,7 +38,7 @@
 namespace dolfin
 {
 
-#ifdef HAS_MPI
+  #ifdef HAS_MPI
   class MPICommunicator
   {
 
@@ -55,7 +56,7 @@ namespace dolfin
   private:
     MPI_Comm communicator;
   };
-#endif
+  #endif
 
   /// This class provides utility functions for easy communcation with MPI.
 
@@ -93,9 +94,11 @@ namespace dolfin
     /// Broadcast value(s) from broadcaster process to all processes
     template<class T> static void broadcast(T& value, uint broadcaster=0)
     {
+      #ifdef HAS_MPI
       MPICommunicator mpi_comm;
       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
       boost::mpi::broadcast(comm, value, broadcaster);
+      #endif
     }
 
     // FIXME: Use common template function for uint and double scatter below
@@ -138,24 +141,47 @@ namespace dolfin
 
     /// Return global max value
     template<class T> static T max(const T& value)
-    { return all_reduce(value, boost::mpi::maximum<T>()); }
+    {
+      #ifdef HAS_MPI
+      return all_reduce(value, boost::mpi::maximum<T>());
+      #else
+      return value;
+      #endif
+    }
 
     /// Return global min value
     template<class T> static T min(const T& value)
-    { return all_reduce(value, boost::mpi::minimum<T>()); }
+    {
+      #ifdef HAS_MPI
+      return all_reduce(value, boost::mpi::minimum<T>());
+      #else
+      return value;
+      #endif
+    }
 
     /// Sum values and return sum
     template<class T> static T sum(const T& value)
-    { return all_reduce(value, std::plus<T>()); }
+    {
+      #ifdef HAS_MPI
+      return all_reduce(value, std::plus<T>());
+      #else
+      return value;
+      #endif
+    }
 
     /// All reduce
     template<class T, class X> static T all_reduce(const T& value, X op)
     {
+      #ifdef HAS_MPI
       MPICommunicator mpi_comm;
       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
       T out;
       boost::mpi::all_reduce(comm, value, out, op);
       return out;
+      #else
+      error("MPI::all_reduce requires MPI to be configured.");
+      return T(0);
+      #endif
     }
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as

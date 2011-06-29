@@ -23,15 +23,14 @@
 // First added:  2007-11-30
 // Last changed: 2010-11-09
 
-#include <dolfin/log/dolfin_log.h>
 #include <numeric>
+#include <dolfin/log/dolfin_log.h>
 #include "mpiutils.h"
 #include "SubSystemsManager.h"
 #include "MPI.h"
 
 #ifdef HAS_MPI
 
-#include <mpi.h>
 
 using MPI::COMM_WORLD;
 
@@ -579,21 +578,6 @@ void dolfin::MPI::gather(std::vector<uint>& values)
 void dolfin::MPI::gather(std::vector<double>& values)
 {
   error("MPI::gather() requires MPI.");
-}
-//-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::global_maximum(uint size)
-{
-  return size;
-}
-//-----------------------------------------------------------------------------
-double dolfin::MPI::sum(double value)
-{
-  return value;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::sum(uint value)
-{
-  return value;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
