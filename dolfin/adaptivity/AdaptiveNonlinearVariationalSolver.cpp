@@ -24,7 +24,6 @@
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 
 #include "AdaptiveNonlinearVariationalSolver.h"
@@ -50,12 +49,13 @@ void AdaptiveNonlinearVariationalSolver::solve(const double tol,
 {
   // Initialize goal functional
   boost::shared_ptr<const Form> a = problem->jacobian_form();
-  assert(a);
   boost::shared_ptr<const Form> L = problem->residual_form();
+  assert(a);
   assert(L);
   M.update_ec(*a, *L);
 
   // Extract error control from goal functional
+  assert(M._ec);
   ErrorControl& ec(*(M._ec));
 
   // Call solve with given error control
