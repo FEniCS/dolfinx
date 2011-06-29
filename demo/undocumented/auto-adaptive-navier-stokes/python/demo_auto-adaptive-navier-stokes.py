@@ -47,16 +47,16 @@ W = V * Q
 
 # Define unknown and test function(s)
 (v, q) = TestFunctions(W)
-w_h = Function(W)
-(u_h, p_h) = (as_vector((w_h[0], w_h[1])), w_h[2])
+w = Function(W)
+(u, p) = (as_vector((w[0], w[1])), w[2])
 
 # Prescribed pressure
 p0 = Expression("(4.0 - x[0])/4.0")
 
 # Define variational forms
 n = FacetNormal(mesh)
-a = (nu*inner(grad(u_h), grad(v)) - div(v)*p_h + q*div(u_h))*dx
-a = a + inner(grad(u_h)*u_h, v)*dx
+a = (nu*inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
+a = a + inner(grad(u)*u, v)*dx
 L = - p0*dot(v, n)*ds
 F = a - L
 
@@ -64,7 +64,10 @@ F = a - L
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
 # Define variational problem
-pde = NonlinearVariationalProblem(F, 0, w_h, bc)
+pde = NonlinearVariationalProblem(F, 0, w, bc)
+
+# Set Jacobian
+pde.set_jacobian(derivative(F, w))
 
 outflow = Outflow()
 outflow_markers = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
@@ -75,7 +78,7 @@ outflow.mark(outflow_markers, 0)
 ds = Measure("ds")[outflow_markers]
 
 # Define goal and reference
-M = u_h[0]*ds(0)
+M = u[0]*ds(0)
 
 # Define solver
 solver = AdaptiveNonlinearVariationalSolver(pde)
