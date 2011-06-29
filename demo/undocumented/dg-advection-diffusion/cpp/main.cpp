@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-06-29
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
   // Compute solution
   Function phi_p(Vp);
-  solve(ap, Lp, phi_p);
+  solve(ap == Lp, phi_p);
 
   // Save projected solution in VTK format
   File file("temperature.pvd");
