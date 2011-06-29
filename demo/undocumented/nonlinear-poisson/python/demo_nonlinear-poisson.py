@@ -67,7 +67,7 @@ u = Function(V)
 # Define variational problem
 v  = TestFunction(V)
 du = TrialFunction(V)
-F  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
+F  = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 J  = derivative(F, u, du)
 
 # Solve nonlinear variational problem
