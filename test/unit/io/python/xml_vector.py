@@ -26,7 +26,6 @@ from dolfin import *
 class XML_vector_io(unittest.TestCase):
     """Test output of Meshes to VTK files"""
 
-    """
     def test_save_vector(self):
         if has_la_backend("PETSc"):
             # Create vector and write file
@@ -41,7 +40,7 @@ class XML_vector_io(unittest.TestCase):
             x[:] = 1.0
             f = File("x.xml")
             f << x
-    """
+
     def test_read_vector(self):
         if has_la_backend("PETSc"):
             # Create vector and write file
@@ -57,7 +56,6 @@ class XML_vector_io(unittest.TestCase):
             self.assertEqual(x.size(), y.size())
             self.assertAlmostEqual(x.norm("l2"), y.norm("l2"))
 
-"""
         if has_la_backend("Epetra"):
             # Create vector and write file
             x = EpetraVector(197)
@@ -70,7 +68,6 @@ class XML_vector_io(unittest.TestCase):
             f >> y
             self.assertEqual(x.size(), y.size())
             self.assertAlmostEqual(x.norm("l2"), y.norm("l2"))
-"""
 
 if __name__ == "__main__":
     unittest.main()

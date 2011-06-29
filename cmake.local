@@ -19,9 +19,9 @@ cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_BENCHMARKS=true \
       -DDOLFIN_ENABLE_GMP=true \
       -DDOLFIN_ENABLE_CGAL=true \
-      -DDOLFIN_ENABLE_MPI=false \
-      -DDOLFIN_ENABLE_PETSC=false \
-      -DDOLFIN_ENABLE_TRILINOS=false \
+      -DDOLFIN_ENABLE_MPI=true \
+      -DDOLFIN_ENABLE_PETSC=true \
+      -DDOLFIN_ENABLE_TRILINOS=true \
       -DCMAKE_BUILD_TYPE=Developer \
       $CMAKE_EXTRA_ARGS \
       ..
