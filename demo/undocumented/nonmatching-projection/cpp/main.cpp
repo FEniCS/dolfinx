@@ -64,6 +64,7 @@ int main()
   P1_projection::LinearForm L(V1, f0);
 
   // Compute solution
+  Function f1(V1);
   solve(a == L, f1);
 
   // Plot results

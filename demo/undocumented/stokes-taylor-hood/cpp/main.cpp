@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 //
 // This demo solves the Stokes equations, using quadratic elements for
 // the velocity and first degree elements for the pressure
@@ -88,18 +88,15 @@ int main()
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
-  // Set up PDE
+  // Define variational problem
   Constant f(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;
 
-  // Solve PDE
+  // Compute solution
   Function w(W);
-  NonlinearVariationalProblem problem(a, L, w, bcs);
-  NonlinearVariationalSolver solver(problem);
-  solver.parameters("solver")["linear_solver"] = "direct";
-  solver.solve();
+  solve(a == L, w, bcs);
   Function u = w[0];
   Function p = w[1];
 
