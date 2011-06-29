@@ -192,9 +192,6 @@ int main(int argc, char* argv[])
   a_form.ds = right_boundary_function;
   L.ds = right_boundary_function;
 
-  // Define variational problem and create solver
-  LinearVariationalProblem problem(a_form, L, bc);
-
   // Create projection to compute the normal strain eps_xx
   DG0_eps_xx::FunctionSpace Vdg(mesh);
   DG0_eps_xx::BilinearForm a_eps(Vdg, Vdg);
