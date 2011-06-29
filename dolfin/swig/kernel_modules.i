@@ -189,7 +189,6 @@
 %include "dolfin/fem/BoundaryCondition.h"
 %include "dolfin/fem/DirichletBC.h"
 %include "dolfin/fem/PeriodicBC.h"
-%include "dolfin/fem/EqualityBC.h"
 %include "dolfin/fem/PointSource.h"
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/solve.h"

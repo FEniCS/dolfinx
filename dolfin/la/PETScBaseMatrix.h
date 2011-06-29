@@ -67,7 +67,7 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1)
     uint size(uint dim) const;
 
-    /// Return local rang along dimension dim
+    /// Return local range along dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
 
     /// Resize vector y such that is it compatible with matrix for

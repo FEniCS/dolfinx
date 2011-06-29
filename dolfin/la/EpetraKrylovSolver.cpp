@@ -150,7 +150,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Reinitialize solution vector if necessary
   if (x.size() != M)
   {
-    x.resize(M);
+    A->resize(x, 1);
     x.zero();
   }
 

@@ -1,3 +1,9 @@
+ - Change interface for variational problems, class VariationalProblem removed
+ - Add solve interface: solve(a == L), solve(F == 0) 
+ - Add new classes Linear/NonlinearVariationalProblem
+ - Add new classes Linear/NonlinearVariationalSolver
+ - Default argument to variables in Expression are passed as kwargs in the Python interface
+ - Add has_openmp as utility function in Python interface
  - Add improved error reporting using dolfin_error
  - Use Boost to compute Legendre polynolials
  - Remove ode code

@@ -91,6 +91,7 @@ generate_docstrings()
 shared_ptr_classes = re.findall("%shared_ptr\(dolfin::(.+)\)", \
                                 open("shared_ptr_classes.i").read())
 
+shared_ptr_classes = filter(lambda x: "NAME" not in x, shared_ptr_classes)
 template = """
 '''
 This module contains the names of the classes in DOLFIN that is

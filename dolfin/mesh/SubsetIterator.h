@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-17
-// Last changed: 2010-11-17
+// Last changed: 2011-06-25
 
 #ifndef __SUBSET_ITERATOR_H
 #define __SUBSET_ITERATOR_H
@@ -42,7 +42,7 @@ namespace dolfin
 
     /// Create iterator for given mesh function. The iterator visits
     /// all entities that match the given label.
-    SubsetIterator(const MeshFunction<uint>& labels, uint label)
+    SubsetIterator(const MeshFunction<unsigned int>& labels, uint label)
       : entity(labels.mesh(), labels.dim(), 0)
     {
       // Extract subset

@@ -34,8 +34,6 @@
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
 // version of constructors to these types
 //-----------------------------------------------------------------------------
-%ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
-
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 const SubDomain&,

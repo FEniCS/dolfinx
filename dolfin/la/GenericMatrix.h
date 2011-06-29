@@ -48,10 +48,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Resize tensor with given dimensions
-    virtual void resize(uint rank, const uint* dims)
-    { error("Generic matrices must be re-sized using a GenericSparsityPattern"); }
-
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
@@ -103,7 +99,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
+    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel
     /// case, size and layout are important.
     virtual void resize(GenericVector& y, uint dim) const = 0;
 

@@ -25,14 +25,14 @@ Note that the sign for the pressure has been flipped for symmetry."""
 
 from dolfin import *
 
-# Test for PETSc and SLEPc
+# Test for PETSc or Epetra
 if not has_la_backend("PETSc") or not has_la_backend("Epetra"):
     print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
     exit()
 
 print "This demo is unlikely to converge if PETSc is not configured with Hypre or ML."
 
-# Load mesh and subdomains
+# Load mesh
 mesh = UnitCube(16, 16, 16)
 
 # Define function spaces
@@ -80,7 +80,7 @@ P, btmp = assemble_system(b, L, bcs)
 # Create Krylov solver and AMG preconditioner
 solver = KrylovSolver("tfqmr", "amg_ml")
 
-# Associate opeartor (A) and preconditioner matrix (P)
+# Associate operator (A) and preconditioner matrix (P)
 solver.set_operators(A, P)
 
 # Solve

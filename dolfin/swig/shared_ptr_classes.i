@@ -85,7 +85,6 @@
 %shared_ptr(dolfin::BoundaryCondition)
 %shared_ptr(dolfin::Hierarchical<dolfin::DirichletBC>)
 %shared_ptr(dolfin::DirichletBC)
-%shared_ptr(dolfin::EqualityBC)
 %shared_ptr(dolfin::PeriodicBC)
 
 // function
