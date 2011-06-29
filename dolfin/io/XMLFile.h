@@ -26,23 +26,13 @@
 #include <fstream>
 #include <string>
 #include <boost/shared_ptr.hpp>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/plot/FunctionPlotData.h>
 #include "GenericFile.h"
-#include "XMLLocalMeshDataDistributed.h"
-#include "XMLFunctionPlotData.h"
 
 namespace pugi
 {
   class xml_document;
   class xml_node;
 }
-
 
 namespace dolfin
 {
@@ -51,6 +41,7 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
   class Parameters;
+  template<class T> class MeshFunction;
 
   class XMLFile: public GenericFile
   {

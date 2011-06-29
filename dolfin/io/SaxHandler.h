@@ -23,24 +23,9 @@
 #ifndef __SAXHANDLER_H
 #define __SAXHANDLER_H
 
-#include <fstream>
-#include <map>
 #include <string>
-#include <stack>
-#include <vector>
 #include <boost/lexical_cast.hpp>
 #include <libxml/parser.h>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/plot/FunctionPlotData.h>
-#include "GenericFile.h"
-#include "XMLLocalMeshDataDistributed.h"
-#include "XMLFunctionPlotData.h"
 
 namespace dolfin
 {
@@ -73,9 +58,7 @@ namespace dolfin
             error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		          attribute, name);
           }
-
           std::string value(attrs[5*i + 3], attrs[5*i + 4]);
-          //std::cout << "Att(2): " << value << std::endl;
           return boost::lexical_cast<T, std::string>(value);
         }
       }

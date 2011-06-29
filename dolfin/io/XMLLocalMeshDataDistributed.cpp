@@ -28,6 +28,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include "SaxHandler.h"
 #include "XMLLocalMeshDataDistributed.h"
 
@@ -45,17 +46,11 @@ void XMLLocalMeshDataDistributed::read()
   // Clear mesh data
   mesh_data.clear();
 
-  //xmlInitParser();
-  //if (MPI::process_number() == 0)
-  //  xmlDefaultSAXHandlerInit();
+  //xmlDefaultSAXHandlerInit();
 
-  // Create handler (must use pointer)
-  //boost::scoped_ptr<xmlSAXHandler> sax_handler(new xmlSAXHandler);
-  //xmlSAXHandlerPtr sax_handler = new xmlSAXHandler;
+  // Create SAX2 handler)
   xmlSAXHandler sax_handler;
   memset(&sax_handler, 0, sizeof(sax_handler));
-
-  //xmlSAXVersion(&sax_handler, 2);
   sax_handler.initialized = XML_SAX2_MAGIC;
 
   // Call back functions
@@ -68,13 +63,10 @@ void XMLLocalMeshDataDistributed::read()
   sax_handler.warning = XMLLocalMeshDataDistributed::sax_warning;
   sax_handler.error = XMLLocalMeshDataDistributed::sax_error;
 
-  // Parse
+  // Parse file
   int err = xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
   if (err != 0)
     error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
-
-  //delete sax_handler;
-  //xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
@@ -213,37 +205,32 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_start_document(void *ctx)
 {
-  //std::cout << "Start doc" << std::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_end_document(void *ctx)
 {
-  //std::cout << "End doc" << std::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_start_element(void * ctx,
-                                                    const xmlChar * name,
-                                                    const xmlChar * prefix,
-                                                    const xmlChar * URI,
+void XMLLocalMeshDataDistributed::sax_start_element(void* ctx,
+                                                    const xmlChar* name,
+                                                    const xmlChar* prefix,
+                                                    const xmlChar* URI,
                                                     int nb_namespaces,
-                                                    const xmlChar ** namespaces,
+                                                    const xmlChar** namespaces,
                                                     int nb_attributes,
                                                     int nb_defaulted,
-                                                    const xmlChar ** attrs)
+                                                    const xmlChar** attrs)
 {
-  //std::cout << "Start el: " << name << std::endl;
   ((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
-  //std::cout << "Done Start el: " << name << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_end_element(void * ctx,
-                                                  const xmlChar * name,
-                                                  const xmlChar * prefix,
-                                                  const xmlChar * URI)
+void XMLLocalMeshDataDistributed::sax_end_element(void* ctx,
+                                                  const xmlChar* name,
+                                                  const xmlChar* prefix,
+                                                  const xmlChar* URI)
 {
-  //std::cout << "End el: " << name << std::endl;
   ((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
 }
 //-----------------------------------------------------------------------------

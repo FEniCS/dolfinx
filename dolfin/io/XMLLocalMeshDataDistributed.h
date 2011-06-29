@@ -24,10 +24,7 @@
 
 #include <string>
 
-#include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <libxml/parserInternals.h>
-#include <libxml/xmlreader.h>
 
 namespace dolfin
 {
