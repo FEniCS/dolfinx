@@ -39,27 +39,100 @@ namespace dolfin
   class GoalFunctional;
   class Parameters;
 
+  /// An abstract class for goal-oriented adaptive solution of
+  /// variational problems.
+
   class GenericAdaptiveVariationalSolver : public Variable
   {
   public:
 
-    // FIXME: Missing documentation strings for functions
-
+    /// Solve such that the error measured in the functional 'goal' is
+    /// less than the given tolerance using the ErrorControl object
+    /// 'control'
+    ///
+    /// *Arguments*
+    ///
+    ///     tol  (double)
+    ///         The error tolerance
+    ///
+    ///     goal  (_Form_)
+    ///         The goal functional
+    ///
+    ///     control  (_ErrorControl_)
+    ///         The error controller
+    ///
     void solve(const double tol, Form& goal, ErrorControl& control);
 
+    /// Solve such that the error measured in the goal functional 'M'
+    /// is less than the given tolerance using the GoalFunctional's
+    /// ErrorControl object. Must be overloaded in subclass.
+    ///
+    /// *Arguments*
+    ///
+    ///     tol  (double)
+    ///         The error tolerance
+    ///
+    ///     goal  (_GoalFunctional_)
+    ///         The goal functional
+    ///
     virtual void solve(const double tol, GoalFunctional& M) = 0;
 
+    /// Solve the primal problem. Must be overloaded in subclass.
+    ///
+    /// *Returns*
+    ///
+    ///     boost::shared_ptr<const _Function_>
+    ///         The solution to the primal problem
+    ///
     virtual boost::shared_ptr<const Function> solve_primal() = 0;
 
-    virtual std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const = 0;
+    /// Extract the boundary conditions for the primal problem. Must
+    /// be overloaded in subclass.
+    ///
+    /// *Returns*
+    ///
+    ///     std::vector<boost::shared_ptr<const BoundaryCondition> >
+    ///         The primal boundary conditions
+    ///
+    virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
+    extract_bcs() const = 0;
 
-    // Evaluate goal functional
+    /// Evaluate the goal functional. Must be overloaded in subclass.
+    ///
+    /// *Arguments*
+    ///
+    ///    M (_Form_)
+    ///        The functional to be evaluated
+    ///
+    ///    u (_Function_)
+    ///        The function of which to evaluate the functional
+    ///
+    /// *Returns*
+    ///
+    ///     double
+    ///         The value of M evaluated at u
+    ///
     virtual double evaluate_goal(Form& M,
                                  boost::shared_ptr<const Function> u) const = 0;
 
-    virtual void adapt_problem(boost::shared_ptr<const Mesh>) = 0;
+    /// Adapt the problem to other mesh. Must be overloaded in subclass.
+    ///
+    /// *Arguments*
+    ///
+    ///    mesh (_Mesh_)
+    ///        The other mesh
+    ///
+    virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh) = 0;
 
-    /// Default parameter values
+    /// Default parameter values:
+    ///
+    ///     "max_iterations" (int)
+    ///     "max_dimension"  (int)
+    ///     "plot_mesh"  (bool)
+    ///     "reference"  (double)
+    ///     "marking_strategy"  (string)
+    ///     "marking_fraction"  (double)
+    ///
     static Parameters default_parameters()
     {
       Parameters p("adaptive_solver");
@@ -77,17 +150,17 @@ namespace dolfin
 
   protected:
 
-    // Check if stopping criterion is satisfied
+    /// Check if stopping criterion is satisfied
     bool stop(const FunctionSpace& V,
               const double error_estimate,
               const double tolerance,
               const Parameters& parameters);
 
-    // Present summary of adaptive data
+    /// Present summary of all adaptive data
     void summary(const std::vector<AdaptiveDatum>& data,
                  const Parameters& parameters);
 
-    // Present summary of adaptive data
+    /// Present summary of single adaptive datum
     void summary(const AdaptiveDatum& data);
 
   };

@@ -30,48 +30,116 @@
 
 namespace dolfin
 {
-
   // Forward declarations
   class Function;
   class LinearVariationalProblem;
   class GoalFunctional;
   class Mesh;
 
+  /// A class for goal-oriented adaptive solution of linear
+  /// variational problems.
+  ///
+  /// For a linear variational problem of the form: find u in V
+  /// satisfying
+  ///
+  ///     a(u, v) = L(v) for all v in :math:`\hat V`
+  ///
+  /// and a corresponding conforming discrete problem: find u_h in V_h
+  /// satisfying
+  ///
+  ///     a(u_h, v) = L(v) for all v in :math:`\hat V_h`
+  ///
+  /// and a given goal functional M and tolerance tol, the aim is to
+  /// find a V_H and a u_H in V_H satisfying the discrete problem such
+  /// that
+  ///
+  ///     \|M(u) - M(u_H)\| < tol
+  ///
+  /// This strategy is based on dual-weighted residual error
+  /// estimators designed and automatically generated for the primal
+  /// problem and subsequent h-adaptivity.
+
   class AdaptiveLinearVariationalSolver
     : public GenericAdaptiveVariationalSolver
   {
   public:
 
-    // FIXME: Missing documentation strings for functions
-
-    /// Create adaptive variational solver for given linear variaional
-    /// problem
+    /// Create AdaptiveLinearVariationalSolver
+    ///
+    /// *Arguments*
+    ///
+    ///     problem (_LinearVariationalProblem_)
+    ///         The primal problem
+    ///
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
 
     /// Destructor
     ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
 
-    /// Solve using ErrorControl extracted from GoalFunctional
+    /// Solve problem such that the error measured in the goal
+    /// functional 'M' is less than the given tolerance using the
+    /// GoalFunctional's ErrorControl object.
+    ///
+    /// *Arguments*
+    ///
+    ///     tol  (double)
+    ///         The error tolerance
+    ///
+    ///     goal  (_GoalFunctional_)
+    ///         The goal functional
+    ///
     virtual void solve(const double tol, GoalFunctional& M);
 
-    /// Solve the primal problem
+    /// Solve the primal problem.
+    ///
+    /// *Returns*
+    ///
+    ///     boost::shared_ptr<const _Function_>
+    ///         The solution to the primal problem
+    ///
     virtual boost::shared_ptr<const Function> solve_primal();
 
-    /// Extract primal boundary conditions
+    /// Extract the boundary conditions for the primal problem.
+    ///
+    /// *Returns*
+    ///
+    ///     std::vector<boost::shared_ptr<const _BoundaryCondition_> >
+    ///         The primal boundary conditions
+    ///
     virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
       extract_bcs() const;
 
-    /// Evaluate goal functional
+    /// Evaluate the goal functional.
+    ///
+    /// *Arguments*
+    ///
+    ///    M (_Form_)
+    ///        The functional to be evaluated
+    ///
+    ///    u (_Function_)
+    ///        The function at which to evaluate the functional
+    ///
+    /// *Returns*
+    ///
+    ///     double
+    ///         The value of M evaluated at u
+    ///
     virtual double evaluate_goal(Form& M,
                                  boost::shared_ptr<const Function> u) const;
 
-    /// Adapt primal problem
+    /// Adapt the problem to other mesh.
+    ///
+    /// *Arguments*
+    ///
+    ///    mesh (_Mesh_)
+    ///        The other mesh
+    ///
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh);
 
 
   private:
 
-    // The problem
+    // The primal problem
     boost::shared_ptr<LinearVariationalProblem> problem;
 
   };

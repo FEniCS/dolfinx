@@ -24,7 +24,6 @@
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 
 #include "AdaptiveLinearVariationalSolver.h"
@@ -41,8 +40,7 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other parameters
-  // FIXME
+  // FIXME: Set other parameters
 }
 // ----------------------------------------------------------------------------
 void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
