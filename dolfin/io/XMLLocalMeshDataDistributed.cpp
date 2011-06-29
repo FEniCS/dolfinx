@@ -50,28 +50,29 @@ void XMLLocalMeshDataDistributed::read()
   //  xmlDefaultSAXHandlerInit();
 
   // Create handler (must use pointer)
-  boost::scoped_ptr<xmlSAXHandler> sax_handler(new xmlSAXHandler);
+  //boost::scoped_ptr<xmlSAXHandler> sax_handler(new xmlSAXHandler);
+  //xmlSAXHandlerPtr sax_handler = new xmlSAXHandler;
+  xmlSAXHandler sax_handler;
+  memset(&sax_handler, 0, sizeof(sax_handler));
 
   //xmlSAXVersion(&sax_handler, 2);
-  sax_handler->initialized = XML_SAX2_MAGIC;
+  sax_handler.initialized = XML_SAX2_MAGIC;
 
   // Call back functions
-  sax_handler->startDocument = XMLLocalMeshDataDistributed::sax_start_document;
-  sax_handler->endDocument   = XMLLocalMeshDataDistributed::sax_end_document;
+  sax_handler.startDocument = XMLLocalMeshDataDistributed::sax_start_document;
+  sax_handler.endDocument   = XMLLocalMeshDataDistributed::sax_end_document;
 
-  sax_handler->startElementNs = XMLLocalMeshDataDistributed::sax_start_element;
-  sax_handler->endElementNs   = XMLLocalMeshDataDistributed::sax_end_element;
+  sax_handler.startElementNs = XMLLocalMeshDataDistributed::sax_start_element;
+  sax_handler.endElementNs   = XMLLocalMeshDataDistributed::sax_end_element;
 
-  sax_handler->warning = XMLLocalMeshDataDistributed::sax_warning;
-  sax_handler->error = XMLLocalMeshDataDistributed::sax_error;
+  sax_handler.warning = XMLLocalMeshDataDistributed::sax_warning;
+  sax_handler.error = XMLLocalMeshDataDistributed::sax_error;
 
   // Parse
-  int err = xmlSAXUserParseFile(sax_handler.get(), (void *) this, filename.c_str());
+  int err = xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
   if (err != 0)
     error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
 
-
-  std::cout << "Post-parsing" << std::endl;
   //delete sax_handler;
   //xmlCleanupParser();
 }
