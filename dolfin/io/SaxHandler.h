@@ -28,7 +28,7 @@
 #include <string>
 #include <stack>
 #include <vector>
-
+#include <boost/lexical_cast.hpp>
 #include <libxml/parser.h>
 
 #include <dolfin/common/MPI.h>
@@ -53,43 +53,44 @@ namespace dolfin
   {
   public:
 
-    // Parse an integer value
-    static int parse_int(const xmlChar* name, const xmlChar** attrs,
-			                   const char* attribute);
+    template<class T>
+    static T parse(const xmlChar* name, const xmlChar** attrs,
+			                 const char* attribute, uint num_attributes)
+    {
+      // Check that we got the data
+      if (!attrs)
+        error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
+                      attribute, name);
 
-    // Parse an unsigned integer value
-    static unsigned int parse_uint(const xmlChar* name, const xmlChar** attrs,
-                    const char *attribute);
+      //for (uint i = 0; i < 5; i++)
+      std::cout << "Test: " << num_attributes << std::endl;
 
-    // Parse a double value
-    static double parse_float(const xmlChar* name, const xmlChar** attrs,
-                       const char* attribute);
+      // Parse data
+      for (uint i = 0; i < num_attributes; i++)
+      {
+        // Check for attribute
+        if (xmlStrcasecmp(attrs[5*i], (xmlChar *) attribute) == 0)
+        {
+          if (!attrs[5*i + 3])
+          {
+            error("Value for attribute \"%s\" of <%s> missing in XML file.",
+		          attribute, name);
+          }
 
-    // Parse a string
-    static  std::string parse_string(const xmlChar* name, const xmlChar** attrs,
-                             const char* attribute);
+          std::string value(attrs[5*i + 3], attrs[5*i + 4]);
+          std::cout << "Att(2): " << value << std::endl;
+          return boost::lexical_cast<T, std::string>(value);
+        }
+      }
 
-  private:
+      // Didn't get the value
+      error("Missing attribute value for \"%s\" for <%s> in XML file.",
+             attribute, name);
 
-    //xmlSAXHandler sax;
+      return boost::lexical_cast<T, std::string>("0");
+    }
 
   };
-
-  /*
-  // Callback functions for the SAX interface
-  void sax_start_document (void *ctx);
-  void sax_end_document   (void *ctx);
-  void sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
-  void sax_end_element    (void *ctx, const xmlChar *name);
-
-  void sax_warning     (void *ctx, const char *msg, ...);
-  void sax_error       (void *ctx, const char *msg, ...);
-  void sax_fatal_error (void *ctx, const char *msg, ...);
-
-  // Callback functions for Relax-NG Schema
-  void rng_parser_error(void *user_data, xmlErrorPtr error);
-  void rng_valid_error (void *user_data, xmlErrorPtr error);
-  */
 
 }
 #endif
