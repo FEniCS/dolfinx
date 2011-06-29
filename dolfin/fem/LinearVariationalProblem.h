@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-22
+// Last changed: 2011-06-29
 
 #ifndef __LINEAR_VARIATIONAL_PROBLEM_H
 #define __LINEAR_VARIATIONAL_PROBLEM_H
@@ -44,6 +44,17 @@ namespace dolfin
   class LinearVariationalProblem : public Hierarchical<LinearVariationalProblem>
   {
   public:
+
+    /// Create linear variational problem without boundary conditions
+    LinearVariationalProblem(const Form& a,
+                             const Form& L,
+                             Function& u);
+
+    /// Create linear variational problem without boundary conditions
+    /// (shared pointer version)
+    LinearVariationalProblem(boost::shared_ptr<const Form> a,
+                             boost::shared_ptr<const Form> L,
+                             boost::shared_ptr<Function> u);
 
     /// Create linear variational problem with a single boundary condition
     LinearVariationalProblem(const Form& a,

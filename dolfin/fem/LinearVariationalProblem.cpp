@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-22
+// Last changed: 2011-06-29
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -25,6 +25,30 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+LinearVariationalProblem::
+LinearVariationalProblem(const Form& a,
+                         const Form& L,
+                         Function& u)
+  : Hierarchical<LinearVariationalProblem>(*this),
+    _a(reference_to_no_delete_pointer(a)),
+    _L(reference_to_no_delete_pointer(L)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+LinearVariationalProblem::
+LinearVariationalProblem(boost::shared_ptr<const Form> a,
+                         boost::shared_ptr<const Form> L,
+                         boost::shared_ptr<Function> u)
+  : Hierarchical<LinearVariationalProblem>(*this),
+    _a(a), _L(L), _u(u)
+{
+  // Check forms
+  check_forms();
+}
 //-----------------------------------------------------------------------------
 LinearVariationalProblem::
 LinearVariationalProblem(const Form& a,

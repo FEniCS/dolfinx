@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
@@ -50,6 +50,17 @@ namespace dolfin
     // the interface of LinearVariationalProblem and second to allow all
     // checks of arguments to be performed in a single place (not also
     // in the Equation class).
+
+    /// Create nonlinear variational problem without boundary conditions
+    NonlinearVariationalProblem(const Form& F,
+                                int rhs,
+                                Function& u);
+
+    /// Create nonlinear variational problem without boundary conditions
+    /// (shared pointer version)
+    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
+                                int rhs,
+                                boost::shared_ptr<Function> u);
 
     /// Create nonlinear variational problem with a single boundary condition
     NonlinearVariationalProblem(const Form& F,
