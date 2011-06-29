@@ -55,7 +55,7 @@ class ErrorControlTest(unittest.TestCase):
         self.goal = M
 
         # Generate ErrorControl object
-        ec = generate_error_control(problem, M, True)
+        ec = generate_error_control(problem, M)
 
         # Store created stuff
         self.problem = problem
