@@ -32,7 +32,7 @@
 // du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 #include <dolfin.h>
-//#include "Poisson.h"
+#include "Poisson.h"
 
 using namespace dolfin;
 
@@ -68,14 +68,8 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  //UnitSquare mesh(32, 32);
+  UnitSquare mesh(32, 32);
 
-  File file("snake.xml");
-  //File file("mesh.xml");
-  LocalMeshData localdata;
-  file >> localdata;
-
-  /*
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition
@@ -102,6 +96,6 @@ int main()
 
   // Plot solution
   plot(u);
-  */
+
   return 0;
 }

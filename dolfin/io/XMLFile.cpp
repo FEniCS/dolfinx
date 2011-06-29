@@ -119,19 +119,32 @@ void XMLFile::operator<< (const LocalMeshData& output_data)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
 {
-  // Create XML doc and get DOLFIN node (on root process)
-  //pugi::xml_node dolfin_node(0);
-  //if (MPI::process_number() == 0)
-  //{
-    pugi::xml_document xml_doc;
-    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  pugi::xml_document xml_doc;
+  pugi::xml_node dolfin_node(0);
 
-    // Read vector
+  // Read vector size
+  uint size = 0;
+  if (MPI::process_number() == 0)
+  {
+    dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+    size = XMLVector::read_size(dolfin_node);
+  }
+  MPI::broadcast(size);
+
+  // Resize if necessary
+  if (MPI::num_processes() > 1 && input.size() != size)
+    warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
+  if (input.size() != size)
+    input.resize(size);
+
+  // Read vector on root process
+  if (MPI::process_number() == 0)
+  {
+    assert(dolfin_node);
     XMLVector::read(input, dolfin_node);
-  //}
-  //else
-  //  XMLVector::read(input, dolfin_node);
+  }
 
+  // Finalise
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------

@@ -41,7 +41,8 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   // Get type and size
   const pugi::xml_node array = xml_vector_node.child("array");
   if (!array)
-    std::cout << "Not a DOLFIN Array" << std::endl;
+    error("Not a DOLFIN array inside Vector XML file.");
+    //std::cout << "Not a DOLFIN Array" << std::endl;
 
   const unsigned int size = array.attribute("size").as_uint();
   const std::string type  = array.attribute("type").value();
@@ -58,14 +59,23 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
     data[index] = value;
   }
 
-  // Resize vector and add data
-  if (MPI::num_processes() > 1 && (x.size() != size))
-    warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
-  if (x.size() != size)
-    x.resize(size);
-
   // Set data (GenericVector::apply will be called be calling function)
   x.set(data.data().get(), size, indices.data().get());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint XMLVector::read_size(const pugi::xml_node xml_dolfin)
+{
+  // Check that we have a XML Vector
+  const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
+  if (!xml_vector_node)
+    error("Not a DOLFIN Vector file.");
+
+  // Get size
+  const pugi::xml_node array = xml_vector_node.child("array");
+  if (!array)
+    std::cout << "Not a DOLFIN Array" << std::endl;
+
+  return array.attribute("size").as_uint();
 }
 //-----------------------------------------------------------------------------
 void XMLVector::write(const GenericVector& vector, std::ostream& outfile,

@@ -37,9 +37,14 @@ public:
 
   void testRead()
   {
+    // libxml2 SAX2 parser segfault in parallel when run through
+    // CPPUNIT. Runs fine through Python unit tests. Needs further
+    // investigation
+    if (dolfin::MPI::num_processes() > 1)
+      return;
+
     // Create undirected graph with edges added out of order (should pass)
-    //File file("../../../../data/meshes/snake.xml.gz");
-    File file("snake.xml");
+    File file("../../../../data/meshes/snake.xml.gz");
     LocalMeshData localdata;
     file >> localdata;
   }

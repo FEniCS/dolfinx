@@ -45,11 +45,12 @@ void XMLLocalMeshDataDistributed::read()
   // Clear mesh data
   mesh_data.clear();
 
-  xmlDefaultSAXHandlerInit();
+  //xmlInitParser();
+  //if (MPI::process_number() == 0)
+  //  xmlDefaultSAXHandlerInit();
 
   // Create handler (must use pointer)
   boost::scoped_ptr<xmlSAXHandler> sax_handler(new xmlSAXHandler);
-  //xmlSAXHandlerPtr sax_handler = new xmlSAXHandler;
 
   //xmlSAXVersion(&sax_handler, 2);
   sax_handler->initialized = XML_SAX2_MAGIC;
@@ -65,9 +66,12 @@ void XMLLocalMeshDataDistributed::read()
   sax_handler->error = XMLLocalMeshDataDistributed::sax_error;
 
   // Parse
-  xmlSAXUserParseFile(sax_handler.get(), (void *) this, filename.c_str());
-  //xmlSAXParseFile(sax_handler.get(), filename.c_str(), 1);
+  int err = xmlSAXUserParseFile(sax_handler.get(), (void *) this, filename.c_str());
+  if (err != 0)
+    error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
 
+
+  std::cout << "Post-parsing" << std::endl;
   //delete sax_handler;
   //xmlCleanupParser();
 }
@@ -229,7 +233,7 @@ void XMLLocalMeshDataDistributed::sax_start_element(void * ctx,
                                                     const xmlChar ** attrs)
 {
   //std::cout << "Start el: " << name << std::endl;
-  //((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
+  ((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
   //std::cout << "Done Start el: " << name << std::endl;
 }
 //-----------------------------------------------------------------------------
@@ -239,7 +243,7 @@ void XMLLocalMeshDataDistributed::sax_end_element(void * ctx,
                                                   const xmlChar * URI)
 {
   //std::cout << "End el: " << name << std::endl;
-  //((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
+  ((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_warning(void *ctx, const char *msg, ...)
