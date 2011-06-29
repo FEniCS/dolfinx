@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -80,8 +80,8 @@ int main()
   Flux g;
   L.f = f;
   L.g = g;
-  Function w(V);
-  LinearVariationalProblem problem(a, L, w);
+  Function u(V);
+  LinearVariationalProblem problem(a, L, u);
 
   // Compute solution
   LinearVariationalSolver solver(problem);
