@@ -90,9 +90,8 @@ public:
       Projection::BilinearForm a(V, V);
       Projection::LinearForm L(V);
       L.f = f1;
-      VariationalProblem problem(a, L);
       Function g(V);
-      problem.solve(g);
+      solve(a == L, g);
 
       const double tol = 1.0e-6;
       f1.eval(u0, x);

@@ -41,7 +41,7 @@ tests = {
     "quadrature": ["test"],
     "adaptivity": ["errorcontrol", "timeseries"],
     "jit": ["test"],
-    "bc-indicators" : ["aneurysm"]
+    "bc-indicators" : ["test"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
