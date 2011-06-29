@@ -60,18 +60,14 @@ V = FunctionSpace(mesh, "CG", 1)
 g = Constant(1.0)
 bc = DirichletBC(V, g, DirichletBoundary())
 
-# Define source and solution functions
-f = Expression("x[0]*sin(x[1])")
-u = Function(V)
-
 # Define variational problem
-v  = TestFunction(V)
-du = TrialFunction(V)
-F  = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
-J  = derivative(F, u, du)
+u = Function(V)
+v = TestFunction(V)
+f = Expression("x[0]*sin(x[1])")
+F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
-# Solve nonlinear variational problem
-solve(F == 0, u, bc, J=J)
+# Compute solution
+solve(F == 0, u, bc)
 
 # Plot solution and solution gradient
 plot(u, title="Solution")
