@@ -62,9 +62,6 @@ namespace dolfin
         error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
                       attribute, name);
 
-      //for (uint i = 0; i < 5; i++)
-      std::cout << "Test: " << num_attributes << std::endl;
-
       // Parse data
       for (uint i = 0; i < num_attributes; i++)
       {
@@ -78,7 +75,7 @@ namespace dolfin
           }
 
           std::string value(attrs[5*i + 3], attrs[5*i + 4]);
-          std::cout << "Att(2): " << value << std::endl;
+          //std::cout << "Att(2): " << value << std::endl;
           return boost::lexical_cast<T, std::string>(value);
         }
       }

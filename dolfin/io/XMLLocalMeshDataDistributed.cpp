@@ -47,27 +47,29 @@ void XMLLocalMeshDataDistributed::read()
 
   xmlDefaultSAXHandlerInit();
 
-  // Create handler
-  xmlSAXHandler sax_handler;
+  // Create handler (must use pointer)
+  boost::scoped_ptr<xmlSAXHandler> sax_handler(new xmlSAXHandler);
+  //xmlSAXHandlerPtr sax_handler = new xmlSAXHandler;
 
   //xmlSAXVersion(&sax_handler, 2);
-
-  sax_handler.initialized = XML_SAX2_MAGIC;
+  sax_handler->initialized = XML_SAX2_MAGIC;
 
   // Call back functions
-  sax_handler.startDocument = XMLLocalMeshDataDistributed::sax_start_document;
-  sax_handler.endDocument   = XMLLocalMeshDataDistributed::sax_end_document;
+  sax_handler->startDocument = XMLLocalMeshDataDistributed::sax_start_document;
+  sax_handler->endDocument   = XMLLocalMeshDataDistributed::sax_end_document;
 
-  sax_handler.startElementNs  = XMLLocalMeshDataDistributed::sax_start_element;
-  sax_handler.endElementNs    = XMLLocalMeshDataDistributed::sax_end_element;
+  sax_handler->startElementNs = XMLLocalMeshDataDistributed::sax_start_element;
+  sax_handler->endElementNs   = XMLLocalMeshDataDistributed::sax_end_element;
 
-  sax_handler.warning = XMLLocalMeshDataDistributed::sax_warning;
-  sax_handler.error = XMLLocalMeshDataDistributed::sax_error;
+  sax_handler->warning = XMLLocalMeshDataDistributed::sax_warning;
+  sax_handler->error = XMLLocalMeshDataDistributed::sax_error;
 
   // Parse
-  xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
+  xmlSAXUserParseFile(sax_handler.get(), (void *) this, filename.c_str());
+  //xmlSAXParseFile(sax_handler.get(), filename.c_str(), 1);
 
-  xmlCleanupParser();
+  //delete sax_handler;
+  //xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
@@ -206,13 +208,13 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_start_document(void *ctx)
 {
-  std::cout << "Start doc" << std::endl;
+  //std::cout << "Start doc" << std::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_end_document(void *ctx)
 {
-  std::cout << "End doc" << std::endl;
+  //std::cout << "End doc" << std::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -226,9 +228,9 @@ void XMLLocalMeshDataDistributed::sax_start_element(void * ctx,
                                                     int nb_defaulted,
                                                     const xmlChar ** attrs)
 {
-  std::cout << "Start el: " << name << std::endl;
-  ((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
-  std::cout << "Done Start el: " << name << std::endl;
+  //std::cout << "Start el: " << name << std::endl;
+  //((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
+  //std::cout << "Done Start el: " << name << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_end_element(void * ctx,
@@ -236,8 +238,8 @@ void XMLLocalMeshDataDistributed::sax_end_element(void * ctx,
                                                   const xmlChar * prefix,
                                                   const xmlChar * URI)
 {
-  std::cout << "End el: " << name << std::endl;
-  ((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
+  //std::cout << "End el: " << name << std::endl;
+  //((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::sax_warning(void *ctx, const char *msg, ...)

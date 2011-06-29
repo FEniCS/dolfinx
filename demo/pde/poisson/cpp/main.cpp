@@ -70,9 +70,10 @@ int main()
   // Create mesh and function space
   //UnitSquare mesh(32, 32);
 
-  File file("mesh.xml");
-  LocalMeshData data;
-  file >> data;
+  File file("snake.xml");
+  //File file("mesh.xml");
+  LocalMeshData localdata;
+  file >> localdata;
 
   /*
   Poisson::FunctionSpace V(mesh);
