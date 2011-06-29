@@ -50,17 +50,22 @@ namespace dolfin
     /// Destructor
     ~AdaptiveNonlinearVariationalSolver() {/* Do nothing */};
 
-    void solve(const double tol, GoalFunctional& M);
+    /// Solve using ErrorControl extracted from GoalFunctional
+    virtual void solve(const double tol, GoalFunctional& M);
 
-    boost::shared_ptr<const Function> solve_primal();
+    /// Solve the primal problem
+    virtual boost::shared_ptr<const Function> solve_primal();
 
-    std::vector<boost::shared_ptr<const BoundaryCondition> > extract_bcs() const;
+    /// Extract primal boundary conditions
+    virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
+      extract_bcs() const;
 
-    // Evaluate goal functional
-    double evaluate_goal(Form& M,
-                         boost::shared_ptr<const Function> u) const;
+    /// Evaluate goal functional
+    virtual double evaluate_goal(Form& M,
+                                 boost::shared_ptr<const Function> u) const;
 
-    void adapt_problem(boost::shared_ptr<const Mesh> mesh);
+    /// Adapt primal problem
+    virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh);
 
   private:
 
