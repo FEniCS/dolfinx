@@ -56,7 +56,7 @@ void NonlinearVariationalSolver::solve()
   assert(problem);
   if (!problem->has_jacobian())
     dolfin_error("NonlinearVariationalSolver.cpp",
-                 "Solve nonlinear variational problem",
+                 "solve nonlinear variational problem",
                  "The Jacobian form has not been defined");
 
   // Get problem data

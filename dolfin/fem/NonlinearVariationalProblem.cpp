@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-29
+// Last changed: 2011-06-30
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -175,14 +175,14 @@ void NonlinearVariationalProblem::check_forms(int rhs) const
   if (_F->rank() != 1)
     dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
-                 "expecting the residual F to be a linear form (not rank %d).",
+                 "Expecting the residual F to be a linear form (not rank %d)",
                  _F->rank());
 
   // Check value of right-hand side
   if (rhs != 0)
     dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
-                 "expecting the right-hand side to be zero (not %d)",
+                 "Expecting the right-hand side to be zero (not %d)",
                  rhs);
 
   // FIXME: Should we add a check here that matches the function space

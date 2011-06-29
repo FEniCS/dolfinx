@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-29
+// Last changed: 2011-06-30
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -165,7 +165,7 @@ void LinearVariationalProblem::check_forms() const
   if (_a->rank() != 2)
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) == L(v) for all v",
-                 "expecting the left-hand side to be a bilinear form (not rank %d).",
+                 "Expecting the left-hand side to be a bilinear form (not rank %d)",
                  _a->rank());
 
   // Check rank of linear form L
@@ -173,7 +173,7 @@ void LinearVariationalProblem::check_forms() const
   if (_L->rank() != 1)
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
-                 "expecting the right-hand side to be a linear form (not rank %d).",
+                 "Expecting the right-hand side to be a linear form (not rank %d)",
                  _L->rank());
 
   // Check that function space of solution variable matches trial space
@@ -182,6 +182,6 @@ void LinearVariationalProblem::check_forms() const
   if (!_u->in(*_a->function_space(1)))
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
-                 "expecting the solution variable u to be a member of the trial space");
+                 "Expecting the solution variable u to be a member of the trial space");
 }
 //-----------------------------------------------------------------------------

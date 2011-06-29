@@ -93,7 +93,7 @@ void Parameters::add(std::string key, int value)
   if (find_parameter(key))
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined.",
+                 "Parameter \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
 
   // Add parameter
@@ -118,7 +118,7 @@ void Parameters::add(std::string key, double value)
   if (find_parameter(key))
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined.",
+                 "Parameter \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
 
   // Add parameter
@@ -143,7 +143,7 @@ void Parameters::add(std::string key, std::string value)
   if (find_parameter(key))
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined.",
+                 "Parameter \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
 
   // Add parameter
@@ -159,7 +159,7 @@ void Parameters::add(std::string key, const char* value)
   if (find_parameter(key))
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined.",
+                 "Parameter \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
 
   // Add parameter
@@ -197,7 +197,7 @@ void Parameters::add(std::string key, bool value)
   if (find_parameter(key))
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined.",
+                 "Parameter \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
 
   // Add parameter

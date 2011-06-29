@@ -84,7 +84,7 @@ void LinearVariationalSolver::solve()
       if (!_bc)
         dolfin_error("LinearVariationalSolver.cpp",
                      "apply boundary condition in linear variational solver",
-                     "only Dirichlet boundary conditions may be used for symmetric systems");
+                     "Only Dirichlet boundary conditions may be used for symmetric systems");
       _bcs.push_back(_bc);
     }
 
