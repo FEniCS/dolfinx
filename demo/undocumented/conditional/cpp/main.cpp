@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-07-23
-// Last changed: 2011-06-28
+// Last changed: 2011-06-29
 //
 // This demo program solves Poisson's equation
 //
@@ -63,7 +63,6 @@ int main()
   // Compute solution
   Function u(V);
   solve(a == L, u, bc);
-  problem.solve();
 
   // Save solution in VTK format
   File file("conditional.pvd");
