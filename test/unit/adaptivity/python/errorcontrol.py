@@ -37,8 +37,8 @@ class ErrorControlTest(unittest.TestCase):
 
         u = TrialFunction(V)
         v = TestFunction(V)
-        f = Expression("10*std::exp(-(std::pow(x[0] - 0.5, 2) + std::pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
-        g = Expression("std::sin(5*x[0])", degree=1)
+        f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+        g = Expression("sin(5*x[0])", degree=1)
         a = inner(grad(u), grad(v))*dx
         L = f*v*dx + g*v*ds
         problem = VariationalProblem(a, L, bc)

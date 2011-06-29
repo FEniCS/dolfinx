@@ -3,8 +3,9 @@ This demo illustrates how to:
 
 * Maintain symmetry when assembling a system of symmetric equations
   with essential (Dirichlet) boundary conditions
-
+* Use a iterative solver explicitly for solving a linear system of equations
 * Define a preconditioner explicitly using a form
+
 
 Strong form of the Stokes equations
 -----------------------------------
@@ -52,10 +53,33 @@ for all :math:`(v, q) \in W` where
                     + \nabla \cdot v \ p
                     + \nabla \cdot u \ q \, {\rm d} x, \\
    L((v, q))
-   &= \int_{\Omega} f \cdot v {\rm d} x
+   &= \int_{\Omega} f \cdot v \, {\rm d} x
       + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
 
 The space `W` should be a mixed (product) function space: :math:`W = V
 \times Q` such that :math:`u \in V` and :math:`q \in Q`.
 
+Preconditioning of the linear system of equations
+--------------------------------------------------
 
+For the resulting linear system of equations, the following form
+defines a suitable preconditioner:
+
+.. math::
+
+   b((u, p), (v, q)) = \int_{\Omega} \nabla u \cdot \nabla v + p \, q \, {\rm d} x
+
+
+Domain and boundary conditions
+------------------------------
+
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
+
+* :math:`\Omega = [0,1]^3`  (a unit cube)
+* :math:`\Omega_D = \{(x_0, x_1, x_2) \, | \, x_0 = 0 \, \text{or} \,
+  x_0 = 1 \, \text{or} \, x_1 = 0 \, \text{or} \, x_1 = 1 \}`
+* :math:`u_0 = (- \sin(\pi x_1), 0.0, 0.0)` for :math:`x_0 = 1` and
+  :math:`u_0 = (0.0, 0.0, 0.0)` otherwise
+* :math:`f = (0.0, 0.0, 0.0)`
+* :math:`g = (0.0, 0.0, 0.0)`
