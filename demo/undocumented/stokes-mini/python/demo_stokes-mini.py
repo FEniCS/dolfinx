@@ -66,13 +66,13 @@ solve(a == L, w, bcs)
 
 # Split the mixed solution using deepcopy
 # (needed for further computation on coefficient vector)
-(u, p) = U.split(True)
+(u, p) = w.split(True)
 
 print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
 print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
 
 # Split the mixed solution using a shallow copy
-(u, p) = U.split()
+(u, p) = w.split()
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")

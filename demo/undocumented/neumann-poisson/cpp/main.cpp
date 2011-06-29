@@ -88,7 +88,7 @@ int main()
 
   // Compute solution
   LinearVariationalSolver solver(problem);
-  solver.parameters("solver")["linear_solver"] = "iterative";
+  solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
   // Plot solution

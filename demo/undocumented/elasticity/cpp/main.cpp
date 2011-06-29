@@ -136,7 +136,7 @@ int main()
   // Compute solution
   LinearVariationalSolver solver(problem);
   solver.parameters["symmetric"] = true;
-  solver.parameters("solver")["linear_solver"] = "direct";
+  solver.parameters["linear_solver"] = "direct";
   solver.solve();
 
   // Extract solution components

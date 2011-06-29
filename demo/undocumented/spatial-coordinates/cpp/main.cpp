@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-03-05
-// Last changed: 2011-06-28
+// Last changed: 2011-06-30
 //
 // This demo program solves Poisson's equation
 //
@@ -68,7 +68,7 @@ int main()
 
   // Compute solution
   LinearVariationalSolver solver(problem);
-  solver.parameters("solver")["linear_solver"] = "iterative";
+  solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
   // Save solution in VTK format

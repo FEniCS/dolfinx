@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2011-06-28
+// Last changed: 2011-06-30
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -98,7 +98,7 @@ int main()
 
   // Compute solution
   LinearVariationalSolver solver(problem);
-  solver.parameters("solver")["linear_solver"] = "direct";
+  solver.parameters["linear_solver"] = "direct";
   solver.solve();
 
   // Extract subfunctions
