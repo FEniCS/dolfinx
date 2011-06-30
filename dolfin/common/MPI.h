@@ -21,17 +21,24 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2011-06-23
+// Last changed: 2011-06-30
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
+
+#include <dolfin/log/dolfin_log.h>
+#include <typeinfo>
 
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
+// NOTE: It would be convenient to use Boost.MPI, but it is not yet well
+//       supported by packaged versions of Boost. Boost.MPI code is therefore
+//       commented out for now.
+
 #ifdef HAS_MPI
-#include <boost/mpi.hpp>
+//#include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
 
@@ -91,13 +98,42 @@ namespace dolfin
     static void distribute(std::vector<double>& values,
                            std::vector<uint>& partition);
 
-    /// Broadcast value(s) from broadcaster process to all processes
+    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
+    /*
+    /// Broadcast value from broadcaster process to all processes
     template<class T> static void broadcast(T& value, uint broadcaster=0)
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
       boost::mpi::broadcast(comm, value, broadcaster);
+      #endif
+    }
+    */
+
+    /// Broadcast value from broadcaster process to all processes
+    template<class T> static void broadcast(T& value, uint broadcaster=0)
+    {
+      #ifdef HAS_MPI
+      MPICommunicator comm;
+      MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, *comm);
+      #endif
+    }
+
+    /// Broadcast value from broadcaster process to all processes
+    template<class T> static void broadcast(std::vector<T>& values, uint broadcaster=0)
+    {
+      #ifdef HAS_MPI
+      // Communicate size
+      uint size = values.size();
+      broadcast(size, broadcaster);
+
+      // Resize (will not affect broadcaster)
+      values.resize(size);
+
+      // Communicate
+      MPICommunicator comm;
+      MPI_Bcast(&values[0], size, mpi_type<T>(), broadcaster, *comm);
       #endif
     }
 
@@ -146,7 +182,7 @@ namespace dolfin
       #endif
     }
 
-    // Commented out due to Boost MPI bug in Ubuntu Karmic
+    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
     /*
     /// Gather values, one from each process (wrapper for boost::mpi::all_gather)
     template<class T> static void gather_all(const T& in_value,
@@ -162,6 +198,50 @@ namespace dolfin
     }
     */
 
+    /// Return  maximum value
+    template<class T> static T max(const T& value)
+    {
+      #ifdef HAS_MPI
+      T _max(0);
+      T _value = value;
+      MPICommunicator comm;
+      MPI_Allreduce(&_value, &_max, 1, mpi_type<T>(), MPI_MAX, *comm);
+      return _max;
+      #else
+      return value;
+      #endif
+    }
+
+    /// Return minimum value
+    template<class T> static T min(const T& value)
+    {
+      #ifdef HAS_MPI
+      T _min(0);
+      T _value = value;
+      MPICommunicator comm;
+      MPI_Allreduce(&_value, &_min, 1, mpi_type<T>(), MPI_MIN, *comm);
+      return _min;
+      #else
+      return value;
+      #endif
+    }
+
+    /// Return sum across all processes
+    template<class T> static T sum(const T& value)
+    {
+      #ifdef HAS_MPI
+      T _sum(0);
+      T _value = value;
+      MPICommunicator comm;
+      MPI_Allreduce(&_value, &_sum, 1, mpi_type<T>(), MPI_SUM, *comm);
+      return _sum;
+      #else
+      return value;
+      #endif
+    }
+
+    /*
+    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
     /// Return global max value
     template<class T> static T max(const T& value)
     {
@@ -206,6 +286,7 @@ namespace dolfin
       return T(0);
       #endif
     }
+    */
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)
@@ -220,7 +301,7 @@ namespace dolfin
                           double* recv_buffer, uint recv_size, uint source);
 
     /// Return local range for local process, splitting [0, N - 1] into
-    ///  num_processes() portions of almost equal size
+    /// num_processes() portions of almost equal size
     static std::pair<uint, uint> local_range(uint N);
 
     /// Return local range for given process, splitting [0, N - 1] into
@@ -240,16 +321,18 @@ namespace dolfin
     // Return MPI data type
     template<class T> static MPI_Datatype mpi_type()
     {
-      error("MPI data type unknown");
+      error("MPI data type unknown.");
       return MPI_CHAR;
     }
 
   };
 
-  // Specialisations
+  // Specialisations for MPI_Datatypes
   template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
   template<> inline MPI_Datatype MPI::mpi_type<int>() { return MPI_INT; }
+  template<> inline MPI_Datatype MPI::mpi_type<long int>() { return MPI_LONG; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
+  template<> inline MPI_Datatype MPI::mpi_type<unsigned long>() { return MPI_UNSIGNED_LONG; }
 
 }
 
