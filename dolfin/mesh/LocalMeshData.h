@@ -35,7 +35,7 @@ namespace dolfin
 {
 
   class Mesh;
-  class XMLLocalMeshData;
+  class XMLLocalMeshDataDistributed;
 
   /// This class stores mesh data on a local processor corresponding
   /// to a portion of a (larger) global mesh.
@@ -71,9 +71,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-    /// Define XMLHandler for use in new XML reader/writer
-    typedef XMLLocalMeshData XMLHandler;
 
   private:
 
@@ -116,6 +113,9 @@ namespace dolfin
     /// Global number of cells
     uint num_global_cells;
 
+    /// Number of vertices per cell
+    uint num_vertices_per_cell;
+
     /// Geometrical dimension
     uint gdim;
 
@@ -127,6 +127,7 @@ namespace dolfin
 
     // Friends
     friend class XMLLocalMeshData;
+    friend class XMLLocalMeshDataDistributed;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;

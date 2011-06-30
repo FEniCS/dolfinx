@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg and Ola Skavhaug
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,49 +15,35 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-06
-// Last changed: 2011-06-01
+// First added:  2003-07-15
+// Last changed: 2006-05-23
 
-#ifndef __XMLFUNCTIONPLOTDATA_H
-#define __XMLFUNCTIONPLOTDATA_H
+#ifndef __XMLMESHFUNCTIONPLOTDATA_H
+#define __XMLMESHFUNCTIONPLOTDATA_H
 
-#include "XMLHandler.h"
+#include <ostream>
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
 
-  class XMLVector;
   class FunctionPlotData;
-  class XMLMesh;
 
-  class XMLFunctionPlotData : public XMLHandler
+  class XMLFunctionPlotData
   {
   public:
 
-    XMLFunctionPlotData(FunctionPlotData& data, XMLFile& parser);
-    ~XMLFunctionPlotData();
+    // Read XML vector
+    static void read(FunctionPlotData& plot_data,
+                     const pugi::xml_node xml_dolfin);
 
-    void start_element (const xmlChar* name, const xmlChar** attrs);
-    void end_element   (const xmlChar* name);
-
-    static void write(const FunctionPlotData& data,
-                      std::ostream& outfile,
-                      uint indentation_level=0);
-
-    void read_data_tag(const xmlChar* name, const xmlChar** attrs);
-
-  private:
-
-    enum parser_state {OUTSIDE, INSIDE, DONE};
-
-    void read_mesh      (const xmlChar* name, const xmlChar** attrs);
-    void read_vector    (const xmlChar* name, const xmlChar** attrs);
-
-    FunctionPlotData& data;
-    parser_state state;
-
-    XMLMesh* xml_mesh;
-    XMLVector* xml_vector;
+    /// Write the XML file
+    static void write(const FunctionPlotData& plot_data, std::ostream& outfile,
+                      unsigned int indentation_level=0);
 
   };
 

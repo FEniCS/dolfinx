@@ -62,12 +62,12 @@ File::File(const std::string filename, std::string encoding)
     const std::string ext =
       boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
-      file.reset(new XMLFile(filename, true));
+      file.reset(new XMLFile(filename));
     else
       error("Unknown file type for \"%s\".", filename.c_str());
   }
   else if (extension == ".xml")
-    file.reset(new XMLFile(filename, false));
+    file.reset(new XMLFile(filename));
   else if (extension == ".py")
     file.reset(new PythonFile(filename));
   else if (extension == ".pvd")
@@ -87,7 +87,7 @@ File::File(const std::string filename, Type type, std::string encoding)
   switch (type)
   {
   case xml:
-    file.reset(new XMLFile(filename, false));
+    file.reset(new XMLFile(filename));
     break;
   case python:
     file.reset(new PythonFile(filename));

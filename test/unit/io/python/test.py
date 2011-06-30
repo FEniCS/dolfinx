@@ -38,6 +38,13 @@ class VectorXML_IO(unittest.TestCase):
         self.assertEqual(x.size(), y.size())
         self.assertAlmostEqual((x - y).norm("l2"), 0.0)
 
+class LocalMeshDataXML_IO(unittest.TestCase):
+
+    def testRead(self):
+        file = File("../../../../data/meshes/snake.xml.gz");
+        localdata = cpp.LocalMeshData();
+        file >> localdata;
+
 
 if __name__ == "__main__":
     unittest.main()

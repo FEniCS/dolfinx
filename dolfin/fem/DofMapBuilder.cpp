@@ -153,7 +153,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Decide ownership of shared dofs
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  const uint max_recv = MPI::global_maximum(send_buffer.size());
+  const uint max_recv = MPI::max(send_buffer.size());
   std::vector<uint> recv_buffer(max_recv);
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
@@ -254,7 +254,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Exchange new dof numbers for dofs that are shared
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  const uint max_recv = MPI::global_maximum(send_buffer.size());
+  const uint max_recv = MPI::max(send_buffer.size());
   std::vector<uint> recv_buffer(max_recv);
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {

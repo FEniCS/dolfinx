@@ -23,15 +23,14 @@
 // First added:  2007-11-30
 // Last changed: 2010-11-09
 
-#include <dolfin/log/dolfin_log.h>
 #include <numeric>
+#include <dolfin/log/dolfin_log.h>
 #include "mpiutils.h"
 #include "SubSystemsManager.h"
 #include "MPI.h"
 
 #ifdef HAS_MPI
 
-#include <mpi.h>
 
 using MPI::COMM_WORLD;
 
@@ -336,52 +335,7 @@ std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
   return values;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<uint>& values)
-{
-  assert(values.size() == num_processes());
-
-  // Prepare arrays
-  uint send_value = values[process_number()];
-  uint* received_values = new uint[values.size()];
-
-  // Create communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
-  // Call MPI
-  MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
-                received_values, 1, MPI_UNSIGNED, *comm);
-
-  // Copy values
-  for (uint i = 0; i < values.size(); i++)
-    values[i] = received_values[i];
-
-  // Cleanup
-  delete [] received_values;
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<double>& values)
-{
-  assert(values.size() == num_processes());
-
-  // Prepare arrays
-  double send_value = values[process_number()];
-  double* received_values = new double[values.size()];
-
-  // Create communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
-  // Call MPI
-  MPI_Allgather(&send_value,     1, MPI_DOUBLE,
-                received_values, 1, MPI_DOUBLE, *comm);
-
-  // Copy values
-  for (uint i = 0; i < values.size(); i++)
-    values[i] = received_values[i];
-
-  // Cleanup
-  delete [] received_values;
-}
-//-----------------------------------------------------------------------------
+/*
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
   uint recv_size = 0;
@@ -390,22 +344,7 @@ dolfin::uint dolfin::MPI::global_maximum(uint size)
   MPI_Allreduce(&size, &recv_size, 1, MPI_UNSIGNED, MPI_MAX, *comm);
   return recv_size;
 }
-//-----------------------------------------------------------------------------
-double dolfin::MPI::sum(double value)
-{
-  double recv_value = 0.0;
-  MPICommunicator comm;
-  MPI_Allreduce(&value, &recv_value, 1, MPI_DOUBLE, MPI_SUM, *comm);
-  return recv_value;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::sum(uint value)
-{
-  uint recv_value = 0;
-  MPICommunicator comm;
-  MPI_Allreduce(&value, &recv_value, 1, MPI_UNSIGNED, MPI_SUM, *comm);
-  return recv_value;
-}
+*/
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 {
@@ -583,31 +522,6 @@ std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
 {
   error("MPI::gather() requires MPI.");
   return std::vector<uint>(1);
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<uint>& values)
-{
-  error("MPI::gather() requires MPI.");
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<double>& values)
-{
-  error("MPI::gather() requires MPI.");
-}
-//-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::global_maximum(uint size)
-{
-  return size;
-}
-//-----------------------------------------------------------------------------
-double dolfin::MPI::sum(double value)
-{
-  return value;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::sum(uint value)
-{
-  return value;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)

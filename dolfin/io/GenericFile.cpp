@@ -23,8 +23,8 @@
 // Last changed: 2010-01-04
 
 #include <fstream>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/dolfin_log.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
@@ -38,11 +38,6 @@ GenericFile::GenericFile(const std::string filename) : filename(filename),
                                                      counter(0),
                                                      counter1(0),
                                                      counter2(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-GenericFile::~GenericFile()
 {
   // Do nothing
 }
@@ -85,11 +80,6 @@ void GenericFile::operator>> (MeshFunction<double>& meshfunction)
 void GenericFile::operator>> (MeshFunction<bool>& meshfunction)
 {
   read_not_impl("MeshFunction<bool>");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator>> (Sample& sample)
-{
-  read_not_impl("Sample");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (Parameters& parameters)
@@ -197,11 +187,6 @@ void GenericFile::operator<< (const std::pair<const Function*, double> u)
   write_not_impl("std::pair<Function*, double> Function");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const Sample& sample)
-{
-  write_not_impl("Sample");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const Parameters& parameters)
 {
   write_not_impl("Parameters");
@@ -283,13 +268,13 @@ void GenericFile::write()
   opened_write = true;
 }
 //-----------------------------------------------------------------------------
-void GenericFile::read_not_impl(const std::string object)
+void GenericFile::read_not_impl(const std::string object) const
 {
   error("Unable to read objects of type %s from %s files.",
         object.c_str(), type.c_str());
 }
 //-----------------------------------------------------------------------------
-void GenericFile::write_not_impl(const std::string object)
+void GenericFile::write_not_impl(const std::string object) const
 {
   error("Unable to write objects of type %s to %s files.",
         object.c_str(), type.c_str());

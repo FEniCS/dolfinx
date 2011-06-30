@@ -202,7 +202,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     if (local_graph[i].size() != num_cell_facets)
       local_boundary_cells.push_back(i);
   }
-  cout << "Number of possible boundary cells " << local_boundary_cells.size() << endl;
 
   // Get number of possible ghost cells coming from each process
   std::vector<uint> boundary_cells_per_process = MPI::gather(local_boundary_cells.size());
@@ -249,11 +248,16 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(MPI::num_processes());
   std::vector<std::vector<uint> > candidate_ghost_cell_global_indices(MPI::num_processes());
 
-  // Unpack data
+  // Unpack data (if any)
   uint _offset = 0;
   for (uint i = 0; i < MPI::num_processes() - 1; ++i)
   {
+    // Check if there is data to unpack
+    if (_offset >= partition.size())
+      break;
+
     const uint p = partition[_offset];
+    assert(p < boundary_cells_per_process.size());
     const uint data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
     std::vector<uint>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];

@@ -46,9 +46,11 @@ namespace dolfin
 
     std::string operator() ();
 
-    inline dolfin::uint level() { return indentation_level; }
+    dolfin::uint level()
+    { return indentation_level; }
 
   private:
+
     uint indentation_level;
     uint step_size;
 

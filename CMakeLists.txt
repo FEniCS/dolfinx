@@ -365,6 +365,9 @@ if (PYTHONINTERP_FOUND)
       COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
       )
+    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)            
+    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
+      DOLFIN_INSTALL_PYTHON_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
       CACHE PATH "Python extension module installation directory.")
   endif()
@@ -375,6 +378,9 @@ if (PYTHONINTERP_FOUND)
       COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
       )
+    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)            
+    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
+      DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
       CACHE PATH "Python module installation directory.")
   endif()

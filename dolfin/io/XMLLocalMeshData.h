@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Ola Skavhaug
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,90 +15,41 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-10
-// Last changed: 2011-05-30
-// Modified by Kent-Andre Mardal, 2011.
+// First added:  2003-07-15
+// Last changed: 2006-05-23
 
-#ifndef __XMLLOCALMESHDATA_H
-#define __XMLLOCALMESHDATA_H
+#ifndef __XMLMESHLOCALMESHDATA_H
+#define __XMLMESHLOCALMESHDATA_H
 
-#include <boost/scoped_ptr.hpp>
-#include <dolfin/mesh/LocalMeshData.h>
-#include "XMLHandler.h"
+#include <ostream>
+#include <string>
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
 
+  class Mesh;
   class LocalMeshData;
-  class XMLArray;
 
-  /// Documentation of class XMLLocalMeshData
-
-  class XMLLocalMeshData: public XMLHandler
+  class XMLLocalMeshData
   {
   public:
 
-    /// Constructor
-    XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser);
+    /// Read XML vector
+    static void read(LocalMeshData& mesh_data, const pugi::xml_node xml_dolfin);
 
-    /// Destructor
-    ~XMLLocalMeshData();
+    /// Write the XML file
+    static void write(const LocalMeshData& mesh_data, std::ostream& outfile,
+                      unsigned int indentation_level=0);
 
-    void start_element(const xmlChar* name, const xmlChar** attrs);
-    void end_element(const xmlChar* name);
 
-  private:
-
-    enum ParserState {OUTSIDE,
-                      INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
-                      INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
-                      INSIDE_DATA_ENTRY,
-                      DONE};
-
-    // Callbacks for reading XML data
-    void read_mesh        (const xmlChar* name, const xmlChar** attrs);
-    void read_vertices    (const xmlChar* name, const xmlChar** attrs);
-    void read_vertex      (const xmlChar* name, const xmlChar** attrs);
-    void read_cells       (const xmlChar* name, const xmlChar** attrs);
-    void read_interval    (const xmlChar* name, const xmlChar** attrs);
-    void read_triangle    (const xmlChar* name, const xmlChar** attrs);
-    void read_tetrahedron (const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
-    void read_array        (const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
-    void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
-
-    // Number of local vertices
-    uint num_local_vertices() const;
-
-    // Number of local cells
-    uint num_local_cells() const;
-
-    // Geometrical mesh dimesion
-    uint gdim;
-
-    // Topological mesh dimesion
-    uint tdim;
-
-    // Range for vertices
-    std::pair<uint, uint> vertex_range;
-
-    // Range for cells
-    std::pair<uint, uint> cell_range;
-
-    // Result object to build
-    LocalMeshData& mesh_data;
-
-    // Name of the array
-    std::string data_entry_name;
-
-    // State of parser
-    ParserState state;
-
-    // Use for reading embedded array data
-    boost::scoped_ptr<XMLArray> xml_array;
 
   };
 
 }
+
 #endif

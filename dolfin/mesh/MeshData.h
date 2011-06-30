@@ -161,9 +161,9 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Friends
-    friend class XMLFile;
-    friend class XMLMeshData;
-    friend class MeshPartitioning; 
+    friend class XMLMesh;
+    friend class OldXMLMeshData;
+    friend class MeshPartitioning;
 
   private:
 

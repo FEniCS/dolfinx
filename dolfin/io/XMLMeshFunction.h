@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ola Skavhaug
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,74 +15,133 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-10
-// Last changed: 2009-09-08
+// First added:  2011-06-30
+// Last changed:
 
 #ifndef __XMLMESHFUNCTION_H
 #define __XMLMESHFUNCTION_H
 
+#include <iomanip>
 #include <iostream>
-#include <map>
-#include "dolfin/common/types.h"
-#include "XMLHandler.h"
+#include <ostream>
+#include <string>
+
+#include "pugixml.hpp"
+
+#include "dolfin/mesh/MeshFunction.h"
+#include "XMLIndent.h"
+#include "XMLMesh.h"
 
 namespace dolfin
 {
 
-  class Mesh;
-  template<class T> class MeshFunction;
-  class XMLSkipper;
-
-  class XMLMeshFunction : public XMLHandler
+  class XMLMeshFunction
   {
   public:
 
-    XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser);
-    XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim);
+    // Read XML MeshFunction
+    template <class T>
+    static void read(MeshFunction<T>& mesh_function, const std::string type,
+                     const pugi::xml_node xml_mesh);
 
-    XMLMeshFunction(MeshFunction<unsigned int>& umf, XMLFile& parser);
-    XMLMeshFunction(MeshFunction<unsigned int>& umf, XMLFile& parser, uint size, uint dim);
-
-    XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser);
-    XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim);
-
-    /// Destructor
-    ~XMLMeshFunction();
-
-    void start_element (const xmlChar *name, const xmlChar **attrs);
-    void end_element   (const xmlChar *name);
-
-    /// Write to file
-    static void write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
-    static void write(const MeshFunction<unsigned int>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
-    static void write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
-
-  private:
-
-    enum parser_state { OUTSIDE_MESHFUNCTION, INSIDE_MESHFUNCTION, DONE };
-    enum mesh_function_type { INT, UINT, DOUBLE, UNSET };
-
-    void start_mesh_function(const xmlChar *name, const xmlChar **attrs);
-    void read_entity (const xmlChar *name, const xmlChar **attrs);
-
-    void build_mapping(uint entity_dimension);
-
-    MeshFunction<int>*  imf;
-    MeshFunction<uint>* umf;
-    MeshFunction<double>* dmf;
-    XMLSkipper* xml_skipper;
-    const Mesh& mesh;
-    std::map<uint, uint> glob2loc; // In parallel, use this global to local mapping to assign values
-
-
-    parser_state state;
-    mesh_function_type mf_type;
-
-    uint size;
-    uint dim;
+    /// Write the XML MeshFunction
+    template <class T>
+    static void write(const MeshFunction<T>& mesh_function,
+                      const std::string type,
+                      std::ostream& outfile, unsigned int indentation_level=0,
+                      bool write_mesh=true);
 
   };
 
-}
+  //---------------------------------------------------------------------------
+  template <class T>
+  inline void XMLMeshFunction::read(MeshFunction<T>& mesh_function,
+                                    const std::string type,
+                                    const pugi::xml_node xml_mesh)
+  {
+    const pugi::xml_node xml_meshfunction = xml_mesh.child("meshfunction");
+    if (!xml_meshfunction)
+      std::cout << "Not a DOLFIN MeshFunction." << std::endl;
 
+    // Get type and size
+    const std::string file_data_type = xml_meshfunction.attribute("type").value();
+    const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
+    const unsigned int size = xml_meshfunction.attribute("size").as_uint();
+
+    // Check that types match
+    if (type != file_data_type)
+      error("Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".", file_data_type.c_str(), type.c_str());
+
+    // Initialise MeshFunction
+    mesh_function.init(dim, size);
+
+    // Iterate over entries (choose data type)
+    if (type == "uint")
+    {
+      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+      {
+        const unsigned int index = it->attribute("index").as_uint();
+        assert(index < size);
+        mesh_function[index] = it->attribute("value").as_uint();
+      }
+    }
+    else if (type == "int")
+    {
+      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+      {
+        const unsigned int index = it->attribute("index").as_uint();
+        assert(index < size);
+        mesh_function[index] = it->attribute("value").as_int();
+      }
+    }
+    else if (type == "double")
+    {
+      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+      {
+        const unsigned int index = it->attribute("index").as_uint();
+        assert(index < size);
+        mesh_function[index] = it->attribute("value").as_double();
+      }
+    }
+    else if (type == "bool")
+    {
+      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+      {
+        const unsigned int index = it->attribute("index").as_uint();
+        assert(index < size);
+        mesh_function[index] = it->attribute("value").as_bool();
+      }
+    }
+    else
+      error("Type unknown in XMLMeshFunction::read.");
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  inline void XMLMeshFunction::write(const MeshFunction<T>& mf,
+                                     const std::string type,
+                                     std::ostream& outfile,
+                                     unsigned int indentation_level,
+                                     bool write_mesh)
+  {
+    // Write mesh if requested
+    if (write_mesh)
+      XMLMesh::write(mf.mesh(), outfile, indentation_level);
+
+    // Write MeshFunction
+    XMLIndent indent(indentation_level);
+    outfile << indent();
+    outfile << "<meshfunction type=\"" << type << "\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
+
+    ++indent;
+    for (uint i = 0; i < mf.size(); ++i)
+    {
+      outfile << indent();
+      outfile << "<entity index=\"" << i << "\" value=\"" << mf[i] << "\"/>" << std::endl;
+    }
+    --indent;
+    outfile << indent() << "</meshfunction>" << std::endl;
+  }
+  //---------------------------------------------------------------------------
+
+}
 #endif

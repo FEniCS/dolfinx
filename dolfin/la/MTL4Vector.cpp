@@ -197,6 +197,12 @@ void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
+void MTL4Vector::gather_on_zero(Array<double>& x) const
+{
+  not_working_in_parallel("MTL4Vector::gather_on_zero)");
+  get_local(x);
+}
+//-----------------------------------------------------------------------------
 const mtl4_vector& MTL4Vector::vec() const
 {
   return x;

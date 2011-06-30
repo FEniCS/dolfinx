@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg and Ola Skavhaug
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,68 +15,54 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-06
-// Last changed: 2011-03-28
+// First added:  2003-07-15
+// Last changed: 2006-05-23
 
-#ifndef __XML_MESH_H
-#define __XML_MESH_H
+#ifndef __XMLMESH_H
+#define __XMLMESH_H
 
-#include <boost/scoped_ptr.hpp>
-#include <dolfin/la/Vector.h>
-#include <dolfin/mesh/MeshEditor.h>
-#include "XMLVector.h"
-#include "XMLHandler.h"
+#include <ostream>
+#include <string>
+#include <vector>
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
 
   class Mesh;
-  template<class T> class MeshFunction;
-  class XMLMeshData;
+  class MeshData;
 
-  class XMLMesh : public XMLHandler
+  class XMLMesh
   {
   public:
 
-    XMLMesh(Mesh& mesh, XMLFile& parser);
-    XMLMesh(Mesh& mesh, XMLFile& parser, std::string celltype, uint dim);
-    ~XMLMesh();
+    /// Read XML vector
+    static void read(Mesh& mesh, const pugi::xml_node xml_dolfin);
 
-    void start_element (const xmlChar* name, const xmlChar** attrs);
-    void end_element   (const xmlChar* name);
+    /// Write the XML file
+    static void write(const Mesh& mesh, std::ostream& outfile,
+                      unsigned int indentation_level=0);
 
-    static void write(const Mesh& mesh, std::ostream& outfile, uint indentation_level=0);
-
-    void read_mesh_tag(const xmlChar* name, const xmlChar** attrs);
 
   private:
 
-    enum parser_state {OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_HIGHERORDERVERTICES, INSIDE_CELLS,
-                       INSIDE_HIGHERORDERCELLS, INSIDE_VECTOR, DONE};
+    // Read mesh
+    static void read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh);
 
-    void read_vertices                  (const xmlChar* name, const xmlChar** attrs);
-    void read_cells                     (const xmlChar* name, const xmlChar** attrs);
-    void read_higher_order_vertices     (const xmlChar* name, const xmlChar** attrs);
-    void read_higher_order_cells        (const xmlChar* name, const xmlChar** attrs);
-    void read_vertex                    (const xmlChar* name, const xmlChar** attrs);
-    void read_interval                  (const xmlChar* name, const xmlChar** attrs);
-    void read_triangle                  (const xmlChar* name, const xmlChar** attrs);
-    void read_tetrahedron               (const xmlChar* name, const xmlChar** attrs);
-    void read_higher_order_vertex       (const xmlChar* name, const xmlChar** attrs);
-    void read_higher_order_cell_data    (const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_entity               (const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_data                 (const xmlChar* name, const xmlChar** attrs);
+    // Read mesh data
+    static void read_data(MeshData& data, const pugi::xml_node xml_mesh);
 
-    void close_mesh();
+    // Read array
+    static void read_array_uint(std::vector<unsigned int>& array,
+                                const pugi::xml_node xml_array);
 
-    Mesh& _mesh;
-    parser_state state;
-    MeshEditor editor;
-
-    MeshFunction<uint>* f;
-    std::vector<uint>* a;
-
-    boost::scoped_ptr<XMLMeshData> xml_mesh_data;
+    // Write the MeshData
+    static void write_data(const MeshData& data, std::ostream& outfile,
+                           unsigned int indentation_level=0);
 
   };
 

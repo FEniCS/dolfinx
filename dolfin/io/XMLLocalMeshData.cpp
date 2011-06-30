@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ola Skavhaug
+// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,417 +15,181 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-11-28
-// Last changed: 2011-05-30
-//
-// Modified by Anders Logg, 2008.
-// Modified by Kent-Andre Mardal, 2011.
+// First added:  2002-12-06
+// Last changed: 2006-10-16
 
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <vector>
 #include <boost/assign/list_of.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
+
+#include "pugixml.hpp"
+
+#include "dolfin/common/Array.h"
+#include "dolfin/common/MPI.h"
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/mesh/Cell.h"
+#include "dolfin/mesh/CellType.h"
+#include "dolfin/mesh/LocalMeshData.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshData.h"
+#include "dolfin/mesh/MeshEditor.h"
+#include "dolfin/mesh/Point.h"
+#include "dolfin/mesh/Vertex.h"
+#include "XMLIndent.h"
+#include "XMLMeshFunction.h"
 #include "XMLLocalMeshData.h"
-#include "XMLArray.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser)
-  : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
+void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_dolfin)
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-XMLLocalMeshData::~XMLLocalMeshData()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
-{
-  switch (state)
-  {
-  case OUTSIDE:
+  std::cout << "Using new-style local mesh data reading." << std::endl;
 
-    if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
-    {
-      read_mesh(name, attrs);
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_MESH:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
-    {
-      read_vertices(name, attrs);
-      state = INSIDE_VERTICES;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
-    {
-      read_cells(name, attrs);
-      state = INSIDE_CELLS;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
-    {
-      state = INSIDE_DATA;
-      read_mesh_data(name, attrs);
-    }
-
-    break;
-
-  case INSIDE_VERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "vertex") == 0)
-      read_vertex(name, attrs);
-
-    break;
-
-  case INSIDE_CELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
-      read_interval(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
-      read_triangle(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
-      read_tetrahedron(name, attrs);
-
-    break;
-
-  case INSIDE_DATA:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
-    {
-      read_mesh_function(name, attrs);
-      state = INSIDE_MESH_FUNCTION;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
-    {
-      read_array(name, attrs);
-      state = INSIDE_ARRAY;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
-    {
-      read_data_entry(name, attrs);
-      state = INSIDE_DATA_ENTRY;
-    }
-
-    break;
-
-  case INSIDE_DATA_ENTRY:
-    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
-    {
-      read_array(name, attrs);
-      state = INSIDE_ARRAY;
-    }
-
-    break;
-
-  default:
-    error("Inconsistent state in XML reader: %d.", state);
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::end_element(const xmlChar* name)
-{
-  switch (state)
-  {
-
-  case INSIDE_MESH:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
-    {
-      state = DONE;
-      release();
-    }
-
-    break;
-
-  case INSIDE_VERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_CELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_DATA:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_MESH_FUNCTION:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
-    {
-      state = INSIDE_DATA;
-    }
-
-    break;
-
-  case INSIDE_DATA_ENTRY:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
-    {
-      state = INSIDE_DATA;
-    }
-
-
-  case INSIDE_ARRAY:
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
-    {
-      state = INSIDE_DATA_ENTRY;
-    }
-
-    if (xmlStrcasecmp(name, (xmlChar* ) "data_entry") == 0)
-    {
-      state = INSIDE_DATA;
-    }
-
-
-    break;
-
-  default:
-    error("Closing XML tag '%s', but state is %d.", name, state);
-  }
-
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
-{
-  // Clear all data
+  // Clear mesh data
   mesh_data.clear();
 
-  // Parse values
-  std::string type = parse_string(name, attrs, "celltype");
-  gdim = parse_uint(name, attrs, "dim");
-
-  // Create cell type to get topological dimension
-  boost::scoped_ptr<CellType> cell_type(CellType::create(type));
-  tdim = cell_type->dim();
-
-  // Get number of entities for topological dimension 0
-  mesh_data.tdim = tdim;
-  mesh_data.gdim = gdim;
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
-{
-  // Parse the number of global vertices
-  const uint num_global_vertices = parse_uint(name, attrs, "size");
-  mesh_data.num_global_vertices = num_global_vertices;
-
-  // Compute vertex range
-  vertex_range = MPI::local_range(num_global_vertices);
-
-  // Reserve space for local-to-global vertex map and vertex coordinates
-  mesh_data.vertex_indices.reserve(num_local_vertices());
-  mesh_data.vertex_coordinates.reserve(num_local_vertices());
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
-{
-  // Read vertex index
-  const uint v = parse_uint(name, attrs, "index");
-
-  // Skip vertices not in range for this process
-  if (v < vertex_range.first || v >= vertex_range.second)
-    return;
-
-  // Parse vertex coordinates
-  switch (gdim)
+  // Check that we have an XML mesh
+  pugi::xml_node xml_mesh(0);
+  if (xml_dolfin)
   {
-  case 1:
+    xml_mesh = xml_dolfin.child("mesh");
+    if (!xml_mesh)
+      error("Not a DOLFIN Mesh file.");
+  }
+
+  // Some process rank checks
+  if (!xml_dolfin && MPI::process_number() == 0)
+    error("XMLLocalMeshData::read must read from root process.");
+  if (xml_dolfin && MPI::process_number() != 0)
+    error("XMLLocalMeshData::read must read from root process only.");
+
+  // Get geometric and topological dimensions and broadcast from root
+  if (xml_mesh)
+  {
+    // Get cell type and geometric dimension
+    const std::string cell_type_str = xml_mesh.attribute("celltype").value();
+    mesh_data.gdim = xml_mesh.attribute("dim").as_uint();
+
+    // Get topological dimension and number of vertices per cell
+    boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
+    mesh_data.tdim = cell_type->dim();
+    mesh_data.num_vertices_per_cell = cell_type->num_entities(0);
+
+    // Read number of global vertices
+    pugi::xml_node xml_vertices = xml_mesh.child("vertices");
+    assert(xml_vertices);
+    mesh_data.num_global_vertices = xml_vertices.attribute("size").as_uint();
+
+    // Read number of global cells
+    pugi::xml_node xml_cells = xml_mesh.child("cells");
+    assert(xml_vertices);
+    mesh_data.num_global_cells = xml_cells.attribute("size").as_uint();
+  }
+  MPI::broadcast(mesh_data.gdim, 0);
+  MPI::broadcast(mesh_data.tdim, 0);
+  MPI::broadcast(mesh_data.num_global_vertices, 0);
+  MPI::broadcast(mesh_data.num_global_cells, 0);
+  MPI::broadcast(mesh_data.num_vertices_per_cell, 0);
+
+  cout << "Dims: " << mesh_data.gdim << "  " << mesh_data.tdim <<  endl;
+
+  // Read vertex data
+  if (xml_mesh)
+  {
+    // Get vertices xml node
+    pugi::xml_node xml_vertices = xml_mesh.child("vertices");
+    assert(xml_vertices);
+
+    // Read vertex data
+    const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
+
+    // Iterate over vertices and add to mesh
+    mesh_data.vertex_indices.reserve(num_vertices);
+    mesh_data.vertex_coordinates.reserve(num_vertices);
+    for (pugi::xml_node_iterator it = xml_vertices.begin(); it != xml_vertices.end(); ++it)
     {
-      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"));
+      const unsigned int index = it->attribute("index").as_uint();
+      std::vector<double> coordinate;
+      switch (mesh_data.gdim)
+      {
+      case 1:
+        coordinate = boost::assign::list_of(it->attribute("x").as_double());
+        break;
+      case 2:
+        coordinate = boost::assign::list_of(it->attribute("x").as_double())
+                                           (it->attribute("y").as_double());
+        break;
+      case 3:
+        coordinate = boost::assign::list_of(it->attribute("x").as_double())
+                                           (it->attribute("y").as_double())
+                                           (it->attribute("z").as_double());
+      break;
+      default:
+        error("Geometric dimension of mesh must be 1, 2 or 3.");
+      }
       mesh_data.vertex_coordinates.push_back(coordinate);
+      mesh_data.vertex_indices.push_back(index);
     }
-  break;
-  case 2:
+  }
+  else
+  {
+    mesh_data.vertex_indices.clear();
+    mesh_data.vertex_coordinates.clear();
+  }
+  cout << "Finished vertex input " << mesh_data.tdim <<  endl;
+
+  // Read cells data
+  if (xml_mesh)
+  {
+    // Get cells node
+    pugi::xml_node xml_cells = xml_mesh.child("cells");
+    assert(xml_cells);
+
+    // Get number of cells and init editor
+    const unsigned int num_cells = xml_cells.attribute("size").as_uint();
+
+    // Get cell type and geometric dimension
+    const std::string cell_type_str = xml_mesh.attribute("celltype").value();
+    boost::scoped_ptr<const CellType> cell_type(CellType::create(cell_type_str));
+    const unsigned int num_vertices_per_cell = cell_type->num_vertices(0);
+
+    mesh_data.cell_vertices.reserve(num_cells);
+    mesh_data.global_cell_indices.reserve(num_cells);
+
+    // Create list of vertex index attribute names
+    std::vector<std::string> v_str(num_vertices_per_cell);
+    for (uint i = 0; i < num_vertices_per_cell; ++i)
+      v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
+
+    // Iterate over cells and add to mesh
+    std::vector<unsigned int> v(num_vertices_per_cell);
+    for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
     {
-      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"))
-                                                                   (parse_float(name, attrs, "y"));
-      mesh_data.vertex_coordinates.push_back(coordinate);
+      const unsigned int index = it->attribute("index").as_uint();
+      for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
+        v[i] = it->attribute(v_str[i].c_str()).as_uint();
+
+      mesh_data.cell_vertices.push_back(v);
+      mesh_data.global_cell_indices.push_back(index);
     }
-    break;
-  case 3:
-    {
-      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"))
-                                                                   (parse_float(name, attrs, "y"))
-                                                                   (parse_float(name, attrs, "z"));
-      mesh_data.vertex_coordinates.push_back(coordinate);
-    }
-    break;
-  default:
-    error("Geometric dimension of mesh must be 1, 2 or 3.");
   }
-
-  // Store global vertex numbering
-  mesh_data.vertex_indices.push_back(v);
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
-{
-  // Parse the number of global cells
-  const uint num_global_cells = parse_uint(name, attrs, "size");
-  mesh_data.num_global_cells = num_global_cells;
-
-  // Compute cell range
-  cell_range = MPI::local_range(num_global_cells);
-
-  // Reserve space for cells
-  mesh_data.cell_vertices.reserve(num_local_cells());
-
-  // Reserve space for global cell indices
-  mesh_data.global_cell_indices.reserve(num_local_cells());
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
-{
-  // Check dimension
-  if (tdim != 1)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
-
-  // Read cell index
-  const uint c = parse_uint(name, attrs, "index");
-
-  // Skip cells not in range for this process
-  if (c < cell_range.first || c >= cell_range.second)
-    return;
-
-  // Parse values
-  std::vector<uint> cell(2);
-  cell[0] = parse_uint(name, attrs, "v0");
-  cell[1] = parse_uint(name, attrs, "v1");
-
-  // Add cell
-  mesh_data.cell_vertices.push_back(cell);
-
-  // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
-{
-  // Check dimension
-  if (tdim != 2)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
-
-  // Read cell index
-  const uint c = parse_uint(name, attrs, "index");
-
-  // Skip cells not in range for this process
-  if (c < cell_range.first || c >= cell_range.second)
-    return;
-
-  // Parse values
-  std::vector<uint> cell(3);
-  cell[0] = parse_uint(name, attrs, "v0");
-  cell[1] = parse_uint(name, attrs, "v1");
-  cell[2] = parse_uint(name, attrs, "v2");
-
-  // Add cell
-  mesh_data.cell_vertices.push_back(cell);
-
-  // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
-{
-  // Check dimension
-  if (tdim != 3)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
-
-  // Read cell index
-  const uint c = parse_uint(name, attrs, "index");
-
-  // Skip cells not in range for this process
-  if (c < cell_range.first || c >= cell_range.second)
-    return;
-
-  // Parse values
-  std::vector<uint> cell(4);
-  cell[0] = parse_uint(name, attrs, "v0");
-  cell[1] = parse_uint(name, attrs, "v1");
-  cell[2] = parse_uint(name, attrs, "v2");
-  cell[3] = parse_uint(name, attrs, "v3");
-
-  // Add cell
-  mesh_data.cell_vertices.push_back(cell);
-
-  // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
-{
-  error("Local mesh data can not read mesh functions.");
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
-{
-  std::string array_type = parse_string(name, attrs, "type");
-  uint size = parse_uint(name, attrs, "size");
-
-  if (array_type.compare("int") == 0)
+  else
   {
-    // FIXME: Add support for more types in MeshData?
-    std::vector<int>* ux = new std::vector<int>();
-    xml_array.reset(new XMLArray(*ux, parser, size));
-    xml_array->handle();
+    mesh_data.cell_vertices.clear();
+    mesh_data.global_cell_indices.clear();
   }
-  else if (array_type.compare("uint") == 0)
-  {
-    //FIXME: this is uint
-    std::vector<unsigned int>* ux = new std::vector<unsigned int>();
-    xml_array.reset(new XMLArray(*ux, parser, size));
-    xml_array->handle();
-    mesh_data.arrays[data_entry_name] = ux;
-  }
-  else if (array_type.compare("double") == 0)
-  {
-    // FIXME: Add support for more types in MeshData?
-    std::vector<double>* dx = new std::vector<double>();
-    xml_array.reset(new XMLArray(*dx, parser, size));
-    xml_array->handle();
-  }
+  cout << "Finished cell input " << mesh_data.tdim <<  endl;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+void XMLLocalMeshData::write(const LocalMeshData& mesh_data, std::ostream& outfile,
+                    uint indentation_level)
 {
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)
-{
-  data_entry_name = parse_string(name, attrs, "name");
-}
-//-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshData::num_local_vertices() const
-{
-  return vertex_range.second - vertex_range.first;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshData::num_local_cells() const
-{
-  return cell_range.second - cell_range.first;
+  error("Writing of mesh LocalData to XML files is not supported.");
 }
 //-----------------------------------------------------------------------------

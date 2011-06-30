@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Ola Skavhaug and Anders Logg
+// Copyright (C) 2004-2011 Ola Skavhaug, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,72 +16,36 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-16
-// Last changed: 2011-03-28
+// Last changed: 2011-06-30
 
-#include <dolfin/log/dolfin_log.h>
+#include "pugixml.hpp"
+
+#include <dolfin/log/log.h>
+#include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/Parameters.h>
 #include "XMLIndent.h"
-#include "XMLFile.h"
 #include "XMLParameters.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLParameters::XMLParameters(Parameters& parameters, XMLFile& parser, bool inside)
-  : XMLHandler(parser), parameters(parameters), state(OUTSIDE)
+void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
 {
-  // Note that we don't clear the parameters here, only add new parameters
-  // or overwrite existing parameters
+  // Check that we have a XML Parameters
+  const pugi::xml_node xml_parameters = xml_dolfin.child("parameters");
+  if (!xml_parameters)
+    error("Not a DOLFIN Parameters file.");
 
-  if (inside)
-    state = INSIDE_PARAMETERS;
-}
-//-----------------------------------------------------------------------------
-void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
-{
-  switch (state)
-  {
-  case OUTSIDE:
+  // Check that there is only one root parameters set
+  if (xml_dolfin.first_child().next_sibling())
+    error("Two parameter sets (not nested) are defined in XML file.");
 
-    if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
-    {
-      read_parameters(name, attrs);
-      state = INSIDE_PARAMETERS;
-    }
+  // Get name of root parameters and rename paramter set
+  const std::string name = xml_parameters.attribute("name").value();
+  p.rename(name);
 
-    break;
-
-  case INSIDE_PARAMETERS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "parameter") == 0)
-      read_parameter(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
-      read_nested_parameters(name, attrs);
-
-    break;
-
-  default:
-    ;
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLParameters::end_element(const xmlChar *name)
-{
-  switch (state)
-  {
-  case INSIDE_PARAMETERS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "parameters") == 0)
-    {
-      state = DONE;
-      release();
-    }
-
-    break;
-
-  default:
-    ;
-  }
+  // Read parameters
+  read_parameter_nest(p, xml_parameters);
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::write(const Parameters& parameters,
@@ -142,82 +106,51 @@ void XMLParameters::write(const Parameters& parameters,
   outfile << indent() << "</parameters>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLParameters::read_parameters(const xmlChar *name, const xmlChar **attrs)
+void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_node)
 {
-  // Parse values
-  const std::string _name = parse_string(name, attrs, "name");
+  // Iterate over parameters
+  for (pugi::xml_node_iterator it = xml_node.begin(); it != xml_node.end(); ++it)
+  {
+    // Get name (parameters or parameter)
+    const std::string node_name = it->name();
+    if (node_name == "parameters")
+    {
+      // Get name of parameters set
+      const std::string name = it->attribute("name").value();
 
-  // Set values
-  parameters.rename(_name);
+      // Create set, add set and then read parameters
+      Parameters nested_parameters(name);
+      p.add(nested_parameters);
+      read_parameter_nest(p(name), *it);
+    }
+    else if (node_name == "parameter")
+    {
+      const std::string key = it->attribute("key").value();
+      const std::string type = it->attribute("type").value();
+      const pugi::xml_attribute value = it->attribute("value");
+      if (type == "double")
+        XMLParameters::add_parameter(p, key, value.as_double());
+      else if (type == "int")
+        XMLParameters::add_parameter(p, key, value.as_int());
+      else if (type == "bool")
+        XMLParameters::add_parameter(p, key, value.as_bool());
+      else if (type == "string")
+        XMLParameters::add_parameter(p, key, value.value());
+      else
+        error("Parameter type \"%s\" unknown in XMLParameters::read.", type.c_str());
+    }
+    else
+      error("Unknown field in XML Parameter file");
+  }
 }
 //-----------------------------------------------------------------------------
-void XMLParameters::read_nested_parameters(const xmlChar *name,
-                                           const xmlChar **attrs)
+template<class T>
+void XMLParameters::add_parameter(Parameters& p, const std::string& key,
+                                  T value)
 {
-  // Parse values
-  const std::string _name = parse_string(name, attrs, "name");
-
-  // Add nested parameters
-  Parameters nested_parameters(_name);
-  parameters.add(nested_parameters);
-
-  // Let nested object continue parsing
-  xml_nested_parameters.reset(new XMLParameters(parameters(_name), parser, true));
-  xml_nested_parameters->handle();
-}
-//-----------------------------------------------------------------------------
-void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
-{
-  // Parse values
-  const std::string key = parse_string(name, attrs, "key");
-  const std::string type = parse_string(name, attrs, "type");
-  const std::string string_value = parse_string(name, attrs, "value");
-
-  // Set parameter
-  if (type == "double")
-  {
-    std::istringstream ss(string_value);
-    double value;
-    ss >> value;
-    if (parameters.has_key(key))
-      parameters[key] = value;
-    else
-      parameters.add(key, value);
-  }
-  else if (type == "int")
-  {
-    std::istringstream ss(string_value);
-    int value;
-    ss >> value;
-    if (parameters.has_key(key))
-      parameters[key] = value;
-    else
-      parameters.add(key, value);
-  }
-  else if (type == "bool")
-  {
-    bool value = true;
-    if (string_value == "true")
-      value = true;
-    else if (string_value == "false" )
-      value = false;
-    else
-      warning("Illegal value for boolean parameter: %s.", key.c_str());
-
-    if (parameters.has_key(key))
-      parameters[key] = value;
-    else
-      parameters.add(key, value);
-  }
-  else if (type == "string")
-  {
-    std::string value = string_value;
-    if (parameters.has_key(key))
-      parameters[key] = value;
-    else
-      parameters.add(key, value);
-  }
+  if (p.has_key(key))
+    p[key] = value;
   else
-    warning("Illegal parameter type: %s", type.c_str());
+    p.add(key, value);
 }
 //-----------------------------------------------------------------------------

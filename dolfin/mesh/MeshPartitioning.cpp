@@ -565,17 +565,23 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
 void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
                                         const std::vector<uint>& cell_partition)
 {
-  // This function takes the partition computed by ParMETIS (which tells us
-  // to which process each of the local cells stored in LocalMeshData on this
-  // process belongs. We use MPI::distribute to redistribute all cells (the
-  // global vertex indices of all cells).
+  // This function takes the partition computed by the partitioner
+  // (which tells us to which process each of the local cells stored in
+  // LocalMeshData on this process belongs. We use MPI::distribute to
+  // redistribute all cells (the global vertex indices of all cells).
 
+  // Get global cell indices
   std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
 
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
   assert(global_cell_indices.size() == num_local_cells);
-  const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
+  const uint num_cell_vertices = mesh_data.num_vertices_per_cell;
+  if (mesh_data.cell_vertices.size() > 0)
+  {
+    if (mesh_data.cell_vertices[0].size() != num_cell_vertices)
+      error("Size mismatch in MeshPartitioning::distribute_cells on process %d.", MPI::process_number());
+  }
 
   // Build array of cell-vertex connectivity and partition vector
   // Distribute the global cell number as well
@@ -661,8 +667,8 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // Distribute vertex coordinates
   std::vector<double> vertex_coordinates;
   std::vector<uint> vertex_coordinates_partition;
-  const uint vertex_size =  mesh_data.vertex_coordinates[0].size();
-  std::pair<uint, uint> local_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
+  const uint vertex_size =  mesh_data.gdim;
+  const std::pair<uint, uint> local_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
   for (uint i = 0; i < vertex_partition.size(); ++i)
   {
     assert(vertex_indices[i] >= local_vertex_range.first && vertex_indices[i] < local_vertex_range.second);

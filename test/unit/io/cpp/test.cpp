@@ -18,7 +18,7 @@
 // First added:  2007-05-29
 // Last changed: 2007-05-29
 //
-// Unit tests for the graph library 
+// Unit tests for the graph library
 
 #include <dolfin.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -33,7 +33,7 @@ class LocalMeshDataIO : public CppUnit::TestFixture
   CPPUNIT_TEST(testRead);
   CPPUNIT_TEST_SUITE_END();
 
-public: 
+public:
 
   void testRead()
   {
@@ -43,7 +43,7 @@ public:
     file >> localdata;
   }
 };
-   
+
 
 CPPUNIT_TEST_SUITE_REGISTRATION(LocalMeshDataIO);
 

@@ -273,9 +273,7 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  const uint local_size = x->MyLength();
-  if (values.size() != local_size)
-    error("EpetraVector::get_local: length of values array is not equal to local vector size.");
+  values.resize(x->MyLength());
 
   const int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
@@ -426,6 +424,21 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
   // Copy values into x
   for (uint i = 0; i < _size; ++i)
     x[i] = (_y)[0][i];
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::gather_on_zero(Array<double>& x) const
+{
+  // FIXME: Is there an Epetra function for this?
+
+  Array<uint> indices(0);
+  if (MPI::process_number() == 0)
+  {
+    indices.resize(size());
+    for (uint i = 0; i < size(); ++i)
+      indices[i] = i;
+  }
+
+  gather(x, indices);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_BlockMap& map)
