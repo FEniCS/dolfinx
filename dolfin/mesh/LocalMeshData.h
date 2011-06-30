@@ -122,7 +122,7 @@ namespace dolfin
     /// Topological dimension
     uint tdim;
 
-    // A map from named mesh data to arrays 
+    // A map from named mesh data to arrays
     std::map<std::string, std::vector<uint>* > arrays;
 
     // Friends
