@@ -1,5 +1,7 @@
+ - Move XML SAX parser to libxml2 SAX2 interface
+ - Simplify XML io
  - Change interface for variational problems, class VariationalProblem removed
- - Add solve interface: solve(a == L), solve(F == 0) 
+ - Add solve interface: solve(a == L), solve(F == 0)
  - Add new classes Linear/NonlinearVariationalProblem
  - Add new classes Linear/NonlinearVariationalSolver
  - Default argument to variables in Expression are passed as kwargs in the Python interface
