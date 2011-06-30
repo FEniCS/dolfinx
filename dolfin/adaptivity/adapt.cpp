@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-06-22
+// Last changed: 2011-06-30
 
 #include <map>
 
@@ -73,6 +73,11 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
   boost::shared_ptr<Mesh> refined_mesh(new Mesh());
   UniformMeshRefinement::refine(*refined_mesh, mesh);
 
+  // Initialize the entities initialized in mesh in refined_mesh
+  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+    if (mesh.num_entities(d) != 0)
+      refined_mesh->init(d);
+
   // Set parent / child
   set_parent_child(mesh, refined_mesh);
 
@@ -92,6 +97,11 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
   // Call refinement algorithm
   boost::shared_ptr<Mesh> refined_mesh(new Mesh());
   LocalMeshRefinement::refine(*refined_mesh, mesh, cell_markers);
+
+  // Initialize the entities initialized in mesh in refined_mesh
+  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+    if (mesh.num_entities(d) != 0)
+      refined_mesh->init(d);
 
   // Set parent / child
   set_parent_child(mesh, refined_mesh);
