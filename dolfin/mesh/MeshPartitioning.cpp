@@ -90,10 +90,6 @@ void MeshPartitioning::partition(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
-  MPI::barrier();
-  cout << "Partition mesh" << endl;
-  MPI::barrier();
-
   // Compute cell partition
   std::vector<uint> cell_partition;
   const std::string partitioner = parameters["mesh_partitioner"];
@@ -104,26 +100,14 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   else
     error("Unknown mesh partition '%s'.", partitioner.c_str());
 
-  MPI::barrier();
-  cout << "++++Call distribute cells: " << cell_partition.size() << endl;
-  MPI::barrier();
-
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   distribute_cells(mesh_data, cell_partition);
-
-  MPI::barrier();
-  cout << "Distribute vertices" << endl;
-  MPI::barrier();
 
   // Distribute vertices
   std::map<uint, uint> vertex_global_to_local;
   distribute_vertices(mesh_data, vertex_global_to_local);
   timer.stop();
-
-  MPI::barrier();
-  cout << "Build mesh" << endl;
-  MPI::barrier();
 
   // Build mesh
   build_mesh(mesh, mesh_data, vertex_global_to_local);
@@ -586,8 +570,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // LocalMeshData on this process belongs. We use MPI::distribute to
   // redistribute all cells (the global vertex indices of all cells).
 
-  cout << "Distribute cells" << endl;
-
   // Get global cell indices
   std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
 
@@ -641,7 +623,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
       cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];
     mesh_data.cell_vertices.push_back(cell);
   }
-  cout << "End distribute cells" << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,

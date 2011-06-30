@@ -90,7 +90,7 @@ void XMLFile::operator>> (LocalMeshData& input_data)
   xml_object.read();
 
   /*
-  std::cout << "Read local mesh data" << std::endl;
+  // Local (DOM) version
   if (MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
