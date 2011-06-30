@@ -18,6 +18,8 @@
 // First added:  2011-06-30
 // Last changed: 2011-06-30
 
+#include <dolfin/fem/Form.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/adaptivity/AdaptiveLinearVariationalSolver.h>
 #include <dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h>
 
@@ -66,11 +68,65 @@ void dolfin::solve(const Equation& equation,
     LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
     AdaptiveLinearVariationalSolver solver(problem);
     solver.solve(tol, M);
-  } else
-  {
+  }
+
+  // Raise error if the problem is nonlinear (for now)
+  dolfin_error("solve.cpp",
+               "solve nonlinear variational problem adaptively",
+               "solve not implemented without Jacobian");
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   const Form& J,
+                   const double tol,
+                   GoalFunctional& M)
+{
+  // Create empty list of boundary conditions
+  std::vector<const BoundaryCondition*> bcs;
+
+  // Call common adaptive solve function with Jacobian
+  solve(equation, u, bcs, J, tol, M);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   const BoundaryCondition& bc,
+                   const Form& J,
+                   const double tol,
+                   GoalFunctional& M)
+{
+  // Create list containing single boundary condition
+  std::vector<const BoundaryCondition*> bcs;
+  bcs.push_back(&bc);
+
+  // Call common adaptive solve function with Jacobian
+  solve(equation, u, bcs, J, tol, M);
+}
+//-----------------------------------------------------------------------------
+void dolfin::solve(const Equation& equation,
+                   Function& u,
+                   std::vector<const BoundaryCondition*> bcs,
+                   const Form& J,
+                   const double tol,
+                   GoalFunctional& M)
+
+{
+  // Raise error if problem is linear
+  if (equation.is_linear())
     dolfin_error("solve.cpp",
                  "solve nonlinear variational problem adaptively",
-                 "solve not implemented without Jacobian");
-  }
+                 "Variational problem is linear");
+
+  // Define nonlinear problem
+  NonlinearVariationalProblem problem(*equation.lhs(), equation.rhs_int(), u,
+                                      bcs);
+  problem.set_jacobian(J);
+
+  // Solve nonlinear problem adaptively
+  AdaptiveNonlinearVariationalSolver solver(problem);
+  solver.solve(tol, M);
 }
 //-----------------------------------------------------------------------------

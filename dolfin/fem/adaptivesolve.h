@@ -28,6 +28,7 @@ namespace dolfin
 
   // Forward declarations
   class Equation;
+  class Form;
   class Function;
   class BoundaryCondition;
   class GoalFunctional;
@@ -54,6 +55,34 @@ namespace dolfin
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs,
+             const double tol,
+             GoalFunctional& M);
+
+  //--- Adaptive solve of nonlinear problems ---
+
+  /// Solve nonlinear variational problem F(u; v) = 0 without
+  /// essential boundary conditions
+  void solve(const Equation& equation,
+             Function& u,
+             const Form& J,
+             const double tol,
+             GoalFunctional& M);
+
+  /// Solve linear variational problem F(u; v) = 0 with single
+  /// boundary condition
+  void solve(const Equation& equation,
+             Function& u,
+             const BoundaryCondition& bc,
+             const Form& J,
+             const double tol,
+             GoalFunctional& M);
+
+  /// Solve linear variational problem F(u; v) = 0 with list of
+  /// boundary conditions
+  void solve(const Equation& equation,
+             Function& u,
+             std::vector<const BoundaryCondition*> bcs,
+             const Form& J,
              const double tol,
              GoalFunctional& M);
 
