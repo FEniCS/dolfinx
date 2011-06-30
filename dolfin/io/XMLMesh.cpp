@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2006-10-16
+// Last changed: 2011-06-30
 
 #include <map>
 #include <iomanip>

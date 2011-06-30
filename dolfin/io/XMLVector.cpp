@@ -16,14 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2006-10-16
+// Last changed: 2011-06-30
 
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include "pugixml.hpp"
 
 #include "dolfin/common/Array.h"
-#include <dolfin/common/MPI.h>
+#include "dolfin/common/MPI.h"
 #include "dolfin/la/GenericVector.h"
 #include "XMLIndent.h"
 #include "XMLVector.h"
@@ -59,7 +60,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
     data[index] = value;
   }
 
-  // Set data (GenericVector::apply will be called be calling function)
+  // Set data (GenericVector::apply will be called by calling function)
   x.set(data.data().get(), size, indices.data().get());
 }
 //-----------------------------------------------------------------------------

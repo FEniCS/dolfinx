@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ola Skavhaug and Anders Logg
+// Copyright (C) 2011 Ola Skavhaug, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,13 @@
 #ifndef __XML_PARAMETERS_H
 #define __XML_PARAMETERS_H
 
+#include <ostream>
 #include <string>
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {

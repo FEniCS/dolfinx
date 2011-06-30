@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ola Skavhaug
+// Copyright (C) 2009-2011 Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,10 +18,9 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-03-03
-// Last changed: 2011-03-31
+// Last changed: 2011-06-30
 
 #include <fstream>
-#include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
@@ -33,13 +32,8 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/plot/FunctionPlotData.h>
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshData.h"
 #include "XMLLocalMeshDataDistributed.h"
@@ -92,8 +86,6 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  //XMLLocalMeshDataDistributed::read(input_data, filename);
-
   XMLLocalMeshDataDistributed xml_object(input_data, filename);
   xml_object.read();
 

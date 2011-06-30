@@ -22,7 +22,6 @@
 #define __XMLVECTOR_H
 
 #include <ostream>
-#include <string>
 
 namespace pugi
 {

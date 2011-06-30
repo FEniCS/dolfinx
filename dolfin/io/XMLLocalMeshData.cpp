@@ -18,9 +18,9 @@
 // First added:  2002-12-06
 // Last changed: 2006-10-16
 
-#include <map>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <vector>
 #include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>

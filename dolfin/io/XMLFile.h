@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ola Skavhaug
+// Copyright (C) 2009-2011 Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,12 +18,12 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-03-03
-// Last changed: 2011-03-31
+// Last changed: 2011-06-30
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
 
-#include <fstream>
+#include <ostream>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "GenericFile.h"
@@ -53,12 +53,11 @@ namespace dolfin
     /// Constructor from a stream
     XMLFile(std::ostream& s);
 
-    // Input/output handling
-
     // Mesh
     void operator>> (Mesh& input);
     void operator<< (const Mesh& output);
 
+    // LocalMeshData
     void operator>> (LocalMeshData& input);
     void operator<< (const LocalMeshData& output);
 
@@ -94,37 +93,11 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& input)
     { write_mesh_function(input, "bool"); }
 
-    /*
-    void operator>> (std::vector<int>& x)                                   { read_xml_array(x); }
-    void operator>> (std::vector<uint>& x)                                  { read_xml_array(x); }
-    void operator>> (std::vector<double>& x)                                { read_xml_array(x); }
-    void operator>> (std::map<uint, int>& map)                              { read_xml_map(map); }
-    void operator>> (std::map<uint, uint>& map)                             { read_xml_map(map); }
-    void operator>> (std::map<uint, double>& map)                           { read_xml_map(map); }
-    void operator>> (std::map<uint, std::vector<int> >& array_map)          { read_xml_map(array_map); }
-    void operator>> (std::map<uint, std::vector<uint> >& array_map)         { read_xml_map(array_map); }
-    void operator>> (std::map<uint, std::vector<double> >& array_map)       { read_xml_map(array_map); }
-
-    //--- Mappings from output to correct handler ---
-
-
-    void operator<< (const std::vector<int>& x)                             { write_xml_array(x); }
-    void operator<< (const std::vector<uint>& x)                            { write_xml_array(x); }
-    void operator<< (const std::vector<double>& x)                          { write_xml_array(x); }
-    void operator<< (const std::map<uint, int>& map)                        { write_xml_map(map); }
-    void operator<< (const std::map<uint, uint>& map)                       { write_xml_map(map); }
-    void operator<< (const std::map<uint, double>& map)                     { write_xml_map(map); }
-    void operator<< (const std::map<uint, std::vector<int> >& array_map)    { write_xml_map(array_map); }
-    void operator<< (const std::map<uint, std::vector<uint> >& array_map)   { write_xml_map(array_map); }
-    void operator<< (const std::map<uint, std::vector<double> >& array_map) { write_xml_map(array_map); }
-    */
-
   private:
 
     /// Write xml start/close tags
     static void write_start(std::ostream& outfile, uint indentation_level=0);
     static void write_end(std::ostream& outfile, uint indentation_level=0);
-
 
     // Write MeshFunction
     template<class T> void read_mesh_function(MeshFunction<T>& t,
@@ -138,7 +111,7 @@ namespace dolfin
     const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
                                              const std::string filename) const;
 
-
+    // Open/close files
     void open_file();
     void close_file();
 

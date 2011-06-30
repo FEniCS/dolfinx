@@ -34,7 +34,7 @@ namespace dolfin
   class Mesh;
   class Parameters;
 
-  class SaxHandler
+  class SAX2AttributeParser
   {
   public:
 

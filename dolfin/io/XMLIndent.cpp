@@ -18,8 +18,8 @@
 // First added: 2009-03-17
 // Last changed: 2009-03-17
 
-#include "XMLIndent.h"
 #include <iomanip>
+#include "XMLIndent.h"
 
 using namespace dolfin;
 

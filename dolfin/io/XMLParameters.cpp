@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-16
-// Last changed: 2011-03-28
+// Last changed: 2011-06-30
 
 #include "pugixml.hpp"
+
 #include <dolfin/log/log.h>
-#include <dolfin/parameter/Parameters.h>
 #include <dolfin/parameter/Parameter.h>
+#include <dolfin/parameter/Parameters.h>
 #include "XMLIndent.h"
 #include "XMLParameters.h"
 

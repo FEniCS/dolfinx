@@ -26,9 +26,6 @@
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
 
-#include <dolfin/log/dolfin_log.h>
-#include <typeinfo>
-
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>

@@ -23,7 +23,6 @@
 #define __XMLLOCALMESHDATADISTRIBUTED_H
 
 #include <string>
-
 #include <libxml/parser.h>
 
 namespace dolfin
@@ -94,7 +93,6 @@ namespace dolfin
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
     void read_data_entry   (const xmlChar* name, const xmlChar** attrs);
-
     */
 
     // Number of local vertices
@@ -112,21 +110,15 @@ namespace dolfin
     // Range for vertices
     std::pair<uint, uint> vertex_range;
 
-
     // Range for cells
     std::pair<uint, uint> cell_range;
-
-
-    /*
-    // Name of the array
-    std::string data_entry_name;
-    */
 
     // State of parser
     ParserState state;
 
     LocalMeshData& mesh_data;
-    std::string filename;
+
+    const std::string filename;
 
   };
 
