@@ -69,7 +69,7 @@ void dolfin::solve(const Equation& equation,
   } else
   {
     dolfin_error("solve.cpp",
-                 "solve nonlinear variational problem adaptivity",
+                 "solve nonlinear variational problem adaptively",
                  "solve not implemented without Jacobian");
   }
 }
