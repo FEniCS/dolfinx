@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2008-09-13
+// Last changed: 2011-06-30
 
 #include <boost/shared_ptr.hpp>
 
@@ -97,7 +97,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     b.apply("insert");
 
     // Solve system
-    solve(A, x, b, "gmres", "amg_hypre");
+    solve(A, x, b, "gmres", "amg");
 
     // Get new coordinates
     Array<double> _new_coordinates(N, new_coordinates.data().get() + dim*N);
