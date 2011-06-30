@@ -318,21 +318,25 @@ namespace dolfin
 
   private:
 
+    #ifdef HAS_MPI
     // Return MPI data type
     template<class T> static MPI_Datatype mpi_type()
     {
       error("MPI data type unknown.");
       return MPI_CHAR;
     }
+    #endif
 
   };
 
+  #ifdef HAS_MPI
   // Specialisations for MPI_Datatypes
   template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
   template<> inline MPI_Datatype MPI::mpi_type<int>() { return MPI_INT; }
   template<> inline MPI_Datatype MPI::mpi_type<long int>() { return MPI_LONG; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long>() { return MPI_UNSIGNED_LONG; }
+  #endif
 
 }
 
