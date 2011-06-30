@@ -37,7 +37,7 @@ namespace dolfin
   {
   public:
 
-    // Read XML vector
+    // Read XML vector. Vector must have correct size.
     static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
     // Read XML vector size

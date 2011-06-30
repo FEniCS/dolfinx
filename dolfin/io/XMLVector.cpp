@@ -46,8 +46,6 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 
   const unsigned int size = array.attribute("size").as_uint();
   const std::string type  = array.attribute("type").value();
-  if (size != x.size())
-    error("Vector has wrong size in XMLVector::read.");
 
   // Iterate over array entries
   Array<double> data(size);
