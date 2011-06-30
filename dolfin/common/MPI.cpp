@@ -335,52 +335,6 @@ std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
   return values;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<uint>& values)
-{
-  assert(values.size() == num_processes());
-
-  // Prepare arrays
-  uint send_value = values[process_number()];
-  uint* received_values = new uint[values.size()];
-
-  // Create communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
-  // Call MPI
-  MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
-                received_values, 1, MPI_UNSIGNED, *comm);
-
-  // Copy values
-  for (uint i = 0; i < values.size(); i++)
-    values[i] = received_values[i];
-
-  // Cleanup
-  delete [] received_values;
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<double>& values)
-{
-  assert(values.size() == num_processes());
-
-  // Prepare arrays
-  double send_value = values[process_number()];
-  double* received_values = new double[values.size()];
-
-  // Create communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
-  // Call MPI
-  MPI_Allgather(&send_value,     1, MPI_DOUBLE,
-                received_values, 1, MPI_DOUBLE, *comm);
-
-  // Copy values
-  for (uint i = 0; i < values.size(); i++)
-    values[i] = received_values[i];
-
-  // Cleanup
-  delete [] received_values;
-}
-//-----------------------------------------------------------------------------
 /*
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
@@ -568,16 +522,6 @@ std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
 {
   error("MPI::gather() requires MPI.");
   return std::vector<uint>(1);
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<uint>& values)
-{
-  error("MPI::gather() requires MPI.");
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::gather(std::vector<double>& values)
-{
-  error("MPI::gather() requires MPI.");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)

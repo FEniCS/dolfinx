@@ -118,10 +118,33 @@ namespace dolfin
     static std::vector<uint> gather(uint value);
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)
-    static void gather(std::vector<uint>& values);
+    template<class T>
+    static void gather(std::vector<T>& values)
+    {
+      #ifdef HAS_MPI
+      assert(values.size() == num_processes());
 
-    /// Gather values, one from each process (wrapper for MPI_Allgather)
-    static void gather(std::vector<double>& values);
+      // Prepare arrays
+      T send_value = values[process_number()];
+      T* received_values = new T[values.size()];
+
+      // Create communicator (copy of MPI_COMM_WORLD)
+      MPICommunicator comm;
+
+      // Call MPI
+      MPI_Allgather(&send_value,     1, mpi_type<T>(),
+                    received_values, 1, mpi_type<T>(), *comm);
+
+      // Copy values
+      for (uint i = 0; i < values.size(); i++)
+        values[i] = received_values[i];
+
+      // Cleanup
+      delete [] received_values;
+      #else
+      error("MPI::gather() requires MPI.");
+      #endif
+    }
 
     // Commented out due to Boost MPI bug in Ubuntu Karmic
     /*
@@ -212,7 +235,21 @@ namespace dolfin
     /// Return which process owns index (inverse of local_range)
     static uint index_owner(uint index, uint N);
 
+  private:
+
+    // Return MPI data type
+    template<class T> static MPI_Datatype mpi_type()
+    {
+      error("MPI data type unknown");
+      return MPI_CHAR;
+    }
+
   };
+
+  // Specialisations
+  template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
+  template<> inline MPI_Datatype MPI::mpi_type<int>() { return MPI_INT; }
+  template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
 
 }
 
