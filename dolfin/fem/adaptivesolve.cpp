@@ -41,7 +41,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const BoundaryCondition& bcs,
+                   const BoundaryCondition& bc,
                    const double tol,
                    GoalFunctional& M)
 {

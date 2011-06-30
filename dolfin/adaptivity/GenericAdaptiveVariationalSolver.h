@@ -37,6 +37,7 @@ namespace dolfin
   class FunctionSpace;
   class ErrorControl;
   class GoalFunctional;
+  class Mesh;
   class Parameters;
 
   /// An abstract class for goal-oriented adaptive solution of
