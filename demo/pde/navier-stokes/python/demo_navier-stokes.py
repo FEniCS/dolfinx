@@ -90,7 +90,6 @@ pfile = File("pressure.pvd")
 
 # Time-stepping
 t = dt
-p = Progress("Time-stepping")
 while t < T + DOLFIN_EPS:
 
     # Update pressure boundary condition
@@ -107,7 +106,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre")
+    solve(A2, p1.vector(), b2, "gmres", "amg")
     end()
 
     # Velocity correction
@@ -127,8 +126,8 @@ while t < T + DOLFIN_EPS:
 
     # Move to next time step
     u0.assign(u1)
-    p.update(t / T)
     t += dt
+    print "t =", t
 
 # Hold plot
 interactive()
