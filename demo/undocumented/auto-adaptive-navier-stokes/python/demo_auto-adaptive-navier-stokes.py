@@ -63,12 +63,7 @@ F = a - L
 # Define boundary conditions
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
-# Define variational problem
-pde = NonlinearVariationalProblem(F, 0, w, bc)
-
-# Set Jacobian
-pde.set_jacobian(derivative(F, w))
-
+# Create boundary subdomains
 outflow = Outflow()
 outflow_markers = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
 outflow_markers.set_all(1)
@@ -77,8 +72,20 @@ outflow.mark(outflow_markers, 0)
 # Define new measure with associated subdomains
 ds = Measure("ds")[outflow_markers]
 
-# Define goal and reference
+# Define goal
 M = u[0]*ds(0)
+
+# Define error tolerance (with respect to goal)
+tol = 1.e-05
+
+# If no more control is wanted, do:
+# solve(F == 0, w, bc, tol, M)
+
+# Define variational problem
+pde = NonlinearVariationalProblem(F, 0, w, bc)
+
+# Set Jacobian
+pde.set_jacobian(derivative(F, w))
 
 # Define solver
 solver = AdaptiveNonlinearVariationalSolver(pde)
@@ -87,5 +94,7 @@ solver = AdaptiveNonlinearVariationalSolver(pde)
 solver.parameters["reference"] = 0.40863917;
 
 # Solve to given tolerance
-tol = 1.e-05
 solver.solve(tol, M)
+
+# Write a summary
+summary()

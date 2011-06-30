@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-06-29
+# Last changed: 2011-06-30
 
 # Begin demo
 
@@ -39,21 +39,28 @@ g = Expression("sin(5*x[0])", degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
-# Define variational problem
+# Define function for the solution
 u = Function(V)
-problem = LinearVariationalProblem(a, L, u, bc)
 
 # Define goal functional (quantity of interest)
 M = u*dx
 
-# Compute solution (adaptively to within accuracy)
+# Define error tolerance
 tol = 1.e-5
-solver = AdaptiveLinearVariationalSolver(problem)
-solver.solve(tol, M)
+
+# Solve equation a = L with respect to u and the given boundary
+# conditions, such that the estimated error (measured in M) is less
+# than tol
+solve(a == L, u, bc, tol, M)
+
+## Alternative, more verbose version:
+# problem = LinearVariationalProblem(a, L, u, bc)
+# solver = AdaptiveLinearVariationalSolver(problem)
+# solver.solve(tol, M)
 
 # Extract the coarsest and finest (final) solutions
-coarse = problem.solution().coarse()
-fine = problem.solution().fine()
+coarse = u.coarse()
+fine = u.fine()
 
 # Plot solution(s)
 plot(coarse, title="Solution on initial mesh")

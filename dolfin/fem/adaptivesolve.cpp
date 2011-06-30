@@ -68,12 +68,13 @@ void dolfin::solve(const Equation& equation,
     LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
     AdaptiveLinearVariationalSolver solver(problem);
     solver.solve(tol, M);
+  } else
+  {
+    // Raise error if the problem is nonlinear (for now)
+    dolfin_error("solve.cpp",
+                 "solve nonlinear variational problem adaptively",
+                 "Nonlinear adaptive solve not implemented without Jacobian");
   }
-
-  // Raise error if the problem is nonlinear (for now)
-  dolfin_error("solve.cpp",
-               "solve nonlinear variational problem adaptively",
-               "solve not implemented without Jacobian");
 }
 //-----------------------------------------------------------------------------
 

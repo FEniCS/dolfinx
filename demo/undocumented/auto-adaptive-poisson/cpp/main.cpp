@@ -80,22 +80,18 @@ int main()
   // Define error tolerance
   double tol = 1.e-5;
 
-  // Compute solution (adaptively to within accuracy)
-  bool verbose = false;
-  if (!verbose)
-  {
-    solve(a == L, u, bc, tol, M);
-  } else
-  {
-    // Define variational problem
-    LinearVariationalProblem problem(a, L, u, bc);
+  // Solve equation a = L with respect to u and the given boundary
+  // conditions, such that the estimated error (measured in M) is less
+  // than tol
+  solve(a == L, u, bc, tol, M);
 
-    // Define solver for problem
-    AdaptiveLinearVariationalSolver solver(problem);
+  // Alternative, more verbose version:
+  // LinearVariationalProblem problem(a, L, u, bc);
+  // AdaptiveLinearVariationalSolver solver(problem);
+  // solver.solve(tol, M);
 
-    // Solve problem with solver to tolerance (measured in M)
-    solver.solve(tol, M);
-  }
+  // Plot final solution
+  plot(u.fine(), "Solution on final mesh");
 
   // Write a summary
   summary();

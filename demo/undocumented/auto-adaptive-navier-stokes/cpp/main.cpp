@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-30
+// Last changed: 2011-07-01
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -94,7 +94,7 @@ int main() {
   // Define error tolerance
   double tol = 1.e-5;
 
-  // If no more control is wanted: do:
+  // If no more control is wanted, do:
   // solve(F == 0, w, bc, dF, tol, M);
   // return 0;
 
