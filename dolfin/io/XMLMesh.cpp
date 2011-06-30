@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg and Ola Skavhaug
+// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,182 +15,61 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-06
-// Last changed: 2011-03-28
+// First added:  2002-12-06
+// Last changed: 2011-06-30
 
-#include <cstring>
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/CellType.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshData.h>
+#include <map>
+#include <iomanip>
+#include <iostream>
+#include <vector>
+#include <boost/lexical_cast.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include "pugixml.hpp"
+
+#include "dolfin/common/Array.h"
+#include "dolfin/common/MPI.h"
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/mesh/Cell.h"
+#include "dolfin/mesh/CellType.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshData.h"
+#include "dolfin/mesh/MeshEditor.h"
+#include "dolfin/mesh/Point.h"
+#include "dolfin/mesh/Vertex.h"
 #include "XMLIndent.h"
-#include "XMLArray.h"
-#include "XMLMeshData.h"
+#include "XMLMeshFunction.h"
 #include "XMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMesh::XMLMesh(Mesh& mesh, XMLFile& parser)
-  : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 {
-  // Do nothing
+  const pugi::xml_node xml_mesh = xml_dolfin.child("mesh");
+  if (!xml_mesh)
+    error("Not a DOLFIN Mesh file.");
+
+  // Read mesh
+  read_mesh(mesh, xml_mesh);
+
+  // Read any mesh data
+  read_data(mesh.data(), xml_mesh);
 }
 //-----------------------------------------------------------------------------
-XMLMesh::~XMLMesh()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
-{
-  switch (state)
-  {
-  case OUTSIDE:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
-    {
-      read_mesh_tag(name, attrs);
-    }
-
-    break;
-
-  case INSIDE_MESH:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
-    {
-      read_vertices(name, attrs);
-      state = INSIDE_VERTICES;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
-    {
-      read_cells(name, attrs);
-      state = INSIDE_CELLS;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
-    {
-      read_mesh_data(name, attrs);
-      state = INSIDE_MESH;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0)
-    {
-      read_higher_order_vertices(name, attrs);
-      state = INSIDE_HIGHERORDERVERTICES;
-    }
-    else if (xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0)
-    {
-      read_higher_order_cells(name, attrs);
-      state = INSIDE_HIGHERORDERCELLS;
-    }
-
-    break;
-
-  case INSIDE_VERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
-      read_vertex(name, attrs);
-
-    break;
-
-  case INSIDE_CELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "interval") == 0)
-      read_interval(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar *) "triangle") == 0)
-      read_triangle(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0)
-      read_tetrahedron(name, attrs);
-
-    break;
-
-  case INSIDE_HIGHERORDERVERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
-      read_higher_order_vertex(name, attrs);
-
-    break;
-
-  case INSIDE_HIGHERORDERCELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "cell") == 0)
-      read_higher_order_cell_data(name, attrs);
-
-    break;
-
-  default:
-    ;
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::end_element(const xmlChar *name)
-{
-  switch (state)
-  {
-  case INSIDE_MESH:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
-    {
-      close_mesh();
-      state = DONE;
-      release();
-    }
-
-    break;
-
-  case INSIDE_VERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_CELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_HIGHERORDERVERTICES:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_HIGHERORDERCELLS:
-
-    if (xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0)
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
-  default:
-    ;
-  }
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_level)
+void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
+                    uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
   // Get cell type
-  CellType::Type cell_type = mesh.type().cell_type();
+  const CellType::Type cell_type = mesh.type().cell_type();
 
   // Write mesh header
   outfile << indent();
-  outfile << "<mesh celltype=\"" << CellType::type2string(cell_type) << "\" dim=\"" << mesh.geometry().dim() << "\">" << std::endl;
+  outfile << "<mesh celltype=\"" << CellType::type2string(cell_type)
+           << "\" dim=\"" << mesh.geometry().dim() << "\">" << std::endl;
 
   // Write vertices header
   ++indent;
@@ -201,21 +80,21 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
   ++indent;
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
-    Point p = v->point();
+    const Point p = v->point();
     outfile << indent();
-
-    switch (mesh.geometry().dim()) {
-    case 1:
-      outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\"/>" << std::endl;
-      break;
-    case 2:
-      outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y() << "\"/>" << std::endl;
-      break;
-    case 3:
-      outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y()  << "\" z=\"" << p.z() << "\"/>" << std::endl;
-      break;
-    default:
-      error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    switch (mesh.geometry().dim())
+    {
+      case 1:
+        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\"/>" << std::endl;
+        break;
+      case 2:
+        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y() << "\"/>" << std::endl;
+        break;
+      case 3:
+        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y()  << "\" z=\"" << p.z() << "\"/>" << std::endl;
+        break;
+      default:
+        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
     }
   }
 
@@ -256,238 +135,226 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
 
   // Write mesh data
   ++indent;
-  XMLMeshData::write(mesh.data(), outfile, indent.level());
+  write_data(mesh.data(), outfile, indent.level());
   --indent;
 
   // Write mesh footer
   --indent;
   outfile << indent() << "</mesh>" << std::endl;
-
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
 {
-  if (MPI::num_processes() > 1)
-    warning("Reading entire mesh to one processor. If this is not what you intended, initialize the mesh directly from the filename.");
+  // Get cell type and geometric dimension
+  const std::string cell_type_str = xml_mesh.attribute("celltype").value();
+  const unsigned int gdim = xml_mesh.attribute("dim").as_uint();
 
-  // Set state
-  state = INSIDE_MESH;
+  // Get topological dimension
+  boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  const unsigned int tdim = cell_type->dim();
 
-  // Parse values
-  std::string type = parse_string(name, attrs, "celltype");
-  uint gdim = parse_uint(name, attrs, "dim");
+  // Create mesh for editing
+  MeshEditor editor;
+  editor.open(mesh, cell_type_str, tdim, gdim);
 
-  // Create cell type to get topological dimension
-  CellType* cell_type = CellType::create(type);
-  uint tdim = cell_type->dim();
-  delete cell_type;
+  // Get vertices xml node
+  pugi::xml_node xml_vertices = xml_mesh.child("vertices");
+  assert(xml_vertices);
 
-  // Open mesh for editing
-  editor.open(_mesh, CellType::string2type(type), tdim, gdim);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
-{
-  // Parse values
-  uint num_vertices = parse_uint(name, attrs, "size");
-
-  // Set number of vertices
+  // Get number of vertices and init editor
+  const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
   editor.init_vertices(num_vertices);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
-{
-  // Parse values
-  uint num_cells = parse_uint(name, attrs, "size");
 
-  // Set number of vertices
+  // Iterate over vertices and add to mesh
+  Point p;
+  for (pugi::xml_node_iterator it = xml_vertices.begin(); it != xml_vertices.end(); ++it)
+  {
+    const unsigned int index = it->attribute("index").as_uint();
+    p[0] = it->attribute("x").as_double();
+    p[1] = it->attribute("y").as_double();
+    p[2] = it->attribute("z").as_double();
+    editor.add_vertex(index, p);
+  }
+
+  // Get cells node
+  pugi::xml_node xml_cells = xml_mesh.child("cells");
+  assert(xml_cells);
+
+  // Get number of cels and init editor
+  const unsigned int num_cells = xml_cells.attribute("size").as_uint();
   editor.init_cells(num_cells);
+
+  // Create list of vertex index attribute names
+  const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
+  std::vector<std::string> v_str(num_vertices_per_cell);
+  for (uint i = 0; i < num_vertices_per_cell; ++i)
+    v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
+
+  // Iterate over cells and add to mesh
+  std::vector<unsigned int> v(num_vertices_per_cell);
+  for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
+  {
+    const unsigned int index = it->attribute("index").as_uint();
+    for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
+      v[i] = it->attribute(v_str[i].c_str()).as_uint();
+    editor.add_cell(index, v);
+  }
+
+  // Close mesh editor
+  editor.close();
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
 {
-  // Read index
-  uint v = parse_uint(name, attrs, "index");
+  // Check if we have any mesh data
+  const pugi::xml_node xml_data = xml_mesh.child("data");
+  if (!xml_data)
+    return;
 
-  // Handle differently depending on geometric dimension
-  switch (_mesh.geometry().dim())
+  // Iterate over data
+  for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
   {
-  case 1:
+    // Check node is data_entry
+    const std::string node_name = it->name();
+    if (node_name != "data_entry")
+      error("Expecting XML node called \"data_entry\", but go \"%s\".", node_name.c_str());
+
+    // Get name of data set
+    const std::string data_set_name = it->attribute("name").value();
+    //std::cout << "MeshData name:" << data_set_name << "." << std::endl;
+
+    // Check that there is only one data set
+    if (it->first_child().next_sibling())
+      error("XML file contains too many data sets.");
+
+    // Get type of data set
+    pugi::xml_node data_set = it->first_child();
+    const std::string data_set_type = data_set.name();
+    //std::cout << "  Data set type: " << data_set_type << std::endl;
+    if (data_set_type == "array")
     {
-      double x = parse_float(name, attrs, "x");
-      editor.add_vertex(v, x);
+      // Get type
+      const std::string data_type = data_set.attribute("type").value();
+      //std::cout << "  Data set type: " << data_type << std::endl;
+      if (data_type == "uint")
+      {
+        // Get vector from MeshData
+        std::vector<unsigned int>* array = data.array(data_set_name);
+        if (!array)
+          array = data.create_array(data_set_name);
+        assert(array);
+
+        // Read vector
+        read_array_uint(*array, data_set);
+      }
+      else
+        error("Only reading of MeshData uint Arrays are supported at present.");
     }
-    break;
-  case 2:
+    else if (data_set_type == "meshfunction")
     {
-      double x = parse_float(name, attrs, "x");
-      double y = parse_float(name, attrs, "y");
-      editor.add_vertex(v, x, y);
+      // Get MeshFunction from MeshData
+      const std::string data_type = data_set.attribute("type").value();
+      boost::shared_ptr<MeshFunction<unsigned int> > mf = data.mesh_function(data_set_name);
+      if (!mf)
+        mf = data.create_mesh_function(data_set_name);
+      assert(mf);
+
+      // Read  MeshFunction
+      XMLMeshFunction::read(*mf, data_type, *it);
     }
-    break;
-  case 3:
-    {
-      double x = parse_float(name, attrs, "x");
-      double y = parse_float(name, attrs, "y");
-      double z = parse_float(name, attrs, "z");
-      editor.add_vertex(v, x, y, z);
-    }
-    break;
-  default:
-    error("Dimension of mesh must be 1, 2 or 3.");
+    else
+      error("Reading of MeshData \"%s\" not yet supported", data_set_type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
+                              const pugi::xml_node xml_array)
 {
-  // Check dimension
-  if (_mesh.topology().dim() != 1)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
+  // Check that we have an array
+  const std::string name = xml_array.name();
+  if (name != "array")
+    error("Expecting an XML array node.");
 
-  // Parse values
-  uint c  = parse_uint(name, attrs, "index");
-  uint v0 = parse_uint(name, attrs, "v0");
-  uint v1 = parse_uint(name, attrs, "v1");
+  // Check type is unit
+  const std::string type = xml_array.attribute("type").value();
+  if (type != "uint")
+    error("Expecting an XML array node.");
 
-  // Add cell
-  editor.add_cell(c, v0, v1);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
-{
-  // Check dimension
-  if (_mesh.topology().dim() != 2)
-    error("Mesh entity (triangle) does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
+  // Get size and resize vector
+  const unsigned int size = xml_array.attribute("size").as_uint();
+  array.resize(size);
 
-  // Parse values
-  uint c  = parse_uint(name, attrs, "index");
-  uint v0 = parse_uint(name, attrs, "v0");
-  uint v1 = parse_uint(name, attrs, "v1");
-  uint v2 = parse_uint(name, attrs, "v2");
-
-  // Add cell
-  editor.add_cell(c, v0, v1, v2);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
-{
-  // Check dimension
-  if (_mesh.topology().dim() != 3)
-    error("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
-
-  // Parse values
-  uint c  = parse_uint(name, attrs, "index");
-  uint v0 = parse_uint(name, attrs, "v0");
-  uint v1 = parse_uint(name, attrs, "v1");
-  uint v2 = parse_uint(name, attrs, "v2");
-  uint v3 = parse_uint(name, attrs, "v3");
-
-  // Add cell
-  editor.add_cell(c, v0, v1, v2, v3);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
-{
-  // Read index
-  const uint index = parse_uint(name, attrs, "index");
-
-  // Read and set value
-  assert(f);
-  assert(index < f->size());
-  const uint value = parse_uint(name, attrs, "value");
-  (*f)[index] = value;
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
-{
-  xml_mesh_data.reset(new XMLMeshData(_mesh.data(), parser, true));
-  xml_mesh_data->handle();
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar **attrs)
-{
-  // Parse values
-  uint num_higher_order_vertices = parse_uint(name, attrs, "size");
-
-  // Set number of vertices
-  editor.init_higher_order_vertices(num_higher_order_vertices);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs)
-{
-  // Parse values
-  uint num_higher_order_cells    = parse_uint(name, attrs, "size");
-  uint num_higher_order_cell_dof = parse_uint(name, attrs, "num_dof");
-
-  // Set number of vertices
-  editor.init_higher_order_cells(num_higher_order_cells, num_higher_order_cell_dof);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attrs)
-{
-  // Read index
-  uint v = parse_uint(name, attrs, "index");
-
-  // Handle differently depending on geometric dimension
-  switch (_mesh.geometry().dim())
+  // Iterate over array entries
+  for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end(); ++it)
   {
-  case 1:
-    {
-      double x = parse_float(name, attrs, "x");
-      editor.add_higher_order_vertex(v, x);
-    }
-    break;
-  case 2:
-    {
-      double x = parse_float(name, attrs, "x");
-      double y = parse_float(name, attrs, "y");
-      editor.add_higher_order_vertex(v, x, y);
-    }
-    break;
-  case 3:
-    {
-      double x = parse_float(name, attrs, "x");
-      double y = parse_float(name, attrs, "y");
-      double z = parse_float(name, attrs, "z");
-      editor.add_higher_order_vertex(v, x, y, z);
-    }
-    break;
-  default:
-    error("Dimension of mesh must be 1, 2 or 3.");
+    const unsigned int index = it->attribute("index").as_uint();
+    const double value = it->attribute("value").as_uint();
+    assert(index < size);
+    array[index] = value;
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
+                         unsigned int indentation_level)
 {
-  // for now assume a P2 triangle!
+  //if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
+  //{
+    XMLIndent indent(indentation_level);
 
-  // Check dimension
-  if (_mesh.topology().dim() != 2)
-    error("Mesh entity must be a triangle; does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
+    // Write mesh data header
+    outfile << indent();
+    outfile << "<data>" << std::endl;
 
-  // Parse values
-  uint c  = parse_uint(name, attrs, "index");
-  const std::string affine_str = parse_string_optional(name, attrs, "affine");
-  uint v0 = parse_uint(name, attrs, "v0");
-  uint v1 = parse_uint(name, attrs, "v1");
-  uint v2 = parse_uint(name, attrs, "v2");
-  uint v3 = parse_uint(name, attrs, "v3");
-  uint v4 = parse_uint(name, attrs, "v4");
-  uint v5 = parse_uint(name, attrs, "v5");
+    // Increment level for data_entries
+    ++indent;
 
-  // Add cell
-  editor.add_higher_order_cell_data(c, v0, v1, v2, v3, v4, v5);
+    // Write mesh functions
+    typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >::const_iterator mf_iter;
+    for (mf_iter it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
-  // set affine indicator
-  editor.set_affine_cell_indicator(c, affine_str);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::close_mesh()
-{
-  editor.close(false);
+      // Write mesh function (omit mesh)
+      ++indent;
+      XMLMeshFunction::write(*(it->second), "uint", outfile, indent.level(), false);
+      --indent;
+
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    typedef std::map<std::string, std::vector<uint>*>::const_iterator arr_iter;
+    for (arr_iter it = data.arrays.begin(); it != data.arrays.end(); ++it)
+    {
+      // Write data entry header
+      outfile << indent();
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      assert(it->second);
+      const std::vector<unsigned int>& v = *it->second;
+      ++indent;
+      outfile << indent() << "<array type=\"uint\" size=\"" << v.size() << "\">" << std::endl;
+      ++indent;
+      for (uint i = 0; i < v.size(); ++i)
+        outfile << indent() << "<element index=\"" << i << "\" value=\"" << v[i] << "\"/>" << std::endl;
+      --indent;
+      outfile << indent() << "</array>" << std::endl;
+      --indent;
+      // Write data entry footer
+      outfile << indent();
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    // Done with entries, decrement level
+    --indent;
+
+    // Write mesh data footer
+    outfile << indent();
+    outfile << "</data>" << std::endl;
+  //}
 }
 //-----------------------------------------------------------------------------

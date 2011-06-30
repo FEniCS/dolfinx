@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2006 Anders Logg and Ola Skavhaug
+// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,70 +15,71 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009.
-//
-// First added:  2009-03-06
-// Last changed: 2009-06-15
+// First added:  2002-12-06
+// Last changed: 2011-06-30
 
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include "pugixml.hpp"
 
-#include <dolfin/common/Array.h>
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/common/MPI.h>
+#include "dolfin/common/Array.h"
+#include "dolfin/common/MPI.h"
+#include "dolfin/la/GenericVector.h"
 #include "XMLIndent.h"
 #include "XMLVector.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLVector::XMLVector(GenericVector& vector, XMLFile& parser)
-  : XMLHandler(parser), x(vector), state(OUTSIDE)
+void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-XMLVector::~XMLVector()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void XMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
-{
-  switch ( state )
+  // Check that we have a XML Vector
+  const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
+  if (!xml_vector_node)
+    error("Not a DOLFIN Vector file.");
+
+  // Get type and size
+  const pugi::xml_node array = xml_vector_node.child("array");
+  if (!array)
+    error("Not a DOLFIN array inside Vector XML file.");
+
+  const unsigned int size = array.attribute("size").as_uint();
+  const std::string type  = array.attribute("type").value();
+
+  // Iterate over array entries
+  Array<double> data(size);
+  Array<unsigned int> indices(size);
+  for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
   {
-  case OUTSIDE:
-    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
-      read_vector_tag(name, attrs);
-    break;
-  case INSIDE_VECTOR:
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
-      read_array_tag(name, attrs);
-    break;
-  default:
-    break;
+    const unsigned int index = it->attribute("index").as_uint();
+    const double value = it->attribute("value").as_double();
+    assert(index < size);
+    indices[index] = index;
+    data[index] = value;
   }
+
+  // Set data (GenericVector::apply will be called by calling function)
+  x.set(data.data().get(), size, indices.data().get());
 }
 //-----------------------------------------------------------------------------
-void XMLVector::end_element(const xmlChar *name)
+dolfin::uint XMLVector::read_size(const pugi::xml_node xml_dolfin)
 {
-  switch ( state )
-  {
-  case INSIDE_VECTOR:
-    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
-    {
-      end_vector();
-      state = DONE;
-      release();
-    }
-    break;
-  default:
-    break;
-  }
+  // Check that we have a XML Vector
+  const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
+  if (!xml_vector_node)
+    error("Not a DOLFIN Vector file.");
+
+  // Get size
+  const pugi::xml_node array = xml_vector_node.child("array");
+  if (!array)
+    std::cout << "Not a DOLFIN Array" << std::endl;
+
+  return array.attribute("size").as_uint();
 }
 //-----------------------------------------------------------------------------
 void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
-                      uint indentation_level)
+                      unsigned int indentation_level)
 {
   bool write_to_stream = false;
   if (MPI::process_number() == 0)
@@ -98,84 +99,31 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
     ++indent;
   }
 
-  // Gather entries from process i on process 0 and write to file
-  for (uint process  = 0; process < MPI::num_processes(); ++process)
-  {
+  // Gather entries from process i on process 0
+  Array<double> x;
+  if (MPI::num_processes() > 1)
+    vector.gather_on_zero(x);
+  else
+    vector.get_local(x);
 
-    // FIXME: Use more elgant approach. The gather functions are collective,
-    //        i.e. must be called on all processes even though we only want to
-    //        gather on process 0.
-    uint n0 = 0;
-    uint local_size = 0;
-    if (MPI::process_number() == 0)
-    {
-      // Get (approximate) range for portion of vector on process
-      const std::pair<uint, uint> range = MPI::local_range(process, vector.size());
-
-      // Get offset anf compute local size
-      n0 = range.first;
-      local_size = range.second - range.first;
-    }
-
-    Array<uint> indices(local_size);
-    for (uint i = 0; i < local_size; ++i)
-      indices[i] = n0 + i;
-
-    // Create local Array and gather values into it
-    Array<double> vector_values;
-    vector.gather(vector_values, indices);
-
-    // Write vector entries
-    if (write_to_stream)
-    {
-      for (uint i = 0; i < local_size; ++i)
-      {
-        outfile << indent()
-          << "<element index=\"" << indices[i]
-          << "\" value=\"" << std::setprecision(16) << vector_values[i]
-          << "\"/>" << std::endl;
-      }
-    }
-  }
+  // Write vector entries
   if (write_to_stream)
   {
+    for (uint i = 0; i < x.size(); ++i)
+    {
+      outfile << indent()
+        << "<element index=\"" << i
+        << "\" value=\"" << std::setprecision(16) << x[i]
+        << "\"/>" << std::endl;
+    }
+
     --indent;
     outfile << indent() << "</array>" << std::endl;
     --indent;
+
+    // Write vector footer
+    if (write_to_stream)
+      outfile << indent() << "</vector>" << std::endl;
   }
-
-  // Write array
-  //++indent;
-  //XMLArray::write(vector_values, n0, outfile, indent.level());
-  //--indent;
-
-  // Write vector footer
-  if (write_to_stream)
-    outfile << indent() << "</vector>" << std::endl;
-}
-//-----------------------------------------------------------------------------
-void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
-{
-  state = INSIDE_VECTOR;
-}
-//-----------------------------------------------------------------------------
-void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
-{
-  xml_array.reset(new XMLArray(values, parser, true));
-  xml_array->read_array_tag(name, attrs);
-  xml_array->handle();
-}
-//-----------------------------------------------------------------------------
-void XMLVector::end_vector()
-{
-  assert(xml_array);
-
-  // Resize vector
-  x.resize(xml_array->size);
-
-  // Set values in the vector
-  x.set(&values[0], xml_array->element_index.size(),
-        &(xml_array->element_index)[0]);
-  x.apply("insert");
 }
 //-----------------------------------------------------------------------------

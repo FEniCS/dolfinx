@@ -473,7 +473,7 @@ void MeshEditor::compute_boundary_indicators()
 
   // Make sure mesh has facets
   const uint D = mesh->topology().dim();
-  mesh->order(); 
+  mesh->order();
   mesh->init(D - 1);
 
   // Need facet cells and numbers if indicators are present

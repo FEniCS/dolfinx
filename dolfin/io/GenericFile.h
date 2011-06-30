@@ -32,33 +32,31 @@
 namespace dolfin
 {
 
-  class Mesh;
-  class LocalMeshData;
-  template <class T> class MeshFunction;
   class Function;
-  class Sample;
-  class Parameters;
+  class FunctionPlotData;
   class GenericMatrix;
   class GenericVector;
-  class FunctionPlotData;
+  class LocalMeshData;
+  class Mesh;
+  template <class T> class MeshFunction;
+  class Parameters;
 
   class GenericFile
   {
   public:
 
+    /// Constructor
     GenericFile(const std::string filename);
-    virtual ~GenericFile();
 
     // Input
+    virtual void operator>> (Mesh& mesh);
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
-    virtual void operator>> (Mesh& mesh);
     virtual void operator>> (LocalMeshData& data);
     virtual void operator>> (MeshFunction<int>& meshfunction);
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
     virtual void operator>> (MeshFunction<double>& meshfunction);
     virtual void operator>> (MeshFunction<bool>& meshfunction);
-    virtual void operator>> (Sample& sample);
     virtual void operator>> (Parameters& parameters);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
@@ -85,7 +83,6 @@ namespace dolfin
     // Output function with time
     virtual void operator<< (const std::pair<const Function*, double> u);
 
-    virtual void operator<< (const Sample& sample);
     virtual void operator<< (const Parameters& parameters);
     virtual void operator<< (const FunctionPlotData& data);
     virtual void operator<< (const std::vector<int>& x);
@@ -103,8 +100,8 @@ namespace dolfin
 
   protected:
 
-    void read_not_impl(const std::string object);
-    void write_not_impl(const std::string object);
+    void read_not_impl(const std::string object) const;
+    void write_not_impl(const std::string object) const;
 
     std::string filename;
     std::string type;

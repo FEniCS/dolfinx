@@ -18,6 +18,8 @@
 // First added:  2009-11-11
 // Last changed: 2011-03-31
 
+#include <iostream>
+
 #include <algorithm>
 #include <sstream>
 #include <boost/scoped_ptr.hpp>
@@ -178,7 +180,8 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
   log(PROGRESS, "Reading mesh at t = %g (close to t = %g).",
       _mesh_times[index], t);
 
-  // Read vector
+  // Read mesh
+  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index) << std::endl;
   File file(filename_data(_name, "mesh", index));
   file >> mesh;
 }

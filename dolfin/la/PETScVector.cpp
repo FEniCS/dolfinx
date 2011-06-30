@@ -182,7 +182,7 @@ void PETScVector::get_local(Array<double>& values) const
   assert(x);
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
-  assert(values.size() == local_size);
+  values.resize(local_size);
 
   if (local_size == 0)
     return;
@@ -666,6 +666,30 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   double sum = 0.0;
   for (uint i = 0; i < x.size(); ++i)
     sum += x[i]*x[i];
+}
+//-----------------------------------------------------------------------------
+void PETScVector::gather_on_zero(Array<double>& x) const
+{
+  if (MPI::process_number() == 0)
+    x.resize(size());
+  else
+    x.resize(0);
+
+  boost::shared_ptr<Vec> vout(new Vec);
+  VecScatter scatter;
+  VecScatterCreateToZero(*this->x, &scatter, vout.get());
+
+  VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+
+  VecScatterDestroy(scatter);
+
+  // Wrap PETSc vector
+  if (MPI::process_number() == 0)
+  {
+    PETScVector _vout(vout);
+    _vout.get_local(x);
+  }
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::distributed() const

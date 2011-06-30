@@ -34,7 +34,7 @@ class MeshConstruction(unittest.TestCase):
         self.cube = UnitCube(3,3,3)
         self.sphere = UnitSphere(5)
         self.box = Box(0,0,0,2,2,2,2,2,5)
-    
+
     def testUFLCell(self):
         import ufl
         self.assertEqual(ufl.interval, self.intervall.ufl_cell())
@@ -83,15 +83,15 @@ class MeshIterators(unittest.TestCase):
             def assign(con, i):
                 con(i)[0] = 1
             self.assertRaises(RuntimeError, assign, con, i)
-        
+
         n = 0
         for i, v in enumerate(vertices(mesh)):
             n += 1
             for j, con in cons:
                 self.assertTrue(numpy.all(con(i) == v.entities(j)))
-        
+
         self.assertEqual(n, mesh.num_vertices())
-        
+
         # Check coordinate assignment
         # FIXME: Outcomment to hopefully please Mac-buildbot
         #end_point = numpy.array([v.x(0), v.x(1), v.x(2)])
@@ -106,19 +106,19 @@ class MeshIterators(unittest.TestCase):
 
         # Test connectivity
         cons = [(i, mesh.topology()(1,i)) for i in xrange(4)]
-        
+
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
             self.assertRaises(RuntimeError, assign, con, i)
-        
+
         n = 0
         for i, e in enumerate(edges(mesh)):
             n += 1
             for j, con in cons:
                 self.assertTrue(numpy.all(con(i) == e.entities(j)))
-        
+
         self.assertEqual(n, mesh.num_edges())
 
     def testFaceIterators(self):
@@ -127,19 +127,19 @@ class MeshIterators(unittest.TestCase):
 
         # Test connectivity
         cons = [(i, mesh.topology()(2,i)) for i in xrange(4)]
-        
+
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
             self.assertRaises(RuntimeError, assign, con, i)
-        
+
         n = 0
         for i, f in enumerate(faces(mesh)):
             n += 1
             for j, con in cons:
                 self.assertTrue(numpy.all(con(i) == f.entities(j)))
-        
+
         self.assertEqual(n, mesh.num_faces())
 
     def testFacetIterators(self):
@@ -156,19 +156,19 @@ class MeshIterators(unittest.TestCase):
 
         # Test connectivity
         cons = [(i, mesh.topology()(3,i)) for i in xrange(4)]
-        
+
         # Test writability
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
             self.assertRaises(RuntimeError, assign, con, i)
-        
+
         n = 0
         for i, c in enumerate(cells(mesh)):
             n += 1
             for j, con in cons:
                 self.assertTrue(numpy.all(con(i) == c.entities(j)))
-        
+
         self.assertEqual(n, mesh.num_cells())
 
     def testMixedIterators(self):

@@ -69,6 +69,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquare mesh(32, 32);
+
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

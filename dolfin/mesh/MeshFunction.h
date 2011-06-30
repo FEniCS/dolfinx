@@ -29,7 +29,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/io/File.h>
-#include <dolfin/io/XMLMeshFunction.h>
 #include "MeshEntity.h"
 #include "Mesh.h"
 
@@ -126,9 +125,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-    // Input and output
-    typedef XMLMeshFunction XMLHandler;
 
   private:
 
