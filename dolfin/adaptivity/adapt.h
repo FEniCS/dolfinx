@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010 Anders Logg, Marie Rognes and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010-2011.
-// Modified by Marie E. Rognes, 2011.
-//
 // First added:  2010-02-10
-// Last changed: 2011-03-14
+// Last changed: 2011-06-22
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -39,7 +36,8 @@ namespace dolfin
   class GenericFunction;
   class DirichletBC;
   class Form;
-  class VariationalProblem;
+  class LinearVariationalProblem;
+  class NonlinearVariationalProblem;
   class ErrorControl;
 
   //--- Refinement of meshes ---
@@ -94,9 +92,13 @@ namespace dolfin
 
   //--- Refinement of variational problems ---
 
-  /// Refine variational problem based on mesh
-  const VariationalProblem& adapt(const VariationalProblem& problem,
-                                  boost::shared_ptr<const Mesh> refined_mesh);
+  /// Refine linear variational problem based on mesh
+  const LinearVariationalProblem& adapt(const LinearVariationalProblem& problem,
+                                        boost::shared_ptr<const Mesh> refined_mesh);
+
+  /// Refine nonlinear variational problem based on mesh
+  const NonlinearVariationalProblem& adapt(const NonlinearVariationalProblem& problem,
+                                           boost::shared_ptr<const Mesh> refined_mesh);
 
   /// Refine error control object based on mesh
   const ErrorControl& adapt(const ErrorControl& ec,

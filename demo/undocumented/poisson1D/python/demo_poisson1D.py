@@ -29,8 +29,10 @@ and boundary conditions given by
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2007-11-28
-# Last changed: 2009-10-07
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -56,9 +58,9 @@ L = f*v*dx + g*v*ds
 u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
-# Solve PDE and plot solution
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+# Compute solution
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution to file
 file = File("poisson.pvd")

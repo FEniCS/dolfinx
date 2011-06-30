@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-23
-// Last changed: 2010-09-02
+// Last changed: 2011-06-28
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
@@ -53,10 +53,11 @@ int main()
   DirichletBC bc3(V, u3, 3);
   std::vector<const BoundaryCondition*> bcs = boost::assign::list_of(&bc0)(&bc1)(&bc2)(&bc3);
 
-  // Solve PDE and plot solution
-  VariationalProblem pde(a, L, bcs);
+  // Compute solution
   Function u(V);
-  pde.solve(u);
+  solve(a == L, u, bcs);
+
+  // Plot solution
   plot(u);
 
   return 0;

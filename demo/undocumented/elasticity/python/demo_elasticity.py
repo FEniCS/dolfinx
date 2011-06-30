@@ -1,4 +1,3 @@
-
 """This demo program solves the equations of static linear elasticity
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
@@ -19,18 +18,12 @@ for a gear clamped at two of its ends and twisted 30 degrees."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008-2011
 #
 # First added:  2007-11-14
-# Last changed: 2010-09-05
+# Last changed: 2011-06-28
 
 from dolfin import *
-
-# Form compiler options
-#parameters["form_compiler"]["cpp_optimize"] = True
-#parameters["form_compiler"]["optimize"] = True
-
-set_log_level(0)
 
 # Load mesh and define function space
 mesh = Mesh("gear.xml.gz")
@@ -97,10 +90,9 @@ bcr = DirichletBC(V, r, right)
 # Set up boundary conditions
 bcs = [bcl, bcr]
 
-# Set up PDE and solve
-problem = VariationalProblem(a, L, bcs)
-problem.parameters["symmetric"] = True
-u = problem.solve()
+# Compute solution
+u = Function(V)
+solve(a == L, u, bcs, solver_parameters={"symmetric": True})
 
 # Save solution to VTK format
 File("elasticity.pvd", "compressed") << u

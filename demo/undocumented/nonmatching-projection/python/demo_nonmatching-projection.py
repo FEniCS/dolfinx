@@ -18,8 +18,10 @@ non-matching mesh."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2009-10-10
-# Last changed: 2009-10-10
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -41,11 +43,11 @@ u1 = TrialFunction(P1)
 a  = v*u1*dx
 L  = v*u0*dx
 
-problem = VariationalProblem(a, L)
-u1 = problem.solve()
+# Compute solution
+u1 = Function(P1)
+solve(a == L, u1)
 
 # Plot functions
 plot(u0, mesh=mesh0, title="u0")
 plot(u1, title="u1")
 interactive()
-

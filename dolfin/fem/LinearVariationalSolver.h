@@ -18,31 +18,35 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem)
-// Last changed: 2011-01-14
+// Last changed: 2011-06-22
 
 #ifndef __LINEAR_VARIATIONAL_SOLVER_H
 #define __LINEAR_VARIATIONAL_SOLVER_H
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 
 namespace dolfin
 {
 
-  class Function;
-  class VariationalProblem;
-  class Parameters;
+  // Forward declarations
+  class LinearVariationalProblem;
 
   /// This class implements a solver for linear variational problems.
 
-  class LinearVariationalSolver
+  class LinearVariationalSolver : public Variable
   {
   public:
 
+    /// Create linear variational solver for given problem
+    LinearVariationalSolver(LinearVariationalProblem& problem);
+
+    /// Create linear variational solver for given problem (shared pointer version)
+    LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
+
     /// Solve variational problem
-    static void solve(Function& u,
-                      const VariationalProblem& problem,
-                      const Parameters& parameters);
+    void solve();
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -62,6 +66,11 @@ namespace dolfin
 
       return p;
     }
+
+  private:
+
+    // The linear problem
+    boost::shared_ptr<LinearVariationalProblem> problem;
 
   };
 

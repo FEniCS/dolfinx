@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-07-11
-// Last changed: 2010-01-27
+// Last changed: 2011-06-28
 //
 // This demo program solves Poisson's equation,
 //
@@ -95,12 +95,9 @@ int main()
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc0); bcs.push_back(&bc1);
 
-  // Define PDE
-  VariationalProblem pde(a, L, bcs);
-
-  // Solve PDE
+  // Compute solution
   Function u(V);
-  pde.solve(u);
+  solve(a == L, u, bcs);
 
   // Plot solution
   plot(u);

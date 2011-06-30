@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg, 2011
+//
 // First added:  2009-01-22
-// Last changed: 2011-06-01
+// Last changed: 2011-06-28
 
 #include <dolfin.h>
 #include "ElastoDynamics.h"
@@ -152,9 +154,9 @@ int main(int argc, char* argv[])
   bc.push_back(&bc0);
 
   // Define solution vectors
-  Function u(V), u0(V);           // displacement
-  Function v(V), v0(V);           // velocity
-  Function a(V), a0(V);           // acceleration
+  Function u(V), u0(V);  // displacement
+  Function v(V), v0(V);  // velocity
+  Function a(V), a0(V);  // acceleration
 
   // Set initial conditions and initialise acceleration function
   u0.vector().zero();
@@ -190,15 +192,11 @@ int main(int argc, char* argv[])
   a_form.ds = right_boundary_function;
   L.ds = right_boundary_function;
 
-  // Create variational problem
-  VariationalProblem pde(a_form, L, bc);
-
   // Create projection to compute the normal strain eps_xx
   DG0_eps_xx::FunctionSpace Vdg(mesh);
   DG0_eps_xx::BilinearForm a_eps(Vdg, Vdg);
   DG0_eps_xx::LinearForm L_eps(Vdg);
   L_eps.u = u;
-  VariationalProblem eps(a_eps, L_eps);
   Function eps_xx(Vdg);
 
   // Create output files
@@ -214,8 +212,8 @@ int main(int argc, char* argv[])
     cout << "Time: " << t << endl;
 
     // Solve
-    pde.solve(u);
-    eps.solve(eps_xx);
+    solve(a_form == L, u, bc);
+    solve(a_eps == L_eps, eps_xx);
 
     // Update velocity and acceleration
     update_a(a, u, a0, v0, u0, beta, dt);

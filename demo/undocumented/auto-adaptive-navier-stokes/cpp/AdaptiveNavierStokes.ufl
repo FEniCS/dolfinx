@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-11-01
-# Last changed: 2011-03-22
+# Last changed: 2011-06-29
 #
 # Compile with ffc -e -l dolfin AdaptiveNavierStokes.ufl
 
@@ -47,4 +47,4 @@ L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q
 M = w[0]*ds(0)
 
 # NB: Label the unknown
-unknown =  w
+unknown = w

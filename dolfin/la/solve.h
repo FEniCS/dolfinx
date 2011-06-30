@@ -20,14 +20,15 @@
 // First added:  2007-04-30
 // Last changed: 2008-08-25
 
-#ifndef __SOLVE_H
-#define __SOLVE_H
+#ifndef __SOLVE_LA_H
+#define __SOLVE_LA_H
 
 #include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
+  // Forward declarations
   class GenericMatrix;
   class GenericVector;
 

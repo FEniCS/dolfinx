@@ -12,7 +12,7 @@ and boundary conditions given by
 du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 """
 
-# Copyright (C) 2007-2009 Anders Logg
+# Copyright (C) 2007-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -30,7 +30,7 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2007-08-16
-# Last changed: 2010-03-05
+# Last changed: 2011-06-28
 
 # Begin demo
 
@@ -57,8 +57,8 @@ a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
 # Compute solution
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution in VTK format
 file = File("poisson.pvd")

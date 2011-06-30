@@ -14,6 +14,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# Modified by Anders Logg 2011
+#
+# First added:  2010
+# Last changed: 2011-06-28
 
 from dolfin import *
 import time
@@ -27,7 +32,7 @@ class Outflow(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] > 4.0 - DOLFIN_EPS
 
-parameters["allow_extrapolation"] = True;
+parameters["allow_extrapolation"] = True
 
 # Material parameters
 nu = Constant(0.02)
@@ -42,27 +47,27 @@ W = V * Q
 
 # Define unknown and test function(s)
 (v, q) = TestFunctions(W)
-w_h = Function(W)
-(u_h, p_h) = (as_vector((w_h[0], w_h[1])), w_h[2])
+w = Function(W)
+(u, p) = (as_vector((w[0], w[1])), w[2])
 
 # Prescribed pressure
 p0 = Expression("(4.0 - x[0])/4.0")
 
 # Define variational forms
 n = FacetNormal(mesh)
-a = (nu*inner(grad(u_h), grad(v)) - div(v)*p_h + q*div(u_h))*dx
-a = a + inner(grad(u_h)*u_h, v)*dx
+a = (nu*inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
+a = a + inner(grad(u)*u, v)*dx
 L = - p0*dot(v, n)*ds
 F = a - L
-
-dw = TrialFunction(W)
-dF = derivative(F, w_h, dw) # FIXME
 
 # Define boundary conditions
 bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
-# Define variational problem (with new notation)
-pde = VariationalProblem(F, dF, bc)
+# Define variational problem
+pde = NonlinearVariationalProblem(F, 0, w, bc)
+
+# Set Jacobian
+pde.set_jacobian(derivative(F, w))
 
 outflow = Outflow()
 outflow_markers = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
@@ -70,13 +75,17 @@ outflow_markers.set_all(1)
 outflow.mark(outflow_markers, 0)
 
 # Define new measure with associated subdomains
-dss = ds[outflow_markers]
+ds = Measure("ds")[outflow_markers]
 
 # Define goal and reference
-M = u_h[0]*dss(0)
-pde.parameters["adaptivity"]["reference"] = 0.40863917;
-pde.parameters["adaptivity"]["plot_mesh"] = False;
+M = u[0]*ds(0)
+
+# Define solver
+solver = AdaptiveNonlinearVariationalSolver(pde)
+
+# Set reference value
+solver.parameters["reference"] = 0.40863917;
 
 # Solve to given tolerance
 tol = 1.e-05
-pde.solve(w_h, tol, M)
+solver.solve(tol, M)

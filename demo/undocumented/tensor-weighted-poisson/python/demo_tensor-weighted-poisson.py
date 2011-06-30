@@ -27,7 +27,7 @@ by the program generate_data.py
 This demo is dedicated to BF and Marius... ;-)
 """
 
-# Copyright (C) 2009 Anders Logg
+# Copyright (C) 2009-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -45,7 +45,7 @@ This demo is dedicated to BF and Marius... ;-)
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-12-16
-# Last changed: 2009-12-16
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -108,8 +108,8 @@ a = inner(C*grad(u), grad(v))*dx
 L = f*v*dx
 
 # Compute solution
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution in VTK format
 file = File("poisson.pvd")

@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg, 2011
+//
 // First added:  2007-11-23
 // Last changed: 2010-01-27
 //
@@ -85,16 +87,15 @@ int main()
   Source f;
   Flux g;
 
-  // Define PDE
+  // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
   L.g = g;
-  VariationalProblem pde(a, L, bc);
 
   // Solve PDE
   Function u(V);
-  pde.solve(u);
+  solve(a ==L, u, bc);
 
   // Save solution in VTK format
   File file_u("poisson.pvd");

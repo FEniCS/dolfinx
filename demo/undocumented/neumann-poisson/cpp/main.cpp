@@ -17,6 +17,7 @@
 //
 // Modified by Johannes Ring, 2011
 //
+// First added:  2010
 // Last changed: 2011-06-23
 //
 // This demo program illustrates how to solve Poisson's equation
@@ -82,14 +83,13 @@ int main()
   Flux g;
   L.f = f;
   L.g = g;
+  Function u(V);
+  LinearVariationalProblem problem(a, L, u);
 
   // Compute solution
-  VariationalProblem problem(a, L);
-  //problem.parameters("solver")["linear_solver"] = "iterative";
-  Function w(V);
-  problem.solve(w);
-
-  Function u = w[0];
+  LinearVariationalSolver solver(problem);
+  solver.parameters["linear_solver"] = "iterative";
+  solver.solve();
 
   // Plot solution
   plot(u);

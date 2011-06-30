@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg and Marie E. Rognes
+// Copyright (C) 2007-2011 Anders Logg and Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2010-08-31
+// Last changed: 2011-06-28
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
@@ -91,12 +91,9 @@ int main()
   EssentialBoundary boundary;
   DirichletBC bc(W0, G, boundary);
 
-  // Define variational problem
-  VariationalProblem problem(a, L, bc);
-
-  // Compute (full) solution
+  // Compute solution
   Function w(W);
-  problem.solve(w);
+  solve(a == L, w, bc);
 
   // Extract sub functions (function views)
   Function& sigma = w[0];

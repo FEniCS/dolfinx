@@ -2,7 +2,7 @@
 that include boundary indicators. The mesh used in this demo was
 generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/)."""
 
-# Copyright (C) 2008 Anders Logg
+# Copyright (C) 2008-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -20,7 +20,7 @@ generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/)."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-05-23
-# Last changed: 2008-12-13
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -48,8 +48,8 @@ bc2 = DirichletBC(V, u2, 2)
 bc3 = DirichletBC(V, u3, 3)
 
 # Compute solution
-problem = VariationalProblem(a, L, [bc0, bc1, bc2, bc3])
-u = problem.solve()
+u = Function(V)
+solve(a == L, u, [bc0, bc1, bc2, bc3])
 
 # Plot solution
 plot(u, interactive=True)

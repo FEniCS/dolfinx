@@ -59,29 +59,26 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
-
 f = Constant((0, 0))
 h = CellSize(mesh)
-
 beta  = 0.2
 delta = beta*h*h
-
-a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*inner(grad(q), grad(p)))*dx
+a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + \
+    delta*inner(grad(q), grad(p)))*dx
 L = inner(v + delta*grad(q), f)*dx
 
-# Set up PDE
-problem = VariationalProblem(a, L, bcs)
-
-# Solve PDE
-(U, P) = problem.solve().split()
+# Compute solution
+w = Function(system)
+solve(a == L, w, bcs)
+u, p = w.split()
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")
-ufile_pvd << U
+ufile_pvd << u
 pfile_pvd = File("pressure.pvd")
-pfile_pvd << P
+pfile_pvd << p
 
 # Plot solution
-plot(U)
-plot(P)
+plot(u)
+plot(p)
 interactive()
