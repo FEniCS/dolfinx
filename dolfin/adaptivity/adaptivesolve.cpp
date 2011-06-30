@@ -16,16 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-06-30
+// Last changed: 2011-07-01
 
 #include <dolfin/fem/Form.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/adaptivity/AdaptiveLinearVariationalSolver.h>
-#include <dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h>
+#include <dolfin/fem/LinearVariationalProblem.h>
+#include <dolfin/fem/NonlinearVariationalProblem.h>
+#include <dolfin/fem/Equation.h>
 
-#include "LinearVariationalProblem.h"
-#include "NonlinearVariationalProblem.h"
-#include "Equation.h"
+#include "AdaptiveLinearVariationalSolver.h"
+#include "AdaptiveNonlinearVariationalSolver.h"
 #include "adaptivesolve.h"
 
 //-----------------------------------------------------------------------------

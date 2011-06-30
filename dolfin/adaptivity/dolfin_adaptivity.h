@@ -2,6 +2,8 @@
 #define __DOLFIN_ADAPTIVITY_H
 
 // DOLFIN adaptivity interface
+// FIXME: We want to expose all of these, but there might be some SWIG
+// issues to resolve.
 
 // #include <dolfin/adaptivity/AdaptiveDatum.h>
 #include <dolfin/adaptivity/GenericAdaptiveVariationalSolver.h>
@@ -16,5 +18,6 @@
 
 #include <dolfin/adaptivity/adapt.h>
 #include <dolfin/adaptivity/marking.h>
+#include <dolfin/adaptivity/adaptivesolve.h>
 
 #endif

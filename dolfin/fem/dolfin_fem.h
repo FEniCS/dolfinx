@@ -13,7 +13,6 @@
 #include <dolfin/fem/PeriodicBC.h>
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/fem/adaptivesolve.h>
 #include <dolfin/fem/solve.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/Assembler.h>
