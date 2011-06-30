@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg, 2011
+//
 // First added:  2009-06-26
 // Last changed: 2010-09-01
 //
@@ -28,7 +30,7 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0
+//     u(x, y)         = 0
 //     nabla^2 u(x, y) = 0
 //
 // using a discontinuous Galerkin formulation (interior penalty method).
@@ -45,7 +47,8 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 4.0*std::pow(DOLFIN_PI, 4)*std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
+    values[0] = 4.0*std::pow(DOLFIN_PI, 4)*
+      std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
   }
 
 };
@@ -76,17 +79,14 @@ int main()
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 
-  // Define forms and attach functions
+  // Define variational problem
   Biharmonic::BilinearForm a(V, V);
   Biharmonic::LinearForm L(V);
   a.alpha = alpha; L.f = f;
 
-  // Create PDE
-  VariationalProblem problem(a, L, bc);
-
-  // Solve PDE
+  // Compute solution
   Function u(V);
-  problem.solve(u);
+  solve(a == L, u, bc);
 
   // Plot solution
   plot(u);

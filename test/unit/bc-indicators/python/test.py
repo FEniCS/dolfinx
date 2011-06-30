@@ -3,8 +3,8 @@ import unittest
 from dolfin import *
 
 
-class Test(unittest.TestCase): 
-    def test(self):  
+class Test(unittest.TestCase):
+    def test(self):
 
 	mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
 	V = FunctionSpace(mesh, "CG", 1)
@@ -23,11 +23,11 @@ class Test(unittest.TestCase):
 	bc3 = DirichletBC(V, u3, mf, 3)
 	bcs = [bc1, bc2, bc3]
 
-	a = inner(grad(u), grad(v))*dx 
-	L = f*v*dx  
+	a = inner(grad(u), grad(v))*dx
+	L = f*v*dx
 
-	problem = VariationalProblem(a, L, bcs)
-	u = problem.solve()
+        u = Function(V)
+        solve(a == L, u, bcs)
 
 	norm = u.vector().norm("l2")
         self.assertAlmostEqual(norm,  140.112465672, 9)

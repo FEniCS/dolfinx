@@ -55,6 +55,11 @@ namespace dolfin
     /// Print error message and throw exception
     void error(std::string msg) const;
 
+    /// Print error message, prefer this to the above generic error message
+    void dolfin_error(std::string location,
+                      std::string task,
+                      std::string reason) const;
+
     /// Begin task (increase indentation level)
     void begin(std::string msg, int log_level=INFO);
 

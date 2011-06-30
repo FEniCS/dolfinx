@@ -18,7 +18,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-01-15
+// Last changed: 2011-06-22
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H
@@ -27,24 +27,25 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
+#include "NonlinearVariationalProblem.h"
 
 namespace dolfin
 {
 
-  class Function;
-  class VariationalProblem;
-  class Parameters;
-
   /// This class implements a solver for nonlinear variational problems.
 
-  class NonlinearVariationalSolver
+  class NonlinearVariationalSolver : public Variable
   {
   public:
 
+    /// Create nonlinear variational solver for given problem
+    NonlinearVariationalSolver(NonlinearVariationalProblem& problem);
+
+    /// Create nonlinear variational solver for given problem (shared pointer version)
+    NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
+
     /// Solve variational problem
-    static void solve(Function& u,
-                      const VariationalProblem& problem,
-                      const Parameters& parameters);
+    void solve();
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -69,16 +70,16 @@ namespace dolfin
   private:
 
     // Nonlinear (algebraic) problem
-    class _NonlinearProblem : public NonlinearProblem
+    class NonlinearDiscreteProblem : public NonlinearProblem
     {
     public:
 
       // Constructor
-      _NonlinearProblem(const VariationalProblem& problem,
-                        const Parameters& parameters);
+      NonlinearDiscreteProblem(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                               boost::shared_ptr<NonlinearVariationalSolver> solver);
 
       // Destructor
-      ~_NonlinearProblem();
+      ~NonlinearDiscreteProblem();
 
       // Compute F at current point x
       virtual void F(GenericVector& b, const GenericVector& x);
@@ -88,16 +89,17 @@ namespace dolfin
 
     private:
 
-      // Reference to variational problem being solved
-      const VariationalProblem& problem;
-
-      // Reference to solver parameters
-      const Parameters& parameters;
+      // Problem and solver objects
+      boost::shared_ptr<NonlinearVariationalProblem> problem;
+      boost::shared_ptr<NonlinearVariationalSolver> solver;
 
       // True if Jacobian has been initialized
       bool jacobian_initialized;
 
     };
+
+    // The nonlinear problem
+    boost::shared_ptr<NonlinearVariationalProblem> problem;
 
   };
 

@@ -91,7 +91,10 @@ void Parameters::add(std::string key, int value)
 {
   // Check key name
   if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
 
   // Add parameter
   _parameters[key] = new IntParameter(key, value);
@@ -113,7 +116,10 @@ void Parameters::add(std::string key, double value)
 {
   // Check key name
   if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
 
   // Add parameter
   _parameters[key] = new DoubleParameter(key, value);
@@ -135,7 +141,10 @@ void Parameters::add(std::string key, std::string value)
 {
   // Check key name
   if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
 
   // Add parameter
   _parameters[key] = new StringParameter(key, value);
@@ -148,7 +157,10 @@ void Parameters::add(std::string key, const char* value)
 
   // Check key name
   if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
 
   // Add parameter
   _parameters[key] = new StringParameter(key, value);
@@ -183,7 +195,10 @@ void Parameters::add(std::string key, bool value)
 {
   // Check key name
   if (find_parameter(key))
-    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
 
   // Add parameter
   _parameters[key] = new BoolParameter(key, value);
@@ -249,10 +264,10 @@ Parameter& Parameters::operator[] (std::string key)
 {
   Parameter* p = find_parameter(key);
   if (!p)
-  {
-    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
-          key.c_str(), this->name().c_str());
-  }
+    dolfin_error("Parameters.cpp",
+                 "access parameter",
+                 "Parameter \"%s.%s\" not defined",
+                 this->name().c_str(), key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -260,10 +275,10 @@ const Parameter& Parameters::operator[] (std::string key) const
 {
   Parameter* p = find_parameter(key);
   if (!p)
-  {
-    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
-          key.c_str(), this->name().c_str());
-  }
+    dolfin_error("Parameters.cpp",
+                 "access parameter",
+                 "Parameter \"%s.%s\" not defined",
+                 this->name().c_str(), key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -271,10 +286,10 @@ Parameters& Parameters::operator() (std::string key)
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
-  {
-    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
-          key.c_str(), this->name().c_str());
-  }
+    dolfin_error("Parameters.cpp",
+                 "access parameter set",
+                 "Parameter set \"%s.%s\" not defined",
+                 this->name().c_str(), key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -282,10 +297,10 @@ const Parameters& Parameters::operator() (std::string key) const
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
-  {
-    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
-          key.c_str(), this->name().c_str());
-  }
+    dolfin_error("Parameters.cpp",
+                 "access parameter set",
+                 "Parameter set \"%s.%s\" not defined",
+                 this->name().c_str(), key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------

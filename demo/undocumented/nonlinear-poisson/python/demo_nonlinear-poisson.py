@@ -12,9 +12,9 @@ and boundary conditions given by
      u(x, y)     = 1  for x = 0
      du/dn(x, y) = 0  otherwise
 
-This is equivalent to solving
+This is equivalent to solving the variational problem
 
-    F(u) = (grad(v), (1 + u^2)*grad(u)) - (v, f) = 0
+    F(u) = ((1 + u^2)*grad(u), grad(v)) - (f, v) = 0
 
 """
 
@@ -60,19 +60,14 @@ V = FunctionSpace(mesh, "CG", 1)
 g = Constant(1.0)
 bc = DirichletBC(V, g, DirichletBoundary())
 
-# Define source and solution functions
-f = Expression("x[0]*sin(x[1])")
-u = Function(V)
-
 # Define variational problem
-v  = TestFunction(V)
-du = TrialFunction(V)
-F  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
-dF  = derivative(F, u, du)
+u = Function(V)
+v = TestFunction(V)
+f = Expression("x[0]*sin(x[1])")
+F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
-# Solve nonlinear variational problem
-problem = VariationalProblem(F, dF, bc)
-problem.solve(u)
+# Compute solution
+solve(F == 0, u, bc)
 
 # Plot solution and solution gradient
 plot(u, title="Solution")

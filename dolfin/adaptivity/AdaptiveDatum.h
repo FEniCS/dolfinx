@@ -33,7 +33,6 @@ namespace dolfin
 
   /// An _AdaptiveDatum_ is a storage unit for data created in an
   /// adaptive process.
-
   class AdaptiveDatum : public Variable
   {
   public:
@@ -42,13 +41,13 @@ namespace dolfin
     ///
     /// *Arguments*
     ///
-    ///     refinement_level (an (unsigned int)
+    ///     refinement_level (unsigned int)
     ///         the number of refinements relative to coarset mesh
     ///
-    ///     num_dofs (an (unsigned) int)
+    ///     num_dofs (unsigned int)
     ///         dimension of discrete solution space
     ///
-    ///     num_cells (an (unsigned) int)
+    ///     num_cells (unsigned int)
     ///         number of cells in mesh
     ///
     ///     error_estimate (double)

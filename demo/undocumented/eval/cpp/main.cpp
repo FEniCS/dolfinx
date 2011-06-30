@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-03-11
-// Last changed: 2011-01-19
+// Last changed: 2011-06-28
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -57,9 +57,8 @@ int main()
   Projection::BilinearForm a(V, V);
   Projection::LinearForm L(V);
   L.f = f;
-  VariationalProblem pde(a, L);
   Function g(V);
-  pde.solve(g);
+  solve(a == L, g);
 
   // Evaluate user-defined function f
   info("f(x) = %g", f(x));

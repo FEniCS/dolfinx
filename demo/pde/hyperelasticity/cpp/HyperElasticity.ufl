@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-09-29
-# Last changed: 2010-09-01
+# Last changed: 2011-06-28
 #
 # The bilinear form a(du, v) and linear form L(v) for
 # a hyperelastic model.
@@ -32,7 +32,7 @@ v  = TestFunction(element)      # Test function
 
 # Functions
 u  = Coefficient(element)       # Displacement from previous iteration
-B  = Coefficient(element)       # Body force per unit mass
+B  = Coefficient(element)       # Body force per unit volume
 T  = Coefficient(element)       # Traction force on the boundary
 
 # Kinematics

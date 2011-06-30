@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Kristian B. Oelgaard, Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2011 Kristian B. Oelgaard, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-06-29
-// Last changed: 2010-01-27
+// Last changed: 2011-06-29
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -104,16 +104,15 @@ int main(int argc, char *argv[])
   // Solve system
   solve(A, phi_h.vector(), b);
 
-  // Define PDE for projection onto continuous P1 basis
+  // Define variational problem
   Projection::FunctionSpace Vp(mesh);
   Projection::BilinearForm ap(Vp, Vp);
   Projection::LinearForm Lp(Vp);
   Lp.phi0 = phi_h;
-  VariationalProblem pde(ap, Lp);
 
-  // Compute projection
+  // Compute solution
   Function phi_p(Vp);
-  pde.solve(phi_p);
+  solve(ap == Lp, phi_p);
 
   // Save projected solution in VTK format
   File file("temperature.pvd");

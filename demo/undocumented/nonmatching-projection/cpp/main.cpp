@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg, 2011.
+//
 // First added:  2009-10-10
-// Last changed:
-
+// Last changed: 2011-06-28
 //
 // This program demonstrates the L2 projection of a function onto a
 // non-matching mesh.
-//
 
 #include <dolfin.h>
 #include "P1_projection.h"
@@ -58,17 +58,14 @@ int main()
   Function f0(V0);
   f0.interpolate(e);
 
-  // Create forms for projection
+  // Define variational problem
   P1_projection::FunctionSpace V1(mesh1);
   P1_projection::BilinearForm a(V1, V1);
   P1_projection::LinearForm L(V1, f0);
 
-  // Create projection problem
-  VariationalProblem projection(a, L);
-
-  // Project f0 into V1
+  // Compute solution
   Function f1(V1);
-  projection.solve(f1);
+  solve(a == L, f1);
 
   // Plot results
   plot(f0);

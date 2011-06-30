@@ -1,5 +1,5 @@
 install(CODE "MESSAGE(
-\"------------------------------------------------------------------------------
+\"----------------------------------------------------------------------------
 DOLFIN has now been installed in
 
     ${CMAKE_INSTALL_PREFIX}
@@ -19,4 +19,4 @@ To update your environment variables, run the following command:
 
 For future reference, we recommend that you add this command to your
 configuration (.bashrc, .profile or similar).
-------------------------------------------------------------------------------\")")
+----------------------------------------------------------------------------\")")

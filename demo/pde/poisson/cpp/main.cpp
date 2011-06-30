@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2011-06-01
+// Last changed: 2011-06-28
 //
 // This demo program solves Poisson's equation
 //
@@ -85,9 +85,8 @@ int main()
   L.g = g;
 
   // Compute solution
-  VariationalProblem problem(a, L, bc);
   Function u(V);
-  problem.solve(u);
+  solve(a == L, u, bc);
 
   // Save solution in VTK format
   File file("poisson.pvd");

@@ -18,10 +18,11 @@ boundary conditions."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Kristian Oelgaard, 2008
+# Modified by Kristian Oelgaard 2008
+# Modified by Anders Logg 2011
 #
 # First added:  2008-08-13
-# Last changed: 2010-09-05
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -54,7 +55,6 @@ u = TrialFunction(V)
 v = TestFunction(V)
 f = Source()
 g = Flux()
-
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
@@ -62,17 +62,14 @@ L = f*v*dx + g*v*ds
 u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
-# Solve PDE and plot solution
-problem = VariationalProblem(a, L, bc)
-U = problem.solve()
-
-plot(U)
+# Compute solution
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution to file
 file = File("poisson.pvd")
-file << U
+file << u
 
-# Hold plot
+# Plot solution
+plot(u)
 interactive()
-
-summary()

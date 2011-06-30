@@ -31,7 +31,8 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
-#include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/fem/LinearVariationalProblem.h>
+#include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
@@ -82,9 +83,10 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+  const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
+  assert(_a_star);
   Function z_h(_a_star->function_space(1));
   compute_dual(z_h, bcs);
 
@@ -106,6 +108,7 @@ double ErrorControl::estimate_error(const Function& u,
   }
 
   // Assemble error estimate
+  info("Assembling error estimate.");
   const double error_estimate = assemble(*_residual);
 
   // Return estimate
@@ -115,8 +118,10 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
-  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
+  info("Solving dual problem.");
 
+  // Create dual boundary conditions by homogenizing
+  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
   for (uint i = 0; i < bcs.size(); i++)
   {
     // Only handle DirichletBCs
@@ -134,13 +139,20 @@ void ErrorControl::compute_dual(Function& z,
     dual_bcs.push_back(dual_bc_ptr);
   }
 
-  VariationalProblem dual(_a_star, _L_star, dual_bcs);
-  dual.solve(z);
+  // Create shared_ptr to dual solution (FIXME: missing interface ...)
+  boost::shared_ptr<Function> dual(reference_to_no_delete_pointer(z));
+
+  // Solve dual problem
+  LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
+  LinearVariationalSolver solver(dual_problem);
+  solver.solve();
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
+  info("Extrapolating dual solution.");
+
   // Extrapolate
   _Ez_h.reset(new Function(_E));
   _Ez_h->extrapolate(z);
@@ -217,12 +229,13 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   // Take absolute value of indicators
   indicators.abs();
 }
+
 //-----------------------------------------------------------------------------
 void ErrorControl::residual_representation(Function& R_T,
                                            SpecialFacetFunction& R_dT,
                                            const Function& u)
 {
-  begin("Computing residual representation");
+  begin("Computing residual representation.");
 
   // Compute cell residual
   Timer timer("Computation of residual representation");
@@ -237,7 +250,7 @@ void ErrorControl::residual_representation(Function& R_T,
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
-  begin("Computing cell residual representation");
+  begin("Computing cell residual representation.");
 
   // Attach primal approximation to left-hand side form (residual) if
   // necessary
@@ -296,7 +309,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& u,
                                           const Function& R_T)
 {
-  begin("Computing facet residual representation");
+  begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
   const FunctionSpace& V = R_dT[0].function_space();
@@ -304,11 +317,9 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   // Extract mesh
   const Mesh& mesh(V.mesh());
-  //const int q = mesh.topology().dim();
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  //const int n = _C->element().space_dimension();
   const int local_cone_dim = _C->element().space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with

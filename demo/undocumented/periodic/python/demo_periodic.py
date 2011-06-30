@@ -24,8 +24,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2007-11-15
-# Last changed: 2010-09-05
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -71,13 +73,12 @@ bcs = [bc0, bc1]
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Source()
-
 a = dot(grad(u), grad(v))*dx
 L = f*v*dx
 
-# Solve PDE
-problem = VariationalProblem(a, L, bcs)
-u = problem.solve()
+# Compute solution
+u = Function(V)
+solve(a == L, u, bcs)
 
 # Save solution to file
 file = File("periodic.pvd")

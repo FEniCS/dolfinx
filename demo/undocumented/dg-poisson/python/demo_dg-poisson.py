@@ -31,10 +31,10 @@ using a discontinuous Galerkin formulation (interior penalty method).
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008-2011
 #
 # First added:  2007-10-02
-# Last changed: 2008-12-19
+# Last changed: 2011-06-28
 
 from dolfin import *
 
@@ -56,16 +56,7 @@ f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 alpha = 4.0
 gamma = 8.0
 
-w = Function(V)
-F = dot(grad(v), grad(w))*dx \
-   - dot(avg(grad(v)), jump(w, n))*dS \
-   - dot(jump(v, n), avg(grad(w)))*dS \
-   + alpha/h_avg*dot(jump(v, n), jump(w, n))*dS \
-   - dot(grad(v), w*n)*ds \
-   - dot(v*n, grad(w))*ds \
-   + gamma/h*v*w*ds
-
-# Define bilinear form
+# Define variational problem
 a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
@@ -73,15 +64,11 @@ a = dot(grad(v), grad(u))*dx \
    - dot(grad(v), u*n)*ds \
    - dot(v*n, grad(u))*ds \
    + gamma/h*v*u*ds
-
-a = derivative(F, w, u)
-
-# Define linear form
 L = v*f*dx
 
 # Compute solution
-problem = VariationalProblem(a, L)
-u = problem.solve()
+u = Function(V)
+solve(a == L, u)
 print "norm:", u.vector().norm("l2")
 
 # Project solution to piecewise linears

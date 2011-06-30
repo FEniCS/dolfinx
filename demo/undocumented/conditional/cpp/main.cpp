@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-07-23
-// Last changed: 2010-07-22
+// Last changed: 2011-06-29
 //
 // This demo program solves Poisson's equation
 //
@@ -61,10 +61,8 @@ int main()
   Conditional::LinearForm L(V);
 
   // Compute solution
-  VariationalProblem problem(a, L, bc);
-
   Function u(V);
-  problem.solve(u);
+  solve(a == L, u, bc);
 
   // Save solution in VTK format
   File file("conditional.pvd");

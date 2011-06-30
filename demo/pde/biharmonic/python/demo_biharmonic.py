@@ -31,8 +31,10 @@ using a discontinuous Galerkin formulation (interior penalty method).
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg, 2011
+#
 # First added:  2009-06-26
-# Last changed: 2009-06-26
+# Last changed: 2011-06-28
 
 # Begin demo
 
@@ -81,9 +83,9 @@ a = inner(div(grad(u)), div(grad(v)))*dx \
 # Define linear form
 L = f*v*dx
 
-# Create variational problem and solve
-problem = VariationalProblem(a, L, bc)
-u = problem.solve()
+# Solve variational problem
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution to file
 file = File("biharmonic.pvd")

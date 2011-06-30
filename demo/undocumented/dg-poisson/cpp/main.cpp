@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg and Kristian B. Oelgaard
+// Copyright (C) 2006-2011 Anders Logg and Kristian B. Oelgaard
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-12-05
-// Last changed: 2010-01-27
+// Last changed: 2011-06-28
 //
 // This demo program solves Poisson's equation,
 //
@@ -68,18 +68,14 @@ int main()
   // Create funtion space
   Poisson::FunctionSpace V(mesh);
 
-  // Define forms and attach functions
+  // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
 
-  // Create variational problem
-  VariationalProblem problem(a, L);
-  //problem.parameters["symmetric"] = true;
-
-  // Solve variational problem
+  // Compute solution
   Function u(V);
-  problem.solve(u);
+  solve(a == L, u);
 
   // Plot solution
   plot(u);

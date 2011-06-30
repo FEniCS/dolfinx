@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-03-05
-// Last changed: 2011-01-17
+// Last changed: 2011-06-30
 //
 // This demo program solves Poisson's equation
 //
@@ -63,12 +63,13 @@ int main()
   // Define variational problem
   SpatialCoordinates::BilinearForm a(V, V);
   SpatialCoordinates::LinearForm L(V);
+  Function u(V);
+  LinearVariationalProblem problem(a, L, u, bc);
 
   // Compute solution
-  VariationalProblem problem(a, L, bc);
-  problem.parameters("solver")["linear_solver"] = "iterative";
-  Function u(V);
-  problem.solve(u);
+  LinearVariationalSolver solver(problem);
+  solver.parameters["linear_solver"] = "iterative";
+  solver.solve();
 
   // Save solution in VTK format
   File file("spatial-coordinates.pvd");
