@@ -49,6 +49,8 @@ void XMLFunctionPlotData::read(FunctionPlotData& plot_data,
 
   // Read vector
   GenericVector& vector = plot_data.vertex_values();
+  const uint size = XMLVector::read_size(xml_plot_node);
+  vector.resize(size);
   XMLVector::read(vector, xml_plot_node);
 }
 //-----------------------------------------------------------------------------

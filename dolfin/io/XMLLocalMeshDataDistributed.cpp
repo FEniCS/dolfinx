@@ -46,8 +46,6 @@ void XMLLocalMeshDataDistributed::read()
   // Clear mesh data
   mesh_data.clear();
 
-  //xmlDefaultSAXHandlerInit();
-
   // Create SAX2 handler
   xmlSAXHandler sax_handler;
   memset(&sax_handler, 0, sizeof(sax_handler));
