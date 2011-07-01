@@ -35,9 +35,9 @@ class NoslipDomain : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
-    return on_boundary &&
-           (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS |
-           (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS));
+    return (on_boundary &&
+            (x[0] < DOLFIN_EPS || x[1] < DOLFIN_EPS ||
+             (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS)));
   }
 };
 
