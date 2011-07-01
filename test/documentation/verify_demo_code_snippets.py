@@ -30,6 +30,12 @@ import sys
 from os import chdir, path, getcwd, curdir, pardir, listdir
 from sys import stderr, path as sys_path
 
+# Make sure we start where this test script is located.
+chdir(sys_path[0])
+
+# We currently only verify demo code.
+chdir(path.join(pardir, pardir, "demo"))
+
 # We have C++ and Python versions of the demos.
 directories = ["cpp", "python"]
 
@@ -133,13 +139,6 @@ def block_in_source(line, block, source_files):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
-        usage = "Usage: python verify_demo_code_snippets.py absolute_path_to_dolfin_demo_dir"
-        print usage
-        sys.exit(2)
-
-    chdir(sys.argv[1])
-
     # Loop categories/demos/directories
 
     # Get all demo categories (fem, la. pde, etc.)
@@ -153,16 +152,8 @@ if __name__ == "__main__":
         chdir(category)
         # Get all demos (Poisson, mixed-Poisson etc.)
         demos = [d for d in listdir(curdir) if path.isdir(d)]
-        print "Checking demos: ", demos
 
-        # Check that there are some demos in each category, otherwise
-        # something is probably wrong
-        if not demos:
-            msg = ("Expected demos in category '%s'. None found, exiting.\n"
-                   % category)
-            stderr.write(msg)
-            sys.exit(1)
-
+        stderr.write("\nChecking %s demos: %s\n" % (category, str(demos)))
         for demo in demos:
             chdir(demo)
             for directory in directories:
@@ -170,14 +161,13 @@ if __name__ == "__main__":
                 stderr.write("Treating %s" % path.join(category, demo, directory))
                 # Get files in demo directory and sort in rst and source files.
                 files = listdir(curdir)
-
-
                 rst_files = [f for f in files if path.splitext(f)[-1] == ".rst"]
                 source_files = [f for f in files if path.splitext(f)[-1] in\
                                   (".py", ".ufl", ".cpp")]
 
+                # If no .rst files are found, that is ok, but suboptimal.
                 if (len(rst_files) == 0):
-                    stderr.write(" -- Missing .rst\n")
+                    stderr.write(" -- missing .rst file\n")
 
                 # Loop files, check if code blocks are present in source files.
                 for rst_file in rst_files:

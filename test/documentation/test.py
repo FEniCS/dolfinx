@@ -16,17 +16,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-05-22
-# Last changed: 2011-07-01
+# Last changed: 2011-05-22
 
 import sys
 from dolfin_utils.commands import getstatusoutput
 
-if len(sys.argv) != 2:
-    usage = "Usage: python test.py absolute_path_to_dolfin_demo_dir"
-    print usage
-    sys.exit(2)
-
-tests = ["verify_demo_code_snippets.py %s" % sys.argv[1]]
+tests = ["verify_demo_code_snippets.py"]
 
 failed = []
 for test in tests:
