@@ -15,11 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Marie E. Rognes 2011
-# Modifiey by Anders Logg 2011
+# Modified by Marie E. Rognes (meg@simula.no)
 #
 # First added:  2011-05-22
-# Last changed: 2011-07-01
+# Last changed: 2011-05-23
 
 """This utility script will find all *.rst files in the source/demo
 directory and checks that any code snippets highlighted by the .. code-block::
@@ -153,33 +152,33 @@ if __name__ == "__main__":
         chdir(category)
         # Get all demos (Poisson, mixed-Poisson etc.)
         demos = [d for d in listdir(curdir) if path.isdir(d)]
+
+        stderr.write("\nChecking %s demos: %s\n" % (category, str(demos)))
         for demo in demos:
             chdir(demo)
             for directory in directories:
                 chdir(directory)
-                stderr.write("Checking demo %s" % path.join(category, demo, directory))
+                stderr.write("Treating %s" % path.join(category, demo, directory))
                 # Get files in demo directory and sort in rst and source files.
                 files = listdir(curdir)
                 rst_files = [f for f in files if path.splitext(f)[-1] == ".rst"]
                 source_files = [f for f in files if path.splitext(f)[-1] in\
                                   (".py", ".ufl", ".cpp")]
 
+                # If no .rst files are found, that is ok, but suboptimal.
+                if (len(rst_files) == 0):
+                    stderr.write(" -- missing .rst file\n")
+
                 # Loop files, check if code blocks are present in source files.
                 for rst_file in rst_files:
                     (ok, block) = verify_blocks(rst_file, source_files,
                                                 block_source[directory])
                     if not ok:
-                        stderr.write(": " + "*** FAILED ***\n")
-                        stderr.write("\nFailing code block:\n\n %s\n\n" % block)
+                        stderr.write(", " + "failed.\n")
+                        stderr.write("\nFailing block: %s\n" % block)
                         failed += [demo]
                     else:
-                        stderr.write(": " + "OK\n")
-
-                # Check if documentation is missing
-                if len(rst_files) == 0:
-                    stderr.write(": " + "*** MISSING ***\n")
-                    failed += [demo]
-
+                        stderr.write(", " + "OK.\n")
                 chdir(pardir)
             chdir(pardir)
         chdir(pardir)

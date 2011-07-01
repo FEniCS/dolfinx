@@ -111,7 +111,7 @@ C++ program
 In the C++ program, :download:`main.cpp`, we start by including
 ``dolfin.h`` and the generated header files:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     #include <dolfin.h>
     #include "TentativeVelocity.h"
@@ -121,7 +121,7 @@ In the C++ program, :download:`main.cpp`, we start by including
 To be able to use classes and functions from the DOLFIN namespace
 directly, we write
 
-.. code-block:: cpp
+.. code-block:: c++
 
     using namespace dolfin;
 
@@ -129,14 +129,16 @@ Next, we define the subdomains that we will use to specify boundary
 conditions. We do this by defining subclasses of
 :cpp:class:`SubDomain` and overloading the function ``inside``:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Define noslip domain
     class NoslipDomain : public SubDomain
     {
       bool inside(const Array<double>& x, bool on_boundary) const
       {
-        return on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS;
+        return (on_boundary &&
+                (x[0] < DOLFIN_EPS || x[1] < DOLFIN_EPS ||
+                 (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS)));
       }
     };
 
@@ -162,7 +164,7 @@ We also define a subclass of :cpp:class:`Expression` which we will use
 to specify the time-dependent boundary value for the pressure at the
 inflow.
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Define pressure boundary value at inflow
     class InflowPressure : public Expression
@@ -190,7 +192,7 @@ of the current time in each time step.
 Once we have defined all classes we will use to write our program, we
 start our C++ program by writing
 
-.. code-block:: cpp
+.. code-block:: c++
 
     int main()
     {
@@ -198,7 +200,7 @@ start our C++ program by writing
 We then load the mesh for the L-shaped domain from file and refine it
 once to obtain a finer mesh:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Load mesh from file
     Mesh mesh("lshape.xml.gz");
@@ -210,7 +212,7 @@ We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and test and trial functions on these
 spaces:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Create function spaces
     VelocityUpdate::FunctionSpace V(mesh);
@@ -218,7 +220,7 @@ spaces:
 
 The time step and the length of the interval are defined by:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Set parameter values
     double dt = 0.01;
@@ -228,7 +230,7 @@ We next define the time-dependent pressure boundary value, and zero
 scalar and vector constants that will be used for boundary conditions
 below.
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Define values for boundary conditions
     InflowPressure p_in;
@@ -238,7 +240,7 @@ below.
 Before we can define our boundary conditions, we also need to
 instantiate the classes we defined above for the boundary subdomains:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Define boundary conditions
     DirichletBC noslip(V, zero_vector, noslip_domain);
@@ -255,7 +257,7 @@ pressure. We define one no-slip boundary condition for the velocity
 and a pair of boundary conditions for the pressure at the inflow and
 outflow boundaries:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Define boundary conditions
     DirichletBC noslip(V, zero_vector, noslip_domain);
@@ -276,7 +278,7 @@ equations on other geometries.
 We next define the functions and the coefficients that will be used
 below:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Create functions
     Function u0(V);
@@ -291,7 +293,7 @@ The next step is now to define the variational problems for the three
 steps of Chorin's method. We do this by instantiating the classes
 generated from our UFL form files:
 
-.. code-block:: cpp
+.. code-block:: c++
 
    // Create forms
    TentativeVelocity::BilinearForm a1(V, V);
@@ -304,7 +306,7 @@ generated from our UFL form files:
 Since the forms depend on coefficients, we have to attach the
 coefficients defined above to the appropriate forms:
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Set coefficients
   a1.k = k; L1.k = k; L1.u0 = u0; L1.f = f;
@@ -315,7 +317,7 @@ Since the bilinear forms do not depend on any coefficients that change
 during time-stepping, the corresponding matrices remain constant. We
 may therefore assemble these before the time-stepping begins:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Assemble matrices
     Matrix A1, A2, A3;
@@ -334,7 +336,7 @@ During time-stepping, we will store the solution in VTK format
 that can be used to store the solution. Specifying the ``.pvd`` suffix
 signals that the solution should be stored in VTK format:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Create files for storing solution
     File ufile("velocity.pvd");
@@ -342,19 +344,17 @@ signals that the solution should be stored in VTK format:
 
 The time-stepping loop is now implemented as follows:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Time-stepping
     double t = dt;
-    Progress p("Time-stepping");
     while (t < T + DOLFIN_EPS)
     {
       // Update pressure boundary condition
       p_in.t = t;
 
-We use the :cpp:class:`Progress` class to display a progress bar
-during the computation. We also remember to update the current time
-for the time-dependent pressure boundary value.
+We remember to update the current time for the time-dependent pressure
+boundary value.
 
 For each of the three steps of Chorin's method, we assemble the
 right-hand side, apply boundary conditions, and solve a linear
@@ -363,7 +363,7 @@ factorization is used for the computation of the tentative velocity
 and the velocity update, while algebraic multigrid is used for the
 pressure equation:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Compute tentative velocity step
     begin("Computing tentative velocity");
@@ -378,7 +378,7 @@ pressure equation:
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre");
+    solve(A2, p1.vector(), b2, "gmres", "amg");
     end();
 
     // Velocity correction
@@ -396,7 +396,7 @@ messages.
 At the end of the time-stepping loop, we store the solution to file
 and update values for the next time step:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Save to file
     ufile << u1;
@@ -404,12 +404,11 @@ and update values for the next time step:
 
     // Move to next time step
     u0 = u1;
-    p = t / T;
     t += dt;
 
 Finally, we plot the solution and the program is finished:
 
-.. code-block:: cpp
+.. code-block:: c++
 
     // Plot solution
     plot(p1, "Pressure");
