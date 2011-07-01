@@ -126,7 +126,8 @@ void XMLFile::operator>> (GenericVector& input)
 
   // Resize if necessary
   const uint input_vector_size = input.size();
-  if (MPI::num_processes() > 1 && input_vector_size != size)
+  const uint num_proc = MPI::num_processes();
+  if (num_proc > 1 && input_vector_size != size)
     warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
   if (input.size() != size)
     input.resize(size);
