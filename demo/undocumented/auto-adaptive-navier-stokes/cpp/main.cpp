@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-27
+// Last changed: 2011-07-01
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -78,18 +78,10 @@ int main() {
   F.nu = nu;
   F.w = w;
 
-  // Define variational problem from the variational form F, specify
-  // the unknown Function w and the boundary condition bc
-  NonlinearVariationalProblem pde(F, 0, w, bc);
-
   // Initialize Jacobian dF
   AdaptiveNavierStokes::BilinearForm dF(W, W);
   dF.nu = nu;
   dF.w = w;
-  pde.set_jacobian(dF);
-
-  // Define solver
-  AdaptiveNonlinearVariationalSolver solver(pde);
 
   // Define goal functional
   AdaptiveNavierStokes::GoalFunctional M(mesh);
@@ -99,12 +91,26 @@ int main() {
   outflow.mark(outflow_markers, 0);
   M.ds = outflow_markers;
 
+  // Define error tolerance
+  double tol = 1.e-5;
+
+  // If no more control is wanted, do:
+  // solve(F == 0, w, bc, dF, tol, M);
+  // return 0;
+
+  // Define variational problem from the variational form F, specify
+  // the unknown Function w and the boundary condition bc
+  NonlinearVariationalProblem pde(F, 0, w, bc);
+  pde.set_jacobian(dF);
+
+  // Define solver
+  AdaptiveNonlinearVariationalSolver solver(pde);
+
   // Set (precomputed) reference in adaptive solver to evaluate
   // quality of error estimates and adaptive refinement
   solver.parameters["reference"] = 0.40863917;
 
   // Solve problem with goal-oriented error control to given tolerance
-  double tol = 1.e-5;
   solver.solve(tol, M);
 
   // Show timings
