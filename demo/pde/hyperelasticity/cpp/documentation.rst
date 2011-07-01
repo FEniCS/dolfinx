@@ -244,26 +244,21 @@ the forms.
 
 .. code-block:: c++
 
-  // Create forms
-  HyperElasticity::BilinearForm a(V, V);
-  a.mu = mu; a.lmbda = lambda; a.u = u;
-  HyperElasticity::LinearForm L(V);
-  L.mu = mu; L.lmbda = lambda; L.B = B; L.T = T; L.u = u;
+  // Create (linear) form defining (nonlinear) variational problem
+  HyperElasticity::ResidualForm F(V);
+  F.mu = mu; F.lmbda = lambda; F.B = B; F.T = T; F.u = u;
+
+  // Create jacobian dF = F' (for use in nonlinear solver).
+  HyperElasticity::JacobianForm J(V, V);
+  J.mu = mu; J.lmbda = lambda; J.u = u;
 
 Now, we have specified the variational forms and can consider the
-solution of the variational problem.  First, a ``VariationalProblem``
-object is created using the bilinear and linear forms, and the
-Dirichlet boundary conditions. The last argument ``true`` specifies
-that this is a nonlinear problem and that a Newton solve should be
-performed. Then, to solve the problem, the ``solve`` function is
-called with ``u`` as a single argument; after which ``u`` will contain
-the solution.
+solution of the variational problem.
 
 .. code-block:: c++
 
-  // Solve nonlinear variational problem
-  VariationalProblem problem(a, L, bcs, true);
-  problem.solve(u);
+  // Solve nonlinear variational problem F(u; v) = 0
+  solve(F == 0, u, bcs, J);
 
 Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the displacement solution is

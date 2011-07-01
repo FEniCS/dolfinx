@@ -136,7 +136,9 @@ conditions. We do this by defining subclasses of
     {
       bool inside(const Array<double>& x, bool on_boundary) const
       {
-        return on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS;
+        return (on_boundary &&
+                (x[0] < DOLFIN_EPS || x[1] < DOLFIN_EPS ||
+                 (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS)));
       }
     };
 
@@ -346,15 +348,13 @@ The time-stepping loop is now implemented as follows:
 
     // Time-stepping
     double t = dt;
-    Progress p("Time-stepping");
     while (t < T + DOLFIN_EPS)
     {
       // Update pressure boundary condition
       p_in.t = t;
 
-We use the :cpp:class:`Progress` class to display a progress bar
-during the computation. We also remember to update the current time
-for the time-dependent pressure boundary value.
+We remember to update the current time for the time-dependent pressure
+boundary value.
 
 For each of the three steps of Chorin's method, we assemble the
 right-hand side, apply boundary conditions, and solve a linear
@@ -378,7 +378,7 @@ pressure equation:
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre");
+    solve(A2, p1.vector(), b2, "gmres", "amg");
     end();
 
     // Velocity correction
@@ -404,7 +404,6 @@ and update values for the next time step:
 
     // Move to next time step
     u0 = u1;
-    p = t / T;
     t += dt;
 
 Finally, we plot the solution and the program is finished:

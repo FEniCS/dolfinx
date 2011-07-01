@@ -5,7 +5,7 @@ conditions, it focuses on how to:
 
 * Minimise a non-quadratic functional
 * Use automatic computation of the directional derivative
-* Use VariationalProblem for a nonlinear equation
+* Solve a nonlinear variational problem
 * Define compiled sub-domains
 * Use specific form compiler optimization options
 

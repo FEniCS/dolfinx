@@ -130,21 +130,6 @@ Directional derivatives are now computed of :math:`\Pi` and :math:`L`
 .. literalinclude:: demo_hyperelasticity.py
    :lines: 66-70
 
-.. index::
-   single: VariationalProblem; (in Hyperelasticity demo)
-
-The functional ``L`` and its Jacobian ``a``, together with the list of
-Dirichlet boundary conditions ``[bcl, bcr]``, are used to construct an
-nonlinear variational problem. Note that for nonlinear variational
-problems, the linear form ``L`` is given as the first argument and the
-bilinear form ``a`` is given as the second argument. When so is the
-case, the VariationalProblem identifies this as a nonlinear problem
-and uses a Newton iteration to solve the problem when calling
-:py:func:`solve <dolfin.fem.VariationalProblem.solve>`:
-
-.. index::
-   single: form compiler parameters; (in Hyperelasticity demo)
-
 .. literalinclude:: demo_hyperelasticity.py
    :lines: 72-74
 

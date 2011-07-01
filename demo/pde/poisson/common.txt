@@ -2,7 +2,6 @@
 This demo illustrates how to:
 
 * Solve a linear partial differential equation
-* Use VariationalProblem
 * Create and apply Dirichlet boundary conditions
 * Define Expressions
 * Define a FunctionSpace
