@@ -19,15 +19,22 @@ file.
 
 First, the :py:mod:`dolfin` module is imported:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 28
+.. code-block:: python
+
+    from dolfin import *
 
 The behavior of the form compiler FFC can be adjusted by prescribing
 various parameters. Here, we want to use some of the optimization
 features.
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 30-35
+.. code-block:: python
+
+    # Optimization options for the form compiler
+    parameters["form_compiler"]["cpp_optimize"] = True
+    ffc_options = {"optimize": True, \
+                   "eliminate_zeros": True, \
+                   "precompute_basis_const": True, \
+                   "precompute_ip_const": True}
 
 The first line tells the form compiler to use C++ compiler optimizations when
 compiling the generated code. The remainder is a dictionary of options which
@@ -42,8 +49,11 @@ on this mesh. Here, we choose to create a unit cube mesh with 17 ( =
 space of continuous piecewise linear vector polynomials (a Lagrange
 vector element space):
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 38-39
+.. code-block:: python
+
+    # Create mesh and define function space
+    mesh = UnitCube(16, 16, 16)
+    V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 Note that :py:class:`VectorFunctionSpace
 <dolfin.functions.functionspace.VectorFunctionSpace>` creates a
@@ -56,13 +66,17 @@ dimension, unless otherwise specified.
 The portions of the boundary on which Dirichlet boundary conditions
 will be applied are now defined:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 26-28
+.. code-block:: python
+
+    # Mark boundary subdomians
+    left, right = compile_subdomains(["(std::abs(x[0])       < DOLFIN_EPS) && on_boundary",
+                                      "(std::abs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary"])
 
 The boundary subdomain ``left`` corresponds to the part of the
 boundary on which :math:`x=0` and the boundary subdomain ``right``
 corresponds to the part of the boundary on which :math:`x=1`. Note
-that C++ syntax is used in the ``compile_subdomains`` function since
+that C++ syntax is used in the :py:func:`compile_subdomains
+<dolfin.compilemodules.subdomains.compile_subdomains>` function since
 the function will be automatically compiled into C++ code for
 efficiency. The (built-in) variable ``on_boundary`` is true for points
 on the boundary of a domain, and false otherwise.
@@ -71,67 +85,112 @@ on the boundary of a domain, and false otherwise.
 
 The Dirichlet boundary values are defined using compiled expressions:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 30-35
+.. code-block:: python
 
-For the ``Expression`` ``r``, the Python dictionary named ``defaults`` is used
-to automatically set values in the function string.
+    # Define Dirichlet boundary (x = 0 or x = 1)
+    c = Expression(("0.0", "0.0", "0.0"))
+    r = Expression(("scale*0.0",
+                    "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])",
+                    "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"),
+                    scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3)
+
+Note the use of setting named parameters in the :py:class:`Expression
+<dolfin.functions.expression.Expression>` for ``r``.
 
 The boundary subdomains and the boundary condition expressions are
-collected together in two ``DirichletBC`` objects, one for each part
-of the Dirichlet boundary:
+collected together in two :py:class:`DirichletBC
+<dolfin.fem.bcs.DirichletBC>` objects, one for each part of the
+Dirichlet boundary:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 37-38
+.. code-block:: python
+
+    bcl = DirichletBC(V, c, left)
+    bcr = DirichletBC(V, r, right)
+    bcs = [bcl, bcr]
 
 The Dirichlet (essential) boundary conditions are constraints on the
 function space :math:`V`. The function space is therefore required as
-an argument to ``DirichletBC``.
+an argument to :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`.
 
 .. index:: TestFunction, TrialFunction, Constant
 
 Trial and test functions, and the most recent approximate displacement
-:math:`u` are defined on the finite element space :math:`V`, and
-``Constants`` are declared for the body force (``B``) and traction
-(``T``) terms:
+``u`` are defined on the finite element space ``V``, and two objects
+of type :py:class:`Constant <dolfin.functions.constant.Constant>` are
+declared for the body force (``B``) and traction (``T``) terms:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 40-45
+.. code-block:: python
 
-In place of ``Constant``, it is also possible to use ``as_vector``,
-e.g.  ``B = as_vector( [0.0, -0.5, 0.0] )``. The advantage of
-``Constant`` is that its values can be changed without requiring
-re-generation and re-compilation of C++ code. On the other hand, using
-``as_vector`` can eliminate some function calls during assembly.
+    # Define functions
+    du = TrialFunction(V)            # Incremental displacement
+    v  = TestFunction(V)             # Test function
+    u  = Function(V)                 # Displacement from previous iteration
+    B  = Constant((0.0, -0.5, 0.0))  # Body force per unit volume
+    T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
+
+In place of :py:class:`Constant <dolfin.functions.constant.Constant>`,
+it is also possible to use ``as_vector``, e.g.  ``B = as_vector( [0.0,
+-0.5, 0.0] )``. The advantage of Constant is that its values can be
+changed without requiring re-generation and re-compilation of C++
+code. On the other hand, using ``as_vector`` can eliminate some
+function calls during assembly.
 
 With the functions defined, the kinematic quantities involved in the model
 are defined using UFL syntax:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 47-54
+.. code-block:: python
+
+    # Kinematics
+    I = Identity(V.cell().d)    # Identity tensor
+    F = I + grad(u)             # Deformation gradient
+    C = F.T*F                   # Right Cauchy-Green tensor
+
+    # Invariants of deformation tensors
+    Ic = tr(C)
+    J  = det(F)
 
 Next, the material parameters are set and the strain energy density
 and the total potential energy are defined, again using UFL syntax:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 56-64
+.. code-block:: python
 
-Just as for the body force and traction vectors, ``Constant`` has been
-used for the model parameters ``mu`` and ``lmbda`` to avoid
-re-generation of C++ code when changing model parameters. Note that
-``lambda`` is a reserved keyword in Python, hence the misspelling
-``lmbda``.
+    # Elasticity parameters
+    E, nu = 10.0, 0.3
+    mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
+
+    # Stored strain energy density (compressible neo-Hookean model)
+    psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
+
+    # Total potential energy
+    Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds
+
+Just as for the body force and traction vectors, :py:class:`Constant
+<dolfin.functions.constant.Constant>` has been used for the model
+parameters ``mu`` and ``lmbda`` to avoid re-generation of C++ code
+when changing model parameters. Note that ``lambda`` is a reserved
+keyword in Python, hence the misspelling ``lmbda``.
 
 .. index:: directional derivative; derivative, taking variations; derivative, automatic differentiation; derivative
 
 Directional derivatives are now computed of :math:`\Pi` and :math:`L`
 (see :eq:`first_variation` and :eq:`second_variation`):
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 66-70
+.. code-block:: python
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 72-74
+    # Compute first variation of Pi (directional derivative about u in the direction of v)
+    F = derivative(Pi, u, v)
+
+    # Compute Jacobian of F
+    J = derivative(F, u, du)
+
+The complete variational problem can now be solved by a single call to
+:py:func:`solve <dolfin.fem.solving.solve>`:
+
+.. code-block:: python
+
+    # Solve variational problem
+    solve(F == 0, u, bcs, J=J,
+          form_compiler_parameters=ffc_options)
 
 The dictionary of form compiler options, which were defined initially,
 is supplied using ``form_compiler_parameters = ffc_options``.
@@ -140,8 +199,15 @@ Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the deformed mesh is plotted
 to the screen:
 
-.. literalinclude:: demo_hyperelasticity.py
-   :lines: 76-
+.. code-block:: python
+
+    # Save solution in VTK format
+    file = File("displacement.pvd");
+    file << u;
+
+    # Plot and hold solution
+    plot(u, mode = "displacement", interactive = True)
+
 
 Complete code
 -------------

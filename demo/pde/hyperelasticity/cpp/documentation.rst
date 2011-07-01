@@ -28,8 +28,14 @@ We are interested in solving for a discrete vector field in three
 dimensions, so first we need the appropriate finite element space and
 trial and test functions on this space
 
-.. literalinclude:: HyperElasticity.ufl
-  :lines: 12-17
+.. code-block:: python
+
+    # Function spaces
+    element = VectorElement("Lagrange", "tetrahedron", 1)
+
+    # Trial and test functions
+    du = TrialFunction(element)     # Incremental displacement
+    v  = TestFunction(element)      # Test function
 
 Note that ``VectorElement`` creates a finite element space of vector
 fields. The dimension of the vector field (the number of components)
@@ -39,27 +45,53 @@ unless otherwise specified.
 Next, we will be needing functions for the boundary source ``B``, the
 traction ``T`` and the displacement solution itself ``u``.
 
-.. literalinclude:: HyperElasticity.ufl
-  :lines: 19-22
+.. code-block:: python
+
+    # Functions
+    u = Coefficient(element)        # Displacement from previous iteration
+    B = Coefficient(element)        # Body force per unit volume
+    T = Coefficient(element)        # Traction force on the boundary
 
 Now, we can define the kinematic quantities involved in the model
 
-.. literalinclude:: HyperElasticity.ufl
-  :lines: 24-31
+.. code-block:: python
+
+    # Kinematics
+    I = Identity(element.cell().d)  # Identity tensor
+    F = I + grad(u)                 # Deformation gradient
+    C = F.T*F                       # Right Cauchy-Green tensor
+
+    # Invariants of deformation tensors
+    Ic = tr(C)
+    J  = det(F)
 
 Before defining the energy density and thus the total potential
 energy, it only remains to specify constants for the elasticity
 parameters
 
-.. literalinclude:: HyperElasticity.ufl
-  :lines: 33-41
+.. code-block:: python
+
+    # Elasticity parameters
+    mu    = Constant("tetrahedron")
+    lmbda = Constant("tetrahedron")
 
 Both the first variation of the potential energy, and the Jacobian of
 the variation, can be automatically computed by a call to
 ``derivative``:
 
-.. literalinclude:: HyperElasticity.ufl
-  :lines: 43-47
+.. code-block:: python
+
+    # Stored strain energy density (compressible neo-Hookean model)
+    psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
+
+    # Total potential energy
+    Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
+
+    # First variation of Pi (directional derivative about u in the direction of v)
+    F = derivative(Pi, u, v)
+
+    # Compute Jacobian of F
+    J = derivative(F, u, du)
 
 Note that ``derivative`` is here used with three arguments: the form
 to be differentiated, the variable (function) we are supposed to
@@ -93,8 +125,8 @@ spaces.  For convenience we also include the DOLFIN namespace.
 
   using namespace dolfin;
 
-We begin by defining two classes, deriving from ``SubDomain`` for
-later use when specifying domains for the boundary conditions.
+We begin by defining two classes, deriving from :cpp:class:`SubDomain`
+for later use when specifying domains for the boundary conditions.
 
 .. code-block:: c++
 
@@ -116,8 +148,8 @@ later use when specifying domains for the boundary conditions.
     }
   };
 
-We also define two classes, deriving from ``Expression``, for later
-use when specifying values for the boundary conditions.
+We also define two classes, deriving from :cpp:class:`Expression`, for
+later use when specifying values for the boundary conditions.
 
 .. code-block:: c++
 
@@ -186,11 +218,11 @@ space defined by the generated code.
   HyperElasticity::FunctionSpace V(mesh);
 
 Now, the Dirichlet boundary conditions can be created using the class
-``DirichletBC``, the previously initialized ``FunctionSpace`` ``V`` and
-instances of the previously listed classes ``Left`` (for the left
-boundary) and ``Right`` (for the right boundary), and ``Clamp`` (for
-the value on the left boundary) and ``Rotation`` (for the value on the
-right boundary).
+:cpp:class:`DirichletBC`, the previously initialized
+:cpp:class:`FunctionSpace` ``V`` and instances of the previously
+listed classes ``Left`` (for the left boundary) and ``Right`` (for the
+right boundary), and ``Clamp`` (for the value on the left boundary)
+and ``Rotation`` (for the value on the right boundary).
 
 .. code-block:: c++
 
@@ -210,8 +242,8 @@ right boundary).
 
 The two boundary conditions are collected in the container ``bcs``.
 
-We use two instances of the class ``Constant`` to define the source
-``B`` and the traction ``T``.
+We use two instances of the class :cpp:class:`Constant` to define the
+source ``B`` and the traction ``T``.
 
 .. code-block:: c++
 
@@ -220,7 +252,8 @@ We use two instances of the class ``Constant`` to define the source
   Constant T(0.1,  0.0, 0.0);
 
 The solution for the displacement will be an instance of the class
-``Function``, living in the function space ``V``; we define it here:
+:cpp:class:`Function`, living in the function space ``V``; we define
+it here:
 
 .. code-block:: c++
 
@@ -237,8 +270,8 @@ Next, we set the material parameters
   Constant mu(E/(2*(1 + nu)));
   Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
 
-Now, we can initialize the bilinear and linear forms (:math:`a`,
-:math:`L`) using the previously defined ``FunctionSpace`` ``V``. We
+Now, we can initialize the bilinear and linear forms (``a``, ``L``)
+using the previously defined :cpp:class:`FunctionSpace` ``V``. We
 attach the material parameters and previously initialized functions to
 the forms.
 
