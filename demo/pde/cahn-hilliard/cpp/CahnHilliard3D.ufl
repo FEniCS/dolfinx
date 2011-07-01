@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2006
-# Last changed: 2010-09-01
+# Last changed: 2011-06-30
 #
 # The linearised bilinear form a(du, v) and linear form L(v) for
 # the Cahn-Hilliard equation.
@@ -49,8 +49,8 @@ c = variable(c)
 f    = 100*c**2*(1-c)**2
 dfdc = diff(f, c)
 
-L0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
-L1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
-L = L0 + L1
+F0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
+F1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
+F  = F0 + F1
 
-a = derivative(L, u, du)
+J = derivative(F, u, du)

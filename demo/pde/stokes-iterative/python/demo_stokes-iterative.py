@@ -78,7 +78,7 @@ A, bb = assemble_system(a, L, bcs)
 P, btmp = assemble_system(b, L, bcs)
 
 # Create Krylov solver and AMG preconditioner
-solver = KrylovSolver("tfqmr", "amg_ml")
+solver = KrylovSolver("tfqmr", "amg")
 
 # Associate operator (A) and preconditioner matrix (P)
 solver.set_operators(A, P)

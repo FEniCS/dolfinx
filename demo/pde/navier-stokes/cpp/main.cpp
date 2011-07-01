@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg
+// Copyright (C) 2010-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-30
-// Last changed: 2011-02-04
+// Last changed: 2011-07-01
 //
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
@@ -35,7 +35,9 @@ class NoslipDomain : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
-    return on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS;
+    return on_boundary &&
+           (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS |
+           (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS));
   }
 };
 
@@ -149,7 +151,6 @@ int main()
 
   // Time-stepping
   double t = dt;
-  Progress p("Time-stepping");
   while (t < T + DOLFIN_EPS)
   {
     // Update pressure boundary condition
@@ -168,7 +169,7 @@ int main()
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre");
+    solve(A2, p1.vector(), b2, "gmres", "amg");
     end();
 
     // Velocity correction
@@ -185,8 +186,8 @@ int main()
 
     // Move to next time step
     u0 = u1;
-    p = t / T;
     t += dt;
+    cout << "t = " << t << endl;
   }
 
   // Plot solution

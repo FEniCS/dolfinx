@@ -1,4 +1,3 @@
-
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
 

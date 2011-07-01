@@ -1,7 +1,7 @@
 """This demo program solves the incompressible Navier-Stokes equations
 on an L-shaped domain using Chorin's splitting method."""
 
-# Copyright (C) 2010 Anders Logg
+# Copyright (C) 2010-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -18,8 +18,10 @@ on an L-shaped domain using Chorin's splitting method."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Mikael Mortensen 2011
+#
 # First added:  2010-08-30
-# Last changed: 2010-08-31
+# Last changed: 2011-06-30
 
 # Begin demo
 
@@ -50,7 +52,10 @@ nu = 0.01
 p_in = Expression("sin(3.0*t)", t=0.0)
 
 # Define boundary conditions
-noslip  = DirichletBC(V, (0, 0), "on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS")
+noslip  = DirichletBC(V, (0, 0),
+                      "on_boundary && \
+                       (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS | \
+                       (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS))")
 inflow  = DirichletBC(Q, p_in, "x[1] > 1.0 - DOLFIN_EPS")
 outflow = DirichletBC(Q, 0, "x[0] > 1.0 - DOLFIN_EPS")
 bcu = [noslip]
@@ -90,7 +95,6 @@ pfile = File("pressure.pvd")
 
 # Time-stepping
 t = dt
-p = Progress("Time-stepping")
 while t < T + DOLFIN_EPS:
 
     # Update pressure boundary condition
@@ -107,7 +111,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre")
+    solve(A2, p1.vector(), b2, "gmres", "amg")
     end()
 
     # Velocity correction
@@ -127,8 +131,8 @@ while t < T + DOLFIN_EPS:
 
     # Move to next time step
     u0.assign(u1)
-    p.update(t / T)
     t += dt
+    print "t =", t
 
 # Hold plot
 interactive()

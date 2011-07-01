@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2009-09-29
 # Last changed: 2011-06-28
 #
@@ -31,9 +33,9 @@ du = TrialFunction(element)     # Incremental displacement
 v  = TestFunction(element)      # Test function
 
 # Functions
-u  = Coefficient(element)       # Displacement from previous iteration
-B  = Coefficient(element)       # Body force per unit volume
-T  = Coefficient(element)       # Traction force on the boundary
+u = Coefficient(element)        # Displacement from previous iteration
+B = Coefficient(element)        # Body force per unit volume
+T = Coefficient(element)        # Traction force on the boundary
 
 # Kinematics
 I = Identity(element.cell().d)  # Identity tensor
@@ -55,7 +57,7 @@ psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
 
 # First variation of Pi (directional derivative about u in the direction of v)
-L = derivative(Pi, u, v)
+F = derivative(Pi, u, v)
 
-# Compute Jacobian of L
-a = derivative(L, u, du)
+# Compute Jacobian of F
+J = derivative(F, u, du)

@@ -365,9 +365,6 @@ if (PYTHONINTERP_FOUND)
       COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
       )
-    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)            
-    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
-      DOLFIN_INSTALL_PYTHON_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
       CACHE PATH "Python extension module installation directory.")
   endif()
@@ -378,9 +375,6 @@ if (PYTHONINTERP_FOUND)
       COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
       OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
       )
-    # Strip off CMAKE_INSTALL_PREFIX (is added later by CMake)            
-    string(REGEX REPLACE "${CMAKE_INSTALL_PREFIX}(/|\\\\)([^ ]*)" "\\2"
-      DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR "${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}")
     set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
       CACHE PATH "Python module installation directory.")
   endif()
@@ -440,9 +434,11 @@ endif()
 # Append the library version information to the library target properties
 if (DOLFIN_WITH_LIBRARY_VERSION)
   string(REPLACE "+" "" DOLFIN_LIBRARY_VERSION ${DOLFIN_VERSION})
+  # This setting of SOVERSION assumes that any API change
+  # will increment either the minor or major version number.
   set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
     VERSION ${DOLFIN_LIBRARY_VERSION}
-    SOVERSION ${DOLFIN_VERSION_MAJOR}
+    SOVERSION ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}
   )
 endif()
 
@@ -624,6 +620,11 @@ if (DOLFIN_ENABLE_TESTING)
   add_custom_target(run_quicktest
     COMMAND ${PYTHON_EXECUTABLE} test.py --only-python
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
+
+  # Add target "run_doctest" for running documentation tests
+  add_custom_target(run_doctest
+    COMMAND ${PYTHON_EXECUTABLE} test.py
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests

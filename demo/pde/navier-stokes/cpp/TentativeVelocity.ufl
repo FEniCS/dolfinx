@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-30
-# Last changed: 2010-09-01
+# Last changed: 2011-06-30
 #
 # The bilinear form a(u, v) and linear form L(v) for the tentative
 # velocity step in Chorin's method for the incompressible
@@ -39,7 +39,7 @@ f  = Coefficient(V)
 nu = 0.01
 
 # Define bilinear and linear forms
-F = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
+eq = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
     nu*inner(grad(u), grad(v))*dx - inner(f, v)*dx
-a = lhs(F)
-L = rhs(F)
+a  = lhs(eq)
+L  = rhs(eq)

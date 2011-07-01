@@ -127,11 +127,11 @@ int main()
   Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
-  HyperElasticity::LinearForm F(V);
+  HyperElasticity::ResidualForm F(V);
   F.mu = mu; F.lmbda = lambda; F.B = B; F.T = T; F.u = u;
 
   // Create jacobian dF = F' (for use in nonlinear solver).
-  HyperElasticity::BilinearForm J(V, V);
+  HyperElasticity::JacobianForm J(V, V);
   J.mu = mu; J.lmbda = lambda; J.u = u;
 
   // Solve nonlinear variational problem F(u; v) = 0
