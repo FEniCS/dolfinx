@@ -154,14 +154,14 @@ boundary condition:
 
     bc = DirichletBC(W.sub(0), G, boundary)
 
-
 To compute the solution we use the bilinear and linear forms, and the
-boundary condition, but we also need to create a :py:class:`Function`
-to store the solution(s). The (full) solution will be stored in the
-``w``, which we initialise using the :py:class:`FunctionSpace
+boundary condition, but we also need to create a :py:class:`Function
+<dolfin.functions.function.Function>` to store the solution(s). The
+(full) solution will be stored in the ``w``, which we initialise using
+the :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` ``W``. The actual
 computation is performed by calling :py:func:`solve
-<dolfin.fem.solving.solve`. The separate components ``sigma`` and
+<dolfin.fem.solving.solve>`. The separate components ``sigma`` and
 ``u`` of the solution can be extracted by calling the :py:func:`split
 <dolfin.functions.function.Function.split>` function. Finally, we plot
 the solutions to examine the result.
