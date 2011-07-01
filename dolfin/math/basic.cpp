@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2005 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-02-06
-// Last changed: 2006-06-16
+// Last changed: 2011-07-01
 
 #include <time.h>
 #include <cstdlib>
@@ -59,5 +59,15 @@ void dolfin::seed(unsigned int s)
 {
   std::srand(s);
   rand_seeded = true;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::near(double x, double x0)
+{
+  return dolfin::between(x0, x, x0);
+}
+//-----------------------------------------------------------------------------
+bool dolfin::between(double x0, double x, double x1)
+{
+  return (x0 - DOLFIN_EPS < x && x < x1 + DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------

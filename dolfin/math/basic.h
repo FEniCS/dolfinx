@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2005 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-02-06
-// Last changed: 2006-06-16
+// Last changed: 2011-07-01
 
 #ifndef __BASIC_H
 #define __BASIC_H
@@ -34,6 +34,12 @@ namespace dolfin
 
   /// Seed random number generator
   void seed(unsigned int s);
+
+  /// Check whether x is close to x0 (to within DOLFIN_EPS)
+  bool near(double x, double x0);
+
+  /// Check whether x is between x0 and x1 (inclusive, to within DOLFIN_EPS)
+  bool between(double x0, double x, double x1);
 
 }
 
