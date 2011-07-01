@@ -211,7 +211,7 @@ if (DOLFIN_ENABLE_PYTHON)
 
     # This is to help pick up swig on Debian/Ubuntu. It can be removed
     # when Debian/Ubuntu rename swig2.0 -> swig
-    find_program(SWIG_EXECUTABLE swig swig2.0)
+    find_program(SWIG_EXECUTABLE swig2.0)
 
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
