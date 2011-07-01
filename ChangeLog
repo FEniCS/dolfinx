@@ -4,6 +4,7 @@
  - Add solve interface: solve(a == L), solve(F == 0)
  - Add new classes Linear/NonlinearVariationalProblem
  - Add new classes Linear/NonlinearVariationalSolver
+ - Ad form class aliases ResidualForm and Jacobian form in wrapper code
  - Default argument to variables in Expression are passed as kwargs in the Python interface
  - Add has_openmp as utility function in Python interface
  - Add improved error reporting using dolfin_error

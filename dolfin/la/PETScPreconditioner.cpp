@@ -44,11 +44,11 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
                               ("jacobi",           PCJACOBI)
                               ("sor",              PCSOR)
                               ("icc",              PCICC)
+                              ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
-                              ("amg_hypre",        PCHYPRE)
-                              ("amg_ml",           PCML);
+                              ("ml_amg",           PCML);
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()
 {
@@ -105,7 +105,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
     #endif
 
-    if (type == "amg_hypre" || type == "hypre_amg")
+    if (type == "hypre_amg" || type == "amg")
       PCHYPRESetType(pc, "boomeramg");
     else if (type == "hypre_parasails")
     {

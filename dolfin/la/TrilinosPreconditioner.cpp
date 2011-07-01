@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-25
-// Last changed: 2010-08-25
+// Last changed: 2011-06-30
 
 #ifdef HAS_TRILINOS
 
@@ -50,8 +50,9 @@ const std::map<std::string, int> TrilinosPreconditioner::methods
                               ("none",      AZ_none)
                               ("sor",       AZ_sym_GS)
                               ("icc",       AZ_icc)
-                              ("amg_hypre", -1)
-                              ("amg_ml",    -1);
+                              ("amg",       -1)
+                              ("hypre_amg", -1)
+                              ("ml_amg",    -1);
 //-----------------------------------------------------------------------------
 Parameters TrilinosPreconditioner::default_parameters()
 {
@@ -130,12 +131,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
   }
-  else if (type == "amg_hypre")
+  else if (type == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver, *_P);
   }
-  else if (type == "amg_ml")
+  else if (type == "ml_amg" || type == "amg")
     set_ml(_solver, *_P);
   else
   {

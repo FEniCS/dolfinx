@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Harish Narayanan, 2009.
+# Modified by Harish Narayanan 2009
+# Modified by Anders Logg 2011
 #
-# The linearised bilinear form a(u, v) and linear form L(v) for
-# the nonlinear equation - div (1+u^2) grad u = f
+# The residal form F and the Jacobian (linearised) form J
+# for the nonlinear equation - div (1+u^2) grad u = f
 #
 # Compile this form with FFC: ffc -l dolfin NonlinearPoisson.ufl
 
@@ -28,8 +29,7 @@ f  = Coefficient(element)
 u  = Coefficient(element)
 v  = TestFunction(element)
 
-L  = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
+F  = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
 du = TrialFunction(element)
-a  = derivative(L, u, du)
-
+J  = derivative(F, u, du)

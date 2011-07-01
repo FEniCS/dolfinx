@@ -80,7 +80,7 @@ KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
   parameters = default_parameters();
 
   DefaultFactory factory;
-  solver.reset( factory.create_krylov_solver(solver_type, pc_type) );
+  solver.reset(factory.create_krylov_solver(solver_type, pc_type));
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

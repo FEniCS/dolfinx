@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2006-03-02
-// Last changed: 2011-01-24
+// Last changed: 2011-06-30
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -64,9 +66,9 @@ class CahnHilliardEquation : public NonlinearProblem
       // Initialse class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
       if (mesh.geometry().dim() == 2)
-        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::BilinearForm, CahnHilliard2D::LinearForm>(mesh, dt, theta, lambda);
+        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm, CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
       else if (mesh.geometry().dim() == 3)
-        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::BilinearForm, CahnHilliard3D::LinearForm>(mesh, dt, theta, lambda);
+        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm, CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only.");
     }
