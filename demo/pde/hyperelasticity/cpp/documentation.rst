@@ -86,7 +86,7 @@ At the top, we include the DOLFIN header file and the generated header
 file "HyperElasticity.h" containing the variational forms and function
 spaces.  For convenience we also include the DOLFIN namespace.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   #include <dolfin.h>
   #include "HyperElasticity.h"
@@ -96,7 +96,7 @@ spaces.  For convenience we also include the DOLFIN namespace.
 We begin by defining two classes, deriving from ``SubDomain`` for
 later use when specifying domains for the boundary conditions.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Sub domain for clamp at left end
   class Left : public SubDomain
@@ -119,7 +119,7 @@ later use when specifying domains for the boundary conditions.
 We also define two classes, deriving from ``Expression``, for later
 use when specifying values for the boundary conditions.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Expression
@@ -168,7 +168,7 @@ use when specifying values for the boundary conditions.
 
 Next:
 
-.. code-block:: cpp
+.. code-block:: c++
 
   int main()
   {
@@ -179,7 +179,7 @@ create a unit cube mesh with 17 ( = 16 + 1) vertices in each
 direction. With this mesh, we initialize the (finite element) function
 space defined by the generated code.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Create mesh and define function space
   UnitCube mesh (16, 16, 16);
@@ -192,7 +192,7 @@ boundary) and ``Right`` (for the right boundary), and ``Clamp`` (for
 the value on the left boundary) and ``Rotation`` (for the value on the
 right boundary).
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Define Dirichlet boundaries
   Left left;
@@ -213,7 +213,7 @@ The two boundary conditions are collected in the container ``bcs``.
 We use two instances of the class ``Constant`` to define the source
 ``B`` and the traction ``T``.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.5, 0.0);
@@ -222,14 +222,14 @@ We use two instances of the class ``Constant`` to define the source
 The solution for the displacement will be an instance of the class
 ``Function``, living in the function space ``V``; we define it here:
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Define solution function
   Function u(V);
 
 Next, we set the material parameters
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Set material parameters
   const double E  = 10.0;
@@ -242,7 +242,7 @@ Now, we can initialize the bilinear and linear forms (:math:`a`,
 attach the material parameters and previously initialized functions to
 the forms.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Create forms
   HyperElasticity::BilinearForm a(V, V);
@@ -259,7 +259,7 @@ performed. Then, to solve the problem, the ``solve`` function is
 called with ``u`` as a single argument; after which ``u`` will contain
 the solution.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Solve nonlinear variational problem
   VariationalProblem problem(a, L, bcs, true);
@@ -269,7 +269,7 @@ Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the displacement solution is
 plotted.
 
-.. code-block:: cpp
+.. code-block:: c++
 
   // Save solution in VTK format
   File file("displacement.pvd");
