@@ -440,9 +440,11 @@ endif()
 # Append the library version information to the library target properties
 if (DOLFIN_WITH_LIBRARY_VERSION)
   string(REPLACE "+" "" DOLFIN_LIBRARY_VERSION ${DOLFIN_VERSION})
+  # This setting of SOVERSION assumes that any API change
+  # will increment either the minor or major version number.
   set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
     VERSION ${DOLFIN_LIBRARY_VERSION}
-    SOVERSION ${DOLFIN_VERSION_MAJOR}
+    SOVERSION ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}
   )
 endif()
 
