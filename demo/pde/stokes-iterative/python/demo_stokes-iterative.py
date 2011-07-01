@@ -26,7 +26,7 @@ Note that the sign for the pressure has been flipped for symmetry."""
 from dolfin import *
 
 # Test for PETSc or Epetra
-if not has_la_backend("PETSc") or not has_la_backend("Epetra"):
+if not has_la_backend("PETSc") and not has_la_backend("Epetra"):
     print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
     exit()
 
