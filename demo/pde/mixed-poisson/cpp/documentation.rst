@@ -195,20 +195,18 @@ defined above does.
     EssentialBoundary boundary;
     DirichletBC bc(W0, G, boundary);
 
-To compute the solution we use the ``VariationalProblem`` class with
-the bilinear and linear forms, and the boundary condition. The (full)
-solution will be stored in the ``Function`` ``w``, which we also
-initialise using the ``FunctionSpace`` :math:`W`. The actual
-computation is performed by calling ``solve``.
+To compute the solution we use the bilinear and linear forms, and the
+boundary condition, but we also need to create a :cpp:class:`Function`
+to store the solution(s). The (full) solution will be stored in the
+:cpp:class:`Function` ``w``, which we initialise using the
+:cpp:class:`FunctionSpace` ``W``. The actual computation is performed
+by calling ``solve``.
 
 .. code-block:: c++
 
-    // Define variational problem
-    VariationalProblem problem(a, L, bc);
-
-    // Compute (full) solution
+    // Compute solution
     Function w(W);
-    problem.solve(w);
+    solve(a == L, w, bc);
 
 Now, the separate components ``sigma`` and ``u`` of the solution can
 be extracted by taking components. These can easily be visualized by

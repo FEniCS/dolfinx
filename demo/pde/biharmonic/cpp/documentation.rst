@@ -100,7 +100,8 @@ function ``Expression::eval`` overloaded:
 
     void eval(Array<double>& values, const Array<double>& x) const
     {
-      values[0] = 4.0*std::pow(DOLFIN_PI, 4)*std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
+    values[0] = 4.0*std::pow(DOLFIN_PI, 4)*
+      std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
     }
 
   };
@@ -162,23 +163,19 @@ are created, and function are attached:
 
 .. code-block:: c++
 
-    // Define forms and attach functions
+    // Define variational problem
     Biharmonic::BilinearForm a(V, V);
     Biharmonic::LinearForm L(V);
     a.alpha = alpha; L.f = f;
 
-A :cpp:class:`VariationalProblem` is created from the forms and the
-Dirichet boundary condition, a finite element function ``u`` is
-created and the problem is solved:
+A :cpp:class:`Function` is created to hold the solution and the
+problem is solved:
 
 .. code-block:: c++
 
-    // Create PDE
-    VariationalProblem problem(a, L, bc);
-
-    // Solve PDE
+    // Compute solution
     Function u(V);
-    problem.solve(u);
+    solve(a == L, u, bc);
 
 The solution is then plotted to the screen and written to a file in VTK
 format:

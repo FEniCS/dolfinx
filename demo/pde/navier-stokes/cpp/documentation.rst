@@ -44,10 +44,10 @@ follows:
     nu = 0.01
 
     # Define bilinear and linear forms
-    F = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
+    eq = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
         nu*inner(grad(u), grad(v))*dx - inner(f, v)*dx
-    a = lhs(F)
-    L = rhs(F)
+    a = lhs(eq)
+    L = rhs(eq)
 
 The variational problem for the pressure update is implemented as
 follows:

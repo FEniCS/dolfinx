@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2011-06-28
+// Last changed: 2011-07-01
 //
 // This demo program solves Poisson's equation
 //
@@ -77,7 +77,7 @@ int main()
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 
-  // Define variational problem
+  // Define variational forms
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   Source f;

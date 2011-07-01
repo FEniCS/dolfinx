@@ -66,13 +66,11 @@ class:
 .. code-block:: python
 
     # Define time-dependent pressure boundary condition
-    p_in = Expression("sin(3.0*t)")
+    p_in = Expression("sin(3.0*t)", t=0.0)
 
-The variable ``t`` is automatically available as part of an
-:py:class:`Expression <dolfin.functions.expression.Expression>`. Note
-that this variable is not automatically updated during time-stepping,
-so we must remember to manually update the value of the current time
-in each time step.
+Note that the variable ``t`` is not automatically updated during
+time-stepping, so we must remember to manually update the value of the
+current time in each time step.
 
 We may now define the boundary conditions for the velocity and
 pressure. We define one no-slip boundary condition for the velocity
@@ -82,11 +80,15 @@ outflow boundaries:
 .. code-block:: python
 
     # Define boundary conditions
-    noslip  = DirichletBC(V, (0, 0), "on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS")
+    noslip  = DirichletBC(V, (0, 0),
+                          "on_boundary && \
+                           (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS | \
+                           (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS))")
     inflow  = DirichletBC(Q, p_in, "x[1] > 1.0 - DOLFIN_EPS")
     outflow = DirichletBC(Q, 0, "x[0] > 1.0 - DOLFIN_EPS")
     bcu = [noslip]
     bcp = [inflow, outflow]
+
 
 We collect the boundary conditions in the two lists ``bcu`` and
 ``bcp`` so that we may easily iterate over them below when we apply
@@ -161,15 +163,13 @@ The time-stepping loop is now implemented as follows:
 
     # Time-stepping
     t = dt
-    p = Progress("Time-stepping")
     while t < T + DOLFIN_EPS:
 
         # Update pressure boundary condition
         p_in.t = t
 
-We use the :py:class:`Progress <dolfin.cpp.Progress>` class to display
-a progress bar during the computation. We also remember to update the
-current time for the time-dependent pressure boundary value.
+We remember to update the current time for the time-dependent pressure
+boundary value.
 
 For each of the three steps of Chorin's method, we assemble the
 right-hand side, apply boundary conditions and solve a linear
@@ -191,7 +191,7 @@ pressure equation:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", "amg_hypre")
+    solve(A2, p1.vector(), b2, "gmres", "amg")
     end()
 
     # Velocity correction
@@ -220,7 +220,6 @@ solution to file, and update values for the next time step:
 
    # Move to next time step
    u0.assign(u1)
-   p.update(t / T)
    t += dt
 
 Finally, we call the ``interactive`` function to signal that the plot

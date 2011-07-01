@@ -97,11 +97,11 @@ automatically, by calling ``derivative``, to form the bilinear form
 
 .. code-block:: python
 
-    L0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
-    L1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
-    L = L0 + L1
+    F0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
+    F1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
+    F = F0 + F1
 
-    a = derivative(L, u, du)
+    J = derivative(F, u, du)
 
 C++ program
 ^^^^^^^^^^^
@@ -178,12 +178,12 @@ function ``init``:
                          const Constant& theta, const Constant& lambda)
                        : reset_Jacobian(true)
     {
-      // Initialse class (depending on geometric dimension of the mesh).
+      // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
       if (mesh.geometry().dim() == 2)
-        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::BilinearForm, CahnHilliard2D::LinearForm>(mesh, dt, theta, lambda);
+        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm, CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
       else if (mesh.geometry().dim() == 3)
-        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::BilinearForm, CahnHilliard3D::LinearForm>(mesh, dt, theta, lambda);
+        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm, CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only.");
     }

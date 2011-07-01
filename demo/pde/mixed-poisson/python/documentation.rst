@@ -154,24 +154,24 @@ boundary condition:
 
     bc = DirichletBC(W.sub(0), G, boundary)
 
-.. index::
-   single: VariationalProblem; (in Mixed Poisson demo)
 
-To compute the solution, a :py:class:`VariationalProblem
-<dolfin.fem.variationalproblem.VariationalProblem>` object is created
-using the bilinear and linear forms, and the boundary condition.  The
-:py:func:`solve
-<dolfin.fem.variationalproblem.VariationalProblem.solve>` function is
-then called, yielding the full solution. The separate components
-``sigma`` and ``u`` of the solution can be extracted by calling the
-:py:func:`split <dolfin.functions.function.Function.split>`
-function. Finally, we plot the solutions to examine the result.
+To compute the solution we use the bilinear and linear forms, and the
+boundary condition, but we also need to create a :py:class:`Function`
+to store the solution(s). The (full) solution will be stored in the
+``w``, which we initialise using the :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` ``W``. The actual
+computation is performed by calling :py:func:`solve
+<dolfin.fem.solving.solve`. The separate components ``sigma`` and
+``u`` of the solution can be extracted by calling the :py:func:`split
+<dolfin.functions.function.Function.split>` function. Finally, we plot
+the solutions to examine the result.
 
 .. code-block:: python
 
     # Compute solution
-    problem = VariationalProblem(a, L, bc)
-    (sigma, u) = problem.solve().split()
+    w = Function(W)
+    solve(a == L, w, bc)
+    (sigma, u) = w.split()
 
     # Plot sigma and u
     plot(sigma)

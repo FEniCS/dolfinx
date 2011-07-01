@@ -63,7 +63,7 @@ class CahnHilliardEquation : public NonlinearProblem
                          const Constant& theta, const Constant& lambda)
                        : reset_Jacobian(true)
     {
-      // Initialse class (depending on geometric dimension of the mesh).
+      // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
       if (mesh.geometry().dim() == 2)
         init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm, CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);

@@ -111,35 +111,31 @@ the linear form ``L`` (using UFL operators). In summary, this reads
   a = inner(grad(u), grad(v))*dx
   L = f*v*dx + g*v*ds
 
-.. index::
-   single: VariationalProblem; (in Poisson demo)
-
 Now, we have specified the variational forms and can consider the
-solution of the variational problem.  First, a
-:py:class:`VariationalProblem
-<dolfin.fem.variationalproblem.VariationalProblem>` object is created
-using the bilinear and linear forms, and the Dirichlet boundary
-condition.  Then, to solve the problem, the :py:func:`solve
-<dolfin.fem.variationalproblem.VariationalProblem.solve>` function is
-called, and the solution is returned in ``u``.
+solution of the variational problem. First, we need to define a
+:py:class:`Function <dolfin.functions.function.Function>` ``u`` to
+represent the solution. (Upon initialization, it is simply set to the
+zero function.) A :py:class:`Function
+<dolfin.functions.function.Function>` represents a function living in
+a finite element function space. Next, we can call the :py:func:`solve
+<dolfin.fem.solving.solve>` function with the arguments ``a == L``,
+``u`` and ``bc`` as follows:
 
 .. code-block:: python
 
     # Compute solution
-    problem = VariationalProblem(a, L, bc)
-    u = problem.solve()
+    u = Function(V)
+    solve(a == L, u, bc)
 
-The default settings for solving a variational problem have been
-used. However, various parameters can be used to control aspects of
-the solution process.
+The function ``u`` will be modified during the call to solve. The
+default settings for solving a variational problem have been
+used. However, the solution process can be controlled in much more
+detail if desired.
 
 .. index::
    single: File; (in Poisson demo)
 
-The solution ``u`` is a :py:class:`Function
-<dolfin.functions.function.Function>` object, which represents a
-function living in a finite element function space. A
-:py:class:`Function <dolfin.functions.function.Function>` can be
+A :py:class:`Function <dolfin.functions.function.Function>` can be
 manipulated in various ways, in particular, it can be plotted and
 saved to file. Here, we output the solution to a ``VTK`` file (using
 the suffix ``.pvd``) for later visualization and also plot it using

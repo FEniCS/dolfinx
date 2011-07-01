@@ -109,13 +109,14 @@ The bilinear and linear forms are defined:
     # Define linear form
     L = f*v*dx
 
-A variational problem is created and solved:
+A :py:class:`Function <dolfin.functions.function.Function>` is created
+to store the solution and the variational problem is solved:
 
 .. code-block:: python
 
-    # Create variational problem and solve
-    problem = VariationalProblem(a, L, bc)
-    u = problem.solve()
+    # Solve variational problem
+    u = Function(V)
+    solve(a == L, u, bc)
 
 The computed solution is written to a file in VTK format and plotted to
 the screen.

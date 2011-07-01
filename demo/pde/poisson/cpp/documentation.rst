@@ -37,7 +37,7 @@ element ``element`` consists of first-order, continuous Lagrange basis
 functions on triangles (or in order words, continuous piecewise linear
 polynomials on triangles).
 
-Next, we use this element to initialise the trial and test functions
+Next, we use this element to initialize the trial and test functions
 (:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
 :math:`g`):
 
@@ -164,15 +164,15 @@ as follows:
 .. index::
     triple: forms; attach; expression
 
-Next, we define the variational problem by initialising the bilinear
-and linear forms (:math:`a`, :math:`L`) using the previously defined
-:cpp:class:`FunctionSpace` ``V``.  Then we can create the source and
-boundary flux term (:math:`f`, :math:`g`) and attach these to the
-linear form.
+Next, we define the variational formulation by initializing the
+bilinear and linear forms (:math:`a`, :math:`L`) using the previously
+defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
+source and boundary flux term (:math:`f`, :math:`g`) and attach these
+to the linear form.
 
 .. code-block:: c++
 
-    // Define variational problem
+    // Define variational forms
     Poisson::BilinearForm a(V, V);
     Poisson::LinearForm L(V);
     Source f;
@@ -180,25 +180,21 @@ linear form.
     L.f = f;
     L.g = g;
 
-.. index:: VariationalProblem
-
 Now, we have specified the variational forms and can consider the
-solution of the variational problem.  First, a
-:cpp:class:`VariationalProblem` object is created using the bilinear
-and linear forms, and the Dirichlet boundary condition. The solution
-will be represented as a :cpp:class:`Function`, living in the function
-space ``V``, and needs to be declared. Then, to solve the problem, the
-``solve`` function is called with ``u`` as a single argument; ``u``
-now contains the solution.
+solution of the variational problem. First, we need to define a
+:cpp:class:`Function` ``u`` to store the solution. (Upon
+initialization, it is simply set to the zero function.) Next, we can
+call the :cpp:func:`solve` function with the arguments ``a == L``,
+``u`` and ``bc`` as follows:
 
 .. code-block:: c++
 
     // Compute solution
-    VariationalProblem problem(a, L, bc);
     Function u(V);
-    problem.solve(u);
+    solve(a == L, u, bc);
 
-A :cpp:class:`Function` can be manipulated in various ways, in
+The function ``u`` will be modified during the call to solve. A
+:cpp:class:`Function` can be manipulated in various ways, in
 particular, it can be plotted and saved to file. Here, we output the
 solution to a ``VTK`` file (using the suffix ``.pvd``) for later
 visualization and also plot it using the ``plot`` command:
