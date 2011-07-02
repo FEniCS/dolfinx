@@ -57,6 +57,11 @@ XMLFile::XMLFile(std::ostream& s) : GenericFile(""), outstream(&s, NoDeleter())
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+XMLFile::~XMLFile()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
   // Create XML doc and get DOLFIN node
@@ -74,14 +79,14 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 
   // Open file on process 0 for distributed objects and on all processes
   // for local objects
-  open_file();
+  open_write_file();
 
   // Note: 'write' is being called on all processes since collective MPI
   // calls might be used.
   XMLMesh::write(output_mesh, *outstream, 1);
 
   // Close file
-  close_file();
+  close_write_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
@@ -147,15 +152,13 @@ void XMLFile::operator<< (const GenericVector& output)
   // Open file on process 0 for distributed objects and on all processes
   // for local objects
   if (MPI::process_number() == 0)
-    open_file();
-
-  // Note: 'write' is being called on all processes since collective MPI
-  // calls might be used.
-  XMLVector::write(output, *outstream, 1);
-
-  // Close file
-  if (MPI::process_number() == 0)
-    close_file();
+  {
+    open_write_file();
+    XMLVector::write(output, *outstream, true, 1);
+    close_write_file();
+  }
+  else
+    XMLVector::write(output, *outstream, false, 1);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Parameters& input)
@@ -171,12 +174,13 @@ void XMLFile::operator>> (Parameters& input)
 void XMLFile::operator<< (const Parameters& output)
 {
   if (MPI::process_number() == 0)
-    open_file();
-
-  XMLParameters::write(output, *outstream, 1);
-
-  if (MPI::process_number() == 0)
-    close_file();
+  {
+    open_write_file();
+    XMLParameters::write(output, *outstream, 1);
+    close_write_file();
+  }
+  else
+    XMLParameters::write(output, *outstream, 1);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (FunctionPlotData& input)
@@ -192,12 +196,13 @@ void XMLFile::operator>> (FunctionPlotData& input)
 void XMLFile::operator<< (const FunctionPlotData& output)
 {
   if (MPI::process_number() == 0)
-    open_file();
-
-  XMLFunctionPlotData::write(output, *outstream, 1);
-
-  if (MPI::process_number() == 0)
-    close_file();
+  {
+    open_write_file();
+    XMLFunctionPlotData::write(output, *outstream, 1);
+    close_write_file();
+  }
+  else
+    XMLFunctionPlotData::write(output, *outstream, 1);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::write_start(std::ostream& outfile, uint indentation_level)
@@ -228,12 +233,13 @@ template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
                                                   const std::string type)
 {
   if (MPI::process_number() == 0)
-    open_file();
-
-  XMLMeshFunction::write(t, type, *outstream, 1);
-
-  if (MPI::process_number() == 0)
-    close_file();
+  {
+    open_write_file();
+    XMLMeshFunction::write(t, type, *outstream, 1);
+    close_write_file();
+  }
+  else
+    XMLMeshFunction::write(t, type, *outstream, 1);
 }
 //-----------------------------------------------------------------------------
 const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
@@ -272,27 +278,31 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = xml_doc.child("dolfin");
   if (!dolfin_node)
-    error("Not a DOLFIN XML file");
+    error("XMLFile::get_dolfin_xml_node: not a DOLFIN XML file");
 
   return dolfin_node;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::open_file()
+void XMLFile::open_write_file()
 {
   // Convert to ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream.get());
   if (outfile)
   {
-    // Open file
-    outfile->open(filename.c_str());
+    // Open file (erase contents)
+    outfile->open(filename.c_str(), std::ios::out | std::ios::trunc);
+
+    if (!outfile->is_open())
+      error("Error opening XML file.");
 
     // Go to end of file
-    outfile->seekp(0, std::ios::end);
+    //outfile->seekp(0, std::ios::end);
   }
+  assert(outstream);
   XMLFile::write_start(*outstream);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::close_file()
+void XMLFile::close_write_file()
 {
   XMLFile::write_end(*outstream);
 
@@ -300,15 +310,9 @@ void XMLFile::close_file()
   const boost::filesystem::path path(filename);
   const std::string extension = boost::filesystem::extension(path);
   if (extension == ".gz")
-  {
     error("Compressed XML output not yet supported.");
-  }
-  else
-  {
-    // Convert to ofstream
-    std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream.get());
-    if (outfile)
-      outfile->close();
-  }
+
+  // Finalise (closes file is stream is a file stream)
+  outstream.reset();
 }
 //-----------------------------------------------------------------------------

@@ -194,8 +194,6 @@ namespace dolfin
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
 
-    typedef XMLMatrix XMLHandler;
-
   };
 
 }

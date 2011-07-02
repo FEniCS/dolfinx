@@ -42,6 +42,11 @@ GenericFile::GenericFile(const std::string filename) : filename(filename),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+GenericFile::~GenericFile()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (Mesh& mesh)
 {
   read_not_impl("Mesh");

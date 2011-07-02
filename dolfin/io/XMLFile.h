@@ -53,6 +53,8 @@ namespace dolfin
     /// Constructor from a stream
     XMLFile(std::ostream& s);
 
+    ~XMLFile();
+
     // Mesh
     void operator>> (Mesh& input);
     void operator<< (const Mesh& output);
@@ -112,8 +114,8 @@ namespace dolfin
                                              const std::string filename) const;
 
     // Open/close files
-    void open_file();
-    void close_file();
+    void open_write_file();
+    void close_write_file();
 
     boost::shared_ptr<std::ostream> outstream;
 

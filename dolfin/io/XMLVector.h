@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Write the XML file
     static void write(const GenericVector& vector, std::ostream& outfile,
-                      unsigned int indentation_level=0);
+                      bool write_to_stream, unsigned int indentation_level=0);
 
   };
 
