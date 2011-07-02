@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -38,7 +38,6 @@
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
-#include "XMLIndent.h"
 #include "XMLMeshFunction.h"
 #include "XMLMesh.h"
 
@@ -56,91 +55,6 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 
   // Read any mesh data
   read_data(mesh.data(), xml_mesh);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
-                    uint indentation_level)
-{
-  XMLIndent indent(indentation_level);
-
-  // Get cell type
-  const CellType::Type cell_type = mesh.type().cell_type();
-
-  // Write mesh header
-  outfile << indent();
-  outfile << "<mesh celltype=\"" << CellType::type2string(cell_type)
-           << "\" dim=\"" << mesh.geometry().dim() << "\">" << std::endl;
-
-  // Write vertices header
-  ++indent;
-  outfile << indent();
-  outfile << "<vertices size=\"" << mesh.num_vertices() << "\">" << std::endl;
-
-  // Write each vertex
-  ++indent;
-  for(VertexIterator v(mesh); !v.end(); ++v)
-  {
-    const Point p = v->point();
-    outfile << indent();
-    switch (mesh.geometry().dim())
-    {
-      case 1:
-        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\"/>" << std::endl;
-        break;
-      case 2:
-        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y() << "\"/>" << std::endl;
-        break;
-      case 3:
-        outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\" y=\"" << p.y()  << "\" z=\"" << p.z() << "\"/>" << std::endl;
-        break;
-      default:
-        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
-    }
-  }
-
-  // Write vertex footer
-  --indent;
-  outfile << indent() << "</vertices>" << std::endl;
-
-  // Write cell header
-  outfile << indent();
-  outfile << "<cells size=\"" << mesh.num_cells() << "\">" << std::endl;
-
-  // Write each cell
-  ++indent;
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    const uint* vertices = c->entities(0);
-    assert(vertices);
-    outfile << indent();
-
-    switch (cell_type)
-    {
-    case CellType::interval:
-      outfile << "<interval index=\"" <<  c->index() << "\" v0=\"" << vertices[0] << "\" v1=\"" << vertices[1] << "\"/>" << std::endl;
-      break;
-    case CellType::triangle:
-      outfile << "<triangle index=\"" <<  c->index() << "\" v0=\"" << vertices[0] << "\" v1=\"" << vertices[1] << "\" v2=\"" << vertices[2] << "\"/>" << std::endl;
-      break;
-    case CellType::tetrahedron:
-      outfile << "<tetrahedron index=\"" <<  c->index() << "\" v0=\"" << vertices[0] << "\" v1=\"" << vertices[1] << "\" v2=\"" << vertices[2] << "\" v3=\"" << vertices[3] << "\"/>" << std::endl;
-      break;
-    default:
-      error("Unknown cell type: %u.", cell_type);
-    }
-  }
-  // Write cell footer
-  --indent;
-  outfile << indent() << "</cells>" << std::endl;
-
-  // Write mesh data
-  ++indent;
-  write_data(mesh.data(), outfile, indent.level());
-  --indent;
-
-  // Write mesh footer
-  --indent;
-  outfile << indent() << "</mesh>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
@@ -300,7 +214,6 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
-    //std::cout << "MeshData name:" << data_set_name << "." << std::endl;
 
     // Check that there is only one data set
     if (it->first_child().next_sibling())
@@ -309,12 +222,10 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
     // Get type of data set
     pugi::xml_node data_set = it->first_child();
     const std::string data_set_type = data_set.name();
-    //std::cout << "  Data set type: " << data_set_type << std::endl;
     if (data_set_type == "array")
     {
       // Get type
       const std::string data_type = data_set.attribute("type").value();
-      //std::cout << "  Data set type: " << data_type << std::endl;
       if (data_type == "uint")
       {
         // Get vector from MeshData
@@ -373,6 +284,12 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   }
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
+{
+  error("XMLMesh::write_data not implemented.");
+}
+//-----------------------------------------------------------------------------
+/*
 void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
                          unsigned int indentation_level)
 {
@@ -436,4 +353,5 @@ void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
     outfile << "</data>" << std::endl;
   //}
 }
+*/
 //-----------------------------------------------------------------------------

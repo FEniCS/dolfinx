@@ -42,8 +42,7 @@ namespace dolfin
                      const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
-    static void write(const FunctionPlotData& plot_data, std::ostream& outfile,
-                      unsigned int indentation_level=0);
+    static void write(const FunctionPlotData& data, pugi::xml_node xml_node);
 
   };
 

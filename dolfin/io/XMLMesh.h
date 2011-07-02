@@ -43,9 +43,6 @@ namespace dolfin
     /// Read XML vector
     static void read(Mesh& mesh, const pugi::xml_node xml_dolfin);
 
-    /// Write the XML file
-    static void write(const Mesh& mesh, std::ostream& outfile,
-                      unsigned int indentation_level=0);
 
     /// Write the XML file
     static void write(const Mesh& mesh, pugi::xml_node xml_node);
@@ -63,8 +60,7 @@ namespace dolfin
                                 const pugi::xml_node xml_array);
 
     // Write the MeshData
-    static void write_data(const MeshData& data, std::ostream& outfile,
-                           unsigned int indentation_level=0);
+    static void write_data(const MeshData& data, pugi::xml_node mesh_node);
 
   };
 

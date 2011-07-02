@@ -40,7 +40,6 @@
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
-#include "XMLIndent.h"
 #include "XMLMeshFunction.h"
 #include "XMLLocalMeshData.h"
 
@@ -185,11 +184,5 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_d
     mesh_data.global_cell_indices.clear();
   }
   cout << "Finished cell input " << mesh_data.tdim <<  endl;
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshData::write(const LocalMeshData& mesh_data, std::ostream& outfile,
-                    uint indentation_level)
-{
-  error("Writing of mesh LocalData to XML files is not supported.");
 }
 //-----------------------------------------------------------------------------

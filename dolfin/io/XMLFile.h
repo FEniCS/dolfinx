@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -97,10 +97,6 @@ namespace dolfin
 
   private:
 
-    /// Write xml start/close tags
-    static void write_start(std::ostream& outfile, uint indentation_level=0);
-    static void write_end(std::ostream& outfile, uint indentation_level=0);
-
     // Write MeshFunction
     template<class T> void read_mesh_function(MeshFunction<T>& t,
                                               const std::string type) const;
@@ -114,10 +110,6 @@ namespace dolfin
                                              const std::string filename) const;
 
     static pugi::xml_node write_dolfin(pugi::xml_document& doc);
-
-    // Open/close files
-    void open_write_file();
-    void close_write_file();
 
     boost::shared_ptr<std::ostream> outstream;
 

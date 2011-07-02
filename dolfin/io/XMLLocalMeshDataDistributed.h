@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Ola Skavhaug
+// Copyright (C) 2006-2011 Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -17,6 +17,7 @@
 //
 // First added:  2009-03-10
 // Last changed: 2011-05-30
+//
 // Modified by Kent-Andre Mardal, 2011.
 
 #ifndef __XMLLOCALMESHDATADISTRIBUTED_H

@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2011 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -24,7 +24,6 @@
 #include "dolfin/log/log.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/plot/FunctionPlotData.h"
-#include "XMLIndent.h"
 #include "XMLMesh.h"
 #include "XMLVector.h"
 #include "XMLFunctionPlotData.h"
@@ -54,27 +53,15 @@ void XMLFunctionPlotData::read(FunctionPlotData& plot_data,
   XMLVector::read(vector, xml_plot_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFunctionPlotData::write(const FunctionPlotData& plot_data,
-                                std::ostream& outfile,
-                                uint indentation_level)
+void XMLFunctionPlotData::write(const FunctionPlotData& data,
+                                pugi::xml_node xml_node)
 {
-  XMLIndent indent(indentation_level);
+  // Add plot data node
+  pugi::xml_node plot_data_node = xml_node.append_child("function_plot_data");
+  plot_data_node.append_attribute("rank") = data.rank;
 
-  // Write Function plot data header
-  outfile << indent();
-  outfile << "<function_plot_data rank=\"" << plot_data.rank << "\">" << std::endl;
-
-  ++indent;
-
-  // Write mesh
-  XMLMesh::write(plot_data.mesh, outfile, indent.level());
-
-  // Write vector
-  XMLVector::write(plot_data.vertex_values(), outfile, indent.level());
-
-  --indent;
-
-  // Write Function plot data footer
-  outfile << indent() << "</function_plot_data>" << std::endl;
+  // Write mesh and vector
+  XMLMesh::write(data.mesh, plot_data_node);
+  XMLVector::write(data.vertex_values(), plot_data_node, true);
 }
 //-----------------------------------------------------------------------------

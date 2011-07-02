@@ -178,12 +178,13 @@ void XMLFile::operator<< (const Parameters& output)
 {
   if (MPI::process_number() == 0)
   {
-    open_write_file();
-    XMLParameters::write(output, *outstream, 1);
-    close_write_file();
+    pugi::xml_document doc;
+    pugi::xml_node node = write_dolfin(doc);
+    XMLParameters::write(output, node);
+
+    // FIXME: Implement copy to stream
+    doc.save_file(filename.c_str(), "  ");
   }
-  else
-    XMLParameters::write(output, *outstream, 1);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (FunctionPlotData& input)
@@ -198,27 +199,15 @@ void XMLFile::operator>> (FunctionPlotData& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const FunctionPlotData& output)
 {
-  if (MPI::process_number() == 0)
-  {
-    open_write_file();
-    XMLFunctionPlotData::write(output, *outstream, 1);
-    close_write_file();
-  }
-  else
-    XMLFunctionPlotData::write(output, *outstream, 1);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::write_start(std::ostream& outfile, uint indentation_level)
-{
-  XMLIndent indent(indentation_level);
-  outfile << indent() << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl << std::endl;
-  outfile << indent() << "<dolfin xmlns:dolfin=\"http://www.fenicsproject.org\">" << std::endl;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::write_end(std::ostream& outfile, uint indentation_level)
-{
-  XMLIndent indent(indentation_level);
-  outfile << indent() << "</dolfin>" << std::endl;
+  if (MPI::num_processes() > 1)
+    error("Mesh XML output in parallel not yet supported");
+
+  pugi::xml_document doc;
+  pugi::xml_node node = write_dolfin(doc);
+  XMLFunctionPlotData::write(output, node);
+
+  // FIXME: Implement copy to stream
+  doc.save_file(filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
@@ -233,16 +222,17 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
-                                                  const std::string type)
+                                                    const std::string type)
 {
-  if (MPI::process_number() == 0)
-  {
-    open_write_file();
-    XMLMeshFunction::write(t, type, *outstream, 1);
-    close_write_file();
-  }
-  else
-    XMLMeshFunction::write(t, type, *outstream, 1);
+  if (MPI::num_processes() > 1)
+    error("MeshFunction XML output in parallel not yet supported");
+
+  pugi::xml_document doc;
+  pugi::xml_node node = write_dolfin(doc);
+  XMLMeshFunction::write(t, type, node);
+
+  // FIXME: Implement copy to stream
+  doc.save_file(filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
@@ -291,38 +281,5 @@ pugi::xml_node XMLFile::write_dolfin(pugi::xml_document& xml_doc)
   pugi::xml_node node = xml_doc.append_child("dolfin");
   node.append_attribute("xmlns:dolfin") = "http://www.fenicsproject.org";
   return node;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::open_write_file()
-{
-  // Convert to ofstream
-  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream.get());
-  if (outfile)
-  {
-    // Open file (erase contents)
-    outfile->open(filename.c_str(), std::ios::out | std::ios::trunc);
-
-    if (!outfile->is_open())
-      error("Error opening XML file.");
-
-    // Go to end of file
-    //outfile->seekp(0, std::ios::end);
-  }
-  assert(outstream);
-  XMLFile::write_start(*outstream);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::close_write_file()
-{
-  XMLFile::write_end(*outstream);
-
-  // Get file path and extension
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-  if (extension == ".gz")
-    error("Compressed XML output not yet supported.");
-
-  // Finalise (closes file is stream is a file stream)
-  outstream.reset();
 }
 //-----------------------------------------------------------------------------

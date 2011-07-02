@@ -34,7 +34,7 @@ namespace dolfin
 
   class Parameters;
 
-  // FIXME: Need to handle nested parameters and ranges in XML format
+  // FIXME: Need to test nested parameters and ranges in XML format
 
   class XMLParameters
   {
@@ -43,9 +43,8 @@ namespace dolfin
     /// Read parameters from XML file
     static void read(Parameters& parameters, const pugi::xml_node xml_dolfin);
 
-    /// Write parameters to XML file
-    static void write(const Parameters& parameters, std::ostream& outfile,
-                      unsigned int indentation_level=0);
+    /// Write the XML file
+    static void write(const Parameters& parameters, pugi::xml_node xml_node);
 
   private:
 

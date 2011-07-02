@@ -27,9 +27,7 @@
 #include <string>
 
 #include "pugixml.hpp"
-
 #include "dolfin/mesh/MeshFunction.h"
-#include "XMLIndent.h"
 #include "XMLMesh.h"
 
 namespace dolfin
@@ -44,12 +42,12 @@ namespace dolfin
     static void read(MeshFunction<T>& mesh_function, const std::string type,
                      const pugi::xml_node xml_mesh);
 
-    /// Write the XML MeshFunction
-    template <class T>
+    /// Write the XML file
+    template<class T>
     static void write(const MeshFunction<T>& mesh_function,
-                      const std::string type,
-                      std::ostream& outfile, unsigned int indentation_level=0,
+                      const std::string type, pugi::xml_node xml_node,
                       bool write_mesh=true);
+
 
   };
 
@@ -116,30 +114,28 @@ namespace dolfin
       error("Type unknown in XMLMeshFunction::read.");
   }
   //---------------------------------------------------------------------------
-  template <class T>
-  inline void XMLMeshFunction::write(const MeshFunction<T>& mf,
-                                     const std::string type,
-                                     std::ostream& outfile,
-                                     unsigned int indentation_level,
-                                     bool write_mesh)
+  template<class T>
+  void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
+                    const std::string type, pugi::xml_node xml_node,
+                    bool write_mesh)
   {
     // Write mesh if requested
     if (write_mesh)
-      XMLMesh::write(mf.mesh(), outfile, indentation_level);
+      XMLMesh::write(mesh_function.mesh(), xml_node);
 
-    // Write MeshFunction
-    XMLIndent indent(indentation_level);
-    outfile << indent();
-    outfile << "<meshfunction type=\"" << type << "\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
+    // Add mesh function node and attributes
+    pugi::xml_node mf_node = xml_node.append_child("meshfunction");
+    mf_node.append_attribute("type") = type.c_str();
+    mf_node.append_attribute("dim") = mesh_function.dim();
+    mf_node.append_attribute("size") = mesh_function.size();
 
-    ++indent;
-    for (uint i = 0; i < mf.size(); ++i)
+    // Add data
+    for (uint i = 0; i < mesh_function.size(); ++i)
     {
-      outfile << indent();
-      outfile << "<entity index=\"" << i << "\" value=\"" << mf[i] << "\"/>" << std::endl;
+      pugi::xml_node entity_node = mf_node.append_child("entity");
+      entity_node.append_attribute("index") = i;
+      entity_node.append_attribute("value") = mesh_function[i];
     }
-    --indent;
-    outfile << indent() << "</meshfunction>" << std::endl;
   }
   //---------------------------------------------------------------------------
 

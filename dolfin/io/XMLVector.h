@@ -44,10 +44,6 @@ namespace dolfin
     static uint read_size(const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
-    static void write(const GenericVector& vector, std::ostream& outfile,
-                      bool write_to_stream, unsigned int indentation_level=0);
-
-    /// Write the XML file
     static void write(const GenericVector& vector, pugi::xml_node xml_node,
                       bool write_to_stream);
 

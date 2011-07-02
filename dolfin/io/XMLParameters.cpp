@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Ola Skavhaug, Anders Logg and Garth N. Wells
+// Copyright (C) 2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,11 +19,9 @@
 // Last changed: 2011-06-30
 
 #include "pugixml.hpp"
-
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/Parameters.h>
-#include "XMLIndent.h"
 #include "XMLParameters.h"
 
 using namespace dolfin;
@@ -48,62 +46,44 @@ void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
   read_parameter_nest(p, xml_parameters);
 }
 //-----------------------------------------------------------------------------
-void XMLParameters::write(const Parameters& parameters,
-                          std::ostream& outfile,
-                          uint indentation_level)
+void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
 {
   // Get keys
   std::vector<std::string> parameter_keys;
   parameters.get_parameter_keys(parameter_keys);
 
-  // Write parameters header
-  XMLIndent indent(indentation_level);
-  outfile << indent() << "<parameters name=\"" << parameters.name() << "\">" << std::endl;
+  // Add parameters node
+  pugi::xml_node parameters_node = xml_node.append_child("parameters");
+  parameters_node.append_attribute("name") = parameters.name().c_str();
 
   // Write each parameter item
-  ++indent;
   for (uint i = 0; i < parameter_keys.size(); ++i)
   {
     const Parameter& parameter = parameters[parameter_keys[i]];
-    outfile << indent();
+
+    pugi::xml_node parameter_node = parameters_node.append_child("parameter");
+    parameter_node.append_attribute("key") = parameter.key().c_str();
+    parameter_node.append_attribute("type") = parameter.type_str().c_str();
     if (parameter.type_str() == "int")
-    {
-      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"int\" value=\""
-              << static_cast<int>(parameter) << "\"/>" << std::endl;
-    }
+      parameter_node.append_attribute("value") = static_cast<int>(parameter);
     else if (parameter.type_str() == "double")
-    {
-      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"double\" value=\""
-              << static_cast<double>(parameter) << "\"/>" << std::endl;
-    }
+      parameter_node.append_attribute("value") = static_cast<double>(parameter);
     else if (parameter.type_str() == "bool")
-    {
-      if (static_cast<bool>(parameter))
-        outfile << "<parameter key=\"" << parameter.key() << "\" type=\"bool\" value=\"true\"/>" << std::endl;
-      else
-        outfile << "<parameter key=\"" << parameter.key() << "\" type=\"bool\" value=\"false\"/>" << std::endl;
-    }
+      parameter_node.append_attribute("value") = static_cast<bool>(parameter);
     else if (parameter.type_str() == "string")
-    {
-      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"string\" value=\""
-              << static_cast<std::string>(parameter) << "\"/>" << std::endl;
-    }
+      parameter_node.append_attribute("value") = static_cast<std::string>(parameter).c_str();
     else
     {
       error("Unable to write parameter \"%s\" to XML file, unknown type: \"%s\".",
             parameter.key().c_str(), parameter.type_str().c_str());
     }
   }
-  --indent;
 
   // Write nested parameter sets
   std::vector<std::string> nested_keys;
   parameters.get_parameter_set_keys(nested_keys);
   for (uint i = 0; i < nested_keys.size(); ++i)
-    write(parameters(nested_keys[i]), outfile, indentation_level + 1);
-
-  // Write parameters footer
-  outfile << indent() << "</parameters>" << std::endl;
+    write(parameters(nested_keys[i]), parameters_node);
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_node)
