@@ -88,6 +88,10 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
   else
     vector.get_local(x);
 
+  const uint size = vector.size();
+  if (MPI::process_number() == 0)
+    assert(size == x.size());
+
   if (write_to_stream)
   {
     XMLIndent indent(indentation_level);
@@ -99,7 +103,7 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
       ++indent;
 
       // Write array header
-      outfile << indent() << "<array type=\"double\" size=\"" << vector.size()
+      outfile << indent() << "<array type=\"double\" size=\"" << size
         << "\">" << std::endl;
       ++indent;
     }
@@ -123,6 +127,42 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
       // Write vector footer
       if (write_to_stream)
         outfile << indent() << "</vector>" << std::endl;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
+                      bool write_to_stream)
+{
+  // Gather entries from process i on process 0
+  Array<double> x;
+  if (MPI::num_processes() > 1)
+    vector.gather_on_zero(x);
+  else
+    vector.get_local(x);
+
+  const uint size = vector.size();
+
+  if (write_to_stream)
+  {
+    assert(size == x.size());
+
+    // Add vector node
+    pugi::xml_node vector_node = xml_node.append_child("vector");
+
+    // Add array node
+    pugi::xml_node array_node = vector_node.append_child("array");
+
+    // Add attributes
+    array_node.append_attribute("type") = "double";
+    array_node.append_attribute("size") = size;
+
+    // Add data
+    for (uint i = 0; i < size; ++i)
+    {
+      pugi::xml_node element_node = array_node.append_child("element");
+      element_node.append_attribute("index") = i;
+      element_node.append_attribute("value") = x[i];
     }
   }
 }

@@ -47,6 +47,8 @@ namespace dolfin
     static void write(const Mesh& mesh, std::ostream& outfile,
                       unsigned int indentation_level=0);
 
+    /// Write the XML file
+    static void write(const Mesh& mesh, pugi::xml_node xml_node);
 
   private:
 

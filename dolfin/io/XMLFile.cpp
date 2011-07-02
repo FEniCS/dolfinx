@@ -77,16 +77,12 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   if (MPI::num_processes() > 1)
     error("Mesh XML output in parallel not yet supported");
 
-  // Open file on process 0 for distributed objects and on all processes
-  // for local objects
-  open_write_file();
+  pugi::xml_document doc;
+  pugi::xml_node node = write_dolfin(doc);
+  XMLMesh::write(output_mesh, node);
 
-  // Note: 'write' is being called on all processes since collective MPI
-  // calls might be used.
-  XMLMesh::write(output_mesh, *outstream, 1);
-
-  // Close file
-  close_write_file();
+  // FIXME: Implement copy to stream
+  doc.save_file(filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
@@ -153,12 +149,18 @@ void XMLFile::operator<< (const GenericVector& output)
   // for local objects
   if (MPI::process_number() == 0)
   {
-    open_write_file();
-    XMLVector::write(output, *outstream, true, 1);
-    close_write_file();
+    pugi::xml_document doc;
+    pugi::xml_node node = write_dolfin(doc);
+    XMLVector::write(output, node, true);
+
+    // FIXME: Implement copy to stream
+    doc.save_file(filename.c_str(), "  ");
   }
   else
-    XMLVector::write(output, *outstream, false, 1);
+  {
+    pugi::xml_node node(0);
+    XMLVector::write(output, node, false);
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Parameters& input)
@@ -281,6 +283,13 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
     error("XMLFile::get_dolfin_xml_node: not a DOLFIN XML file");
 
   return dolfin_node;
+}
+//-----------------------------------------------------------------------------
+pugi::xml_node XMLFile::write_dolfin(pugi::xml_document& xml_doc)
+{
+  pugi::xml_node node = xml_doc.append_child("dolfin");
+  node.append_attribute("xmlns:dolfin") = "http://www.fenicsproject.org";
+  return node;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::open_write_file()

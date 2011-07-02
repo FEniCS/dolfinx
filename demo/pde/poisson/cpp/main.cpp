@@ -69,13 +69,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquare mesh(32, 32);
-  File meshg("mesh.xml");
-  meshg << mesh;
 
-  //XMLFile xml_file("mesh.xml");
-
-
-  /*
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition
@@ -101,6 +95,6 @@ int main()
 
   // Plot solution
   plot(u);
-  */
+
   return 0;
 }

@@ -113,6 +113,8 @@ namespace dolfin
     const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
                                              const std::string filename) const;
 
+    static pugi::xml_node write_dolfin(pugi::xml_document& doc);
+
     // Open/close files
     void open_write_file();
     void close_write_file();
