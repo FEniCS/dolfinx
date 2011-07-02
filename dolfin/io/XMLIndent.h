@@ -44,7 +44,7 @@ namespace dolfin
 
     void operator--();
 
-    std::string operator() ();
+    std::string operator() () const;
 
     dolfin::uint level()
     { return indentation_level; }

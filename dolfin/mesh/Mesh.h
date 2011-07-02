@@ -610,9 +610,6 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Define XMLHandler for use in new XML reader/writer
-    typedef XMLMesh XMLHandler;
-
   private:
 
     // Friends

@@ -143,6 +143,85 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile,
   outfile << indent() << "</mesh>" << std::endl;
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
+{
+  // Add mesh node
+  pugi::xml_node mesh_node = xml_node.append_child("mesh");
+
+  // Add mesh attributes
+  const CellType::Type _cell_type = mesh.type().cell_type();
+  const std::string cell_type = CellType::type2string(_cell_type);
+  mesh_node.append_attribute("celltype") = cell_type.c_str();
+  mesh_node.append_attribute("dim") = mesh.geometry().dim();
+
+  // Add vertices node
+  pugi::xml_node vertices_node = mesh_node.append_child("vertices");
+  vertices_node.append_attribute("size") = mesh.num_vertices();
+
+  // Write each vertex
+  for(VertexIterator v(mesh); !v.end(); ++v)
+  {
+    pugi::xml_node vertex_node = vertices_node.append_child("vertex");
+    vertex_node.append_attribute("index") = v->index();
+
+    const Point p = v->point();
+    switch (mesh.geometry().dim())
+    {
+      case 1:
+        vertex_node.append_attribute("x") = p.x();
+        break;
+      case 2:
+        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("y") = p.y();
+        break;
+      case 3:
+        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("y") = p.y();
+        vertex_node.append_attribute("z") = p.z();
+        break;
+      default:
+        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    }
+  }
+
+  // Add cells node
+  pugi::xml_node cells_node = mesh_node.append_child("cells");
+  cells_node.append_attribute("size") = mesh.num_cells();
+
+  // Add each cell
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
+    cell_node.append_attribute("index") = c->index();
+
+    const uint* vertices = c->entities(0);
+    assert(vertices);
+
+    switch (_cell_type)
+    {
+    case CellType::interval:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      break;
+    case CellType::triangle:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v2") = vertices[2];
+      break;
+    case CellType::tetrahedron:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v2") = vertices[2];
+      cell_node.append_attribute("v3") = vertices[3];
+      break;
+    default:
+      error("Unknown cell type: %u.", _cell_type);
+    }
+  }
+
+  // FIXME: Write mesh data
+}
+//-----------------------------------------------------------------------------
 void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
 {
   // Get cell type and geometric dimension

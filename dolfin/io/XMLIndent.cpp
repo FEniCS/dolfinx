@@ -45,10 +45,8 @@ void XMLIndent::operator--()
   -- indentation_level;
 }
 //-----------------------------------------------------------------------------
-std::string XMLIndent::operator()()
+std::string XMLIndent::operator()() const
 {
-  std::ostringstream ss;
-  ss << std::setw(indentation_level*step_size) << "";
-  return ss.str();
+  return std::string(indentation_level*step_size, ' ');
 }
 //-----------------------------------------------------------------------------

@@ -48,6 +48,9 @@ namespace dolfin
     /// Constructor
     GenericFile(const std::string filename);
 
+    /// Destructor
+    virtual ~GenericFile();
+
     // Input
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (GenericVector& x);

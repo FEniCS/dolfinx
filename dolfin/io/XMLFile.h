@@ -53,6 +53,8 @@ namespace dolfin
     /// Constructor from a stream
     XMLFile(std::ostream& s);
 
+    ~XMLFile();
+
     // Mesh
     void operator>> (Mesh& input);
     void operator<< (const Mesh& output);
@@ -111,9 +113,11 @@ namespace dolfin
     const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
                                              const std::string filename) const;
 
+    static pugi::xml_node write_dolfin(pugi::xml_document& doc);
+
     // Open/close files
-    void open_file();
-    void close_file();
+    void open_write_file();
+    void close_write_file();
 
     boost::shared_ptr<std::ostream> outstream;
 
