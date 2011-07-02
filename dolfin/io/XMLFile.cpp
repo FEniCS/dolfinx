@@ -46,8 +46,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-                                               outstream(new std::ofstream)
+XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
 {
   // Do nothing
 }
@@ -66,7 +65,8 @@ void XMLFile::operator>> (Mesh& input_mesh)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
   // Read mesh
   XMLMesh::read(input_mesh, dolfin_node);
@@ -80,9 +80,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
   XMLMesh::write(output_mesh, node);
-
-  // FIXME: Implement copy to stream
-  doc.save_file(filename.c_str(), "  ");
+  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
@@ -120,7 +118,8 @@ void XMLFile::operator>> (GenericVector& input)
   uint size = 0;
   if (MPI::process_number() == 0)
   {
-    dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+    load_xml_doc(xml_doc);
+    dolfin_node = get_dolfin_xml_node(xml_doc);
     size = XMLVector::read_size(dolfin_node);
   }
   MPI::broadcast(size);
@@ -153,9 +152,7 @@ void XMLFile::operator<< (const GenericVector& output)
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
     XMLVector::write(output, node, true);
-
-    // FIXME: Implement copy to stream
-    doc.save_file(filename.c_str(), "  ");
+    save_xml_doc(doc);
   }
   else
   {
@@ -168,7 +165,8 @@ void XMLFile::operator>> (Parameters& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
   // Read parameters
   XMLParameters::read(input, dolfin_node);
@@ -181,9 +179,7 @@ void XMLFile::operator<< (const Parameters& output)
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
     XMLParameters::write(output, node);
-
-    // FIXME: Implement copy to stream
-    doc.save_file(filename.c_str(), "  ");
+    save_xml_doc(doc);
   }
 }
 //-----------------------------------------------------------------------------
@@ -191,7 +187,8 @@ void XMLFile::operator>> (FunctionPlotData& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
   // Read plot data
   XMLFunctionPlotData::read(input, dolfin_node);
@@ -205,9 +202,7 @@ void XMLFile::operator<< (const FunctionPlotData& output)
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
   XMLFunctionPlotData::write(output, node);
-
-  // FIXME: Implement copy to stream
-  doc.save_file(filename.c_str(), "  ");
+  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
@@ -215,7 +210,8 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
   // Read MeshFunction
   XMLMeshFunction::read(t, type, dolfin_node);
@@ -230,13 +226,10 @@ template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
   XMLMeshFunction::write(t, type, node);
-
-  // FIXME: Implement copy to stream
-  doc.save_file(filename.c_str(), "  ");
+  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
-const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
-                                                  const std::string filename) const
+void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
 {
   // Create XML parser result
   pugi::xml_parse_result result;
@@ -268,11 +261,31 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc,
   else
     result = xml_doc.load_file(filename.c_str());
 
+  if (!result)
+    error("XML parsing error.");
+}
+//-----------------------------------------------------------------------------
+void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
+{
+  if (outstream)
+    xml_doc.save(*outstream, "  ");
+  else
+  {
+    // Get file path and extension
+    const boost::filesystem::path path(filename);
+    const std::string extension = boost::filesystem::extension(path);
+    if (extension == ".gz")
+      error("Gzipped XML output not yet supported.");
+    xml_doc.save_file(filename.c_str(), "  ");
+  }
+}
+//-----------------------------------------------------------------------------
+const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) const
+{
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = xml_doc.child("dolfin");
   if (!dolfin_node)
     error("XMLFile::get_dolfin_xml_node: not a DOLFIN XML file");
-
   return dolfin_node;
 }
 //-----------------------------------------------------------------------------

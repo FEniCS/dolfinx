@@ -105,9 +105,14 @@ namespace dolfin
     template<class T> void write_mesh_function(const MeshFunction<T>& t,
                                                const std::string type);
 
+    // Load/open XML doc (from file)
+    void load_xml_doc(pugi::xml_document& xml_doc) const;
+
+    // Save XML doc (to file or stream)
+    void save_xml_doc(const pugi::xml_document& xml_doc) const;
+
     // Get DOLFIN XML node
-    const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc,
-                                             const std::string filename) const;
+    const pugi::xml_node get_dolfin_xml_node(pugi::xml_document& xml_doc) const;
 
     static pugi::xml_node write_dolfin(pugi::xml_document& doc);
 
