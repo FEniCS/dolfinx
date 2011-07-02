@@ -1,3 +1,6 @@
+ - Support parallel XML vector io
+ - Add support for gzipped XML output
+ - Use pugixml for XML output
  - Move XML SAX parser to libxml2 SAX2 interface
  - Simplify XML io
  - Change interface for variational problems, class VariationalProblem removed
@@ -11,7 +14,7 @@
  - Use Boost to compute Legendre polynolials
  - Remove ode code
  - Handle parsing of unrecognized command-line parameters
- - All const std::vector<foo>& now return a readonly NumPy array
+ - All const std::vector<foo>& now return a read-only NumPy array
  - Make a robust macro for generating a NumPy array from data
  - Exposing low level fem functionality to Python, by adding a Cell -> ufc::cell typemap
  - Added ufl_cell as a method to Mesh in Python interface
