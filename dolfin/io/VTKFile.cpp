@@ -264,17 +264,17 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
     fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   if (encoding == "ascii")
@@ -287,29 +287,29 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i = 0; i < 2; i++)
-          ss << " " << values[vertex->index() + i*num_vertices];
-        ss << " " << 0.0;
+          ss << values[vertex->index() + i*num_vertices] << " ";
+        ss << 0.0 << "  ";
       }
       else if (rank == 2 && dim == 4)
       {
         // Pad 2D tensors with 0.0 to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i + 0)*num_vertices];
-          ss << " " << values[vertex->index() + (2*i + 1)*num_vertices];
-          ss << " " << 0.0;
+          ss << values[vertex->index() + (2*i + 0)*num_vertices] << " ";
+          ss << values[vertex->index() + (2*i + 1)*num_vertices] << " ";
+          ss << 0.0 << " ";
         }
-        ss << " " << 0.0;
-        ss << " " << 0.0;
-        ss << " " << 0.0;
+        ss << 0.0 << " ";
+        ss << 0.0 << " ";
+        ss << 0.0 << "  ";
       }
       else
       {
         // Write all components
         for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*num_vertices];
+          ss << values[vertex->index() + i*num_vertices] << " ";
+        ss << " ";
       }
-      ss << std::endl;
     }
 
     // Send to file

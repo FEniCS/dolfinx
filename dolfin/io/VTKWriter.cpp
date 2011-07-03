@@ -78,21 +78,21 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
     if(!(data_dim == 2 || data_dim == 3))
       error("Don't know what to do with vector function with dim other than 2 or 3.");
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     if(!(data_dim == 4 || data_dim == 9))
       error("Don't know what to do with tensor function with dim other than 4 or 9.");
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -142,30 +142,28 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
     if (rank == 1 && data_dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
-      ss << " " << values[*cell_offset];
-      ss << " " << values[*cell_offset+1];
-      ss << " " << 0.0;
+      ss << values[*cell_offset] << "  " << values[*cell_offset + 1] << " " << 0.0;
     }
     else if (rank == 2 && data_dim == 4)
     {
       // Pad with 0.0 to 2D tensors to make them 3D
       for(uint i = 0; i < 2; i++)
       {
-        ss << " " << values[*cell_offset + 2*i];
-        ss << " " << values[*cell_offset + 2*i+1];
-        ss << " " << 0.0;
+        ss << values[*cell_offset + 2*i] << " ";
+        ss << values[*cell_offset + 2*i + 1] << " ";
+        ss << 0.0 << " ";
       }
-      ss << " " << 0.0;
-      ss << " " << 0.0;
-      ss << " " << 0.0;
+      ss << 0.0 << " ";
+      ss << 0.0 << " ";
+      ss << 0.0;
     }
     else
     {
       // Write all components
       for (uint i = 0; i < data_dim; i++)
-        ss << " " << values[*cell_offset + i];
+        ss << values[*cell_offset + i] << " ";
     }
-    ss << std::endl;
+    ss << "  ";
     ++cell_offset;
   }
 
@@ -219,35 +217,35 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">" << std::endl;
+  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
-    file << p.x() << " " << p.y() << " " <<  p.z() << std::endl;
+    file << p.x() << " " << p.y() << " " <<  p.z() << "  ";
   }
   file << "</DataArray>" << std::endl <<  "</Points>" << std::endl;
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << "ascii" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << "ascii" << "\">";
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (VertexIterator v(*c); !v.end(); ++v)
       file << v->index() << " ";
-    file << std::endl;
+    file << " ";
   }
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "ascii" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "ascii" << "\">";
   for (uint offsets = 1; offsets <= num_cells; offsets++)
-    file << " " << offsets*num_cell_vertices << "  "  << std::endl;
+    file << offsets*num_cell_vertices << " ";
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii" << "\">";
   for (uint types = 0; types < num_cells; types++)
-    file << " " << _vtk_cell_type << std::endl;
+    file << _vtk_cell_type << " ";
   file  << "</DataArray>" << std::endl;
   file  << "</Cells>" << std::endl;
 
