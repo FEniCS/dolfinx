@@ -20,8 +20,13 @@
 // First added:  2009-03-03
 // Last changed: 2011-06-30
 
+//#include <iostream>
+#include <iostream>
+
 #include <fstream>
+
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -271,12 +276,22 @@ void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
     xml_doc.save(*outstream, "  ");
   else
   {
-    // Get file path and extension
+    // Compress if filename has extension '.gz'
     const boost::filesystem::path path(filename);
     const std::string extension = boost::filesystem::extension(path);
     if (extension == ".gz")
-      error("Gzipped XML output not yet supported.");
-    xml_doc.save_file(filename.c_str(), "  ");
+    {
+      std::stringstream xml_stream;
+      xml_doc.save(xml_stream, "  ");
+
+      std::ofstream file(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+      boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
+      out.push(boost::iostreams::gzip_compressor());
+      out.push(file);
+      boost::iostreams::copy(xml_stream, out);
+    }
+    else
+      xml_doc.save_file(filename.c_str(), "  ");
   }
 }
 //-----------------------------------------------------------------------------
