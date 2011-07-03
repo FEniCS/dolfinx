@@ -109,7 +109,7 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
   case INSIDE_CELLS:
     if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
     {
-      //read_interval(name, attrs);
+      read_interval(name, attrs, num_attributes);
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
     {
@@ -117,7 +117,7 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
     {
-      //read_tetrahedron(name, attrs);
+      read_tetrahedron(name, attrs, num_attributes);
     }
     break;
 
@@ -387,7 +387,8 @@ void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name,
-                                                const xmlChar **attrs, uint num_attributes)
+                                                const xmlChar **attrs,
+                                                uint num_attributes)
 {
   // Check dimension
   if (tdim != 2)
@@ -417,7 +418,8 @@ void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name,
-                                                   const xmlChar **attrs, uint num_attributes)
+                                                   const xmlChar **attrs,
+                                                   uint num_attributes)
 {
   // Check dimension
   if (tdim != 3)
