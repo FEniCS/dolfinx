@@ -86,7 +86,9 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
   XMLLocalMeshDataDistributed xml_object(input_data, filename);
+  std::cout << "Read data" << std::endl;
   xml_object.read();
+  std::cout << "End Read data" << std::endl;
 
   /*
   // Local (DOM) version

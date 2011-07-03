@@ -29,6 +29,8 @@
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 
+#include "pugixml.hpp"
+
 #include <dolfin/common/Array.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -86,10 +88,13 @@ void VTKFile::operator<<(const Mesh& mesh)
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_mesh_write(pvtu_filename, vtu_filename);
+    pvtu_write_mesh(pvtu_filename);
+    pvd_file_write(counter, counter, pvtu_filename);
   }
+  else if (MPI::num_processes() == 1)
+    pvd_file_write(counter, counter, vtu_filename);
 
-  // Finalise and write pvd files
+  // Finalise
   finalize(vtu_filename, counter);
 
   log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
@@ -144,9 +149,11 @@ void VTKFile::write(const Function& u, double time)
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_mesh_write(pvtu_filename, vtu_filename);
-    pvtu_results_write(u, pvtu_filename);
+    pvtu_write(u, pvtu_filename);
+    pvd_file_write(counter, time, pvtu_filename);
   }
+  else if (MPI::num_processes() == 1)
+    pvd_file_write(counter, time, vtu_filename);
 
   // Finalise and write pvd files
   finalize(vtu_filename, time);
@@ -170,14 +177,6 @@ std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
   // Write headers
   vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
 
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
-  {
-    // Get pvtu file name and clear file
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    clear_file(pvtu_filename);
-    pvtu_header_open(pvtu_filename);
-  }
-
   return vtu_filename;
 }
 //----------------------------------------------------------------------------
@@ -185,22 +184,6 @@ void VTKFile::finalize(std::string vtu_filename, double time)
 {
   // Close headers
   vtk_header_close(vtu_filename);
-
-  // Parallel-specfic files
-  if (MPI::num_processes() > 1)
-  {
-    if (MPI::process_number() == 0)
-    {
-      // Close pvtu headers
-      std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-      pvtu_header_close(pvtu_filename);
-
-      // Write pvd file (parallel)
-      pvd_file_write(counter, counter, pvtu_filename);
-    }
-  }
-  else
-    pvd_file_write(counter, time, vtu_filename);
 
   // Increase the number of times we have saved the object
   counter++;
@@ -346,79 +329,154 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 //----------------------------------------------------------------------------
 void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
 {
-  std::fstream pvd_file;
-
+  pugi::xml_document xml_doc;
   if (step == 0)
   {
-    // Open pvd file
-    pvd_file.open(filename.c_str(), std::ios::out|std::ios::trunc);
-
-    // Write header
-    pvd_file << "<?xml version=\"1.0\"?> " << std::endl;
-    pvd_file << "<VTKFile type=\"Collection\" version=\"0.1\">" << std::endl;
-    pvd_file << "<Collection> " << std::endl;
+    pugi::xml_node vtk_node = xml_doc.append_child("VTKFile");
+    vtk_node.append_attribute("type") = "Collection";
+    vtk_node.append_attribute("version") = "0.1";
+    vtk_node.append_child("Collection");
   }
   else
   {
-    // Open pvd file
-    pvd_file.open(filename.c_str(), std::ios::out|std::ios::in);
-    pvd_file.seekp(mark);
+    pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+    if (!result)
+      error("XML parsing error when reading from file.");
   }
 
   // Remove directory path from name for pvd file
-  std::string fname = strip_path(_filename);
+  const std::string fname = strip_path(_filename);
 
-  // Data file name
-  pvd_file << "<DataSet timestep=\"" << time << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl;
-  mark = pvd_file.tellp();
+  // Get Collection node
+  pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
+  assert(xml_collections);
 
-  // Close headers
-  pvd_file << "</Collection>" << std::endl;
-  pvd_file << "</VTKFile>" << std::endl;
+  // Append data set
+  pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
+  dataset_node.append_attribute("timestep") = time;
+  dataset_node.append_attribute("part") = "0";
+  dataset_node.append_attribute("file") = fname.c_str();
 
-  // Close file
-  pvd_file.close();
+  // Save file
+  xml_doc.save_file(filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
-                              std::string vtu_filename) const
+void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
 {
-  // Open pvtu file
-  std::ofstream pvtu_file;
-  pvtu_file.open(pvtu_filename.c_str(), std::ios::app);
+  // Vertex data
+  pugi::xml_node vertex_data_node = xml_node.append_child("PPoints");
+  pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "Float32";
+  data_node.append_attribute("NumberOfComponents") = "3";
 
-  pvtu_file << "<PCellData>" << std::endl;
-  pvtu_file << "<PDataArray  type=\"UInt32\"  Name=\"connectivity\"/>" << std::endl;
-  pvtu_file << "<PDataArray  type=\"UInt32\"  Name=\"offsets\"/>" << std::endl;
-  pvtu_file << "<PDataArray  type=\"UInt8\"  Name=\"types\"/>"  << std::endl;
-  pvtu_file << "</PCellData>" << std::endl;
+  // Cell data
+  pugi::xml_node cell_data_node = xml_node.append_child("PCellData");
 
-  pvtu_file << "<PPoints>" <<std::endl;
-  pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
-  pvtu_file << "</PPoints>" << std::endl;
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("Name") = "connectivity";
 
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("Name") = "offsets";
+
+  data_node = cell_data_node.append_child("PDataArray");
+  data_node.append_attribute("type") = "UInt8";
+  data_node.append_attribute("Name") = "types";
+}
+//----------------------------------------------------------------------------
+void VTKFile::pvtu_write_function(uint dim, uint rank,
+                                  const std::string data_location,
+                                  const std::string name,
+                                  const std::string filename) const
+{
+  // Create xml doc
+  pugi::xml_document xml_doc;
+  pugi::xml_node vtk_node = xml_doc.append_child("VTKFile");
+  vtk_node.append_attribute("type") = "PUnstructuredGrid";
+  vtk_node.append_attribute("version") = "0.1";
+  pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
+  grid_node.append_attribute("GhostLevel") = 0;
+
+  // Mesh
+  pvtu_write_mesh(grid_node);
+
+  // Get type based on rank
+  std::string rank_type;
+  uint num_components = 0;
+  if (rank == 0)
+  {
+    rank_type = "Scalars";
+    num_components = 0;
+  }
+  else if (rank == 1)
+  {
+    rank_type = "Vectors";
+    if (!(dim == 2 || dim == 3))
+      error("Do not know what to do with vector function with dim other than 2 or 3.");
+    num_components = 3;
+  }
+  else if (rank == 2)
+  {
+    rank_type = "Tensors";
+    if(!(dim == 4 || dim == 9))
+      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+    num_components = 9;
+  }
+  else
+    error("Cannot handle XML output of rank %d.", rank);
+
+  // Add function data
+  pugi::xml_node data_node;
+  if (data_location == "point")
+    data_node = grid_node.append_child("PPointData");
+  else if (data_location == "cell")
+    data_node = grid_node.append_child("PCellData");
+
+  data_node.append_attribute(rank_type.c_str()) = name.c_str();
+  pugi::xml_node data_array_node = data_node.append_child("PDataArray");
+  data_array_node.append_attribute("type") = "Float32";
+  data_array_node.append_attribute("Name") = name.c_str();
+  data_array_node.append_attribute("NumberOfComponents") = num_components;
+
+  // Write vtu file list
   for(uint i = 0; i < MPI::num_processes(); i++)
   {
-    std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
-    pvtu_file << "<Piece Source=\"" << tmp_string << "\"/>" << std::endl;
+    const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
+    pugi::xml_node piece_node = grid_node.append_child("Piece");
+    piece_node.append_attribute("Source") = tmp_string.c_str();
   }
 
-  pvtu_file.close();
+  xml_doc.save_file(filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) const
+void VTKFile::pvtu_write_mesh(const std::string filename) const
 {
-  // Type of data (point or cell). Point by default.
-  std::string data_type = "point";
+  // Create xml doc
+  pugi::xml_document xml_doc;
+  pugi::xml_node vtk_node = xml_doc.append_child("VTKFile");
+  vtk_node.append_attribute("type") = "PUnstructuredGrid";
+  vtk_node.append_attribute("version") = "0.1";
+  pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
+  grid_node.append_attribute("GhostLevel") = 0;
 
-  // For brevity
-  const FunctionSpace& V = u.function_space();
-  const Mesh& mesh = V.mesh();
-  const FiniteElement& element = V.element();
-  const GenericDofMap& dofmap = V.dofmap();
+  // Mesh
+  pvtu_write_mesh(grid_node);
 
-  // Get rank of Function
-  const uint rank = element.value_rank();
+  // Write vtu file list
+  for(uint i = 0; i < MPI::num_processes(); i++)
+  {
+    const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
+    pugi::xml_node piece_node = grid_node.append_child("Piece");
+    piece_node.append_attribute("Source") = tmp_string.c_str();
+  }
+
+  xml_doc.save_file(filename.c_str(), "  ");
+}
+//----------------------------------------------------------------------------
+void VTKFile::pvtu_write(const Function& u, const std::string filename) const
+{
+  const uint rank = u.function_space().element().value_rank();
   if(rank > 2)
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
@@ -426,81 +484,14 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
   const uint dim = u.value_size();
 
   // Test for cell-based element type
+  std::string data_type = "point";
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
-    cell_based_dim *= mesh.topology().dim();
-  if (dofmap.max_cell_dimension() == cell_based_dim)
+    cell_based_dim *= u.function_space().mesh().topology().dim();
+  if (u.function_space().dofmap().max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
-  // Write file
-  pvtu_results_write(dim, rank, data_type, u.name(), pvtu_filename);
-}
-//----------------------------------------------------------------------------
-void VTKFile::pvtu_results_write(uint dim, uint rank, std::string data_type,
-                                 std::string name,
-                                 std::string pvtu_filename) const
-{
-  // Open pvtu file
-  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::app);
-
-  // Write function data at mesh cells
-  if (data_type == "cell")
-  {
-    // Write headers
-    if (rank == 0)
-    {
-      pvtu_file << "<PCellData  Scalars=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\">" << std::endl;
-    }
-    else if (rank == 1)
-    {
-      if (!(dim == 2 || dim == 3))
-        error("Do not know what to do with vector function with dim other than 2 or 3.");
-      pvtu_file << "<PCellData  Vectors=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"3\">" << std::endl;
-    }
-    else if (rank == 2)
-    {
-      if(!(dim == 4 || dim == 9))
-        error("Don't know what to do with tensor function with dim other than 4 or 9.");
-      pvtu_file << "<PCellData  Tensors=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
-    }
-    else
-      error("Don't know how to write function of this rank to VTK file.");
-
-    pvtu_file << "</PDataArray> " << std::endl;
-    pvtu_file << "</PCellData> " << std::endl;
-  }
-  else if (data_type == "point")
-  {
-    if (rank == 0)
-    {
-      pvtu_file << "<PPointData  Scalars=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\">" << std::endl;
-    }
-    else if (rank == 1)
-    {
-      if (!(dim == 2 || dim == 3))
-        error("Do not know what to do with vector function with dim other than 2 or 3.");
-      pvtu_file << "<PPointData  Vectors=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"3\">" << std::endl;
-    }
-    else if (rank == 2)
-    {
-      if(!(dim == 4 || dim == 9))
-        error("Don't know what to do with tensor function with dim other than 4 or 9.");
-      pvtu_file << "<PPointData  Tensors=\"" << name << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
-    }
-    else
-      error("Don't know how to write function of this rank to VTK file.");
-
-    pvtu_file << "</PDataArray> " << std::endl;
-    pvtu_file << "</PPointData> " << std::endl;
-  }
-
-  pvtu_file.close();
+  pvtu_write_function(dim, rank, data_type, u.name(), filename);
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
@@ -553,28 +544,6 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
   file.close();
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_header_open(std::string pvtu_filename) const
-{
-  // Open pvtu file
-  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::trunc);
-
-  // Write header
-  pvtu_file << "<?xml version=\"1.0\"?>" << std::endl;
-  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
-  pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;
-  pvtu_file.close();
-}
-//----------------------------------------------------------------------------
-void VTKFile::pvtu_header_close(std::string pvtu_filename) const
-{
-  // Open pvtu file
-  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::app);
-
-  pvtu_file << "</PUnstructuredGrid>" << std::endl;
-  pvtu_file << "</VTKFile>" << std::endl;
-  pvtu_file.close();
-}
-//----------------------------------------------------------------------------
 std::string VTKFile::vtu_name(const int process, const int num_processes,
                               const int counter, std::string ext) const
 {
@@ -621,26 +590,27 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write mesh
   VTKWriter::write_mesh(mesh, cell_dim, vtu_filename, binary, compress);
 
-  // Parallel-specfic files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_mesh_write(pvtu_filename, vtu_filename);
-    pvtu_results_write(1, 0, "cell", meshfunction.name(), pvtu_filename);
-  }
-
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">" << std::endl;
+  fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">";
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-    fp << meshfunction[cell->index()] << std::endl;
+    fp << meshfunction[cell->index()] << " ";
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
 
   // Close file
   fp.close();
+
+  // Parallel-specfic files
+  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename);
+    pvd_file_write(counter, counter, pvtu_filename);
+  }
+  else if (MPI::num_processes() == 1)
+    pvd_file_write(counter, counter, vtu_filename);
 
   // Write pvd files
   finalize(vtu_filename, counter);

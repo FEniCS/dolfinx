@@ -30,6 +30,11 @@
 #include <vector>
 #include "GenericFile.h"
 
+namespace pugixml
+{
+  class xml_node;
+}
+
 namespace dolfin
 {
 
@@ -63,18 +68,18 @@ namespace dolfin
 
     void pvd_file_write(uint step, double time, std::string file);
 
-    void pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filename) const;
 
-    void pvtu_results_write(const Function& u, std::string pvtu_filename) const;
+    void pvtu_write_function(uint dim, uint rank,
+                             const std::string data_location,
+                             const std::string name,
+                             const std::string filename) const;
 
-    void pvtu_results_write(uint dim, uint rank, std::string data_type,
-                            std::string name, std::string pvtu_filename) const;
+    void pvtu_write_mesh(const std::string pvtu_filename) const;
+
+    void pvtu_write(const Function& u, const std::string pvtu_filename) const;
 
     void vtk_header_open(uint num_vertices, uint num_cells, std::string file) const;
     void vtk_header_close(std::string file) const;
-
-    void pvtu_header_open(std::string pvtu_filename) const;
-    void pvtu_header_close(std::string pvtu_filename) const;
 
     std::string vtu_name(const int process, const int num_processes,
                          const int counter, std::string ext) const;
@@ -89,8 +94,7 @@ namespace dolfin
 
   private:
 
-    // Most recent position in pvd file
-    std::ios::pos_type mark;
+    void pvtu_write_mesh(pugi::xml_node xml_node) const;
 
     // File encoding
     const std::string encoding;
