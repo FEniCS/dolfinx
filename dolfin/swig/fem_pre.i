@@ -72,10 +72,9 @@
                         int, Function&, const BoundaryCondition&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                         int, Function&, std::vector<const BoundaryCondition*>);
-%ignore NonlinearVariationalProblem::set_jacobian(const Form&);
+%ignore dolfin::NonlinearVariationalProblem::set_jacobian(const Form&);
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
-
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
 //-----------------------------------------------------------------------------
