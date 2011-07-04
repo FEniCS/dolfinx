@@ -168,6 +168,8 @@ if __name__ == "__main__":
                 # If no .rst files are found, that is ok, but suboptimal.
                 if (len(rst_files) == 0):
                     stderr.write("*** MISSING ***\n")
+                    # FIXME: Enable at some point
+                    #failed += [demo]
 
                 # Loop files, check if code blocks are present in source files.
                 for rst_file in rst_files:
