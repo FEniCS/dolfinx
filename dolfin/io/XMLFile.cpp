@@ -39,6 +39,9 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshData.h"
 #include "XMLLocalMeshDataDistributed.h"
@@ -68,13 +71,26 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& input_mesh)
 {
-  // Create XML doc and get DOLFIN node
-  pugi::xml_document xml_doc;
-  load_xml_doc(xml_doc);
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+  if (MPI::num_processes() == 1)
+  {
+    // Create XML doc and get DOLFIN node
+    pugi::xml_document xml_doc;
+    load_xml_doc(xml_doc);
+    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
 
-  // Read mesh
-  XMLMesh::read(input_mesh, dolfin_node);
+    // Read mesh
+    XMLMesh::read(input_mesh, dolfin_node);
+  }
+  else
+  {
+    // Read local mesh data
+    LocalMeshData local_mesh_data;
+    XMLLocalMeshDataDistributed xml_object(local_mesh_data, filename);
+    xml_object.read();
+
+    // Partition and build mesh
+    MeshPartitioning::partition(input_mesh, local_mesh_data);
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
@@ -91,9 +107,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
   XMLLocalMeshDataDistributed xml_object(input_data, filename);
-  std::cout << "Read data" << std::endl;
   xml_object.read();
-  std::cout << "End Read data" << std::endl;
 
   /*
   // Local (DOM) version
