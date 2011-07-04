@@ -158,7 +158,7 @@ if __name__ == "__main__":
             chdir(demo)
             for directory in directories:
                 chdir(directory)
-                stderr.write("Treating %s" % path.join(category, demo, directory))
+                stderr.write("Checking %s: " % path.join(category, demo, directory))
                 # Get files in demo directory and sort in rst and source files.
                 files = listdir(curdir)
                 rst_files = [f for f in files if path.splitext(f)[-1] == ".rst"]
@@ -167,18 +167,18 @@ if __name__ == "__main__":
 
                 # If no .rst files are found, that is ok, but suboptimal.
                 if (len(rst_files) == 0):
-                    stderr.write(" -- missing .rst file\n")
+                    stderr.write("*** MISSING ***\n")
 
                 # Loop files, check if code blocks are present in source files.
                 for rst_file in rst_files:
                     (ok, block) = verify_blocks(rst_file, source_files,
                                                 block_source[directory])
                     if not ok:
-                        stderr.write(", " + "failed.\n")
-                        stderr.write("\nFailing block: %s\n" % block)
+                        stderr.write("*** FAILED ***\n")
+                        stderr.write("\nFailing block:\n\n %s\n\n" % block)
                         failed += [demo]
                     else:
-                        stderr.write(", " + "OK.\n")
+                        stderr.write("OK\n")
                 chdir(pardir)
             chdir(pardir)
         chdir(pardir)
