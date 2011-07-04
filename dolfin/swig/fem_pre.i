@@ -57,6 +57,23 @@
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
 
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                const Form&, Function&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                const Form& L, Function&, const BoundaryCondition&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                const Form&, Function&, std::vector<const BoundaryCondition*>);
+
+%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                        int, Function&);
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                        int, Function&, const BoundaryCondition&);
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                        int, Function&, std::vector<const BoundaryCondition*>);
+
+%ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
