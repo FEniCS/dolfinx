@@ -28,7 +28,7 @@ the variational problem in UFL terms in a separate form file
 
 .. code-block:: python
 
-    element = FiniteElement("Lagrange", triangle, 1)
+    element = FiniteElement("Lagrange", triangle, 2)
 
 The first argument to :py:class:`FiniteElement` is the finite element
 family, the second argument specifies the domain, while the third
