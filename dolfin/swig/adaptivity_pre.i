@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-23
-// Last changed: 2011-06-27
+// Last changed: 2011-07-04
 
 // ===========================================================================
 // SWIG directives for the DOLFIN adaptivity kernel module (pre)
@@ -30,6 +30,28 @@ namespace dolfin {
   class ErrorControl;
 }
 
+//-----------------------------------------------------------------------------
+// Instantiate Hierarchical ErrorControl template class
+//-----------------------------------------------------------------------------
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
 
-%ignore dolfin::GoalFunctional::_ec;
+//-----------------------------------------------------------------------------
+// Rename [] for SpecialFacetFunction -> _sub
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::SpecialFacetFunction::operator[];
+
+//-----------------------------------------------------------------------------
+// Ignore solve methods of *Adaptive*VariationalSolver that take
+// GoalFunctional as input
+//-----------------------------------------------------------------------------
+%ignore dolfin::GenericAdaptiveVariationalSolver::solve(const double tol,
+                                                        GoalFunctional& M);
+%ignore dolfin::AdaptiveLinearVariationalSolver::solve(const double tol,
+                                                       GoalFunctional& M);
+%ignore dolfin::AdaptiveNonlinearVariationalSolver::solve(const double tol,
+                                                          GoalFunctional& M);
+
+//-----------------------------------------------------------------------------
+// Ignore GoalFunctional entirely
+//-----------------------------------------------------------------------------
+%ignore dolfin::GoalFunctional;

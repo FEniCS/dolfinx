@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-13
-// Last changed: 2011-06-27
+// Last changed: 2011-07-04
 
 #ifndef __SPECIAL_FACET_FUNCTION_H
 #define __SPECIAL_FACET_FUNCTION_H
@@ -73,7 +73,7 @@ namespace dolfin
     ///        component
     ///
     /// *Returns*
-    ///     the sub-function (_Function_)
+    ///     _Function_
     Function& operator[] (uint i) const;
 
   private:

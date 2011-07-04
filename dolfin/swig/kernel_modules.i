@@ -206,13 +206,19 @@
 
 // DOLFIN headers included from adaptivity
 %include "dolfin/swig/adaptivity_pre.i"
+%include "dolfin/adaptivity/AdaptiveDatum.h"
 %include "dolfin/adaptivity/GenericAdaptiveVariationalSolver.h"
 %include "dolfin/adaptivity/AdaptiveLinearVariationalSolver.h"
 %include "dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h"
+%include "dolfin/adaptivity/GoalFunctional.h"
 %include "dolfin/adaptivity/ErrorControl.h"
+%include "dolfin/adaptivity/Extrapolation.h"
+%include "dolfin/adaptivity/LocalAssembler.h"
+%include "dolfin/adaptivity/SpecialFacetFunction.h"
 %include "dolfin/adaptivity/TimeSeries.h"
 %include "dolfin/adaptivity/adapt.h"
 %include "dolfin/adaptivity/marking.h"
+%include "dolfin/adaptivity/adaptivesolve.h"
 
 // DOLFIN headers included from io
 %include "dolfin/io/File.h"

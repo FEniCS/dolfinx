@@ -63,7 +63,7 @@ namespace dolfin
                   const double functional_value);
 
     /// Destructor.
-    ~AdaptiveDatum() { /* Do nothing */};
+    ~AdaptiveDatum();
 
     /// Store adaptive datum to file
     ///
@@ -82,7 +82,7 @@ namespace dolfin
     void set_reference_value(const double reference);
 
     // AdaptiveVariationalSolver is AdaptiveDatum's BFF.
-    friend class AdaptiveVariationalSolver;
+    friend class GenericAdaptiveVariationalSolver;
 
   private:
 
@@ -91,7 +91,6 @@ namespace dolfin
     uint num_cells;
     double error_estimate;
     double tolerance;
-
     double functional_value;
     double reference;
 

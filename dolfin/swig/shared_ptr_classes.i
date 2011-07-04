@@ -58,13 +58,18 @@
 %enddef
 
 // adaptivity
-%shared_ptr(dolfin::TimeSeries)
-%shared_ptr(dolfin::GenericAdaptiveVariationalSolver)
+%shared_ptr(dolfin::AdaptiveDatum)
 %shared_ptr(dolfin::AdaptiveLinearVariationalSolver)
 %shared_ptr(dolfin::AdaptiveNonlinearVariationalSolver)
+%shared_ptr(dolfin::ErrorControl)
+%shared_ptr(dolfin::GenericAdaptiveVariationalSolver)
+%shared_ptr(dolfin::GoalFunctional)
+%shared_ptr(dolfin::SpecialFacetFunction)
+%shared_ptr(dolfin::TimeSeries)
 
 // common
 %shared_ptr(dolfin::Variable)
+
 
 // fem
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
