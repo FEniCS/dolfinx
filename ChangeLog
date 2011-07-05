@@ -1,3 +1,5 @@
+ - Added out typemap for vector of shared_ptr objects
+ - Fix typemap bug for list of shared_ptr objects
  - Support parallel XML vector io
  - Add support for gzipped XML output
  - Use pugixml for XML output

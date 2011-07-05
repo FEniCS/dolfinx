@@ -72,7 +72,7 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
   std::stringstream command;
   command << "viper --mode=" << mode << " "
           << "--title=\"" << title
-          << "\" " << filename << " &";
+          << "\" " << filename;
 
   // Call Viper from command-line
   if (system(command.str().c_str()) != 0)

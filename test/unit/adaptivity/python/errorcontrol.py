@@ -72,7 +72,7 @@ class ErrorControlTest(unittest.TestCase):
         solver.solve()
 
         # Compute error estimate
-        error_estimate = self.ec.estimate_error(self.u, self.problem.bcs)
+        error_estimate = self.ec.estimate_error(self.u, self.problem.bcs())
 
         # Compare estimate with defined reference
         reference = 0.0011789985750808342

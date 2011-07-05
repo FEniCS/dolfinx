@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg, 2010-2011.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-31
+// Last changed: 2011-07-05
 
 #ifndef __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
@@ -72,6 +73,15 @@ namespace dolfin
     ///         The primal problem
     ///
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
+
+    /// Create AdaptiveLinearVariationalSolver
+    ///
+    /// *Arguments*
+    ///
+    ///     problem (_LinearVariationalProblem_)
+    ///         The primal problem
+    ///
+    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
 
     /// Destructor
     ~AdaptiveLinearVariationalSolver() {/* Do nothing */};

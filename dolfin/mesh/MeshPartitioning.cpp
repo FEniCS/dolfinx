@@ -717,6 +717,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const uint process_number = MPI::process_number();
 
   // Open mesh for editing
+  mesh.clear();
   MeshEditor editor;
   editor.open(mesh, mesh_data.gdim, mesh_data.tdim);
 
