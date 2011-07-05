@@ -32,9 +32,31 @@ namespace dolfin {
   class ErrorControl;
 }
 
+//-----------------------------------------------------------------------------
+// Instantiate Hierarchical ErrorControl template class
+//-----------------------------------------------------------------------------
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
 
-%ignore dolfin::GoalFunctional::_ec;
+//-----------------------------------------------------------------------------
+// Rename [] for SpecialFacetFunction -> _sub
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::SpecialFacetFunction::operator[];
+
+//-----------------------------------------------------------------------------
+// Ignore GoalFunctional entirely
+//-----------------------------------------------------------------------------
+%ignore dolfin::GoalFunctional;
+
+//-----------------------------------------------------------------------------
+// Ignore solve methods of *Adaptive*VariationalSolver that take
+// GoalFunctional as input
+//-----------------------------------------------------------------------------
+%ignore dolfin::GenericAdaptiveVariationalSolver::solve(const double tol,
+                                                        GoalFunctional& M);
+%ignore dolfin::AdaptiveLinearVariationalSolver::solve(const double tol,
+                                                       GoalFunctional& M);
+%ignore dolfin::AdaptiveNonlinearVariationalSolver::solve(const double tol,
+                                                          GoalFunctional& M);
 
 //-----------------------------------------------------------------------------
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
@@ -42,3 +64,5 @@ namespace dolfin {
 //-----------------------------------------------------------------------------
 %ignore dolfin::AdaptiveLinearVariationalSolver::AdaptiveLinearVariationalSolver(LinearVariationalProblem&);
 %ignore dolfin::AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem&);
+
+

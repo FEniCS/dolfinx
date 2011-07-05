@@ -96,17 +96,15 @@ namespace dolfin
                            std::vector<uint>& partition);
 
     // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
-    /*
-    /// Broadcast value from broadcaster process to all processes
-    template<class T> static void broadcast(T& value, uint broadcaster=0)
-    {
-      #ifdef HAS_MPI
-      MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-      boost::mpi::broadcast(comm, value, broadcaster);
-      #endif
-    }
-    */
+    // // Broadcast value from broadcaster process to all processes
+    // template<class T> static void broadcast(T& value, uint broadcaster=0)
+    // {
+    //   #ifdef HAS_MPI
+    //   MPICommunicator mpi_comm;
+    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+    //   boost::mpi::broadcast(comm, value, broadcaster);
+    //   #endif
+    // }
 
     /// Broadcast value from broadcaster process to all processes
     template<class T> static void broadcast(T& value, uint broadcaster=0)
@@ -180,20 +178,18 @@ namespace dolfin
     }
 
     // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
-    /*
-    /// Gather values, one from each process (wrapper for boost::mpi::all_gather)
-    template<class T> static void gather_all(const T& in_value,
-                                             std::vector<T>& out_values)
-    {
-      #ifdef HAS_MPI
-      MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-      boost::mpi::all_gather(comm, in_value, out_values);
-      #else
-      out_values.clear();
-      #endif
-    }
-    */
+    // // Gather values, one from each process (wrapper for boost::mpi::all_gather)
+    // template<class T> static void gather_all(const T& in_value,
+    //                                          std::vector<T>& out_values)
+    // {
+    //   #ifdef HAS_MPI
+    //   MPICommunicator mpi_comm;
+    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+    //   boost::mpi::all_gather(comm, in_value, out_values);
+    //   #else
+    //   out_values.clear();
+    //   #endif
+    // }
 
     /// Return  maximum value
     template<class T> static T max(const T& value)
@@ -237,53 +233,52 @@ namespace dolfin
       #endif
     }
 
-    /*
     // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
-    /// Return global max value
-    template<class T> static T max(const T& value)
-    {
-      #ifdef HAS_MPI
-      return all_reduce(value, boost::mpi::maximum<T>());
-      #else
-      return value;
-      #endif
-    }
+    // // Return global max value
+    // template<class T> static T max(const T& value)
+    // {
+    //   #ifdef HAS_MPI
+    //   return all_reduce(value, boost::mpi::maximum<T>());
+    //   #else
+    //   return value;
+    //   #endif
+    // }
 
-    /// Return global min value
-    template<class T> static T min(const T& value)
-    {
-      #ifdef HAS_MPI
-      return all_reduce(value, boost::mpi::minimum<T>());
-      #else
-      return value;
-      #endif
-    }
+    // // Return global min value
+    // template<class T> static T min(const T& value)
+    // {
+    //   #ifdef HAS_MPI
+    //   return all_reduce(value, boost::mpi::minimum<T>());
+    //   #else
+    //   return value;
+    //   #endif
+    // }
 
-    /// Sum values and return sum
-    template<class T> static T sum(const T& value)
-    {
-      #ifdef HAS_MPI
-      return all_reduce(value, std::plus<T>());
-      #else
-      return value;
-      #endif
-    }
+    // // Sum values and return sum
+    // template<class T> static T sum(const T& value)
+    // {
+    //   #ifdef HAS_MPI
+    //   return all_reduce(value, std::plus<T>());
+    //   #else
+    //   return value;
+    //   #endif
+    // }
 
-    /// All reduce
-    template<class T, class X> static T all_reduce(const T& value, X op)
-    {
-      #ifdef HAS_MPI
-      MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-      T out;
-      boost::mpi::all_reduce(comm, value, out, op);
-      return out;
-      #else
-      error("MPI::all_reduce requires MPI to be configured.");
-      return T(0);
-      #endif
-    }
-    */
+    // // All reduce
+    // template<class T, class X> static T all_reduce(const T& value, X op)
+    // {
+    //   #ifdef HAS_MPI
+    //   MPICommunicator mpi_comm;
+    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+    //   T out;
+    //   boost::mpi::all_reduce(comm, value, out, op);
+    //   return out;
+    //   #else
+    //   error("MPI::all_reduce requires MPI to be configured.");
+    //   return T(0);
+    //   #endif
+    // }
+    //
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)
