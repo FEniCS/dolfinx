@@ -41,7 +41,7 @@ namespace std
 }
 
 //-----------------------------------------------------------------------------
-// User macro for defineing in typmaps for std::vector of pointers or 
+// User macro for defineing in typmaps for std::vector of pointers or
 // shared_pointer to some DOLFIN type
 //-----------------------------------------------------------------------------
 %define IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(TYPE)
@@ -101,10 +101,10 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       }
       else
       {
-	// If failed with normal pointer conversion then
-	// try with shared_ptr conversion
-	newmem = 0;
-	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+        // If failed with normal pointer conversion then
+        // try with shared_ptr conversion
+        newmem = 0;
+        res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
         if (SWIG_IsOK(res))
         {
           // If we need to release memory
@@ -168,7 +168,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       }
       else
       {
-	SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
+        SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
       }
     }
     $1 = tmp_vec;
@@ -218,22 +218,27 @@ const std::vector<TYPE>&  ARG_NAME
         const unsigned int size = PyArray_DIM(xa, 0);
         temp.resize(size);
         TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
-	if (PyArray_ISCONTIGUOUS(xa))
-	  std::copy(array, array + size, temp.begin());
-	else {
-	  const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
-	  for (int i=0; i<size; i++)
-	    temp[i] = array[i*strides];
-	}
+        if (PyArray_ISCONTIGUOUS(xa))
+          std::copy(array, array + size, temp.begin());
+        else
+        {
+          const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
+          for (int i=0; i<size; i++)
+            temp[i] = array[i*strides];
+        }
         $1 = &temp;
       }
-     else
-       SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected."\
-		      " Make sure that the numpy array use dtype='DESCR'.");
+      else
+      {
+        SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected."\
+          " Make sure that the numpy array use dtype='DESCR'.");
+      }
     }
     else
+    {
       SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected. "\
 		     "Make sure that the numpy array use dtype='DESCR'.");
+    }
   }
 }
 
@@ -320,7 +325,7 @@ const std::vector<TYPE>&  ARG_NAME
   $1 = PySequence_Check($input) ? 1 : 0;
 }
 
-%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) std::vector<TYPE> ARG_NAME 
+%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) std::vector<TYPE> ARG_NAME
 (std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
 {
   // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
@@ -342,8 +347,10 @@ const std::vector<TYPE>&  ARG_NAME
     item = PySequence_GetItem($input, i);
 
     if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
+    {
       SWIG_exception(SWIG_TypeError, "expected items of sequence to be of type "\
 		     "\"TYPE_NAME\" in argument $argnum");
+    }
     tmp_vec.push_back(value);
     Py_DECREF(item);
   }
@@ -384,7 +391,7 @@ const std::vector<TYPE>&  ARG_NAME
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum");
 
-  int size = PyList_Size($input); 
+  int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
   void * itemp = 0;
