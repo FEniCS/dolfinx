@@ -62,6 +62,7 @@
 %shared_ptr(dolfin::AdaptiveLinearVariationalSolver)
 %shared_ptr(dolfin::AdaptiveNonlinearVariationalSolver)
 %shared_ptr(dolfin::ErrorControl)
+%shared_ptr(dolfin::Hierarchical<dolfin::ErrorControl>)
 %shared_ptr(dolfin::GenericAdaptiveVariationalSolver)
 %shared_ptr(dolfin::GoalFunctional)
 %shared_ptr(dolfin::SpecialFacetFunction)
