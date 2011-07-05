@@ -60,19 +60,31 @@ import pprint
 pyslow = []
 cppslow = []
 for s in pyslow:
-    pydemos.remove(s)
-    pydemos.append(s)
+    if s in pydemos:
+        pydemos.remove(s)
+        pydemos.append(s)
 for s in cppslow:
-    cppdemos.remove(s)
-    cppdemos.append(s)
+    if s in cppdemos:
+        cppdemos.remove(s)
+        cppdemos.append(s)
 
 # Remove demos that need command-line arguments
-pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
-cppdemos.remove(os.path.join(demodir, 'undocumented', 'quadrature', 'cpp'))
+pyremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
+cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
+for demo in pyremoves:
+    if demo in pydemos:
+        pydemos.remove(demo)
+
+for demo in cppremoves:
+    if demo in cppdemos:
+        cppdemos.remove(demo)
 
 # Remove C++ coloring demo on Windows until #797640 is fixed
 if platform.system() == 'Windows':
-    cppdemos.remove(os.path.join(demodir, 'undocumented', 'coloring', 'cpp'))
+    winremove = [os.path.join(demodir, 'undocumented', 'coloring', 'cpp')]
+    for demo in wrinremove:
+        if demo in cppdemos:
+            cppdemos.remove()
 
 failed = []
 timing = []
