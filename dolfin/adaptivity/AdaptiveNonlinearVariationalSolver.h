@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg, 2010-2011.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
 // Last changed: 2011-03-31
@@ -72,6 +73,15 @@ namespace dolfin
     ///         The primal problem
     ///
     AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem);
+
+    /// Create AdaptiveNonlinearVariationalSolver
+    ///
+    /// *Arguments*
+    ///
+    ///     problem (_NonlinearVariationalProblem_)
+    ///         The primal problem
+    ///
+    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
 
     /// Destructor
     ~AdaptiveNonlinearVariationalSolver() {/* Do nothing */};

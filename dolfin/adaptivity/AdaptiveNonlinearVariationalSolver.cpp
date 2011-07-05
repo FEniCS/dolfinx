@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg, 2010-2011.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-22
+// Last changed: 2011-07-05
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
@@ -36,6 +37,17 @@ using namespace dolfin;
 AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem)
   : problem(reference_to_no_delete_pointer(problem))
+{
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Set other parameters
+  // FIXME
+}
+// ----------------------------------------------------------------------------
+AdaptiveNonlinearVariationalSolver::
+AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem)
+  : problem(problem)
 {
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();

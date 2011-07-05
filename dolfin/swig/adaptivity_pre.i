@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2011.
+//
 // First added:  2011-02-23
-// Last changed: 2011-06-27
+// Last changed: 2011-07-05
 
 // ===========================================================================
 // SWIG directives for the DOLFIN adaptivity kernel module (pre)
@@ -33,3 +35,10 @@ namespace dolfin {
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
 
 %ignore dolfin::GoalFunctional::_ec;
+
+//-----------------------------------------------------------------------------
+// To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
+// version of constructors to these types
+//-----------------------------------------------------------------------------
+%ignore dolfin::AdaptiveLinearVariationalSolver::AdaptiveLinearVariationalSolver(LinearVariationalProblem&);
+%ignore dolfin::AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem&);
