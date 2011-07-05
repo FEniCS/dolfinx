@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-05-30
+// Last changed: 2011-07-04
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -78,9 +78,12 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 }
 
 //-----------------------------------------------------------------------------
-// The typemap
+// The std::vector<Type*> typemap
 //-----------------------------------------------------------------------------
-%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &(std::vector<CONST dolfin::TYPE *> tmp_vec, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
+%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> & (
+std::vector<CONST dolfin::TYPE *> tmp_vec, 
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, 
+dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR)
   if (PyList_Check($input))
@@ -107,18 +110,16 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
         if (SWIG_IsOK(res))
         {
+	  if (itemp)
+	  {
+	    tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
+	    tmp_vec.push_back(tempshared.get());
+	  }
           // If we need to release memory
           if (newmem & SWIG_CAST_NEW_MEMORY)
           {
-            tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
             delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-            arg = const_cast< dolfin::TYPE * >(tempshared.get());
           }
-	        else
-          {
-            arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
-          }
-          tmp_vec.push_back(arg);
         }
         else
         {
@@ -136,7 +137,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 
 
 //-----------------------------------------------------------------------------
-// The typecheck
+// The std::vector<Type*> typecheck
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> >
 {
@@ -144,9 +145,13 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 }
 
 //-----------------------------------------------------------------------------
-// The typemap
+// The std::vector<shared_ptr<Type> > typemap
 //-----------------------------------------------------------------------------
-%typemap (in) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > (std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
+%typemap (in) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::
+              shared_ptr<CONST dolfin::TYPE> > (
+std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec, 
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, 
+dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
   if (PyList_Check($input))
@@ -160,11 +165,17 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
     for (int i = 0; i < size; i++)
     {
       newmem = 0;
-      py_item = PyList_GetItem($input,i);
+      py_item = PyList_GetItem($input, i);
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
-        tmp_vec.push_back(*reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+	if (itemp)
+	{
+	  tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+	  tmp_vec.push_back(tempshared);
+	}
+	if (newmem & SWIG_CAST_NEW_MEMORY)
+	  delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
       }
       else
       {
@@ -177,6 +188,14 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
   {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
   }
+}
+
+//-----------------------------------------------------------------------------
+// The std::vector<shared_ptr<Type> > typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_POINTER) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> >
+{
+  $1 = PyList_Check($input) ? 1 : 0;
 }
 
 %enddef

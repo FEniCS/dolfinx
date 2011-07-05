@@ -50,31 +50,37 @@
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&, const SubDomain&);
+%ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,
+				       const SubDomain&);
 
 %ignore dolfin::DirichletBC(const FunctionSpace&,
                             const GenericFunction&,
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
 
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                const Form&, Function&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                const Form& L, Function&, const BoundaryCondition&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                const Form&, Function&, std::vector<const BoundaryCondition*>);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
+	        const Form&, const Form&, Function&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
+		const Form&, const Form&, Function&, 
+		const BoundaryCondition&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
+		const Form&, const Form&, Function&, 
+		std::vector<const BoundaryCondition*>);
 
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
+%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(
+				       LinearVariationalProblem&);
 
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                        int, Function&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                        int, Function&, const BoundaryCondition&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                        int, Function&, std::vector<const BoundaryCondition*>);
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
+		const Form&, int, Function&);
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
+		const Form&, int, Function&, const BoundaryCondition&);
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
+                const Form&, int, Function&, 
+		std::vector<const BoundaryCondition*>);
 %ignore dolfin::NonlinearVariationalProblem::set_jacobian(const Form&);
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
+
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
 //-----------------------------------------------------------------------------
@@ -112,17 +118,21 @@
 						  const double* coordinates,
 						  const Cell& cell) const;
 
-%ignore dolfin::DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-					                                   const Cell& cell) const;
+%ignore dolfin::DofMap::tabulate_coordinates(
+			      boost::multi_array<double, 2>& coordinates,
+			      const Cell& cell) const;
 
-%ignore dolfin::GenericDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-						                                        const Cell& cell) const;
+%ignore dolfin::GenericDofMap::tabulate_coordinates(
+                              boost::multi_array<double, 2>& coordinates,
+			      const Cell& cell) const;
 
-%ignore dolfin::DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-					                                   const ufc::cell& cell) const;
+%ignore dolfin::DofMap::tabulate_coordinates(
+			      boost::multi_array<double, 2>& coordinates,
+			      const ufc::cell& cell) const;
 
-%ignore dolfin::GenericDofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-						                                        const ufc::cell& cell) const;
+%ignore dolfin::GenericDofMap::tabulate_coordinates(
+                              boost::multi_array<double, 2>& coordinates,
+			      const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
