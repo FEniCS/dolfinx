@@ -26,7 +26,7 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -241,7 +241,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::scoped_ptr<GenericVector> vector;
+    boost::shared_ptr<GenericVector> vector;
 
   };
 

@@ -26,6 +26,7 @@
 #define __MATRIX_H
 
 #include <tr1/tuple>
+#include <boost/shared_ptr.hpp>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -40,15 +41,14 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix() : matrix(0)
-    { DefaultFactory factory; matrix = factory.create_matrix(); }
+    Matrix()
+    { DefaultFactory factory; matrix.reset(factory.create_matrix()); }
 
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
     /// Destructor
-    virtual ~Matrix()
-    { delete matrix; }
+    virtual ~Matrix() {}
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -58,7 +58,11 @@ namespace dolfin
 
     /// Return copy of tensor
     virtual Matrix* copy() const
-    { Matrix* A = new Matrix(); delete A->matrix; A->matrix = matrix->copy(); return A; }
+    {
+      Matrix* A = new Matrix();
+      A->matrix.reset(matrix->copy());
+      return A;
+    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -159,11 +163,11 @@ namespace dolfin
 
     /// Return concrete instance / unwrap (const version)
     virtual const GenericMatrix* instance() const
-    { return matrix; }
+    { return matrix.get() ; }
 
     /// Return concrete instance / unwrap (non-const version)
     virtual GenericMatrix* instance()
-    { return matrix; }
+    { return matrix.get(); }
 
     //--- Special Matrix functions ---
 
@@ -174,7 +178,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    GenericMatrix* matrix;
+    boost::shared_ptr<GenericMatrix> matrix;
 
   };
 
