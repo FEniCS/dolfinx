@@ -145,7 +145,6 @@ const GenericMatrix& UmfpackLUSolver::get_operator() const
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
-  check_dimensions(get_operator(), x, b);
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -170,7 +169,6 @@ dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                     const GenericVector& b)
 {
-  check_dimensions(A, x, b);
   set_operator(A);
   return solve(x, b);
 }

@@ -135,7 +135,6 @@ void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 void PETScKrylovSolver::set_operators(const GenericMatrix& A,
                                       const GenericMatrix& P)
 {
-  this->AA = reference_to_no_delete_pointer(A);
   set_operators(A.down_cast<PETScBaseMatrix>(), P.down_cast<PETScBaseMatrix>());
 }
 //-----------------------------------------------------------------------------
@@ -148,23 +147,23 @@ void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
   assert(this->P);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& PETScKrylovSolver::get_operator() const
+const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
-  if (!AA)
-    error("Operator for linear solver has not been set.");
-  return *AA;
+  if (!A)
+    error("Operator for PETScKrylovSolver has not been set.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  check_dimensions(get_operator(), x, b);
+  //check_dimensions(*A, x, b);
   return solve(x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                       const GenericVector& b)
 {
-  check_dimensions(A, x, b);
+  //check_dimensions(A, x, b);
   return solve(A.down_cast<PETScBaseMatrix>(), x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }
@@ -399,5 +398,26 @@ void PETScKrylovSolver::write_report(int num_iterations,
   }
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
+                                         const GenericVector& x,
+                                         const GenericVector& b) const
+{
+  // Check dimensions of A
+  if (A.size(0) == 0 || A.size(1) == 0)
+    error("Unable to solve linear system; matrix must have a nonzero number of rows and columns.");
 
+  // Check dimensions of A vs b
+  if (A.size(0) != b.size())
+    error("Unable to solve linear system; matrix dimension (%d rows) does not match dimension of righ-hand side vector (%d).",
+          A.size(0), b.size());
+
+  // Check dimensions of A vs x
+  if (x.size() > 0 && x.size() != A.size(1))
+    error("Unable to solve linear system; matrix dimension (%d columns) does not match dimension of solution vector (%d).",
+          A.size(1), x.size());
+
+  // FIXME: We could implement a more thorough check of local/global
+  // FIXME: dimensions for distributed matrices and vectors here.
+}
+//-----------------------------------------------------------------------------
 #endif

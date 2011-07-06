@@ -127,7 +127,6 @@ const GenericMatrix& EpetraKrylovSolver::get_operator() const
 dolfin::uint EpetraKrylovSolver::solve(GenericVector& x,
                                        const GenericVector& b)
 {
-  check_dimensions(get_operator(), x, b);
   return solve(x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------
@@ -207,7 +206,6 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                        const GenericVector& b)
 {
-  check_dimensions(A, x, b);
   return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
                b.down_cast<EpetraVector>());
 }

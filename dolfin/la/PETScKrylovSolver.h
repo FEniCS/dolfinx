@@ -84,7 +84,7 @@ namespace dolfin
     void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
 
     /// Get operator (matrix)
-    const GenericMatrix& get_operator() const;
+    const PETScBaseMatrix& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);
@@ -121,6 +121,9 @@ namespace dolfin
     /// Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
 
+    void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
+                          const GenericVector& b) const;
+
     // Available solvers and preconditioners
     static const std::map<std::string, const KSPType> methods;
     static const std::map<std::string, const PCType> pc_methods;
@@ -134,10 +137,7 @@ namespace dolfin
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    /// Operator (the matrix) as GenericMatrix
-    boost::shared_ptr<const GenericMatrix> AA;
-
-    /// Operator (the matrix) as PETScBaseMatrix
+    /// Operator (the matrix)
     boost::shared_ptr<const PETScBaseMatrix> A;
 
     /// Matrix used to construct the preconditoner

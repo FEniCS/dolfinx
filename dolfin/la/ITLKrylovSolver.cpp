@@ -61,7 +61,6 @@ void ITLKrylovSolver::set_operator(const GenericMatrix& A)
 void ITLKrylovSolver::set_operators(const GenericMatrix& A,
                                     const GenericMatrix& P)
 {
-  this->AA = reference_to_no_delete_pointer(A);
   this->A = reference_to_no_delete_pointer(A.down_cast<MTL4Matrix>());
   this->P = reference_to_no_delete_pointer(P.down_cast<MTL4Matrix>());
   assert(this->A);
@@ -70,14 +69,13 @@ void ITLKrylovSolver::set_operators(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 const GenericMatrix& ITLKrylovSolver::get_operator() const
 {
-  if (!AA)
+  if (!A)
     error("Operator for linear solver has not been set.");
-  return *AA;
+  return *A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  check_dimensions(get_operator(), x, b);
   return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
 }
 //-----------------------------------------------------------------------------
@@ -166,7 +164,6 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
 dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                 const GenericVector& b)
 {
-  check_dimensions(A, x, b);
   set_operator(A);
   return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
 }

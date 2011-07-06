@@ -46,9 +46,6 @@ namespace dolfin
     virtual void set_operators(const GenericMatrix& A, const GenericMatrix& P)
     { error("Linear algebra backend solver does not support 'set_operators'."); }
 
-    /// Get operator (matrix)
-    virtual const GenericMatrix& get_operator() const = 0;
-
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { error("solve(A, x, b) is not implemented. Consider trying solve(x, b)."); return 0; }
@@ -56,13 +53,6 @@ namespace dolfin
     /// Solve linear system Ax = b
     virtual uint solve(GenericVector& x, const GenericVector& b)
     { error("solve(x, b) is not yet implemented for this backend."); return 0; }
-
-  protected:
-
-    // Check dimensions of matrix and vector(s)
-    void check_dimensions(const GenericMatrix& A,
-                          GenericVector& x,
-                          const GenericVector& b) const;
 
   };
 

@@ -79,7 +79,6 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                       const GenericVector& b)
 {
-  check_dimensions(A, x, b);
   return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
                x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
 }

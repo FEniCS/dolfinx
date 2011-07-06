@@ -79,9 +79,6 @@ namespace dolfin
 
   private:
 
-    /// Operator (the matrix) as GenericMatrix
-    boost::shared_ptr<const GenericMatrix> AA;
-
     /// Operator (the matrix) as MTL4Matrix
     boost::shared_ptr<const MTL4Matrix> A;
 

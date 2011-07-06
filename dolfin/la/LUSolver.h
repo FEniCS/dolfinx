@@ -59,9 +59,6 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
 
-    /// Return the operator (matrix)
-    const GenericMatrix& get_operator() const;
-
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 

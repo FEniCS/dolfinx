@@ -96,12 +96,6 @@ void KrylovSolver::set_operator(const GenericMatrix& A)
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& KrylovSolver::get_operator() const
-{
-  assert(solver);
-  return solver->get_operator();
-}
-//-----------------------------------------------------------------------------
 void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
 {
   assert(solver);
@@ -112,7 +106,7 @@ void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
 dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
-  check_dimensions(solver->get_operator(), x, b);
+  //check_dimensions(solver->get_operator(), x, b);
 
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
@@ -123,7 +117,7 @@ dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   assert(solver);
-  check_dimensions(A, x, b);
+  //check_dimensions(A, x, b);
 
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);

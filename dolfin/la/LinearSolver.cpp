@@ -62,17 +62,11 @@ void LinearSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& LinearSolver::get_operator() const
-{
-  assert(solver);
-  return solver->get_operator();
-}
-//-----------------------------------------------------------------------------
 dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   assert(solver);
-  check_dimensions(A, x, b);
+  //check_dimensions(A, x, b);
 
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
@@ -81,7 +75,7 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
-  check_dimensions(get_operator(), x, b);
+  //check_dimensions(get_operator(), x, b);
 
   solver->parameters.update(parameters);
   return solver->solve(x, b);
