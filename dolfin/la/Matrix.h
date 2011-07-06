@@ -169,6 +169,12 @@ namespace dolfin
     virtual GenericMatrix* instance()
     { return matrix.get(); }
 
+    virtual boost::shared_ptr<const GenericTensor> shared_instance() const
+    { return matrix; }
+
+    virtual boost::shared_ptr<GenericTensor> shared_instance()
+    { return matrix; }
+
     //--- Special Matrix functions ---
 
     /// Assignment operator

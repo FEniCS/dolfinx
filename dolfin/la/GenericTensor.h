@@ -27,6 +27,7 @@
 
 #include <exception>
 #include <typeinfo>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -129,6 +130,26 @@ namespace dolfin
       return dynamic_cast<T&>(*instance());
     }
 
+    /// Cast a GenericTensor shared ptr to its derived class. Caller
+    /// must check for success (returns null if cast fails).
+    template<class X, class Y>
+    static boost::shared_ptr<X> down_cast(const boost::shared_ptr<Y> A)
+    {
+      // Try to down cast shared pointer
+      boost::shared_ptr<X> _A = boost::dynamic_pointer_cast<X>(A);
+
+      // If down cast fails, try to get shared ptr instance to unwrapped object
+      if (!_A)
+      {
+        // Try to get instance to unwrapped object and cast
+        boost::shared_ptr<GenericTensor> B = A->shared_instance();
+        if (B)
+          _A = boost::dynamic_pointer_cast<X>(B);
+      }
+      return _A;
+    }
+
+
     /// Check whether the GenericTensor instance matches a specific type
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
@@ -142,6 +163,14 @@ namespace dolfin
     /// Return concrete instance / unwrap (non-const version)
     virtual GenericTensor* instance()
     { return this; }
+
+    /// Return concrete shared ptr instance / unwrap (const version)
+    virtual boost::shared_ptr<const GenericTensor> shared_instance() const
+    { return boost::shared_ptr<const GenericTensor>(); }
+
+    /// Return concrete shared ptr instance / unwrap
+    virtual boost::shared_ptr<GenericTensor> shared_instance()
+    { return boost::shared_ptr<GenericTensor>(); }
 
     /// Assignment (must be overloaded by subclass)
     virtual const GenericTensor& operator= (const GenericTensor& x)
