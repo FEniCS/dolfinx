@@ -68,6 +68,6 @@ bool dolfin::near(double x, double x0)
 //-----------------------------------------------------------------------------
 bool dolfin::between(double x0, double x, double x1)
 {
-  return (x0 - DOLFIN_EPS < x && x < x1 + DOLFIN_EPS);
+  return x0 - DOLFIN_EPS <= x && x <= x1 + DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
