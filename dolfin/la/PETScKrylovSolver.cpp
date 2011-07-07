@@ -135,9 +135,9 @@ void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatr
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                       const boost::shared_ptr<const GenericMatrix> P)
 {
-  const boost::shared_ptr<const PETScMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
-  const boost::shared_ptr<const PETScMatrix> _P = GenericTensor::down_cast<const PETScMatrix>(P);
-  set_operators(A, P);
+  boost::shared_ptr<const PETScBaseMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
+  boost::shared_ptr<const PETScBaseMatrix> _P = GenericTensor::down_cast<const PETScMatrix>(P);
+  set_operators(_A, _P);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
