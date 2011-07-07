@@ -48,8 +48,7 @@ class DirichletBCTest(unittest.TestCase):
     def test_near_and_between(self):
         "Test that near and between handle rounding errors correctly."
         # TODO: Move this test to a test module 'basic' or something?
-        from dolfin.cpp import near, between # TODO: Import from dolfin directly
-        from dolfin import DOLFIN_EPS as eps
+        eps = DOLFIN_EPS
         # Loop over magnitudes
         for i in range(100):
             # Loop over base values
