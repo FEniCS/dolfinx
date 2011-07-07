@@ -61,7 +61,7 @@ namespace dolfin
     ~UmfpackLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Return the operator (matrix)
     const GenericMatrix& get_operator() const;

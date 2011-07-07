@@ -66,10 +66,11 @@ namespace dolfin
     ~EpetraKrylovSolver();
 
     /// Set the operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Set the operator (matrix)
-    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                       const boost::shared_ptr<const GenericMatrix> P);
 
     /// Get the operator (matrix)
     const GenericMatrix& get_operator() const;

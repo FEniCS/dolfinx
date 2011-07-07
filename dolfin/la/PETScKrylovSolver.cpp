@@ -122,27 +122,29 @@ PETScKrylovSolver::~PETScKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const GenericMatrix& A)
+void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
+void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatrix> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const GenericMatrix& A,
-                                      const GenericMatrix& P)
+void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                                      const boost::shared_ptr<const GenericMatrix> P)
 {
-  set_operators(A.down_cast<PETScBaseMatrix>(), P.down_cast<PETScBaseMatrix>());
+  boost::shared_ptr<const PETScBaseMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
+  boost::shared_ptr<const PETScBaseMatrix> _P = GenericTensor::down_cast<const PETScMatrix>(P);
+  set_operators(_A, _P);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
-                                      const PETScBaseMatrix& P)
+void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
+                                      const boost::shared_ptr<const PETScBaseMatrix> P)
 {
-  this->A = reference_to_no_delete_pointer(A);
-  this->P = reference_to_no_delete_pointer(P);
+  this->A = A;
+  this->P = P;
   assert(this->A);
   assert(this->P);
 }
@@ -247,7 +249,8 @@ dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A, PETScVector& x,
     error("Non-matching dimensions for linear system.");
 
   // Set operator
-  set_operator(A);
+  boost::shared_ptr<const PETScBaseMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
 
   return solve(x, b);
 }

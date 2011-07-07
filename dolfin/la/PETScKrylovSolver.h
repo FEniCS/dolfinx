@@ -72,16 +72,18 @@ namespace dolfin
     ~PETScKrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Set operator (matrix)
-    void set_operator(const PETScBaseMatrix& A);
+    void set_operator(const boost::shared_ptr<const PETScBaseMatrix> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                       const boost::shared_ptr<const GenericMatrix> P);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
+    void set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
+                       const boost::shared_ptr<const PETScBaseMatrix> P);
 
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;

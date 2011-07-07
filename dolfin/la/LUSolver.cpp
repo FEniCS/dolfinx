@@ -19,6 +19,7 @@
 // Last changed:
 
 #include <dolfin/parameter/GlobalParameters.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include "DefaultFactory.h"
 #include "LUSolver.h"
@@ -44,7 +45,8 @@ LUSolver::LUSolver(const GenericMatrix& A, std::string type)
 
   DefaultFactory factory;
   solver.reset(factory.create_lu_solver());
-  solver->set_operator(A);
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  solver->set_operator(_A);
 
   solver->parameters.update(parameters);
 }
@@ -54,7 +56,7 @@ LUSolver::~LUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void LUSolver::set_operator(const GenericMatrix& A)
+void LUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   assert(solver);
   solver->parameters.update(parameters);
@@ -80,8 +82,3 @@ dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-

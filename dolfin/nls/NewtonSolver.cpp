@@ -102,7 +102,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   nonlinear_problem.form(*A, *b, x);
   nonlinear_problem.F(*b, x);
 
-  solver->set_operator(*A);
+  solver->set_operator(A);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -111,7 +111,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     nonlinear_problem.J(*A, x);
 
     // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
-    solver->set_operator(*A);
+    solver->set_operator(A);
 
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)

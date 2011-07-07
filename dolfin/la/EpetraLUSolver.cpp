@@ -73,7 +73,8 @@ EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
                                linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
-  set_operator(A);
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
 
   // Create linear solver
   Amesos factory;
@@ -93,13 +94,13 @@ EpetraLUSolver::~EpetraLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraLUSolver::set_operator(const GenericMatrix& A)
+void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   assert(linear_problem);
 
-  this->A = reference_to_no_delete_pointer(A);
-  const EpetraMatrix& _A = A.down_cast<EpetraMatrix>();
-  linear_problem->SetOperator(_A.mat().get());
+  this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
+  assert(this->A);
+  linear_problem->SetOperator(this->A->mat().get());
 
   symbolic_factorized = false;
   numeric_factorized  = false;
@@ -189,7 +190,8 @@ dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
-  set_operator(A);
+  boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
