@@ -50,10 +50,11 @@ namespace dolfin
     ~LinearSolver();
 
     /// Set the operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Set the operator (matrix) and preconitioner matrix
-    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                       const boost::shared_ptr<const GenericMatrix> P);
 
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
@@ -78,4 +79,3 @@ namespace dolfin
 }
 
 #endif
-

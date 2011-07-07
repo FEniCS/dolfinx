@@ -48,14 +48,15 @@ LinearSolver::~LinearSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void LinearSolver::set_operator(const GenericMatrix& A)
+void LinearSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   assert(solver);
   solver->parameters.update(parameters);
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
-void LinearSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
+void LinearSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                                 const boost::shared_ptr<const GenericMatrix> P)
 {
   assert(solver);
   solver->parameters.update(parameters);

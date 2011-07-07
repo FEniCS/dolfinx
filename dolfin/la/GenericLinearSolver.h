@@ -23,6 +23,7 @@
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
@@ -40,10 +41,11 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const GenericMatrix& A) = 0;
+    virtual void set_operator(const boost::shared_ptr<const GenericMatrix> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
-    virtual void set_operators(const GenericMatrix& A, const GenericMatrix& P)
+    virtual void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                               const boost::shared_ptr<const GenericMatrix> P)
     { error("Linear algebra backend solver does not support 'set_operators'."); }
 
     /// Solve linear system Ax = b

@@ -62,7 +62,7 @@ namespace dolfin
     ~uBLASKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const GenericMatrix& A)
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A)
     { error("set_operator(A) is not implemented."); }
 
     /// Return the operator (matrix)

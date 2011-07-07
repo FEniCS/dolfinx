@@ -129,14 +129,15 @@ PETScLUSolver::~PETScLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const GenericMatrix& A)
+void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
-  set_operator(A.down_cast<PETScMatrix>());
+  this->A = GenericTensor::down_cast<const PETScMatrix>(A);
+  assert(this->A);
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const PETScMatrix& A)
+void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
 {
-  this->A = reference_to_no_delete_pointer(A);
+  this->A = A;
   assert(this->A);
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +201,8 @@ dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
-  set_operator(A);
+  boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------

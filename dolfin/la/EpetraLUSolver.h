@@ -57,7 +57,7 @@ namespace dolfin
     ~EpetraLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Get operator (matrix)
     const GenericMatrix& get_operator() const;
@@ -82,7 +82,7 @@ namespace dolfin
     bool symbolic_factorized, numeric_factorized;
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> A;
+    boost::shared_ptr<const EpetraMatrix> A;
 
     // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;
@@ -103,5 +103,3 @@ namespace dolfin
 
 
 #endif
-
-

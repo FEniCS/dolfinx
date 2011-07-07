@@ -103,16 +103,16 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(const GenericMatrix& A)
+void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(const GenericMatrix& A,
-                                       const GenericMatrix& P)
+void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                                       const boost::shared_ptr<const GenericMatrix> P)
 {
-  this->A = reference_to_no_delete_pointer(A.down_cast<EpetraMatrix>());
-  this->P = reference_to_no_delete_pointer(P.down_cast<EpetraMatrix>());
+  this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
+  this->P = GenericTensor::down_cast<const EpetraMatrix>(P);
   assert(this->A);
   assert(this->P);
 }
@@ -213,7 +213,8 @@ dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
-  set_operator(A);
+  boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
