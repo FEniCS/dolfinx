@@ -33,16 +33,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SingularSolver::SingularSolver(std::string solver_type,
                                std::string pc_type)
-  : linear_solver(solver_type, pc_type), B(0), y(0), c(0)
+  : linear_solver(solver_type, pc_type)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 SingularSolver::~SingularSolver()
 {
-  delete B;
-  delete y;
-  delete c;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SingularSolver::solve(const GenericMatrix& A,
@@ -115,11 +113,6 @@ void SingularSolver::init(const GenericMatrix& A)
   if (B && B->size(0) == N + 1 && B->size(1) == N + 1)
     return;
 
-  // Delete any old data
-  delete B;
-  delete y;
-  delete c;
-
   // Create sparsity pattern for B
   SparsityPattern s;
   std::vector<uint> dims(2);
@@ -173,9 +166,9 @@ void SingularSolver::init(const GenericMatrix& A)
   s.insert(_rows);
 
   // Create matrix and vector
-  B = A.factory().create_matrix();
-  y = A.factory().create_vector();
-  c = A.factory().create_vector();
+  B.reset(A.factory().create_matrix());
+  y.reset(A.factory().create_vector());
+  c.reset(A.factory().create_vector());
   B->init(s);
   y->resize(N + 1);
   c->resize(N + 1);

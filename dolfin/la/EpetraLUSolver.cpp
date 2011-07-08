@@ -67,14 +67,15 @@ EpetraLUSolver::EpetraLUSolver() : symbolic_factorized(false),
   solver.reset(factory.Create(solver_type, *linear_problem));
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
+EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A)
                              : symbolic_factorized(false),
                                numeric_factorized(false),
                                linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
-  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
-  set_operator(_A);
+
+  this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
+  assert(this->A);
 
   // Create linear solver
   Amesos factory;

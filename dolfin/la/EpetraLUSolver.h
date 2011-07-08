@@ -51,7 +51,7 @@ namespace dolfin
     EpetraLUSolver();
 
     /// Constructor
-    EpetraLUSolver(const GenericMatrix& A);
+    EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A);
 
     /// Destructor
     ~EpetraLUSolver();

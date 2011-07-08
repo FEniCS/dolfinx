@@ -53,9 +53,6 @@ namespace dolfin
     PETScLUSolver(std::string lu_package="default");
 
     /// Constructor
-    PETScLUSolver(const GenericMatrix& A, std::string lu_package="default");
-
-    /// Constructor
     PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
                   std::string lu_package="default");
 

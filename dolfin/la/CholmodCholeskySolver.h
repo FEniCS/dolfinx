@@ -51,9 +51,6 @@ namespace dolfin
     CholmodCholeskySolver();
 
     /// Constructor
-    CholmodCholeskySolver(const GenericMatrix& A);
-
-    /// Constructor
     CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A);
 
     /// Destructor

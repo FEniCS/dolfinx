@@ -109,13 +109,6 @@ UmfpackLUSolver::UmfpackLUSolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver(const GenericMatrix& A)
-                               : A(reference_to_no_delete_pointer(A))
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A)
                                : A(A)
 {

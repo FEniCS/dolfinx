@@ -43,13 +43,6 @@ CholmodCholeskySolver::CholmodCholeskySolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-CholmodCholeskySolver::CholmodCholeskySolver(const GenericMatrix& A)
-                               : _A(reference_to_no_delete_pointer(A))
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A)
                                : _A(A)
 {
@@ -331,4 +324,3 @@ void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 }
 //-----------------------------------------------------------------------------
 #endif
-

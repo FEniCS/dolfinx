@@ -52,9 +52,6 @@ namespace dolfin
     UmfpackLUSolver();
 
     /// Constructor
-    UmfpackLUSolver(const GenericMatrix& A);
-
-    /// Constructor
     UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A);
 
     /// Destructor
