@@ -167,14 +167,38 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 
 }
 
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<double, double>
+{
+  $1 = PyTuple_Check($input) ? 1 : 0;
+}
+
+%typemap(in) std::pair<double, double> (std::pair<double, double> tmp_pair, long tmp)
+{
+  // Check that we have a tuple
+  if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
+    SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 of floats.");
+
+  // Get pointers to function and time
+  PyObject* py_first  = PyTuple_GetItem($input, 0);
+  PyObject* py_second = PyTuple_GetItem($input, 1);
+
+  tmp_pair = std::make_pair(PyFloat_AsDouble(py_first), PyFloat_AsDouble(py_second));
+
+  // Assign input variable
+  $1 = tmp_pair;
+}
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
 %typemap(out) std::pair<dolfin::uint, dolfin::uint>
 {
-  $result = Py_BuildValue("ii",$1.first,$1.second);
+  $result = Py_BuildValue("ii", $1.first, $1.second);
 }
-%typemap(out) std::pair<dolfin::uint,bool>
+%typemap(out) std::pair<dolfin::uint, bool>
 {
-  $result = Py_BuildValue("ib",$1.first,$1.second);
+  $result = Py_BuildValue("ib", $1.first, $1.second);
+}
+%typemap(out) std::pair<double, double>
+{
+  $result = Py_BuildValue("dd", $1.first, $1.second);
 }

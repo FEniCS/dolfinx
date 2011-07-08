@@ -46,7 +46,7 @@ class DirichletBCTest(unittest.TestCase):
                 self.assertTrue(near(v, v))
                 self.assertTrue(near(vm, vm))
                 self.assertTrue(near(vp, vp))
-                #self.assertTrue(near(v, vm)) # Can fail 
+                #self.assertTrue(near(v, vm)) # Can fail
                 #self.assertTrue(near(v, vp))
                 if not near(v, vm):
                     print "not near vm: %r, %r" % (v, vm)
@@ -76,7 +76,7 @@ class DirichletBCTest(unittest.TestCase):
                 vp = v + eps
 
                 # Check that we return True when we should by definition:
-                self.assertTrue(between(vm, v, vp))
+                self.assertTrue(between(v, (vm, vp)))
 
                 # vm and vp can round off to v, make some small values != v
                 v2m = v * (1.0 - 2*eps) - 2*eps
@@ -85,10 +85,10 @@ class DirichletBCTest(unittest.TestCase):
                 # Close to 1 except for some of the smallest v's:
                 self.assertTrue(v/v2m > 1.0)
                 self.assertTrue(v/v2p < 1.0)
-                self.assertTrue(between(v2m, v, v2p))
+                self.assertTrue(between(v, (v2m, v2p)))
 
                 # Check that we can fail for fairly close values
-                self.assertFalse(between(v2p, v, v2m))
+                self.assertFalse(between(v, (v2p, v2m)))
 
 
 if __name__ == "__main__":
