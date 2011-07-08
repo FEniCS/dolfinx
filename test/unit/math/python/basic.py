@@ -36,7 +36,7 @@ class DirichletBCTest(unittest.TestCase):
             for j in range(1, 10):
                 # Compute a value v and some values close to it
                 v = j*10**(i-15)
-                print "number:", v
+                #print "number:", v
                 vm = v - eps
                 vp = v + eps
 
