@@ -62,8 +62,8 @@ void dolfin::seed(unsigned int s)
 //-----------------------------------------------------------------------------
 bool dolfin::near(double x, double x0, double eps)
 {
-  //return std::abs(x - x0) <= eps;
-  return x0 - eps <= x && x <= x0 + eps;
+  return x0 - eps < x && x < x0 + eps;
+  //return x0 - eps <= x && x <= x0 + eps;
 }
 //-----------------------------------------------------------------------------
 //bool between(double x, std::pair<double, double> range)
