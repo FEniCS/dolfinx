@@ -21,7 +21,8 @@
 #ifndef __BASIC_H
 #define __BASIC_H
 
-#include <cmath>
+#include <utility>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -36,10 +37,15 @@ namespace dolfin
   void seed(unsigned int s);
 
   /// Check whether x is close to x0 (to within DOLFIN_EPS)
-  bool near(double x, double x0);
+  bool near(double x, double x0, double eps=DOLFIN_EPS);
 
+  // FIXME: This should no involve eps. It is 'between' and
+  //        not 'nearly between'.
+  // FIXME: Syntax would be clearer using std::pair for the range. Need
+  //        Swig typemap
   /// Check whether x is between x0 and x1 (inclusive, to within DOLFIN_EPS)
-  bool between(double x0, double x, double x1);
+  bool between(double x0, double x, double x1, double eps=DOLFIN_EPS);
+  //bool between(double x, std::pair<double, double> range);
 
 }
 
