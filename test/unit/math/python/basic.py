@@ -41,6 +41,9 @@ class DirichletBCTest(unittest.TestCase):
                 vp = v + eps
 
                 # Check that we return True when we should by definition:
+                self.assertTrue(near(v, v))
+                self.assertTrue(near(vm, vm))
+                self.assertTrue(near(vp, vp))
                 self.assertTrue(near(v, vm))
                 self.assertTrue(near(v, vp))
 
