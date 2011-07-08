@@ -38,15 +38,14 @@ LUSolver::LUSolver(std::string type)
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------
-LUSolver::LUSolver(const GenericMatrix& A, std::string type)
+LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A, std::string type)
 {
   // Set default parameters
   parameters = default_parameters();
 
   DefaultFactory factory;
   solver.reset(factory.create_lu_solver());
-  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
-  solver->set_operator(_A);
+  solver->set_operator(A);
 
   solver->parameters.update(parameters);
 }

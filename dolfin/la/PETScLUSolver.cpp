@@ -96,20 +96,6 @@ PETScLUSolver::PETScLUSolver(std::string lu_package)
   init_solver(lu_package);
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(const GenericMatrix& A, std::string lu_package)
-               : A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
-{
-  // Check dimensions
-  if (A.size(0) != A.size(1))
-    error("Cannot LU factorize non-square PETSc matrix.");
-
-  // Set parameter values
-  parameters = default_parameters();
-
-  // Initialize PETSc LU solver
-  init_solver(lu_package);
-}
-//-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
                              std::string lu_package) : A(A)
 {

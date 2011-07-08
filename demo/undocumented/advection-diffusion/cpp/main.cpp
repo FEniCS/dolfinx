@@ -67,19 +67,19 @@ int main(int argc, char *argv[])
   Function u1(V);
 
   // Linear system
-  Matrix A;
+  boost::shared_ptr<Matrix> A(new Matrix);
   Vector b;
 
   // Assemble matrix
-  assemble(A, a);
-  bc.apply(A);
+  assemble(*A, a);
+  bc.apply(*A);
 
   // LU solver
   LUSolver lu(A);
   lu.parameters["reuse_factorization"] = true;
 
   // Parameters for time-stepping
-  double T = 2.0;
+  const double T = 2.0;
   const double k = 0.05;
   double t = k;
 
