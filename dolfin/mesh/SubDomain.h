@@ -30,8 +30,8 @@ namespace dolfin
   template<class T> class Array;
 
   /// This class defines the interface for definition of sub domains.
-  /// Alternatively, sub domains may be defined by a Mesh and a
-  /// MeshFunction<uint> over the mesh.
+  /// Alternatively, sub domains may be defined by a _Mesh_ and a
+  /// _MeshFunction_ <uint> over the mesh.
 
   class SubDomain
   {
@@ -44,28 +44,76 @@ namespace dolfin
     virtual ~SubDomain();
 
     /// Return true for points inside the subdomain
+    ///
+    /// *Arguments*
+    ///     x (_Array_ <double>)
+    ///         The points.
+    ///     on_boundary (bool)
+    ///         True for points on the boundary.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True for points inside the subdomain.
     virtual bool inside(const Array<double>& x, bool on_boundary) const;
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
+    ///
+    /// *Arguments*
+    ///     x (_Array_ <double>)
+    ///         The coordinates in domain H.
+    ///     unnamed (_Array_ <double>)
+    ///         The coordinates in domain G.
     virtual void map(const Array<double>& x, Array<double>&) const;
 
     /// Snap coordinate to boundary of sub domain
+    ///
+    /// *Arguments*
+    ///     x (_Array_ <double>)
+    ///         The coordinates.
     virtual void snap(Array<double>& x) const {}
 
     /// Set sub domain markers (uint) for given subdomain
+    ///
+    /// *Arguments*
+    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///         A _MeshFunction_ object.
+    ///     sub_domain (unsigned int)
+    ///         An unsigned int.
     void mark(MeshFunction<unsigned int>& sub_domains, unsigned int sub_domain) const;
 
     /// Set sub domain markers (int) for given subdomain
+    ///
+    /// *Arguments*
+    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///         The sub domains.
+    ///     sub_domain (int)
+    ///         Markers.
     void mark(MeshFunction<int>& sub_domains, int sub_domain) const;
 
     /// Set sub domain markers (double) for given subdomain
+    ///
+    /// *Arguments*
+    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///         The sub domains.
+    ///     sub_domain (double)
+    ///         Markers.
     void mark(MeshFunction<double>& sub_domains, double sub_domain) const;
 
     /// Set sub domain markers (bool) for given subdomain
+    ///
+    /// *Arguments*
+    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///         The sub domains.
+    ///     sub_domain (bool)
+    ///         Markers.
     void mark(MeshFunction<bool>& sub_domains, bool sub_domain) const;
 
     /// Return geometric dimension
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The geometric dimension.
     uint geometric_dimension() const;
 
   private:

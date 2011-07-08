@@ -24,9 +24,10 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Johan Hake, 2010.
+# Modified by Anders E. Johansen, 2011.
 #
 # First added:  2010-08-19
-# Last changed: 2010-10-19
+# Last changed: 2011-07-08
 
 import os, shutil, types, sys
 
@@ -153,32 +154,75 @@ def replace_example(text, classname, signature):
             new_text.append(l)
     return "\n".join(new_text)
 
+def handle_std_pair(cpp_type, classnames):
+    """Map std::pair to Python object."""
+    arg1, arg2 = cpp_type.split(">")[0].split("<")[1].split(",")
+    arg1 = arg1.strip()
+    arg2 = arg2.strip()
+
+    if arg1 in cpp_to_python:
+        arg1 = cpp_to_python[arg1]
+        if not arg2 in cpp_to_python:
+            print "No type map for '%s'!" % cpp_type
+            return cpp_type
+        arg2 = cpp_to_python[arg2]
+        return "(%s, %s)" % (arg1, arg2)
+
+    elif arg1[0] == "_" and arg1[-1] == "_" and arg1[1:-1] in classnames:
+        if not arg2 in cpp_to_python:
+            print "No type map for '%s'!" % cpp_type
+            return cpp_type
+        arg2 = cpp_to_python[arg2]
+        return "Swig Object< std::pair<%s, %s> >" % (arg1, arg2)
+
+    else:
+        return None
+
+def handle_std_vector(cpp_type, classnames):
+    """Map std::vector to Python object (numpy.array)."""
+
+    # Special case: vector of pairs
+    if "std::pair" in cpp_type:
+        arg1, arg2 = cpp_type.split("<")[2].split(">")[0].split(",")
+        pair = "std::pair<%s,%s>" % (arg1, arg2)
+        if handle_std_pair(pair, classnames) is not None:
+            return "numpy.array(%s)" % handle_std_pair(pair, classnames)
+        else:
+            return None
+    else:
+        arg = cpp_type.split("<")[1].split(">")[0].strip()
+        if not arg in cpp_to_python:
+            if arg[0] == "_" and arg[-1] == "_" and arg[1:-1] in classnames:
+                return "list of %s" % arg
+            else:
+                return None
+        return "numpy.array(%s)" % cpp_to_python[arg]
+
 # NOTE: KBO: This function is not complete and is only tested for the Mesh.h class
 def map_cpp_type(cpp_type, classnames):
     "Map a C++ type to a Python type."
 
     if cpp_type in cpp_to_python:
         return cpp_to_python[cpp_type]
-    # Special handling of std::pair
-    elif "std::pair" in cpp_type:
-        arg1, arg2 = cpp_type.split(">")[0].split("<")[1].split(",")
-        arg1 = arg1.strip()
-        arg2 = arg2.strip()
-        if arg1 in cpp_to_python:
-            arg1 = cpp_to_python[arg1]
-            if not arg2 in cpp_to_python:
-                print "No type map for '%s'!" % cpp_type
-                return cpp_type
-            arg2 = cpp_to_python[arg2]
-            return "(%s, %s)" % (arg1, arg2)
-        elif arg1[0] == "_" and arg1[-1] == "_" and arg1[1:-1] in classnames:
-            if not arg2 in cpp_to_python:
-                print "No type map for '%s'!" % cpp_type
-                return cpp_type
-            arg2 = cpp_to_python[arg2]
-            return "Swig Object< std::pair<%s, %s> >" % (arg1, arg2)
+
+    # std::vector --> numpy.array or list
+    elif "std::vector" in cpp_type:
+        pobject = handle_std_vector(cpp_type, classnames)
+        if pobject is not None:
+            return pobject
         else:
             print "No type map for '%s'!" % cpp_type
+            return cpp_type
+
+    # Special handling of std::pair
+    elif "std::pair" in cpp_type:
+        pobject = handle_std_pair(cpp_type, classnames)
+        if pobject is not None:
+            return pobject
+        else:
+            print "No type map for '%s'!" % cpp_type
+            return cpp_type
+
     # dolfin::Array --> numpy.array (primitives only)
     elif "_Array_" in cpp_type:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
@@ -186,16 +230,7 @@ def map_cpp_type(cpp_type, classnames):
             print "No type map for '%s'!" % arg
             return "numpy.array(%s)" % arg
         return "numpy.array(%s)" % cpp_to_python[arg]
-    # std::vector --> numpy.array or list
-    elif "std::vector" in cpp_type:
-        arg = cpp_type.split("<")[1].split(">")[0].strip()
-        if not arg in cpp_to_python:
-            if arg[0] == "_" and arg[-1] == "_" and arg[1:-1] in classnames:
-                return "list of %s" % arg
-            else:
-                print "No type map for '%s'!" % arg
-                return cpp_type
-        return "numpy.array(%s)" % cpp_to_python[arg]
+
     # std::set --> set
     elif "std::set" in cpp_type:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
@@ -203,9 +238,19 @@ def map_cpp_type(cpp_type, classnames):
             print "No type map for '%s'!" % cpp_type
             return cpp_type
         return "set of %s" % cpp_to_python[arg]
+
     # Handle links to classes defined in DOLFIN.
     elif cpp_type[0] == "_" and cpp_type[-1] == "_" and cpp_type[1:-1] in classnames:
         return cpp_type
+
+    # Special case, e.g. cpp_type = boost::shared_ptr<_FunctionSpace_>
+    elif "_" in cpp_type:
+        args = cpp_type.split("_")
+        for arg in args:
+            if arg in classnames:
+                return "_" + arg + "_"
+        print "No type map for '%s'!" % cpp_type
+
     else:
         print "No type map for '%s'!" % cpp_type
 
@@ -298,7 +343,16 @@ def get_args(signature):
 #    print "arg_string: '%s'" % arg_string
     args = []
     if arg_string:
-        args = [a.split()[-1] for a in arg_string.split(",")]
+        # This does not handle ',' inside type declaration,
+        # e.g. std::pair<uint, uint>.
+        # args = [a.split()[-1] for a in arg_string.split(",")]
+        for a in arg_string.split(","):
+            arg = a.split()[-1]
+            # Assuming '::' is never in a name, but always
+            # present when dealing with e.g. 'std::pair'
+            # or boost::unordered_map.
+            if not "::" in arg:
+                args.append(arg)
 #    print "args: '%s'" % args
     return args
 
