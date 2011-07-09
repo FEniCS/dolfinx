@@ -124,7 +124,7 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  boost::shared_ptr<GenericMatrix> _A(&A, NoDeleter());
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
   UmfpackLUSolver solver(_A);
   return solver.solve(x, b);
 }
