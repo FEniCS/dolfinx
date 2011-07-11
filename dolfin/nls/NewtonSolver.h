@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2006-2011.
+// Modified by Anders E. Johansen 2011.
 //
 // First added:  2005-10-23
-// Last changed: 2011-03-29
+// Last changed: 2011-07-11
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -47,8 +48,8 @@ namespace dolfin
 
     /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(std::string solver_type = "lu",
-                 std::string pc_type = "default");
+    NewtonSolver(std::string solver_type="lu",
+                 std::string pc_type="default");
 
     /// Create nonlinear solver using provided linear solver and linear algebra
     /// backend determined by factory
