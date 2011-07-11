@@ -55,12 +55,28 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh (data is not shared)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (boost::shared_ptr<ufc::dofmap>)
+    ///         The ufc::dofmap.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& mesh);
 
     /// Create dof map on mesh ((data is not shared), const mesh version)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (boost::shared_ptr<ufc::dofmap>)
+    ///         The ufc::dofmap.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     dofmap (DofMap)
+    ///         The object to be copied.
     DofMap(const DofMap& dofmap);
 
   private:
@@ -78,39 +94,91 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
-    /// True if dof map is a view into another map (is a sub-dofmap)
+    /// True if dof map is a view into another map
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the dof map is a sub-dofmap (a view into another map).
     bool is_view() const
     { return _is_view; }
 
     /// Return true iff mesh entities of topological dimension d are needed
+    ///
+    /// *Arguments*
+    ///     d (unsigned int)
+    ///         Topological dimension.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the mesh entities are needed.
     bool needs_mesh_entities(unsigned int d) const;
 
     /// Return the dimension of the global finite element function space
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The dimension of the global finite element function space.
     unsigned int global_dimension() const;
 
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
     /// Return the dimension of the local finite element function space on a
-    // cell
+    /// cell
+    ///
+    /// *Arguments*
+    ///     cell_index (uint)
+    ///         Index of cell
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         Dimension of the local finite element function space.
     unsigned int cell_dimension(uint cell_index) const;
 
     /// Return the maximum dimension of the local finite element function space
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         Maximum dimension of the local finite element function space.
     unsigned int max_cell_dimension() const;
 
-    // Return the geometric dimension of the coordinates this dof map provides
+    /// Return the geometric dimension of the coordinates this dof map provides
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The geometric dimension.
     unsigned int geometric_dimension() const;
 
     /// Return number of facet dofs
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The number of facet dofs.
     unsigned int num_facet_dofs() const;
 
     /// Return the ownership range (dofs in this range are owned by this process)
+    ///
+    /// *Returns*
+    ///     std::pair<unsigned int, unsigned int>
+    ///         The ownership range.
     std::pair<unsigned int, unsigned int> ownership_range() const;
 
     /// Return map from nonlocal-dofs that appear in local dof map to owning
     /// process
+    ///
+    /// *Returns*
+    ///     boost::unordered_map<unsigned int, unsigned int>
+    ///         The map from non-local dofs.
     const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
 
     /// Local-to-global mapping of dofs on a cell
+    ///
+    /// *Arguments*
+    ///     cell_index (uint)
+    ///         The cell index.
+    ///
+    /// *Returns*
+    ///     std::vector<uint>
+    ///         Local-to-global mapping of dofs.
     const std::vector<uint>& cell_dofs(uint cell_index) const
     {
       assert(cell_index < dofmap.size());
@@ -118,6 +186,12 @@ namespace dolfin
     }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
+    ///
+    /// *Arguments*
+    ///     dofs (uint)
+    ///         Degrees of freedom on a cell.
+    ///     cell (_Cell_)
+    ///         The cell.
     void tabulate_dofs(uint* dofs, const Cell& cell) const
     {
       const uint cell_index = cell.index();
@@ -126,34 +200,92 @@ namespace dolfin
     }
 
     /// Tabulate local-local facet dofs
+    ///
+    /// *Arguments*
+    ///     dofs (uint)
+    ///         Degrees of freedom.
+    ///     local_facet (uint)
+    ///         The local facet.
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
+    ///
+    /// *Arguments*
+    ///     coordinates (boost::multi_array<double, 2>)
+    ///         The coordinates of all dofs on a cell.
+    ///     ufc_cell (ufc::cell)
+    ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const;
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    ///
+    /// *Arguments*
+    ///     coordinates (boost::multi_array<double, 2>)
+    ///         The coordinates of all dofs on a cell.
+    ///     cell (_Cell_)
+    ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const Cell& cell) const;
 
     /// Create a copy of the dof map
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The object to be copied.
     DofMap* copy(const Mesh& mesh) const;
 
     /// Extract sub dofmap component
+    ///
+    /// *Arguments*
+    ///     component (std::vector<uint>)
+    ///         The component.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///
+    /// *Returns*
+    ///     DofMap
+    ///         The sub dofmap component.
     DofMap* extract_sub_dofmap(const std::vector<uint>& component,
                                const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
+    ///
+    /// *Arguments*
+    ///     collapsed_map (boost::unordered_map<uint, uint>)
+    ///         The "collapsed" map.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///
+    /// *Returns*
+    ///     DofMap
+    ///         The collapsed dofmap.
     DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                      const Mesh& mesh) const;
 
     /// Return the set of dof indices
+    ///
+    /// *Returns*
+    ///     boost::unordered_set<dolfin::uint>
+    ///         The set of dof indices.
     boost::unordered_set<dolfin::uint> dofs() const;
 
-    // Renumber dofs
+    /// Renumber dofs
+    ///
+    /// *Arguments*
+    ///     renumbering_map (std::vector<uint>)
+    ///         The map of dofs to be renumbered.
     void renumber(const std::vector<uint>& renumbering_map);
 
     /// Return informal string representation (pretty-print)
+    ///
+    /// *Arguments*
+    ///     verbose (bool)
+    ///         Flag to turn on additional output.
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 
   private:

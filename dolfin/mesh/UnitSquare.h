@@ -26,7 +26,7 @@
 namespace dolfin
 {
 
-  /// Triangular mesh of the 2D unit square (0,1) x (0,1).
+  /// Triangular mesh of the 2D unit square [0,1] x [0,1].
   /// Given the number of cells (nx, ny) in each direction,
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
@@ -53,7 +53,8 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(32,32);
+    ///         UnitSquare mesh1(32, 32);
+    ///         UnitSquare mesh2(32, 32, "crossed");
     ///
     UnitSquare(uint nx, uint ny, std::string diagonal = "right");
 

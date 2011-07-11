@@ -26,7 +26,7 @@
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the 3D unit cube (0,1) x (0,1) x (0,1).
+  /// Tetrahedral mesh of the 3D unit cube [0,1] x [0,1] x [0,1].
   /// Given the number of cells (nx, ny, nz) in each direction,
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
   /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
@@ -35,6 +35,22 @@ namespace dolfin
   {
   public:
 
+    /// Define a uniform finite element _Mesh_ over the unit cube
+    /// [0,1] x [0,1] x [0,1].
+    ///
+    /// *Arguments*
+    ///     nx (uint)
+    ///         Number of cells in :math:`x` direction.
+    ///     ny (uint)
+    ///         Number of cells in :math:`y` direction.
+    ///     nz (uint)
+    ///         Number of cells in :math:`z` direction.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitCube mesh(32, 32, 32);
+    ///
     UnitCube(uint nx, uint ny, uint nz);
 
   };

@@ -35,7 +35,7 @@
 namespace dolfin
 {
 
-  /// A Cell is a MeshEntity of topological codimension 0.
+  /// A Cell is a _MeshEntity_ of topological codimension 0.
 
   class Cell : public MeshEntity
   {
@@ -45,6 +45,12 @@ namespace dolfin
     Cell() : MeshEntity() {}
 
     /// Create cell on given mesh with given index
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     index (uint)
+    ///         The index.
     Cell(const Mesh& mesh, uint index)
       : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
@@ -55,35 +61,85 @@ namespace dolfin
     CellType::Type type() const
     { return _mesh->type().cell_type(); }
 
-    /// Compute orientation of cell (0 is right, 1 is left)
+    /// Compute orientation of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         Orientation of the cell (0 is right, 1 is left).
     double orientation() const
     { return _mesh->type().orientation(*this); }
 
     /// Compute (generalized) volume of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         The volume of the cell.
     double volume() const
     { return _mesh->type().volume(*this); }
 
     /// Compute diameter of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         The diameter of the cell.
     double diameter() const
     { return _mesh->type().diameter(*this); }
 
     /// Compute component i of normal of given facet with respect to the cell
+    ///
+    /// *Arguments*
+    ///     facet (uint)
+    ///         Index of facet.
+    ///     i (uint)
+    ///         Component.
+    ///
+    /// *Returns*
+    ///     double
+    ///         Component i of the normal of the facet.
     double normal(uint facet, uint i) const
     { return _mesh->type().normal(*this, facet, i); }
 
     /// Compute normal of given facet with respect to the cell
+    ///
+    /// *Arguments*
+    ///     facet (uint)
+    ///         Index of facet.
+    ///
+    /// *Returns*
+    ///     _Point_
+    ///         Normal of the facet.
     Point normal(uint facet) const
     { return _mesh->type().normal(*this, facet); }
 
     /// Compute the area/length of given facet with respect to the cell
+    ///
+    /// *Arguments*
+    ///     facet (uint)
+    ///         Index of the facet.
+    ///
+    /// *Returns*
+    ///     double
+    ///         Area/length of the facet.
     double facet_area(uint facet) const
     { return _mesh->type().facet_area(*this, facet); }
 
     /// Order entities locally
+    ///
+    /// *Arguments*
+    ///     global_vertex_indices (_MeshFunction_ <uint>)
+    ///         The global vertex indices.
     void order(const MeshFunction<uint>* global_vertex_indices)
     { _mesh->type().order(*this, global_vertex_indices); }
 
     /// Check if entities are ordered
+    ///
+    /// *Arguments*
+    ///     global_vertex_indices (_MeshFunction_ <uint>)
+    ///         The global vertex indices.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if ordered.
     bool ordered(const MeshFunction<uint>* global_vertex_indices) const
     { return _mesh->type().ordered(*this, global_vertex_indices); }
 
