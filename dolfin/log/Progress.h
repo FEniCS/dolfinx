@@ -27,6 +27,9 @@
 namespace dolfin
 {
 
+  // FIXME: Replace implementation with wrapper for boost::progress_display
+  // FIXME: See http://www.boost.org/doc/libs/1_42_0/libs/timer/timer.htm
+
   /// This class provides a simple way to create and update progress
   /// bars during a computation.
   ///
@@ -54,23 +57,34 @@ namespace dolfin
   ///           p = t / T;
   ///         }
 
-  // FIXME: Replace implementation with wrapper for boost::progress_display
-  // FIXME: See http://www.boost.org/doc/libs/1_42_0/libs/timer/timer.htm
-
   class Progress
   {
   public:
 
     /// Create progress bar with a known number of steps
+    ///
+    /// *Arguments*
+    ///     title (std::string)
+    ///         The title.
+    ///     n (unsigned int)
+    ///         Number of steps.
     Progress(std::string title, unsigned int n);
 
     /// Create progress bar with an unknown number of steps
+    ///
+    /// *Arguments*
+    ///     title (std::string)
+    ///         The title.
     Progress(std::string title);
 
     /// Destructor
     ~Progress();
 
     /// Set current position
+    ///
+    /// *Arguments*
+    ///     p (double)
+    ///         The position.
     void operator=(double p);
 
     /// Increment progress

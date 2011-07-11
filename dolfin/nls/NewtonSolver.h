@@ -38,7 +38,8 @@ namespace dolfin
   class GenericVector;
   class NonlinearProblem;
 
-  /// This class defines a Newton solver for equations of the form F(u) = 0.
+  /// This class defines a Newton solver for equations of the form
+  /// :math:`F(u) = 0`.
 
   class NewtonSolver : public Variable
   {
@@ -51,29 +52,65 @@ namespace dolfin
 
     /// Create nonlinear solver using provided linear solver and linear algebra
     /// backend determined by factory
+    ///
+    /// *Arguments*
+    ///     solver (_GenericLinearSolver_)
+    ///         The linear solver.
+    ///     factory (_LinearAlgebraFactory_)
+    ///         The factory.
     NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
 
-    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
-    /// Jacobian dF/dx
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` for given vector
+    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+    ///
+    /// *Arguments*
+    ///     nonlinear_function (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    ///
+    /// *Returns*
+    ///     std::pair<uint, bool>
+    ///         Solution.
     std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 
     /// Return Newton iteration number
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The iteration number.
     uint iteration() const;
 
     /// Return current residual
+    ///
+    /// *Returns*
+    ///     double
+    ///         Current residual.
     double residual() const;
 
     /// Return current relative residual
+    ///
+    /// *Returns*
+    ///     double
+    ///       Current relative residual.
     double relative_residual() const;
 
     /// Return the linear solver
+    ///
+    /// *Returns*
+    ///     _GenericLinearSolver_
+    ///         The linear solver.
     GenericLinearSolver& linear_solver() const;
 
     /// Default parameter values
+    ///
+    /// *Returns*
+    ///     _Parameters_
+    ///         Parameter values.
     static Parameters default_parameters();
 
   private:
