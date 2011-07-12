@@ -74,6 +74,17 @@ namespace dolfin
     /// *Returns*
     ///     double
     ///         The volume of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.volume());
+    ///
+    ///     output::
+    ///
+    ///         0.5
     double volume() const
     { return _mesh->type().volume(*this); }
 
@@ -82,6 +93,17 @@ namespace dolfin
     /// *Returns*
     ///     double
     ///         The diameter of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.diameter());
+    ///
+    ///     output::
+    ///
+    ///         1.41421
     double diameter() const
     { return _mesh->type().diameter(*this); }
 
