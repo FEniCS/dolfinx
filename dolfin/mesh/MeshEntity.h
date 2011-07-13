@@ -42,7 +42,7 @@ namespace dolfin
   //class Mesh;
 
   /// A MeshEntity represents a mesh entity associated with
-  /// a specific topological dimension of some mesh.
+  /// a specific topological dimension of some _Mesh_.
 
   class MeshEntity
   {
@@ -52,65 +52,175 @@ namespace dolfin
     MeshEntity() : _mesh(0), _dim(0), _index(0) {}
 
     /// Constructor
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (uint)
+    ///         The topological dimension.
+    ///     index (uint)
+    ///         The index.
     MeshEntity(const Mesh& mesh, uint dim, uint index);
 
     /// Destructor
     virtual ~MeshEntity();
 
     /// Comparision Operator
+    ///
+    /// *Arguments*
+    ///     another (MeshEntity)
+    ///         Another MeshEntity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the two MeshEntity objects are equal.
     bool operator==(const MeshEntity& another) const
     { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
 
+    /// Comparision Operator
+    ///
+    /// *Arguments*
+    ///     another (MeshEntity)
+    ///         Another MeshEntity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the two MeshEntity objects are NOT equal.
     bool operator!=(const MeshEntity& another) const
     { return !operator==(another); }
 
     /// Return mesh associated with mesh entity
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The mesh.
     const Mesh& mesh() const
     { return *_mesh; }
 
     /// Return topological dimension
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The dimension.
     uint dim() const
     { return _dim; }
 
     /// Return index of mesh entity
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The index.
     uint index() const
     { return _index; }
 
     /// Return number of incident mesh entities of given topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The topological dimension.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The number of incident MeshEntity objects of given dimension.
     uint num_entities(uint dim) const
     { return _mesh->topology()(_dim, dim).size(_index); }
 
-    /// Return array of indices for incident mesh entitites of given topological dimension
+    /// Return array of indices for incident mesh entitites of given
+    /// topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The topological dimension.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The index for incident mesh entities of given dimension.
     const uint* entities(uint dim) const
     { return _mesh->topology()(_dim, dim)(_index); }
 
     /// Return unique mesh ID
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The unique mesh ID.
     uint mesh_id() const
     { return _mesh->id(); }
 
     /// Check if given entity is indicent
+    ///
+    /// *Arguments*
+    ///     entity (MeshEntity)
+    ///         The entity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the given entity is indicent.
     bool incident(const MeshEntity& entity) const;
 
     /// Check if given point intersects (using inexact but fast numerics)
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the given point intersects.
     bool intersects(const Point& point) const
     { return PrimitiveIntersector::do_intersect(*this,point); }
 
     /// Check if given entity intersects (using inexact but fast numerics)
+    ///
+    /// *Arguments*
+    ///     entity (MeshEntity)
+    ///         The mesh entity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the given entity intersects.
     bool intersects(const MeshEntity& entity) const
     { return PrimitiveIntersector::do_intersect(*this,entity); }
 
     /// Check if given point intersects (using exact numerics)
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the given point intersects.
     bool intersects_exactly(const Point& point) const
     { return PrimitiveIntersector::do_intersect_exact(*this,point); }
 
     /// Check if given entity intersects (using exact numerics)
+    ///
+    /// *Arguments*
+    ///     entity (MeshEntity)
+    ///         The mesh entity.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the given entity intersects.
     bool intersects_exactly(const MeshEntity& entity) const
     { return PrimitiveIntersector::do_intersect_exact(*this,entity); }
 
     /// Compute local index of given incident entity (error if not found)
+    ///
+    /// *Arguments*
+    ///     entity (MeshEntity)
+    ///         The mesh entity.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The local index of given entity.
     uint index(const MeshEntity& entity) const;
 
     /// Compute midpoint of cell
+    ///
+    /// *Returns*
+    ///     _Point_
+    ///         The midpoint of the cell.
     Point midpoint() const;
 
     #ifdef HAS_CGAL
@@ -120,6 +230,14 @@ namespace dolfin
 
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
+    ///
+    /// *Arguments*
+    ///     verbose (bool)
+    ///         Flag to turn on additional output.
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 
   protected:
