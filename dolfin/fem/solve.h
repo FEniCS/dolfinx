@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-28
+// Last changed: 2011-07-17
 
 #ifndef __SOLVE_FEM_H
 #define __SOLVE_FEM_H
@@ -54,22 +54,22 @@ namespace dolfin
 
   /// Solve nonlinear variational problem F(u; v) == 0 without boundary
   /// conditions. The argument J should provide the Jacobian bilinear
-  /// form F' = dF/du.
+  /// form J = dF/du.
   void solve(const Equation& equation,
              Function& u,
              const Form& J);
 
   /// Solve nonlinear variational problem F(u; v) == 0 with a single
   /// boundary condition. The argument J should provide the Jacobian
-  /// bilinear form F' = dF/du.
+  /// bilinear form J = dF/du.
   void solve(const Equation& equation,
              Function& u,
              const BoundaryCondition& bc,
              const Form& J);
 
   /// Solve nonlinear variational problem F(u; v) == 0 with a list of
-  /// boundary conditions.The argument J should provide the Jacobian
-  /// bilinear form F'.
+  /// boundary conditions. The argument J should provide the Jacobian
+  /// bilinear form J = dF/du.
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs,
