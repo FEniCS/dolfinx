@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-29
+// Last changed: 2011-07-17
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
@@ -56,24 +56,11 @@ namespace dolfin
                                 int rhs,
                                 Function& u);
 
-    /// Create nonlinear variational problem without boundary conditions
-    /// (shared pointer version)
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                int rhs,
-                                boost::shared_ptr<Function> u);
-
     /// Create nonlinear variational problem with a single boundary condition
     NonlinearVariationalProblem(const Form& F,
                                 int rhs,
                                 Function& u,
                                 const BoundaryCondition& bc);
-
-    /// Create nonlinear variational problem with a single boundary condition
-    /// (shared pointer version)
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                int rhs,
-                                boost::shared_ptr<Function> u,
-                                boost::shared_ptr<const BoundaryCondition> bc);
 
     /// Create nonlinear variational problem with a list of boundary conditions
     NonlinearVariationalProblem(const Form& F,
@@ -81,7 +68,6 @@ namespace dolfin
                                 Function& u,
                                 std::vector<const BoundaryCondition*> bcs);
 
-    /// Create nonlinear variational problem with a list of boundary conditions
     /// (shared pointer version)
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
                                 int rhs,

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-30
+// Last changed: 2011-07-17
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -39,17 +39,6 @@ NonlinearVariationalProblem(const Form& F,
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            int rhs,
-                            boost::shared_ptr<Function> u)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _u(u)
-{
-  // Check forms
-  check_forms(rhs);
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
 NonlinearVariationalProblem(const Form& F,
                             int rhs,
                             Function& u,
@@ -60,21 +49,6 @@ NonlinearVariationalProblem(const Form& F,
 {
   // Store boundary condition
   _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms(rhs);
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            int rhs,
-                            boost::shared_ptr<Function> u,
-                            boost::shared_ptr<const BoundaryCondition> bc)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _u(u)
-{
-  // Store boundary condition
-  _bcs.push_back(bc);
 
   // Check forms
   check_forms(rhs);

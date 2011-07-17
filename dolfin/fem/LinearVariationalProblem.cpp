@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-30
+// Last changed: 2011-07-17
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -40,17 +40,6 @@ LinearVariationalProblem(const Form& a,
 }
 //-----------------------------------------------------------------------------
 LinearVariationalProblem::
-LinearVariationalProblem(boost::shared_ptr<const Form> a,
-                         boost::shared_ptr<const Form> L,
-                         boost::shared_ptr<Function> u)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(a), _L(L), _u(u)
-{
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalProblem::
 LinearVariationalProblem(const Form& a,
                          const Form& L,
                          Function& u,
@@ -62,21 +51,6 @@ LinearVariationalProblem(const Form& a,
 {
   // Store boundary condition
   _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalProblem::
-LinearVariationalProblem(boost::shared_ptr<const Form> a,
-                         boost::shared_ptr<const Form> L,
-                         boost::shared_ptr<Function> u,
-                         boost::shared_ptr<const BoundaryCondition> bc)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(a), _L(L), _u(u)
-{
-  // Store boundary condition
-  _bcs.push_back(bc);
 
   // Check forms
   check_forms();
