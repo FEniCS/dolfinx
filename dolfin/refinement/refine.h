@@ -83,7 +83,7 @@ namespace dolfin
   ///         {
   ///             Point p = cell.midpoint();
   ///             if (p.distance(origin) < 0.1)
-  ///             cell_markers[cell] = true;
+  ///                 cell_markers[cell] = true;
   ///         }
   ///         mesh = refine(mesh, cell_markers);
   ///
@@ -97,7 +97,7 @@ namespace dolfin
   ///         The mesh that will be the refined mesh.
   ///     mesh (_Mesh_)
   ///         The original mesh.
-  ///     cell_markers (_MeshFunction_<bool>)
+  ///     cell_markers (_MeshFunction_ <bool>)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
   void refine(Mesh& refined_mesh,
