@@ -143,10 +143,9 @@ form ``L`` as a dummy form:
     P, btmp = assemble_system(b, L, bcs)
 
 Next, we specify the iterative solver we want to use, in this case a
-:py:class:`KrylovSolver <dolfin.cpp.KrylovSolver>` with some obscure
-parameters. We associate the left-hand side matrix ``A`` and the
-preconditioner matrix ``P`` with the solver by calling
-:py:func:`solver.set_operators
+:py:class:`KrylovSolver <dolfin.cpp.KrylovSolver>`. We associate the
+left-hand side matrix ``A`` and the preconditioner matrix ``P`` with
+the solver by calling :py:func:`solver.set_operators
 <dolfin.cpp.GenericLinearSolver.set_operators>`.
 
 .. code-block:: python

@@ -63,7 +63,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     element (_FiniteElement_
+    ///     element (_FiniteElement_)
     ///         The element.
     ///     dofmap (_GenericDofMap_)
     ///         The dofmap.

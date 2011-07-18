@@ -230,7 +230,7 @@ Complete UFL file
 ^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: MixedPoisson.ufl
-   :start-after: # Licensed
+   :start-after: # Compile
    :language: python
 
 Complete main file

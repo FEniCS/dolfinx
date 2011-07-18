@@ -184,8 +184,8 @@ Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a
 :cpp:class:`Function` ``u`` to store the solution. (Upon
 initialization, it is simply set to the zero function.) Next, we can
-call the :cpp:func:`solve` function with the arguments ``a == L``,
-``u`` and ``bc`` as follows:
+call the ``solve`` function with the arguments ``a == L``, ``u`` and
+``bc`` as follows:
 
 .. code-block:: c++
 

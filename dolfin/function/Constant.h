@@ -103,7 +103,7 @@ namespace dolfin
     /// Copy constructor
     ///
     /// *Arguments*
-    ///     constant (Constant)
+    ///     constant (_Constant_)
     ///         Object to be copied.
     Constant(const Constant& constant);
 
@@ -113,8 +113,8 @@ namespace dolfin
     /// Assignment operator
     ///
     /// *Arguments*
-    ///     constant (Constant)
-    ///         Another Constant object.
+    ///     constant (_Constant_)
+    ///         Another constant.
     const Constant& operator= (const Constant& constant);
 
     /// Assignment operator

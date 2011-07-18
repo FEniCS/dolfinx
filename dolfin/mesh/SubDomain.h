@@ -85,7 +85,7 @@ namespace dolfin
     /// Set subdomain markers (int) for given subdomain index
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <int>)
     ///         The subdomain markers
     ///     sub_domain (int)
     ///         The index
@@ -94,7 +94,7 @@ namespace dolfin
     /// Set subdomain markers (double) for given subdomain index
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <double>)
     ///         The subdomain markers.
     ///     sub_domain (double)
     ///         The index
@@ -103,7 +103,7 @@ namespace dolfin
     /// Set subdomain markers (bool) for given subdomain
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <bool>)
     ///         The subdomain markers
     ///     sub_domain (bool)
     ///         The index
