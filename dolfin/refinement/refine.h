@@ -34,17 +34,72 @@ namespace dolfin
   template <class T> class MeshFunction;
 
   /// Create uniformly refined mesh
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh to refine.
+  ///
+  /// *Returns*
+  ///     _Mesh_
+  ///         The refined mesh.
+  ///
+  /// *Example*
+  ///     .. code-block:: c++
+  ///
+  ///         mesh = refine(mesh);
+  ///
   Mesh refine(const Mesh& mesh);
 
   /// Create uniformly refined mesh
+  ///
+  /// *Arguments*
+  ///     refined_mesh (_Mesh_)
+  ///         The mesh that will be the refined mesh.
+  ///     mesh (_Mesh_)
+  ///         The original mesh.
   void refine(Mesh& refined_mesh,
               const Mesh& mesh);
 
   /// Create locally refined mesh
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh to refine.
+  ///     cell_markers (_MeshFunction_)
+  ///         A boolean MeshFunction to specify which
+  ///         cells that should be refined.
+  ///
+  /// *Returns*
+  ///     _Mesh_
+  ///         The locally refined mesh.
+  ///
+  /// *Example*
+  ///     .. code-block:: c++
+  ///
+  ///         CellFunction<bool> cell_markers(mesh);
+  ///         cell_markers.set_all(false);
+  ///         Point origin(0.0, 0.0, 0.0);
+  ///         for (CellIterator cell(mesh); !cell.end(); ++cell)
+  ///         {
+  ///             Point p = cell.midpoint();
+  ///             if (p.distance(origin) < 0.1)
+  ///             cell_markers[cell] = true;
+  ///         }
+  ///         mesh = refine(mesh, cell_markers);
+  ///
   Mesh refine(const Mesh& mesh,
               const MeshFunction<bool>& cell_markers);
 
   /// Create locally refined mesh
+  ///
+  /// *Arguments*
+  ///     refined_mesh (_Mesh_)
+  ///         The mesh that will be the refined mesh.
+  ///     mesh (_Mesh_)
+  ///         The original mesh.
+  ///     cell_markers (_MeshFunction_)
+  ///         A boolean MeshFunction to specify which
+  ///         cells that should be refined.
   void refine(Mesh& refined_mesh,
               const Mesh& mesh,
               const MeshFunction<bool>& cell_markers);

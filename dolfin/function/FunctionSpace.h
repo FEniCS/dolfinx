@@ -58,6 +58,14 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap (shared data)
+    ///
+    /// *Arguments*
+    ///     mesh (boost::shared_ptr<_Mesh_>)
+    ///         The mesh.
+    ///     element (boost::shared_ptr<_FiniteElement_>
+    ///         The element.
+    ///     dofmap (boost::shared_ptr<_GenericDofMap_>)
+    ///         The dofmap.
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const GenericDofMap> dofmap);
@@ -69,11 +77,19 @@ namespace dolfin
     /// to construct objects before the initialisation of the base
     /// class. Data can be attached to the base class using
     /// FunctionSpace::attach(...).
+    ///
+    /// *Arguments*
+    ///     mesh (boost::shared_ptr<_Mesh_>)
+    ///         The mesh.
     FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     V (FunctionSpace)
+    ///         The object to be copied.
     FunctionSpace(const FunctionSpace& V);
 
     /// Destructor
@@ -82,58 +98,145 @@ namespace dolfin
   protected:
 
     /// Attach data to an empty FunctionSpace
+    ///
+    /// *Arguments*
+    ///     element (boost::shared_ptr<_FiniteElement_>)
+    ///         The element.
+    ///     dofmap (boost::shared_ptr<_GenericDofMap_>)
+    ///         The dofmap.
     void attach(boost::shared_ptr<const FiniteElement> element,
                 boost::shared_ptr<const GenericDofMap> dofmap);
 
   public:
 
     /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     V (FunctionSpace)
+    ///         Another function space.
     const FunctionSpace& operator= (const FunctionSpace& V);
 
     /// Return mesh
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The mesh.
     const Mesh& mesh() const;
 
     /// Return finite element
+    ///
+    /// *Returns*
+    ///     _FiniteElement_
+    ///         The finite element.
     const FiniteElement& element() const;
 
     /// Return dofmap
+    ///
+    /// *Returns*
+    ///     _GenericDofMap_
+    ///         The dofmap.
     const GenericDofMap& dofmap() const;
 
     /// Return dimension of function space
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The dimension of the function space.
     uint dim() const;
 
     /// Interpolate function v into function space, returning the vector of
     /// expansion coefficients
+    ///
+    /// *Arguments*
+    ///     expansion_coefficients (_GenericVector_)
+    ///         The expansion coefficients.
+    ///     v (_GenericFunction_)
+    ///         The function to be interpolated.
     void interpolate(GenericVector& expansion_coefficients,
                      const GenericFunction& v) const;
 
     /// Extract sub space for component
+    ///
+    /// *Arguments*
+    ///     i (uint)
+    ///         Index of sub space.
+    /// *Returns*
+    ///     boost::shared_ptr<_FunctionSpace_>
+    ///         The sub space.
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
 
     /// Extract sub space for component
+    ///
+    /// *Arguments*
+    ///     component (std::vector<uint>)
+    ///         The component.
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<_FunctionSpace_>
+    ///         The sub space.
     boost::shared_ptr<FunctionSpace>
     extract_sub_space(const std::vector<uint>& component) const;
 
     /// Collapse a subspace and return a new function space
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<_FunctionSpace_>
+    ///         The new function space.
     boost::shared_ptr<FunctionSpace> collapse() const;
 
     /// Collapse a subspace and return a new function space and a map from new
     /// to old dofs
+    ///
+    /// *Arguments*
+    ///     collapsed_dofs (boost::unordered_map<uint, uint>)
+    ///         The map from new to old dofs.
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<_FunctionSpace_>
+    ///       The new function space.
     boost::shared_ptr<FunctionSpace>
     collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const;
 
     /// Check if function space has given cell
+    ///
+    /// *Arguments*
+    ///     cell (_Cell_)
+    ///         The cell.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the function space has the given cell.
     bool has_cell(const Cell& cell) const
     { return &cell.mesh() == &(*_mesh); }
 
     /// Check if function space has given element
+    ///
+    /// *Arguments*
+    ///     element (_FiniteElement_)
+    ///         The finite element.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the function space has the given element.
     bool has_element(const FiniteElement& element) const
     { return element.hash() == _element->hash(); }
 
-    /// Return component (relative to super space)
+    /// Return component
+    ///
+    /// *Returns*
+    ///     std::vector<uint>
+    ///         The component (relative to super space).
     const std::vector<uint>& component() const;
 
     /// Return informal string representation (pretty-print)
+    ///
+    /// *Arguments*
+    ///     verbose (bool)
+    ///         Flag to turn on additional output.
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 
     /// Print dofmap (useful for debugging)

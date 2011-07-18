@@ -32,8 +32,8 @@ namespace dolfin
   /// used for computation of basis function values and derivatives.
   ///
   /// Evaluation of basis functions is also possible through the use
-  /// of the functions evaluate_basis and evaluate_basis_derivatives
-  /// available in the FiniteElement class. The BasisFunction class
+  /// of the functions ``evaluate_basis`` and ``evaluate_basis_derivatives``
+  /// available in the _FiniteElement_ class. The BasisFunction class
   /// relies on these functions for evaluation but also implements the
   /// ufc::function interface which allows evaluate_dof to be
   /// evaluated for a basis function (on a possibly different
@@ -44,6 +44,14 @@ namespace dolfin
   public:
 
     /// Create basis function with given index on element on given cell
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The index of the basis function.
+    ///     element (_FiniteElement_)
+    ///         The element to create basis function on.
+    ///     cell (ufc::cell)
+    ///         The cell.
     BasisFunction(uint index, const FiniteElement& element, const ufc::cell& cell)
       : index(index), element(element), cell(cell) {}
 
@@ -51,16 +59,38 @@ namespace dolfin
     ~BasisFunction() {}
 
     /// Evaluate basis function at given point
+    ///
+    /// *Arguments*
+    ///     values (double)
+    ///         The values.
+    ///     x (double)
+    ///         The point to evaluate at.
     void eval(double* values, const double* x) const
     { element.evaluate_basis(index, values, x, cell); }
 
     /// Evaluate all order n derivatives at given point
+    ///
+    /// *Arguments*
+    ///     values (double)
+    ///         The values.
+    ///     x (double)
+    ///         The point to evaluate at.
+    ///     n (uint)
+    ///         The order of derivation.
     void eval_derivatives(double* values, const double* x, uint n) const
     { element.evaluate_basis_derivatives(index, n, values, x, cell); }
 
     //--- Implementation of ufc::function interface ---
 
     /// Evaluate function at given point in cell
+    ///
+    /// *Arguments*
+    ///     values (double)
+    ///         The values.
+    ///     coordinates (double)
+    ///         The coordinates of the point.
+    ///     cell (ufc::cell)
+    ///         The cell.
     void evaluate(double* values,
                   const double* coordinates,
                   const ufc::cell& cell) const

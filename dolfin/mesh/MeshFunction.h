@@ -53,19 +53,47 @@ namespace dolfin
     MeshFunction();
 
     /// Create empty mesh function on given mesh
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
     MeshFunction(const Mesh& mesh);
 
     /// Create mesh function on given mesh of given dimension
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
+    ///     dim (uint)
+    ///         The dimension.
     MeshFunction(const Mesh& mesh, uint dim);
 
-    /// Create mesh function on given mesh of given dimension and initialise
+    /// Create mesh function on given mesh of given dimension and initialize
     /// to a value
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
+    ///     dim (uint)
+    ///         The dimension.
+    ///     value (T)
+    ///         The value.
     MeshFunction(const Mesh& mesh, uint dim, const T& value);
 
     /// Create function from data file
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
+    ///     filename (std::string)
+    ///         The filename to create mesh function from.
     MeshFunction(const Mesh& mesh, const std::string filename);
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     f (MeshFunction<T>)
+    ///         The object to be copied.
     MeshFunction(const MeshFunction<T>& f);
 
     /// Destructor
@@ -73,30 +101,82 @@ namespace dolfin
     { delete [] _values; }
 
     /// Return mesh associated with mesh function
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The mesh.
     const Mesh& mesh() const;
 
     /// Return topological dimension
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The dimension.
     uint dim() const;
 
     /// Return size (number of entities)
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The size.
     uint size() const;
 
-    /// Return array of values
+    /// Return array of values (const. version)
+    ///
+    /// *Returns*
+    ///     T
+    ///         The values.
     const T* values() const;
 
     /// Return array of values
+    ///
+    /// *Returns*
+    ///     T
+    ///         The values.
     T* values();
 
-    /// Return value at given entity
+    /// Return value at given mesh entity
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The mesh entity.
+    ///
+    /// *Returns*
+    ///     T
+    ///         The value at the given entity.
     T& operator[] (const MeshEntity& entity);
 
-    /// Return value at given entity (const version)
+    /// Return value at given mesh entity (const version)
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The mesh entity.
+    ///
+    /// *Returns*
+    ///     T
+    ///         The value at the given entity.
     const T& operator[] (const MeshEntity& entity) const;
 
     /// Return value at given index
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The index.
+    ///
+    /// *Returns*
+    ///     T
+    ///         The value at the given index.
     T& operator[] (uint index);
 
     /// Return value at given index  (const version)
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The index.
+    ///
+    /// *Returns*
+    ///     T
+    ///         The value at the given index.
     const T& operator[] (uint index) const;
 
     /// Assign mesh function
@@ -106,24 +186,64 @@ namespace dolfin
     const MeshFunction<T>& operator= (const T& value);
 
     /// Initialize mesh function for given topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension.
     void init(uint dim);
 
     /// Initialize mesh function for given topological dimension of given size
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension.
+    ///     size (uint)
+    ///         The size.
     void init(uint dim, uint size);
 
     /// Initialize mesh function for given topological dimension
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (uint)
+    ///         The dimension.
     void init(const Mesh& mesh, uint dim);
 
     /// Initialize mesh function for given topological dimension of given size
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (uint)
+    ///         The dimension.
+    ///     size (uint)
+    ///         The size.
     void init(const Mesh& mesh, uint dim, uint size);
 
     /// Set all values to given value
+    ///
+    /// *Arguments*
+    ///     value (T)
+    ///         The value to set all values to.
     void set_all(const T& value);
 
     /// Set values
+    ///
+    /// *Arguments*
+    ///     values (std::vector<T>)
+    ///         The values.
     void set(const std::vector<T>& values);
 
     /// Return informal string representation (pretty-print)
+    ///
+    /// *Arguments*
+    ///     verbose (bool)
+    ///         Flag to turn on additional output.
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         An informal representation.
     std::string str(bool verbose) const;
 
   private:
