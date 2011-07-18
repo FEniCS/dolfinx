@@ -383,7 +383,7 @@ def write_docstrings(module, header, docs, classnames):
                 func_doc = "**Overloaded versions**"
                 for signature, doc in functions:
                     args = get_args(signature)
-                    doc = "\n\n* %s\ **(%s)**\n\n" % (name, ", ".join(args)) +\
+                    doc = "\n\n* %s\ (%s)\n\n" % (name, ", ".join(args)) +\
                           indent(doc, 2)
                     func_doc += modify_doc(doc, classnames, classname, signature)
                 output_file.write(docstring % (func_name, func_doc))
@@ -405,16 +405,8 @@ def generate_docstrings():
     documentation, classnames = extract_doc_representation(dolfin_dir)
     print "Generating docstrings.i from intermediate representation module..."
     for module in documentation:
-##        if module != "common":
-#        if module != "mesh":
-#        if module != "function":
-#            continue
         print " "*2 + module
         for header, docs in documentation[module]:
-##            if header != "timing.h":
-#            if header != "Mesh.h":
-#            if header != "Vertex.h":
-#                continue
             print " "*4 + header
             write_docstrings(module, header, docs, classnames)
 
