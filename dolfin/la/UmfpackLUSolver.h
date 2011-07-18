@@ -52,16 +52,13 @@ namespace dolfin
     UmfpackLUSolver();
 
     /// Constructor
-    UmfpackLUSolver(const GenericMatrix& A);
-
-    /// Constructor
     UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A);
 
     /// Destructor
     ~UmfpackLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Return the operator (matrix)
     const GenericMatrix& get_operator() const;

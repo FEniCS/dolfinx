@@ -130,7 +130,7 @@ namespace dolfin
     boost::shared_ptr<GenericLinearSolver> solver;
 
     /// Jacobian matrix
-    boost::scoped_ptr<GenericMatrix> A;
+    boost::shared_ptr<GenericMatrix> A;
 
     /// Solution vector
     boost::scoped_ptr<GenericVector> dx;

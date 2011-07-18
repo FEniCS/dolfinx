@@ -242,7 +242,7 @@ class GmshTest(_ConverterTest):
         1 edge marked
         """
         marked_facets = [7]
-        self._facet_marker_driver(1, marked_facets, 8)
+        self._facet_marker_driver(2, 1, marked_facets, 8)
     
     def test_2D_facet_markings_2 (self):
         """
@@ -250,7 +250,7 @@ class GmshTest(_ConverterTest):
         2 edges marked
         """
         marked_facets = [2,5]
-        self._facet_marker_driver(2, marked_facets, 8)
+        self._facet_marker_driver(2, 2, marked_facets, 8)
         
     def test_2D_facet_markings_3 (self):
         """
@@ -258,7 +258,7 @@ class GmshTest(_ConverterTest):
         3 edges marked
         """
         marked_facets = [5,6,7]
-        self._facet_marker_driver(3, marked_facets, 8)
+        self._facet_marker_driver(2, 3, marked_facets, 8)
         
     def test_2D_facet_markings_4 (self):
         """
@@ -266,20 +266,35 @@ class GmshTest(_ConverterTest):
         4 edges marked
         """
         marked_facets = [2,5,6,7]
-        self._facet_marker_driver(4, marked_facets, 8)
+        self._facet_marker_driver(2, 4, marked_facets, 8)
     
-    def _facet_marker_driver (self, id, marked_facets, size ):
-        handler = self.__convert("gmsh_test_facet_regions_2D_%d.msh" % id, DataHandler.CellType_Triangle, 2)
+    def test_3D_facet_markings_1 (self):
+        """
+        Test the marking of 3D facets
+        Unit cube, 1 Face marked
+        """
+#         [0, 0, 0, 999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 999, 0, 0, 0, 0, 0, 0, 0, 0, 999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 999, 
+# 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        marked_facets = [3, 15, 24, 39,]
+        self._facet_marker_driver(3, 1, marked_facets, 60)
+    
+    def _facet_marker_driver (self, dim, id, marked_facets, size ):
+        if dim == 2:
+            cell_type = DataHandler.CellType_Triangle
+        elif dim == 3:
+            cell_type = DataHandler.CellType_Tetrahedron
+            
+        handler = self.__convert("gmsh_test_facet_regions_%dD_%d.msh" % (dim, id), cell_type, dim)
         
         free_facets = range(size)
 
         for i in marked_facets:
             free_facets.remove(i)
         
-        dim, sz, entries, ended = handler.functions["facet_region"]
+        function_dim, sz, entries, ended = handler.functions["facet_region"]
         
         # the dimension of the meshfunction should be 1
-        self.assertEqual(dim, 1)
+        self.assertEqual(function_dim, dim-1)
         # There should be 8 edges in the mesh function
         self.assertEqual(len(entries), size)
         self.assertEqual(sz, size)

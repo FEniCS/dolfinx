@@ -208,13 +208,35 @@ void Parameters::add(const Parameters& parameters)
 {
   // Check key name
   if (find_parameter_set(parameters.name()))
-    error("Unable to add parameter set \"%s\", already defined.",
-          parameters.name().c_str());
+    dolfin_error("Parameters.cpp",
+                 "add parameter set",
+                 "Parameter set \"%s.%s\" already defined",
+                 this->name().c_str(), parameters.name().c_str());
 
   // Add parameter set
   Parameters* p = new Parameters("");
   *p = parameters;
   _parameter_sets[parameters.name()] = p;
+}
+//-----------------------------------------------------------------------------
+void Parameters::remove(std::string key)
+{
+  // Check key name
+  if (!find_parameter(key) && !find_parameter_set(key))
+    dolfin_error("Parameters.cpp",
+                 "remove parameter or parameter set",
+                 "No parameter or parameter set \"%s.%s\" defined",
+                 this->name().c_str(), key.c_str());
+
+  // Delete objects (safe to delete both even if only one is nonzero)
+  delete find_parameter(key);
+  delete find_parameter_set(key);
+
+  // Remove from maps (safe to remove both)
+  uint num_removed = 0;
+  num_removed += _parameters.erase(key);
+  num_removed += _parameter_sets.erase(key);
+  assert(num_removed == 1);
 }
 //-----------------------------------------------------------------------------
 void Parameters::parse(int argc, char* argv[])

@@ -21,6 +21,7 @@
 #ifndef __SINGULAR_SOLVER_H
 #define __SINGULAR_SOLVER_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "LinearSolver.h"
@@ -66,7 +67,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("singular_solver");
-      
+
       p.add(LinearSolver::default_parameters());
 
       return p;
@@ -84,13 +85,13 @@ namespace dolfin
     LinearSolver linear_solver;
 
     // Extended matrix
-    GenericMatrix* B;
+    boost::scoped_ptr<GenericMatrix> B;
 
     // Solution of extended system
-    GenericVector* y;
+    boost::scoped_ptr<GenericVector> y;
 
     // Extended vector
-    GenericVector* c;
+    boost::scoped_ptr<GenericVector> c;
 
   };
 

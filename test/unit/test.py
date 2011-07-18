@@ -32,6 +32,7 @@ from dolfin import has_mpi, has_parmetis
 tests = {
     "fem": ["test", "Assembly", "DirichletBC"],
     "function": ["test", "function"],
+    "math": ["basic"],
     "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],

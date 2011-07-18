@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-08
-// Last changed: 2009-10-12
+// Last changed: 2011-07-06
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -295,7 +295,7 @@ namespace dolfin
   {
   public:
 
-    /// Create usnet bool-valued parameter
+    /// Create unset bool-valued parameter
     BoolParameter(std::string key);
 
     /// Create bool-valued parameter

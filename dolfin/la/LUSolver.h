@@ -51,13 +51,13 @@ namespace dolfin
     LUSolver(std::string type = "lu");
 
     /// Constructor
-    LUSolver(const GenericMatrix& A, std::string type = "lu");
+    LUSolver(boost::shared_ptr<const GenericMatrix> A, std::string type = "lu");
 
     /// Destructor
     ~LUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A);
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);

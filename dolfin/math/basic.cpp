@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2011.
 //
 // First added:  2003-02-06
 // Last changed: 2011-07-01
@@ -51,7 +51,6 @@ double dolfin::rand()
     std::srand(s);
     rand_seeded = true;
   }
-
   return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 //-----------------------------------------------------------------------------
@@ -61,13 +60,13 @@ void dolfin::seed(unsigned int s)
   rand_seeded = true;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::near(double x, double x0)
+bool dolfin::near(double x, double x0, double eps)
 {
-  return dolfin::between(x0, x, x0);
+  return x0 - eps <= x && x <= x0 + eps;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::between(double x0, double x, double x1)
+bool dolfin::between(double x, std::pair<double, double> range)
 {
-  return (x0 - DOLFIN_EPS < x && x < x1 + DOLFIN_EPS);
+  return range.first - DOLFIN_EPS <= x && x <= range.second + DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------

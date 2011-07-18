@@ -24,8 +24,7 @@ import unittest
 import numpy
 from dolfin import *
 
-# FIXME: No complete
-
+# FIXME: Not complete
 
 class DirichletBCTest(unittest.TestCase):
 
@@ -44,6 +43,7 @@ class DirichletBCTest(unittest.TestCase):
         A = assemble(v*u*dx)
         bc = DirichletBC(V, BoundaryFunction(), Boundary())
         bc.apply(A)
+
 
 if __name__ == "__main__":
     print ""

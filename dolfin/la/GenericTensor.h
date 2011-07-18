@@ -142,13 +142,11 @@ namespace dolfin
       if (!_A)
       {
         // Try to get instance to unwrapped object and cast
-        boost::shared_ptr<GenericTensor> B = A->shared_instance();
-        if (B)
-          _A = boost::dynamic_pointer_cast<X>(B);
+        if (A->shared_instance())
+          _A = boost::dynamic_pointer_cast<X>(A->shared_instance());
       }
       return _A;
     }
-
 
     /// Check whether the GenericTensor instance matches a specific type
     template<class T> bool has_type() const

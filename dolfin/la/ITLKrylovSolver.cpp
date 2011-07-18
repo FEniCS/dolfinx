@@ -53,16 +53,16 @@ ITLKrylovSolver::~ITLKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void ITLKrylovSolver::set_operator(const GenericMatrix& A)
+void ITLKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void ITLKrylovSolver::set_operators(const GenericMatrix& A,
-                                    const GenericMatrix& P)
+void ITLKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                                    const boost::shared_ptr<const GenericMatrix> P)
 {
-  this->A = reference_to_no_delete_pointer(A.down_cast<MTL4Matrix>());
-  this->P = reference_to_no_delete_pointer(P.down_cast<MTL4Matrix>());
+  this->A = GenericTensor::down_cast<const MTL4Matrix>(A);
+  this->A = GenericTensor::down_cast<const MTL4Matrix>(P);
   assert(this->A);
   assert(this->P);
 }
@@ -164,7 +164,8 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
 dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                 const GenericVector& b)
 {
-  set_operator(A);
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
   return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
 }
 //-----------------------------------------------------------------------------

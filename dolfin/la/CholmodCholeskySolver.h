@@ -51,16 +51,13 @@ namespace dolfin
     CholmodCholeskySolver();
 
     /// Constructor
-    CholmodCholeskySolver(const GenericMatrix& A);
-
-    /// Constructor
     CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A);
 
     /// Destructor
     ~CholmodCholeskySolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const GenericMatrix& A)
+    void set_operator(const boost::shared_ptr<const GenericMatrix> A)
     { error("set_operator(A) is not implemented."); }
 
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD

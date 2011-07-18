@@ -109,13 +109,6 @@ UmfpackLUSolver::UmfpackLUSolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver(const GenericMatrix& A)
-                               : A(reference_to_no_delete_pointer(A))
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A)
                                : A(A)
 {
@@ -128,11 +121,12 @@ UmfpackLUSolver::~UmfpackLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::set_operator(const GenericMatrix& A)
+void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   symbolic.reset();
   numeric.reset();
-  this->A = reference_to_no_delete_pointer(A);
+  this->A = A;
+  assert(this->A);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& UmfpackLUSolver::get_operator() const
@@ -169,7 +163,8 @@ dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                     const GenericVector& b)
 {
-  set_operator(A);
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
@@ -430,4 +425,3 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
-

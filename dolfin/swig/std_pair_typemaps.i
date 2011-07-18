@@ -64,7 +64,7 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
   int res = 0;
   void* itemp = 0;
   int newmem = 0;
-  
+
   // Check that we have a tuple
   if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
     SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 with TYPE and Float.");
@@ -81,7 +81,8 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
   tmp_pair.second = PyFloat_AsDouble(py_second);
 
   res = SWIG_ConvertPtr(py_first, &itemp, $descriptor(dolfin::TYPE *), 0);
-  if (SWIG_IsOK(res)) {
+  if (SWIG_IsOK(res))
+  {
     tmp_pair.first = reinterpret_cast<dolfin::TYPE *>(itemp);
   }
   else{
@@ -91,21 +92,24 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
     res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
     if (SWIG_IsOK(res)){
       // If we need to release memory
-      if (newmem & SWIG_CAST_NEW_MEMORY){
-	tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
-	delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-	arg = const_cast< dolfin::TYPE * >(tempshared.get());
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+      {
+        tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+        delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+        arg = const_cast< dolfin::TYPE * >(tempshared.get());
       }
-      else {
-	arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+      else
+      {
+        arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
       }
       tmp_pair.first = arg;
     }
-    else {
+    else
+    {
       SWIG_exception(SWIG_TypeError, "expected tuple of TYPE and Float (Bad conversion)");
     }
   }
-  
+
   // Assign the input variable
   $1 = tmp_pair;
 }
@@ -119,7 +123,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-  %typecheck(SWIG_TYPECHECK_POINTER) std::pair<dolfin::uint, dolfin::uint>
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<dolfin::uint, dolfin::uint>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;
 }
@@ -163,15 +167,38 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 
 }
 
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<double, double>
+{
+  $1 = PyTuple_Check($input) ? 1 : 0;
+}
+
+%typemap(in) std::pair<double, double> (std::pair<double, double> tmp_pair, long tmp)
+{
+  // Check that we have a tuple
+  if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
+    SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 of floats.");
+
+  // Get pointers to function and time
+  PyObject* py_first  = PyTuple_GetItem($input, 0);
+  PyObject* py_second = PyTuple_GetItem($input, 1);
+
+  tmp_pair = std::make_pair(PyFloat_AsDouble(py_first), PyFloat_AsDouble(py_second));
+
+  // Assign input variable
+  $1 = tmp_pair;
+}
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-%typemap(out) std::pair<dolfin::uint,dolfin::uint>
+%typemap(out) std::pair<dolfin::uint, dolfin::uint>
 {
-  $result = Py_BuildValue("ii",$1.first,$1.second);
+  $result = Py_BuildValue("ii", $1.first, $1.second);
 }
-%typemap(out) std::pair<dolfin::uint,bool>
+%typemap(out) std::pair<dolfin::uint, bool>
 {
-  $result = Py_BuildValue("ib",$1.first,$1.second);
+  $result = Py_BuildValue("ib", $1.first, $1.second);
 }
-
+%typemap(out) std::pair<double, double>
+{
+  $result = Py_BuildValue("dd", $1.first, $1.second);
+}

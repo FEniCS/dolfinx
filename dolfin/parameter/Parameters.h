@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-03-28
+// Last changed: 2011-07-07
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -142,6 +142,9 @@ namespace dolfin
 
     /// Add nested parameter set
     void add(const Parameters& parameters);
+
+    /// Remove parameter or parameter set with given key
+    void remove(std::string key);
 
     /// Parse parameters from command-line
     virtual void parse(int argc, char* argv[]);

@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Dag Lindbo and Garth N. Wells
+// Copyright (C) 2008-2011 Dag Lindbo and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,11 +20,11 @@
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "UmfpackLUSolver.h"
+#include <dolfin/log/dolfin_log.h>
 #include "LUSolver.h"
+#include "UmfpackLUSolver.h"
 #include "CholmodCholeskySolver.h"
 
 using namespace dolfin;
@@ -38,13 +38,6 @@ Parameters CholmodCholeskySolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 CholmodCholeskySolver::CholmodCholeskySolver()
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-CholmodCholeskySolver::CholmodCholeskySolver(const GenericMatrix& A)
-                               : _A(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
@@ -65,8 +58,8 @@ CholmodCholeskySolver::~CholmodCholeskySolver()
 //=============================================================================
 #ifdef HAS_CHOLMOD
 dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
-					  GenericVector& x,
-					  const GenericVector& b)
+					                                GenericVector& x,
+					                                const GenericVector& b)
 {
   // Factorize matrix
   factorize(A);
@@ -102,7 +95,8 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const GenericVector& b)
+dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
+                                                     const GenericVector& b)
 {
   const uint N = b.size();
 
@@ -125,12 +119,13 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
 #else
 // ============================================================================
 dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
-					  GenericVector& x,
-					  const GenericVector& b)
+					                                GenericVector& x,
+					                                const GenericVector& b)
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  UmfpackLUSolver solver(A);
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  UmfpackLUSolver solver(_A);
   return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
@@ -140,7 +135,8 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const GenericVector& b)
+dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
+                                                     const GenericVector& b)
 {
   error("CHOLMOD must be installed to perform sparse back and forward substitution");
   return 0;
@@ -181,7 +177,7 @@ void CholmodCholeskySolver::Cholmod::clear()
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
-					  uint M, uint nz)
+					                                uint M, uint nz)
 {
   if (factorized)
     log(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
@@ -224,7 +220,8 @@ void CholmodCholeskySolver::Cholmod::factorize()
   factorized = true;
 }
 //-----------------------------------------------------------------------------
-void CholmodCholeskySolver::Cholmod::factorized_solve(double*x, const double* b)
+void CholmodCholeskySolver::Cholmod::factorized_solve(double*x,
+                                                      const double* b)
 {
   cholmod_dense *x_chol, *b_chol;
 
@@ -271,7 +268,7 @@ void CholmodCholeskySolver::Cholmod::factorized_solve(double*x, const double* b)
 }
 //-----------------------------------------------------------------------------
 cholmod_dense* CholmodCholeskySolver::Cholmod::residual(cholmod_dense* x,
-							cholmod_dense* b)
+							                                          cholmod_dense* b)
 {
   double  one[2] = { 1, 0};
   double mone[2] = {-1, 0};
@@ -284,8 +281,8 @@ cholmod_dense* CholmodCholeskySolver::Cholmod::residual(cholmod_dense* x,
 }
 //-----------------------------------------------------------------------------
 double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
-						     cholmod_dense* x,
-						     cholmod_dense* b)
+  						                                       cholmod_dense* x,
+	  					                                       cholmod_dense* b)
 {
   double r_norm = cholmod_l_norm_dense(r, 0, &c);
   double x_norm = cholmod_l_norm_dense(x, 0, &c);
@@ -297,7 +294,7 @@ double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
-						 cholmod_dense* r)
+						                                     cholmod_dense* r)
 {
   cholmod_dense* r_iter;
   r_iter = cholmod_l_solve(CHOLMOD_A, L_chol, r, &c);
@@ -331,4 +328,3 @@ void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 }
 //-----------------------------------------------------------------------------
 #endif
-
