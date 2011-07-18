@@ -52,16 +52,12 @@ namespace dolfin
     /// 'control'
     ///
     /// *Arguments*
-    ///
     ///     tol  (double)
     ///         The error tolerance
-    ///
     ///     goal  (_Form_)
     ///         The goal functional
-    ///
     ///     control  (_ErrorControl_)
     ///         The error controller
-    ///
     void solve(const double tol, Form& goal, ErrorControl& control);
 
     /// Solve such that the error measured in the goal functional 'M'
@@ -69,60 +65,47 @@ namespace dolfin
     /// ErrorControl object. Must be overloaded in subclass.
     ///
     /// *Arguments*
-    ///
     ///     tol  (double)
     ///         The error tolerance
-    ///
     ///     goal  (_GoalFunctional_)
     ///         The goal functional
-    ///
     virtual void solve(const double tol, GoalFunctional& M) = 0;
 
     /// Solve the primal problem. Must be overloaded in subclass.
     ///
     /// *Returns*
-    ///
-    ///     boost::shared_ptr<const _Function_>
+    ///     _Function_
     ///         The solution to the primal problem
-    ///
     virtual boost::shared_ptr<const Function> solve_primal() = 0;
 
     /// Extract the boundary conditions for the primal problem. Must
     /// be overloaded in subclass.
     ///
     /// *Returns*
-    ///
-    ///     std::vector<boost::shared_ptr<const BoundaryCondition> >
+    ///     std::vector<_BoundaryCondition_>
     ///         The primal boundary conditions
-    ///
     virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
     extract_bcs() const = 0;
 
     /// Evaluate the goal functional. Must be overloaded in subclass.
     ///
     /// *Arguments*
-    ///
     ///    M (_Form_)
     ///        The functional to be evaluated
-    ///
     ///    u (_Function_)
     ///        The function of which to evaluate the functional
     ///
     /// *Returns*
-    ///
     ///     double
     ///         The value of M evaluated at u
-    ///
     virtual double evaluate_goal(Form& M,
                                  boost::shared_ptr<const Function> u) const = 0;
 
     /// Adapt the problem to other mesh. Must be overloaded in subclass.
     ///
     /// *Arguments*
-    ///
     ///    mesh (_Mesh_)
     ///        The other mesh
-    ///
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh) = 0;
 
     /// Default parameter values:
@@ -133,7 +116,6 @@ namespace dolfin
     ///     "reference"  (double)
     ///     "marking_strategy"  (string)
     ///     "marking_fraction"  (double)
-    ///
     static Parameters default_parameters()
     {
       Parameters p("adaptive_solver");

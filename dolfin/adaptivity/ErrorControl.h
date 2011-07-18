@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-27
+// Last changed: 2011-07-18
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -47,7 +47,27 @@ namespace dolfin
   {
   public:
 
-    /// Create error control
+    /// Create error control object
+    ///
+    /// *Arguments*
+    ///     a_star (_Form_)
+    ///        the bilinear form for the dual problem
+    ///     L_star (_Form_)
+    ///        the linear form for the dual problem
+    ///     residual (_Form_)
+    ///        a functional for the residual (error estimate)
+    ///     a_R_T (_Form_)
+    ///        the bilinear form for the strong cell residual problem
+    ///     L_R_T (_Form_)
+    ///        the linear form for the strong cell residual problem
+    ///     a_R_dT (_Form_)
+    ///        the bilinear form for the strong facet residual problem
+    ///     L_R_dT (_Form_)
+    ///        the linear form for the strong facet residual problem
+    ///     eta_T (_Form_)
+    ///        a linear form over DG_0 for error indicators
+    ///     is_linear (bool)
+    ///        true iff primal problem is linear
     ErrorControl(boost::shared_ptr<Form> a_star,
                  boost::shared_ptr<Form> L_star,
                  boost::shared_ptr<Form> residual,
@@ -70,7 +90,7 @@ namespace dolfin
     ///     u (_Function_)
     ///        the primal approximation
     ///
-    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
+    ///     bcs (std::vector<_BoundaryCondition_>)
     ///         the primal boundary conditions
     ///
     /// *Returns*
@@ -140,7 +160,7 @@ namespace dolfin
     ///     z (_Function_)
     ///         the dual approximation (to be computed)
     ///
-    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
+    ///     bcs (std::vector<_BoundaryCondition_>)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
@@ -151,7 +171,7 @@ namespace dolfin
     ///     z (_Function_)
     ///         the extrapolated function (to be computed)
     ///
-    ///     bcs (std::vector<boost::shared_ptr<const _BoundaryCondition_> >)
+    ///     bcs (std::vector<_BoundaryCondition_>)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);

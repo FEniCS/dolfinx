@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-09-16
-// Last changed: 2011-03-15
+// Last changed: 2011-07-18
 
 #ifndef __GOAL_FUNCTIONAL_H
 #define __GOAL_FUNCTIONAL_H
@@ -45,7 +45,6 @@ namespace dolfin
     /// *Arguments*
     ///     rank (int)
     ///         the rank of the functional (should be 0)
-    ///
     ///     num_coefficients (int)
     ///         the number of coefficients in functional
     GoalFunctional(uint rank, uint num_coefficients);
@@ -59,7 +58,7 @@ namespace dolfin
     ///         a linear form
     virtual void update_ec(const Form& a, const Form& L) = 0;
 
-    /// Pointer to _ErrorControl_ instance
+    // Pointer to _ErrorControl_ instance
     boost::scoped_ptr<ErrorControl> _ec;
 
   };
