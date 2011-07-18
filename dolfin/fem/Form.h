@@ -65,7 +65,7 @@ namespace dolfin
   /// .. note::
   ///
   ///     Figure out how to write this in math mode without it getting
-  ///     messed up in the python version.
+  ///     messed up in the Python version.
   ///
   /// This is reflected in the ordering of the spaces that should be
   /// supplied to generated subclasses. In particular, when a bilinear
@@ -97,11 +97,11 @@ namespace dolfin
     /// Create form (shared data)
     ///
     /// *Arguments*
-    ///     ufc_form (boost::shared_ptr<ufc::form>)
+    ///     ufc_form (ufc::form)
     ///         The UFC form.
-    ///     function_spaces (std::vector<boost::shared_ptr<_FunctionSpace_> >)
+    ///     function_spaces (std::vector<_FunctionSpace_>)
     ///         Vector of function spaces.
-    ///     coefficients (std::vector<boost::shared_ptr<_GenericFunction_> >)
+    ///     coefficients (std::vector<_GenericFunction_>)
     ///         Vector of coefficients.
     Form(boost::shared_ptr<const ufc::form> ufc_form,
          std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
@@ -140,7 +140,7 @@ namespace dolfin
     /// Set mesh, necessary for functionals when there are no function spaces
     ///
     /// *Arguments*
-    ///     mesh (boost::shared_ptr<_Mesh_>)
+    ///     mesh (_Mesh_)
     ///         The mesh.
     void set_mesh(boost::shared_ptr<const Mesh> mesh);
 
@@ -154,7 +154,7 @@ namespace dolfin
     /// Return mesh shared pointer (if any)
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_Mesh_>
+    ///     _Mesh_
     ///         The mesh shared pointer.
     boost::shared_ptr<const Mesh> mesh_shared_ptr() const;
 
@@ -165,14 +165,14 @@ namespace dolfin
     ///         Index
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_FunctionSpace_>
+    ///     _FunctionSpace_
     ///         Function space shared pointer.
     boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
 
     /// Return function spaces for arguments
     ///
     /// *Returns*
-    ///     std::vector<boost::shared_ptr<_FunctionSpace_> >
+    ///     std::vector<_FunctionSpace_>
     ///         Vector of function space shared pointers.
     std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces() const;
 
@@ -181,7 +181,7 @@ namespace dolfin
     /// *Arguments*
     ///     i (uint)
     ///         The given number.
-    ///     coefficient (boost::shared_ptr<_GenericFunction_>)
+    ///     coefficient (_GenericFunction_)
     ///         The coefficient.
     void set_coefficient(uint i,
                          boost::shared_ptr<const GenericFunction> coefficient);
@@ -191,16 +191,16 @@ namespace dolfin
     /// *Arguments*
     ///     name (std::string)
     ///         The name.
-    ///     coefficient (boost::shared_ptr<_GenericFunction_>)
+    ///     coefficient (_GenericFunction_)
     ///         The coefficient.
     void set_coefficient(std::string name,
                          boost::shared_ptr<const GenericFunction> coefficient);
 
-    /// Set all coefficients in given map, possibly a subset
-    /// (shared pointer version)
+    /// Set all coefficients in given map, possibly a subset (shared
+    /// pointer version)
     ///
     /// *Arguments*
-    ///     coefficients (std::map<std::string, boost::shared_ptr<const _GenericFunction_> >)
+    ///     coefficients (std::map<std::string, _GenericFunction_>)
     ///         The map of coefficients.
     void set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients);
 
@@ -211,7 +211,7 @@ namespace dolfin
     ///         Index
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_GenericFunction_>
+    ///     _GenericFunction_
     ///         The coefficient.
     boost::shared_ptr<const GenericFunction> coefficient(uint i) const;
 
@@ -222,14 +222,14 @@ namespace dolfin
     ///         The name.
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_GenericFunction_>
+    ///     _GenericFunction_
     ///         The coefficient.
     boost::shared_ptr<const GenericFunction> coefficient(std::string name) const;
 
     /// Return all coefficients
     ///
     /// *Returns*
-    ///     std::vector<boost::shared_ptr<_GenericFunction_> >
+    ///     std::vector<_GenericFunction_>
     ///         All coefficients.
     std::vector<boost::shared_ptr<const GenericFunction> > coefficients() const;
 
@@ -255,45 +255,48 @@ namespace dolfin
     ///         The name of the coefficient with the given number.
     virtual std::string coefficient_name(dolfin::uint i) const;
 
-    /// Return cell domains (zero pointer if no domains have been specified)
+    /// Return cell domains (zero pointer if no domains have been
+    /// specified)
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <uint> >
+    ///     _MeshFunction_ <uint>
     ///         The cell domains.
     boost::shared_ptr<const MeshFunction<uint> > cell_domains_shared_ptr() const;
 
-    /// Return exterior facet domains (zero pointer if no domains have been specified)
+    /// Return exterior facet domains (zero pointer if no domains have
+    /// been specified)
     ///
     /// *Returns*
     ///     boost::shared_ptr<_MeshFunction_ <uint> >
     ///         The exterior facet domains.
     boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains_shared_ptr() const;
 
-    /// Return interior facet domains (zero pointer if no domains have been specified)
+    /// Return interior facet domains (zero pointer if no domains have
+    /// been specified)
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <uint> >
+    ///     _MeshFunction_ <uint>
     ///         The interior facet domains.
     boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains_shared_ptr() const;
 
     /// Set cell domains
     ///
     /// *Arguments*
-    ///     cell_domains (boost::shared_ptr<_MeshFunction_ <unsigned int> >)
+    ///     cell_domains (_MeshFunction_ <unsigned int>)
     ///         The cell domains.
     void set_cell_domains(boost::shared_ptr<const MeshFunction<unsigned int> > cell_domains);
 
     /// Set exterior facet domains
     ///
     /// *Arguments*
-    ///     exterior_facet_domains (boost::shared_ptr<_MeshFunction_ <unsigned int> >)
+    ///     exterior_facet_domains (_MeshFunction_ <unsigned int>)
     ///         The exterior facet domains.
     void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facet_domains);
 
     /// Set interior facet domains
     ///
     /// *Arguments*
-    ///     interior_facet_domains (boost::shared_ptr<_MeshFunction_ <unsigned int> >)
+    ///     interior_facet_domains (_MeshFunction_ <unsigned int>)
     ///         The interior facet domains.
     void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
 
@@ -307,7 +310,7 @@ namespace dolfin
     /// Return UFC form shared pointer
     ///
     /// *Returns*
-    ///     boost::shared_ptr<ufc::form>
+    ///     ufc::form
     ///         The UFC form.
     boost::shared_ptr<const ufc::form> ufc_form_shared_ptr() const;
 

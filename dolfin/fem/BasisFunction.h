@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-01-01
-// Last changed: 2009-12-14
+// Last changed: 2011-07-18
 
 #ifndef __BASIS_FUNCTION_H
 #define __BASIS_FUNCTION_H
@@ -62,9 +62,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     values (double)
-    ///         The values.
+    ///         The values of the function at the point.
     ///     x (double)
-    ///         The point to evaluate at.
+    ///         The coordinates of the point.
     void eval(double* values, const double* x) const
     { element.evaluate_basis(index, values, x, cell); }
 
@@ -72,9 +72,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     values (double)
-    ///         The values.
+    ///         The values of derivatives at the point.
     ///     x (double)
-    ///         The point to evaluate at.
+    ///         The coordinates of the point.
     ///     n (uint)
     ///         The order of derivation.
     void eval_derivatives(double* values, const double* x, uint n) const
@@ -86,7 +86,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     values (double)
-    ///         The values.
+    ///         The values of the function at the point..
     ///     coordinates (double)
     ///         The coordinates of the point.
     ///     cell (ufc::cell)

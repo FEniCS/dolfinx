@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-02
-// Last changed: 2009-09-29
+// Last changed: 2011-07-18
 
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H
@@ -56,7 +56,7 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquare(uint nx, uint ny, std::string diagonal = "right");
+    UnitSquare(uint nx, uint ny, std::string diagonal="right");
 
   };
 

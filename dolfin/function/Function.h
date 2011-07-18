@@ -57,9 +57,9 @@ namespace dolfin
   ///
   /// .. math::
   ///
-  ///     u_h = \sum_{i=1}^{\infty} U_i \phi_i
+  ///     u_h = \sum_{i=1}^{n} U_i \phi_i
   ///
-  /// where :math:`\{\phi_i\}_{i=1}^{\infty}` is a basis for :math:`V_h`,
+  /// where :math:`\{\phi_i\}_{i=1}^{n}` is a basis for :math:`V_h`,
   /// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
 
   class Function : public GenericFunction, public Hierarchical<Function>
@@ -83,7 +83,7 @@ namespace dolfin
     /// Create function on given function space (shared data)
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
     explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
@@ -94,16 +94,15 @@ namespace dolfin
     ///         The function space.
     ///     x (_GenericVector_)
     ///         The vector.
-    Function(const FunctionSpace& V,
-             GenericVector& x);
+    Function(const FunctionSpace& V, GenericVector& x);
 
     /// Create function on given function space with a given vector
     /// (shared data)
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
-    ///     x (boost::shared_ptr<_GenericVector_>)
+    ///     x (_GenericVector_)
     ///         The vector.
     Function(boost::shared_ptr<const FunctionSpace> V,
              boost::shared_ptr<GenericVector> x);
@@ -112,12 +111,11 @@ namespace dolfin
     /// Python interface)
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
     ///     x (_GenericVector_)
     ///         The vector.
-    Function(boost::shared_ptr<const FunctionSpace> V,
-             GenericVector& x);
+    Function(boost::shared_ptr<const FunctionSpace> V, GenericVector& x);
 
     /// Create function from vector of dofs stored to file
     ///
@@ -126,18 +124,16 @@ namespace dolfin
     ///         The function space.
     ///     filename (std::string)
     ///         The name of the file containing the vector.
-    Function(const FunctionSpace& V,
-             std::string filename);
+    Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
     ///     filename (std::string)
     ///         The name of the file containing the vector.
-    Function(boost::shared_ptr<const FunctionSpace> V,
-             std::string filename);
+    Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
     /// Copy constructor
     ///
@@ -153,7 +149,7 @@ namespace dolfin
     ///     v (_Function_)
     ///         The function to be copied.
     ///     i (uint)
-    ///         Index of sub function.
+    ///         Index of subfunction.
     ///
     Function(const Function& v, uint i);
 
@@ -174,11 +170,11 @@ namespace dolfin
     ///         The expression.
     const Function& operator= (const Expression& v);
 
-    /// Extract sub-function
+    /// Extract subfunction
     ///
     /// *Arguments*
     ///     i (uint)
-    ///         Index of sub function.
+    ///         Index of subfunction.
     Function& operator[] (uint i) const;
 
     /// Return function space
@@ -191,7 +187,7 @@ namespace dolfin
     /// Return shared pointer to function space
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_FunctionSpace_>
+    ///     _FunctionSpace_
     ///         Return the shared pointer.
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
@@ -227,7 +223,7 @@ namespace dolfin
     ///         The geometric dimension.
     uint geometric_dimension() const;
 
-    /// Evaluate function for given coordinate
+    /// Evaluate function at given coordinates
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
@@ -236,7 +232,7 @@ namespace dolfin
     ///         The coordinates.
     void eval(Array<double>& values, const Array<double>& x) const;
 
-    /// Evaluate function for given coordinate in given cell
+    /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
@@ -252,7 +248,7 @@ namespace dolfin
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 
-    /// Interpolate function (possibly non-matching meshes)
+    /// Interpolate function (on possibly non-matching meshes)
     ///
     /// *Arguments*
     ///     v (_GenericFunction_)
@@ -286,25 +282,25 @@ namespace dolfin
     ///         The value dimension.
     virtual uint value_dimension(uint i) const;
 
-    /// Evaluate function for given data
+    /// Evaluate at given point in given cell
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
-    ///         The values.
+    ///         The values at the point.
     ///     x (_Array_ <double>)
-    ///         The coordinates.
+    ///         The coordinates of the point.
     ///     cell (ufc::cell)
-    ///         The cell.
+    ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate function for given data
+    /// Evaluate function for given data (non-matching meshes)
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
-    ///         The values.
+    ///         The values at the point.
     ///     x (_Array_ <double>)
-    ///         The coordinates.
+    ///         The coordinates of the point.
     ///     cell (ufc::cell)
     ///         The cell.
     void non_matching_eval(Array<double>& values, const Array<double>& x,
@@ -313,7 +309,7 @@ namespace dolfin
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
     /// *Arguments*
-    ///     w (double)
+    ///     w (list of doubles)
     ///         Expansion coefficients.
     ///     element (_FiniteElement_)
     ///         The element.

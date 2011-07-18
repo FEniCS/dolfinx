@@ -41,8 +41,8 @@ namespace dolfin
   /// more generally, assembly of a sparse tensor from a given
   /// variational form.
   ///
-  /// Subdomains for cells and facets may be specified in a number
-  /// of different ways:
+  /// Subdomains for cells and facets may be specified in a number of
+  /// different ways:
   ///
   /// 1. By explicitly passing _MeshFunction_ (as pointers) to the
   ///    assemble functions
@@ -52,9 +52,9 @@ namespace dolfin
   ///
   ///    .. code-block:: c++
   ///
-  ///        form.cell_domains = cell_domains
-  ///        form.exterior_facet_domains = exterior_facet_domains
-  ///        form.interior_facet_domains = interior_facet_domains
+  ///        form.dx = cell_domains
+  ///        form.ds = exterior_facet_domains
+  ///        form.dS = interior_facet_domains
   ///
   /// 3. By _MeshFunction_ stored in _MeshData_ as
   ///
@@ -87,7 +87,7 @@ namespace dolfin
                          bool reset_sparsity=true,
                          bool add_values=false);
 
-    /// Assemble tensor from given form on sub domain
+    /// Assemble tensor from given form on subdomain
     ///
     /// *Arguments*
     ///     A (_GenericTensor_)
@@ -95,7 +95,7 @@ namespace dolfin
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
     ///     sub_domain (_SubDomain_)
-    ///         The sub domain to assemble on.
+    ///         The subdomain to assemble on.
     ///     reset_sparsity (bool)
     ///         Optional argument: Default value is true.
     ///     add_values (bool)
@@ -106,7 +106,7 @@ namespace dolfin
                          bool reset_sparsity=true,
                          bool add_values=false);
 
-    /// Assemble tensor from given form on sub domains
+    /// Assemble tensor from given form on subdomains
     ///
     /// *Arguments*
     ///     A (_GenericTensor_)

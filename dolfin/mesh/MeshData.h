@@ -39,7 +39,7 @@ namespace dolfin
   class Mesh;
   template <class T> class MeshFunction;
 
-  // FIXME: Remove space with underscore in names
+  // FIXME: Replace space with underscore in names
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as _MeshFunction_ over topological mesh
@@ -106,7 +106,7 @@ namespace dolfin
     /// Assignment operator
     ///
     /// *Arguments*
-    ///     data (MeshData)
+    ///     data (_MeshData_)
     ///         Another MeshData object.
     const MeshData& operator= (const MeshData& data);
 
@@ -119,24 +119,24 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     name (std::string)
-    ///         The name of the _MeshFunction_.
+    ///         The name of the mesh function.
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <unsigned int> >
-    ///         The MeshFunction.
+    ///     _MeshFunction_ <unsigned int>
+    ///         The mesh function.
     boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
     ///
     /// *Arguments*
     ///     name (std::string)
-    ///         The name of the _MeshFunction_.
+    ///         The name of the mesh function.
     ///     dim (uint)
-    ///         The dimension of the _MeshFunction_.
+    ///         The dimension of the mesh function.
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <unsigned int> >
-    ///         The MeshFunction
+    ///     _MeshFunction_ <unsigned int>
+    ///         The mesh function.
     boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name, uint dim);
 
     /// Create empty array (vector) with given name
@@ -187,18 +187,20 @@ namespace dolfin
 
     //--- Retrieval of data ---
 
-    /// Return MeshFunction with given name (returning zero if data is not available)
+    /// Return MeshFunction with given name (returning zero if data is
+    /// not available)
     ///
     /// *Arguments*
     ///     name (std::string)
     ///         The name of the MeshFunction.
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <unsigned int> >
-    ///         The MeshFunction.
+    ///     _MeshFunction_ <unsigned int>
+    ///         The mesh function with given name
     boost::shared_ptr<MeshFunction<unsigned int> > mesh_function(const std::string name) const;
 
-    /// Return array with given name (returning zero if data is not available)
+    /// Return array with given name (returning zero if data is not
+    /// available)
     ///
     /// *Arguments*
     ///     name (std::string)
@@ -223,7 +225,8 @@ namespace dolfin
     ///         The array.
     std::vector<uint>* array(const std::string name, uint number) const;
 
-    /// Return mapping with given name (returning zero if data is not available)
+    /// Return mapping with given name (returning zero if data is not
+    /// available)
     ///
     /// *Arguments*
     ///     name (std::string)
@@ -234,8 +237,8 @@ namespace dolfin
     ///         The map.
     std::map<uint, uint>* mapping(const std::string name) const;
 
-    /// Return vector mapping with given name (returning zero
-    /// if data is not available)
+    /// Return vector mapping with given name (returning zero if data
+    /// is not available)
     ///
     /// *Arguments*
     ///     name (std::string)
@@ -252,7 +255,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     name (std::string)
-    ///         The name of the MeshFunction.
+    ///         The name of the mesh function
     void erase_mesh_function(const std::string name);
 
     /// Erase array with given name

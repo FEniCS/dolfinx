@@ -39,8 +39,8 @@ namespace dolfin
   class GenericVector;
   class NonlinearProblem;
 
-  /// This class defines a Newton solver for equations of the form
-  /// :math:`F(u) = 0`.
+  /// This class defines a Newton solver for nonlinear systems of
+  /// equations of the form :math:`F(x) = 0`.
 
   class NewtonSolver : public Variable
   {
@@ -64,7 +64,7 @@ namespace dolfin
     /// Destructor
     virtual ~NewtonSolver();
 
-    /// Solve abstract nonlinear problem :math:`F(x) = 0` for given vector
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
     /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
     ///
     /// *Arguments*
@@ -75,7 +75,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<uint, bool>
-    ///         Solution.
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
     std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 

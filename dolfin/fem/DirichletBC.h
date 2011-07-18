@@ -60,7 +60,7 @@ namespace dolfin
   /// where :math:`u` is the solution to be computed, :math:`g` is a function
   /// and :math:`G` is a sub domain of the mesh.
   ///
-  /// A DirichletBC is specified by the function :math:`g`, the function space
+  /// A DirichletBC is specified by the function g, the function space
   /// (trial space) and boundary indicators on (a subset of) the mesh
   /// boundary.
   ///
@@ -79,19 +79,20 @@ namespace dolfin
   /// mesh. This is handled automatically when exporting a mesh from
   /// for example VMTK.
   ///
-  /// The BCMethod variable may be used to specify the type of method
-  /// used to identify degrees of freedom on the boundary. Available
-  /// methods are: topological approach (default), geometric approach,
-  /// and pointwise approach. The topological approach is faster, but
-  /// will only identify degrees of freedom that are located on a
-  /// facet that is entirely on the boundary. In particular, the
-  /// topological approach will not identify degrees of freedom for
-  /// discontinuous elements (which are all internal to the cell).  A
-  /// remedy for this is to use the geometric approach. To apply
-  /// pointwise boundary conditions e.g. pointloads, one will have to
-  /// use the pointwise approach which in turn is the slowest of the
-  /// three possible methods.  The three possibilties are
-  /// "topological", "geometric" and "pointwise".
+  /// The ``method`` variable may be used to specify the type of
+  /// method used to identify degrees of freedom on the
+  /// boundary. Available methods are: topological approach (default),
+  /// geometric approach, and pointwise approach. The topological
+  /// approach is faster, but will only identify degrees of freedom
+  /// that are located on a facet that is entirely on the boundary. In
+  /// particular, the topological approach will not identify degrees
+  /// of freedom for discontinuous elements (which are all internal to
+  /// the cell).  A remedy for this is to use the geometric
+  /// approach. To apply pointwise boundary conditions
+  /// e.g. pointloads, one will have to use the pointwise approach
+  /// which in turn is the slowest of the three possible methods.  The
+  /// three possibilties are "topological", "geometric" and
+  /// "pointwise".
 
   /// This class specifies the interface for setting (strong)
 
@@ -122,11 +123,11 @@ namespace dolfin
     /// Create boundary condition for subdomain
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space
-    ///     g (boost::shared_ptr<_GenericFunction_>)
+    ///     g (_GenericFunction_)
     ///         The value
-    ///     sub_domain (boost::shared_ptr<_SubDomain_>)
+    ///     sub_domain (_SubDomain_)
     ///         The subdomain
     ///     method (std::string)
     ///         Optional argument: A string specifying
@@ -144,11 +145,11 @@ namespace dolfin
     ///     g (_GenericFunction_)
     ///         The value.
     ///     sub_domains (_MeshFunction_)
-    ///         The sub domains.
+    ///         Subdomain markers
     ///     sub_domain (uint)
-    ///         The number of the subdomain.
+    ///         The subdomain index (number)
     ///     method (std::string)
-    ///         Opional argument: A string specifying the
+    ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
@@ -159,17 +160,17 @@ namespace dolfin
     /// Create boundary condition for subdomain specified by index
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
-    ///     g (boost::shared_ptr<_GenericFunction_>)
+    ///     g (_GenericFunction_)
     ///         The value.
     ///     sub_domains (_MeshFunction_)
-    ///         The sub domains.
+    ///         Subdomain markers
     ///     sub_domain (uint)
-    ///         The number of the subdomain.
+    ///         The subdomain index (number)
     ///     method (std::string)
     ///         Optional argument: A string specifying the
-    ///         method to identify dofsy.
+    ///         method to identify dofs.
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 boost::shared_ptr<const MeshFunction<unsigned int> > sub_domains,
@@ -184,7 +185,7 @@ namespace dolfin
     ///     g (_GenericFunction_)
     ///         The value.
     ///     sub_domain (uint)
-    ///         The number of the sub domain.
+    ///         The subdomain index (number)
     ///     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
@@ -201,9 +202,9 @@ namespace dolfin
     ///     g (_GenericFunction_)
     ///         The value.
     ///     sub_domain (uint)
-    ///         The number of the sub domain.
+    ///         The subdomain index (number)
     ///     method (std::string)
-    ///         Opional argument: A string specifying the
+    ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
@@ -219,9 +220,9 @@ namespace dolfin
     ///     g (_GenericFunction_)
     ///         The value.
     ///     markers (std::vector<std::pair<uint, uint> >)
-    ///         The boundary markers.
+    ///         Subdomain markers (cells, local facet number)
     ///     method (std::string)
-    ///         Opional argument: A string specifying the
+    ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
@@ -231,7 +232,7 @@ namespace dolfin
     /// Copy constructor
     ///
     /// *Arguments*
-    ///     bc (DiricletBC)
+    ///     bc (_DirichletBC_)
     ///         The object to be copied.
     DirichletBC(const DirichletBC& bc);
 
@@ -241,7 +242,7 @@ namespace dolfin
     /// Assignment operator
     ///
     /// *Arguments*
-    ///     bc (DiricletBC)
+    ///     bc (_DirichletBC_)
     ///         Another DirichletBC object.
     const DirichletBC& operator= (const DirichletBC& bc);
 
@@ -249,26 +250,26 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     A (_GenericMatrix_)
-    ///         The matrix to apply boundary conditions to.
+    ///         The matrix to apply boundary condition to.
     void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
     ///
     /// *Arguments*
     ///     b (_GenericVector_)
-    ///         The vector to apply boundary conditions to.
+    ///         The vector to apply boundary condition to.
     void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
     ///
     /// *Arguments*
     ///     A (_GenericMatrix_)
-    ///         The matrix to apply boundary conditions to.
+    ///         The matrix to apply boundary condition to.
     ///     b (_GenericVector_)
-    ///         The vector to apply boundary conditions to.
+    ///         The vector to apply boundary condition to.
     void apply(GenericMatrix& A, GenericVector& b) const;
 
-    /// Apply boundary condition to a vector for a nonlinear problem
+    /// Apply boundary condition to vectors for a nonlinear problem
     ///
     /// *Arguments*
     ///     b (_GenericVector_)
@@ -292,7 +293,7 @@ namespace dolfin
     /// Get Dirichlet dofs and values
     ///
     /// *Arguments*
-    ///     boundary_values (Map)
+    ///     boundary_values (boost::unordered_map<uint, double>)
     ///         The boundary values.
     ///     method (std::string)
     ///         Optional argument: A string specifying which
@@ -300,25 +301,23 @@ namespace dolfin
     void get_boundary_values(Map& boundary_values,
                              std::string method="default") const;
 
-    /// Make row associated with boundary conditions zero, useful for
-    /// non-diagonal matrices in a block matrix.
+    /// Make rows of matrix associated with boundary condition zero,
+    /// useful for non-diagonal matrices in a block matrix.
     ///
     /// *Arguments*
     ///     A (_GenericMatrix_)
-    ///         The matrix to associate with
-    ///         boundary conditions.
+    ///         The matrix
     void zero(GenericMatrix& A) const;
 
-    /// Make columns associated with boundary conditions zero, and
-    /// update the RHS to reflect the changes. Useful for non-diagonals.
+    /// Make columns of matrix associated with boundary condition
+    /// zero, and update a (right-hand side) vector to reflect the
+    /// changes. Useful for non-diagonals.
     ///
     /// *Arguments*
     ///     A (_GenericMatrix_)
-    ///         The matrix to associate with
-    ///         boundary conditions.
+    ///         The matrix
     ///     b (_GenericVector_)
-    ///         The vector to associate with
-    ///         boundary conditions.
+    ///         The vector
     ///     diag_val (double)
     ///         This parameter would normally be -1, 0 or 1.
     void zero_columns(GenericMatrix& A, GenericVector& b, double diag_val=0) const;
@@ -327,22 +326,22 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::vector<std::pair<uint, uint> >
-    ///         Boundary markers (facets stored as pairs of cells and local
-    ///         facet numbers).
+    ///         Boundary markers (facets stored as pairs of cells and
+    ///         local facet numbers).
     const std::vector<std::pair<uint, uint> >& markers() const;
 
     /// Return boundary value g
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_GenericFunction_>
+    ///     _GenericFunction_
     ///         The boundary values.
     boost::shared_ptr<const GenericFunction> value() const;
 
-    /// Return shared pointer to sub-domain
+    /// Return shared pointer to subdomain
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_SubDomain_>
-    ///         Shared pointer to sub domain.
+    ///     _SubDomain_
+    ///         Shared pointer to subdomain.
     boost::shared_ptr<const SubDomain> user_sub_domain() const;
 
     /// Check if given function is compatible with boundary condition
@@ -368,7 +367,7 @@ namespace dolfin
     /// Set value g for boundary condition, domain remains unchanged
     ///
     /// *Arguments*
-    ///     g (boost::shared_ptr<_GenericFunction_>)
+    ///     g (_GenericFunction_)
     ///         The value.
     void set_value(boost::shared_ptr<const GenericFunction> g);
 

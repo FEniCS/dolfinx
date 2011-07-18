@@ -35,10 +35,10 @@
 
 namespace dolfin
 {
-  /// A Point represents a point in :math:`\mathbb{R}^3` with coordinates
-  /// :math:`x, y, z,` or
-  /// alternatively, a vector in :math:`\mathbb{R}^3`, supporting standard
-  /// operations like the norm, distances, scalar and vector products etc.
+  /// A Point represents a point in :math:`\mathbb{R}^3` with
+  /// coordinates :math:`x, y, z,` or alternatively, a vector in
+  /// :math:`\mathbb{R}^3`, supporting standard operations like the
+  /// norm, distances, scalar and vector products etc.
 
   class Point
   {
@@ -69,7 +69,7 @@ namespace dolfin
     /// Copy constructor
     ///
     /// *Arguments*
-    ///     p (Point)
+    ///     p (_Point_)
     ///         The object to be copied.
     Point(const Point& p)
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; }
@@ -128,7 +128,7 @@ namespace dolfin
     /// Return coordinate array
     ///
     /// *Returns*
-    ///     double
+    ///     list of doubles
     ///         The coordinates.
     double* coordinates()
     { return _x; }
@@ -136,7 +136,7 @@ namespace dolfin
     /// Return coordinate array (const. version)
     ///
     /// *Returns*
-    ///     double
+    ///     list of doubles
     ///         The coordinates.
     const double* coordinates() const
     { return _x; }
@@ -178,17 +178,18 @@ namespace dolfin
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
 
     #ifdef HAS_CGAL
-    ///Conversion operator to appropriate CGAL Point_3 class.
+    /// Conversion operator to appropriate CGAL Point_3 class.
     template <typename Kernel>
     operator CGAL::Point_3<Kernel>() const
     { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
 
-    ///Constructor taking a CGAL::Point_3. Allows conversion from CGAL Point_3 class to Point class.
+    /// Constructor taking a CGAL::Point_3. Allows conversion from
+    /// CGAL Point_3 class to Point class.
     template <typename Kernel>
     Point (const CGAL::Point_3<Kernel> & point)
     { _x[0] = point.x(); _x[1] = point.y(); _x[2] = point.z(); }
 
-    ///Provides a CGAL bounding box, using conversion operator.
+    /// Provides a CGAL bounding box, using conversion operator.
     template <typename Kernel>
     CGAL::Bbox_3  bbox()
     { return CGAL::Point_3<Kernel>(*this).bbox(); }
@@ -220,7 +221,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     double
-    ///         The (euclidean) norm of the vector from the origin to the point.
+    ///         The (Euclidean) norm of the vector from the origin to
+    ///         the point.
     ///
     /// *Example*
     ///     .. code-block:: c++

@@ -96,7 +96,7 @@ namespace dolfin
     ///     value_shape (std::vector<uint>)
     ///         Shape of tensor.
     ///     values (std::vector<double>)
-    ///         Values to create a Constant object from.
+    ///         Values to create tensor-valued constant from.
     Constant(std::vector<uint> value_shape,
              std::vector<double> values);
 

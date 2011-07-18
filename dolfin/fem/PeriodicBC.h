@@ -70,7 +70,7 @@ namespace dolfin
   {
   public:
 
-    /// Create periodic boundary condition for sub domain
+    /// Create periodic boundary condition for subdomain
     ///
     /// *Arguments*
     ///     V (_FunctionSpace_)
@@ -80,13 +80,13 @@ namespace dolfin
     PeriodicBC(const FunctionSpace& V,
                const SubDomain& sub_domain);
 
-    /// Create periodic boundary condition for sub domain
+    /// Create periodic boundary condition for subdomain
     ///
     /// *Arguments*
-    ///     V (boost::shared_ptr<_FunctionSpace_>)
+    ///     V (_FunctionSpace_)
     ///         The function space.
-    ///     sub_domain (boost::shared_ptr<_SubDomain_>)
-    ///         The sub domain.
+    ///     sub_domain (_SubDomain_)
+    ///         The subdomain.
     PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                boost::shared_ptr<const SubDomain> sub_domain);
 
@@ -125,7 +125,8 @@ namespace dolfin
     ///         Another vector (nonlinear problem).
     void apply(GenericVector& b, const GenericVector& x) const;
 
-    /// Apply boundary condition to a linear system for a nonlinear problem
+    /// Apply boundary condition to a linear system for a nonlinear
+    /// problem
     ///
     /// *Arguments*
     ///     A (_GenericMatrix_)

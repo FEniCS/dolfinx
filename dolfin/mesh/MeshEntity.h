@@ -39,8 +39,6 @@
 namespace dolfin
 {
 
-  //class Mesh;
-
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some _Mesh_.
 
@@ -68,12 +66,12 @@ namespace dolfin
     /// Comparision Operator
     ///
     /// *Arguments*
-    ///     another (MeshEntity)
-    ///         Another MeshEntity.
+    ///     another (_MeshEntity_)
+    ///         Another mesh entity
     ///
     /// *Returns*
     ///     bool
-    ///         True if the two MeshEntity objects are equal.
+    ///         True if the two mesh entities are equal.
     bool operator==(const MeshEntity& another) const
     { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
 
@@ -81,11 +79,11 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     another (MeshEntity)
-    ///         Another MeshEntity.
+    ///         Another mesh entity.
     ///
     /// *Returns*
     ///     bool
-    ///         True if the two MeshEntity objects are NOT equal.
+    ///         True if the two mesh entities are NOT equal.
     bool operator!=(const MeshEntity& another) const
     { return !operator==(another); }
 
@@ -146,18 +144,19 @@ namespace dolfin
     uint mesh_id() const
     { return _mesh->id(); }
 
-    /// Check if given entity is indicent
+    /// Check if given entity is incident
     ///
     /// *Arguments*
-    ///     entity (MeshEntity)
+    ///     entity (_MeshEntity_)
     ///         The entity.
     ///
     /// *Returns*
     ///     bool
-    ///         True if the given entity is indicent.
+    ///         True if the given entity is incident
     bool incident(const MeshEntity& entity) const;
 
-    /// Check if given point intersects (using inexact but fast numerics)
+    /// Check if given point intersects (using inexact but fast
+    /// numerics)
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -169,10 +168,11 @@ namespace dolfin
     bool intersects(const Point& point) const
     { return PrimitiveIntersector::do_intersect(*this,point); }
 
-    /// Check if given entity intersects (using inexact but fast numerics)
+    /// Check if given entity intersects (using inexact but fast
+    /// numerics)
     ///
     /// *Arguments*
-    ///     entity (MeshEntity)
+    ///     entity (_MeshEntity_)
     ///         The mesh entity.
     ///
     /// *Returns*
@@ -196,7 +196,7 @@ namespace dolfin
     /// Check if given entity intersects (using exact numerics)
     ///
     /// *Arguments*
-    ///     entity (MeshEntity)
+    ///     entity (_MeshEntity_)
     ///         The mesh entity.
     ///
     /// *Returns*
@@ -205,10 +205,11 @@ namespace dolfin
     bool intersects_exactly(const MeshEntity& entity) const
     { return PrimitiveIntersector::do_intersect_exact(*this,entity); }
 
-    /// Compute local index of given incident entity (error if not found)
+    /// Compute local index of given incident entity (error if not
+    /// found)
     ///
     /// *Arguments*
-    ///     entity (MeshEntity)
+    ///     entity (_MeshEntity_)
     ///         The mesh entity.
     ///
     /// *Returns*
@@ -224,7 +225,8 @@ namespace dolfin
     Point midpoint() const;
 
     #ifdef HAS_CGAL
-    ///Returns a 3D bounding box of the mesh entity. For lower dimension it may be a degenerated box.
+    /// Returns a 3D bounding box of the mesh entity. For lower
+    /// dimension it may be a degenerated box.
     template <typename K> CGAL::Bbox_3 bbox() const;
     #endif
 

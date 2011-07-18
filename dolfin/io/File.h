@@ -96,7 +96,7 @@ namespace dolfin
     ///
     File(const std::string filename, Type type, std::string encoding="ascii");
 
-    /// Create a outfile object writing to stream
+    /// Create an outfile object writing to stream
     ///
     /// *Arguments*
     ///     outstream (std::ostream)
@@ -116,7 +116,7 @@ namespace dolfin
     /// Write Function to file
     void operator<<(const Function& u);
 
-    /// Write Function to file (with time)
+    /// Write Function to file (with, for instance, time)
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -146,7 +146,7 @@ namespace dolfin
 
   private:
 
-    // Pointer to implementation (envelop-letter design)
+    // Pointer to implementation (envelope-letter design)
     boost::scoped_ptr<GenericFile> file;
 
   };

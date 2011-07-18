@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-21
+// Last changed: 2011-07-18
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -63,9 +63,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     dim0 (uint)
-    ///         Dimension.
+    ///         Dimension (rows).
     ///     dim1 (uint)
-    ///         Dimension.
+    ///         Dimension (columns).
     Expression(uint dim0, uint dim1);
 
     /// Create tensor-valued expression with given shape.
@@ -92,9 +92,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
-    ///         The values.
+    ///         The values at the point.
     ///     x (_Array_ <double>)
-    ///         The coordinates.
+    ///         The coordinates of the point.
     ///     cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
@@ -104,9 +104,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     values (_Array_ <double>)
-    ///         The values.
+    ///         The values at the point.
     ///     x (_Array_ <double>)
-    ///         The coordinates.
+    ///         The coordinates of the point.
     virtual void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Return value rank.
@@ -120,7 +120,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     i (uint)
-    ///         Integer denoting which axis to use.
+    ///         Integer denoting the axis to use.
     ///
     /// *Returns*
     ///     uint
@@ -130,7 +130,7 @@ namespace dolfin
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
     /// *Arguments*
-    ///     w (double)
+    ///     w (list of doubles)
     ///         Expansion coefficients.
     ///     element (_FiniteElement_)
     ///         The element.

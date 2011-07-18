@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-02-09
+// Last changed: 2011-07-18
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -31,7 +31,8 @@ namespace dolfin
   class Mesh;
   class Point;
 
-  /// A simple mesh editor for creating simplicial meshes in 1D, 2D and 3D.
+  /// A simple mesh editor for creating simplicial meshes in 1D, 2D
+  /// and 3D.
 
   class MeshEditor
   {
@@ -236,7 +237,7 @@ namespace dolfin
     ///     c (uint)
     ///         The cell (index).
     ///     v (std::vector<uint>)
-    ///         The vertices.
+    ///         The vertex indices
     void add_cell(uint c, const std::vector<uint>& v);
 
     /// Add cell (interval) with given vertices

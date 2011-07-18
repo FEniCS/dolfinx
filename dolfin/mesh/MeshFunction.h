@@ -65,7 +65,7 @@ namespace dolfin
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The dimension.
+    ///         The mesh entity dimension for the mesh function
     MeshFunction(const Mesh& mesh, uint dim);
 
     /// Create mesh function on given mesh of given dimension and initialize
@@ -75,7 +75,7 @@ namespace dolfin
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The dimension.
+    ///         The mesh entity dimension
     ///     value (T)
     ///         The value.
     MeshFunction(const Mesh& mesh, uint dim, const T& value);
@@ -92,7 +92,7 @@ namespace dolfin
     /// Copy constructor
     ///
     /// *Arguments*
-    ///     f (MeshFunction<T>)
+    ///     f (_MeshFunction_ <T>)
     ///         The object to be copied.
     MeshFunction(const MeshFunction<T>& f);
 
@@ -179,7 +179,7 @@ namespace dolfin
     ///         The value at the given index.
     const T& operator[] (uint index) const;
 
-    /// Assign mesh function
+    /// Assign mesh function to other mesh function
     const MeshFunction<T>& operator= (const MeshFunction<T>& f);
 
     /// Set all values to given value
@@ -192,7 +192,8 @@ namespace dolfin
     ///         The dimension.
     void init(uint dim);
 
-    /// Initialize mesh function for given topological dimension of given size
+    /// Initialize mesh function for given topological dimension of
+    /// given size
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -210,7 +211,8 @@ namespace dolfin
     ///         The dimension.
     void init(const Mesh& mesh, uint dim);
 
-    /// Initialize mesh function for given topological dimension of given size
+    /// Initialize mesh function for given topological dimension of
+    /// given size
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)

@@ -57,16 +57,17 @@ namespace dolfin
     /// Create dof map on mesh (data is not shared)
     ///
     /// *Arguments*
-    ///     ufc_dofmap (boost::shared_ptr<ufc::dofmap>)
+    ///     ufc_dofmap (ufc::dofmap)
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& mesh);
 
-    /// Create dof map on mesh ((data is not shared), const mesh version)
+    /// Create dof map on mesh ((data is not shared), const mesh
+    /// version)
     ///
     /// *Arguments*
-    ///     ufc_dofmap (boost::shared_ptr<ufc::dofmap>)
+    ///     ufc_dofmap (ufc::dofmap)
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
@@ -75,7 +76,7 @@ namespace dolfin
     /// Copy constructor
     ///
     /// *Arguments*
-    ///     dofmap (DofMap)
+    ///     dofmap (_DofMap_)
     ///         The object to be copied.
     DofMap(const DofMap& dofmap);
 
@@ -98,11 +99,13 @@ namespace dolfin
     ///
     /// *Returns*
     ///     bool
-    ///         True if the dof map is a sub-dofmap (a view into another map).
+    ///         True if the dof map is a sub-dof map (a view into
+    ///         another map).
     bool is_view() const
     { return _is_view; }
 
-    /// Return true iff mesh entities of topological dimension d are needed
+    /// Return true iff mesh entities of topological dimension d are
+    /// needed
     ///
     /// *Arguments*
     ///     d (unsigned int)
@@ -113,7 +116,8 @@ namespace dolfin
     ///         True if the mesh entities are needed.
     bool needs_mesh_entities(unsigned int d) const;
 
-    /// Return the dimension of the global finite element function space
+    /// Return the dimension of the global finite element function
+    /// space
     ///
     /// *Returns*
     ///     unsigned int
@@ -122,8 +126,8 @@ namespace dolfin
 
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
-    /// Return the dimension of the local finite element function space on a
-    /// cell
+    /// Return the dimension of the local finite element function
+    /// space on a cell
     ///
     /// *Arguments*
     ///     cell_index (uint)
@@ -134,14 +138,17 @@ namespace dolfin
     ///         Dimension of the local finite element function space.
     unsigned int cell_dimension(uint cell_index) const;
 
-    /// Return the maximum dimension of the local finite element function space
+    /// Return the maximum dimension of the local finite element
+    /// function space
     ///
     /// *Returns*
     ///     unsigned int
-    ///         Maximum dimension of the local finite element function space.
+    ///         Maximum dimension of the local finite element function
+    ///         space.
     unsigned int max_cell_dimension() const;
 
-    /// Return the geometric dimension of the coordinates this dof map provides
+    /// Return the geometric dimension of the coordinates this dof map
+    /// provides
     ///
     /// *Returns*
     ///     unsigned int
@@ -155,15 +162,16 @@ namespace dolfin
     ///         The number of facet dofs.
     unsigned int num_facet_dofs() const;
 
-    /// Return the ownership range (dofs in this range are owned by this process)
+    /// Return the ownership range (dofs in this range are owned by
+    /// this process)
     ///
     /// *Returns*
     ///     std::pair<unsigned int, unsigned int>
     ///         The ownership range.
     std::pair<unsigned int, unsigned int> ownership_range() const;
 
-    /// Return map from nonlocal-dofs that appear in local dof map to owning
-    /// process
+    /// Return map from nonlocal dofs that appear in local dof map to
+    /// owning process
     ///
     /// *Returns*
     ///     boost::unordered_map<unsigned int, unsigned int>
@@ -208,7 +216,8 @@ namespace dolfin
     ///         The local facet.
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
-    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
+    /// Tabulate the coordinates of all dofs on a cell (UFC cell
+    /// version)
     ///
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
@@ -218,7 +227,8 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const;
 
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
+    /// version)
     ///
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
@@ -235,7 +245,7 @@ namespace dolfin
     ///         The object to be copied.
     DofMap* copy(const Mesh& mesh) const;
 
-    /// Extract sub dofmap component
+    /// Extract subdofmap component
     ///
     /// *Arguments*
     ///     component (std::vector<uint>)
@@ -245,7 +255,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     DofMap
-    ///         The sub dofmap component.
+    ///         The subdofmap component.
     DofMap* extract_sub_dofmap(const std::vector<uint>& component,
                                const Mesh& mesh) const;
 
