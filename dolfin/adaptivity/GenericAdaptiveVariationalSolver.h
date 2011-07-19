@@ -108,13 +108,20 @@ namespace dolfin
     ///        The other mesh
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh) = 0;
 
+    /// Return stored adaptive data
+    ///
+    /// *Returns*
+    ///    std::vector<_AdaptiveDatum_>
+    ///        The data stored in the adaptive loop
+    std::vector<boost::shared_ptr<AdaptiveDatum> > adaptive_data() const;
+
     /// Default parameter values:
     ///
     ///     "max_iterations"     (int)
     ///     "max_dimension"      (int)
     ///     "plot_mesh"          (bool)
     ///     "save_data"          (bool)
-    ///     "data_label"     (std::string)
+    ///     "data_label"         (std::string)
     ///     "reference"          (double)
     ///     "marking_strategy"   (std::string)
     ///     "marking_fraction"   (double)
@@ -135,21 +142,18 @@ namespace dolfin
       return p;
     }
 
-    // A list of adaptive data
-    std::vector<AdaptiveDatum> adaptive_data;
-
-
   protected:
+
+    // A list of adaptive data
+    std::vector<boost::shared_ptr<AdaptiveDatum> > _adaptive_data;
 
     /// Check if stopping criterion is satisfied
     bool stop(const FunctionSpace& V,
               const double error_estimate,
-              const double tolerance,
-              const Parameters& parameters);
+              const double tolerance);
 
-    /// Present summary of all adaptive data
-    void summary(const std::vector<AdaptiveDatum>& data,
-                 const Parameters& parameters);
+    /// Present summary of all adaptive data and parameters
+    void summary();
 
     /// Present summary of single adaptive datum
     void summary(const AdaptiveDatum& data);

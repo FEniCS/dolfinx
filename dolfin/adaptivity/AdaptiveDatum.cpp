@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-01
-// Last changed: 2011-07-04
+// Last changed: 2011-07-19
 
 #include <sstream>
 #include <dolfin/common/utils.h>
@@ -46,6 +46,20 @@ AdaptiveDatum::AdaptiveDatum(const uint refinement_level,
 AdaptiveDatum::~AdaptiveDatum()
 {
   // Nothing to do
+}
+//-----------------------------------------------------------------------------
+AdaptiveDatum& AdaptiveDatum::operator= (const AdaptiveDatum& other)
+{
+  // Assign all data
+  refinement_level = other.refinement_level;
+  num_dofs = other.num_dofs;
+  num_cells = other.num_cells;
+  error_estimate = other.error_estimate;
+  tolerance = other.tolerance;
+  functional_value = other.functional_value;
+  reference = other.reference;
+  reference_value_given = other.reference_value_given;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveDatum::set_reference_value(const double reference)

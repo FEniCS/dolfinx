@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-07-05
+// Last changed: 2011-07-19
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -41,7 +41,7 @@ namespace std
 }
 
 //-----------------------------------------------------------------------------
-// User macro for defineing in typmaps for std::vector of pointers or
+// User macro for defining in typemaps for std::vector of pointers or
 // shared_pointer to some DOLFIN type
 //-----------------------------------------------------------------------------
 %define TYPEMAPS_STD_VECTOR_OF_POINTERS(TYPE)
@@ -81,8 +81,8 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 // The std::vector<Type*> typemap
 //-----------------------------------------------------------------------------
 %typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> & (
-std::vector<CONST dolfin::TYPE *> tmp_vec, 
-SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, 
+std::vector<CONST dolfin::TYPE *> tmp_vec,
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
 dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR)
@@ -149,8 +149,8 @@ dolfin::TYPE * arg)
 //-----------------------------------------------------------------------------
 %typemap (in) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::
               shared_ptr<CONST dolfin::TYPE> > (
-std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec, 
-SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, 
+std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec,
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
 dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
@@ -203,14 +203,14 @@ dolfin::TYPE * arg)
 //-----------------------------------------------------------------------------
 %typemap (out) std::vector<SWIG_SHARED_PTR_QNAMESPACE::
                shared_ptr<CONST dolfin::TYPE> > (
-SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> tempshared, 
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> tempshared,
 PyObject* ret_list,
 PyObject* list_item)
 {
   // OUT_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
   int size = (&$1)->size();
   ret_list = PyList_New(size);
-  
+
   // Iterate over the vector and fill list
   for (int i=0; i<size; i++)
   {
@@ -218,7 +218,7 @@ PyObject* list_item)
     tempshared = (&$1)->operator[](i);
 
     // Create a new ptr while increasing the reference.
-    // NOTE: Const cast because SWIG does not know how to handle non 
+    // NOTE: Const cast because SWIG does not know how to handle non
     // NOTE: const shared_ptr types
     SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE >* smartresult = tempshared ? new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE >(boost::const_pointer_cast<dolfin::TYPE>(tempshared)) : 0;
     list_item = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), SWIG_POINTER_OWN);
@@ -469,6 +469,7 @@ TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(BoundaryCondition)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
+TYPEMAPS_STD_VECTOR_OF_POINTERS(AdaptiveDatum)
 
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)

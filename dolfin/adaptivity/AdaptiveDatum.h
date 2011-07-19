@@ -60,6 +60,13 @@ namespace dolfin
     /// Destructor.
     ~AdaptiveDatum();
 
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     other (_AdaptiveDatum_)
+    ///         Another adaptive datum
+    AdaptiveDatum& operator= (const AdaptiveDatum& other);
+
     /// Store adaptive datum to file
     ///
     /// *Arguments*
@@ -81,11 +88,7 @@ namespace dolfin
     ///         The value.
     void set_reference_value(const double reference);
 
-    // GenericAdaptiveVariationalSolver is AdaptiveDatum's BFF.
-    friend class GenericAdaptiveVariationalSolver;
-
-  private:
-
+    // Various information from adaptive algorithm
     uint refinement_level;
     uint num_dofs;
     uint num_cells;
