@@ -108,14 +108,23 @@ namespace dolfin
     ///        The other mesh
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh) = 0;
 
+    /// Return stored adaptive data
+    ///
+    /// *Returns*
+    ///    std::vector<_AdaptiveDatum_>
+    ///        The data stored in the adaptive loop
+    std::vector<boost::shared_ptr<AdaptiveDatum> > adaptive_data() const;
+
     /// Default parameter values:
     ///
-    ///     "max_iterations" (int)
-    ///     "max_dimension"  (int)
-    ///     "plot_mesh"  (bool)
-    ///     "reference"  (double)
-    ///     "marking_strategy"  (string)
-    ///     "marking_fraction"  (double)
+    ///     "max_iterations"     (int)
+    ///     "max_dimension"      (int)
+    ///     "plot_mesh"          (bool)
+    ///     "save_data"          (bool)
+    ///     "data_label"         (std::string)
+    ///     "reference"          (double)
+    ///     "marking_strategy"   (std::string)
+    ///     "marking_fraction"   (double)
     static Parameters default_parameters()
     {
       Parameters p("adaptive_solver");
@@ -124,6 +133,8 @@ namespace dolfin
       p.add("max_iterations", 20);
       p.add("max_dimension", 0);
       p.add("plot_mesh", false); // Useful for debugging
+      p.add("save_data", false);
+      p.add("data_label", "default/adaptivity");
       p.add("reference", 0.0);
       p.add("marking_strategy", "dorfler");
       p.add("marking_fraction", 0.5, 0.0, 1.0);
@@ -133,15 +144,16 @@ namespace dolfin
 
   protected:
 
+    // A list of adaptive data
+    std::vector<boost::shared_ptr<AdaptiveDatum> > _adaptive_data;
+
     /// Check if stopping criterion is satisfied
     bool stop(const FunctionSpace& V,
               const double error_estimate,
-              const double tolerance,
-              const Parameters& parameters);
+              const double tolerance);
 
-    /// Present summary of all adaptive data
-    void summary(const std::vector<AdaptiveDatum>& data,
-                 const Parameters& parameters);
+    /// Present summary of all adaptive data and parameters
+    void summary();
 
     /// Present summary of single adaptive datum
     void summary(const AdaptiveDatum& data);
