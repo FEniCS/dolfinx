@@ -100,24 +100,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
-                   GenericVector& x)
-  : Hierarchical<Function>(*this), _function_space(V),
-    _vector(reference_to_no_delete_pointer(x)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
-
-  // Check that we don't have a subspace
-  if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
-
-  // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap().global_dimension() <= x.size());
-}
-//-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : Hierarchical<Function>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
