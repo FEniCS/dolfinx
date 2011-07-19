@@ -110,12 +110,14 @@ namespace dolfin
 
     /// Default parameter values:
     ///
-    ///     "max_iterations" (int)
-    ///     "max_dimension"  (int)
-    ///     "plot_mesh"  (bool)
-    ///     "reference"  (double)
-    ///     "marking_strategy"  (string)
-    ///     "marking_fraction"  (double)
+    ///     "max_iterations"     (int)
+    ///     "max_dimension"      (int)
+    ///     "plot_mesh"          (bool)
+    ///     "save_data"          (bool)
+    ///     "data_label"     (std::string)
+    ///     "reference"          (double)
+    ///     "marking_strategy"   (std::string)
+    ///     "marking_fraction"   (double)
     static Parameters default_parameters()
     {
       Parameters p("adaptive_solver");
@@ -124,12 +126,18 @@ namespace dolfin
       p.add("max_iterations", 20);
       p.add("max_dimension", 0);
       p.add("plot_mesh", false); // Useful for debugging
+      p.add("save_data", false);
+      p.add("data_label", "default/adaptivity");
       p.add("reference", 0.0);
       p.add("marking_strategy", "dorfler");
       p.add("marking_fraction", 0.5, 0.0, 1.0);
 
       return p;
     }
+
+    // A list of adaptive data
+    std::vector<AdaptiveDatum> adaptive_data;
+
 
   protected:
 

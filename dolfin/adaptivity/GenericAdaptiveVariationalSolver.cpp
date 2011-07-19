@@ -32,6 +32,7 @@
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
 #include "ErrorControl.h"
+#include "TimeSeries.h"
 #include "adapt.h"
 #include "marking.h"
 
@@ -42,8 +43,10 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
                                              Form& goal,
                                              ErrorControl& control)
 {
-  // A list of adaptive data
-  std::vector<AdaptiveDatum> data;
+  // Clear adaptive data
+  adaptive_data.clear();
+  std::string label = parameters["data_label"];
+  TimeSeries series(label);
 
   // Start adaptive loop
   const uint max_iterations = parameters["max_iterations"];
@@ -80,13 +83,14 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
                         tol, functional_value);
     if (parameters["reference"].change_count() > 0)
      datum.set_reference_value(parameters["reference"]);
-    data.push_back(datum);
+    adaptive_data.push_back(datum);
+    summary(datum);
 
     // Check stopping criterion
     if (stop(V, error_estimate, tol, parameters))
     {
       end();
-      summary(data, parameters);
+      summary(adaptive_data, parameters);
       return;
     }
 
@@ -95,6 +99,11 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     Vector indicators(mesh.num_cells());
     assert(u);
     ec.compute_indicators(indicators, *u);
+    if (parameters["save_data"])
+    {
+      series.store(indicators, i);
+      series.store(mesh, i);
+    }
     end();
 
     //--- Stage 3: Mark mesh for refinement ---
@@ -120,7 +129,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
   }
 
-  summary(data, parameters);
+  summary(adaptive_data, parameters);
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.",
           max_iterations);
 }
@@ -139,11 +148,9 @@ bool GenericAdaptiveVariationalSolver::stop(const FunctionSpace& V,
   const uint max_dimension = parameters["max_dimension"];
   if (parameters["max_dimension"].change_count() > 0
       && V.dim() > max_dimension)
-  {
     return true;
-  }
-  else
-    return false;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::

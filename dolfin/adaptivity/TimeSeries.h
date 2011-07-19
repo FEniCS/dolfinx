@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-03-31
+// Last changed: 2011-07-19
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -48,38 +48,100 @@ namespace dolfin
   public:
 
     /// Create empty time series
+    ///
+    /// *Arguments*
+    ///     name (std::string)
+    ///         The time series name
     TimeSeries(std::string name);
 
     /// Destructor
     ~TimeSeries();
 
     /// Store vector at given time
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to be stored.
+    ///     t (double)
+    ///         The time.
     void store(const GenericVector& vector, double t);
 
     /// Store mesh at given time
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to be stored.
+    ///     t (double)
+    ///         The time.
     void store(const Mesh& mesh, double t);
 
     /// Retrieve vector at given time
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector (values to be retrieved).
+    ///     t (double)
+    ///         The time.
+    ///     interpolate (bool)
+    ///         Optional argument: If true (default), interpolate
+    ///         time samples closest to t if t is not present.
     void retrieve(GenericVector& vector, double t, bool interpolate=true) const;
 
     /// Retrieve mesh at given time
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh (values to be retrieved).
+    ///     t (double)
+    ///         The time.
     void retrieve(Mesh& mesh, double t) const;
 
     /// Return array of sample times for vectors
+    ///
+    /// *Returns*
+    ///     _Array_ <double>
+    ///         The times.
     Array<double> vector_times() const;
 
     /// Return array of sample times for meshes
+    ///
+    /// *Returns*
+    ///     _Array_ <double>
+    ///         The times.
     Array<double> mesh_times() const;
 
     /// Clear time series
     void clear();
 
     /// Return filename for data
+    ///
+    /// *Arguments*
+    ///     series_name (std::string)
+    ///         The time series name
+    ///     type_name (std::string)
+    ///         The type of data
+    ///     index (uint)
+    ///         The index
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         The filename
     static std::string filename_data(std::string series_name,
                                      std::string type_name, uint index);
 
     /// Return filename for times
-    static std::string filename_times(std::string series_name, std::string type_name);
+    ///
+    /// *Arguments*
+    ///     series_name (std::string)
+    ///         The time series name
+    ///     type_name (std::string)
+    ///         The type of data
+    ///
+    /// *Returns*
+    ///     std::string
+    ///         The filename
+    static std::string filename_times(std::string series_name,
+                                      std::string type_name);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
