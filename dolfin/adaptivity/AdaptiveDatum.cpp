@@ -48,20 +48,6 @@ AdaptiveDatum::~AdaptiveDatum()
   // Nothing to do
 }
 //-----------------------------------------------------------------------------
-AdaptiveDatum& AdaptiveDatum::operator= (const AdaptiveDatum& other)
-{
-  // Assign all data
-  refinement_level = other.refinement_level;
-  num_dofs = other.num_dofs;
-  num_cells = other.num_cells;
-  error_estimate = other.error_estimate;
-  tolerance = other.tolerance;
-  functional_value = other.functional_value;
-  reference = other.reference;
-  reference_value_given = other.reference_value_given;
-  return *this;
-}
-//-----------------------------------------------------------------------------
 void AdaptiveDatum::set_reference_value(const double reference)
 {
   this->reference = reference;
@@ -78,17 +64,18 @@ void AdaptiveDatum::store(Table& table) const
   std::stringstream s;
   s << refinement_level;
 
-  table(s.str(), "M(u_h)")         = functional_value;
+  table(s.str(), "M(u_h)") = functional_value;
   if (reference_value_given)
-    table(s.str(), "M(u)")         = reference;
+    table(s.str(), "M(u)") = reference;
   else
-    table(s.str(), "M(u)")         = "N/A";
+    table(s.str(), "M(u)") = "N/A";
   table(s.str(), "TOL")            = tolerance;
   table(s.str(), "Error estimate") = error_estimate;
   table(s.str(), "#cells")         = num_cells;
   table(s.str(), "#dofs")          = num_dofs;
 
-  if (reference_value_given) {
+  if (reference_value_given)
+  {
     const double error = reference - functional_value;
     double efficiency_index = 0.0;
     if (error)
