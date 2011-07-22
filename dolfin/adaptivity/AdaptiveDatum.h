@@ -24,6 +24,7 @@
 #define __ADAPTIVE_DATUM_H
 
 #include <string>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -59,13 +60,6 @@ namespace dolfin
 
     /// Destructor.
     ~AdaptiveDatum();
-
-    /// Assignment operator
-    ///
-    /// *Arguments*
-    ///     other (_AdaptiveDatum_)
-    ///         Another adaptive datum
-    AdaptiveDatum& operator= (const AdaptiveDatum& other);
 
     /// Store adaptive datum to file
     ///
