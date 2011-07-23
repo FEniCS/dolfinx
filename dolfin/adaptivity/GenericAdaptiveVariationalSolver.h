@@ -130,7 +130,7 @@ namespace dolfin
       Parameters p("adaptive_solver");
 
       // Set default generic adaptive parameters
-      p.add("max_iterations", 20);
+      p.add("max_iterations", 50);
       p.add("max_dimension", 0);
       p.add("plot_mesh", false); // Useful for debugging
       p.add("save_data", false);
