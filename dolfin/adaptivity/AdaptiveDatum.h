@@ -24,6 +24,7 @@
 #define __ADAPTIVE_DATUM_H
 
 #include <string>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -40,19 +41,14 @@ namespace dolfin
     /// Create adaptive datum
     ///
     /// *Arguments*
-    ///
     ///     refinement_level (unsigned int)
     ///         the number of refinements relative to coarset mesh
-    ///
     ///     num_dofs (unsigned int)
     ///         dimension of discrete solution space
-    ///
     ///     num_cells (unsigned int)
     ///         number of cells in mesh
-    ///
     ///     error_estimate (double)
     ///         error estimate
-    ///
     ///     tolerance (double)
     ///         error (or num_dofs) tolerance
     AdaptiveDatum(const uint refinement_level,
@@ -79,13 +75,14 @@ namespace dolfin
     ///         Table to store in
     void store(Table& table) const;
 
+    /// Set reference value for goal functional
+    ///
+    /// *Arguments*
+    ///     reference (double)
+    ///         The value.
     void set_reference_value(const double reference);
 
-    // AdaptiveVariationalSolver is AdaptiveDatum's BFF.
-    friend class GenericAdaptiveVariationalSolver;
-
-  private:
-
+    // Various information from adaptive algorithm
     uint refinement_level;
     uint num_dofs;
     uint num_cells;

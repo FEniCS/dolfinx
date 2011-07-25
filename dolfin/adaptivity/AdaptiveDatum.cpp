@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-01
-// Last changed: 2011-07-04
+// Last changed: 2011-07-19
 
 #include <sstream>
 #include <dolfin/common/utils.h>
@@ -64,17 +64,18 @@ void AdaptiveDatum::store(Table& table) const
   std::stringstream s;
   s << refinement_level;
 
-  table(s.str(), "M(u_h)")         = functional_value;
+  table(s.str(), "M(u_h)") = functional_value;
   if (reference_value_given)
-    table(s.str(), "M(u)")         = reference;
+    table(s.str(), "M(u)") = reference;
   else
-    table(s.str(), "M(u)")         = "N/A";
+    table(s.str(), "M(u)") = "N/A";
   table(s.str(), "TOL")            = tolerance;
   table(s.str(), "Error estimate") = error_estimate;
   table(s.str(), "#cells")         = num_cells;
   table(s.str(), "#dofs")          = num_dofs;
 
-  if (reference_value_given) {
+  if (reference_value_given)
+  {
     const double error = reference - functional_value;
     double efficiency_index = 0.0;
     if (error)

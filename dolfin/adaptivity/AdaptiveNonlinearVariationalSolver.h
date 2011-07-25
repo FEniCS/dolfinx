@@ -68,19 +68,15 @@ namespace dolfin
     /// Create AdaptiveNonlinearVariationalSolver
     ///
     /// *Arguments*
-    ///
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    ///
     AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem);
 
     /// Create AdaptiveNonlinearVariationalSolver
     ///
     /// *Arguments*
-    ///
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    ///
     AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
 
     /// Destructor
@@ -91,59 +87,46 @@ namespace dolfin
     /// GoalFunctional's ErrorControl object.
     ///
     /// *Arguments*
-    ///
     ///     tol  (double)
     ///         The error tolerance
-    ///
     ///     goal  (_GoalFunctional_)
     ///         The goal functional
-    ///
     virtual void solve(const double tol, GoalFunctional& M);
 
     /// Solve the primal problem.
     ///
     /// *Returns*
-    ///
-    ///     boost::shared_ptr<const _Function_>
+    ///     _Function_
     ///         The solution to the primal problem
-    ///
     virtual boost::shared_ptr<const Function> solve_primal();
 
     /// Extract the boundary conditions for the primal problem.
     ///
     /// *Returns*
-    ///
-    ///     std::vector<boost::shared_ptr<const _BoundaryCondition_> >
+    ///     std::vector<_BoundaryCondition_>
     ///         The primal boundary conditions
-    ///
     virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
       extract_bcs() const;
 
     /// Evaluate the goal functional.
     ///
     /// *Arguments*
-    ///
     ///    M (_Form_)
     ///        The functional to be evaluated
-    ///
     ///    u (_Function_)
     ///        The function at which to evaluate the functional
     ///
     /// *Returns*
-    ///
     ///     double
     ///         The value of M evaluated at u
-    ///
     virtual double evaluate_goal(Form& M,
                                  boost::shared_ptr<const Function> u) const;
 
     /// Adapt the problem to other mesh.
     ///
     /// *Arguments*
-    ///
     ///    mesh (_Mesh_)
     ///        The other mesh
-    ///
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh);
 
   private:

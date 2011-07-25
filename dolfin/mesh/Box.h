@@ -28,17 +28,46 @@
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the 3D  rectangular prism (x0, y0) x (x1, y1) x (x2, y2).
-  /// Given the number of cells (nx, ny, nz) in each direction,
-  /// the total number of tetrahedra will be 6*nx*ny*nz and the
-  /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
+  /// Tetrahedral mesh of the 3D rectangular prism [x0, x1] x [y0, y1]
+  /// x [z0, z1].  Given the number of cells (nx, ny, nz) in each
+  /// direction, the total number of tetrahedra will be 6*nx*ny*nz and
+  /// the total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
 
   class Box : public Mesh
   {
   public:
 
-    Box(double x0, double y0, double z0,
-        double x1, double y1, double z1,
+    /// Define a uniform finite element _Mesh_ over the rectangular prism
+    /// [x0, x1] x [y0, y1] x [z0, z1].
+    ///
+    /// *Arguments*
+    ///     x0 (double)
+    ///         :math:`x`-min.
+    ///     x1 (double)
+    ///         :math:`x`-max.
+    ///     y0 (double)
+    ///         :math:`y`-min.
+    ///     y1 (double)
+    ///         :math:`y`-max.
+    ///     z0 (double)
+    ///         :math:`z`-min.
+    ///     z1 (double)
+    ///         :math:`z`-max.
+    ///     xn (double)
+    ///         Number of cells in :math:`x`-direction.
+    ///     yn (double)
+    ///         Number of cells in :math:`y`-direction.
+    ///     zn (double)
+    ///         Number of cells in :math:`z`-direction.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         // Mesh with 6 cells in each direction on the
+    ///         // interval [-1,2] x [-1,2] x [-1,2].
+    ///         Box mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
+    ///
+    Box(double x0, double y0, double z0, double x1, double y1, double z1,
         uint nx, uint ny, uint nz);
 
   };

@@ -21,7 +21,6 @@
 // Last changed: 2011-06-22
 
 #include <dolfin/common/utils.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -32,6 +31,7 @@
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
 #include "ErrorControl.h"
+#include "TimeSeries.h"
 #include "adapt.h"
 #include "marking.h"
 
@@ -42,8 +42,10 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
                                              Form& goal,
                                              ErrorControl& control)
 {
-  // A list of adaptive data
-  std::vector<AdaptiveDatum> data;
+  // Clear adaptive data
+  _adaptive_data.clear();
+  std::string label = parameters["data_label"];
+  TimeSeries series(label);
 
   // Start adaptive loop
   const uint max_iterations = parameters["max_iterations"];
@@ -76,17 +78,21 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     assert(u);
     const FunctionSpace& V = u->function_space();
     const Mesh& mesh = V.mesh();
-    AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
-                        tol, functional_value);
+    boost::shared_ptr<AdaptiveDatum> datum(new AdaptiveDatum(i, V.dim(),
+                                                             mesh.num_cells(),
+                                                             error_estimate,
+                                                             tol,
+                                                             functional_value));
     if (parameters["reference"].change_count() > 0)
-     datum.set_reference_value(parameters["reference"]);
-    data.push_back(datum);
+      datum->set_reference_value(parameters["reference"]);
+    _adaptive_data.push_back(datum);
+    summary(*datum);
 
     // Check stopping criterion
-    if (stop(V, error_estimate, tol, parameters))
+    if (stop(V, error_estimate, tol))
     {
       end();
-      summary(data, parameters);
+      summary();
       return;
     }
 
@@ -95,6 +101,11 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     Vector indicators(mesh.num_cells());
     assert(u);
     ec.compute_indicators(indicators, *u);
+    if (parameters["save_data"])
+    {
+      series.store(indicators, i);
+      series.store(mesh, i);
+    }
     end();
 
     //--- Stage 3: Mark mesh for refinement ---
@@ -120,15 +131,20 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
   }
 
-  summary(data, parameters);
+  summary();
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.",
           max_iterations);
 }
 //-----------------------------------------------------------------------------
+std::vector<boost::shared_ptr<AdaptiveDatum> >
+GenericAdaptiveVariationalSolver::adaptive_data() const
+{
+  return _adaptive_data;
+}
+//-----------------------------------------------------------------------------
 bool GenericAdaptiveVariationalSolver::stop(const FunctionSpace& V,
                                             const double error_estimate,
-                                            const double tolerance,
-                                            const Parameters& parameters)
+                                            const double tolerance)
 {
   // Done if error is less than tolerance
   if (std::abs(error_estimate) < tolerance)
@@ -139,15 +155,12 @@ bool GenericAdaptiveVariationalSolver::stop(const FunctionSpace& V,
   const uint max_dimension = parameters["max_dimension"];
   if (parameters["max_dimension"].change_count() > 0
       && V.dim() > max_dimension)
-  {
     return true;
-  }
-  else
-    return false;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
-void GenericAdaptiveVariationalSolver::
-summary(const std::vector<AdaptiveDatum>& data, const Parameters& parameters)
+void GenericAdaptiveVariationalSolver::summary()
 {
   // Show parameters used
   info("");
@@ -160,15 +173,15 @@ summary(const std::vector<AdaptiveDatum>& data, const Parameters& parameters)
   info("Summary of adaptive solve:");
   info("");
   Table table("Level");
-  for (uint i = 0; i < data.size(); i++)
-    data[i].store(table);
+  for (uint i = 0; i < _adaptive_data.size(); i++)
+    _adaptive_data[i]->store(table);
   info(indent(table.str(true)));
   info("");
 }
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
 {
-  // Show summary for all iterations
+  // Show summary for given adaptive datum
   info("");
   info("Current adaptive data");
   info("");

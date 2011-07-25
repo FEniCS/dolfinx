@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-21
+// Last changed: 2011-07-18
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -49,47 +49,107 @@ namespace dolfin
   {
   public:
 
-    /// Create scalar expression
+    /// Create scalar expression.
     Expression();
 
-    /// Create vector-valued expression with given dimension
+    /// Create vector-valued expression with given dimension.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         Dimension of the vector-valued expression.
     Expression(uint dim);
 
-    /// Create matrix-valued expression with given dimensions
+    /// Create matrix-valued expression with given dimensions.
+    ///
+    /// *Arguments*
+    ///     dim0 (uint)
+    ///         Dimension (rows).
+    ///     dim1 (uint)
+    ///         Dimension (columns).
     Expression(uint dim0, uint dim1);
 
-    /// Create tensor-valued expression with given shape
+    /// Create tensor-valued expression with given shape.
+    ///
+    /// *Arguments*
+    ///     value_shape (std::vector<uint>)
+    ///         Shape of expression.
     Expression(std::vector<uint> value_shape);
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     expression (_Expression_)
+    ///         Object to be copied.
     Expression(const Expression& expression);
 
     /// Destructor
     virtual ~Expression();
 
     //--- Implementation of GenericFunction interface ---
-    /// Note: The reimplementation of eval is needed for the Python interface
+    /// Note: The reimplementation of eval is needed for the Python interface.
 
-    /// Evaluate at given point in given cell 
+    /// Evaluate at given point in given cell.
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values at the point.
+    ///     x (_Array_ <double>)
+    ///         The coordinates of the point.
+    ///     cell (ufc::cell)
+    ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate at given point
+    /// Evaluate at given point.
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values at the point.
+    ///     x (_Array_ <double>)
+    ///         The coordinates of the point.
     virtual void eval(Array<double>& values, const Array<double>& x) const;
 
-    /// Return value rank
+    /// Return value rank.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The value rank.
     virtual uint value_rank() const;
 
-    /// Return value dimension for given axis
+    /// Return value dimension for given axis.
+    ///
+    /// *Arguments*
+    ///     i (uint)
+    ///         Integer denoting the axis to use.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The value dimension (for the given axis).
     virtual uint value_dimension(uint i) const;
 
-    /// Restrict function to local cell (compute expansion coefficients w)
+    /// Restrict function to local cell (compute expansion coefficients w).
+    ///
+    /// *Arguments*
+    ///     w (list of doubles)
+    ///         Expansion coefficients.
+    ///     element (_FiniteElement_)
+    ///         The element.
+    ///     dolfin_cell (_Cell_)
+    ///         The cell.
+    ///     ufc_cell (ufc::cell)
+    ///         The ufc::cell.
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell) const;
 
-    /// Compute values at all mesh vertices
+    /// Compute values at all mesh vertices.
+    ///
+    /// *Arguments*
+    ///     vertex_values (_Array_ <double>)
+    ///         The values at all vertices.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     virtual void compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const;
 

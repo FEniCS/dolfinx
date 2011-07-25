@@ -14,6 +14,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2006
+# Last changed: 2011-07-18
+#
+# The bilinear form a(u, v) and linear form L(v) for a two-field
+# (mixed) formulation of Poisson's equation
+#
+# Compile this form with FFC: ffc -l dolfin MixedPoisson.ufl.
 
 BDM = FiniteElement("BDM", "triangle", 1)
 DG  = FiniteElement("DG", "triangle", 0)

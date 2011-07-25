@@ -52,13 +52,15 @@ namespace dolfin
   class SubDomain;
   template<class T> class Array;
 
-  /// This class represents a function u_h in a finite element
-  /// function space V_h, given by
+  /// This class represents a function :math:`u_h` in a finite
+  /// element function space :math:`V_h`, given by
   ///
-  ///   u_h = sum_i U_i phi_i
+  /// .. math::
   ///
-  /// where {phi_i}_i is a basis for V_h, and U is a vector of
-  /// expansion coefficients for u_h.
+  ///     u_h = \sum_{i=1}^{n} U_i \phi_i
+  ///
+  /// where :math:`\{\phi_i\}_{i=1}^{n}` is a basis for :math:`V_h`,
+  /// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
 
   class Function : public GenericFunction, public Hierarchical<Function>
 
@@ -66,108 +68,257 @@ namespace dolfin
   public:
 
     /// Create function on given function space
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Function u(V);
+    ///
     explicit Function(const FunctionSpace& V);
 
     /// Create function on given function space (shared data)
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
     explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector
-    Function(const FunctionSpace& V,
-             GenericVector& x);
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    Function(const FunctionSpace& V, GenericVector& x);
 
     /// Create function on given function space with a given vector
     /// (shared data)
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///     x (_GenericVector_)
+    ///         The vector.
     Function(boost::shared_ptr<const FunctionSpace> V,
              boost::shared_ptr<GenericVector> x);
 
-    /// Create function on given function space with a given vector (used by
-    /// Python interface)
-    Function(boost::shared_ptr<const FunctionSpace> V,
-             GenericVector& x);
-
     /// Create function from vector of dofs stored to file
-    Function(const FunctionSpace& V,
-             std::string filename);
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///     filename (std::string)
+    ///         The name of the file containing the vector.
+    Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
-    Function(boost::shared_ptr<const FunctionSpace> V,
-             std::string filename);
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///     filename (std::string)
+    ///         The name of the file containing the vector.
+    Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     v (_Function_)
+    ///         The object to be copied.
     Function(const Function& v);
 
     /// Sub-function constructor with shallow copy of vector (used in Python
     /// interface)
+    ///
+    /// *Arguments*
+    ///     v (_Function_)
+    ///         The function to be copied.
+    ///     i (uint)
+    ///         Index of subfunction.
+    ///
     Function(const Function& v, uint i);
 
     /// Destructor
     virtual ~Function();
 
     /// Assignment from function
+    ///
+    /// *Arguments*
+    ///     v (_Function_)
+    ///         Another function.
     const Function& operator= (const Function& v);
 
     /// Assignment from expression using interpolation
+    ///
+    /// *Arguments*
+    ///     v (_Expression_)
+    ///         The expression.
     const Function& operator= (const Expression& v);
 
-    /// Extract sub-function
+    /// Extract subfunction
+    ///
+    /// *Arguments*
+    ///     i (uint)
+    ///         Index of subfunction.
     Function& operator[] (uint i) const;
 
     /// Return function space
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Return the function space.
     const FunctionSpace& function_space() const;
 
     /// Return shared pointer to function space
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Return the shared pointer.
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
     /// Return vector of expansion coefficients (non-const version)
+    ///
+    /// *Returns*
+    ///     _GenericVector_
+    ///         The vector of expansion coefficients.
     GenericVector& vector();
 
     /// Return vector of expansion coefficients (const version)
+    ///
+    /// *Returns*
+    ///     _GenericVector_
+    ///         The vector of expansion coefficients (const).
     const GenericVector& vector() const;
 
     /// Check if function is a member of the given function space
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the function is in the function space.
     bool in(const FunctionSpace& V) const;
 
     /// Return geometric dimension
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The geometric dimension.
     uint geometric_dimension() const;
 
-    /// Evaluate function for given coordinate
+    /// Evaluate function at given coordinates
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values.
+    ///     x (_Array_ <double>)
+    ///         The coordinates.
     void eval(Array<double>& values, const Array<double>& x) const;
 
-    /// Evaluate function for given coordinate in given cell
+    /// Evaluate function at given coordinates in given cell
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values.
+    ///     x (_Array_ <double>)
+    ///         The coordinates.
+    ///     dolfin_cell (_Cell_)
+    ///         The cell.
+    ///     ufc_cell (ufc::cell)
+    ///         The ufc::cell.
     void eval(Array<double>& values,
               const Array<double>& x,
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 
-    /// Interpolate function (possibly non-matching meshes)
+    /// Interpolate function (on possibly non-matching meshes)
+    ///
+    /// *Arguments*
+    ///     v (_GenericFunction_)
+    ///         The function to be interpolated.
     void interpolate(const GenericFunction& v);
 
     /// Extrapolate function (from a possibly lower-degree function space)
+    ///
+    /// *Arguments*
+    ///     v (_Function_)
+    ///         The function to be extrapolated.
     void extrapolate(const Function& v);
 
     //--- Implementation of GenericFunction interface ---
 
     /// Return value rank
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The value rank.
     virtual uint value_rank() const;
 
     /// Return value dimension for given axis
+    ///
+    /// *Arguments*
+    ///     i (uint)
+    ///         The index of the axis.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The value dimension.
     virtual uint value_dimension(uint i) const;
 
-    /// Evaluate function for given data
+    /// Evaluate at given point in given cell
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values at the point.
+    ///     x (_Array_ <double>)
+    ///         The coordinates of the point.
+    ///     cell (ufc::cell)
+    ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate function for given data
+    /// Evaluate function for given data (non-matching meshes)
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values at the point.
+    ///     x (_Array_ <double>)
+    ///         The coordinates of the point.
+    ///     cell (ufc::cell)
+    ///         The cell.
     void non_matching_eval(Array<double>& values, const Array<double>& x,
                            const ufc::cell& ufc_cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
+    ///
+    /// *Arguments*
+    ///     w (list of doubles)
+    ///         Expansion coefficients.
+    ///     element (_FiniteElement_)
+    ///         The element.
+    ///     dolfin_cell (_Cell_)
+    ///         The cell.
+    ///     ufc_cell (ufc::cell).
+    ///         The ufc::cell.
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell) const;
 
     /// Compute values at all mesh vertices
+    ///
+    /// *Arguments*
+    ///     vertex_values (_Array_ <double>)
+    ///         The values at all vertices.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     virtual void compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const;
 

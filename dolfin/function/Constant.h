@@ -39,34 +39,96 @@ namespace dolfin
   public:
 
     /// Create scalar constant
+    ///
+    /// *Arguments*
+    ///     value (double)
+    ///         The scalar to create a Constant object from.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Constant c(1.0);
+    ///
     Constant(double value);
 
     /// Create vector constant (dim = 2)
+    ///
+    /// *Arguments*
+    ///     value0 (double)
+    ///         The first vector element.
+    ///     value1 (double)
+    ///         The second vector element.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Constant B(0.0, 1.0);
+    ///
     Constant(double value0, double value1);
 
     /// Create vector constant (dim = 3)
+    ///
+    /// *Arguments*
+    ///     value0 (double)
+    ///         The first vector element.
+    ///     value1 (double)
+    ///         The second vector element.
+    ///     value2 (double)
+    ///         The third vector element.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Constant T(0.0, 1.0, 0.0);
+    ///
     Constant(double value0, double value1, double value2);
 
     /// Create vector-valued constant
+    ///
+    /// *Arguments*
+    ///     values (std::vector<double>)
+    ///         Values to create a vector-valued constant from.
     Constant(std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values
+    ///
+    /// *Arguments*
+    ///     value_shape (std::vector<uint>)
+    ///         Shape of tensor.
+    ///     values (std::vector<double>)
+    ///         Values to create tensor-valued constant from.
     Constant(std::vector<uint> value_shape,
              std::vector<double> values);
 
     /// Copy constructor
+    ///
+    /// *Arguments*
+    ///     constant (_Constant_)
+    ///         Object to be copied.
     Constant(const Constant& constant);
 
     /// Destructor
     ~Constant();
 
     /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     constant (_Constant_)
+    ///         Another constant.
     const Constant& operator= (const Constant& constant);
 
     /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     constant (double)
+    ///         Another constant.
     const Constant& operator= (double constant);
 
     /// Cast to double (for scalar constants)
+    ///
+    /// *Returns*
+    ///     double
+    ///         The scalar value.
     operator double() const;
 
     //--- Implementation of Expression interface ---

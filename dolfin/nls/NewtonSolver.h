@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2006-2011.
+// Modified by Anders E. Johansen 2011.
 //
 // First added:  2005-10-23
-// Last changed: 2011-03-29
+// Last changed: 2011-07-11
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -38,7 +39,8 @@ namespace dolfin
   class GenericVector;
   class NonlinearProblem;
 
-  /// This class defines a Newton solver for equations of the form F(u) = 0.
+  /// This class defines a Newton solver for nonlinear systems of
+  /// equations of the form :math:`F(x) = 0`.
 
   class NewtonSolver : public Variable
   {
@@ -46,34 +48,71 @@ namespace dolfin
 
     /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(std::string solver_type = "lu",
-                 std::string pc_type = "default");
+    NewtonSolver(std::string solver_type="lu",
+                 std::string pc_type="default");
 
     /// Create nonlinear solver using provided linear solver and linear algebra
     /// backend determined by factory
+    ///
+    /// *Arguments*
+    ///     solver (_GenericLinearSolver_)
+    ///         The linear solver.
+    ///     factory (_LinearAlgebraFactory_)
+    ///         The factory.
     NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
 
-    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
-    /// Jacobian dF/dx
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
+    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+    ///
+    /// *Arguments*
+    ///     nonlinear_function (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    ///
+    /// *Returns*
+    ///     std::pair<uint, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
     std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 
     /// Return Newton iteration number
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The iteration number.
     uint iteration() const;
 
     /// Return current residual
+    ///
+    /// *Returns*
+    ///     double
+    ///         Current residual.
     double residual() const;
 
     /// Return current relative residual
+    ///
+    /// *Returns*
+    ///     double
+    ///       Current relative residual.
     double relative_residual() const;
 
     /// Return the linear solver
+    ///
+    /// *Returns*
+    ///     _GenericLinearSolver_
+    ///         The linear solver.
     GenericLinearSolver& linear_solver() const;
 
     /// Default parameter values
+    ///
+    /// *Returns*
+    ///     _Parameters_
+    ///         Parameter values.
     static Parameters default_parameters();
 
   private:

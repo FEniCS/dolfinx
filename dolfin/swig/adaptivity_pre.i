@@ -48,6 +48,11 @@ namespace dolfin {
 %ignore dolfin::GoalFunctional;
 
 //-----------------------------------------------------------------------------
+// Ignore assignment operator in AdaptiveDatum to avoid warning
+//-----------------------------------------------------------------------------
+%ignore dolfin::AdaptiveDatum::operator=;
+
+//-----------------------------------------------------------------------------
 // Ignore solve methods of *Adaptive*VariationalSolver that take
 // GoalFunctional as input
 //-----------------------------------------------------------------------------

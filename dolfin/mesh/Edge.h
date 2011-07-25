@@ -33,30 +33,75 @@
 namespace dolfin
 {
 
-  /// An Edge is a MeshEntity of topological dimension 1.
+  /// An Edge is a _MeshEntity_ of topological dimension 1.
 
   class Edge : public MeshEntity
   {
   public:
 
     /// Create edge on given mesh
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     index (uint)
+    ///         Index of the edge.
     Edge(const Mesh& mesh, uint index) : MeshEntity(mesh, 1, index) {}
 
     /// Create edge from mesh entity
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The mesh entity to create an edge from.
     Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
 
     /// Destructor
     ~Edge() {}
 
     /// Compute Euclidean length of edge
+    ///
+    /// *Returns*
+    ///     double
+    ///         Euclidean length of edge.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(2, 2);
+    ///         Edge edge(mesh, 0);
+    ///         info("%g", edge.length());
+    ///
+    ///     output::
+    ///
+    ///         0.5
     double length() const;
 
     /// Compute dot product between edge and other edge
+    ///
+    /// *Arguments*
+    ///     edge (_Edge_)
+    ///         Another edge.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The dot product.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(2, 2);
+    ///         Edge edge1(mesh, 0);
+    ///         Edge edge2(mesh, 1);
+    ///         info("%g", edge1.dot(edge2));
+    ///
+    ///     output::
+    ///
+    ///         0.25
     double dot(const Edge& edge) const;
 
   };
 
-  /// An EdgeIterator is a MeshEntityIterator of topological dimension 1.
+  /// An EdgeIterator is a _MeshEntityIterator_ of topological dimension 1.
 
   class EdgeIterator : public MeshEntityIterator
   {
@@ -70,7 +115,7 @@ namespace dolfin
 
   };
 
-  /// An EdgeFunction is a MeshFunction of topological dimension 1.
+  /// An EdgeFunction is a _MeshFunction_ of topological dimension 1.
 
   template <class T> class EdgeFunction : public MeshFunction<T>
   {
