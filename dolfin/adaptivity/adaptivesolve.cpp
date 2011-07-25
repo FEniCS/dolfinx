@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-07-01
+// Last changed: 2011-07-17
 
 #include <dolfin/fem/Form.h>
 #include <dolfin/function/Function.h>
@@ -122,9 +122,7 @@ void dolfin::solve(const Equation& equation,
                  "Variational problem is linear");
 
   // Define nonlinear problem
-  NonlinearVariationalProblem problem(*equation.lhs(), equation.rhs_int(), u,
-                                      bcs);
-  problem.set_jacobian(J);
+  NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
 
   // Solve nonlinear problem adaptively
   AdaptiveNonlinearVariationalSolver solver(problem);

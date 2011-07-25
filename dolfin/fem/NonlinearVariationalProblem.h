@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-29
+// Last changed: 2011-07-25
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
@@ -45,48 +45,63 @@ namespace dolfin
   {
   public:
 
-    // Developer note: The rhs argument (which must be zero) is included
-    // here for two reasons; first to make the interface consistent with
-    // the interface of LinearVariationalProblem and second to allow all
-    // checks of arguments to be performed in a single place (not also
-    // in the Equation class).
-
-    /// Create nonlinear variational problem without boundary conditions
+    /// Create nonlinear variational problem without boundary conditions.
+    /// The Jacobian form is not specified which requires the use of a
+    /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(const Form& F,
-                                int rhs,
                                 Function& u);
 
-    /// Create nonlinear variational problem without boundary conditions
-    /// (shared pointer version)
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                int rhs,
-                                boost::shared_ptr<Function> u);
-
-    /// Create nonlinear variational problem with a single boundary condition
+    /// Create nonlinear variational problem without boundary conditions.
+    /// The Jacobian form is specified which allows the use of a nonlinear
+    /// solver that relies on the Jacobian (using Newton's method).
     NonlinearVariationalProblem(const Form& F,
-                                int rhs,
+                                Function& u,
+                                const Form& J);
+
+    /// Create nonlinear variational problem with a single boundary condition.
+    /// The Jacobian form is not specified which requires the use of a
+    /// nonlinear solver that does not rely on the Jacobian.
+    NonlinearVariationalProblem(const Form& F,
                                 Function& u,
                                 const BoundaryCondition& bc);
 
-    /// Create nonlinear variational problem with a single boundary condition
-    /// (shared pointer version)
-    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                int rhs,
-                                boost::shared_ptr<Function> u,
-                                boost::shared_ptr<const BoundaryCondition> bc);
-
-    /// Create nonlinear variational problem with a list of boundary conditions
+    /// Create nonlinear variational problem with a single boundary condition.
+    /// The Jacobian form is specified which allows the use of a nonlinear
+    /// solver that relies on the Jacobian (using Newton's method).
     NonlinearVariationalProblem(const Form& F,
-                                int rhs,
+                                Function& u,
+                                const BoundaryCondition& bc,
+                                const Form& J);
+
+    /// Create nonlinear variational problem with a list of boundary conditions.
+    /// The Jacobian form is not specified which requires the use of a
+    /// nonlinear solver that does not rely on the Jacobian.
+    NonlinearVariationalProblem(const Form& F,
                                 Function& u,
                                 std::vector<const BoundaryCondition*> bcs);
 
-    /// Create nonlinear variational problem with a list of boundary conditions
-    /// (shared pointer version)
+    /// Create nonlinear variational problem with a list of boundary conditions.
+    /// The Jacobian form is specified which allows the use of a nonlinear
+    /// solver that relies on the Jacobian (using Newton's method).
+    NonlinearVariationalProblem(const Form& F,
+                                Function& u,
+                                std::vector<const BoundaryCondition*> bcs,
+                                const Form& J);
+
+    /// Create nonlinear variational problem, shared pointer version.
+    /// The Jacobian form is not specified which requires the use of a
+    /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                                int rhs,
                                 boost::shared_ptr<Function> u,
                                 std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+
+    /// Create nonlinear variational problem, shared pointer version.
+    /// The Jacobian form is specified which allows the use of a nonlinear
+    /// solver that relies on the Jacobian (using Newton's method).
+    NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
+                                boost::shared_ptr<Function> u,
+                                std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
+                                boost::shared_ptr<const Form> J);
 
     /// Return residual form
     boost::shared_ptr<const Form> residual_form() const;
@@ -109,19 +124,13 @@ namespace dolfin
     /// Return test space
     boost::shared_ptr<const FunctionSpace> test_space() const;
 
-    /// Set Jacobian form
-    void set_jacobian(const Form& J);
-
-    /// Set Jacobian form (shared pointer version)
-    void set_jacobian(boost::shared_ptr<const Form> J);
-
     /// Check whether Jacobian has been defined
     bool has_jacobian() const;
 
   private:
 
     // Check forms
-    void check_forms(int rhs) const;
+    void check_forms() const;
 
     // The residual form
     boost::shared_ptr<const Form> _F;

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-06-30
+// Last changed: 2011-07-17
 
 #include <map>
 
@@ -377,15 +377,16 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Create new problem
   assert(F);
   assert(u);
-  boost::shared_ptr<NonlinearVariationalProblem>
-    refined_problem(new NonlinearVariationalProblem(F->child_shared_ptr(),
-                                                    0,
-                                                    refined_u,
-                                                    refined_bcs));
-
-  // Set Jacobian form
+  boost::shared_ptr<NonlinearVariationalProblem> refined_problem;
   if (J)
-    refined_problem->set_jacobian(J->child_shared_ptr());
+    refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
+                                                          refined_u,
+                                                          refined_bcs,
+                                                          J->child_shared_ptr()));
+  else
+    refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
+                                                          refined_u,
+                                                          refined_bcs));
 
   // Set parent / child
   set_parent_child(problem, refined_problem);
