@@ -400,13 +400,21 @@ void DirichletBC::homogenize()
   {
     boost::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
-    return;
+  } else if (value_rank == 1)
+  {
+    const uint value_dim = g->value_dimension(0);
+    std::vector<double> values(value_dim, 0.0);
+    boost::shared_ptr<Constant> zero(new Constant(values));
+    set_value(zero);
+  } else
+  {
+    std::vector<uint> value_shape;
+    for (uint i = 0; i < value_rank; i++)
+      value_shape.push_back(g->value_dimension(i));
+    std::vector<double> values(g->value_size(), 0.0);
+    boost::shared_ptr<Constant> zero(new Constant(value_shape, values));
+    set_value(zero);
   }
-
-  const uint value_dim = g->value_dimension(0);
-  std::vector<double> values(value_dim, 0.0);
-  boost::shared_ptr<Constant> zero(new Constant(values));
-  set_value(zero);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
