@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-07-01
+// Last changed: 2011-07-25
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -100,8 +100,7 @@ int main() {
 
   // Define variational problem from the variational form F, specify
   // the unknown Function w and the boundary condition bc
-  NonlinearVariationalProblem pde(F, 0, w, bc);
-  pde.set_jacobian(dF);
+  NonlinearVariationalProblem pde(F, w, bc, dF);
 
   // Define solver
   AdaptiveNonlinearVariationalSolver solver(pde);

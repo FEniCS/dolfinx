@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-30
+// Last changed: 2011-07-17
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -28,30 +28,30 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::
 NonlinearVariationalProblem(const Form& F,
-                            int rhs,
                             Function& u)
   : Hierarchical<NonlinearVariationalProblem>(*this),
     _F(reference_to_no_delete_pointer(F)),
     _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
-  check_forms(rhs);
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            int rhs,
-                            boost::shared_ptr<Function> u)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _u(u)
-{
-  // Check forms
-  check_forms(rhs);
+  check_forms();
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::
 NonlinearVariationalProblem(const Form& F,
-                            int rhs,
+                            Function& u,
+                            const Form& J)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(reference_to_no_delete_pointer(F)),
+    _J(reference_to_no_delete_pointer(J)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(const Form& F,
                             Function& u,
                             const BoundaryCondition& bc)
   : Hierarchical<NonlinearVariationalProblem>(*this),
@@ -62,27 +62,28 @@ NonlinearVariationalProblem(const Form& F,
   _bcs.push_back(reference_to_no_delete_pointer(bc));
 
   // Check forms
-  check_forms(rhs);
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::
-NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            int rhs,
-                            boost::shared_ptr<Function> u,
-                            boost::shared_ptr<const BoundaryCondition> bc)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _F(F), _u(u)
-{
-  // Store boundary condition
-  _bcs.push_back(bc);
-
-  // Check forms
-  check_forms(rhs);
+  check_forms();
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::
 NonlinearVariationalProblem(const Form& F,
-                            int rhs,
+                            Function& u,
+                            const BoundaryCondition& bc,
+                            const Form& J)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(reference_to_no_delete_pointer(F)),
+    _J(reference_to_no_delete_pointer(J)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary condition
+  _bcs.push_back(reference_to_no_delete_pointer(bc));
+
+  // Check forms
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(const Form& F,
                             Function& u,
                             std::vector<const BoundaryCondition*> bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this),
@@ -94,12 +95,29 @@ NonlinearVariationalProblem(const Form& F,
     _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 
   // Check forms
-  check_forms(rhs);
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(const Form& F,
+                            Function& u,
+                            std::vector<const BoundaryCondition*> bcs,
+                            const Form& J)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(reference_to_no_delete_pointer(F)),
+    _J(reference_to_no_delete_pointer(J)),
+    _u(reference_to_no_delete_pointer(u))
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
+
+  // Check forms
+  check_forms();
 }
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::
 NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
-                            int rhs,
                             boost::shared_ptr<Function> u,
                             std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
   : Hierarchical<NonlinearVariationalProblem>(*this),
@@ -110,7 +128,23 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
     _bcs.push_back(bcs[i]);
 
   // Check forms
-  check_forms(rhs);
+  check_forms();
+}
+//-----------------------------------------------------------------------------
+NonlinearVariationalProblem::
+NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
+                            boost::shared_ptr<Function> u,
+                            std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
+                            boost::shared_ptr<const Form> J)
+  : Hierarchical<NonlinearVariationalProblem>(*this),
+    _F(F), _J(J), _u(u)
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); ++i)
+    _bcs.push_back(bcs[i]);
+
+  // Check forms
+  check_forms();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const
@@ -153,22 +187,12 @@ NonlinearVariationalProblem::test_space() const
   return _F->function_space(0);
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_jacobian(const Form& J)
-{
-  _J = reference_to_no_delete_pointer(J);
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_jacobian(boost::shared_ptr<const Form> J)
-{
-  _J = J;
-}
-//-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_jacobian() const
 {
   return _J; // cast to bool
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::check_forms(int rhs) const
+void NonlinearVariationalProblem::check_forms() const
 {
   // Check rank of residual F
   assert(_F);
@@ -178,12 +202,21 @@ void NonlinearVariationalProblem::check_forms(int rhs) const
                  "Expecting the residual F to be a linear form (not rank %d)",
                  _F->rank());
 
+  // Check rank of Jacobian J
+  if (_J && _J->rank() != 2)
+    dolfin_error("NonlinearVariationalProblem.cpp",
+                 "define nonlinear variational problem F(u; v) = 0 for all v",
+                 "Expecting the Jacobian J to be a bilinear form (not rank %d)",
+                 _J->rank());
+
+  /*
   // Check value of right-hand side
   if (rhs != 0)
     dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
                  "Expecting the right-hand side to be zero (not %d)",
                  rhs);
+  */
 
   // FIXME: Should we add a check here that matches the function space
   // FIXME: of the solution variable u to a coefficient space for F?

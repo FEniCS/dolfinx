@@ -47,15 +47,12 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
 
   // Store child->parent cell and facet information as mesh data
   const uint D = refined_mesh.topology().dim();
-
-  info("Storing parent cell information");
   boost::shared_ptr<MeshFunction<unsigned int> > cf = \
     refined_mesh.data().create_mesh_function("parent_cell", D);
   for(uint i = 0; i < refined_mesh.num_cells(); i++)
     (*cf)[i] = cell_map[i];
 
   // Create mesh function in refined mesh encoding parent facet maps
-  info("Storing parent facet information");
   boost::shared_ptr<MeshFunction<unsigned int> > ff = \
     refined_mesh.data().create_mesh_function("parent_facet", D - 1);
 

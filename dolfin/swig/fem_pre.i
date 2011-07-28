@@ -58,26 +58,46 @@
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
 
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
-	        const Form&, const Form&, Function&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
-		const Form&, const Form&, Function&, 
-		const BoundaryCondition&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(
-		const Form&, const Form&, Function&, 
-		std::vector<const BoundaryCondition*>);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                                                                   const Form&,
+                                                                   Function&);
 
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(
-				       LinearVariationalProblem&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                                                                   const Form&,
+                                                                   Function&,
+                                                                   const BoundaryCondition&);
 
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
-		const Form&, int, Function&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
-		const Form&, int, Function&, const BoundaryCondition&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(
-                const Form&, int, Function&, 
-		std::vector<const BoundaryCondition*>);
-%ignore dolfin::NonlinearVariationalProblem::set_jacobian(const Form&);
+%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
+                                                                   const Form&,
+                                                                   Function&,
+                                                                   std::vector<const BoundaryCondition*>);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&,
+                                                                         const Form&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&,
+                                                                         const BoundaryCondition&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&,
+                                                                         const BoundaryCondition&,
+                                                                         const Form&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&,
+                                                                         std::vector<const BoundaryCondition*>);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                         Function&,
+                                                                         std::vector<const BoundaryCondition*>,
+                                                                         const Form&);
+
+%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 

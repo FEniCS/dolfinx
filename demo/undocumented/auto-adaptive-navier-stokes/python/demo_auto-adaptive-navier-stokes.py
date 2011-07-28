@@ -81,11 +81,11 @@ tol = 1.e-05
 # If no more control is wanted, do:
 # solve(F == 0, w, bc, tol, M)
 
-# Define variational problem
-pde = NonlinearVariationalProblem(F, 0, w, bc)
+# Compute Jacobian form
+J = derivative(F, w)
 
-# Set Jacobian
-pde.set_jacobian(derivative(F, w))
+# Define variational problem
+pde = NonlinearVariationalProblem(F, w, bc, J)
 
 # Define solver
 solver = AdaptiveNonlinearVariationalSolver(pde)

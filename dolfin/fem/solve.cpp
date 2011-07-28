@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-06-30
+// Last changed: 2011-07-17
 
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -63,7 +63,7 @@ void dolfin::solve(const Equation& equation,
   // Solve nonlinear problem
   else
   {
-    NonlinearVariationalProblem problem(*equation.lhs(), equation.rhs_int(), u, bcs);
+    NonlinearVariationalProblem problem(*equation.lhs(), u, bcs);
     NonlinearVariationalSolver solver(problem);
     solver.solve();
   }
@@ -105,8 +105,7 @@ void dolfin::solve(const Equation& equation,
                  "Variational problem is linear");
 
   // Solve nonlinear problem
-  NonlinearVariationalProblem problem(*equation.lhs(), equation.rhs_int(), u, bcs);
-  problem.set_jacobian(J);
+  NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
   NonlinearVariationalSolver solver(problem);
   solver.solve();
 }
