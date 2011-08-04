@@ -255,6 +255,16 @@ class Instantiation(unittest.TestCase):
           f4 = F2(cell=triangle)
           self.assertTrue(isinstance(f4.ufl_element(), TensorElement))
           
+     def testExponentInit(self):
+          e0 = Expression("1e10")
+          self.assertEqual(e0(0,0,0), 1e10)
+
+          e1 = Expression("1e-10")
+          self.assertEqual(e1(0,0,0), 1e-10)
+
+          e2 = Expression("1e+10")
+          self.assertEqual(e2(0,0,0), 1e+10)
+
 
 class Interpolate(unittest.TestCase):
 
