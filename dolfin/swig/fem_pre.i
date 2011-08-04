@@ -50,13 +50,13 @@
 					 uint,
 					 std::string method="topological");
 
+%ignore dolfin::DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace>,
+					 boost::shared_ptr<const GenericFunction>,
+					 const std::vector<std::pair<uint, uint> >&,
+					 std::string method="topological");
+
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,
 				       const SubDomain&);
-
-%ignore dolfin::DirichletBC(const FunctionSpace&,
-                            const GenericFunction&,
-                            const std::vector<std::pair<uint, uint> >&,
-                            std::string method="topological");
 
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
