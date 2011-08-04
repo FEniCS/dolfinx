@@ -576,7 +576,7 @@ const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
 {
   assert(A.mat());
-  *(this->A) = *A.mat();
+  this->A = A.mat();
   return *this;
 }
 //-----------------------------------------------------------------------------
