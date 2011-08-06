@@ -143,11 +143,15 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   const PETScVector& _b = b.down_cast<PETScVector>();
   PETScVector& _x = x.down_cast<PETScVector>();
 
+  // Write a message
+  if (parameters["report"] && dolfin::MPI::process_number() == 0)
+    log(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver).", A->size(0), A->size(1));
+
   // Check dimensions
   if (A->size(0) != b.size())
     error("Cannot LU factorize non-square PETSc matrix.");
 
-  // Initialize solution vector if required
+  // Initialize solution vector if required (make compatible with A in parallel)
   if (A->size(1) != x.size())
     A->resize(x, 1);
 

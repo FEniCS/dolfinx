@@ -30,6 +30,7 @@
 #include <Epetra_LinearProblem.h>
 #include <Epetra_MultiVector.h>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -118,6 +119,10 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(linear_problem);
   assert(solver);
+
+  // Write a message
+  if (parameters["report"] && dolfin::MPI::process_number() == 0)
+    log(PROGRESS, "Solving linear system of size %d x %d (Epetra LU solver).", A->size(0), A->size(1));
 
   // Downcast vector
   EpetraVector& _x = x.down_cast<EpetraVector>();

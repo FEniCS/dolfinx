@@ -144,8 +144,10 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   if (newton_converged)
   {
     if (dolfin::MPI::process_number() == 0)
+    {
      info("Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
+    }
   }
   else
   {
