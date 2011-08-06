@@ -346,7 +346,8 @@ void SparsityPattern::info_statistics() const
 
   // Return number of entries
   cout << "Matrix of size " << shape[0] << " x " << shape[1] << " has "
-       << num_nonzeros_total << " nonzero entries." << endl;
+       << num_nonzeros_total << " (" << 100.0*num_nonzeros_total/(shape[0]*shape[1])
+        << "%)" << " nonzero entries." << endl;
   if (num_nonzeros_total != num_nonzeros_diagonal)
   {
     cout << "Diagonal: " << num_nonzeros_diagonal << " ("
