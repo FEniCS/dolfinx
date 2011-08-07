@@ -43,7 +43,7 @@ fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
                "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]","2"), element = Vv.ufl_element())
 
 # Project to a discrete function
-g = project(fs, Vs)
+g = project(fs, V=Vs)
 
 print """
 Evaluate user-defined scalar function fs

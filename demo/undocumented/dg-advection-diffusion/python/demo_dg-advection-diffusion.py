@@ -92,7 +92,7 @@ bc.apply(A, b)
 solve(A, phi_h.vector(), b)
 
 # Project solution to a continuous function space
-up = project(phi_h, V_cg)
+up = project(phi_h, V=V_cg)
 
 file = File("temperature.pvd")
 file << up
