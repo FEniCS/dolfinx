@@ -31,7 +31,7 @@ P1 = FunctionSpace(mesh, "CG", 1)
 v = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=2)
 
 # Compute projection (L2-projection)
-Pv = project(v, P1)
+Pv = project(v, V=P1)
 
 # Compute interpolation (evaluating dofs)
 PIv = Function(P1)
