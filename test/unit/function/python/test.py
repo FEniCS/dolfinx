@@ -84,11 +84,11 @@ class Eval(unittest.TestCase):
           # Projection requires CGAL
           if not has_cgal():
                return
-          
+
           # FIXME: eval does not work in parallel yet
           if MPI.num_processes() == 1:
               V2 = FunctionSpace(mesh, 'CG', 2)
-              g = project(f3, V2)
+              g = project(f3, V=V2)
               u3 = f3(x)
               u4 = g(x)
               self.assertAlmostEqual(u3, u4, places=5)
@@ -194,7 +194,7 @@ class Instantiation(unittest.TestCase):
 
           def wrongDefaultType():
                Expression("a", a="1")
-               
+
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
@@ -227,34 +227,34 @@ class Instantiation(unittest.TestCase):
 
           e0 = Expression("1")
           self.assertTrue(e0.ufl_element().cell().is_undefined())
-          
+
           e1 = Expression("1", cell=triangle)
           self.assertFalse(e1.ufl_element().cell().is_undefined())
 
           e2 = Expression("1", cell=triangle, degree=2)
           self.assertEqual(e2.ufl_element().degree(), 2)
-          
+
           e3 = Expression(["1", "1"], cell=triangle)
           self.assertTrue(isinstance(e3.ufl_element(), VectorElement))
-          
+
           e4 = Expression((("1", "1"), ("1", "1")), cell=triangle)
           self.assertTrue(isinstance(e4.ufl_element(), TensorElement))
-          
+
           f0 = F0()
           self.assertTrue(f0.ufl_element().cell().is_undefined())
-          
+
           f1 = F0(cell=triangle)
           self.assertFalse(f1.ufl_element().cell().is_undefined())
 
           f2 = F0(cell=triangle, degree=2)
           self.assertEqual(f2.ufl_element().degree(), 2)
-          
+
           f3 = F1(cell=triangle)
           self.assertTrue(isinstance(f3.ufl_element(), VectorElement))
-          
+
           f4 = F2(cell=triangle)
           self.assertTrue(isinstance(f4.ufl_element(), TensorElement))
-          
+
      def testExponentInit(self):
           e0 = Expression("1e10")
           self.assertEqual(e0(0,0,0), 1e10)
@@ -295,7 +295,7 @@ class Interpolate(unittest.TestCase):
             self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
 
 class Constants(unittest.TestCase):
-     
+
      def testConstantInit(self):
           c0 = Constant(1.)
           c1 = Constant([2,3], interval)
@@ -306,7 +306,7 @@ class Constants(unittest.TestCase):
           self.assertTrue(c1.cell() == interval)
           self.assertTrue(c2.cell() == triangle)
           self.assertTrue(c3.cell() == tetrahedron)
-          
+
           self.assertTrue(c0.shape() == ())
           self.assertTrue(c1.shape() == (2,))
           self.assertTrue(c2.shape() == (2,2))
