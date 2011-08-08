@@ -29,6 +29,27 @@ mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
+
+# TODO: Move this function to dolfin.Expression/dolfin.Function
+def ufl_evaluate(self, x, component, derivatives):
+     import numpy
+     import ufl
+     assert derivatives == () # TODO: Handle derivatives
+
+     if component:
+          shape = self.shape()
+          assert len(shape) == len(component)
+          value_size = ufl.common.product(shape)
+          index = ufl.common.component_to_index(component, shape)
+          values = numpy.zeros(value_size)
+          self(*x, values=values)
+          return values[index]
+     else:
+          # Scalar evaluation
+          return self(*x)
+Expression.ufl_evaluate = ufl_evaluate # Hack while developing here: Attaching to Expression
+
+
 class Eval(unittest.TestCase):
 
      def testArbitraryEval(self):
@@ -71,16 +92,6 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(u11, same_result)
           self.assertAlmostEqual(u21, same_result)
 
-          # Test ufl evalutation:
-          def N(x):
-               return x[0]**2 + x[1]
-
-          self.assertEqual(f0((2.0, 1.0), { f0: N }),5)
-
-          a = f0**2
-          b = a((2.0, 1.0), { f0: N })
-          self.assertEqual(b, 25)
-
           # Projection requires CGAL
           if not has_cgal():
                return
@@ -94,6 +105,43 @@ class Eval(unittest.TestCase):
               self.assertAlmostEqual(u3, u4, places=5)
               self.assertRaises(TypeError, g, [0,0,0,0])
               self.assertRaises(TypeError, g, Point(0,0))
+
+     def testUflEval(self):
+          class F0(Expression):
+               def eval(self, values, x):
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+
+          class V0(Expression):
+               def eval(self, values, x):
+                    values[0] = x[0]**2
+                    values[1] = x[1]**2
+                    values[2] = x[2]**2
+               def value_shape(self):
+                    return (3,)
+
+          f0 = F0()
+          v0 = V0()
+
+          x = (2.0, 1.0, 3.0)
+
+          # Test ufl evaluation through mapping (overriding the Expression with N here):
+          def N(x):
+               return x[0]**2 + x[1] + 3*x[2]
+
+          self.assertEqual(f0(x, { f0: N }), 14)
+
+          a = f0**2
+          b = a(x, { f0: N })
+          self.assertEqual(b, 196)
+
+          # Test ufl evaluation together with Expression evaluation by dolfin
+          # scalar
+          self.assertEqual(f0(x), f0(*x))
+          self.assertEqual((f0**2)(x), f0(*x)**2)
+          # vector
+          self.assertTrue(all(a == b for a,b in zip(v0(x), v0(*x))))
+          self.assertEqual(dot(v0,v0)(x), sum(v**2 for v in v0(*x)))
+          self.assertEqual(dot(v0,v0)(x), 98)
 
      def testOverLoadAndCallBack(self):
           class F0(Expression):
