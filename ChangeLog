@@ -1,3 +1,6 @@
+ - Print percentage of non-zero entries when computing sparsity patterns
+ - Use ufl.Real for Constant in Python interface
+ - Add Dirichlet boundary condition argument to Python project function
  - Add remove functionality for parameter sets
  - Added out typemap for vector of shared_ptr objects
  - Fix typemap bug for list of shared_ptr objects
