@@ -22,6 +22,7 @@
 #define __FACET_CELL_H
 
 #include "Cell.h"
+#include "BoundaryMesh.h"
 
 namespace dolfin
 {
@@ -36,7 +37,7 @@ namespace dolfin
   public:
 
     /// Create cell on mesh corresponding to given facet (cell) on boundary
-    FacetCell(const Mesh& mesh, const Cell& facet);
+    FacetCell(const BoundaryMesh& mesh, const Cell& facet);
 
     /// Destructor
     ~FacetCell();

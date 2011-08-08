@@ -71,8 +71,8 @@ namespace dolfin
   ///
   /// Boundary extraction
   ///
-  ///   * "vertex map" - _MeshFunction_ <uint> of dimension 0
-  ///   * "cell map"   - _MeshFunction_ <uint> of dimension D
+  ///   * (removed, is now a member function of BoundaryMesh) "vertex map" - _MeshFunction_ <uint> of dimension 0
+  ///   * (removed, is now a member function of BoundaryMesh) "cell map"   - _MeshFunction_ <uint> of dimension D
   ///
   ///
   /// Mesh partitioning
