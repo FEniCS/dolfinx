@@ -54,9 +54,11 @@ namespace dolfin
     MeshFunction<unsigned int>& cell_map()
     { return _cell_map; }
 
+    /// Get cell mapping from the boundary mesh to the original full mesh
     const MeshFunction<unsigned int>& cell_map() const
     { return _cell_map; }
 
+    /// Get vertex mapping from the boundary mesh to the original full mesh
     MeshFunction<unsigned int>& vertex_map()
     { return _vertex_map; }
 

@@ -27,18 +27,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FacetCell::FacetCell(const Mesh& mesh, const Cell& facet)
+FacetCell::FacetCell(const BoundaryMesh& mesh, const Cell& facet)
   : Cell(mesh, 0), _facet_index(0)
 {
   // Get map from facets (boundary cells) to mesh cells
-  boost::shared_ptr<const MeshFunction<unsigned int> > cell_map = facet.mesh().data().mesh_function("cell map");
-
-  // Check that mapping exists
-  if (!cell_map)
-    error("Unable to create create cell corresponding to facet, missing cell map.");
+  const MeshFunction<unsigned int>& cell_map = mesh.cell_map();
 
   // Get mesh facet corresponding to boundary cell
-  Facet mesh_facet(mesh, (*cell_map)[facet]);
+  Facet mesh_facet(mesh, cell_map[facet]);
 
   // Get cell index (pick first, there is only one)
   const uint D = mesh.topology().dim();
