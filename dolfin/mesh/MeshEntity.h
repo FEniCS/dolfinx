@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -31,10 +31,10 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/intersection/PrimitiveIntersector.h>
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Point.h"
-#include "PrimitiveIntersector.h"
 
 namespace dolfin
 {

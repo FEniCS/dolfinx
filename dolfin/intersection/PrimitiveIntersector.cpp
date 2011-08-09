@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-09
-// Last changed: 2010-03-05
+// Last changed: 2011-08-09
 
-#include "Mesh.h"
-#include "MeshEntity.h"
-#include "Point.h"
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/Point.h>
 #include "PrimitiveIntersector.h"
 
 using namespace dolfin;

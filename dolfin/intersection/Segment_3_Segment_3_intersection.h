@@ -16,17 +16,18 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2010-04-06
+// Last changed: 2011-08-09
 
 #ifndef  segment_3_segment_3_intersection_INC
 #define  segment_3_segment_3_intersection_INC
 
 #include <CGAL/version.h>
 
-///@file This file contains some small extension to the CGAL library, for
-//instance unifying their do_intersect functions to also deal with Segment_3
-//and Primitive intersections or some additional intersection collision test.
-// It is not required for CGAL_VERSION >= 3.8
+// @file This file contains some small extension to the CGAL library,
+// for instance unifying their do_intersect functions to also deal
+// with Segment_3 and Primitive intersections or some additional
+// intersection collision test. It is not required for CGAL_VERSION >=
+// 3.8
 
 #if CGAL_VERSION_NR < 1030801000
 
@@ -94,7 +95,6 @@ intersection(const Segment_3<K> &s1, const Segment_3<K> &s2)
 
 CGAL_END_NAMESPACE
 
-
 #endif
 
-#endif   /* ----- #ifndef segment_3_segment_3_intersection_INC  ----- */
+#endif

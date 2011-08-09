@@ -16,14 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-10-12
-// Last changed: 2009-11-10
+// Last changed: 2011-08-09
 
 #ifndef  __TREE_TRAITS_H
 #define  __TREE_TRAITS_H
 
 #include <CGAL/AABB_traits.h>
 
-namespace dolfin 
+namespace dolfin
 {
 
   template<typename GeomTraits, typename AABB_primitive>
@@ -31,15 +31,16 @@ namespace dolfin
   {
 
   public:
+
     typedef CGAL::AABB_traits<GeomTraits, AABB_primitive> AT;
     typedef typename CGAL::Bbox_3 Bounding_box;
     typedef AABB_primitive Primitive;
 
-
-    //Redefine  this class in order to overwrite static compute_bbox methods
-    //and to use our own (calling directly the bbox of primitive, which is not
-    //required by th CGAL primitive concept.
-    class Compute_bbox {
+    // Redefine  this class in order to overwrite static compute_bbox methods
+    // and to use our own (calling directly the bbox of primitive, which is not
+    // required by th CGAL primitive concept.
+    class Compute_bbox
+    {
     public:
       template<typename ConstPrimitiveIterator>
       typename AT::Bounding_box operator()(ConstPrimitiveIterator first,
@@ -57,11 +58,10 @@ namespace dolfin
     Compute_bbox compute_bbox_object() {return Compute_bbox();}
 
   private:
-    /**
-     * @brief Computes bounding box of one primitive
-     * @param pr the primitive
-     * @return the bounding box of the primitive \c pr
-     */
+
+    // @brief Computes bounding box of one primitive
+    // @param pr the primitive
+    // @return the bounding box of the primitive \c pr
     static Bounding_box compute_bbox(const Primitive& pr)
     {
       return pr.bbox();
@@ -70,4 +70,4 @@ namespace dolfin
 
 }
 
-#endif   // ----- #ifndef __TREE_TRAITS_H  -----
+#endif
