@@ -29,27 +29,6 @@ mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
-
-# TODO: Move this function to dolfin.Expression/dolfin.Function
-def ufl_evaluate(self, x, component, derivatives):
-     import numpy
-     import ufl
-     assert derivatives == () # TODO: Handle derivatives
-
-     if component:
-          shape = self.shape()
-          assert len(shape) == len(component)
-          value_size = ufl.common.product(shape)
-          index = ufl.common.component_to_index(component, shape)
-          values = numpy.zeros(value_size)
-          self(*x, values=values)
-          return values[index]
-     else:
-          # Scalar evaluation
-          return self(*x)
-Expression.ufl_evaluate = ufl_evaluate # Hack while developing here: Attaching to Expression
-
-
 class Eval(unittest.TestCase):
 
      def testArbitraryEval(self):
