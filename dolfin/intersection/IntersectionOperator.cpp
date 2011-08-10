@@ -63,13 +63,13 @@ IntersectionOperator::~IntersectionOperator()
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const Point& point,
-                                                    uint_set& ids_result) const
+                                                    std::set<uint>& ids_result) const
 {
   rImpl().all_intersected_entities(point, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const std::vector<Point>& points,
-                                                   uint_set& ids_result) const
+                                                   std::set<uint>& ids_result) const
 {
   rImpl().all_intersected_entities(points, ids_result);
 }
@@ -81,13 +81,13 @@ void IntersectionOperator::all_intersected_entities(const MeshEntity & entity,
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const std::vector<MeshEntity>& entities,
-						    uint_set& ids_result) const
+						    std::set<uint>& ids_result) const
 {
   rImpl().all_intersected_entities(entities, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const Mesh& another_mesh,
-                                                    uint_set& ids_result) const
+                                                    std::set<uint>& ids_result) const
 {
   rImpl().all_intersected_entities(another_mesh, ids_result);
 }

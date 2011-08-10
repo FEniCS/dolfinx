@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-04-22
-// Last changed: 2009-11-27
+// Last changed: 2011-08-10
 //
 // This file provides DOLFIN typedefs for basic types.
 
@@ -34,9 +34,6 @@ namespace dolfin
 
   // Complex numbers
   typedef std::complex<double> complex;
-
-  // (Ordered) set of uints
-  typedef std::set<uint> uint_set; 
 
 }
 

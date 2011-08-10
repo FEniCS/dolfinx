@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2009 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2005-2010.
-// Modified by Martin Sandve Alnes, 2008.
-// Modified by Andre Massing, 2009.
+// Modified by Garth N. Wells 2005-2010
+// Modified by Martin Sandve Alnes 2008
+// Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
 // Last changed: 2011-03-15
@@ -297,7 +297,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // Find the cell that contains x
   const double* _x = x.data().get();
   const Point point(_function_space->mesh().geometry().dim(), _x);
-  int id = _function_space->mesh().any_intersected_entity(point);
+  int id = _function_space->mesh().intersected_cell(point);
 
   // If not found, use the closest cell
   if (id == -1)
@@ -418,7 +418,7 @@ void Function::non_matching_eval(Array<double>& values,
   const Point point(dim, _x);
 
   // Alternative 1: Find cell that point (x) intersects
-  int id = _function_space->mesh().any_intersected_entity(point);
+  int id = _function_space->mesh().intersected_cell(point);
 
   if (id == -1 && !allow_extrapolation)
     error("Unable to evaluate function at given point (not inside domain). Set parameter 'allow_extrapolation' to true to allow extrapolation'.");
@@ -442,7 +442,7 @@ void Function::non_matching_eval(Array<double>& values,
       barycenter += vertex;
     }
     barycenter /= (dim + 1);
-    id = _function_space->mesh().any_intersected_entity(barycenter);
+    id = _function_space->mesh().intersected_cell(barycenter);
   }
 
   // Throw error if all alternatives failed.

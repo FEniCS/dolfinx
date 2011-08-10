@@ -441,71 +441,63 @@ namespace dolfin
     ///         The colors as a mesh function over entities of the mesh.
     const MeshFunction<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
 
-    /// Compute all ids of all cells which are intersected by the
-    /// given point.
+    /// Compute all cells which are intersected by the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
     ///         A _Point_ object.
     ///
-    ///     ids_result (std::set<uint>)
-    ///         The cell ids which are intersected are stored in a set for
-    ///         efficiency reasons, to avoid to sort out duplicates later on.
-    void all_intersected_entities(const Point& point, uint_set& ids_result) const;
+    ///     cells (std::set<uint>)
+    ///         A set of indices of all intersected cells.
+    void intersected_cells(const Point& point,
+                           std::set<uint>& cells) const;
 
-    /// Compute all ids of all cells which are intersected by any
-    /// point in points.
+    /// Compute all cells which are intersected by any of a vector of points.
     ///
     /// *Arguments*
     ///     points (std::vector<_Point_>)
     ///         A vector of _Point_ objects.
     ///
-    ///     ids_result (std::set<uint>)
-    ///         The cell ids which are intersected are stored in a set
-    ///         for efficiency reasons, to avoid to sort out
-    ///         duplicates later on.
-    void all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const;
+    ///     cells (std::set<uint>)
+    ///         A set of indices of all intersected cells.
+    void intersected_cells(const std::vector<Point>& points,
+                           std::set<uint>& cells) const;
 
-    /// Compute all ids of all cells which are intersected by the given
-    /// entity.
+    /// Compute all cells which are intersected by the given entity.
     ///
     /// *Arguments*
     ///     entity (_MeshEntity_)
     ///         A _MeshEntity_ object.
     ///
-    ///     ids_result (std::vector<uint>)
-    ///         The ids of the intersected cells are saved in a list.
-    ///         This is more efficent than using a set and allows a
-    ///         map between the (external) cell and the intersected
-    ///         cell of the mesh.
-    void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const;
+    ///     cells (std::vector<uint>)
+    ///         A vector of indices of all intersected cells.
+    void intersected_cells(const MeshEntity& entity,
+                           std::vector<uint>& cells) const;
 
-    /// Compute all id of all cells which are intersected by any entity in the
-    /// vector entities.
+    /// Compute all cells which are intersected by any of a vector of entities.
     ///
     /// *Arguments*
     ///     entities (std::vector<_MeshEntity_>)
     ///         A vector of _MeshEntity_ objects.
     ///
-    ///     ids_result (std::set<uint>)
-    ///         The cell ids which are intersected are stored in a set for
-    ///         efficiency reasons, to avoid to sort out duplicates later on.
-    void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const;
+    ///     cells (std::set<uint>)
+    ///         A vector of indices of all intersected cells.
+    void intersected_cells(const std::vector<MeshEntity>& entities,
+                           std::set<uint>& ids_result) const;
 
-    /// Compute all ids of all cells which are intersected by
-    /// another_mesh.
+    /// Compute all cells which are intersected by the given mesh.
     ///
     /// *Arguments*
-    ///     another_mesh (_Mesh_)
+    ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
     ///
-    ///     ids_result (std::set<uint>)
-    ///         The cell ids which are intersected are stored in a set for
-    ///         efficiency reasons, to avoid to sort out duplicates later on.
-    void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const;
+    ///     cells (std::set<uint>)
+    ///         A set of indices of all intersected cells.
+    void intersected_cells(const Mesh& mesh,
+                           std::set<uint>& cells) const;
 
-    /// Computes only the first id of the entity, which contains the
-    /// point.
+    /// Find the cell (if any) containing the given point. If the point
+    /// is contained in several cells, the first cell is returned.
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -513,12 +505,11 @@ namespace dolfin
     ///
     /// *Returns*
     ///     int
-    ///         The first id of the cell, which contains the point,
-    ///         returns -1 if no cell is intersected.
-    int any_intersected_entity(const Point& point) const;
+    ///         The index of the cell containing the point. If no cell
+    ///         is found, the return value is -1.
+    int intersected_cell(const Point& point) const;
 
-    /// Computes the point inside the mesh and the corresponding cell
-    /// index which are closest to the point query.
+    /// Find the point in the mesh closest to the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -526,12 +517,10 @@ namespace dolfin
     ///
     /// *Returns*
     ///     _Point_
-    ///         The point inside the mesh which is closest to the
-    ///         point.
+    ///         The closest point.
     Point closest_point(const Point& point) const;
 
-    /// Computes the index of the cell in the mesh which is closest to the
-    /// point query.
+    /// Find the cell in the mesh closest to the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -539,7 +528,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     uint
-    ///         The index of the cell in the mesh which is closest to point.
+    ///         The index of the closest cell.
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -553,8 +542,7 @@ namespace dolfin
     ///         1
     dolfin::uint closest_cell(const Point& point) const;
 
-    /// Computes the point inside the mesh and the corresponding cell
-    /// index which are closest to the point query.
+    /// Find the point and corresponding cell closest to the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
@@ -562,8 +550,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<_Point_, uint>
-    ///         The point inside the mesh and the corresponding cell
-    ///         index which is closest to the point query.
+    ///         A pair consisting of the closest point and corresponding cell index.
     std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
 
     /// Compute minimum cell diameter.

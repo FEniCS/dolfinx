@@ -62,13 +62,13 @@ namespace dolfin
     /// \param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
     /// reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Point & point,
-                                  uint_set& ids_result) const;
+                                  std::set<uint>& ids_result) const;
 
     /// Compute all id of all cells which are intersects any point in \em points.
     /// \param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
     /// reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const std::vector<Point>& points,
-                                  uint_set& ids_result) const;
+                                  std::set<uint>& ids_result) const;
 
     /// Compute all id of all cells which are intersects by a \em entity.
     /// \param[out] ids_result The ids of the intersected entities are saved in a vector.
@@ -76,7 +76,7 @@ namespace dolfin
     /// the (external) cell and the intersected cell of the mesh. If you
     /// are only interested in intersection with a list of cells without caring about which
     /// cell what intersected by which one, use
-    /// void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, uint_set &) const;
+    /// void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, std::set<uint> &) const;
     /// @internal
     /// @todo This function has to improved: 1) it requires the object the
     /// mesh is to be cut with to be another mesh entitiy instead of being just a
@@ -88,13 +88,13 @@ namespace dolfin
     /// Compute all id of all cells which are intersects by any of the entities in \em entities. This
     /// \param[out] ids_result The ids of the intersected set are saved in a set for efficienty
     /// reasons, to avoid to sort out duplicates later on.
-    void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;
+    void all_intersected_entities(const std::vector<MeshEntity> & entities, std::set<uint> & ids_result) const;
 
     /// Compute all id of all cells which are intersects by the given mesh \em another_mesh;
     /// \param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
     /// reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Mesh& another_mesh,
-                                  uint_set& ids_result) const;
+                                  std::set<uint>& ids_result) const;
 
     /// Computes only the first id of the entity, which contains the point. Returns -1 if no cell is intersected.
     /// @internal @remark This makes the function evaluation significantly faster.

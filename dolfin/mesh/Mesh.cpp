@@ -309,7 +309,8 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
+const dolfin::MeshFunction<dolfin::uint>&
+Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
   std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
@@ -329,37 +330,37 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::vector<uint> coloring
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const Point& point,
-                                    uint_set& ids_result) const
+void Mesh::intersected_cells(const Point& point,
+                             std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(point, ids_result);
+  _intersection_operator.all_intersected_entities(point, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const std::vector<Point>& points,
-                                    uint_set& ids_result) const
+void Mesh::intersected_cells(const std::vector<Point>& points,
+                             std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(points, ids_result);
+  _intersection_operator.all_intersected_entities(points, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const MeshEntity & entity,
-                                    std::vector<uint>& ids_result) const
+void Mesh::intersected_cells(const MeshEntity & entity,
+                             std::vector<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entity, ids_result);
+  _intersection_operator.all_intersected_entities(entity, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const std::vector<MeshEntity>& entities,
-                                    uint_set& ids_result) const
+void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
+                             std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entities, ids_result);
+  _intersection_operator.all_intersected_entities(entities, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const Mesh& another_mesh,
-                                    uint_set& ids_result) const
+void Mesh::intersected_cells(const Mesh& another_mesh,
+                             std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(another_mesh, ids_result);
+  _intersection_operator.all_intersected_entities(another_mesh, cells);
 }
 //-----------------------------------------------------------------------------
-int Mesh::any_intersected_entity(const Point& point) const
+int Mesh::intersected_cell(const Point& point) const
 {
   return _intersection_operator.any_intersected_entity(point);
 }
@@ -374,7 +375,8 @@ dolfin::uint Mesh::closest_cell(const Point & point) const
   return _intersection_operator.closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint> Mesh::closest_point_and_cell(const Point & point) const
+std::pair<Point,dolfin::uint>
+Mesh::closest_point_and_cell(const Point & point) const
 {
   return _intersection_operator.closest_point_and_cell(point);
 }

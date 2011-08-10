@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2011-04-13
+// Last changed: 2011-08-10
 
 #include <boost/scoped_array.hpp>
 
@@ -65,7 +65,7 @@ void PointSource::apply(GenericVector& b)
   // we only care about the first). Well-defined if the basis
   // functions are continuous but may give unexpected results for DG.
   const Mesh& mesh = V->mesh();
-  int cell_index = mesh.any_intersected_entity(p);
+  int cell_index = mesh.intersected_cell(p);
   if (cell_index < 0)
     error("Unable to apply point source; point is outside of domain: %s", p.str().c_str());
 

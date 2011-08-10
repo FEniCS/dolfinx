@@ -54,13 +54,13 @@ namespace dolfin
     // Only default constructor, since the search tree has a dimension dependent type, hence encapsulates in the
     // inheriting IntersectionOperatorImplementation_d!
 
-    virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const = 0;
-    virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const = 0;
+    virtual void all_intersected_entities(const Point & point, std::set<uint> & ids_result) const = 0;
+    virtual void all_intersected_entities(const std::vector<Point> & points, std::set<uint> & ids_result) const = 0;
 
     virtual void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const = 0;
-    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const = 0;
+    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, std::set<uint> & ids_result) const = 0;
 
-    virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const = 0;
+    virtual void all_intersected_entities(const Mesh & another_mesh, std::set<uint> & ids_result) const = 0;
     virtual int any_intersected_entity(const Point & point) const = 0;
     virtual Point closest_point(const Point & point) const = 0;
     virtual dolfin::uint closest_cell(const Point & point) const = 0;
@@ -89,13 +89,13 @@ namespace dolfin
       build_tree();
     }
 
-    virtual void all_intersected_entities(const Point& point, uint_set& ids_result) const;
-    virtual void all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const;
+    virtual void all_intersected_entities(const Point& point, std::set<uint>& ids_result) const;
+    virtual void all_intersected_entities(const std::vector<Point>& points, std::set<uint>& ids_result) const;
 
     virtual void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const;
-    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const;
+    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, std::set<uint>& ids_result) const;
 
-    virtual void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const;
+    virtual void all_intersected_entities(const Mesh& another_mesh, std::set<uint>& ids_result) const;
 
     virtual  int any_intersected_entity(const Point& point) const;
 
@@ -116,18 +116,18 @@ namespace dolfin
   };
 
   template <class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Point& point, uint_set& ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Point& point, std::set<uint>& ids_result) const
   {
     //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
-    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
+    std::insert_iterator< std::set<uint> > output_it(ids_result, ids_result.end());
     tree->all_intersected_primitives(PrimitiveTraits<PointPrimitive,K>::datum(point), output_it);
   }
 
   template <class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<Point>& points, std::set<uint>& ids_result) const
   {
     //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
-    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
+    std::insert_iterator< std::set<uint> > output_it(ids_result, ids_result.end());
     for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
     {
       tree->all_intersected_primitives(PrimitiveTraits<PointPrimitive,K>::datum(*p), output_it);
@@ -151,9 +151,9 @@ namespace dolfin
   }
 
   template<class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<MeshEntity>& entities, std::set<uint>& ids_result) const
   {
-    std::insert_iterator< uint_set > output_it(ids_result, ids_result.end());
+    std::insert_iterator< std::set<uint> > output_it(ids_result, ids_result.end());
     for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); entity != entities.end(); ++entity)
       switch(entity->dim())
       {
@@ -170,10 +170,10 @@ namespace dolfin
   }
 
   template<class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const
+  void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Mesh& another_mesh, std::set<uint>& ids_result) const
   {
     //Avoid instantiation of an insert_iterator for each cell.
-    std::insert_iterator<uint_set> output_it(ids_result, ids_result.end());
+    std::insert_iterator<std::set<uint> > output_it(ids_result, ids_result.end());
     switch( another_mesh.type().cell_type())
     {
       case CellType::point:
@@ -345,11 +345,11 @@ namespace dolfin
       error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
     }
     virtual ~IntersectionOperatorImplementation() {}
-    virtual void all_intersected_entities(const Point& point, uint_set& ids_result) const {}
-    virtual void all_intersected_entities(const std::vector<Point>& points, uint_set& ids_result) const {}
+    virtual void all_intersected_entities(const Point& point, std::set<uint>& ids_result) const {}
+    virtual void all_intersected_entities(const std::vector<Point>& points, std::set<uint>& ids_result) const {}
     virtual void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const {};
-    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const {};
-    virtual void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const {}
+    virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, std::set<uint>& ids_result) const {};
+    virtual void all_intersected_entities(const Mesh& another_mesh, std::set<uint>& ids_result) const {}
     virtual int any_intersected_entity(const Point& point) const {return -1; }
     virtual Point closest_point(const Point& point) const {return Point(); }
     virtual dolfin::uint closest_cell(const Point& point) const {return 0; }
