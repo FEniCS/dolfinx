@@ -297,7 +297,8 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
+const dolfin::MeshFunction<dolfin::uint>&
+Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);

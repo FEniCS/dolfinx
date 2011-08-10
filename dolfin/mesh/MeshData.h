@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -39,15 +39,16 @@ namespace dolfin
   class Mesh;
   template <class T> class MeshFunction;
 
-  // FIXME: Replace space with underscore in names
-
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as _MeshFunction_ over topological mesh
   /// entities, arrays or maps. Each dataset is identified by a unique
   /// user-specified string. Only uint-valued data are currently
   /// supported.
   ///
-  /// The following named mesh data are recognized by DOLFIN:
+  /// Auxiliary mesh data may be attached to a mesh by users as a
+  /// convenient way to store data associated with a mesh. It is also
+  /// used internally by DOLFIN to communicate data associated with
+  /// meshes. The following named mesh data are recognized by DOLFIN:
   ///
   /// Boundary indicators
   ///
@@ -56,43 +57,22 @@ namespace dolfin
   ///   * "boundary_indicators"    -  _Array_ <uint> of size num_facets
   ///   * "material_indicators"    -  _MeshFunction_ <uint> of dimension D
   ///
-  ///
   /// Subdomain indicators
   ///
   ///   * "cell_domains"           - _MeshFunction_ <uint> of dimension D
   ///   * "interior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
   ///   * "exterior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
   ///
-  ///
   /// Facet orientation (used for assembly over interior facets)
   ///
   ///   * "facet orientation" - _MeshFunction_ <uint> of dimension D - 1
   ///
-  ///
-  /// Boundary extraction
-  ///
-  ///   * (removed, is now a member function of BoundaryMesh) "vertex map" - _MeshFunction_ <uint> of dimension 0
-  ///   * (removed, is now a member function of BoundaryMesh) "cell map"   - _MeshFunction_ <uint> of dimension D
-  ///
-  ///
-  /// Mesh partitioning
-  ///
-  ///   * (moved to ParallelData) "global entity indices %d" - _MeshFunction_ <uint> of dimension 0, 1, ..., D
-  ///   * (moved to ParallelData) "exterior facets"          - _MeshFunction_ <uint> of dimension D - 1
-  ///   * (moved to ParallelData) "num global entities"      - _Array_ <uint> of size D + 1
-  ///   * (moved to ParallelData) "overlap"                  - vector mapping
-  ///
-  ///
-  /// Sub meshes
+  /// Sub meshes (used by the class SubMesh)
   ///
   ///   * "global vertex indices" - _MeshFunction_ <uint> of dimension 0
   ///
-  ///
-  /// Mesh
-  ///
-  ///   * "colors-%D-%d-%1"   - _MeshFunction_ <uint> of dimension D with colors based on connectivity %d
-  ///   * "num colored cells" - _Array_ <uint> listing the number of cells of each color
-  ///   * "colored cells %d"  - _Array_ <uint> of cell indices with colors 0, 1, 2, ...
+  /// Note to developers: use underscore in names in place of spaces.
+
   class MeshData : public Variable
   {
   public:
