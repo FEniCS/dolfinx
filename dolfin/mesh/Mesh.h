@@ -483,7 +483,7 @@ namespace dolfin
     ///     cells (std::set<uint>)
     ///         A vector of indices of all intersected cells.
     void intersected_cells(const std::vector<MeshEntity>& entities,
-                           std::set<uint>& ids_result) const;
+                           std::set<uint>& cells) const;
 
     /// Compute all cells which are intersected by the given mesh.
     ///
