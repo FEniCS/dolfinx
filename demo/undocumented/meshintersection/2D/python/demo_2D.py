@@ -61,7 +61,7 @@ while theta < 2*DOLFIN_PI + dtheta:
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
-    cells = omega0.all_intersected_entities(boundary)
+    cells = omega0.intersected_cells(boundary)
 
     # Mark intersected values
     intersection.array()[:] = 0
@@ -116,7 +116,7 @@ _first = True
 
 while theta < 2*DOLFIN_PI + dtheta:
 
-  cells = background_mesh.all_intersected_entities(structure_mesh)
+  cells = background_mesh.intersected_cells(structure_mesh)
 
   # Mark intersected values
   intersection.array()[:] = 0

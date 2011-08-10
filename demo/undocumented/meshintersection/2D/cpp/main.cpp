@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-01-14
-// Last changed: 2010-01-14
+// Last changed: 2011-08-10
 
 #include <dolfin.h>
 #include <math.h>
@@ -49,13 +49,13 @@ int main()
     // Compute intersection with boundary of square
     BoundaryMesh boundary(omega1);
     //typedef for std::set<unsigned int>
-    uint_set cells;
-    omega0.all_intersected_entities(boundary, cells);
+    std::set<dolfin::uint> cells;
+    omega0.intersected_cells(boundary, cells);
 
     // Copy values to mesh function for plotting
     MeshFunction<unsigned int> intersection(omega0, omega0.topology().dim());
     intersection = 0;
-    for (uint_set::const_iterator i = cells.begin(); i != cells.end(); i++)
+    for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
       intersection[*i] = 1;
 
     // Plot intersection

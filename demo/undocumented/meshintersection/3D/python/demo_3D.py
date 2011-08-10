@@ -31,8 +31,8 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-#Set to False if you do not want to create movies 
-#(default should be True since you probably want to :) 
+#Set to False if you do not want to create movies
+#(default should be True since you probably want to :)
 create_movies = False
 
 sphere = UnitSphere(20)
@@ -57,7 +57,7 @@ while t < 1.4 :
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(sphere)
-    cells = cube.all_intersected_entities(boundary)
+    cells = cube.intersected_cells(boundary)
 
     # Mark intersected values
     intersection.array()[:] = 0
@@ -81,10 +81,10 @@ while t < 1.4 :
     if create_movies:
       p.write_png()
 
-    #Propagate sphere along the line t(1,1,1).  
-    x[:,0] += dt 
+    #Propagate sphere along the line t(1,1,1).
+    x[:,0] += dt
     x[:,1] += dt
-    x[:,2] += dt 
+    x[:,2] += dt
 
     t += dt
 
