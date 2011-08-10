@@ -343,9 +343,9 @@ if MPI.num_processes() == 1:
             points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
             for p in points:
                 if p.x()<0 or p.x()>1:
-                    self.assertTrue(not mesh.all_intersected_entities(p))
+                    self.assertTrue(not mesh.intersected_cells(p))
                 else:
-                    self.assertTrue(mesh.all_intersected_entities(p))
+                    self.assertTrue(mesh.intersected_cells(p))
 
 
         def testIntersectPoints(self):
@@ -354,9 +354,9 @@ if MPI.num_processes() == 1:
             points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
             all_intersected_entities = []
             for p in points:
-                all_intersected_entities.extend(mesh.all_intersected_entities(p))
+                all_intersected_entities.extend(mesh.intersected_cells(p))
             for i0, i1 in zip(sorted(all_intersected_entities),
-                              sorted(mesh.all_intersected_entities(points))):
+                              sorted(mesh.intersected_cells(points))):
                 self.assertEqual(i0, i1)
 
         def testIntersectMesh2D(self):
