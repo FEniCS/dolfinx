@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2010-04-16
+// Last changed: 2011-08-10
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -96,3 +96,4 @@ namespace std
 %enddef
 
 ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(dolfin::uint, INT32, ids_result, NPY_INT)
+ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-07-19
+// Last changed: 2011-08-10
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -425,21 +425,22 @@ const std::vector<TYPE>&  ARG_NAME
 
 %enddef
 
+%define IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(TYPE)
 //-----------------------------------------------------------------------------
-// Typemap for const std::vector<dolfin::Point>& used in IntersectionOperator
+// Typemap for const std::vector<dolfin::TYPE>& used in IntersectionOperator
 // Expects a list of Points
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) const std::vector<dolfin::Point>&
+%typecheck(SWIG_TYPECHECK_POINTER) const std::vector<dolfin::TYPE>&
 {
   $1 = PyList_Check($input) ? 1 : 0;
 }
 
-%typemap (in) const std::vector<dolfin::Point>& (std::vector<dolfin::Point> tmp_vec)
+%typemap (in) const std::vector<dolfin::TYPE>& (std::vector<dolfin::TYPE> tmp_vec)
 {
-  // IN_TYPEMAP_STD_VECTOR_OF_POINTS
+  // IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES, TYPE
   // A first sequence test
   if (!PyList_Check($input))
-    SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum");
+    SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum");
 
   int size = PyList_Size($input);
   int res = 0;
@@ -449,18 +450,19 @@ const std::vector<TYPE>&  ARG_NAME
   for (int i = 0; i < size; i++)
   {
     py_item = PyList_GetItem($input,i);
-    res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::Point*), 0);
+    res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE*), 0);
     if (SWIG_IsOK(res))
     {
-      tmp_vec.push_back(*reinterpret_cast<dolfin::Point *>(itemp));
+      tmp_vec.push_back(*reinterpret_cast<dolfin::TYPE *>(itemp));
     }
     else
     {
-      SWIG_exception(SWIG_TypeError, "expected a list of Points for argument $argnum, (Bad conversion)");
+      SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum, (Bad conversion)");
     }
   }
   $1 = &tmp_vec;
 }
+%enddef
 
 //-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps
@@ -488,3 +490,6 @@ READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
+
+IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
+IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
