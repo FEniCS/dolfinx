@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2009-10-08
+// Last changed: 2011-08-10
 
 #include <map>
 #include <vector>
@@ -111,7 +111,7 @@ void SubMesh::init(const Mesh& mesh,
   editor.close();
 
   // Build local-to-global mapping for vertices
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = data().create_mesh_function("global vertex indices", 0);
+  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = data().create_mesh_function("global_vertex_indices", 0);
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
     (*global_vertex_indices)[it->second] = it->first;
 }

@@ -466,7 +466,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
                               const DirichletBC::Map& boundary_values)
 {
   // Facet orientation not supported
-  if (cell0.mesh().data().mesh_function("facet orientation"))
+  if (cell0.mesh().data().mesh_function("facet_orientation"))
     error("Facet orientation not supported by system assembler.");
 
   // Tabulate dofs

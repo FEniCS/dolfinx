@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2009
-// Modified by Ola Skavhaug, 2007-2009
-// Modified by Kent-Andre Mardal, 2008
+// Modified by Garth N. Wells 2007-2009
+// Modified by Ola Skavhaug 2007-2009
+// Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-04-13
+// Last changed: 2011-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -354,7 +354,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet orientation");
+  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != D - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",

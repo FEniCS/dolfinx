@@ -65,11 +65,11 @@ namespace dolfin
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet orientation" - _MeshFunction_ <uint> of dimension D - 1
+  ///   * "facet_orientation"      - _MeshFunction_ <uint> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "global vertex indices" - _MeshFunction_ <uint> of dimension 0
+  ///   * "global_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 

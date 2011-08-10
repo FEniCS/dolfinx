@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2009
-// Modified by Ola Skavhaug, 2007-2009
-// Modified by Kent-Andre Mardal, 2008
+// Modified by Garth N. Wells 2007-2009
+// Modified by Ola Skavhaug 2007-2009
+// Modified by Kent-Andre Mardal 2008
+// Modified by Anders Logg 2010-2011
 //
 // First added:  2010-11-10
-// Last changed: 2011-03-10
+// Last changed: 2011-08-10
 
 #ifdef HAS_OPENMP
 
@@ -419,7 +420,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet orientation");
+  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
