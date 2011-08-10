@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2010-03-03
+// Last changed: 2011-08-09
 
 #include <algorithm>
 #include <map>
@@ -27,11 +27,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 
-#include "Mesh.h"
-#include "Edge.h"
-#include "Facet.h"
-#include "Vertex.h"
-#include "Cell.h"
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Cell.h>
 #include "IntersectionOperator.h"
 #include "IntersectionOperatorImplementation.h"
 
@@ -107,7 +107,8 @@ dolfin::uint IntersectionOperator::closest_cell(const Point& point) const
   return rImpl().closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell(const Point& point) const
+std::pair<Point,dolfin::uint>
+IntersectionOperator::closest_point_and_cell(const Point& point) const
 {
   return rImpl().closest_point_and_cell(point);
 }
@@ -178,4 +179,3 @@ IntersectionOperatorImplementation*
 }
 #endif
 //-----------------------------------------------------------------------------
-

@@ -30,8 +30,8 @@
 #include <boost/optional.hpp>
 
 #include <dolfin/common/types.h>
-#include "Point.h"
-#include "Mesh.h"
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Mesh.h>
 
 #ifdef HAS_CGAL
 
@@ -42,17 +42,17 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel EPICK;
 namespace dolfin
 {
 
-  ///@brief Interface class for the actual implementation of the intersection operations.
+  /// @brief Interface class for the actual implementation of the intersection operations.
   ///
-  ///@internal This is neccessary since the search tree has a dimension dependent type, hence encapsulates in the
-  ///inheriting IntersectionOperatorImplementation_d! It provides the glue level between the dimension independent implementation
-  ///of the mesh class and the dimension dependent search structures in CGAL.
+  /// @internal This is neccessary since the search tree has a dimension dependent type, hence encapsulates in the
+  /// inheriting IntersectionOperatorImplementation_d! It provides the glue level between the dimension independent implementation
+  /// of the mesh class and the dimension dependent search structures in CGAL.
   class IntersectionOperatorImplementation
   {
   public:
 
-    //Only default constructor, since the search tree has a dimension dependent type, hence encapsulates in the
-    //inheriting IntersectionOperatorImplementation_d!
+    // Only default constructor, since the search tree has a dimension dependent type, hence encapsulates in the
+    // inheriting IntersectionOperatorImplementation_d!
 
     virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const = 0;
     virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const = 0;
@@ -65,10 +65,11 @@ namespace dolfin
     virtual Point closest_point(const Point & point) const = 0;
     virtual dolfin::uint closest_cell(const Point & point) const = 0;
     virtual std::pair<Point,uint> closest_point_and_cell(const Point & point) const = 0;
+
   };
 
-  ///Class which provides the dimensional implementation of the search structure
-  //for the mesh.
+  /// Class which provides the dimensional implementation of the search structure
+  /// for the mesh.
   template <class Primitive, class Kernel>
   class IntersectionOperatorImplementation_d : public IntersectionOperatorImplementation
   {
@@ -81,7 +82,7 @@ namespace dolfin
 
   public:
 
-    ///Constructor.
+    /// Constructor
     IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh)
       : _mesh(_mesh), point_search_tree_constructed(false)
     {
@@ -111,6 +112,7 @@ namespace dolfin
     boost::shared_ptr<const Mesh> _mesh;
     boost::scoped_ptr<Tree> tree;
     bool point_search_tree_constructed;
+
   };
 
   template <class P, class K>
@@ -220,8 +222,8 @@ namespace dolfin
     }
   };
 
-  //Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  //Have to supply myself :)
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
+  // Have to supply myself :)
   template<class K, class Tree>
   struct ClosestPoint<TetrahedronCell, K, Tree>
   {
@@ -234,8 +236,8 @@ namespace dolfin
     }
   };
 
-  //Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  //Have to supply myself :)
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
+  // Have to supply myself :)
   template<class K, class Tree>
   struct ClosestPoint<PointCell, K, Tree>
   {
@@ -260,8 +262,8 @@ namespace dolfin
     }
   };
 
-  //Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  //Have to supply myself :)
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
+  // Have to supply myself :)
   template<class K, class Tree>
   struct ClosestPointAndPrimitive<TetrahedronCell, K, Tree>
   {
@@ -274,8 +276,8 @@ namespace dolfin
     }
   };
 
-  //Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles *points*.
-  //Have to supply myself :) THAT should not be difficult...
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles *points*.
+  // Have to supply myself :) THAT should not be difficult...
   template<class K, class Tree>
   struct ClosestPointAndPrimitive<PointCell, K, Tree>
   {
@@ -326,11 +328,13 @@ namespace dolfin
 
 #else
 
-  //Fake interface to allow creation of an IntersectionOperator instance
-  //*without* functionality.  IntersectionOperator uses lazy initialization.
-  //Throw an exception  if a IntersectionOperatorImplementation instance should
-  //be created without CGAL support.
-namespace dolfin  {
+  // Fake interface to allow creation of an IntersectionOperator instance
+  // *without* functionality.  IntersectionOperator uses lazy initialization.
+  // Throw an exception  if a IntersectionOperatorImplementation instance should
+  // be created without CGAL support.
+
+namespace dolfin
+{
 
   class IntersectionOperatorImplementation
   {
@@ -355,4 +359,5 @@ namespace dolfin  {
 }
 
 #endif
+
 #endif

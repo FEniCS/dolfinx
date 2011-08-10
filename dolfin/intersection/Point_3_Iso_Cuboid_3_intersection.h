@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-10
+// Last changed: 2011-08-09
 
 #ifndef CGAL_POINT_3_ISO_CUBOID_3_INTERSECTION_H
 #define CGAL_POINT_3_ISO_CUBOID_3_INTERSECTION_H
@@ -62,7 +62,6 @@ intersection(const typename K::Point_3 &pt,
   }
   return Object();
 }
-
 
 template <class K>
 Object

@@ -33,7 +33,6 @@
 #include <dolfin/common/MPI.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
-#include "IntersectionOperator.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
 #include "MeshData.h"

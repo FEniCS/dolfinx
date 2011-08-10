@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2010-04-06
+// Last changed: 2011-08-09
 
 #ifndef  CGAL_POINT_3_POINT_3_INTERSECTION_H
 #define	 CGAL_POINT_3_POINT_3_INTERSECTION_H
@@ -24,9 +24,10 @@
 #include <CGAL/Point_3.h>
 #include <CGAL/Object.h>
 
-///@file This file contains some small extension to the CGAL library, for
-//instance unifying their do_intersect functions to also deal with Point_3
-//and Primitive intersections or some additional intersection collision test.
+/// @file This file contains some small extension to the CGAL library,
+/// for instance unifying their do_intersect functions to also deal
+/// with Point_3 and Primitive intersections or some additional
+/// intersection collision test.
 
 CGAL_BEGIN_NAMESPACE
 
@@ -79,4 +80,4 @@ intersection(const Point_3<K> &pt1, const Point_3<K> &pt2)
 
 CGAL_END_NAMESPACE
 
-#endif   // CGAL_POINT_3_POINT_3_INTERSECTION_H
+#endif

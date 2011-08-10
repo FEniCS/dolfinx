@@ -16,17 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2010-04-06
+// Last changed: 2011-08-09
 
-#ifndef CGAL_POINT_3_TETRAHEDRON_3_INTERSECTION_H
-#define CGAL_POINT_3_TETRAHEDRON_3_INTERSECTION_H
+#ifndef  POINT_3_BBOX_3_INTERSECTION_H
+#define  POINT_3_BBOX_3_INTERSECTION_H
 
+#include <CGAL/Bbox_3.h>
 #include <CGAL/Point_3.h>
 #include <CGAL/Object.h>
-#include <CGAL/Tetrahedron_3.h>
 
 CGAL_BEGIN_NAMESPACE
-
 
 #if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
@@ -36,33 +35,39 @@ namespace internal {
 
   template <class K>
   inline
-  bool
-  do_intersect(const typename K::Point_3 &pt,
-	       const typename K::Tetrahedron_3 &tet,
-	       const K&)
+  bool do_intersect(const typename K::Point_3& pt, const CGAL::Bbox_3& bbox,
+                    const K &)
   {
-    return !tet.has_on_unbounded_side(pt);
+    for(int i = 0; i < 3; ++i)
+    {
+      if (bbox.max(i) < pt[i] || bbox.min(i) > pt[i])
+        return false;
+    }
+    return true;
   }
 
   template <class K>
   inline
-  bool
-  do_intersect(const typename K::Tetrahedron_3 &tet,
-	       const typename K::Point_3 &pt,
-	       const K&)
+  bool do_intersect(const CGAL::Bbox_3& bbox,
+		    const typename K::Point_3& pt,
+		    const K &)
   {
-    return !tet.has_on_unbounded_side(pt);
+    for(int i = 0; i < 3; ++i)
+    {
+      if(bbox.max(i) < pt[i] || bbox.min(i) > pt[i])
+	      return false;
+    }
+    return true;
   }
-
 
   template <class K>
   inline
   Object
   intersection(const typename K::Point_3 &pt,
-	       const typename K::Tetrahedron_3 &tet,
+	       const typename K::Bbox_3 &bbox,
 	       const K&)
   {
-    if (do_intersect(pt,tet))
+    if (do_intersect(pt, bbox))
     {
       return make_object(pt);
     }
@@ -72,51 +77,50 @@ namespace internal {
   template <class K>
   inline
   Object
-  intersection( const typename K::Tetrahedron_3 &tet,
+  intersection(const typename K::Bbox_3 &bbox,
 	        const typename K::Point_3 &pt,
 	        const K&)
   {
-    if (do_intersect(pt,tet))
+    if (do_intersect(pt, bbox))
     {
       return make_object(pt);
     }
     return Object();
   }
 
-} // namespace CGALi
 
+} //namespace CGALi
 
 template <class K>
-inline bool
-do_intersect(const Tetrahedron_3<K> &tet, const Point_3<K> &pt)
+inline
+bool do_intersect(const CGAL::Point_3<K>& point,
+		  const CGAL::Bbox_3& bbox)
 {
-  typedef typename K::Do_intersect_3 Do_intersect;
-  return Do_intersect()(pt, tet);
+  return typename K::Do_intersect_3()(point, bbox);
 }
 
 template <class K>
-inline bool
-do_intersect(const Point_3<K> &pt, const Tetrahedron_3<K> &tet)
+inline
+bool do_intersect(const CGAL::Bbox_3& bbox,
+		  const CGAL::Point_3<K>& point)
 {
-  typedef typename K::Do_intersect_3 Do_intersect;
-  return Do_intersect()(pt, tet);
-}
-
-
-template <class K>
-inline Object
-intersection(const Tetrahedron_3<K> &tet, const Point_3<K> &pt)
-{
-  typedef typename K::Intersect_3 Intersect;
-  return Intersect()(pt, tet);
+  return typename K::Do_intersect_3()(point, bbox);
 }
 
 template <class K>
 inline Object
-intersection(const Point_3<K> &pt, const Tetrahedron_3<K> &tet)
+intersection(const Bbox_3 & bbox, const Point_3<K> & pt)
 {
   typedef typename K::Intersect_3 Intersect;
-  return Intersect()(pt, tet);
+  return Intersect()(pt, bbox);
+}
+
+template <class K>
+inline Object
+intersection(const Point_3<K> & pt, const Bbox_3 & bbox)
+{
+  typedef typename K::Intersect_3 Intersect;
+  return Intersect()(pt, bbox);
 }
 
 CGAL_END_NAMESPACE

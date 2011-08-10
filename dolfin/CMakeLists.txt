@@ -14,6 +14,7 @@ set(DOLFIN_DIRS
   fem
   function
   graph
+  intersection
   io
   la
   log

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-10
+// Last changed: 2011-08-09
 
 #ifndef CGAL_POINT_3_TRIANGLE_3_INTERSECTION_H
 #define CGAL_POINT_3_TRIANGLE_3_INTERSECTION_H
@@ -25,8 +25,8 @@
 #include <CGAL/Triangle_3.h>
 #include <CGAL/Object.h>
 
-//already defined in original
-//CGAL, but not with p.has_on(pt) function??
+// already defined in original
+// CGAL, but not with p.has_on(pt) function??
 
 #ifdef SUBSTITUTE_ORIGINAL_CGAL_FUNCTION
 
@@ -86,7 +86,6 @@ namespace CGALi
 
 } // namespace CGALi
 
-
 template <class K>
 inline bool
 do_intersect(const Triangle_3<K> &tri, const Point_3<K> &pt)
@@ -122,4 +121,5 @@ intersection(const Point_3<K> &pt, const Triangle_3<K> &tri)
 CGAL_END_NAMESPACE
 
 #endif
+
 #endif

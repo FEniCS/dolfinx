@@ -1,5 +1,3 @@
-// =====================================================================================
-//
 // Copyright (C) 2010 Andre Massing
 //
 // This file is part of DOLFIN.
@@ -17,34 +15,22 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andre Massing, 2010
+// Modified by Anders Logg 2011
 //
 // First added:  2010-02-05
 // Last changed: 2010-02-10
-// 
-//Author:  Andre Massing (am), massing@simula.no
-//Company:  Simula Research Laboratory, Fornebu, Norway
-//
-// =====================================================================================
 
 #ifdef HAS_CGAL
 
-#include "added_intersection_3.h" //additional intersection functionality, *Must* include before the AABB_tree!
-//#include <CGAL/intersections.h>
-
-#include <CGAL/AABB_tree.h> // *Must* be inserted before kernel!
+#include "added_intersection_3.h" //  Additional intersection functionality, *must* include before the AABB_tree!
+#include <CGAL/AABB_tree.h>       // *Must* be inserted before kernel!
 #include <CGAL/AABB_traits.h>
-
-#include <CGAL/Simple_cartesian.h> 
+#include <CGAL/Simple_cartesian.h>
 #include "Triangle_3_Tetrahedron_3_do_intersect_SCK.h" //template specialization for Simple_cartesian kernel
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-
 #include <CGAL/Bbox_3.h>
 #include <CGAL/Point_3.h>
-
 #include "PrimitiveTraits.h"
-
 #include "MeshPrimitive.h"
 
 typedef CGAL::Simple_cartesian<double> SCK;

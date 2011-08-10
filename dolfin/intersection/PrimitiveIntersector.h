@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-09
-// Last changed: 2010-03-05
+// Last changed: 2011-08-09
 
 #ifndef  __PRIMITIVE_INTERSECTOR_H
 #define  __PRIMITIVE_INTERSECTOR_H
 
 namespace dolfin
 {
+
   class MeshEntity;
   class Point;
 
@@ -57,9 +58,10 @@ namespace dolfin
 
   private:
 
-    // Helper classes to deal with all combination in a N and not N*N way.
-    // Just declaration, definition and instantation takes place in the corresponding cpp file, where
-    // this helper function are actually needed.
+    // Helper classes to deal with all combination in a N and not N*N
+    // way. Just declaration, definition and instantation takes place
+    // in the corresponding cpp file, where this helper function are
+    // actually needed.
 
     template <typename K, typename T, typename U >
     static bool do_intersect_with_kernel(const T& entity_1,

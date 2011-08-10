@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Hoffman, 2007.
-// Modified by Magnus Vikstrøm, 2007.
-// Modified by Garth N. Wells, 2007-2011.
-// Modified by Niclas Jansson, 2008.
-// Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2009-2010.
+// Modified by Johan Hoffman 2007
+// Modified by Magnus Vikstrøm 2007
+// Modified by Garth N. Wells 2007-2011
+// Modified by Niclas Jansson 2008
+// Modified by Kristoffer Selim 2008
+// Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
 // Last changed: 2011-04-13
@@ -35,8 +35,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/intersection/IntersectionOperator.h>
 #include "CellType.h"
-#include "IntersectionOperator.h"
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
