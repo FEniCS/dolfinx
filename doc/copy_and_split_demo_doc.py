@@ -20,7 +20,7 @@
 # Utility script for splitting the cpp and python demos into separate
 # directory trees. Ignores cmake files for python.
 
-import sys, os, shutil
+import sys, os, shutil, subprocess
 
 index_template = """
 Collection of documented demos
@@ -101,17 +101,24 @@ def generate_main_index_file(output_dir, language):
 
 def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
+    # Get list of files in demo directories
+    bzr_files = subprocess.check_output(["bzr", "ls", "-R", "-V", input_dir])
+    bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
+    for (i, f) in enumerate(bzr_files):
+        if f[-1] == "/":
+            bzr_files[i] = f[:-1]
+
     def ignore_cpp(directory, contents):
         if directory[-3:] == "cpp":
             return contents
         else:
-            return [c for c in contents if "cmake" in c.lower()]
+            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
 
     def ignore_python(directory, contents):
         if directory[-6:] == "python":
             return contents
         else:
-            return ()
+            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
 
     # Copy demo tree to cpp_output_dir ignoring python demos
     try:
@@ -133,6 +140,10 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
     # In addition, generate main index file for navigating demos
     generate_main_index_file(python_output_dir, "python")
 
+def in_bzr(directory, f, bzr_files):
+    "Check whether file is version-controlled"
+    f = os.path.join(directory, f)
+    return f in bzr_files
 
 if __name__ == "__main__":
 

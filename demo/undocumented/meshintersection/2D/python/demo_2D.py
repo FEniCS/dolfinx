@@ -30,14 +30,13 @@ background mesh.
 
 from dolfin import *
 from numpy import max
-#cos, sin
 
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-#Set to False if you do not want to create movies
-#(default should be True since you probably want to :)
+# Set to False if you do not want to create movies
+# (default should be True since you probably want to :)
 create_movies = True
 
 # Create meshes (omega0 overlapped by omega1)
@@ -71,12 +70,15 @@ while theta < 2*DOLFIN_PI + dtheta:
     if _first:
         p = plot(intersection, rescale=False)
 #        p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
-        p.add_polygon([[0, 0, -0.01], [1, 0, -0.01], [1, 1, -0.01], [0, 1, -0.01], [0, 0, -0.01]])
+        p.add_polygon([[0, 0, -0.01],
+                       [1, 0, -0.01],
+                       [1, 1, -0.01],
+                       [0, 1, -0.01],
+                       [0, 0, -0.01]])
         p.ren.ResetCamera()
         p.update(intersection)
         _first = False
         interactive()
-
     else:
         plot(intersection)
 
@@ -99,8 +101,7 @@ if create_movies:
 # Hold plot
 interactive()
 
-####Repeat the same with the rotator in the cavity example.
-
+# Repeat the same with the rotator in the cavity example.
 background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30)
 structure_mesh = Mesh("rotator.xml.gz")
 
@@ -135,7 +136,7 @@ while theta < 2*DOLFIN_PI + dtheta:
   if create_movies:
     q.write_png()
 
-  #Rotate rotator
+  # Rotate rotator
   xr = x[:, 0].copy()
   yr = x[:, 1].copy()
 
@@ -147,5 +148,5 @@ while theta < 2*DOLFIN_PI + dtheta:
 if create_movies:
   q.movie("rotator_cavity_intersection.avi", cleanup=True)
 
-#hold plot
+# Hold plot
 interactive()
