@@ -7,9 +7,9 @@ cmake_minimum_required(VERSION 2.8)
 # Set project name and version number
 
 project(DOLFIN)
-set(DOLFIN_VERSION_MAJOR "0")
-set(DOLFIN_VERSION_MINOR "9")
-set(DOLFIN_VERSION_MICRO "11+")
+set(DOLFIN_VERSION_MAJOR "1")
+set(DOLFIN_VERSION_MINOR "0")
+set(DOLFIN_VERSION_MICRO "beta")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
