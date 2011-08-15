@@ -20,7 +20,16 @@
 # Utility script for splitting the cpp and python demos into separate
 # directory trees. Ignores cmake files for python.
 
-import sys, os, shutil, subprocess
+import sys, os, shutil
+
+# Wrapper for check_output introduced in Python 2.7
+try:
+    from subprocess import check_output
+except:
+    from commands import getstatusoutput
+    def check_output(*args):
+        status, output = getstatusoutput(" ".join(args))
+        return output
 
 index_template = """
 Collection of documented demos
@@ -102,7 +111,7 @@ def generate_main_index_file(output_dir, language):
 def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
-    bzr_files = subprocess.check_output(["bzr", "ls", "-R", "-V", input_dir])
+    bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
     bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
     for (i, f) in enumerate(bzr_files):
         if f[-1] == "/":
