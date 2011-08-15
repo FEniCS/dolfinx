@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -22,6 +22,7 @@
 // First added:  2008-07-17
 // Last changed: 2009-11-14
 
+#include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include "SpecialFunctions.h"
@@ -35,7 +36,8 @@ MeshCoordinates::MeshCoordinates(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(Array<double>& values, const Array<double>& x,
+void MeshCoordinates::eval(Array<double>& values,
+                           const Array<double>& x,
                            const ufc::cell& cell) const
 {
   assert(cell.geometric_dimension == mesh.geometry().dim());
@@ -45,39 +47,28 @@ void MeshCoordinates::eval(Array<double>& values, const Array<double>& x,
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-/*
-CellSize::CellSize(const Mesh& mesh)
-  : mesh(mesh)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void CellSize::eval(Array<double>& values, const Data& data) const
-{
-  assert(&data.cell().mesh() == &mesh);
-  values[0] = data.cell().diameter();
-}
-*/
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 FacetArea::FacetArea(const Mesh& mesh)
   : mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(Array<double>& values, const Array<double>& x,
+void FacetArea::eval(Array<double>& values,
+                     const Array<double>& x,
                      const ufc::cell& cell) const
 {
-  error("FacetArea::eval in SpecialFunctions needs to be updated");
-  /*
-  assert(&data.cell().mesh() == &mesh);
+  assert(cell.geometric_dimension == mesh.geometry().dim());
 
-  if (data.on_facet())
-    values[0] = data.cell().facet_area(data.facet());
+  if (cell.local_facet >= 0)
+  {
+    Cell c(mesh, cell.index);
+    values[0] = c.facet_area(cell.local_facet);
+  }
   else
-    values[0] = 0.0;
-  */
+  {
+    dolfin_error("SpecialFunctions.cpp",
+                 "evaluate FacetArea expression",
+                 "Facet area is only defined on mesh boundaries");
+  }
 }
 //-----------------------------------------------------------------------------

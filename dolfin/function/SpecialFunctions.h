@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kristian B. Oelgaard, 2007.
-// Modified by Martin Sandve Alnes, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Kristian B. Oelgaard 2007
+// Modified by Martin Sandve Alnes 2008
+// Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-09
 // Last changed: 2009-10-05
@@ -42,7 +42,9 @@ namespace dolfin
     MeshCoordinates(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const;
+    void eval(Array<double>& values,
+              const Array<double>& x,
+              const ufc::cell& cell) const;
 
   private:
 
@@ -50,27 +52,6 @@ namespace dolfin
     const Mesh& mesh;
 
   };
-
-  /*
-  /// This Function represents the local cell size on a given mesh.
-  class CellSize : public Expression
-  {
-  public:
-
-    /// Constructor
-    CellSize(const Mesh& mesh);
-
-    /// Evaluate function
-    void eval(Array<double>& values, const Data& data) const;
-
-  private:
-
-    // The mesh
-    const Mesh& mesh;
-
-  };
-*/
-
 
   /// This function represents the area/length of a cell facet on a given mesh.
   class FacetArea : public Expression
@@ -81,7 +62,8 @@ namespace dolfin
     FacetArea(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values, const Array<double>& x,
+    void eval(Array<double>& values,
+              const Array<double>& x,
               const ufc::cell& cell) const;
 
   private:
