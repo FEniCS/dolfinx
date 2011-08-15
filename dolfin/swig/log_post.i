@@ -74,7 +74,8 @@ def info(object, verbose=False):
 
     *Arguments*
         object
-            A string or a DOLFIN object (:py:class:`Variable <dolfin.cpp.Variable>` or :py:class:`Parameters <dolfin.cpp.Parameters>`)
+            A string or a DOLFIN object (:py:class:`Variable <dolfin.cpp.Variable>`
+            or :py:class:`Parameters <dolfin.cpp.Parameters>`)
         verbose
             An optional argument that indicates whether verbose object data
             should be printed. If False, a short one-line summary is printed.
