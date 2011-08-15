@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-10
-// Last changed: 2010-10-07
+// Last changed: 2011-08-15
 
 //=============================================================================
 // SWIG directives for the DOLFIN log kernel module (post)
@@ -70,12 +70,8 @@ def debug(message):
     __debug(file, line, func, message)
 
 def info(*args):
-    if args and isinstance(args[0], int):
-        if args[0] < get_log_level():
-            return
-        args = args[1:]
 
-    if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
+    if len(args) > 0 and isinstance(args[0], (Variable, Parameters)):
         if len(args) > 1:
             _info(args[0].str(*args[1:]))
         else:
