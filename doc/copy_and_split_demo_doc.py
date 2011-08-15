@@ -111,23 +111,31 @@ def generate_main_index_file(output_dir, language):
 def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
-    bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
-    bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
-    for (i, f) in enumerate(bzr_files):
-        if f[-1] == "/":
-            bzr_files[i] = f[:-1]
+    try:
+        # This may fail if we're not in a bzr repo
+        bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
+        bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
+        for (i, f) in enumerate(bzr_files):
+            if f[-1] == "/":
+                bzr_files[i] = f[:-1]
+    except:
+        bzr_files = None
 
     def ignore_cpp(directory, contents):
         if directory[-3:] == "cpp":
             return contents
-        else:
+        elif bzr_files is not None:
             return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        else:
+            return []
 
     def ignore_python(directory, contents):
         if directory[-6:] == "python":
             return contents
-        else:
+        elif bzr_files is not None:
             return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        else:
+            return []
 
     # Copy demo tree to cpp_output_dir ignoring python demos
     try:
