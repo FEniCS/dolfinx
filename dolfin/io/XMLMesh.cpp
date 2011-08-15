@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2011-06-30
+// Last changed: 2011-08-15
 
 #include <map>
 #include <iomanip>
@@ -73,7 +73,7 @@ void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
   vertices_node.append_attribute("size") = mesh.num_vertices();
 
   // Write each vertex
-  for(VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(mesh); !v.end(); ++v)
   {
     pugi::xml_node vertex_node = vertices_node.append_child("vertex");
     vertex_node.append_attribute("index") = v->index();
@@ -210,7 +210,8 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
     // Check node is data_entry
     const std::string node_name = it->name();
     if (node_name != "data_entry")
-      error("Expecting XML node called \"data_entry\", but go \"%s\".", node_name.c_str());
+      error("Expecting XML node called \"data_entry\", but go \"%s\".",
+            node_name.c_str());
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
