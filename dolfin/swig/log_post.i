@@ -69,13 +69,21 @@ def debug(message):
     file, line, func, txt = traceback.extract_stack(None, 2)[0]
     __debug(file, line, func, message)
 
-def info(*args):
+def info(object, verbose=False):
+    """Print string or object.
 
-    if len(args) > 0 and isinstance(args[0], (Variable, Parameters)):
-        if len(args) > 1:
-            _info(args[0].str(*args[1:]))
-        else:
-            _info(args[0].str(False))
+    *Arguments*
+        object
+            A string or a DOLFIN object (:py:class:`Variable <dolfin.cpp.Variable>` or :py:class:`Parameters <dolfin.cpp.Parameters>`)
+        verbose
+            An optional argument that indicates whether verbose object data
+            should be printed. If False, a short one-line summary is printed.
+            If True, verbose and sometimes very exhaustive object data are
+            printed.
+    """
+
+    if isinstance(object, (Variable, Parameters)):
+        _info(object.str(verbose))
     else:
-        _info(*args)
+        _info(object)
 %}
