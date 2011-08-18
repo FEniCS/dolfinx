@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2011-08-15
+// Last changed: 2011-08-18
 
 #include <map>
 #include <iomanip>
@@ -210,7 +210,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
     // Check node is data_entry
     const std::string node_name = it->name();
     if (node_name != "data_entry")
-      error("Expecting XML node called \"data_entry\", but go \"%s\".",
+      error("Expecting XML node called \"data_entry\", but got \"%s\".",
             node_name.c_str());
 
     // Get name of data set
