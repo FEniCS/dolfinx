@@ -28,6 +28,150 @@ from dolfin import *
 
 class Assembly(unittest.TestCase):
 
+    def test_facet_assembly(self):
+
+        if MPI.num_processes() > 1:
+            print "FIXME: This unit test does not work in parallel, skipping"
+            return
+
+        mesh = UnitSquare(24, 24)
+        V = FunctionSpace(mesh, "DG", 1)
+
+        # Define test and trial functions
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        # Define normal component, mesh size and right-hand side
+        n = V.cell().n
+        h = CellSize(mesh)
+        h_avg = (h('+') + h('-'))/2
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+
+        # Define bilinear form
+        a = dot(grad(v), grad(u))*dx \
+           - dot(avg(grad(v)), jump(u, n))*dS \
+           - dot(jump(v, n), avg(grad(u)))*dS \
+           + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+           - dot(grad(v), u*n)*ds \
+           - dot(v*n, grad(u))*ds \
+           + 8.0/h*v*u*ds
+
+        # Define linear form
+        L = v*f*dx
+
+        # Reference values
+        A_frobenius_norm = 157.867392938645
+        b_l2_norm = 1.48087142738768
+
+        # Assemble A and b separately
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+        # Assemble system
+        A, b = assemble_system(a, L)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b separately (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+    def test_cell_assembly(self):
+
+        mesh = UnitCube(4, 4, 4)
+        V = VectorFunctionSpace(mesh, "DG", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant((10, 20, 30))
+
+        def epsilon(v):
+            return 0.5*(grad(v) + grad(v).T)
+
+        a = inner(epsilon(v), epsilon(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm =  4.3969686527582512
+        b_l2_norm = 0.95470326978246278
+
+        # Assemble A and b separately
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+        # Assemble system
+        A, b = assemble_system(a, L)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b separately (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+    def test_nonsquare_assembly(self):
+        """Test assembly of a rectangular matrix"""
+
+        mesh = UnitSquare(16, 16)
+
+        V = VectorFunctionSpace(mesh, "CG", 2)
+        Q = FunctionSpace(mesh, "CG", 1)
+        W = V*Q
+
+        (v, q) = TestFunctions(W)
+        (u, p) = TrialFunctions(W)
+
+        a = div(v)*p*dx
+        A_frobenius_norm = 9.6420303878382718e-01
+
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+
+    def test_subdomain_assembly(self):
+        """Test assembly over subdomains"""
+
+        # Define mesh
+        mesh = UnitSquare(8, 8)
+
+        # This is a hack to get around a DOLFIN bug
+        if MPI.num_processes() > 1:
+            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
+
+        # Define domain for lower left corner
+        class MyDomain(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] < 0.5 + DOLFIN_EPS and x[1] < 0.5 + DOLFIN_EPS
+        my_domain = MyDomain()
+
+        # Mark mesh functions
+        D = mesh.topology().dim()
+        cell_domains = MeshFunction("uint", mesh, D)
+        exterior_facet_domains = MeshFunction("uint", mesh, D - 1)
+        cell_domains.set_all(1)
+        exterior_facet_domains.set_all(1)
+        my_domain.mark(cell_domains, 0)
+        my_domain.mark(exterior_facet_domains, 0)
+
+        # Define forms
+        c = Constant(1.0)
+
+        dxs = dx[cell_domains]
+        a0 = c*dxs(0)
+        dss = ds[exterior_facet_domains]
+        a1 = c*dss(0)
+
+        parameters["num_threads"] = 0
+        self.assertAlmostEqual(assemble(a0, mesh=mesh), 0.25)
+        self.assertAlmostEqual(assemble(a1, mesh=mesh), 1.0)
+
     def test_functional_assembly(self):
 
         mesh = UnitSquare(24, 24)

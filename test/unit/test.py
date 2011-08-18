@@ -30,7 +30,7 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem": ["test", "Assembly", "DirichletBC"],
+    "fem": ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
     "function": ["test", "function"],
     "math": ["basic"],
     "mesh": ["test", "MeshFunction", "Edge", "Face"],
