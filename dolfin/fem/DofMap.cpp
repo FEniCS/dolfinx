@@ -288,7 +288,14 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
 {
   // FIXME: This is a hack because UFC wants a double pointer for coordinates
 
-  // FIXME: check dimensions
+  // Check dimensions
+  if (coordinates.shape()[0] != cell_dimension(ufc_cell.index) ||
+      coordinates.shape()[1] != geometric_dimension())
+  {
+    boost::multi_array<double, 2>::extent_gen extents;
+    coordinates.resize(extents[cell_dimension(ufc_cell.index)]
+		       [geometric_dimension()]);
+  }
 
   // Set vertex coordinates
   const uint num_points = coordinates.size();
