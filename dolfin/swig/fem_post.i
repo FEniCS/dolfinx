@@ -68,7 +68,17 @@ def function_space(self):
 
 %pythoncode %{
 def tabulate_coordinates(self, cell, coordinates=None):
-    """ Tabulate the coordinates of the dofs in a cell"""
+    """ Tabulate the coordinates of all dofs on a cell 
+    
+    *Arguments*
+        cell (_Cell_)
+             The cell.
+        coordinates (NumPy array)
+             Optional argument: The coordinates of all dofs on a cell.
+    *Returns*
+        coordinates
+             The coordinates of all dofs on a cell.
+    """
     import numpy as np
 
     # Check coordinate argument

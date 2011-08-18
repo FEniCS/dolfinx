@@ -38,7 +38,6 @@ class DofMapTest(unittest.TestCase):
         coord1 = numpy.zeros((3,2), dtype="d")
         coord2 = numpy.zeros((3,2), dtype="d")
         coord3 = numpy.zeros((3,2), dtype="d")
-        coord4 = numpy.zeros((6,2), dtype="d")
 
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coord0)
@@ -46,7 +45,7 @@ class DofMapTest(unittest.TestCase):
             L = self.W.sub(1)
             L.sub(0).dofmap().tabulate_coordinates(cell, coord2)
             L.sub(1).dofmap().tabulate_coordinates(cell, coord3)
-            L.dofmap().tabulate_coordinates(cell, coord4)
+            coord4 = L.dofmap().tabulate_coordinates(cell)
 
             self.assertTrue((coord0 == coord1).all())
             self.assertTrue((coord0 == coord2).all())
