@@ -61,8 +61,8 @@ def function_space(self):
     
     // Copy data
     double* data = static_cast<double*>(PyArray_DATA(xa));
-    for (uint i=0; i<self->cell_dimension(cell.index()); i++)
-      for (uint j=0; j<self->geometric_dimension(); j++)
+    for (dolfin::uint i=0; i<self->cell_dimension(cell.index()); i++)
+      for (dolfin::uint j=0; j<self->geometric_dimension(); j++)
 	data[i*self->geometric_dimension()+j] = tmparray[i][j];
   }
 
