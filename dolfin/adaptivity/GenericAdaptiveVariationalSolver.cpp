@@ -55,17 +55,27 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 {
   // Clear adaptive data
   _adaptive_data.clear();
+
+  // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
   TimeSeries series(label);
 
-  // Start adaptive loop
-  const uint max_iterations = parameters["max_iterations"];
-
-  Timer timer("adaptive_loop");
-
   // Iterate over a series of meshes
+  Timer timer("Adaptive solve");
+  const uint max_iterations = parameters["max_iterations"];
   for (uint i = 0; i < max_iterations; i++)
   {
+    // Check that num_dofs is not greater than than max dimension (and
+    // that that parameter is modified)
+    const uint max_dimension = parameters["max_dimension"];
+    if (parameters["max_dimension"].change_count() > 0
+        && num_dofs_primal() > max_dimension)
+    {
+      info("Maximal number of dofs reached, finishing");
+      summary();
+      return;
+    }
+
     // Initialize adaptive data
     boost::shared_ptr<Parameters> datum(new Parameters("adaptive_data"));
     _adaptive_data.push_back(datum);
@@ -88,7 +98,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     boost::shared_ptr<const Function> u = solve_primal();
     datum->add("time_solve_primal", timer.stop());
 
-    // Extract stuff
+    // Extract views to primal trial space and mesh
     assert(u);
     const FunctionSpace& V = u->function_space();
     const Mesh& mesh = V.mesh();
@@ -115,10 +125,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     datum->add("functional_value", functional_value);
     //info(*datum, true);
 
-    // Check stopping criterion
-    if (stop(V, error_estimate, tol))
+    // Stop if error estimate is less than tolerance
+    if (std::abs(error_estimate) < tol)
     {
-      end();
       summary();
       return;
     }
@@ -177,24 +186,6 @@ GenericAdaptiveVariationalSolver::adaptive_data() const
   return _adaptive_data;
 }
 //-----------------------------------------------------------------------------
-bool GenericAdaptiveVariationalSolver::stop(const FunctionSpace& V,
-                                            const double error_estimate,
-                                            const double tolerance)
-{
-  // Done if error is less than tolerance
-  if (std::abs(error_estimate) < tolerance)
-    return true;
-
-  // Or done if dimension is larger than max dimension (and that
-  // parameter is set).
-  const uint max_dimension = parameters["max_dimension"];
-  if (parameters["max_dimension"].change_count() > 0
-      && V.dim() > max_dimension)
-    return true;
-
-  return false;
-}
-//-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::summary()
 {
   // Show parameters used
@@ -245,11 +236,11 @@ void GenericAdaptiveVariationalSolver::summary()
 
   // Show summary for all iterations
   info("");
-  info("Summary of adaptive solve:");
+  info("Summary of adaptive data:");
   info("");
   info(indent(table.str(true)));
   info("");
-  info("Summary of adaptive solve timings:");
+  info("Time spent for adaptive solve (in seconds):");
   info("");
   info(indent(time_table.str(true)));
   info("");

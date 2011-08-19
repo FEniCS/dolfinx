@@ -26,6 +26,7 @@
 #include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 
 #include "AdaptiveNonlinearVariationalSolver.h"
 #include "GoalFunctional.h"
@@ -101,5 +102,12 @@ adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
   const NonlinearVariationalProblem& current = problem->fine();
   adapt(current, mesh);
+}
+// ----------------------------------------------------------------------------
+dolfin::uint AdaptiveNonlinearVariationalSolver::num_dofs_primal()
+{
+  const NonlinearVariationalProblem& current = problem->fine();
+  const FunctionSpace& V = *(current.trial_space());
+  return V.dim();
 }
 // ----------------------------------------------------------------------------

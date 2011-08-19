@@ -148,13 +148,16 @@ namespace dolfin
     // A list of adaptive data
     std::vector<boost::shared_ptr<Parameters> > _adaptive_data;
 
-    /// Check if stopping criterion is satisfied
-    bool stop(const FunctionSpace& V,
-              const double error_estimate,
-              const double tolerance);
-
     /// Present summary of all adaptive data and parameters
     void summary();
+
+    /// Return the number of degrees of freedom for primal problem
+    ///
+    /// *Returns*
+    ///     _uint_
+    ///         The number of degrees of freedom
+    virtual uint num_dofs_primal() = 0;
+
 
   };
 
