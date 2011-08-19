@@ -58,7 +58,6 @@
 %enddef
 
 // adaptivity
-%shared_ptr(dolfin::AdaptiveDatum)
 %shared_ptr(dolfin::AdaptiveLinearVariationalSolver)
 %shared_ptr(dolfin::AdaptiveNonlinearVariationalSolver)
 %shared_ptr(dolfin::ErrorControl)

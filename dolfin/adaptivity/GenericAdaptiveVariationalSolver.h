@@ -27,7 +27,6 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/BoundaryCondition.h>
-#include <dolfin/adaptivity/AdaptiveDatum.h>
 
 namespace dolfin
 {
@@ -46,6 +45,8 @@ namespace dolfin
   class GenericAdaptiveVariationalSolver : public Variable
   {
   public:
+
+    virtual ~GenericAdaptiveVariationalSolver();
 
     /// Solve such that the error measured in the functional 'goal' is
     /// less than the given tolerance using the ErrorControl object
@@ -111,9 +112,9 @@ namespace dolfin
     /// Return stored adaptive data
     ///
     /// *Returns*
-    ///    std::vector<_AdaptiveDatum_>
+    ///    std::vector<_Parameters_>
     ///        The data stored in the adaptive loop
-    std::vector<boost::shared_ptr<AdaptiveDatum> > adaptive_data() const;
+    std::vector<boost::shared_ptr<Parameters> > adaptive_data() const;
 
     /// Default parameter values:
     ///
@@ -145,7 +146,7 @@ namespace dolfin
   protected:
 
     // A list of adaptive data
-    std::vector<boost::shared_ptr<AdaptiveDatum> > _adaptive_data;
+    std::vector<boost::shared_ptr<Parameters> > _adaptive_data;
 
     /// Check if stopping criterion is satisfied
     bool stop(const FunctionSpace& V,
@@ -153,10 +154,10 @@ namespace dolfin
               const double tolerance);
 
     /// Present summary of all adaptive data and parameters
-    void summary();
+    //void summary();
 
     /// Present summary of single adaptive datum
-    void summary(const AdaptiveDatum& data);
+    //void summary(const AdaptiveDatum& data);
 
   };
 

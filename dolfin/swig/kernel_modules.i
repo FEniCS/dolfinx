@@ -208,7 +208,6 @@
 
 // DOLFIN headers included from adaptivity
 %include "dolfin/swig/adaptivity_pre.i"
-%include "dolfin/adaptivity/AdaptiveDatum.h"
 %include "dolfin/adaptivity/GenericAdaptiveVariationalSolver.h"
 %include "dolfin/adaptivity/AdaptiveLinearVariationalSolver.h"
 %include "dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h"

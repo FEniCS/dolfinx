@@ -1,6 +1,5 @@
 // Auto generated import statements for the SWIG kernel module: 'adaptivity'
 
-%import(module="dolfin.cpp") "dolfin/adaptivity/AdaptiveDatum.h"
 %import(module="dolfin.cpp") "dolfin/adaptivity/GenericAdaptiveVariationalSolver.h"
 %import(module="dolfin.cpp") "dolfin/adaptivity/AdaptiveLinearVariationalSolver.h"
 %import(module="dolfin.cpp") "dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h"
