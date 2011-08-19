@@ -154,10 +154,7 @@ namespace dolfin
               const double tolerance);
 
     /// Present summary of all adaptive data and parameters
-    //void summary();
-
-    /// Present summary of single adaptive datum
-    //void summary(const AdaptiveDatum& data);
+    void summary();
 
   };
 

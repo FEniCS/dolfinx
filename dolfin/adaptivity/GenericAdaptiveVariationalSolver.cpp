@@ -20,7 +20,12 @@
 // First added:  2010-08-19
 // Last changed: 2011-06-22
 
+#include <sstream>
+#include <stdio.h>
+#include <dolfin/log/Table.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Timer.h>
+
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -56,6 +61,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
   // Start adaptive loop
   const uint max_iterations = parameters["max_iterations"];
 
+  Timer timer("adaptive_loop");
+
   // Iterate over a series of meshes
   for (uint i = 0; i < max_iterations; i++)
   {
@@ -77,7 +84,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 
     //--- Stage 0: Solve primal problem
     begin("Stage %d.0: Solving primal problem...", i);
+    timer.start();
     boost::shared_ptr<const Function> u = solve_primal();
+    datum->add("time_solve_primal", timer.stop());
 
     // Extract stuff
     assert(u);
@@ -92,7 +101,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 
     //--- Stage 1: Estimate error
     begin("Stage %d.1: Computing error estimate...", i);
+    timer.start();
     const double error_estimate = ec.estimate_error(*u, extract_bcs());
+    datum->add("time_estimate_error", timer.stop());
     info("Error estimate is %g (tol = %g).", error_estimate, tol);
     end();
 
@@ -102,12 +113,13 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     datum->add("num_dofs", num_dofs);
     datum->add("error_estimate", error_estimate);
     datum->add("functional_value", functional_value);
-    info(*datum, true);
+    //info(*datum, true);
 
     // Check stopping criterion
     if (stop(V, error_estimate, tol))
     {
       end();
+      summary();
       return;
     }
 
@@ -115,7 +127,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     begin("Stage %d.2: Computing error indicators...", i);
     Vector indicators(mesh.num_cells());
     assert(u);
+    timer.start();
     ec.compute_indicators(indicators, *u);
+    datum->add("time_compute_indicators", timer.stop());
     if (parameters["save_data"])
     {
       series.store(indicators, i);
@@ -128,24 +142,31 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     MeshFunction<bool> markers(mesh, mesh.topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
+    timer.start();
     mark(markers, indicators, strategy, fraction);
+    datum->add("time_mark_mesh", timer.stop());
     end();
 
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
+    timer.start();
     adapt(mesh, markers);
+    datum->add("time_adapt_mesh", timer.stop());
     if (parameters["plot_mesh"])
       plot(mesh.child(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
+    timer.start();
     adapt_problem(mesh.fine_shared_ptr());
     adapt(M, mesh.fine_shared_ptr());
     adapt(ec, mesh.fine_shared_ptr());
+    datum->add("time_adapt_forms", timer.stop());
     end();
   }
 
+  summary();
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.",
           max_iterations);
 }
@@ -173,35 +194,64 @@ bool GenericAdaptiveVariationalSolver::stop(const FunctionSpace& V,
 
   return false;
 }
-// //-----------------------------------------------------------------------------
-// void GenericAdaptiveVariationalSolver::summary()
-// {
-//   // Show parameters used
-//   info("");
-//   info("Parameters used for adaptive solve:");
-//   info("");
-//   info(parameters, true);
+//-----------------------------------------------------------------------------
+void GenericAdaptiveVariationalSolver::summary()
+{
+  // Show parameters used
+  info("");
+  info("Parameters used for adaptive solve:");
+  info("");
+  info(parameters, true);
 
-//   // Show summary for all iterations
-//   info("");
-//   info("Summary of adaptive solve:");
-//   info("");
-//   Table table("Level");
-//   for (uint i = 0; i < _adaptive_data.size(); i++)
-//     _adaptive_data[i]->store(table);
-//   info(indent(table.str(true)));
-//   info("");
-// }
-// //-----------------------------------------------------------------------------
-// void GenericAdaptiveVariationalSolver::summary(const AdaptiveDatum& datum)
-// {
-//   // Show summary for given adaptive datum
-//   info("");
-//   info("Current adaptive data");
-//   info("");
-//   Table table("Level");
-//   datum.store(table);
-//   info(indent(table.str(true)));
-//   info("");
-// }
-// //-----------------------------------------------------------------------------
+  Table table("Level");
+  Table time_table("Level");
+
+  for (uint i = 0; i < _adaptive_data.size(); i++)
+  {
+    std::stringstream s;
+    s << i;
+    const Parameters& datum = *_adaptive_data[i];
+
+    if (datum.has_key("reference"))
+      table(s.str(), "reference") = datum["reference"].value_str();
+    table(s.str(), "functional_value") = datum["functional_value"].value_str();
+    table(s.str(), "error_estimate") = datum["error_estimate"].value_str();
+    table(s.str(), "tolerance") = datum["tolerance"].value_str();
+    table(s.str(), "num_cells") = datum["num_cells"].value_str();
+    table(s.str(), "num_dofs") = datum["num_dofs"].value_str();
+
+    time_table(s.str(), "solve_primal")
+      = datum["time_solve_primal"].value_str();
+    time_table(s.str(), "estimate_error")
+      = datum["time_estimate_error"].value_str();
+    if (datum.has_key("time_compute_indicators"))
+      time_table(s.str(), "compute_indicators")
+        = datum["time_compute_indicators"].value_str();
+    else
+      time_table(s.str(), "compute_indicators") = 0.0;
+    if (datum.has_key("time_mark_mesh"))
+      time_table(s.str(), "mark_mesh") = datum["time_mark_mesh"].value_str();
+    else
+      time_table(s.str(), "mark_mesh") = 0.0;
+    if (datum.has_key("time_adapt_mesh"))
+      time_table(s.str(), "adapt_mesh") = datum["time_adapt_mesh"].value_str();
+    else
+      time_table(s.str(), "adapt_mesh") = 0.0;
+    if (datum.has_key("time_adapt_forms"))
+      time_table(s.str(), "update") = datum["time_adapt_forms"].value_str();
+    else
+      time_table(s.str(), "update") = 0.0;
+  }
+
+  // Show summary for all iterations
+  info("");
+  info("Summary of adaptive solve:");
+  info("");
+  info(indent(table.str(true)));
+  info("");
+  info("Summary of adaptive solve timings:");
+  info("");
+  info(indent(time_table.str(true)));
+  info("");
+}
+//-----------------------------------------------------------------------------
