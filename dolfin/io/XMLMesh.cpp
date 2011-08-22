@@ -59,6 +59,9 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 
   // Read any mesh data
   read_data(mesh.data(), mesh_node);
+
+  // Initialize boundary indicators
+  mesh.initialize_exterior_facet_domains();
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
@@ -177,7 +180,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
         read_array_uint(*array, data_set);
       }
       else
-        error("Only reading of MeshData uint Arrays are supported at present.");
+        error("Only reading of MeshData uint arrays are supported at present.");
     }
     else if (data_set_type == "meshfunction")
     {

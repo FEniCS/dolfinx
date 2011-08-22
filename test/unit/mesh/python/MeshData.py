@@ -33,6 +33,10 @@ class MeshData(unittest.TestCase):
         f = File("../../../../data/meshes/aneurysm.xml.gz")
         f >> mesh
 
+        # Check for generated exterior_facet_domains
+        mf = mesh.data().mesh_function("exterior_facet_domains")
+        self.assertEqual(mf.size(), 59912)
+
         # Write mesh with boundary indicators
         g = File("MeshData_test_io.xml")
         g << mesh
