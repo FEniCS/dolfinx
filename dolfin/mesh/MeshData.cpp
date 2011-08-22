@@ -29,17 +29,15 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >::iterator mf_iterator;
-typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >::const_iterator mf_const_iterator;
+typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >
+::iterator mf_iterator;
+typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >
+::const_iterator mf_const_iterator;
 
-typedef std::map<std::string, std::vector<dolfin::uint>*>::iterator a_iterator;
-typedef std::map<std::string, std::vector<dolfin::uint>*>::const_iterator a_const_iterator;
-
-typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::iterator m_iterator;
-typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::const_iterator m_const_iterator;
-
-typedef std::map<std::string, std::map<dolfin::uint, std::vector<dolfin::uint> > *>::iterator mvec_iterator;
-typedef std::map<std::string, std::map<dolfin::uint, std::vector<dolfin::uint> > *>::const_iterator mvec_const_iterator;
+typedef std::map<std::string, boost::shared_ptr<std::vector<dolfin::uint> > >
+::iterator a_iterator;
+typedef std::map<std::string, boost::shared_ptr<std::vector<dolfin::uint> > >
+::const_iterator a_const_iterator;
 
 //-----------------------------------------------------------------------------
 MeshData::MeshData(Mesh& mesh) : mesh(mesh)
@@ -57,17 +55,20 @@ const MeshData& MeshData::operator= (const MeshData& data)
   // Clear all data
   clear();
 
-  // Copy MeshFunctions
-  for (mf_const_iterator it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
+  // Copy mesh functions
+  for (mf_const_iterator it = data.mesh_functions.begin();
+       it != data.mesh_functions.end(); ++it)
   {
-    boost::shared_ptr<MeshFunction<unsigned int> > f = create_mesh_function(it->first, it->second->dim());
+    boost::shared_ptr<MeshFunction<unsigned int> >
+      f = create_mesh_function(it->first, it->second->dim());
     *f = *it->second;
   }
 
   // Copy arrays
   for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
-    std::vector<uint>* a = create_array( it->first, static_cast<uint>(it->second->size()) );
+    boost::shared_ptr<std::vector<uint> >
+      a = create_array( it->first, static_cast<uint>(it->second->size()) );
     *a = *it->second;
   }
 
@@ -77,13 +78,11 @@ const MeshData& MeshData::operator= (const MeshData& data)
 void MeshData::clear()
 {
   mesh_functions.clear();
-
-  for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
-    delete it->second;
   arrays.clear();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(std::string name)
+boost::shared_ptr<MeshFunction<unsigned int> >
+MeshData::create_mesh_function(std::string name)
 {
   // Check if data already exists
   mf_iterator it = mesh_functions.find(name);
@@ -103,7 +102,8 @@ boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(st
   return f;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(std::string name, uint dim)
+boost::shared_ptr<MeshFunction<unsigned int> >
+MeshData::create_mesh_function(std::string name, uint dim)
 {
   boost::shared_ptr<MeshFunction<unsigned int> > f = create_mesh_function(name);
   f->init(dim);
@@ -111,12 +111,14 @@ boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(st
   return f;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>* MeshData::create_array(std::string name)
+boost::shared_ptr<std::vector<dolfin::uint> >
+MeshData::create_array(std::string name)
 {
   return create_array(name, 0);
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>* MeshData::create_array(std::string name, uint size)
+boost::shared_ptr<std::vector<dolfin::uint> >
+MeshData::create_array(std::string name, uint size)
 {
   // Check if data already exists
   a_iterator it = arrays.find(name);
@@ -127,7 +129,7 @@ std::vector<dolfin::uint>* MeshData::create_array(std::string name, uint size)
   }
 
   // Create new data
-  std::vector<uint>* a = new std::vector<uint>(size);
+  boost::shared_ptr<std::vector<uint> > a(new std::vector<uint>(size));
   std::fill(a->begin(), a->end(), 0);
 
   // Add to map
@@ -136,7 +138,8 @@ std::vector<dolfin::uint>* MeshData::create_array(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> > MeshData::mesh_function(const std::string name) const
+boost::shared_ptr<MeshFunction<unsigned int> >
+MeshData::mesh_function(const std::string name) const
 {
   // Check if data exists
   mf_const_iterator it = mesh_functions.find(name);
@@ -146,19 +149,15 @@ boost::shared_ptr<MeshFunction<unsigned int> > MeshData::mesh_function(const std
   return it->second;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>* MeshData::array(const std::string name) const
+boost::shared_ptr<std::vector<dolfin::uint> >
+MeshData::array(const std::string name) const
 {
   // Check if data exists
   a_const_iterator it = arrays.find(name);
   if (it == arrays.end())
-    return 0;
+    return boost::shared_ptr<std::vector<uint> >();
 
   return it->second;
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::uint>* MeshData::array(const std::string name, uint i) const
-{
-  return array(name + " " + to_string(i));
 }
 //-----------------------------------------------------------------------------
 void MeshData::erase_mesh_function(const std::string name)
@@ -167,21 +166,16 @@ void MeshData::erase_mesh_function(const std::string name)
   if (it != mesh_functions.end())
     mesh_functions.erase(it);
   else
-    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+    warning("Mesh data named \"%s\" does not exist.", name.c_str());
 }
 //-----------------------------------------------------------------------------
 void MeshData::erase_array(const std::string name)
 {
   a_iterator it = arrays.find(name);
   if (it != arrays.end())
-  {
-    delete it->second;
     arrays.erase(it);
-  }
   else
-  {
-    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
-  }
+    warning("Mesh data named \"%s\" does not exist.", name.c_str());
 }
 //-----------------------------------------------------------------------------
 std::string MeshData::str(bool verbose) const
@@ -195,14 +189,16 @@ std::string MeshData::str(bool verbose) const
     // Mesh functions
     s << "  MeshFunction<uint>" << std::endl;
     s << "  ------------------" << std::endl;
-    for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
+    for (mf_const_iterator it = mesh_functions.begin();
+         it != mesh_functions.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
 
     // Arrays
     s << "  std::vector<uint>" << std::endl;
     s << "  -----------------" << std::endl;
-    for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
+    for (a_const_iterator it = arrays.begin();
+         it != arrays.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
   }

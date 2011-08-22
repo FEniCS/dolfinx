@@ -167,7 +167,8 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
       if (data_type == "uint")
       {
         // Get vector from MeshData
-        std::vector<unsigned int>* array = data.array(data_set_name);
+        boost::shared_ptr<std::vector<unsigned int> >
+          array = data.array(data_set_name);
         if (!array)
           array = data.create_array(data_set_name);
         assert(array);

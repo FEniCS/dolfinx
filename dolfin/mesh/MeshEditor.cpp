@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-03-10
+// Last changed: 2011-08-22
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -463,9 +463,12 @@ void MeshEditor::compute_boundary_indicators()
     return;
 
   // Extract data for boundary indicators
-  std::vector<uint>* facet_cells   = mesh->data().array("boundary_facet_cells");
-  std::vector<uint>* facet_numbers = mesh->data().array("boundary_facet_numbers");
-  std::vector<uint>* indicators    = mesh->data().array("boundary_indicators");
+  boost::shared_ptr<const std::vector<uint> >
+    facet_cells = mesh->data().array("boundary_facet_cells");
+  boost::shared_ptr<const std::vector<uint> >
+    facet_numbers = mesh->data().array("boundary_facet_numbers");
+  boost::shared_ptr<const std::vector<uint> >
+    indicators = mesh->data().array("boundary_indicators");
 
   // Do nothing if there are no indicators
   if (!indicators)

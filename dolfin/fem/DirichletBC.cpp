@@ -579,6 +579,10 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 {
   assert(facets.size() == 0);
 
+  // FIXME: This should not be necessary since this data is (should) be
+  // FIXME: converted to facet indicators before we get here. That's how
+  // FIXME: this is treated for assembly.
+
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
   // here will either have no effect (if the mesh is already ordered
@@ -586,9 +590,12 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // In conclusion: we don't need to order the mesh here.
 
   // Get data
-  const std::vector<uint>* facet_cells   = _function_space->mesh().data().array("boundary facet cells");
-  const std::vector<uint>* facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
-  const std::vector<uint>* indicators    = _function_space->mesh().data().array("boundary indicators");
+  boost::shared_ptr<const std::vector<uint> >
+    facet_cells = _function_space->mesh().data().array("boundary facet cells");
+  boost::shared_ptr<const std::vector<uint> >
+    facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
+  boost::shared_ptr<const std::vector<uint> >
+    indicators = _function_space->mesh().data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)
