@@ -27,14 +27,16 @@ class xml_mesh_io(unittest.TestCase):
     """Test output of Meshes to XML files"""
 
     def test_save_plain_mesh2D(self):
-        mesh = UnitSquare(8, 8)
-        f = File("unit_square.xml")
-        f << mesh
+        if MPI.num_processes() == 1:
+            mesh = UnitSquare(8, 8)
+            f = File("unit_square.xml")
+            f << mesh
 
     def test_save_plain_mesh3D(self):
-        mesh = UnitCube(8, 8, 8)
-        f = File("unit_cube.xml")
-        f << mesh
+        if MPI.num_processes() == 1:
+            mesh = UnitCube(8, 8, 8)
+            f = File("unit_cube.xml")
+            f << mesh
 
 
 if __name__ == "__main__":
