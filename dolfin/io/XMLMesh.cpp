@@ -329,33 +329,30 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
     }
   }
 
-  /*
   // Write arrays
   typedef std::map<std::string,
-                   boost::shared_ptr<MeshFunction<uint> > >
-    ::const_iterator mf_iterator;
-  for (mf_iterator it = mesh.data().mesh_functions.begin();
-       it != mesh.data().mesh_functions.end(); ++it)
+                   boost::shared_ptr<std::vector<uint> > >
+    ::const_iterator array_iterator;
+  for (array_iterator it = data.arrays.begin();
+       it != data.arrays.end(); ++it)
   {
     std::string name = it->first;
-    boost::shared_ptr<MeshFunction<unsigned int> > mf = it->second;
-    assert(mf);
+    boost::shared_ptr<std::vector<unsigned int> > array = it->second;
+    assert(array);
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
     data_entry_node.append_attribute("name") = name.c_str();
 
-    pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
-    mf_node.append_attribute("type") = "uint";
-    mf_node.append_attribute("dim") = mf->dim();
-    mf_node.append_attribute("size") = mf->size();
+    pugi::xml_node array_node = data_entry_node.append_child("array");
+    array_node.append_attribute("type") = "uint";
+    array_node.append_attribute("size") = static_cast<uint>(array->size());
 
-    for (uint i = 0; i < mf->size(); i++)
+    for (uint i = 0; i < array->size(); i++)
     {
-      pugi::xml_node entity_node = mf_node.append_child("entity");
-      entity_node.append_attribute("index") = i;
-      entity_node.append_attribute("value") = (*mf)[i];
+      pugi::xml_node element_node = array_node.append_child("element");
+      element_node.append_attribute("index") = i;
+      element_node.append_attribute("value") = (*array)[i];
     }
   }
-  */
 }
 //-----------------------------------------------------------------------------
