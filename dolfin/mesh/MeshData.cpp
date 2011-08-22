@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -71,20 +71,6 @@ const MeshData& MeshData::operator= (const MeshData& data)
     *a = *it->second;
   }
 
-  // Copy mappings
-  for (m_const_iterator it = data.mappings.begin(); it != data.mappings.end(); ++it)
-  {
-    std::map<uint, uint>* m = create_mapping(it->first);
-    *m = *it->second;
-  }
-
-  // Copy vector mappings
-  for (mvec_const_iterator it = data.vector_mappings.begin(); it != data.vector_mappings.end(); ++it)
-  {
-    std::map<uint, std::vector<uint> >* m = create_vector_mapping(it->first);
-    *m = *it->second;
-  }
-
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -95,14 +81,6 @@ void MeshData::clear()
   for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
     delete it->second;
   arrays.clear();
-
-  for (m_iterator it = mappings.begin(); it != mappings.end(); ++it)
-    delete it->second;
-  mappings.clear();
-
-  for (mvec_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
-    delete it->second;
-  vector_mappings.clear();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<unsigned int> > MeshData::create_mesh_function(std::string name)
@@ -158,44 +136,6 @@ std::vector<dolfin::uint>* MeshData::create_array(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::create_mapping(std::string name)
-{
-  // Check if data already exists
-  m_iterator it = mappings.find(name);
-  if (it != mappings.end())
-  {
-    warning("Mesh data named \"%s\" already exists.", name.c_str());
-    return it->second;
-  }
-
-  // Create new data
-  std::map<uint, uint>* m = new std::map<uint, uint>;
-
-  // Add to map
-  mappings[name] = m;
-
-  return m;
-}
-//-----------------------------------------------------------------------------
-std::map<dolfin::uint, std::vector<dolfin::uint> >* MeshData::create_vector_mapping(std::string name)
-{
-  // Check if data already exists
-  mvec_iterator it = vector_mappings.find(name);
-  if (it != vector_mappings.end())
-  {
-    warning("Mesh data named \"%s\" already exists.", name.c_str());
-    return it->second;
-  }
-
-  // Create new data
-  std::map<uint, std::vector<uint> >* m = new std::map<uint, std::vector<uint> >;
-
-  // Add to map
-  vector_mappings[name] = m;
-
-  return m;
-}
-//-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<unsigned int> > MeshData::mesh_function(const std::string name) const
 {
   // Check if data exists
@@ -221,26 +161,6 @@ std::vector<dolfin::uint>* MeshData::array(const std::string name, uint i) const
   return array(name + " " + to_string(i));
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) const
-{
-  // Check if data exists
-  m_const_iterator it = mappings.find(name);
-  if (it == mappings.end())
-    return 0;
-
-  return it->second;
-}
-//-----------------------------------------------------------------------------
-std::map<dolfin::uint, std::vector<dolfin::uint> >* MeshData::vector_mapping(const std::string name) const
-{
-  // Check if data exists
-  mvec_const_iterator it = vector_mappings.find(name);
-  if (it == vector_mappings.end())
-    return 0;
-
-  return it->second;
-}
-//-----------------------------------------------------------------------------
 void MeshData::erase_mesh_function(const std::string name)
 {
   mf_iterator it = mesh_functions.find(name);
@@ -257,34 +177,6 @@ void MeshData::erase_array(const std::string name)
   {
     delete it->second;
     arrays.erase(it);
-  }
-  else
-  {
-    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
-  }
-}
-//-----------------------------------------------------------------------------
-void MeshData::erase_mapping(const std::string name)
-{
-  m_iterator it = mappings.find(name);
-  if (it != mappings.end())
-  {
-    delete it->second;
-    mappings.erase(it);
-  }
-  else
-  {
-    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
-  }
-}
-//-----------------------------------------------------------------------------
-void MeshData::erase_vector_mapping(const std::string name)
-{
-  mvec_iterator it = vector_mappings.find(name);
-  if (it != vector_mappings.end())
-  {
-    delete it->second;
-    vector_mappings.erase(it);
   }
   else
   {
@@ -313,25 +205,11 @@ std::string MeshData::str(bool verbose) const
     for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
-
-    // Mappings
-    s << "  std::map<uint, uint>" << std::endl;
-    s << "  --------------------" << std::endl;
-    for (m_const_iterator it = mappings.begin(); it != mappings.end(); ++it)
-      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-    s << std::endl;
-
-    // Vector mappings
-    s << "  std::map<uint, std::vector<uint>" << std::endl;
-    s << "  --------------------------------" << std::endl;
-    for (mvec_const_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
-      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-    s << std::endl;
   }
   else
   {
     const uint num_objects =
-      mesh_functions.size() + arrays.size() + mappings.size() + vector_mappings.size();
+      mesh_functions.size() + arrays.size();
     s << "<MeshData containing " << num_objects << " objects>";
   }
 

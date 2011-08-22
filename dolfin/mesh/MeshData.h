@@ -143,28 +143,6 @@ namespace dolfin
     ///         The array.
     std::vector<uint>* create_array(std::string name, uint size);
 
-    /// Create mapping from uint to uint with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, uint>
-    ///         The map.
-    std::map<uint, uint>* create_mapping(std::string name);
-
-    /// Create mapping from uint to vector of uint with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, std::vector<uint> >
-    ///         The map.
-    std::map<uint, std::vector<uint> >* create_vector_mapping(std::string name);
-
     //--- Retrieval of data ---
 
     /// Return MeshFunction with given name (returning zero if data is
@@ -205,30 +183,6 @@ namespace dolfin
     ///         The array.
     std::vector<uint>* array(const std::string name, uint number) const;
 
-    /// Return mapping with given name (returning zero if data is not
-    /// available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, uint>
-    ///         The map.
-    std::map<uint, uint>* mapping(const std::string name) const;
-
-    /// Return vector mapping with given name (returning zero if data
-    /// is not available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map
-    ///
-    /// *Returns*
-    ///     std::map<uint, std::vector<uint> >
-    ///         The vector mapping.
-    std::map<uint, std::vector<uint> >* vector_mapping(const std::string name) const;
-
     //--- Removal of data ---
 
     /// Erase MeshFunction with given name
@@ -244,20 +198,6 @@ namespace dolfin
     ///     name (std::string)
     ///         The name of the array.
     void erase_array(const std::string name);
-
-    /// Erase mapping with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the mapping.
-    void erase_mapping(const std::string name);
-
-    /// Erase vector mapping with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the vector mapping.
-    void erase_vector_mapping(const std::string name);
 
     //--- Misc ---
 
@@ -287,12 +227,6 @@ namespace dolfin
 
     // A map from named mesh data to vector
     std::map<std::string, std::vector<uint>* > arrays;
-
-    // A map from named mesh data to mapping
-    std::map<std::string, std::map<uint, uint>* > mappings;
-
-    // A map from named mesh data to vector mapping
-    std::map<std::string, std::map<uint, std::vector<uint> >* > vector_mappings;
 
   };
 
