@@ -41,6 +41,13 @@
 %include <boost_shared_ptr.i>
 
 //-----------------------------------------------------------------------------
+// define to make SWIG_SHARED_PTR_QNAMESPACE available in inlined C++ code
+//-----------------------------------------------------------------------------
+%{
+#define SWIG_SHARED_PTR_QNAMESPACE boost
+%}
+
+//-----------------------------------------------------------------------------
 // Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
 // UFC
@@ -69,7 +76,8 @@
 
 // common
 %shared_ptr(dolfin::Variable)
-
+%shared_ptr(dolfin::Parameters)
+%shared_ptr(dolfin::GlobalParameters)
 
 // fem
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
@@ -140,6 +148,9 @@
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
 %shared_ptr(dolfin::MeshFunction<unsigned int>)
 
+// parameters
+%shared_ptr(dolfin::Parameters)
+%shared_ptr(dolfin::GlobalParameters)
 
 %shared_ptr(dolfin::CellFunction<bool>)
 %shared_ptr(dolfin::CellFunction<double>)
