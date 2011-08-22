@@ -579,10 +579,6 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 {
   assert(facets.size() == 0);
 
-  // FIXME: This should not be necessary since this data is (should) be
-  // FIXME: converted to facet indicators before we get here. That's how
-  // FIXME: this is treated for assembly.
-
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
   // here will either have no effect (if the mesh is already ordered
@@ -590,46 +586,33 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // In conclusion: we don't need to order the mesh here.
 
   // Get data
-  boost::shared_ptr<const std::vector<uint> >
-    facet_cells = _function_space->mesh().data().array("boundary facet cells");
-  boost::shared_ptr<const std::vector<uint> >
-    facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
-  boost::shared_ptr<const std::vector<uint> >
-    indicators = _function_space->mesh().data().array("boundary indicators");
+  const Mesh& mesh = _function_space->mesh();
+  boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains
+    = mesh.data().mesh_function("exterior_facet_domains");
 
   // Check data
-  if (!facet_cells)
+  if (!exterior_facet_domains)
   {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary facet cells\" not available.");
+    info(mesh.data());
+    error("Mesh data \"exterior_facet_domains\" not available.");
   }
 
-  if (!facet_numbers)
+  // Extract facets
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary facet numbers\" not available.");
-  }
-
-  if (!indicators)
-  {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary indicators\" not available.");
-  }
-
-  // Get size
-  const uint size = facet_cells->size();
-  assert(size == facet_numbers->size());
-  assert(size == indicators->size());
-
-  // Build set of boundary facets
-  for (uint i = 0; i < size; ++i)
-  {
-    // Skip facets not on this boundary
-    if ((*indicators)[i] != sub_domain)
+    // Skip non-matching facets
+    if ((*exterior_facet_domains)[facet->index()] != sub_domain)
       continue;
 
-    // Copy data
-    facets.push_back(std::pair<uint, uint>((*facet_cells)[i], (*facet_numbers)[i]));
+    // Extract cell/facet data
+    const uint D = mesh.topology().dim();
+    assert(facet->exterior());
+    const uint cell_index = facet->entities(D)[0];
+    const Cell cell(mesh, cell_index);
+    const uint local_facet_index = cell.index(*facet);
+
+    // Store cell/facet data
+    facets.push_back(std::pair<uint, uint>(cell_index, local_facet_index));
   }
 }
 //-----------------------------------------------------------------------------

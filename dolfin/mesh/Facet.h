@@ -58,12 +58,7 @@ namespace dolfin
       if (_mesh->parallel_data().exterior_facet().size() > 0)
         return _mesh->parallel_data().exterior_facet()[*this];
       else
-      {
-        if (num_entities(dim() + 1) == 2)
-          return false;
-        else
-          return true;
-      }
+        return num_entities(dim() + 1) == 1;
     }
 
     // FIXME: This function should take care of the case where adjacent cells
@@ -74,7 +69,8 @@ namespace dolfin
     /// the ordering of the two cells. If not specified, the ordering
     /// will depend on the (arbitrary) ordering of the mesh
     /// connectivity.
-    std::pair<const Cell, const Cell> adjacent_cells(const MeshFunction<uint>* facet_orientation=0) const
+    std::pair<const Cell, const Cell>
+    adjacent_cells(const MeshFunction<uint>* facet_orientation=0) const
     {
       assert(num_entities(dim() + 1) == 2);
 
