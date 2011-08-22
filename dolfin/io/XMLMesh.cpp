@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2002-12-06
-// Last changed: 2011-08-18
+// Last changed: 2011-08-22
 
 #include <map>
 #include <iomanip>
@@ -38,6 +40,7 @@
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
+#include "dolfin/mesh/MeshFunction.h"
 #include "XMLMeshFunction.h"
 #include "XMLMesh.h"
 
@@ -46,15 +49,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 {
-  const pugi::xml_node xml_mesh = xml_dolfin.child("mesh");
-  if (!xml_mesh)
+  // Get mesh node
+  const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
+  if (!mesh_node)
     error("Not a DOLFIN Mesh file.");
 
   // Read mesh
-  read_mesh(mesh, xml_mesh);
+  read_mesh(mesh, mesh_node);
 
   // Read any mesh data
-  read_data(mesh.data(), xml_mesh);
+  read_data(mesh.data(), mesh_node);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
@@ -62,85 +66,18 @@ void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
   // Add mesh node
   pugi::xml_node mesh_node = xml_node.append_child("mesh");
 
-  // Add mesh attributes
-  const CellType::Type _cell_type = mesh.type().cell_type();
-  const std::string cell_type = CellType::type2string(_cell_type);
-  mesh_node.append_attribute("celltype") = cell_type.c_str();
-  mesh_node.append_attribute("dim") = mesh.geometry().dim();
+  // Write mesh
+  write_mesh(mesh, mesh_node);
 
-  // Add vertices node
-  pugi::xml_node vertices_node = mesh_node.append_child("vertices");
-  vertices_node.append_attribute("size") = mesh.num_vertices();
-
-  // Write each vertex
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    pugi::xml_node vertex_node = vertices_node.append_child("vertex");
-    vertex_node.append_attribute("index") = v->index();
-
-    const Point p = v->point();
-    switch (mesh.geometry().dim())
-    {
-      case 1:
-        vertex_node.append_attribute("x") = p.x();
-        break;
-      case 2:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
-        break;
-      case 3:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
-        vertex_node.append_attribute("z") = p.z();
-        break;
-      default:
-        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
-    }
-  }
-
-  // Add cells node
-  pugi::xml_node cells_node = mesh_node.append_child("cells");
-  cells_node.append_attribute("size") = mesh.num_cells();
-
-  // Add each cell
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
-    cell_node.append_attribute("index") = c->index();
-
-    const uint* vertices = c->entities(0);
-    assert(vertices);
-
-    switch (_cell_type)
-    {
-    case CellType::interval:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      break;
-    case CellType::triangle:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
-      break;
-    case CellType::tetrahedron:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
-      cell_node.append_attribute("v3") = vertices[3];
-      break;
-    default:
-      error("Unknown cell type: %u.", _cell_type);
-    }
-  }
-
-  // FIXME: Write mesh data
+  // Write any mesh data
+  write_data(mesh.data(), mesh_node);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
+void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 {
   // Get cell type and geometric dimension
-  const std::string cell_type_str = xml_mesh.attribute("celltype").value();
-  const unsigned int gdim = xml_mesh.attribute("dim").as_uint();
+  const std::string cell_type_str = mesh_node.attribute("celltype").value();
+  const unsigned int gdim = mesh_node.attribute("dim").as_uint();
 
   // Get topological dimension
   boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
@@ -151,7 +88,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
   editor.open(mesh, cell_type_str, tdim, gdim);
 
   // Get vertices xml node
-  pugi::xml_node xml_vertices = xml_mesh.child("vertices");
+  pugi::xml_node xml_vertices = mesh_node.child("vertices");
   assert(xml_vertices);
 
   // Get number of vertices and init editor
@@ -170,7 +107,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
   }
 
   // Get cells node
-  pugi::xml_node xml_cells = xml_mesh.child("cells");
+  pugi::xml_node xml_cells = mesh_node.child("cells");
   assert(xml_cells);
 
   // Get number of cels and init editor
@@ -197,10 +134,10 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node xml_mesh)
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_data(MeshData& data, const pugi::xml_node xml_mesh)
+void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
 {
   // Check if we have any mesh data
-  const pugi::xml_node xml_data = xml_mesh.child("data");
+  const pugi::xml_node xml_data = mesh_node.child("data");
   if (!xml_data)
     return;
 
@@ -285,74 +222,139 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
+void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 {
-  error("XMLMesh::write_data not implemented.");
+  // Add mesh attributes
+  const CellType::Type _cell_type = mesh.type().cell_type();
+  const std::string cell_type = CellType::type2string(_cell_type);
+  mesh_node.append_attribute("celltype") = cell_type.c_str();
+  mesh_node.append_attribute("dim") = mesh.geometry().dim();
+
+  // Add vertices node
+  pugi::xml_node vertices_node = mesh_node.append_child("vertices");
+  vertices_node.append_attribute("size") = mesh.num_vertices();
+
+  // Write each vertex
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    pugi::xml_node vertex_node = vertices_node.append_child("vertex");
+    vertex_node.append_attribute("index") = v->index();
+
+    const Point p = v->point();
+    switch (mesh.geometry().dim())
+    {
+      case 1:
+        vertex_node.append_attribute("x") = p.x();
+        break;
+      case 2:
+        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("y") = p.y();
+        break;
+      case 3:
+        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("y") = p.y();
+        vertex_node.append_attribute("z") = p.z();
+        break;
+      default:
+        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    }
+  }
+
+  // Add cells node
+  pugi::xml_node cells_node = mesh_node.append_child("cells");
+  cells_node.append_attribute("size") = mesh.num_cells();
+
+  // Add each cell
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
+    cell_node.append_attribute("index") = c->index();
+
+    const uint* vertices = c->entities(0);
+    assert(vertices);
+
+    switch (_cell_type)
+    {
+    case CellType::interval:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      break;
+    case CellType::triangle:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v2") = vertices[2];
+      break;
+    case CellType::tetrahedron:
+      cell_node.append_attribute("v0") = vertices[0];
+      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v2") = vertices[2];
+      cell_node.append_attribute("v3") = vertices[3];
+      break;
+    default:
+      error("Unknown cell type: %u.", _cell_type);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
-/*
-void XMLMesh::write_data(const MeshData& data, std::ostream& outfile,
-                         unsigned int indentation_level)
+void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 {
-  //if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
-  //{
-    XMLIndent indent(indentation_level);
+  // Add mesh data node
+  pugi::xml_node mesh_data_node = mesh_node.append_child("data");
 
-    // Write mesh data header
-    outfile << indent();
-    outfile << "<data>" << std::endl;
+  // Write mesh functions
+  typedef std::map<std::string,
+                   boost::shared_ptr<MeshFunction<uint> > >
+    ::const_iterator mf_iterator;
+  for (mf_iterator it = data.mesh_functions.begin();
+       it != data.mesh_functions.end(); ++it)
+  {
+    std::string name = it->first;
+    boost::shared_ptr<MeshFunction<unsigned int> > mf = it->second;
+    assert(mf);
 
-    // Increment level for data_entries
-    ++indent;
+    pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
+    data_entry_node.append_attribute("name") = name.c_str();
 
-    // Write mesh functions
-    typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >::const_iterator mf_iter;
-    for (mf_iter it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
+    pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
+    mf_node.append_attribute("type") = "uint";
+    mf_node.append_attribute("dim") = mf->dim();
+    mf_node.append_attribute("size") = mf->size();
+
+    for (uint i = 0; i < mf->size(); i++)
     {
-      // Write data entry header
-      outfile << indent();
-      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
-
-      // Write mesh function (omit mesh)
-      ++indent;
-      XMLMeshFunction::write(*(it->second), "uint", outfile, indent.level(), false);
-      --indent;
-
-      // Write data entry footer
-      outfile << indent();
-      outfile << "</data_entry>" << std::endl;
+      pugi::xml_node entity_node = mf_node.append_child("entity");
+      entity_node.append_attribute("index") = i;
+      entity_node.append_attribute("value") = (*mf)[i];
     }
+  }
 
-    typedef std::map<std::string, std::vector<uint>*>::const_iterator arr_iter;
-    for (arr_iter it = data.arrays.begin(); it != data.arrays.end(); ++it)
+  /*
+  // Write arrays
+  typedef std::map<std::string,
+                   boost::shared_ptr<MeshFunction<uint> > >
+    ::const_iterator mf_iterator;
+  for (mf_iterator it = mesh.data().mesh_functions.begin();
+       it != mesh.data().mesh_functions.end(); ++it)
+  {
+    std::string name = it->first;
+    boost::shared_ptr<MeshFunction<unsigned int> > mf = it->second;
+    assert(mf);
+
+    pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
+    data_entry_node.append_attribute("name") = name.c_str();
+
+    pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
+    mf_node.append_attribute("type") = "uint";
+    mf_node.append_attribute("dim") = mf->dim();
+    mf_node.append_attribute("size") = mf->size();
+
+    for (uint i = 0; i < mf->size(); i++)
     {
-      // Write data entry header
-      outfile << indent();
-      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
-
-      // Write array
-      assert(it->second);
-      const std::vector<unsigned int>& v = *it->second;
-      ++indent;
-      outfile << indent() << "<array type=\"uint\" size=\"" << v.size() << "\">" << std::endl;
-      ++indent;
-      for (uint i = 0; i < v.size(); ++i)
-        outfile << indent() << "<element index=\"" << i << "\" value=\"" << v[i] << "\"/>" << std::endl;
-      --indent;
-      outfile << indent() << "</array>" << std::endl;
-      --indent;
-      // Write data entry footer
-      outfile << indent();
-      outfile << "</data_entry>" << std::endl;
+      pugi::xml_node entity_node = mf_node.append_child("entity");
+      entity_node.append_attribute("index") = i;
+      entity_node.append_attribute("value") = (*mf)[i];
     }
-
-    // Done with entries, decrement level
-    --indent;
-
-    // Write mesh data footer
-    outfile << indent();
-    outfile << "</data>" << std::endl;
-  //}
+  }
+  */
 }
-*/
 //-----------------------------------------------------------------------------
