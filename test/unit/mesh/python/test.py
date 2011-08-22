@@ -1,4 +1,4 @@
-"""Unit tests for the mesh library"""
+"Unit tests for the mesh library"
 
 # Copyright (C) 2006 Anders Logg
 #
@@ -29,11 +29,11 @@ class MeshConstruction(unittest.TestCase):
     def setUp(self):
         self.intervall = UnitInterval(10)
         self.circle = UnitCircle(5)
-        self.square = UnitSquare(5,5)
-        self.rectangle = Rectangle(0,0,2,2,5,5)
-        self.cube = UnitCube(3,3,3)
+        self.square = UnitSquare(5, 5)
+        self.rectangle = Rectangle(0, 0, 2, 2, 5, 5)
+        self.cube = UnitCube(3, 3, 3)
         self.sphere = UnitSphere(5)
-        self.box = Box(0,0,0,2,2,2,2,2,5)
+        self.box = Box(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
     def testUFLCell(self):
         import ufl
@@ -44,141 +44,6 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.sphere.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
-
-class MeshEditorTest(unittest.TestCase):
-
-    def testTriangle(self):
-        # Create mesh object and open editor
-        mesh = Mesh()
-        editor = MeshEditor()
-        editor.open(mesh, 2, 2)
-        editor.init_vertices(3)
-        editor.init_cells(1)
-
-        # Add vertices
-        p = Point(0.0, 0.0)
-        editor.add_vertex(0, p)
-        p = Point(1.0, 0.0)
-        editor.add_vertex(1, p)
-        p = Point(0.0, 1.0)
-        editor.add_vertex(2, p)
-
-        # Add cell
-        editor.add_cell(0, 0, 1, 2)
-
-        # Close editor
-        editor.close()
-
-class MeshIterators(unittest.TestCase):
-
-    def testVertexIterators(self):
-        """Iterate over vertices."""
-        mesh = UnitCube(5, 5, 5)
-
-        # Test connectivity
-        cons = [(i, mesh.topology()(0,i)) for i in xrange(4)]
-
-        # Test writability
-        for i, con in cons:
-            def assign(con, i):
-                con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
-
-        n = 0
-        for i, v in enumerate(vertices(mesh)):
-            n += 1
-            for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == v.entities(j)))
-
-        self.assertEqual(n, mesh.num_vertices())
-
-        # Check coordinate assignment
-        # FIXME: Outcomment to hopefully please Mac-buildbot
-        #end_point = numpy.array([v.x(0), v.x(1), v.x(2)])
-        #mesh.coordinates()[:] += 2
-        #self.assertEqual(end_point[0] + 2, mesh.coordinates()[-1,0])
-        #self.assertEqual(end_point[1] + 2, mesh.coordinates()[-1,1])
-        #self.assertEqual(end_point[2] + 2, mesh.coordinates()[-1,2])
-
-    def testEdgeIterators(self):
-        """Iterate over edges."""
-        mesh = UnitCube(5, 5, 5)
-
-        # Test connectivity
-        cons = [(i, mesh.topology()(1,i)) for i in xrange(4)]
-
-        # Test writability
-        for i, con in cons:
-            def assign(con, i):
-                con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
-
-        n = 0
-        for i, e in enumerate(edges(mesh)):
-            n += 1
-            for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == e.entities(j)))
-
-        self.assertEqual(n, mesh.num_edges())
-
-    def testFaceIterators(self):
-        """Iterate over faces."""
-        mesh = UnitCube(5, 5, 5)
-
-        # Test connectivity
-        cons = [(i, mesh.topology()(2,i)) for i in xrange(4)]
-
-        # Test writability
-        for i, con in cons:
-            def assign(con, i):
-                con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
-
-        n = 0
-        for i, f in enumerate(faces(mesh)):
-            n += 1
-            for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == f.entities(j)))
-
-        self.assertEqual(n, mesh.num_faces())
-
-    def testFacetIterators(self):
-        """Iterate over facets."""
-        mesh = UnitCube(5, 5, 5)
-        n = 0
-        for f in facets(mesh):
-            n += 1
-        self.assertEqual(n, mesh.num_facets())
-
-    def testCellIterators(self):
-        """Iterate over cells."""
-        mesh = UnitCube(5, 5, 5)
-
-        # Test connectivity
-        cons = [(i, mesh.topology()(3,i)) for i in xrange(4)]
-
-        # Test writability
-        for i, con in cons:
-            def assign(con, i):
-                con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
-
-        n = 0
-        for i, c in enumerate(cells(mesh)):
-            n += 1
-            for j, con in cons:
-                self.assertTrue(numpy.all(con(i) == c.entities(j)))
-
-        self.assertEqual(n, mesh.num_cells())
-
-    def testMixedIterators(self):
-        """Iterate over vertices of cells."""
-        mesh = UnitCube(5, 5, 5)
-        n = 0
-        for c in cells(mesh):
-            for v in vertices(c):
-                n += 1
-        self.assertEqual(n, 4*mesh.num_cells())
 
 # FIXME: The following test breaks in parallel
 if MPI.num_processes() == 1:
@@ -347,7 +212,6 @@ if MPI.num_processes() == 1:
                 else:
                     self.assertTrue(mesh.intersected_cells(p))
 
-
         def testIntersectPoints(self):
             from numpy import linspace
             mesh = UnitSquare(10, 10)
@@ -364,7 +228,6 @@ if MPI.num_processes() == 1:
 
         def testIntersectMesh3D(self):
             pass
-
 
 if __name__ == "__main__":
     unittest.main()
