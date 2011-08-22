@@ -140,6 +140,10 @@ namespace dolfin
       p.add("marking_strategy", "dorfler");
       p.add("marking_fraction", 0.5, 0.0, 1.0);
 
+      // Set parameters for dual solver
+      //Parameters p_dual("dual_variational_solver");
+      //p.add(p_dual);
+
       return p;
     }
 

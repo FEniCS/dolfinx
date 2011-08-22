@@ -42,8 +42,8 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other parameters
-  // FIXME
+  // Add parameters for nonlinear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
@@ -53,8 +53,8 @@ AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other parameters
-  // FIXME
+  // Add parameters for nonlinear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 void AdaptiveNonlinearVariationalSolver::solve(const double tol,
@@ -80,6 +80,7 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
 {
   NonlinearVariationalProblem& current = problem->fine();
   NonlinearVariationalSolver solver(current);
+  solver.parameters.update(parameters("nonlinear_variational_solver"));
   solver.solve();
   return current.solution();
 }
