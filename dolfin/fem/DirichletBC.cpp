@@ -606,7 +606,7 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 
     // Extract cell/facet data
     const uint D = mesh.topology().dim();
-    assert(facet->exterior());
+    assert(facet->num_entities(D) > 0);
     const uint cell_index = facet->entities(D)[0];
     const Cell cell(mesh, cell_index);
     const uint local_facet_index = cell.index(*facet);
