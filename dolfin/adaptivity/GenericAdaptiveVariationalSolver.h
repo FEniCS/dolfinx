@@ -27,7 +27,6 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/BoundaryCondition.h>
-#include <dolfin/adaptivity/AdaptiveDatum.h>
 
 namespace dolfin
 {
@@ -46,6 +45,8 @@ namespace dolfin
   class GenericAdaptiveVariationalSolver : public Variable
   {
   public:
+
+    virtual ~GenericAdaptiveVariationalSolver();
 
     /// Solve such that the error measured in the functional 'goal' is
     /// less than the given tolerance using the ErrorControl object
@@ -111,9 +112,9 @@ namespace dolfin
     /// Return stored adaptive data
     ///
     /// *Returns*
-    ///    std::vector<_AdaptiveDatum_>
+    ///    std::vector<_Parameters_>
     ///        The data stored in the adaptive loop
-    std::vector<boost::shared_ptr<AdaptiveDatum> > adaptive_data() const;
+    std::vector<boost::shared_ptr<Parameters> > adaptive_data() const;
 
     /// Default parameter values:
     ///
@@ -139,24 +140,28 @@ namespace dolfin
       p.add("marking_strategy", "dorfler");
       p.add("marking_fraction", 0.5, 0.0, 1.0);
 
+      // Set parameters for dual solver
+      //Parameters p_dual("dual_variational_solver");
+      //p.add(p_dual);
+
       return p;
     }
 
   protected:
 
     // A list of adaptive data
-    std::vector<boost::shared_ptr<AdaptiveDatum> > _adaptive_data;
-
-    /// Check if stopping criterion is satisfied
-    bool stop(const FunctionSpace& V,
-              const double error_estimate,
-              const double tolerance);
+    std::vector<boost::shared_ptr<Parameters> > _adaptive_data;
 
     /// Present summary of all adaptive data and parameters
     void summary();
 
-    /// Present summary of single adaptive datum
-    void summary(const AdaptiveDatum& data);
+    /// Return the number of degrees of freedom for primal problem
+    ///
+    /// *Returns*
+    ///     _uint_
+    ///         The number of degrees of freedom
+    virtual uint num_dofs_primal() = 0;
+
 
   };
 

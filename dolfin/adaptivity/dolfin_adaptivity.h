@@ -3,7 +3,6 @@
 
 // DOLFIN adaptivity interface
 
-#include <dolfin/adaptivity/AdaptiveDatum.h>
 #include <dolfin/adaptivity/GenericAdaptiveVariationalSolver.h>
 #include <dolfin/adaptivity/AdaptiveLinearVariationalSolver.h>
 #include <dolfin/adaptivity/AdaptiveNonlinearVariationalSolver.h>

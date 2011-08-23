@@ -129,6 +129,14 @@ namespace dolfin
     ///        The other mesh
     virtual void adapt_problem(boost::shared_ptr<const Mesh> mesh);
 
+  protected:
+    /// Return the number of degrees of freedom for primal problem
+    ///
+    /// *Returns*
+    ///     _uint_
+    ///         The number of degrees of freedom
+    virtual uint num_dofs_primal();
+
   private:
 
     // The problem

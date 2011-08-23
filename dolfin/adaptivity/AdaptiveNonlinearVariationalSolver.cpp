@@ -26,6 +26,7 @@
 #include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 
 #include "AdaptiveNonlinearVariationalSolver.h"
 #include "GoalFunctional.h"
@@ -41,8 +42,8 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other parameters
-  // FIXME
+  // Add parameters for nonlinear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
@@ -52,8 +53,8 @@ AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // Set other parameters
-  // FIXME
+  // Add parameters for nonlinear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 void AdaptiveNonlinearVariationalSolver::solve(const double tol,
@@ -79,6 +80,7 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
 {
   NonlinearVariationalProblem& current = problem->fine();
   NonlinearVariationalSolver solver(current);
+  solver.parameters.update(parameters("nonlinear_variational_solver"));
   solver.solve();
   return current.solution();
 }
@@ -101,5 +103,12 @@ adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
   const NonlinearVariationalProblem& current = problem->fine();
   adapt(current, mesh);
+}
+// ----------------------------------------------------------------------------
+dolfin::uint AdaptiveNonlinearVariationalSolver::num_dofs_primal()
+{
+  const NonlinearVariationalProblem& current = problem->fine();
+  const FunctionSpace& V = *(current.trial_space());
+  return V.dim();
 }
 // ----------------------------------------------------------------------------
