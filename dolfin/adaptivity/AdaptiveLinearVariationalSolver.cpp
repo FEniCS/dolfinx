@@ -26,6 +26,7 @@
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 
 #include "AdaptiveLinearVariationalSolver.h"
 #include "GoalFunctional.h"
@@ -41,9 +42,9 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // FIXME: Set other parameters
+  // Add parameters for linear variational solver
+  parameters.add(LinearVariationalSolver::default_parameters());
 }
-// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
@@ -52,7 +53,8 @@ AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> prob
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
-  // FIXME: Set other parameters
+  // Add parameters for linear variational solver
+  parameters.add(LinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
@@ -77,6 +79,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
 {
   LinearVariationalProblem& current = problem->fine();
   LinearVariationalSolver solver(current);
+  solver.parameters.update(parameters("linear_variational_solver"));
   solver.solve();
   return current.solution();
 }
@@ -101,5 +104,12 @@ adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
   const LinearVariationalProblem& current = problem->fine();
   adapt(current, mesh);
+}
+// ----------------------------------------------------------------------------
+dolfin::uint AdaptiveLinearVariationalSolver::num_dofs_primal()
+{
+  const LinearVariationalProblem& current = problem->fine();
+  const FunctionSpace& V = *(current.trial_space());
+  return V.dim();
 }
 // ----------------------------------------------------------------------------
