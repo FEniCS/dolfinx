@@ -65,6 +65,10 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
+    /// Return true if tensor is distributed
+    virtual bool distributed() const
+    { return false; }
+
     /// Return copy of tensor
     virtual MTL4Vector* copy() const;
 

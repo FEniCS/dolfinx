@@ -52,6 +52,10 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
+    /// Return true if tensor is distributed
+    virtual bool distributed() const
+    { error("Scalar::distributed() not implemented."); return false; }
+
     /// Resize tensor to given dimensions
     virtual void resize(uint rank, const uint* dims)
     { assert(rank == 0); value = 0.0; }

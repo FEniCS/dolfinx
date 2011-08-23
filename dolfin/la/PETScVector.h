@@ -89,6 +89,9 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
+    /// Return true if tensor is distributed
+    virtual bool distributed() const;
+
     /// Return copy of tensor
     virtual PETScVector* copy() const;
 
@@ -214,9 +217,6 @@ namespace dolfin
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
-
-    // Test vector type (distributed/local)
-    bool distributed() const;
 
     friend class PETScBaseMatrix;
     friend class PETScMatrix;

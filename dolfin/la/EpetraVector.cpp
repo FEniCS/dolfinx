@@ -81,6 +81,12 @@ EpetraVector::~EpetraVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+bool EpetraVector::distributed() const
+{
+  assert(x);
+  return x->Map().DistributedGlobal();
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::resize(uint N)
 {
   if (x && this->size() == N)

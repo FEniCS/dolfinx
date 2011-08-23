@@ -78,6 +78,9 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
+    /// Return true if tensor is distributed
+    virtual bool distributed() const;
+
     /// Return copy of tensor
     virtual EpetraVector* copy() const;
 

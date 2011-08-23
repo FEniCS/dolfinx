@@ -120,6 +120,26 @@ PETScVector::~PETScVector()
   // Do nothing. The custom shared_ptr deleter takes care of the cleanup.
 }
 //-----------------------------------------------------------------------------
+bool PETScVector::distributed() const
+{
+  assert(x);
+
+  // Get type
+  const VecType petsc_type;
+  VecGetType(*x, &petsc_type);
+
+  // Return type
+  bool _distributed = false;
+  if (strcmp(petsc_type, VECMPI) == 0)
+    _distributed = true;
+  else if (strcmp(petsc_type, VECSEQ) == 0)
+    _distributed =  false;
+  else
+    error("Unknown PETSc vector type.");
+
+  return _distributed;
+}
+//-----------------------------------------------------------------------------
 void PETScVector::resize(uint N)
 {
   if (x && this->size() == N)
@@ -689,26 +709,6 @@ void PETScVector::gather_on_zero(Array<double>& x) const
   {
     PETScVector _vout(vout);
     _vout.get_local(x);
-  }
-}
-//-----------------------------------------------------------------------------
-bool PETScVector::distributed() const
-{
-  assert(x);
-
-  // Get type
-  const VecType petsc_type;
-  VecGetType(*x, &petsc_type);
-
-  // Return type string
-  if (strcmp(petsc_type, VECMPI) == 0)
-    return true;
-  else if (strcmp(petsc_type, VECSEQ) == 0)
-    return false;
-  else
-  {
-    error("Unknown PETSc vector type.");
-    return false;
   }
 }
 //-----------------------------------------------------------------------------

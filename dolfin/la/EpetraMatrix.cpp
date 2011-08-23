@@ -81,6 +81,12 @@ EpetraMatrix::~EpetraMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+bool EpetraMatrix::distributed() const
+{
+  assert(A);
+  return A->Graph().DistributedGlobal();
+}
+//-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   if (A && !A.unique())

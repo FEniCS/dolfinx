@@ -62,14 +62,14 @@ namespace dolfin
     /// Construct vector from a ublas_vector
     explicit uBLASVector(boost::shared_ptr<ublas_vector> x);
 
-    // Create vector from given uBLAS vector expression
-    //template <class E>
-    //explicit uBLASVector(const ublas::vector_expression<E>& x) : x(new ublas_vector(x)) {}
-
     /// Destructor
     virtual ~uBLASVector();
 
     //--- Implementation of the GenericTensor interface ---
+
+    /// Return true if tensor is distributed
+    virtual bool distributed() const
+    { return false; }
 
     /// Create copy of tensor
     virtual uBLASVector* copy() const;

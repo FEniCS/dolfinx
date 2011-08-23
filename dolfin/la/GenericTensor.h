@@ -49,6 +49,9 @@ namespace dolfin
 
     //--- Basic GenericTensor interface ---
 
+    /// Return true if tensor is distributed
+    virtual bool distributed() const = 0;
+
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 

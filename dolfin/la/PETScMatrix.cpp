@@ -66,6 +66,22 @@ PETScMatrix::~PETScMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+bool PETScMatrix::distributed() const
+{
+  assert(A);
+
+  // Get type
+  const MatType petsc_type;
+  MatGetType(*A, &petsc_type);
+
+  // Return type
+  bool _distributed = false;
+  if (strncmp(petsc_type, "seq", 3) != 0)
+    _distributed = true;
+
+  return _distributed;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::resize(uint M, uint N)
 {
   // FIXME: Remove this function or use init() function somehow to
