@@ -76,8 +76,6 @@
 
 // common
 %shared_ptr(dolfin::Variable)
-%shared_ptr(dolfin::Parameters)
-%shared_ptr(dolfin::GlobalParameters)
 
 // fem
 %shared_ptr(dolfin::Hierarchical<dolfin::Form>)
