@@ -69,7 +69,7 @@ namespace dolfin
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "global_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
+  ///   * "parent_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 

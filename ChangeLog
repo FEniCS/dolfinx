@@ -1,3 +1,5 @@
+ - Rename SubMesh data "global_vertex_indices" --> "parent_vertex_indices"
+ - Get XML input/output of boundary markers working again
  - Get FacetArea working again
 1.0-beta [2011-08-11]
  - Print percentage of non-zero entries when computing sparsity patterns
