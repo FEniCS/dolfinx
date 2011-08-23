@@ -30,9 +30,6 @@ from dolfin import *
 # Load mesh from file
 mesh = Mesh("lshape.xml.gz")
 
-# Refine mesh
-mesh = refine(mesh)
-
 # Define function spaces (P2-P1)
 V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
