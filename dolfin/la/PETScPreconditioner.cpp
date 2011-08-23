@@ -63,7 +63,6 @@ Parameters PETScPreconditioner::default_parameters()
   // Hypre package parameters
   Parameters p_hypre("hypre");
   p_hypre.add(p_parasails);
-
   p.add(p_hypre);
 
   return p;
@@ -147,21 +146,23 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   }
   else if (type == "additive_schwarz")
   {
-    // Select method and and overlap
+    // Select method and overlap
     PCSetType(pc, methods.find("additive_schwarz")->second);
     PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
 
     // Make sure the data structures have been constructed
     KSPSetUp(*solver.ksp());
 
-    // Get sub-solvers and set su- solver parameters
+    // Get sub-solvers and set sub-solver parameters
     KSP* sub_ksps;
     int num_local(0), first(0);
     PCASMGetSubKSP(pc, &num_local, &first, &sub_ksps);
     for (int i = 0; i < num_local; ++i)
     {
+      // Get sub-preconditioner
       PC sub_pc;
       KSPGetPC(sub_ksps[i], &sub_pc);
+
       //PCSetType(sub_pc, PCLU);
       //PCFactorSetMatSolverPackage(sub_pc, MAT_SOLVER_UMFPACK);
       //PCSetType(sub_pc, PCILU);

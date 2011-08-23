@@ -30,13 +30,13 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem": ["test", "Assembly", "DirichletBC"],
+    "fem": ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
     "function": ["test", "function"],
     "math": ["basic"],
     "mesh": ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert": ["test"],
     "la": ["test", "Vector", "Matrix"],
-    "io": ["test", "vtk", "xml_vector"],
+    "io": ["test", "vtk", "xml_mesh", "xml_vector"],
     "parameter": ["test"],
     "python-extras": ["test"],
     "quadrature": ["test"],

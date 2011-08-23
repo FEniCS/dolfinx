@@ -370,7 +370,7 @@ pressure equation:
     assemble(b1, L1);
     for (dolfin::uint i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
-    solve(A1, u1.vector(), b1, "gmres", "ilu");
+    solve(A1, u1.vector(), b1, "gmres", "default");
     end();
 
     // Pressure correction
@@ -386,7 +386,7 @@ pressure equation:
     assemble(b3, L3);
     for (dolfin::uint i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
-    solve(A3, u1.vector(), b3, "gmres", "ilu");
+    solve(A3, u1.vector(), b3, "gmres", "default");
     end();
 
 Note the use of ``begin`` and ``end``; these improve the readability

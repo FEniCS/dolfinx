@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-25
-// Last changed: 2011-06-30
+// Last changed: 2011-08-18
 
 #ifdef HAS_TRILINOS
 
@@ -162,8 +162,7 @@ std::string TrilinosPreconditioner::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
 {
-  warning("The TrilinosPreconditioner interface for the ML preconditioner is experimental.");
-
+  
   Teuchos::ParameterList mlist;
 
   //ML_Epetra::SetDefaults("SA", mlist);

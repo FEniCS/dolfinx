@@ -24,7 +24,7 @@ import unittest
 from dolfin import *
 
 class XML_vector_io(unittest.TestCase):
-    """Test output of Meshes to VTK files"""
+    """Test output of Meshes to XML files"""
 
     def test_save_vector(self):
         if has_la_backend("PETSc"):

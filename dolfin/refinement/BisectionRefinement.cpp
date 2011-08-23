@@ -38,6 +38,8 @@ using namespace dolfin;
 void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
                         const Mesh& mesh, const MeshFunction<bool>& cell_marker)
 {
+  not_working_in_parallel("BisectionRefinement::refine");
+
   // Transformation maps
   MeshFunction<uint> cell_map;
   std::vector<int> facet_map;
