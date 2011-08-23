@@ -33,6 +33,8 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
                                  const Mesh& mesh,
                                  const MeshFunction<bool>& cell_markers)
 {
+  not_working_in_parallel("LocalMeshRefinement::refine");
+
   // Count the number of marked cells
   const uint n0 = mesh.num_cells();
   uint n = 0;

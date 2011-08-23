@@ -38,6 +38,8 @@ using namespace dolfin;
 void UniformMeshRefinement::refine(Mesh& refined_mesh,
                                    const Mesh& mesh)
 {
+  not_working_in_parallel("UniformMeshRefinement::refine");
+
   log(TRACE, "Refining simplicial mesh uniformly.");
 
   // Check that refined_mesh and mesh are not the same

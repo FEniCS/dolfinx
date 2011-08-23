@@ -37,6 +37,8 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
                                   const Mesh& mesh,
                                   const MeshFunction<bool>& cell_markers)
 {
+  not_working_in_parallel("RegularCutRefinement::refine");
+
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
     error("Regular-cut mesh refinement is currently only implemented in 2D.");
