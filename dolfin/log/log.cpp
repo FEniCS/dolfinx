@@ -214,13 +214,10 @@ void dolfin::not_working_in_parallel(std::string what)
 {
   if (MPI::num_processes() > 1)
   {
+    MPI::barrier();
     if (MPI::process_number() == 0)
-    {
-      std::string url("https://bugs.launchpad.net/dolfin");
-      std::cout << what << " is not (yet) working in parallel. Consider filing a bug report at "
-                << url << std::endl;
-    }
-    exit(10);
+      error("%s is not yet working in parallel. Consider filing a bug report at %s",
+            what.c_str(), "https://bugs.launchpad.net/dolfin");
   }
 }
 //-----------------------------------------------------------------------------
