@@ -45,7 +45,12 @@ namespace dolfin
     NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
 
     /// Solve variational problem
-    void solve();
+    ///
+    /// *Returns*
+    ///     std::pair<uint, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<uint, bool> solve();
 
     /// Default parameter values
     static Parameters default_parameters()

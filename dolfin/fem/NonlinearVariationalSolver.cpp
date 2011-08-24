@@ -48,7 +48,7 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::solve()
+std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
 {
   begin("Solving nonlinear variational problem.");
 
@@ -74,9 +74,11 @@ void NonlinearVariationalSolver::solve()
 
   // Solve nonlinear problem using Newton's method
   assert(u);
-  newton_solver.solve(nonlinear_problem, u->vector());
+  const std::pair<uint, bool> ret = newton_solver.solve(nonlinear_problem, u->vector());
 
   end();
+
+  return ret;
 }
 //-----------------------------------------------------------------------------
 // Implementation of NonlinearDiscreteProblem
