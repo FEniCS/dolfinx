@@ -37,7 +37,7 @@ tests = {
     "mesh":           ["test", "MeshFunction", "Edge", "Face"],
     "meshconvert":    ["test"],
     "refinement":     ["refine"],
-    "la":             ["test", "Vector", "Matrix"],
+    "la":             ["test", "Scalar", "Vector", "Matrix"],
     "io":             ["test", "vtk", "xml_mesh", "xml_vector"],
     "parameter":      ["test"],
     "python-extras":  ["test"],

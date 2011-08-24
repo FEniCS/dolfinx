@@ -55,7 +55,7 @@ class AbstractBaseTest(object):
           else:
                self.assertFalse(a.distributed())
         else:
-           self.assertFalse(a.distributed(), False)
+           self.assertFalse(a.distributed())
 
 
     def test_create_empty_vector(self):

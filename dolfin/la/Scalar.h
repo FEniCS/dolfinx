@@ -54,7 +54,12 @@ namespace dolfin
 
     /// Return true if tensor is distributed
     virtual bool distributed() const
-    { error("Scalar::distributed() not implemented."); return false; }
+    {
+      if (MPI::num_processes() > 1)
+        return true;
+      else
+        return false;
+    }
 
     /// Resize tensor to given dimensions
     virtual void resize(uint rank, const uint* dims)
@@ -82,7 +87,6 @@ namespace dolfin
       error("The size() function is not available for scalars.");
       return std::make_pair(0, 0);
     }
-
 
     /// Get block of values
     void get(double* block, const uint* num_rows, const uint * const * rows) const
