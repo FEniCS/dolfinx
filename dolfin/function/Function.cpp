@@ -589,7 +589,7 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
   // Get dof map
   const GenericDofMap& dofmap = _function_space->dofmap();
 
-  // Dofs per cell and total dofs
+  // Dofs per cell
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
 
   // Get local range

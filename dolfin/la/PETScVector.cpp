@@ -35,21 +35,6 @@
 #include "PETScFactory.h"
 #include <dolfin/common/MPI.h>
 
-/*
-namespace dolfin
-{
-  class PETScVectorDeleter
-  {
-  public:
-    void operator() (Vec* x)
-    {
-      if (*x)
-        VecDestroy(*x);
-      delete x;
-    }
-  };
-}
-*/
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScVector::norm_types
@@ -149,7 +134,7 @@ void PETScVector::resize(uint N)
     error("PETSc vector has not been initialised. Cannot call PETScVector::resize.");
 
   // Get vector type
-  bool _distributed = distributed();
+  const bool _distributed = distributed();
 
   // Create vector
   if (_distributed)
@@ -166,9 +151,8 @@ void PETScVector::resize(uint N)
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<uint, uint> range)
 {
-  // Empty ghost indices vector
+  // Create empty ghost indices vector
   std::vector<uint> ghost_indices;
-
   resize(range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
@@ -184,8 +168,8 @@ void PETScVector::resize(std::pair<uint, uint> range,
   //if (x && (this->local_range().first == range.first && this->local_range().second == range.second))
   //  return;
 
-  // Save type
-  bool _distributed = distributed();
+  // Get type
+  const bool _distributed = distributed();
 
   // Re-initialise vector
   init(range, ghost_indices, _distributed);
@@ -407,31 +391,8 @@ const PETScVector& PETScVector::operator= (double a)
 //-----------------------------------------------------------------------------
 void PETScVector::update_ghost_values()
 {
-  if (ghost_global_to_local.size() > 0)
-  {
-    VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
-  }
-
-  /*
-  std::vector<uint> gdof;
-  std::vector<uint> ldof;
-  for (std::map<uint, uint>::const_iterator ghost = ghost_global_to_local.begin();
-           ghost != ghost_global_to_local.end(); ++ghost)
-  {
-    gdof.push_back(ghost->first);
-    ldof.push_back(ghost->second);
-  }
-
-  std::vector<double> gvals(gdof.size());
-  get_local(&gvals[0], gdof.size(), &gdof[0]);
-  if (MPI::process_number() == 0)
-  {
-    cout << "Local   " << "Global    " << "value" << endl;
-    for (uint i = 0; i < gdof.size(); ++i)
-      cout << ldof[i] << "   " << gdof[i] << "   " << gvals[i] << endl;
-  }
-  */
+  VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -734,21 +695,22 @@ void PETScVector::init(std::pair<uint, uint> range,
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
+    const int* _ghost_indices = 0;
     if (ghost_indices.size() > 0)
-    {
-      VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
-                     reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
+      _ghost_indices = reinterpret_cast<const int*>(&ghost_indices[0]);
 
-      // Build global-to-local map for ghost indices
-      for (uint i = 0; i < ghost_indices.size(); ++i)
-        ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
+    cout << "Number of ghosts: " << ghost_indices.size() << endl;
 
-      // Create ghost view
-      x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-      VecGhostGetLocalForm(*x, x_ghosted.get());
-    }
-    else
-      VecCreateMPI(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, x.get());
+    VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
+                   ghost_indices.size(), _ghost_indices, x.get());
+
+    // Build global-to-local map for ghost indices
+    for (uint i = 0; i < ghost_indices.size(); ++i)
+      ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
+
+    // Create ghost view
+    x_ghosted.reset(new Vec(0), PETScVectorDeleter());
+    VecGhostGetLocalForm(*x, x_ghosted.get());
   }
 }
 //-----------------------------------------------------------------------------
