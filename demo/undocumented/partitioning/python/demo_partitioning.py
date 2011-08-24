@@ -26,7 +26,7 @@ where <n> is the desired number of processes."""
 
 from dolfin import *
 
-# Read in mesh from XML file in parallel
+# Read in mesh from XML file in parallel and partition
 mesh = Mesh("unitsquare.xml.gz")
 
 # Plot partition

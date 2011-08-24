@@ -34,7 +34,7 @@ using namespace dolfin;
 
 int main()
 {
-  // Read in mesh from XML file in parallel
+  // Read in mesh from XML file in parallel and partition
   Mesh mesh("unitsquare.xml.gz");
 
   // Store partition to file

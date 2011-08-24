@@ -95,8 +95,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  if (MPI::num_processes() > 1)
-    error("Mesh XML output in parallel not yet supported");
+  not_working_in_parallel("Mesh XML output in parallel not yet supported.");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
@@ -217,8 +216,7 @@ void XMLFile::operator>> (FunctionPlotData& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const FunctionPlotData& output)
 {
-  if (MPI::num_processes() > 1)
-    error("Mesh XML output in parallel not yet supported");
+  not_working_in_parallel("Mesh XML output in parallel not yet supported.");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
@@ -241,8 +239,7 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
 template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
                                                     const std::string type)
 {
-  if (MPI::num_processes() > 1)
-    error("MeshFunction XML output in parallel not yet supported");
+  not_working_in_parallel("MeshFunction XML output in parallel not yet supported.");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
