@@ -581,10 +581,11 @@ const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
 {
-  assert(A.mat());
-  // FIXME: A hack to get around a subtle bug in Epetra_FECrsMatrix::operator=()
-  boost::shared_ptr<Epetra_FECrsMatrix> Acopy(new Epetra_FECrsMatrix(*A.mat()));
-  this->A = Acopy;
+  if (A.mat())
+    this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
+  else
+    A.mat().reset();
+
   return *this;
 }
 //-----------------------------------------------------------------------------
