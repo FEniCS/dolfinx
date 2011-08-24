@@ -79,7 +79,7 @@ M = u[0]*ds(0)
 tol = 1.e-05
 
 # If no more control is wanted, do:
-# solve(F == 0, w, bc, tol, M)
+#solve(F == 0, w, bc, tol=tol, M=M)
 
 # Compute Jacobian form
 J = derivative(F, w)

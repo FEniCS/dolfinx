@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-06-30
+# Last changed: 2011-08-24
 
 # Begin demo
 
@@ -51,7 +51,7 @@ tol = 1.e-5
 # Solve equation a = L with respect to u and the given boundary
 # conditions, such that the estimated error (measured in M) is less
 # than tol
-solve(a == L, u, bc, tol, M)
+solve(a == L, u, bc, tol=tol, M=M)
 
 ## Alternative, more verbose version:
 # problem = LinearVariationalProblem(a, L, u, bc)
