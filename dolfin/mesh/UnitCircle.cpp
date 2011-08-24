@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Nuno Lopes 2008
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2011-08-23
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -30,27 +30,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircle::UnitCircle(uint nx, std::string diagonal, 
+UnitCircle::UnitCircle(uint nx, std::string diagonal,
                        std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+  if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
 
-  if(transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
-    error("Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".", 
+  if (transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
+    error("Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".",
             transformation.c_str());
-
-  warning("UnitCircle is experimental. It may be of poor quality.");
 
   uint ny = nx;
 
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
 
-  rename("mesh", "Mesh of the unit square (0,1) x (0,1)");
+  rename("mesh", "Mesh of the unit circle");
 
   // Open mesh for editing
   MeshEditor editor;
@@ -161,7 +159,7 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
     trans[1] = y;
     return;
   }
-  
+
   if(transformation == "maxn")
   {
     trans[0] = x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);

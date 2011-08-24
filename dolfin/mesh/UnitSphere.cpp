@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Nuno Lopes, 2008
 //
 // First added:  2005-12-02
-// Last changed: 2011-03-17
+// Last changed: 2011-08-23
 
 #include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
@@ -33,8 +33,6 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
-
-  log(WARNING, "UnitSphere is experimental. It may be of poor quality mesh");
 
   const uint ny = nx;
   const uint nz = nx;

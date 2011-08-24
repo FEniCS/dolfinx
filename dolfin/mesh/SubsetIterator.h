@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-17
-// Last changed: 2011-06-25
+// Last changed: 2011-08-24
 
 #ifndef __SUBSET_ITERATOR_H
 #define __SUBSET_ITERATOR_H
@@ -52,8 +52,6 @@ namespace dolfin
         if (labels[*entity] == label)
           subset.push_back(entity->index());
       }
-      info("Iterating over subset, found %d entities out of %d.",
-           subset.size(), labels.size());
 
       // Set iterator
       it = subset.begin();
