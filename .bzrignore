@@ -38,6 +38,9 @@ RE:demo/adaptivity/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/indicators.py
 RE:demo/.*/cpp/.*-demo
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
+RE:test/unit/parameter/(cpp|python)/.*.(xml|xml.gz)
+RE:test/unit/io/(cpp|python)/.*.(xml|xml.gz|vtu|pvtu|pvd)
+RE:test/unit/adaptivity/(cpp|python)/.*.(bin)
 RE:test/.*/cpp/.*-test
 RE:bench/.*/cpp/.*-bench
 
