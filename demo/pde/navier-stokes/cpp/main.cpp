@@ -143,8 +143,8 @@ int main()
   Vector b1, b2, b3;
 
   // Create files for storing solution
-  File ufile("velocity.pvd");
-  File pfile("pressure.pvd");
+  File ufile("results/velocity.pvd");
+  File pfile("results/pressure.pvd");
 
   // Time-stepping
   double t = dt;

@@ -18,6 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Johannes Ring 2009, 2011
+# Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
 # Last changed: 2011-06-23
@@ -30,18 +31,19 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem": ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
-    "function": ["test", "function"],
-    "math": ["basic"],
-    "mesh": ["test", "MeshFunction", "Edge", "Face"],
-    "meshconvert": ["test"],
-    "la": ["test", "Vector", "Matrix"],
-    "io": ["test", "vtk", "xml_mesh", "xml_vector"],
-    "parameter": ["test"],
-    "python-extras": ["test"],
-    "quadrature": ["test"],
-    "adaptivity": ["errorcontrol", "timeseries"],
-    "jit": ["test"],
+    "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
+    "function":       ["test", "function"],
+    "math":           ["basic"],
+    "mesh":           ["test", "MeshFunction", "Edge", "Face"],
+    "meshconvert":    ["test"],
+    "refinement":     ["refine"],
+    "la":             ["test", "Vector", "Matrix"],
+    "io":             ["test", "vtk", "xml_mesh", "xml_vector"],
+    "parameter":      ["test"],
+    "python-extras":  ["test"],
+    "quadrature":     ["test"],
+    "adaptivity":     ["errorcontrol", "timeseries"],
+    "jit":            ["test"],
     "bc-indicators" : ["test"]
     }
 

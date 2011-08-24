@@ -87,8 +87,8 @@ A2 = assemble(a2)
 A3 = assemble(a3)
 
 # Create files for storing solution
-ufile = File("velocity.pvd")
-pfile = File("pressure.pvd")
+ufile = File("results/velocity.pvd")
+pfile = File("results/pressure.pvd")
 
 # Time-stepping
 t = dt

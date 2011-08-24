@@ -197,16 +197,12 @@ start our C++ program by writing
     int main()
     {
 
-We then load the mesh for the L-shaped domain from file and refine it
-once to obtain a finer mesh:
+We then load the mesh for the L-shaped domain from file:
 
 .. code-block:: c++
 
     // Load mesh from file
     Mesh mesh("lshape.xml.gz");
-
-    // Refine mesh
-    mesh = refine(mesh);
 
 We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and test and trial functions on these
@@ -339,8 +335,8 @@ signals that the solution should be stored in VTK format:
 .. code-block:: c++
 
     // Create files for storing solution
-    File ufile("velocity.pvd");
-    File pfile("pressure.pvd");
+    File ufile("results/velocity.pvd");
+    File pfile("results/pressure.pvd");
 
 The time-stepping loop is now implemented as follows:
 

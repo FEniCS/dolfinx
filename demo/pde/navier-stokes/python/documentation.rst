@@ -22,16 +22,12 @@ First, the :py:mod:`dolfin` module is imported:
 
     from dolfin import *
 
-We then load the mesh for the L-shaped domain from file and refine it
-once to obtain a finer mesh:
+We then load the mesh for the L-shaped domain from file:
 
 .. code-block:: python
 
     # Load mesh from file
     mesh = Mesh("lshape.xml.gz")
-
-    # Refine mesh
-    mesh = refine(mesh)
 
 We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and trial and test functions on these
@@ -154,8 +150,8 @@ signals that the solution should be stored in VTK format:
 .. code-block:: python
 
     # Create files for storing solution
-    ufile = File("velocity.pvd")
-    pfile = File("pressure.pvd")
+    ufile = File("results/velocity.pvd")
+    pfile = File("results/pressure.pvd")
 
 The time-stepping loop is now implemented as follows:
 
