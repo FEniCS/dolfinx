@@ -100,7 +100,8 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Iterate over vertices and add to mesh
   Point p;
-  for (pugi::xml_node_iterator it = xml_vertices.begin(); it != xml_vertices.end(); ++it)
+  for (pugi::xml_node_iterator it = xml_vertices.begin();
+       it != xml_vertices.end(); ++it)
   {
     const unsigned int index = it->attribute("index").as_uint();
     p[0] = it->attribute("x").as_double();

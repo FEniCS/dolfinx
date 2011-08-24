@@ -36,6 +36,9 @@ class MeshConstruction(unittest.TestCase):
         self.box = Box(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
     def testUFLCell(self):
+
+        not_working_in_parallel("test")
+
         import ufl
         self.assertEqual(ufl.interval, self.intervall.ufl_cell())
         self.assertEqual(ufl.triangle, self.circle.ufl_cell())

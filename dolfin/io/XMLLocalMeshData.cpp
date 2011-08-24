@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2006-10-16
+// Last changed: 2011-08-24
 
 #include <iomanip>
 #include <iostream>
@@ -46,7 +46,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read(LocalMeshData& mesh_data, const pugi::xml_node xml_dolfin)
+void XMLLocalMeshData::read(LocalMeshData& mesh_data,
+                            const pugi::xml_node xml_dolfin)
 {
   std::cout << "Using new-style local mesh data reading." << std::endl;
 
