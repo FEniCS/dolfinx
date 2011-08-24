@@ -15,20 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2009.
+// Modified by Garth N. Wells, 2007-2011.
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2011-01-24
+// Last changed: 2011-08-23
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
 
-#include <numeric>
+#include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
-#include "uBLASFactory.h"
 #include "GenericTensor.h"
+#include "uBLASFactory.h"
 
 namespace dolfin
 {
@@ -43,12 +43,10 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), value(0.0)
-    {}
+    Scalar() : GenericTensor(), value(0.0) {}
 
     /// Destructor
-    virtual ~Scalar()
-    {}
+    virtual ~Scalar() {}
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -123,18 +121,7 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    {
-      if (MPI::num_processes() > 1)
-      {
-        // Get values from other processes
-        std::vector<double> values(MPI::num_processes());
-        values[MPI::process_number()] = value;
-        MPI::gather(values);
-
-        // Sum contribution from each process
-        value = std::accumulate(values.begin(), values.end(), 0.0);
-      }
-    }
+    { value = MPI::sum(value); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
@@ -157,7 +144,7 @@ namespace dolfin
     //--- Special functions
 
     /// Return a factory for the default linear algebra backend
-    inline LinearAlgebraFactory& factory() const
+    LinearAlgebraFactory& factory() const
     { return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value

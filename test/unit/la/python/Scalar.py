@@ -33,7 +33,6 @@ class ScalarTest(unittest.TestCase):
              self.assertFalse(a.distributed())
 
     def test_parallel_sum(self):
-        print "Testig bbbb"
         a = Scalar()
         b = 1.0
         a.assign(b)
