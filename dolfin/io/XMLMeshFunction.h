@@ -116,8 +116,8 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<class T>
   void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
-                    const std::string type, pugi::xml_node xml_node,
-                    bool write_mesh)
+                              const std::string type, pugi::xml_node xml_node,
+                              bool write_mesh)
   {
     // Write mesh if requested
     if (write_mesh)

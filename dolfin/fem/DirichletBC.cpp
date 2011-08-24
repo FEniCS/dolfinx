@@ -585,44 +585,49 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // or it won't do anything good (since the markers are wrong anyway).
   // In conclusion: we don't need to order the mesh here.
 
-  // Get data
-  const std::vector<uint>* facet_cells   = _function_space->mesh().data().array("boundary facet cells");
-  const std::vector<uint>* facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
-  const std::vector<uint>* indicators    = _function_space->mesh().data().array("boundary indicators");
+  // Extract data for boundary indicators
+  const Mesh& mesh = _function_space->mesh();
 
-  // Check data
-  if (!facet_cells)
-  {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary facet cells\" not available.");
-  }
+  boost::shared_ptr<const std::vector<uint> >
+    boundary_indicators = mesh.data().array("boundary_indicators");
+  boost::shared_ptr<const std::vector<uint> >
+    boundary_facet_cells = mesh.data().array("boundary_facet_cells");
+  boost::shared_ptr<const std::vector<uint> >
+    boundary_facet_numbers = mesh.data().array("boundary_facet_numbers");
 
-  if (!facet_numbers)
-  {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary facet numbers\" not available.");
-  }
+  // Need indicators
+  if (!boundary_indicators)
+    dolfin_error("Mesh.cpp",
+                 "initialize boundary indicators",
+                 "Mesh has no boundary indicators");
 
-  if (!indicators)
-  {
-    info(_function_space->mesh().data());
-    error("Mesh data \"boundary indicators\" not available.");
-  }
+  // Need facet cells and numbers if indicators are present
+  if (!boundary_facet_cells || !boundary_facet_numbers)
+    dolfin_error("Mesh.cpp",
+                 "initialize boundary indicators",
+                 "Mesh has boundary indicators but missing data for \"boundary_facet_cells\" and \"boundary_facet_numbers\"");
+  const uint num_facets = boundary_indicators->size();
+  assert(num_facets > 0);
+  assert(boundary_facet_cells->size() == num_facets);
+  assert(boundary_facet_numbers->size() == num_facets);
 
-  // Get size
-  const uint size = facet_cells->size();
-  assert(size == facet_numbers->size());
-  assert(size == indicators->size());
+  // Initialize facets
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
 
-  // Build set of boundary facets
-  for (uint i = 0; i < size; ++i)
+  // Assign domain numbers for each facet
+  for (uint i = 0; i < num_facets; i++)
   {
     // Skip facets not on this boundary
-    if ((*indicators)[i] != sub_domain)
+    if ((*boundary_indicators)[i] != sub_domain)
       continue;
 
-    // Copy data
-    facets.push_back(std::pair<uint, uint>((*facet_cells)[i], (*facet_numbers)[i]));
+    // Get cell index and local facet index
+    const uint cell_index = (*boundary_facet_cells)[i];
+    const uint local_facet = (*boundary_facet_numbers)[i];
+
+    // Store cell/facet data
+    facets.push_back(std::pair<uint, uint>(cell_index, local_facet));
   }
 }
 //-----------------------------------------------------------------------------

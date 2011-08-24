@@ -871,34 +871,38 @@ void MeshPartitioning::distribute_data(Mesh& mesh,
                                        std::map<uint, uint>& glob2loc,
                                        const std::vector<uint>& gci)
 {
-   // Make global to local mapping lci (inverse of gci)
-   std::map<uint,uint> lci;
-   for (uint i=0; i< gci.size(); i++)
-     lci[gci[i]] = i;
+  // FIXME: This piece of code looks suspicious
 
-   // Loop through the arrays
-   std::map<std::string, std::vector<uint>* >::const_iterator it;
-   for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)
-   {
-     const std::string name = it->first;
-     const std::vector<uint>* array = it->second;
-     if (name == "boundary_facet_cells")
-     {
-       std::vector<uint>* cell_array = new std::vector<uint>(array->size());
-       for (uint i=0; i< array->size(); i++)
-       {
-         if (lci.find((*array)[i]) != lci.end())
-           (*cell_array)[i] = lci[(*array)[i]];
-         else
-            (*cell_array)[i] = 0;
-       }
-       mesh.data().arrays[name] = cell_array;
-     }
-     else
-     {
-       std::vector<uint>* non_const_array = (std::vector<uint>*)  array;
+  // Make global to local mapping lci (inverse of gci)
+  std::map<uint,uint> lci;
+  for (uint i=0; i< gci.size(); i++)
+    lci[gci[i]] = i;
+
+  // Loop through the arrays
+  std::map<std::string, std::vector<uint>* >::const_iterator it;
+  for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)
+  {
+    const std::string name = it->first;
+    const std::vector<uint>* array = it->second;
+    if (name == "boundary_facet_cells")
+    {
+      boost::shared_ptr<std::vector<uint> >
+        cell_array(new std::vector<uint>(array->size()));
+      for (uint i=0; i< array->size(); i++)
+      {
+        if (lci.find((*array)[i]) != lci.end())
+          (*cell_array)[i] = lci[(*array)[i]];
+        else
+          (*cell_array)[i] = 0;
+      }
+      mesh.data().arrays[name] = cell_array;
+    }
+    else
+    {
+       boost::shared_ptr<std::vector<uint> >
+         non_const_array((std::vector<uint>*) array);
        mesh.data().arrays[name] = non_const_array;
-     }
+    }
   }
 }
 //-----------------------------------------------------------------------------

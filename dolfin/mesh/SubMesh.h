@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2009-02-11
+// Last changed: 2011-08-23
 
 #ifndef __SUB_MESH_H
 #define __SUB_MESH_H
@@ -32,7 +32,9 @@ namespace dolfin
   /// A SubMesh is a mesh defined as a subset of a given mesh. It
   /// provides a convenient way to create matching meshes for
   /// multiphysics applications by creating meshes for subdomains as
-  /// subsets of a single global mesh.
+  /// subsets of a single global mesh. A mapping from the vertices of
+  /// the sub mesh to the vertices of the parent mesh is stored as the
+  /// mesh data named "parent_vertex_indices".
 
   class SubMesh : public Mesh
   {

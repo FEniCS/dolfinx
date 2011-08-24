@@ -112,7 +112,5 @@ class MeshFunctions(unittest.TestCase):
         v = Vertex(self.mesh, 3)
         self.assertEqual(f[v], 10)
 
-
-
 if __name__ == "__main__":
     unittest.main()

@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2011-04-13
+// Last changed: 2011-08-22
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -604,6 +604,13 @@ namespace dolfin
     friend class TopologyComputation;
     friend class MeshOrdering;
     friend class BinaryFile;
+    friend class XMLMesh;
+
+    // Initialize mesh data "exterior_facet_domains". This function
+    // should be called to initialize DOLFINs internal storage of
+    // boundary indicators ("exterior_facet_domains") from an external
+    // specification (XML) of boundary indicators.
+    void initialize_exterior_facet_domains();
 
     // Mesh topology
     MeshTopology _topology;

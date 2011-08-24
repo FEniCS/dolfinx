@@ -69,7 +69,7 @@ namespace dolfin
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "global_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
+  ///   * "parent_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 
@@ -104,7 +104,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <unsigned int>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name);
+    boost::shared_ptr<MeshFunction<unsigned int> >
+    create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
     ///
@@ -117,7 +118,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <unsigned int>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<unsigned int> > create_mesh_function(std::string name, uint dim);
+    boost::shared_ptr<MeshFunction<unsigned int> >
+    create_mesh_function(std::string name, uint dim);
 
     /// Create empty array (vector) with given name
     ///
@@ -128,7 +130,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The array.
-    std::vector<uint>* create_array(std::string name);
+    boost::shared_ptr<std::vector<uint> > create_array(std::string name);
 
     /// Create array (vector) with given name and size
     ///
@@ -141,29 +143,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The array.
-    std::vector<uint>* create_array(std::string name, uint size);
-
-    /// Create mapping from uint to uint with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, uint>
-    ///         The map.
-    std::map<uint, uint>* create_mapping(std::string name);
-
-    /// Create mapping from uint to vector of uint with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, std::vector<uint> >
-    ///         The map.
-    std::map<uint, std::vector<uint> >* create_vector_mapping(std::string name);
+    boost::shared_ptr<std::vector<uint> > create_array(std::string name, uint size);
 
     //--- Retrieval of data ---
 
@@ -177,7 +157,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <unsigned int>
     ///         The mesh function with given name
-    boost::shared_ptr<MeshFunction<unsigned int> > mesh_function(const std::string name) const;
+    boost::shared_ptr<MeshFunction<unsigned int> >
+    mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)
@@ -189,45 +170,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The array.
-    std::vector<uint>* array(const std::string name) const;
-
-    /// Return array with given name postfixed by " %d" (returning zero
-    /// if data is not available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name.
-    ///     number (uint)
-    ///         The number.
-    ///
-    /// *Returns*
-    ///     std::vector<uint>
-    ///         The array.
-    std::vector<uint>* array(const std::string name, uint number) const;
-
-    /// Return mapping with given name (returning zero if data is not
-    /// available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map.
-    ///
-    /// *Returns*
-    ///     std::map<uint, uint>
-    ///         The map.
-    std::map<uint, uint>* mapping(const std::string name) const;
-
-    /// Return vector mapping with given name (returning zero if data
-    /// is not available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the map
-    ///
-    /// *Returns*
-    ///     std::map<uint, std::vector<uint> >
-    ///         The vector mapping.
-    std::map<uint, std::vector<uint> >* vector_mapping(const std::string name) const;
+    boost::shared_ptr<std::vector<uint> >array(const std::string name) const;
 
     //--- Removal of data ---
 
@@ -244,20 +187,6 @@ namespace dolfin
     ///     name (std::string)
     ///         The name of the array.
     void erase_array(const std::string name);
-
-    /// Erase mapping with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the mapping.
-    void erase_mapping(const std::string name);
-
-    /// Erase vector mapping with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the vector mapping.
-    void erase_vector_mapping(const std::string name);
 
     //--- Misc ---
 
@@ -286,13 +215,7 @@ namespace dolfin
     std::map<std::string, boost::shared_ptr<MeshFunction<uint> > > mesh_functions;
 
     // A map from named mesh data to vector
-    std::map<std::string, std::vector<uint>* > arrays;
-
-    // A map from named mesh data to mapping
-    std::map<std::string, std::map<uint, uint>* > mappings;
-
-    // A map from named mesh data to vector mapping
-    std::map<std::string, std::map<uint, std::vector<uint> >* > vector_mappings;
+    std::map<std::string, boost::shared_ptr<std::vector<uint> > > arrays;
 
   };
 

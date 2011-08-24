@@ -25,7 +25,7 @@ generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/)."""
 from dolfin import *
 
 # Create mesh and define function space
-mesh = Mesh("aneurysm.xml.gz")
+mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem

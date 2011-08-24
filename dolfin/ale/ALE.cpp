@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-02
-// Last changed: 2011-08-10
+// Last changed: 2011-08-24
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -41,8 +41,10 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   BoundaryMesh boundary1(mesh1);
 
   // Get vertex mappings
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0 = mesh0.data().mesh_function("global_vertex_indices");
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1 = mesh1.data().mesh_function("global_vertex_indices");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0
+    = mesh0.data().mesh_function("parent_vertex_indices");
+  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1
+    = mesh1.data().mesh_function("parent_vertex_indices");
   const MeshFunction<unsigned int>& boundary_to_mesh_0 = boundary0.vertex_map();
   const MeshFunction<unsigned int>& boundary_to_mesh_1 = boundary1.vertex_map();
   assert(local_to_global_0);

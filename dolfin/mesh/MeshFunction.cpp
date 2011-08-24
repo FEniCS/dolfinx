@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-25
-// Last changed: 2009-09-28
+// Last changed: 2011-08-23
 
 // Template specializations of str for simple types
 
@@ -56,7 +56,7 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
-    s << "<MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
+    s << "<MeshFunction of topological dimension " << _dim << " containing " << _size << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------

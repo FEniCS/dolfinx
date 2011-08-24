@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2011-08-10
+// Last changed: 2011-08-23
 
 #include <map>
 #include <vector>
@@ -76,15 +76,17 @@ void SubMesh::init(const Mesh& mesh,
   editor.init_cells(cells.size());
   uint current_cell = 0;
   uint current_vertex = 0;
-  for (std::set<uint>::iterator cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
+  for (std::set<uint>::iterator cell_it = cells.begin();
+       cell_it != cells.end(); ++cell_it)
   {
     std::vector<uint> cell_vertices;
     Cell cell(mesh, *cell_it);
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
     {
-      const uint global_vertex_index = vertex->index();
+      const uint parent_vertex_index = vertex->index();
       uint local_vertex_index = 0;
-      std::map<uint, uint>::iterator vertex_it = local_vertex_indices.find(global_vertex_index);
+      std::map<uint, uint>::iterator vertex_it
+        = local_vertex_indices.find(parent_vertex_index);
       if (vertex_it != local_vertex_indices.end())
       {
         local_vertex_index = vertex_it->second;
@@ -92,7 +94,7 @@ void SubMesh::init(const Mesh& mesh,
       else
       {
         local_vertex_index = current_vertex++;
-        local_vertex_indices[global_vertex_index] = local_vertex_index;
+        local_vertex_indices[parent_vertex_index] = local_vertex_index;
       }
       cell_vertices.push_back(local_vertex_index);
     }
@@ -101,7 +103,8 @@ void SubMesh::init(const Mesh& mesh,
 
   // Add vertices
   editor.init_vertices(local_vertex_indices.size());
-  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
+  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin();
+       it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
     editor.add_vertex(it->second, vertex.point());
@@ -110,9 +113,11 @@ void SubMesh::init(const Mesh& mesh,
   // Close editor
   editor.close();
 
-  // Build local-to-global mapping for vertices
-  boost::shared_ptr<MeshFunction<unsigned int> > global_vertex_indices = data().create_mesh_function("global_vertex_indices", 0);
-  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
-    (*global_vertex_indices)[it->second] = it->first;
+  // Build local-to-parent mapping for vertices
+  boost::shared_ptr<MeshFunction<unsigned int> > parent_vertex_indices
+    = data().create_mesh_function("parent_vertex_indices", 0);
+  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin();
+       it != local_vertex_indices.end(); ++it)
+    (*parent_vertex_indices)[it->second] = it->first;
 }
 //-----------------------------------------------------------------------------
