@@ -33,6 +33,7 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
+
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
         mesh = UnitSquare(21, 23)
@@ -50,16 +51,28 @@ class AbstractBaseTest(object):
 
         if use_backend:
             if self.backend == "uBLAS":
-                backend = globals()[self.backend+self.sub_backend + 'Factory_instance']()
+                backend = globals()[self.backend + self.sub_backend + 'Factory_instance']()
             else:
                 backend = globals()[self.backend + 'Factory_instance']()
             return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
             return assemble(a), assemble(b)
 
+
+    def test_distributed(self):
+        A, B = self.assemble_matrices()
+        if self.backend == "PETSc" or self.backend == "Epetra":
+          if MPI.num_processes() > 1:
+               self.assertTrue(A.distributed())
+          else:
+               self.assertFalse(A.distributed())
+        else:
+           self.assertFalse(A.distributed())
+
+
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
-        A,B = self.assemble_matrices(use_backend)
+        A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
 
         def wrong_getitem(type):
@@ -193,7 +206,7 @@ class DataTester:
             for col in xrange(rows[row], rows[row+1]):
                 self.assertEqual(array[row, cols[col]],values[i])
                 i += 1
-        
+
         # Test none writeable of a shallow copy of the data
         rows, cols, values = A.data(False)
         def write_data(data):

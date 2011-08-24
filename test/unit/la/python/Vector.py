@@ -34,40 +34,28 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-    #def assemble_matrices(self, use_backend=False):
-    #    " Assemble a pair of matrices, one (square) MxM and one MxN"
-    #    mesh = UnitSquare(3,3)
-    #
-    #    V = FunctionSpace(mesh, "Lagrange", 2)
-    #    W = FunctionSpace(mesh, "Lagrange", 1)
-    #
-    #    v = TestFunction(V)
-    #    u = TrialFunction(V)
-    #    s = TrialFunction(W)
 
-    #    # Forms
-    #    a = dot(grad(u),grad(v))*dx
-    #    b = v*s*dx
+    def assemble_vectors(self):
+        mesh = UnitSquare(7, 4)
 
-    #    if use_backend:
-    #        if self.backend == "uBLAS":
-    #            backend = globals()[self.backend+self.sub_backend+'Factory_instance']()
-    #        else:
-    #            backend = globals()[self.backend+'Factory_instance']()
-    #        return assemble(a, backend=backend), assemble(b, backend=backend)
-    #    else:
-    #        return assemble(a), assemble(b)
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        W = FunctionSpace(mesh, "Lagrange", 1)
 
-    #def assemble_vectors(self):
-    #    mesh = UnitSquare(3,3)
-    #
-    #    V = FunctionSpace(mesh, "Lagrange", 2)
-    #    W = FunctionSpace(mesh, "Lagrange", 1)
+        v = TestFunction(V)
+        t = TestFunction(W)
 
-    #    v = TestFunction(V)
-    #    t = TestFunction(W)
+        return assemble(v*dx), assemble(t*dx)
 
-    #    return assemble(v*dx), assemble(t*dx)
+
+    def test_distributed(self):
+        a, b = self.assemble_vectors()
+        if self.backend == "PETSc" or self.backend == "Epetra":
+          if MPI.num_processes() > 1:
+               self.assertTrue(a.distributed())
+          else:
+               self.assertFalse(a.distributed())
+        else:
+           self.assertFalse(a.distributed(), False)
 
 
     def test_create_empty_vector(self):
