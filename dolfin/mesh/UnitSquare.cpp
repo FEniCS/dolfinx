@@ -32,7 +32,11 @@ using namespace dolfin;
 UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::partition(*this);
+    return;
+  }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
         && diagonal != "left/right"  && diagonal != "crossed")
@@ -161,6 +165,10 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster())
+  {
+    MeshPartitioning::partition(*this);
+    return;
+  }
 }
 //-----------------------------------------------------------------------------

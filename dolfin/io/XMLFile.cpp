@@ -43,7 +43,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLFunctionPlotData.h"
-#include "XMLLocalMeshDOM.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
@@ -107,21 +106,6 @@ void XMLFile::operator>> (LocalMeshData& input_data)
 {
   XMLLocalMeshSAX xml_object(input_data, filename);
   xml_object.read();
-
-  /*
-  // Local (DOM) version
-  if (MPI::process_number() == 0)
-  {
-    pugi::xml_document xml_doc;
-    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
-    XMLLocalMeshDOM::read(input_data, dolfin_node);
-  }
-  else
-  {
-    const pugi::xml_node dolfin_node(0);
-    XMLLocalMeshDOM::read(input_data, dolfin_node);
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const LocalMeshData& output_data)

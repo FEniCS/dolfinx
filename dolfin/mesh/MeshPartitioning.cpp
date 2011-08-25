@@ -46,12 +46,14 @@
 using namespace dolfin;
 
 // Utility functions for debugging/printing
-template<typename InputIterator> void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+template<typename InputIterator>
+void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
 {
   std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
 }
 
-template<typename InputIterator> void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+template<typename InputIterator>
+void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
 {
   std::stringstream msg_stream;
   msg_stream << msg;
@@ -59,7 +61,8 @@ template<typename InputIterator> void print_container(std::string msg, InputIter
   info(msg_stream.str());
 }
 
-template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
+template<typename Map>
+void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
 {
   for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
   {
@@ -68,7 +71,8 @@ template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const cha
   }
 }
 
-template<typename Map> void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
+template<typename Map>
+void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
 {
   std::stringstream msg_stream;
   msg_stream << msg << " ";
