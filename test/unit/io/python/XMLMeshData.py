@@ -1,4 +1,4 @@
-"Unit tests for the MeshData class"
+"Unit tests for input/output of mesh data"
 
 # Copyright (C) 2011 Anders Logg
 #
@@ -18,23 +18,28 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-08-22
-# Last changed: 2011-08-22
+# Last changed: 2011-08-25
 
 import unittest
 from dolfin import *
 
-class MeshData(unittest.TestCase):
+class XMLMeshData(unittest.TestCase):
 
-    def test_meshfunction(self):
+    def test_io(self):
         "Test input/output"
 
-        mesh = UnitCube(3, 3, 3)
+        # Read mesh with boundary indicators
+        mesh = Mesh()
+        f = File("../../../../data/meshes/aneurysm.xml.gz")
+        f >> mesh
 
-        f = mesh.data().create_mesh_function("foo")
-        f.init(0)
-        g = mesh.data().mesh_function("foo")
+        # Check for generated exterior_facet_domains
+        mf = mesh.data().mesh_function("exterior_facet_domains")
+        self.assertEqual(mf.size(), 59912)
 
-        self.assertEqual(g.size(), mesh.num_vertices())
+        # Write mesh with boundary indicators
+        g = File("MeshData_test_io.xml")
+        g << mesh
 
 if __name__ == "__main__":
     unittest.main()
