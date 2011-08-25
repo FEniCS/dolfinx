@@ -29,19 +29,19 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "SAX2AttributeParser.h"
-#include "XMLLocalMeshDataDistributed.h"
+#include "XMLLocalMeshSAX.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLLocalMeshDataDistributed::XMLLocalMeshDataDistributed(LocalMeshData& mesh_data,
+XMLLocalMeshSAX::XMLLocalMeshSAX(LocalMeshData& mesh_data,
   const std::string filename) : state(OUTSIDE), mesh_data(mesh_data),
   filename(filename)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read()
+void XMLLocalMeshSAX::read()
 {
   // Clear mesh data
   mesh_data.clear();
@@ -52,14 +52,14 @@ void XMLLocalMeshDataDistributed::read()
   sax_handler.initialized = XML_SAX2_MAGIC;
 
   // Call back functions
-  sax_handler.startDocument = XMLLocalMeshDataDistributed::sax_start_document;
-  sax_handler.endDocument   = XMLLocalMeshDataDistributed::sax_end_document;
+  sax_handler.startDocument = XMLLocalMeshSAX::sax_start_document;
+  sax_handler.endDocument   = XMLLocalMeshSAX::sax_end_document;
 
-  sax_handler.startElementNs = XMLLocalMeshDataDistributed::sax_start_element;
-  sax_handler.endElementNs   = XMLLocalMeshDataDistributed::sax_end_element;
+  sax_handler.startElementNs = XMLLocalMeshSAX::sax_start_element;
+  sax_handler.endElementNs   = XMLLocalMeshSAX::sax_end_element;
 
-  sax_handler.warning = XMLLocalMeshDataDistributed::sax_warning;
-  sax_handler.error = XMLLocalMeshDataDistributed::sax_error;
+  sax_handler.warning = XMLLocalMeshSAX::sax_warning;
+  sax_handler.error = XMLLocalMeshSAX::sax_error;
 
   // Parse file
   int err = xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
@@ -67,7 +67,7 @@ void XMLLocalMeshDataDistributed::read()
     error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
+void XMLLocalMeshSAX::start_element(const xmlChar* name,
                                                 const xmlChar** attrs,
                                                 uint num_attributes)
 {
@@ -154,7 +154,7 @@ void XMLLocalMeshDataDistributed::start_element(const xmlChar* name,
   }
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::end_element(const xmlChar *name)
+void XMLLocalMeshSAX::end_element(const xmlChar *name)
 {
   switch (state)
   {
@@ -201,17 +201,17 @@ void XMLLocalMeshDataDistributed::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_start_document(void *ctx)
+void XMLLocalMeshSAX::sax_start_document(void *ctx)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_end_document(void *ctx)
+void XMLLocalMeshSAX::sax_end_document(void *ctx)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_start_element(void* ctx,
+void XMLLocalMeshSAX::sax_start_element(void* ctx,
                                                     const xmlChar* name,
                                                     const xmlChar* prefix,
                                                     const xmlChar* URI,
@@ -221,18 +221,18 @@ void XMLLocalMeshDataDistributed::sax_start_element(void* ctx,
                                                     int nb_defaulted,
                                                     const xmlChar** attrs)
 {
-  ((XMLLocalMeshDataDistributed*) ctx)->start_element(name, attrs, nb_attributes);
+  ((XMLLocalMeshSAX*) ctx)->start_element(name, attrs, nb_attributes);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_end_element(void* ctx,
+void XMLLocalMeshSAX::sax_end_element(void* ctx,
                                                   const xmlChar* name,
                                                   const xmlChar* prefix,
                                                   const xmlChar* URI)
 {
-  ((XMLLocalMeshDataDistributed*) ctx)->end_element(name);
+  ((XMLLocalMeshSAX*) ctx)->end_element(name);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_warning(void *ctx, const char *msg, ...)
+void XMLLocalMeshSAX::sax_warning(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -242,7 +242,7 @@ void XMLLocalMeshDataDistributed::sax_warning(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_error(void *ctx, const char *msg, ...)
+void XMLLocalMeshSAX::sax_error(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -252,7 +252,7 @@ void XMLLocalMeshDataDistributed::sax_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::sax_fatal_error(void *ctx, const char *msg, ...)
+void XMLLocalMeshSAX::sax_fatal_error(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -262,7 +262,7 @@ void XMLLocalMeshDataDistributed::sax_fatal_error(void *ctx, const char *msg, ..
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name,
+void XMLLocalMeshSAX::read_mesh(const xmlChar* name,
                                             const xmlChar** attrs,
                                             uint num_attributes)
 {
@@ -279,7 +279,7 @@ void XMLLocalMeshDataDistributed::read_mesh(const xmlChar* name,
   mesh_data.gdim = gdim;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name,
+void XMLLocalMeshSAX::read_vertices(const xmlChar* name,
                                                 const xmlChar** attrs,
                                                 uint num_attributes)
 {
@@ -295,7 +295,7 @@ void XMLLocalMeshDataDistributed::read_vertices(const xmlChar* name,
   mesh_data.vertex_coordinates.reserve(num_local_vertices());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name,
+void XMLLocalMeshSAX::read_vertex(const xmlChar* name,
                                               const xmlChar** attrs,
                                               uint num_attributes)
 {
@@ -339,7 +339,7 @@ void XMLLocalMeshDataDistributed::read_vertex(const xmlChar* name,
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name,
+void XMLLocalMeshSAX::read_cells(const xmlChar* name,
                                              const xmlChar** attrs,
                                              uint num_attributes)
 {
@@ -357,7 +357,7 @@ void XMLLocalMeshDataDistributed::read_cells(const xmlChar* name,
   mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name,
+void XMLLocalMeshSAX::read_interval(const xmlChar *name,
                                                 const xmlChar **attrs, uint num_attributes)
 {
   // Check dimension
@@ -386,7 +386,7 @@ void XMLLocalMeshDataDistributed::read_interval(const xmlChar *name,
   mesh_data.num_vertices_per_cell = 2;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name,
+void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
                                                 const xmlChar **attrs,
                                                 uint num_attributes)
 {
@@ -417,7 +417,7 @@ void XMLLocalMeshDataDistributed::read_triangle(const xmlChar *name,
   mesh_data.num_vertices_per_cell = 3;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name,
+void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
                                                    const xmlChar **attrs,
                                                    uint num_attributes)
 {
@@ -449,12 +449,12 @@ void XMLLocalMeshDataDistributed::read_tetrahedron(const xmlChar *name,
   mesh_data.num_vertices_per_cell = 4;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshDataDistributed::num_local_vertices() const
+dolfin::uint XMLLocalMeshSAX::num_local_vertices() const
 {
   return vertex_range.second - vertex_range.first;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshDataDistributed::num_local_cells() const
+dolfin::uint XMLLocalMeshSAX::num_local_cells() const
 {
   return cell_range.second - cell_range.first;
 }

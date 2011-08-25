@@ -41,12 +41,12 @@
 #include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
 #include "XMLMeshFunction.h"
-#include "XMLLocalMeshData.h"
+#include "XMLLocalMeshDOM.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLLocalMeshData::read(LocalMeshData& mesh_data,
+void XMLLocalMeshDOM::read(LocalMeshData& mesh_data,
                             const pugi::xml_node xml_dolfin)
 {
   std::cout << "Using new-style local mesh data reading." << std::endl;
@@ -65,9 +65,9 @@ void XMLLocalMeshData::read(LocalMeshData& mesh_data,
 
   // Some process rank checks
   if (!xml_dolfin && MPI::process_number() == 0)
-    error("XMLLocalMeshData::read must read from root process.");
+    error("XMLLocalMeshDOM::read must read from root process.");
   if (xml_dolfin && MPI::process_number() != 0)
-    error("XMLLocalMeshData::read must read from root process only.");
+    error("XMLLocalMeshDOM::read must read from root process only.");
 
   // Get geometric and topological dimensions and broadcast from root
   if (xml_mesh)

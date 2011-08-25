@@ -18,8 +18,8 @@
 // First added:  2003-07-15
 // Last changed: 2006-05-23
 
-#ifndef __XMLMESHLOCALMESHDATA_H
-#define __XMLMESHLOCALMESHDATA_H
+#ifndef __XMLMESHLOCALMESHDOM_H
+#define __XMLMESHLOCALMESHDOM_H
 
 #include <ostream>
 #include <string>
@@ -35,7 +35,7 @@ namespace dolfin
   class Mesh;
   class LocalMeshData;
 
-  class XMLLocalMeshData
+  class XMLLocalMeshDOM
   {
   public:
 

@@ -43,8 +43,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLFunctionPlotData.h"
-#include "XMLLocalMeshData.h"
-#include "XMLLocalMeshDataDistributed.h"
+#include "XMLLocalMeshDOM.h"
+#include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
 #include "XMLParameters.h"
@@ -85,7 +85,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
   {
     // Read local mesh data
     LocalMeshData local_mesh_data;
-    XMLLocalMeshDataDistributed xml_object(local_mesh_data, filename);
+    XMLLocalMeshSAX xml_object(local_mesh_data, filename);
     xml_object.read();
 
     // Partition and build mesh
@@ -105,7 +105,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  XMLLocalMeshDataDistributed xml_object(input_data, filename);
+  XMLLocalMeshSAX xml_object(input_data, filename);
   xml_object.read();
 
   /*
@@ -114,12 +114,12 @@ void XMLFile::operator>> (LocalMeshData& input_data)
   {
     pugi::xml_document xml_doc;
     const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc, filename);
-    XMLLocalMeshData::read(input_data, dolfin_node);
+    XMLLocalMeshDOM::read(input_data, dolfin_node);
   }
   else
   {
     const pugi::xml_node dolfin_node(0);
-    XMLLocalMeshData::read(input_data, dolfin_node);
+    XMLLocalMeshDOM::read(input_data, dolfin_node);
   }
   */
 }

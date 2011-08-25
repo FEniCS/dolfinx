@@ -126,8 +126,8 @@ namespace dolfin
     std::map<std::string, std::vector<uint>* > arrays;
 
     // Friends
-    friend class XMLLocalMeshData;
-    friend class XMLLocalMeshDataDistributed;
+    friend class XMLLocalMeshDOM;
+    friend class XMLLocalMeshSAX;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;
