@@ -699,8 +699,6 @@ void PETScVector::init(std::pair<uint, uint> range,
     if (ghost_indices.size() > 0)
       _ghost_indices = reinterpret_cast<const int*>(&ghost_indices[0]);
 
-    cout << "Number of ghosts: " << ghost_indices.size() << endl;
-
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
                    ghost_indices.size(), _ghost_indices, x.get());
 

@@ -311,6 +311,7 @@ namespace dolfin
       Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
+    not_working_in_parallel("Reading MeshFunctions from file");
     File file(filename);
     file >> *this;
   }
