@@ -324,13 +324,13 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
-  not_working_in_parallel("Assembly over interior facets");
-
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_domains() == 0)
     return;
 
-  Timer timer("Assemble interior facets");
+ not_working_in_parallel("Assembly over interior facets");
+
+ Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
