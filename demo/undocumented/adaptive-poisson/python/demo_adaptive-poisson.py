@@ -38,9 +38,6 @@ from dolfin import *
 from numpy import array, sqrt
 from math import pow
 
-# This demo does not run in parallel
-not_working_in_parallel("This demo")
-
 # This demo does not work without CGAL
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
