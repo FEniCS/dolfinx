@@ -36,6 +36,8 @@ void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
+  not_working_in_parallel("ALE::move");
+
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0);
   BoundaryMesh boundary1(mesh1);
@@ -92,6 +94,8 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const Function& displacement)
 {
+  not_working_in_parallel("ALE::move");
+
   // Check dimensions
   const FiniteElement& element = displacement.function_space().element();
   const uint gdim = mesh.geometry().dim();
