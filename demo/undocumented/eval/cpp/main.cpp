@@ -43,8 +43,6 @@ public:
 
 int main()
 {
-  not_working_in_parallel("This demo");
-
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
   Point x(0.31, 0.32, 0.33);

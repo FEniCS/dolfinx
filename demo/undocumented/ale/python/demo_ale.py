@@ -25,8 +25,6 @@ for implementation of ALE methods)."""
 
 from dolfin import *
 
-not_working_in_parallel("This demo")
-
 # Create mesh
 mesh = UnitSquare(20, 20)
 

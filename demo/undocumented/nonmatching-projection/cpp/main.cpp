@@ -44,8 +44,6 @@ public:
 
 int main()
 {
-  not_working_in_parallel("non-matching projection demo");
-
   // Create meshes
   UnitSquare mesh0(16, 16);
   UnitSquare mesh1(64, 64);
