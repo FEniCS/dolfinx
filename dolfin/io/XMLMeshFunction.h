@@ -57,6 +57,8 @@ namespace dolfin
                                     const std::string type,
                                     const pugi::xml_node xml_mesh)
   {
+    not_working_in_parallel("Reading XML MeshFunctions");
+
     const pugi::xml_node xml_meshfunction = xml_mesh.child("meshfunction");
     if (!xml_meshfunction)
       std::cout << "Not a DOLFIN MeshFunction." << std::endl;
@@ -119,6 +121,8 @@ namespace dolfin
                               const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)
   {
+    not_working_in_parallel("Writing XML MeshFunctions");
+
     // Write mesh if requested
     if (write_mesh)
       XMLMesh::write(mesh_function.mesh(), xml_node);

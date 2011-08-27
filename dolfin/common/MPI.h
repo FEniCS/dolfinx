@@ -332,7 +332,6 @@ namespace dolfin
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long>() { return MPI_UNSIGNED_LONG; }
   #endif
 
-
 }
 
 #endif
