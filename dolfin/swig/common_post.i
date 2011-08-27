@@ -20,6 +20,14 @@
 // Last changed: 2011-05-30
 
 //-----------------------------------------------------------------------------
+// Instantiate some DOLFIN MPI templates
+//-----------------------------------------------------------------------------
+
+%template(max) dolfin::MPI::max<double>;
+%template(min) dolfin::MPI::min<double>;
+%template(sum) dolfin::MPI::sum<double>;
+
+//-----------------------------------------------------------------------------
 // Ignore const array interface (Used if the Array type is a const)
 //-----------------------------------------------------------------------------
 %define CONST_ARRAY_IGNORES(TYPE)
@@ -33,7 +41,7 @@
 
 //-----------------------------------------------------------------------------
 // Macro for instantiating the Array templates
-// 
+//
 // TYPE          : The Array template type
 // TEMPLATE_NAME : The Template name
 // TYPE_NAME     : The name of the pointer type, 'double' for 'double', 'uint' for
@@ -49,10 +57,10 @@
 
 %ignore dolfin::Array<TYPE>::Array(uint N, boost::shared_array<TYPE> x);
 
-// Cannot construct an Array from another Array. 
+// Cannot construct an Array from another Array.
 // Use NumPy Array instead
 %ignore dolfin::Array<TYPE>::Array(const Array& other);
- 
+
 %template(TEMPLATE_NAME ## Array) dolfin::Array<TYPE>;
 
 %feature("docstring") dolfin::Array::__getitem__ "Missing docstring";
@@ -66,7 +74,7 @@
   PyObject * array(){
     return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data().get(), true);
   }
-  
+
 }
 %enddef
 

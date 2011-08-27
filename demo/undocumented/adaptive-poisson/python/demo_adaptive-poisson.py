@@ -77,12 +77,13 @@ for level in xrange(MAX_ITER):
     gamma = h*R*sqrt(K)
 
     # Compute error estimate
-    E  = sqrt(sum([g*g for g in gamma]))
+    E = sum([g*g for g in gamma])
+    E = sqrt(MPI.sum(E))
     print "Level %d: E = %g (TOL = %g)" % (level, E, TOL)
 
     # Check convergence
     if E < TOL:
-        print "Success, solution converged after %d iterations" % level
+        info("Success, solution converged after %d iterations", level)
         break
 
     # Mark cells for refinement
