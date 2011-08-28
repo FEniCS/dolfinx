@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-30
-// Last changed: 2011-02-03
+// Last changed: 2011-08-25
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
@@ -89,7 +89,9 @@ namespace dolfin
     T& parent()
     {
       if (!_parent)
-        error("Object has no parent in hierarchy.");
+        dolfin_error("Hierarchical.h",
+                     "extract parent of hierarchical object",
+                     "Object has no parent in hierarchy");
       return *_parent;
     }
 
@@ -97,7 +99,9 @@ namespace dolfin
     const T& parent() const
     {
       if (!_parent)
-        error("Object has no parent in hierarchy.");
+        dolfin_error("Hierarchical.h",
+                     "extract parent of hierarchical object",
+                     "Object has no parent in hierarchy");
       return *_parent;
     }
 
@@ -123,7 +127,9 @@ namespace dolfin
     T& child()
     {
       if (!_child)
-        error("Object has no child in hierarchy.");
+        dolfin_error("Hierarchical.h",
+                     "extract child of hierarchical object",
+                     "Object has no child in hierarchy");
       return *_child;
     }
 
@@ -131,7 +137,9 @@ namespace dolfin
     const T& child() const
     {
       if (!_child)
-        error("Object has no child in hierarchy.");
+        dolfin_error("Hierarchical.h",
+                     "extract child of hierarchical object",
+                     "Object has no child in hierarchy");
       return *_child;
     }
 
