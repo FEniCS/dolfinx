@@ -105,14 +105,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),    \
    os.path.join(demodir, 'undocumented', 'eval',                        'python')]
 
-print "------------"
-print not_working_in_parallel
-print "------------"
-print pydemos
-print "------------"
-print cppdemos
-print "------------"
-
 failed = []
 timing = []
 
