@@ -133,7 +133,7 @@ for prefix in prefixes:
     # List of demos to run
     if prefix == mpi_prefix:
         cppdemos_to_run = list(set(cppdemos) - set(not_working_in_parallel))
-        pydemos_to_run  = list(set(cppdemos) - set(not_working_in_parallel))
+        pydemos_to_run  = list(set(pydemos)  - set(not_working_in_parallel))
     else:
         cppdemos_to_run = cppdemos
         pydemos_to_run  = pydemos
