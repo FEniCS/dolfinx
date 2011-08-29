@@ -22,7 +22,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-02-07
+// Last changed: 2011-08-29
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>

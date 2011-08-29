@@ -57,8 +57,11 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Read mesh
   read_mesh(mesh, mesh_node);
 
-  // Read any mesh data
+  // Read mesh data (if any)
   read_data(mesh.data(), mesh_node);
+
+  // Read mesh markers (if any)
+  read_markers(mesh.domains(), mesh_node);
 
   // Initialize boundary indicators
   mesh.initialize_exterior_facet_domains();
@@ -72,8 +75,11 @@ void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
   // Write mesh
   write_mesh(mesh, mesh_node);
 
-  // Write any mesh data
+  // Write mesh data (if any)
   write_data(mesh.data(), mesh_node);
+
+  // Write mesh markers (if any)
+  write_markers(mesh.domains(), mesh_node);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
@@ -198,6 +204,13 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     else
       error("Reading of MeshData \"%s\" not yet supported", data_set_type.c_str());
   }
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::read_markers(MeshDomains& domains,
+                           const pugi::xml_node mesh_node)
+{
+
+
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
@@ -358,5 +371,13 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
       element_node.append_attribute("value") = (*array)[i];
     }
   }
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::write_markers(const MeshDomains& domains,
+                            pugi::xml_node mesh_node)
+{
+
+
+
 }
 //-----------------------------------------------------------------------------

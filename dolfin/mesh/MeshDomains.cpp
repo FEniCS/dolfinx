@@ -19,6 +19,8 @@
 // Last changed: 2011-08-29
 
 #include <dolfin/log/log.h>
+#include "Mesh.h"
+#include "MeshFunction.h"
 #include "MeshDomains.h"
 
 using namespace dolfin;
@@ -55,8 +57,9 @@ void MeshDomains::init_subdomains(uint d)
   _mesh->init(d);
 
   // Initialize mesh function
-  _subdomains[d].init(d);
-  MeshFunction<uint>& mf = _subdomains[d];
+  boost::shared_ptr<MeshFunction<uint> > mf = _subdomains[d];
+  assert(mf);
+  mf->init(d);
 
   // Get mesh connectivity D --> d
   const uint D = _mesh->topology().dim();
@@ -75,7 +78,7 @@ void MeshDomains::init_subdomains(uint d)
     const uint global_entity = connectivity(cell_index)[local_entity];
 
     // Set boundary indicator for facet
-    mf[global_entity] = subdomain;
+    (*mf)[global_entity] = subdomain;
   }
 }
 //-----------------------------------------------------------------------------

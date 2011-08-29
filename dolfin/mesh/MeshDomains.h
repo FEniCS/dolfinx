@@ -25,10 +25,13 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class Mesh;
+  template <class T> class MeshFunction;
 
   /// The class _MeshDomains_ stores the division of a _Mesh_ into
   /// subdomains. For each topological dimension 0 <= d <= D, where D
@@ -66,10 +69,10 @@ namespace dolfin
     boost::shared_ptr<Mesh> _mesh;
 
     // Subdomain markers (input/storage)
-    std::vector< std::vector< std::vector<uint> > > _markers;
+    std::vector<std::vector<std::vector<uint> > > _markers;
 
     // Subdomains corresponding to markers
-    std::vector< MeshFunction<uint> > _subdomains;
+    std::vector<boost::shared_ptr<MeshFunction<uint> > > _subdomains;
 
   };
 
