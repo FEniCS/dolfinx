@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-02
-// Last changed: 2011-01-31
+// Last changed: 2011-08-29
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
@@ -43,3 +43,16 @@ def function_space(self):
 %}
 }
 
+//-----------------------------------------------------------------------------
+// Extend Function so f.fine() returns a dolfin.Function
+//-----------------------------------------------------------------------------
+%extend dolfin::Function {
+%pythoncode %{
+def fine(self):
+    "Return the finest Function in hierarchy"
+    from dolfin.functions.function import Function
+    f = self._fine()
+    V = f.function_space()
+    return Function(V, f.vector())
+%}
+}

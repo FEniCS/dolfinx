@@ -96,5 +96,12 @@ solver.parameters["reference"] = 0.40863917;
 # Solve to given tolerance
 solver.solve(tol, M)
 
+# Extract solution on finest mesh
+(u, p) = w.fine().split()
+plot(u, title="Velocity")
+plot(p, title="Velocity")
+
 # Write a summary
 summary()
+
+interactive()

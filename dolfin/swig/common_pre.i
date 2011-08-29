@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-22
-// Last changed: 2011-05-22
+// Last changed: 2011-08-29
 
 //=============================================================================
 // SWIG directives for the DOLFIN common kernel module (pre)
@@ -71,15 +71,15 @@ namespace dolfin {
 }
 
 //-----------------------------------------------------------------------------
-// Ignore all foo and rename foo_shared_ptr to foo for SWIG >= 2.0
+// Ignore all foo and rename foo_shared_ptr to _foo for SWIG >= 2.0
 // and ignore foo_shared_ptr for SWIG < 2.0
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::parent;
-%rename(parent) dolfin::Hierarchical::parent_shared_ptr;
+%rename(_parent) dolfin::Hierarchical::parent_shared_ptr;
 %ignore dolfin::Hierarchical::child;
-%rename(child) dolfin::Hierarchical::child_shared_ptr;
+%rename(_child) dolfin::Hierarchical::child_shared_ptr;
 %ignore dolfin::Hierarchical::coarse;
-%rename(coarse) dolfin::Hierarchical::coarse_shared_ptr;
+%rename(_coarse) dolfin::Hierarchical::coarse_shared_ptr;
 %ignore dolfin::Hierarchical::fine;
-%rename(fine) dolfin::Hierarchical::fine_shared_ptr;
+%rename(_fine) dolfin::Hierarchical::fine_shared_ptr;
 
