@@ -170,7 +170,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The array.
-    boost::shared_ptr<std::vector<uint> >array(const std::string name) const;
+    boost::shared_ptr<std::vector<uint> > array(const std::string name) const;
 
     //--- Removal of data ---
 
