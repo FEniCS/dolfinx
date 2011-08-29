@@ -124,8 +124,8 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
-   os.path.join(demodir, 'undocumented', 'neumann-possion',             'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'neumann-possion',             'python'), \
+   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
    os.path.join(demodir, 'undocumented', 'partitioning',                'cpp'),    \
@@ -135,7 +135,13 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'periodic',                    'cpp'),    \
    os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python')]
+   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
+   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'python'), \
+   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'smoothing',                   'python')]
 
 
 failed = []

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-03-10
+// Last changed: 2011-08-28
 
 #ifndef __INDEX_SET_H
 #define __INDEX_SET_H
@@ -61,7 +61,9 @@ namespace dolfin
     {
       assert(index < _size);
       if (!_has_index[index])
-        error("No such index: %d.", index);
+        dolfin_error("IndexSet.h",
+                     "locate position of index",
+                     "Index %d is not in index set", index);
       return _positions[index];
     }
 
