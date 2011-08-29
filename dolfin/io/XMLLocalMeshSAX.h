@@ -20,8 +20,8 @@
 //
 // Modified by Kent-Andre Mardal, 2011.
 
-#ifndef __XMLLOCALMESHDATADISTRIBUTED_H
-#define __XMLLOCALMESHDATADISTRIBUTED_H
+#ifndef __XMLLOCALMESHDATASAX_H
+#define __XMLLOCALMESHDATASAX_H
 
 #include <string>
 #include <libxml/parser.h>
@@ -31,14 +31,14 @@ namespace dolfin
 
   class LocalMeshData;
 
-  /// Documentation of class XMLLocalMeshData
+  /// Documentation of class XMLLocalMeshSAX
 
-  class XMLLocalMeshDataDistributed
+  class XMLLocalMeshSAX
   {
 
   public:
 
-    XMLLocalMeshDataDistributed(LocalMeshData& mesh_data,
+    XMLLocalMeshSAX(LocalMeshData& mesh_data,
                                 const std::string filename);
 
     void read();

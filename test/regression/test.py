@@ -69,7 +69,7 @@ for s in cppslow:
         cppdemos.append(s)
 
 # Remove demos that need command-line arguments
-pyremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
+pyremoves  = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
 cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
 for demo in pyremoves:
     if demo in pydemos:
@@ -85,6 +85,64 @@ if platform.system() == 'Windows':
     for demo in wrinremove:
         if demo in cppdemos:
             cppdemos.remove()
+
+# List of demos that throw expected errors in parallel
+not_working_in_parallel = \
+  [os.path.join(demodir, 'pde',          'biharmonic',                  'cpp'),    \
+   os.path.join(demodir, 'pde',          'biharmonic',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'advection-difusion',          'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'advection-difusion',          'python'), \
+   os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
+   os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
+   os.path.join(demodir, 'undocumented', 'auto-adaptive-poisson',       'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'auto-adaptive-poisson',       'python'), \
+   os.path.join(demodir, 'undocumented', 'dg-advection-diffusion',      'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'dg-advection-diffusion',      'python'), \
+   os.path.join(demodir, 'undocumented', 'dg-poisson',                  'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'dg-poisson',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
+   os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
+   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'python'), \
+   os.path.join(demodir, 'undocumented', 'advection-diffusion',         'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'advection-diffusion',         'python'), \
+   os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'refinement',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
+   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
+   os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'python'), \
+   os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
+   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'python'), \
+   os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
+   os.path.join(demodir, 'undocumented', 'partitioning',                'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'partitioning',                'python'), \
+   os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'simple'      ,                'python'), \
+   os.path.join(demodir, 'undocumented', 'periodic',                    'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
+   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
+   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'python'), \
+   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'smoothing',                   'python')]
+
 
 failed = []
 timing = []
@@ -102,16 +160,25 @@ if only_python:
 
 # Build prefix list
 prefixes = [""]
+mpi_prefix = "mpirun -np 3 "
 if "RUN_REGRESSION_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
-    prefixes.append("mpirun -np 3 ")
+    prefixes.append(mpi_prefix)
 else:
     print "Not running regression tests in parallel."
 
 # Run in serial, then in parallel
 for prefix in prefixes:
 
+    # List of demos to run
+    if prefix == mpi_prefix:
+        cppdemos_to_run = list(set(cppdemos) - set(not_working_in_parallel))
+        pydemos_to_run  = list(set(pydemos)  - set(not_working_in_parallel))
+    else:
+        cppdemos_to_run = cppdemos
+        pydemos_to_run  = pydemos
+
     # Run C++ demos
-    for demo in cppdemos:
+    for demo in cppdemos_to_run:
         print "----------------------------------------------------------------------"
         print "Running C++ demo %s%s" % (prefix, demo)
         print ""
@@ -136,7 +203,7 @@ for prefix in prefixes:
             print "*** Warning: missing demo"
 
     # Run Python demos
-    for demo in pydemos:
+    for demo in pydemos_to_run:
         print "----------------------------------------------------------------------"
         print "Running Python demo %s%s" % (prefix, demo)
         print ""

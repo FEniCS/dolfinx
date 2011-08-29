@@ -25,8 +25,6 @@
 from dolfin import *
 from numpy import array
 
-not_working_in_parallel("This demo")
-
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)

@@ -27,8 +27,6 @@ using namespace dolfin;
 
 int main()
 {
-  not_working_in_parallel("This demo");
-
   // Create empty time series
   TimeSeries series("primal");
 

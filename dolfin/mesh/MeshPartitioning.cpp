@@ -46,12 +46,14 @@
 using namespace dolfin;
 
 // Utility functions for debugging/printing
-template<typename InputIterator> void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+template<typename InputIterator>
+void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
 {
   std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
 }
 
-template<typename InputIterator> void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+template<typename InputIterator>
+void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
 {
   std::stringstream msg_stream;
   msg_stream << msg;
@@ -59,7 +61,8 @@ template<typename InputIterator> void print_container(std::string msg, InputIter
   info(msg_stream.str());
 }
 
-template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
+template<typename Map>
+void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
 {
   for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
   {
@@ -68,7 +71,8 @@ template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const cha
   }
 }
 
-template<typename Map> void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
+template<typename Map>
+void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
 {
   std::stringstream msg_stream;
   msg_stream << msg << " ";
@@ -571,7 +575,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // redistribute all cells (the global vertex indices of all cells).
 
   // Get global cell indices
-  std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
+  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
 
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
@@ -607,17 +611,17 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Clear mesh data
   mesh_data.cell_vertices.clear();
-  global_cell_indices.clear();
+  mesh_data.global_cell_indices.clear();
 
   // Put mesh_data back into mesh_data.cell_vertices
   const uint num_new_local_cells = cell_vertices.size()/(num_cell_vertices + 1);
   mesh_data.cell_vertices.reserve(num_new_local_cells);
-  global_cell_indices.reserve(num_new_local_cells);
+  mesh_data.global_cell_indices.reserve(num_new_local_cells);
 
   // Loop over new cells
   for (uint i = 0; i < num_new_local_cells; ++i)
   {
-    global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
+    mesh_data.global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];

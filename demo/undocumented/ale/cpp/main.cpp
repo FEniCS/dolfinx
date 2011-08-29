@@ -30,8 +30,6 @@ using namespace dolfin;
 
 int main()
 {
-  not_working_in_parallel("This demo");
-
   // Create mesh
   UnitSquare mesh(20, 20);
 

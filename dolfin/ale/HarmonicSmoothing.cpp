@@ -41,6 +41,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
+  not_working_in_parallel("ALE::move");
+
   const uint D = mesh.topology().dim();
   const uint d = mesh.geometry().dim();
 

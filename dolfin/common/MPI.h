@@ -177,7 +177,8 @@ namespace dolfin
       #endif
     }
 
-    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
+    // NOTE: This is commented out since Boost.MPI is not well supported
+    //       on older platforms
     // // Gather values, one from each process (wrapper for boost::mpi::all_gather)
     // template<class T> static void gather_all(const T& in_value,
     //                                          std::vector<T>& out_values)
@@ -233,7 +234,8 @@ namespace dolfin
       #endif
     }
 
-    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
+    // NOTE: This is commented out since Boost.MPI is not well supported
+    //       on older platforms
     // // Return global max value
     // template<class T> static T max(const T& value)
     // {

@@ -22,8 +22,6 @@
 
 from dolfin import *
 
-not_working_in_parallel("mesh smoothing demo")
-
 # Create rectangular mesh
 mesh = Rectangle(0.0, 0.0, 2.4, 0.4, 60, 10)
 

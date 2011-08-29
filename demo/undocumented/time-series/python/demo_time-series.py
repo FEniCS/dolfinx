@@ -21,8 +21,6 @@
 from dolfin import *
 from numpy import ones
 
-not_working_in_parallel("This demo")
-
 # Create empty time series
 series = TimeSeries("primal")
 
