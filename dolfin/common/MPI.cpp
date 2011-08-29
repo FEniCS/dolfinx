@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2009.
-// Modified by Anders Logg, 2007-2009.
-// Modified by Ola Skavhaug, 2008-2009.
-// Modified by Niclas Jansson, 2009.
+// Modified by Garth N. Wells 2007-2009
+// Modified by Anders Logg 2007-2011
+// Modified by Ola Skavhaug 2008-2009
+// Modified by Niclas Jansson 2009
 //
 // First added:  2007-11-30
-// Last changed: 2010-11-09
+// Last changed: 2011-08-25
 
 #include <numeric>
 #include <dolfin/log/dolfin_log.h>
@@ -104,7 +104,10 @@ void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
   {
     // Check size of values
     if (values.size() != num_processes())
-      error("Number of values to scatter must be equal to the number of processes.");
+      dolfin_error("MPI.cpp",
+                   "scatter values across processes",
+                   "The number of values (%d) does not match the number of processes (%d)",
+                   values.size(), num_processes());
 
     // Prepare send buffer
     uint* send_buffer = new uint[values.size()];
@@ -157,7 +160,10 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
   {
     // Check size of values
     if (values.size() != num_processes())
-      error("Number of values to scatter must be equal to the number of processes.");
+      dolfin_error("MPI.cpp",
+                   "scatter values across processes",
+                   "The number of values (%d) does not match the number of processes (%d)",
+                   values.size(), num_processes());
 
     // Extract sizes and compute size of send buffer
     std::vector<uint> sizes;
@@ -249,7 +255,10 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
   {
     // Check size of values
     if (values.size() != num_processes())
-      error("Number of values to scatter must be equal to the number of processes.");
+      dolfin_error("MPI.cpp",
+                   "scatter values across processes",
+                   "The number of values (%d) does not match the number of processes (%d)",
+                   values.size(), num_processes());
 
     // Extract sizes and compute size of send buffer
     std::vector<uint> sizes;
@@ -483,41 +492,55 @@ bool dolfin::MPI::is_receiver()
 //-----------------------------------------------------------------------------
 void dolfin::MPI::barrier()
 {
-  error("MPI::barrier() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::barrier",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<uint>& values,
                              std::vector<uint>& partition)
 {
-  error("MPI::distribute() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::distribute",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<double>& values,
                              std::vector<uint>& partition)
 {
-  error("MPI::distribute() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::distribute",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
 {
-  error("MPI::scatter() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::scatter",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
                           uint sending_process)
 {
-  error("MPI::scatter() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::scatter",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {
-  error("MPI::scatter() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::scatter",
+               "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
 {
-  error("MPI::gather() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::gather",
+               "Your DOLFIN installation has been built without MPI support");
   return std::vector<uint>(1);
 }
 //-----------------------------------------------------------------------------
@@ -529,14 +552,18 @@ dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {
-  error("MPI::send_recv() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::send_recv",
+               "Your DOLFIN installation has been built without MPI support");
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
                                     double* recv_buffer, uint recv_size, uint source)
 {
-  error("MPI::send_recv() requires MPI.");
+  dolfin_error("MPI.cpp",
+               "call MPI::send_recv",
+               "Your DOLFIN installation has been built without MPI support");
   return 0;
 }
 //-----------------------------------------------------------------------------

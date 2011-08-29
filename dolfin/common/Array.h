@@ -130,7 +130,9 @@ namespace dolfin
           x.reset(new T[N]);
         }
         else
-          error("Cannot resize Array. Data is shared");
+          dolfin_error("Array.h",
+                       "resize Array",
+                       "Data is shared");
       }
     }
 
