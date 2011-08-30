@@ -205,22 +205,11 @@ add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
 
 # Define libraries
 add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
-
-# FIXME: GNW: What link flags are we adding? Is this platform-independent?
-# FIXME: JR: Yes, it is. Currently it is only '-framework vecLib' defined in
-#            ARMADILLO_LINK_FLAGS but this variable will be empty on non-apple.
-# FIXME: JR: Maybe we should add DOLFIN_LINK_FLAGS to CMAKE_SHARED_LINKER_FLAGS
-#            instead of setting it as a property on the dolfin library? We
-#            should at least add either CMAKE_SHARED_LINKER_FLAGS or
-#            DOLFIN_LINK_FLAGS to dolfin-config.cmake.
-# Add link flags (if any)
-if (DOLFIN_LINK_FLAGS)
-  set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
-endif()
 
 # Strip leading and trailing whitespaces
 string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
@@ -280,6 +269,7 @@ endforeach()
 
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
@@ -302,7 +292,7 @@ string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
 
 # Add additional link flags
 foreach(_linkflag ${DOLFIN_LINK_FLAGS})
-  set(PKG_LINK_FLAGS "${PKG_LINKFLAGS} ${_linkflag}")
+  set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflag}")
 endforeach()
 
 # Configure and install pkg-config file
