@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-08-29
+// Last changed: 2011-08-30
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -25,6 +25,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
+#include "MeshMarkers.h"
 
 namespace dolfin
 {
@@ -60,8 +61,6 @@ namespace dolfin
 
   private:
 
-    // FIXME: Still thinking about which names to use here
-
     // Initialize mesh function of dimension d from markers
     void init_subdomains(uint d);
 
@@ -70,6 +69,8 @@ namespace dolfin
 
     // Subdomain markers (input/storage)
     std::vector<std::vector<std::vector<uint> > > _markers;
+
+    std::vector<MeshMarkers<uint> > __markers;
 
     // Subdomains corresponding to markers
     std::vector<boost::shared_ptr<MeshFunction<uint> > > _subdomains;

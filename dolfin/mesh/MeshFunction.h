@@ -65,7 +65,7 @@ namespace dolfin
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The mesh entity dimension for the mesh function
+    ///         The mesh entity dimension for the mesh function.
     MeshFunction(const Mesh& mesh, uint dim);
 
     /// Create mesh of given dimension on given mesh and initialize
@@ -75,7 +75,7 @@ namespace dolfin
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The mesh entity dimension
+    ///         The mesh entity dimension.
     ///     value (T)
     ///         The value.
     MeshFunction(const Mesh& mesh, uint dim, const T& value);
@@ -493,7 +493,8 @@ namespace dolfin
       //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
     }
     else
-      s << "<MeshFunction of topological dimension " << _dim << " containing " << _size << " values>";
+      s << "<MeshFunction of topological dimension " << dim()
+        << " containing " << size() << " values>";
 
     return s.str();
   }
