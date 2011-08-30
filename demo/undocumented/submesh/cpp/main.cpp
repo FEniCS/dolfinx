@@ -52,18 +52,18 @@ int main()
   SubMesh structure_mesh(mesh, sub_domains, 1);
 
   // Move structure mesh
-  //MeshGeometry& geometry = structure_mesh.geometry();
-  //for (VertexIterator v(structure_mesh); !v.end(); ++v)
-  //{
-  //  const double* x = v->x();
-  //  geometry.x(v->index())[0] += 0.1*x[0]*x[1];
-  //}
+  MeshGeometry& geometry = structure_mesh.geometry();
+  for (VertexIterator v(structure_mesh); !v.end(); ++v)
+  {
+    const double* x = v->x();
+    geometry.x(v->index())[0] += 0.1*x[0]*x[1];
+  }
 
   // Move fluid mesh according to structure mesh
-  //fluid_mesh.move(structure_mesh);
-  //fluid_mesh.smooth();
+  fluid_mesh.move(structure_mesh);
+  fluid_mesh.smooth();
 
   // Plot meshes
-  plot(fluid_mesh);
-  plot(structure_mesh);
+  //plot(fluid_mesh);
+  //plot(structure_mesh);
 }
