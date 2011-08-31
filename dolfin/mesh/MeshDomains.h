@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-08-30
+// Last changed: 2011-08-31
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -25,7 +25,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
-#include "MeshMarkers.h"
 
 namespace dolfin
 {
@@ -33,6 +32,7 @@ namespace dolfin
   // Forward declarations
   class Mesh;
   template <class T> class MeshFunction;
+  template <class T> class MeshMarkers;
 
   /// The class _MeshDomains_ stores the division of a _Mesh_ into
   /// subdomains. For each topological dimension 0 <= d <= D, where D
@@ -61,16 +61,14 @@ namespace dolfin
 
   private:
 
-    // Initialize mesh function of dimension d from markers
-    void init_subdomains(uint d);
+    // Initialize mesh functions corresponding to markers
+    void init_subdomains();
 
     // The mesh
     boost::shared_ptr<Mesh> _mesh;
 
     // Subdomain markers (input/storage)
-    std::vector<std::vector<std::vector<uint> > > _markers;
-
-    std::vector<MeshMarkers<uint> > __markers;
+    std::vector<boost::shared_ptr<MeshMarkers<uint> > > _markers;
 
     // Subdomains corresponding to markers
     std::vector<boost::shared_ptr<MeshFunction<uint> > > _subdomains;

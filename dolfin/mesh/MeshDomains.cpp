@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-08-29
+// Last changed: 2011-08-31
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshFunction.h"
+#include "MeshMarkers.h"
 #include "MeshDomains.h"
 
 using namespace dolfin;
@@ -39,7 +40,8 @@ MeshDomains::~MeshDomains()
 dolfin::uint MeshDomains::num_marked(uint dim) const
 {
   assert(dim < _markers.size());
-  return _markers[dim].size();
+  assert(_markers[dim]);
+  return _markers[dim]->size();
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::clear()
@@ -47,38 +49,9 @@ void MeshDomains::clear()
   _markers.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshDomains::init_subdomains(uint d)
+void init_subdomains()
 {
-  assert(_mesh);
-  assert(d < _markers.size());
-  assert(d < _subdomains.size());
+  // FIXME: initialize and call function in MeshMarkers
 
-  // Initialize entities of dimension d
-  _mesh->init(d);
-
-  // Initialize mesh function
-  boost::shared_ptr<MeshFunction<uint> > mf = _subdomains[d];
-  assert(mf);
-  mf->init(d);
-
-  // Get mesh connectivity D --> d
-  const uint D = _mesh->topology().dim();
-  const MeshConnectivity& connectivity = _mesh->topology()(D, d);
-
-  // Iterate over all markers
-  for (uint i = 0; i < _markers[d].size(); i++)
-  {
-    // Get marker data
-    const std::vector<uint>& marker = _markers[d][i];
-    const uint cell_index   = marker[0];
-    const uint local_entity = marker[1];
-    const uint subdomain    = marker[2];
-
-    // Get global facet index
-    const uint global_entity = connectivity(cell_index)[local_entity];
-
-    // Set boundary indicator for facet
-    (*mf)[global_entity] = subdomain;
-  }
 }
 //-----------------------------------------------------------------------------

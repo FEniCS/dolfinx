@@ -18,7 +18,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2007-04-24
-// Last changed: 2011-03-17
+// Last changed: 2011-08-31
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
@@ -28,6 +28,8 @@
 #include "MeshEntityIterator.h"
 #include "ParallelData.h"
 #include "Vertex.h"
+#include "MeshFunction.h"
+#include "MeshMarkers.h"
 #include "SubDomain.h"
 
 using namespace dolfin;
@@ -57,22 +59,22 @@ void SubDomain::map(const Array<double>& x, Array<double>&) const
 /// Set sub domain markers (uint) for given subdomain
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
-  mark_meshfunction(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<int>& sub_domains, int sub_domain) const
 {
-  mark_meshfunction(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<double>& sub_domains, double sub_domain) const
 {
-  mark_meshfunction(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
 {
-  mark_meshfunction(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SubDomain::geometric_dimension() const
@@ -84,8 +86,8 @@ dolfin::uint SubDomain::geometric_dimension() const
   return _geometric_dimension;
 }
 //-----------------------------------------------------------------------------
-template<class T>
-void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) const
+template<class S, class T>
+void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
 {
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
@@ -119,7 +121,8 @@ void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) co
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
     {
-      on_boundary = (entity->num_entities(D) == 1 && (exterior.size() == 0 || exterior[*entity]));
+      on_boundary = entity->num_entities(D) == 1 &&
+        (exterior.size() == 0 || exterior[*entity]);
     }
 
     // Start by assuming all points are inside
@@ -142,7 +145,8 @@ void SubDomain::mark_meshfunction(MeshFunction<T>& sub_domains, T sub_domain) co
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside)
     {
-      x.update(_geometric_dimension, const_cast<double*>(entity->midpoint().coordinates()));
+      x.update(_geometric_dimension,
+               const_cast<double*>(entity->midpoint().coordinates()));
       if (!inside(x, on_boundary))
         all_points_inside = false;
     }

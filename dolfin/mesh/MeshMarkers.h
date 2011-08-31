@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-08-30
+// Last changed: 2011-08-31
 
 #ifndef __MESH_MARKERS_H
 #define __MESH_MARKERS_H
@@ -24,9 +24,13 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
+#include "MeshFunction.h"
 
 namespace dolfin
 {
+
+  // Forward declarations
+  template <class T> class MeshFunction;
 
   /// The MeshMarkers class can be used to store data associated with
   /// a subset of the entities of a mesh of a given topological
@@ -102,6 +106,13 @@ namespace dolfin
     ///         The size.
     uint size() const;
 
+    /// Extract data for corresponding MeshFunction
+    ///
+    /// *Arguments*
+    ///     mesh_function (_MeshFunction_)
+    ///         The MeshFunction to be computed.
+    void extract_mesh_function(MeshFunction<T>& mesh_function) const;
+
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*
@@ -175,6 +186,46 @@ namespace dolfin
   uint MeshMarkers<T>::size() const
   {
     return _markers.size();
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshMarkers<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
+  {
+    assert(_mesh);
+
+    // Initialize mesh function
+    mesh_function.init(_mesh, _dim);
+
+    // Get mesh connectivity D --> d
+    const uint D = _mesh->topology().dim();
+    const MeshConnectivity& connectivity = _mesh->topology()(D, _dim);
+
+    // Get maximum value of marker. Note that this requires that the
+    // type T can be intialized to zero, supports std::max and can
+    // be incremented by 1.
+    T maxval = T(0);
+    for (uint i = 0; i < _markers.size(); i++)
+      maxval = std::max(maxval, _markers[i][2]);
+
+    // Set all value of mesh function to maximum value (not all will
+    // be set) by markers below
+    mesh_function.set_all(maxval);
+
+    // Iterate over all markers
+    for (uint i = 0; i < _markers.size(); i++)
+    {
+      // Get marker data
+      const std::vector<uint>& marker = _markers[i];
+      const uint cell_index   = marker[0];
+      const uint local_entity = marker[1];
+      const uint subdomain    = marker[2];
+
+      // Get global entity index
+      const uint entity_index = connectivity(cell_index)[local_entity];
+
+      // Set boundary indicator for facet
+      mesh_function[entity_index] = subdomain;
+    }
   }
   //---------------------------------------------------------------------------
   template <class T>
