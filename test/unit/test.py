@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-06-23
+# Last changed: 2011-08-31
 
 import sys, os, re
 import platform
@@ -62,6 +62,10 @@ if has_mpi() and has_parmetis():
     prefixes.append("mpirun -np 3 ")
 else:
     print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
+
+# Allow to disable parallel testing
+if "DISABLE_PARALLEL_TESTING" in os.environ:
+    prefixes = [""]
 
 # Run in serial, then in parallel
 for prefix in prefixes:
