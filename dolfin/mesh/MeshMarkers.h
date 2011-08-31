@@ -24,13 +24,12 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
+#include "MeshEntity.h"
+#include "Cell.h"
 #include "MeshFunction.h"
 
 namespace dolfin
 {
-
-  // Forward declarations
-  template <class T> class MeshFunction;
 
   /// The MeshMarkers class can be used to store data associated with
   /// a subset of the entities of a mesh of a given topological
@@ -106,6 +105,15 @@ namespace dolfin
     ///         The size.
     uint size() const;
 
+    /// Set marker value for given entity index
+    ///
+    /// *Arguments*
+    ///     entity_index (uint)
+    ///         Index of the entity.
+    ///     marker_value (T).
+    ///         The value of the marker.
+    void set_marker(uint entity_index, T& marker_value);
+
     /// Extract data for corresponding MeshFunction
     ///
     /// *Arguments*
@@ -130,7 +138,7 @@ namespace dolfin
     boost::shared_ptr<Mesh> _mesh;
 
     // The markers
-    std::vector<std::vector<T> > _markers;
+    std::vector<std::pair<std::pair<uint, uint>, T> > _markers;
 
     /// Topological dimension
     uint _dim;
@@ -189,6 +197,28 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
+  void MeshMarkers<T>::set_marker(uint entity_index, T& marker_value)
+  {
+    assert(_mesh);
+
+    // Get mesh connectivity d --> D
+    const uint D = _mesh->topology().dim();
+    const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
+
+    // Find the cell
+    assert(connectivity.size(entity_index) > 0);
+    MeshEntity entity(*_mesh, _dim, entity_index);
+    Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+
+    // Find the local entity index
+    const uint local_entity = cell.index(entity);
+
+    // Add marker
+    std::pair<uint, uint> pos(std::make_pair(cell.index(), local_entity));
+    _markers.push_back(std::make_pair(pos, marker_value));
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
   void MeshMarkers<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
   {
     assert(_mesh);
@@ -218,13 +248,13 @@ namespace dolfin
       const std::vector<uint>& marker = _markers[i];
       const uint cell_index   = marker[0];
       const uint local_entity = marker[1];
-      const uint subdomain    = marker[2];
+      const T marker_value    = marker[2];
 
       // Get global entity index
       const uint entity_index = connectivity(cell_index)[local_entity];
 
       // Set boundary indicator for facet
-      mesh_function[entity_index] = subdomain;
+      mesh_function[entity_index] = marker_value;
     }
   }
   //---------------------------------------------------------------------------

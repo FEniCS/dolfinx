@@ -223,6 +223,20 @@ namespace dolfin
     ///         The size.
     void init(const Mesh& mesh, uint dim, uint size);
 
+    /// Set value at given index
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The index.
+    ///     value (T)
+    ///         The value.
+    void set(uint index, T& value);
+
+    /// This is an alias for the set(index, value) function used
+    /// internally by the SubDomain class
+    void set_marker(uint entity_index, T& marker_value)
+    { set(entity_index, marker_value); }
+
     /// Set all values to given value
     ///
     /// *Arguments*
@@ -456,6 +470,14 @@ namespace dolfin
     _size = size;
     delete [] _values;
     _values = new T[size];
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshFunction<T>::set(uint index, T& value)
+  {
+    assert(_values);
+    assert(index < _size);
+    _values[index] = value;
   }
   //---------------------------------------------------------------------------
   template <class T>

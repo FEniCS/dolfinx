@@ -56,7 +56,6 @@ void SubDomain::map(const Array<double>& x, Array<double>&) const
   error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
 }
 //-----------------------------------------------------------------------------
-/// Set sub domain markers (uint) for given subdomain
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
@@ -73,6 +72,26 @@ void SubDomain::mark(MeshFunction<double>& sub_domains, double sub_domain) const
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
+{
+  apply_markers(sub_domains, sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark(MeshMarkers<uint>& sub_domains, uint sub_domain) const
+{
+  apply_markers(sub_domains, sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark(MeshMarkers<int>& sub_domains, int sub_domain) const
+{
+  apply_markers(sub_domains, sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark(MeshMarkers<double>& sub_domains, double sub_domain) const
+{
+  apply_markers(sub_domains, sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark(MeshMarkers<bool>& sub_domains, bool sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
 }
@@ -153,7 +172,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains[*entity] = sub_domain;
+      sub_domains.set_marker(entity->index(), sub_domain);
 
     p++;
   }
