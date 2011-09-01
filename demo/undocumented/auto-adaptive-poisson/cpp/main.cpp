@@ -94,8 +94,5 @@ int main()
   plot(u.coarse(), "Solution on initial mesh");
   plot(u.fine(), "Solution on final mesh");
 
-  // Write a summary
-  summary();
-
   return 0;
 }
