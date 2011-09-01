@@ -135,7 +135,7 @@ namespace dolfin
   private:
 
     // The mesh
-    boost::shared_ptr<Mesh> _mesh;
+    boost::shared_ptr<const Mesh> _mesh;
 
     // The markers
     std::vector<std::pair<std::pair<uint, uint>, T> > _markers;

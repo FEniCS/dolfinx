@@ -62,6 +62,13 @@ namespace dolfin
     /// Get subdomain markers for given dimension (const version)
     const MeshMarkers<uint>& markers(uint dim) const;
 
+    /// Initialize mesh domains for given topological dimension
+    void init(const Mesh& mesh, uint dim);
+
+    /// Initialize mesh domains for given topological dimension
+    /// (shared pointer version)
+    void init(boost::shared_ptr<const Mesh> mesh, uint dim);
+
     /// Clear all data
     void clear();
 
@@ -69,9 +76,6 @@ namespace dolfin
 
     // Initialize mesh functions corresponding to markers
     void init_subdomains();
-
-    // The mesh
-    boost::shared_ptr<Mesh> _mesh;
 
     // Subdomain markers (input/storage)
     std::vector<boost::shared_ptr<MeshMarkers<uint> > > _markers;

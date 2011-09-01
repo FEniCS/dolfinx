@@ -19,7 +19,6 @@
 // Last changed: 2011-09-01
 
 #include <dolfin/log/log.h>
-#include "Mesh.h"
 #include "MeshFunction.h"
 #include "MeshMarkers.h"
 #include "MeshDomains.h"
@@ -58,9 +57,33 @@ const MeshMarkers<unsigned int>& MeshDomains::markers(uint dim) const
   return *_markers[dim];
 }
 //-----------------------------------------------------------------------------
+void MeshDomains::init(const Mesh& mesh, uint dim)
+{
+  init(reference_to_no_delete_pointer(mesh), dim);
+}
+//-----------------------------------------------------------------------------
+void MeshDomains::init(boost::shared_ptr<const Mesh> mesh, uint dim)
+{
+  // Clear old data
+  clear();
+
+  // Add markers for each topological dimension. Notice that to save
+  // space we don't initialize the MeshFunctions here, only the
+  // MeshMarkers which require minimal storage when empty.
+  for (uint i = 0; i <= dim; i++)
+  {
+    boost::shared_ptr<MeshMarkers<uint> > m(new MeshMarkers<uint>(mesh, dim));
+    boost::shared_ptr<MeshFunction<uint> > f(new MeshFunction<uint>());
+
+    _markers.push_back(m);
+    _subdomains.push_back(f);
+  }
+}
+//-----------------------------------------------------------------------------
 void MeshDomains::clear()
 {
   _markers.clear();
+  _subdomains.clear();
 }
 //-----------------------------------------------------------------------------
 void init_subdomains()

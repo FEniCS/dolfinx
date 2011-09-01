@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2011-08-29
+// Last changed: 2011-09-01
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H

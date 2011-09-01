@@ -1,4 +1,4 @@
-"Unit tests for XML input/output of MeshData"
+"Unit tests for XML input/output of MeshMarkers"
 
 # Copyright (C) 2011 Anders Logg
 #
@@ -17,29 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-08-22
-# Last changed: 2011-08-25
+# First added:  2011-09-01
+# Last changed: 2011-09-01
 
 import unittest
 from dolfin import *
 
-class XMLMeshData(unittest.TestCase):
+class XMLMeshMarkers(unittest.TestCase):
 
     def test_io(self):
         "Test input/output"
 
-        # Read mesh with boundary indicators
-        mesh = Mesh()
-        f = File("../../../../data/meshes/aneurysm.xml.gz")
-        f >> mesh
-
-        # Check for generated exterior_facet_domains
-        mf = mesh.data().mesh_function("exterior_facet_domains")
-        self.assertEqual(mf.size(), 59912)
-
-        # Write mesh with boundary indicators
-        g = File("MeshData_test_io.xml")
-        g << mesh
+        # FIXME: Add test here
+        self.assertEqual(0, 0)
 
 if __name__ == "__main__":
     unittest.main()

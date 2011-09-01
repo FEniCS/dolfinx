@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2011-06-30
-// Last changed:
+// Last changed: 2011-09-01
 
-#ifndef __XMLMESHFUNCTION_H
-#define __XMLMESHFUNCTION_H
+#ifndef __XML_MESH_FUNCTION_H
+#define __XML_MESH_FUNCTION_H
 
 #include <iomanip>
 #include <iostream>
