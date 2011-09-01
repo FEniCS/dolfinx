@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-04-07
+// Last changed: 2011-09-01
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
@@ -465,7 +465,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   boost::shared_ptr<MeshFunction<unsigned int> > _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
   assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
-  _refined_bisection_twins->set(refined_bisection_twins);
+  _refined_bisection_twins->set_values(refined_bisection_twins);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint RegularCutRefinement::count_markers(const std::vector<bool>& markers)

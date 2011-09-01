@@ -6,6 +6,7 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshTopology.h>
 #include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -22,6 +23,7 @@
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/DynamicMeshEditor.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshMarkers.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshColoring.h>
 #include <dolfin/mesh/MeshRenumbering.h>
