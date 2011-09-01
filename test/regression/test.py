@@ -141,7 +141,9 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'stokes-mini',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'stokes-mini',                 'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'smoothing',                   'python')]
+   os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
+   os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'submesh',                     'python')]
 
 
 failed = []
