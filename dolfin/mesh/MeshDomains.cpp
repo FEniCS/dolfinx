@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-08-31
+// Last changed: 2011-09-01
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -42,6 +42,20 @@ dolfin::uint MeshDomains::num_marked(uint dim) const
   assert(dim < _markers.size());
   assert(_markers[dim]);
   return _markers[dim]->size();
+}
+//-----------------------------------------------------------------------------
+MeshMarkers<unsigned int>& MeshDomains::markers(uint dim)
+{
+  assert(dim < _markers.size());
+  assert(_markers[dim]);
+  return *_markers[dim];
+}
+//-----------------------------------------------------------------------------
+const MeshMarkers<unsigned int>& MeshDomains::markers(uint dim) const
+{
+  assert(dim < _markers.size());
+  assert(_markers[dim]);
+  return *_markers[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::clear()

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-08-31
+// Last changed: 2011-09-01
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -55,6 +55,12 @@ namespace dolfin
 
     /// Return number of marked entities of given dimension
     uint num_marked(uint dim) const;
+
+    /// Get subdomain markers for given dimension
+    MeshMarkers<uint>& markers(uint dim);
+
+    /// Get subdomain markers for given dimension (const version)
+    const MeshMarkers<uint>& markers(uint dim) const;
 
     /// Clear all data
     void clear();

@@ -56,6 +56,21 @@ void SubDomain::map(const Array<double>& x, Array<double>&) const
   error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
 }
 //-----------------------------------------------------------------------------
+void SubDomain::mark_cells(Mesh& mesh, unsigned int sub_domain) const
+{
+  mark(mesh, mesh.topology().dim(), sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark_facets(Mesh& mesh, unsigned int sub_domain) const
+{
+  mark(mesh, mesh.topology().dim() - 1, sub_domain);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const
+{
+  mark(mesh.domains().markers(dim), sub_domain);
+}
+//-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
