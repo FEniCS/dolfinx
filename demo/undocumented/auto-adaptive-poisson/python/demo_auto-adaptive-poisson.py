@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-08-24
+# Last changed: 2011-09-01
 
 # Begin demo
 
@@ -67,5 +67,3 @@ plot(coarse, title="Solution on initial mesh")
 plot(fine, title="Solution on final mesh")
 interactive()
 
-# Write a summary
-summary()
