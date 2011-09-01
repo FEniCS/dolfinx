@@ -230,12 +230,14 @@ namespace dolfin
     ///         The index.
     ///     value (T)
     ///         The value.
-    void set(uint index, T& value);
+    void set_value(uint index, T& value);
 
-    /// This is an alias for the set(index, value) function used
-    /// internally by the SubDomain class
-    void set_marker(uint entity_index, T& marker_value)
-    { set(entity_index, marker_value); }
+    /// Set values
+    ///
+    /// *Arguments*
+    ///     values (std::vector<T>)
+    ///         The values.
+    void set_values(const std::vector<T>& values);
 
     /// Set all values to given value
     ///
@@ -243,13 +245,6 @@ namespace dolfin
     ///     value (T)
     ///         The value to set all values to.
     void set_all(const T& value);
-
-    /// Set values
-    ///
-    /// *Arguments*
-    ///     values (std::vector<T>)
-    ///         The values.
-    void set(const std::vector<T>& values);
 
     /// Return informal string representation (pretty-print)
     ///
@@ -473,11 +468,20 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshFunction<T>::set(uint index, T& value)
+  void MeshFunction<T>::set_value(uint index, T& value)
   {
     assert(_values);
     assert(index < _size);
     _values[index] = value;
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshFunction<T>::set_values(const std::vector<T>& values)
+  {
+    assert(_values);
+    assert(_size == values.size());
+    for (uint i = 0; i < _size; i++)
+      _values[i] = values[i];
   }
   //---------------------------------------------------------------------------
   template <class T>
@@ -486,15 +490,6 @@ namespace dolfin
     assert(_values);
     for (uint i = 0; i < _size; i++)
       _values[i] = value;
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  void MeshFunction<T>::set(const std::vector<T>& values)
-  {
-    assert(_values);
-    assert(_size == values.size());
-    for (uint i = 0; i < _size; i++)
-      _values[i] = values[i];
   }
   //---------------------------------------------------------------------------
   template <class T>

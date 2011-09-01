@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-08-31
+// Last changed: 2011-09-01
 
 #ifndef __MESH_MARKERS_H
 #define __MESH_MARKERS_H
@@ -112,7 +112,7 @@ namespace dolfin
     ///         Index of the entity.
     ///     marker_value (T).
     ///         The value of the marker.
-    void set_marker(uint entity_index, T& marker_value);
+    void set_value(uint entity_index, T& marker_value);
 
     /// Extract data for corresponding MeshFunction
     ///
@@ -197,7 +197,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::set_marker(uint entity_index, T& marker_value)
+  void MeshMarkers<T>::set_value(uint entity_index, T& marker_value)
   {
     assert(_mesh);
 

@@ -172,7 +172,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains.set_marker(entity->index(), sub_domain);
+      sub_domains.set_value(entity->index(), sub_domain);
 
     p++;
   }
