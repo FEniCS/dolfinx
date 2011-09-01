@@ -154,11 +154,12 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
   // Iterate over data
   for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
   {
-    // Check node is data_entry
+    // Check that node is data_entry
     const std::string node_name = it->name();
     if (node_name != "data_entry")
       error("Expecting XML node called \"data_entry\", but got \"%s\".",
             node_name.c_str());
+
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
@@ -189,11 +190,12 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
       else
         error("Only reading of MeshData uint arrays are supported at present.");
     }
-    else if (data_set_type == "meshfunction")
+    else if (data_set_type == "mesh_function")
     {
       // Get MeshFunction from MeshData
       const std::string data_type = data_set.attribute("type").value();
-      boost::shared_ptr<MeshFunction<unsigned int> > mf = data.mesh_function(data_set_name);
+      boost::shared_ptr<MeshFunction<unsigned int> >
+        mf = data.mesh_function(data_set_name);
       if (!mf)
         mf = data.create_mesh_function(data_set_name);
       assert(mf);
@@ -201,8 +203,15 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
       // Read  MeshFunction
       XMLMeshFunction::read(*mf, data_type, *it);
     }
+    else if (data_set_type == "meshfunction")
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read DOLFIN mesh from XML file",
+                   "The XML tag <meshfunction> has been changed to <mesh_function>");
+    }
     else
-      error("Reading of MeshData \"%s\" not yet supported", data_set_type.c_str());
+      error("Reading of MeshData \"%s\" is not yet supported.",
+            data_set_type.c_str());
   }
 }
 //-----------------------------------------------------------------------------

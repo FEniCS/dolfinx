@@ -59,7 +59,14 @@ namespace dolfin
   {
     not_working_in_parallel("Reading XML MeshFunctions");
 
-    const pugi::xml_node xml_meshfunction = xml_mesh.child("meshfunction");
+    // Check for old tag
+    if (xml_mesh.child("meshfunction"))
+      dolfin_error("XMLMeshFunction.h",
+                   "read DOLFIN MeshFunction from XML file",
+                   "The XML tag <meshfunction> has been changed to <mesh_function>");
+
+    // Read main tag
+    const pugi::xml_node xml_meshfunction = xml_mesh.child("mesh_function");
     if (!xml_meshfunction)
       std::cout << "Not a DOLFIN MeshFunction." << std::endl;
 
@@ -128,7 +135,7 @@ namespace dolfin
       XMLMesh::write(mesh_function.mesh(), xml_node);
 
     // Add mesh function node and attributes
-    pugi::xml_node mf_node = xml_node.append_child("meshfunction");
+    pugi::xml_node mf_node = xml_node.append_child("mesh_function");
     mf_node.append_attribute("type") = type.c_str();
     mf_node.append_attribute("dim") = mesh_function.dim();
     mf_node.append_attribute("size") = mesh_function.size();
