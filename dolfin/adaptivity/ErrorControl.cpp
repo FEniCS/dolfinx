@@ -83,7 +83,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-  const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+  const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
   assert(_a_star);
@@ -116,7 +116,7 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   info("Solving dual problem.");
 
@@ -149,7 +149,7 @@ void ErrorControl::compute_dual(Function& z,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   info("Extrapolating dual solution.");
 
@@ -382,7 +382,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::apply_bcs_to_extrapolation(
-const std::vector<boost::shared_ptr<const BoundaryCondition> >& bcs)
+const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Create boundary conditions for extrapolated dual, and apply
   // these.
