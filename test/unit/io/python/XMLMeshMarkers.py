@@ -37,7 +37,7 @@ class XMLMeshMarkers(unittest.TestCase):
         markers.set_value(13, 21);
 
         # Write to file
-        # FIXME: Not working at the moment
+        # FIXME: Not working at the moment, need to expose MeshMarkers in Python
         #f = File("XMLMeshMarkers_test_io.xml")
         #f << markers
 
