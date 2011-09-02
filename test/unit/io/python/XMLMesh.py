@@ -55,5 +55,59 @@ class XMLMesh(unittest.TestCase):
         g = File("XMLMesh_test_vmtk_io.xml")
         g << mesh
 
+    def test_mesh_domains_io(self):
+        "Test input/output for mesh domains"
+
+        # The same example is used in another unit test
+
+        # Define subdomains for 5 of the 6 faces of the unit cube
+        class F0(SubDomain):
+            def inside(self, x, inside):
+                return near(x[0], 0.0)
+        class F1(SubDomain):
+            def inside(self, x, inside):
+                return near(x[0], 1.0)
+        class F2(SubDomain):
+            def inside(self, x, inside):
+                return near(x[1], 0.0)
+        class F3(SubDomain):
+            def inside(self, x, inside):
+                return near(x[1], 1.0)
+        class F4(SubDomain):
+            def inside(self, x, inside):
+                return near(x[2], 0.0)
+        f0 = F0()
+        f1 = F1()
+        f2 = F2()
+        f3 = F3()
+        f4 = F4()
+
+        # Apply markers to unit cube
+        output_mesh = UnitCube(3, 3, 3)
+        f0.mark_facets(output_mesh, 0)
+        f1.mark_facets(output_mesh, 1)
+        f2.mark_facets(output_mesh, 2)
+        f3.mark_facets(output_mesh, 3)
+        f4.mark_facets(output_mesh, 4)
+
+        # Write to file
+        output_file = File("XMLMesh_test_mesh_domains_io.xml")
+        output_file << output_mesh
+
+        # Read from file
+        input_file = File("XMLMesh_test_mesh_domains_io.xml")
+        input_mesh = Mesh()
+        input_file >> input_mesh
+
+        # Get some data and check that it matches
+        self.assertEqual(input_mesh.domains().markers(0).size(),
+                         output_mesh.domains().markers(0).size());
+        self.assertEqual(input_mesh.domains().markers(1).size(),
+                         output_mesh.domains().markers(1).size());
+        self.assertEqual(input_mesh.domains().markers(2).size(),
+                         output_mesh.domains().markers(2).size());
+        self.assertEqual(input_mesh.domains().markers(3).size(),
+                         output_mesh.domains().markers(3).size());
+
 if __name__ == "__main__":
     unittest.main()
