@@ -98,6 +98,31 @@ namespace dolfin
     ///         The size.
     uint size() const;
 
+    /// Get entity index and value for given marker
+    ///
+    /// *Arguments*
+    ///     i (uint)
+    ///         The number of the marker.
+    ///
+    /// *Returns*
+    ///     ((cell_index, local_entity), marker_value)
+    ///         A pair of (cell_index, local_entity) and the value
+    ///         of the marker at the given local_entity of the cell
+    ///         with index cell_index.
+    const std::pair<std::pair<uint, uint>, T>& get_marker(uint i) const;
+
+    /// Set marker value for given entity defined by a cell index and
+    /// a local entity index
+    ///
+    /// *Arguments*
+    ///     cell_index (uint)
+    ///         The index of the cell.
+    ///     local_entity (uint)
+    ///         The local index of the entity relative to the cell.
+    ///     marker_value (T)
+    ///         The value of the marker.
+    void set_marker(uint cell_index, uint local_entity, const T& marker_value);
+
     /// Set marker value for given entity index
     ///
     /// *Arguments*
@@ -105,7 +130,7 @@ namespace dolfin
     ///         Index of the entity.
     ///     marker_value (T).
     ///         The value of the marker.
-    void set_value(uint entity_index, T& marker_value);
+    void set_value(uint entity_index, const T& marker_value);
 
     /// Extract data for corresponding MeshFunction
     ///
@@ -190,7 +215,23 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::set_value(uint entity_index, T& marker_value)
+  const std::pair<std::pair<uint, uint>, T>& MeshMarkers<T>::get_marker(uint i) const
+  {
+    assert(i < _markers.size());
+    return _markers[i];
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshMarkers<T>::set_marker(uint cell_index,
+                                  uint local_entity,
+                                  const T& marker_value)
+  {
+    std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
+    _markers.push_back(std::make_pair(pos, marker_value));
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshMarkers<T>::set_value(uint entity_index, const T& marker_value)
   {
     assert(_mesh);
 

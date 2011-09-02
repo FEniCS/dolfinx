@@ -61,7 +61,7 @@ class XMLMesMarkers(unittest.TestCase):
         f4.mark_facets(mesh, 4)
 
         # Write to file (used as input for another unit test)
-        f = File("mesh_with_markers.xml")
+        f = File("MeshMarkers_test_subdomain_marking.xml")
         f << mesh
 
         # FIXME: Add test here

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-01
+// Last changed: 2011-09-02
 
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
@@ -34,6 +34,14 @@ MeshDomains::MeshDomains()
 MeshDomains::~MeshDomains()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MeshDomains::dim() const
+{
+  if (_markers.size() == 0)
+    return 0;
+  else
+    return _markers.size() - 1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshDomains::num_marked(uint dim) const
@@ -70,9 +78,9 @@ void MeshDomains::init(boost::shared_ptr<const Mesh> mesh, uint dim)
   // Add markers for each topological dimension. Notice that to save
   // space we don't initialize the MeshFunctions here, only the
   // MeshMarkers which require minimal storage when empty.
-  for (uint i = 0; i <= dim; i++)
+  for (uint d = 0; d <= dim; d++)
   {
-    boost::shared_ptr<MeshMarkers<uint> > m(new MeshMarkers<uint>(mesh, dim));
+    boost::shared_ptr<MeshMarkers<uint> > m(new MeshMarkers<uint>(mesh, d));
     boost::shared_ptr<MeshFunction<uint> > f(new MeshFunction<uint>());
 
     _markers.push_back(m);
