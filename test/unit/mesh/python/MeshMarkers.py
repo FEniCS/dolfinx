@@ -1,5 +1,5 @@
-"""Unit tests for class MeshMarkers. These unit test actually test a
-bit more than that, since they also test marking of meshes and the
+"""Unit tests for the class MeshMarkers. These unit test actually test
+a bit more than that, since they also test marking of meshes and the
 interaction between Mesh - MeshDomains - MeshMarkers"""
 
 # Copyright (C) 2011 Anders Logg
@@ -20,7 +20,7 @@ interaction between Mesh - MeshDomains - MeshMarkers"""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-09-01
-# Last changed: 2011-09-01
+# Last changed: 2011-09-02
 
 import unittest
 from dolfin import *
@@ -60,9 +60,12 @@ class XMLMesMarkers(unittest.TestCase):
         f3.mark_facets(mesh, 3)
         f4.mark_facets(mesh, 4)
 
+        # Write to file (used as input for another unit test)
+        f = File("mesh_with_markers.xml")
+        f << mesh
+
         # FIXME: Add test here
         self.assertEqual(0, 0)
 
 if __name__ == "__main__":
     unittest.main()
-

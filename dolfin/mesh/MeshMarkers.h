@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-01
+// Last changed: 2011-09-02
 
 #ifndef __MESH_MARKERS_H
 #define __MESH_MARKERS_H
@@ -46,13 +46,6 @@ namespace dolfin
 
     /// Create empty mesh markers
     MeshMarkers();
-
-    /// Create empty mesh markers on given mesh
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh markers on.
-    MeshMarkers(const Mesh& mesh);
 
     /// Create empty mesh markers of given dimension on given mesh
     ///

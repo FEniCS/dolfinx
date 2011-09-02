@@ -28,6 +28,11 @@ class XMLMeshMarkers(unittest.TestCase):
     def test_io(self):
         "Test input/output"
 
+        # Create markers and add some data
+        mesh = UnitCube(5, 5, 5)
+        markers = MeshMarkers()
+
+
         # FIXME: Add test here
         self.assertEqual(0, 0)
 
