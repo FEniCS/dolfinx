@@ -30,8 +30,16 @@ class XMLMeshMarkers(unittest.TestCase):
 
         # Create markers and add some data
         mesh = UnitCube(5, 5, 5)
-        markers = MeshMarkers()
+        markers = MeshMarkers(mesh, 2)
+        markers.set_value(1, 1);
+        markers.set_value(2, 3);
+        markers.set_value(5, 8);
+        markers.set_value(13, 21);
 
+        # Write to file
+        # FIXME: Not working at the moment
+        #f = File("XMLMeshMarkers_test_io.xml")
+        #f << markers
 
         # FIXME: Add test here
         self.assertEqual(0, 0)
