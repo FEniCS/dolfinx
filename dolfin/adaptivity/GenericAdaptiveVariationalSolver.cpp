@@ -192,7 +192,7 @@ void GenericAdaptiveVariationalSolver::summary()
   info("");
   info("Parameters used for adaptive solve:");
   info("");
-  info(parameters, true);
+  info(parameters, false);
 
   Table table("Level");
   Table time_table("Level");

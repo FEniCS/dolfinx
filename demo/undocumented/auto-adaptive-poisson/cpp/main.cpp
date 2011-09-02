@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-06-30
+// Last changed: 2011-09-01
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -91,10 +91,8 @@ int main()
   // solver.solve(tol, M);
 
   // Plot final solution
+  plot(u.coarse(), "Solution on initial mesh");
   plot(u.fine(), "Solution on final mesh");
-
-  // Write a summary
-  summary();
 
   return 0;
 }

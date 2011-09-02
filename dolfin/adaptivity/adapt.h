@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-06-22
+// Last changed: 2011-09-01
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -63,9 +63,13 @@ namespace dolfin
 
   //--- Refinement of functions ---
 
-  /// Refine coefficient based on refined mesh
+  /// Refine Function based on refined mesh
   const Function& adapt(const Function& function,
                         boost::shared_ptr<const Mesh> refined_mesh);
+
+  /// Refine GenericFunction based on refined mesh
+  const GenericFunction& adapt(const GenericFunction& function,
+                               boost::shared_ptr<const Mesh> refined_mesh);
 
   /// Refine mesh function<uint> based on mesh
   const MeshFunction<dolfin::uint>& adapt(const MeshFunction<uint>& mesh_function,

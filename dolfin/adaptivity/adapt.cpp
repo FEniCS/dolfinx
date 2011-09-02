@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-07-17
+// Last changed: 2011-09-01
 
 #include <map>
 
@@ -182,6 +182,17 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   set_parent_child(function, refined_function);
 
   return *refined_function;
+}
+//-----------------------------------------------------------------------------
+const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
+                                             boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Try casting to a function
+  const Function* f = dynamic_cast<const Function*>(&function);
+  if (f)
+    return adapt(*f, refined_mesh);
+  else
+    return function;
 }
 //-----------------------------------------------------------------------------
 const dolfin::Form& dolfin::adapt(const Form& form,
@@ -421,26 +432,31 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     V.reset(new SubSpace(S.child(), component));
   }
 
-  // Extract markers
-  const std::vector<std::pair<uint, uint> >& markers = bc.markers();
+  // Get refined value
+  const GenericFunction& g = adapt(*(bc.value()), refined_mesh);
+  boost::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
 
-  // Create refined markers
-  std::vector<std::pair<uint, uint> > refined_markers;
-  adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
-
-  // Extract value
-  const Function* g = dynamic_cast<const Function*>(bc.value().get());
+  // Extract user_sub_domain
+  boost::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
 
   // Create refined boundary condition
   boost::shared_ptr<DirichletBC> refined_bc;
-  if (g != 0)
+  if (user_sub_domain)
   {
-    adapt(*g, refined_mesh);
-    refined_bc.reset(new DirichletBC(V, g->child_shared_ptr(),
-                                     refined_markers));
+    // Use user defined sub domain if defined
+    refined_bc.reset(new DirichletBC(V, g_ptr, user_sub_domain, bc.method()));
   }
   else
-    refined_bc.reset(new DirichletBC(V, bc.value(), refined_markers));
+  {
+    // Extract markers
+    const std::vector<std::pair<uint, uint> >& markers = bc.markers();
+
+    // Create refined markers
+    std::vector<std::pair<uint, uint> > refined_markers;
+    adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
+
+    refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
+  }
 
   // Set parent / child
   set_parent_child(bc, refined_bc);
