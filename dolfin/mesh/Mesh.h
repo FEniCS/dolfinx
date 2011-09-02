@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2011-08-22
+// Last changed: 2011-08-29
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -40,6 +40,7 @@
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
+#include "MeshDomains.h"
 
 namespace dolfin
 {
@@ -236,7 +237,7 @@ namespace dolfin
     ///         No example code available for this function.
     uint size(uint dim) const { return _topology.size(dim); }
 
-    /// Get topology associated with mesh.
+    /// Get mesh topology.
     ///
     /// *Returns*
     ///     _MeshTopology_
@@ -255,6 +256,16 @@ namespace dolfin
 
     /// Get mesh geometry (const version).
     const MeshGeometry& geometry() const { return _geometry; }
+
+    /// Get mesh (sub)domains.
+    ///
+    /// *Returns*
+    ///     _MeshDomains_
+    ///         The (sub)domains associated with the mesh.
+    MeshDomains& domains() { return _domains; }
+
+    /// Get mesh (sub)domains.
+    const MeshDomains& domains() const { return _domains; }
 
     /// Get unique mesh identifier.
     ///
@@ -617,6 +628,9 @@ namespace dolfin
 
     // Mesh geometry
     MeshGeometry _geometry;
+
+    // Mesh domains
+    MeshDomains _domains;
 
     // Auxiliary mesh data
     MeshData _data;

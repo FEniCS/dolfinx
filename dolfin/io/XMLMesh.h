@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-07-15
-// Last changed: 2011-08-22
+// Last changed: 2011-08-29
 
 #ifndef __XMLMESH_H
 #define __XMLMESH_H
@@ -35,6 +35,7 @@ namespace dolfin
 
   class Mesh;
   class MeshData;
+  class MeshDomains;
 
   class XMLMesh
   {
@@ -49,20 +50,33 @@ namespace dolfin
   private:
 
     // Read mesh
-    static void read_mesh(Mesh& mesh, const pugi::xml_node mesh_node);
+    static void read_mesh(Mesh& mesh,
+                          const pugi::xml_node mesh_node);
 
     // Read mesh data
-    static void read_data(MeshData& data, const pugi::xml_node mesh_node);
+    static void read_data(MeshData& data,
+                          const pugi::xml_node mesh_node);
+
+    // Read mesh markers
+    static void read_markers(MeshDomains& domains,
+                             const pugi::xml_node mesh_node);
+
 
     // Read array
     static void read_array_uint(std::vector<unsigned int>& array,
                                 const pugi::xml_node xml_array);
 
     // Write mesh
-    static void write_mesh(const Mesh& mesh, pugi::xml_node mesh_node);
+    static void write_mesh(const Mesh& mesh,
+                           pugi::xml_node mesh_node);
 
     // Write mesh data
-    static void write_data(const MeshData& data, pugi::xml_node mesh_node);
+    static void write_data(const MeshData& data,
+                           pugi::xml_node mesh_node);
+
+    // Write mesh markers
+    static void write_markers(const MeshDomains& domains,
+                              pugi::xml_node mesh_node);
 
   };
 

@@ -59,23 +59,23 @@ namespace dolfin
     ///         The mesh to create mesh function on.
     MeshFunction(const Mesh& mesh);
 
-    /// Create mesh function on given mesh of given dimension
+    /// Create mesh function of given dimension on given mesh
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The mesh entity dimension for the mesh function
+    ///         The mesh entity dimension for the mesh function.
     MeshFunction(const Mesh& mesh, uint dim);
 
-    /// Create mesh function on given mesh of given dimension and initialize
+    /// Create mesh of given dimension on given mesh and initialize
     /// to a value
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     ///     dim (uint)
-    ///         The mesh entity dimension
+    ///         The mesh entity dimension.
     ///     value (T)
     ///         The value.
     MeshFunction(const Mesh& mesh, uint dim, const T& value);
@@ -223,19 +223,28 @@ namespace dolfin
     ///         The size.
     void init(const Mesh& mesh, uint dim, uint size);
 
-    /// Set all values to given value
+    /// Set value at given index
     ///
     /// *Arguments*
+    ///     index (uint)
+    ///         The index.
     ///     value (T)
-    ///         The value to set all values to.
-    void set_all(const T& value);
+    ///         The value.
+    void set_value(uint index, T& value);
 
     /// Set values
     ///
     /// *Arguments*
     ///     values (std::vector<T>)
     ///         The values.
-    void set(const std::vector<T>& values);
+    void set_values(const std::vector<T>& values);
+
+    /// Set all values to given value
+    ///
+    /// *Arguments*
+    ///     value (T)
+    ///         The value to set all values to.
+    void set_all(const T& value);
 
     /// Return informal string representation (pretty-print)
     ///
@@ -459,20 +468,28 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshFunction<T>::set_all(const T& value)
+  void MeshFunction<T>::set_value(uint index, T& value)
   {
     assert(_values);
-    for (uint i = 0; i < _size; i++)
-      _values[i] = value;
+    assert(index < _size);
+    _values[index] = value;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshFunction<T>::set(const std::vector<T>& values)
+  void MeshFunction<T>::set_values(const std::vector<T>& values)
   {
     assert(_values);
     assert(_size == values.size());
     for (uint i = 0; i < _size; i++)
       _values[i] = values[i];
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshFunction<T>::set_all(const T& value)
+  {
+    assert(_values);
+    for (uint i = 0; i < _size; i++)
+      _values[i] = value;
   }
   //---------------------------------------------------------------------------
   template <class T>
@@ -493,7 +510,8 @@ namespace dolfin
       //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
     }
     else
-      s << "<MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
+      s << "<MeshFunction of topological dimension " << dim()
+        << " containing " << size() << " values>";
 
     return s.str();
   }

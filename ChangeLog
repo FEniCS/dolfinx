@@ -1,3 +1,4 @@
+ - Rename XML tag <meshfunction> --> <mesh_function>
  - Rename SubMesh data "global_vertex_indices" --> "parent_vertex_indices"
  - Get XML input/output of boundary markers working again
  - Get FacetArea working again

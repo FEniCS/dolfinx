@@ -157,8 +157,7 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <unsigned int>
     ///         The mesh function with given name
-    boost::shared_ptr<MeshFunction<unsigned int> >
-    mesh_function(const std::string name) const;
+    boost::shared_ptr<MeshFunction<unsigned int> > mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)

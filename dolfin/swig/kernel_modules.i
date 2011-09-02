@@ -109,6 +109,7 @@
 %include "dolfin/mesh/CellType.h"
 %include "dolfin/mesh/MeshTopology.h"
 %include "dolfin/mesh/MeshGeometry.h"
+%include "dolfin/mesh/MeshDomains.h"
 %include "dolfin/mesh/MeshData.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshEntity.h"

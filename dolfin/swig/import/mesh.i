@@ -3,6 +3,7 @@
 %import(module="dolfin.cpp") "dolfin/mesh/CellType.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshTopology.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshGeometry.h"
+%import(module="dolfin.cpp") "dolfin/mesh/MeshDomains.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshData.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Mesh.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEntity.h"
