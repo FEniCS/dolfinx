@@ -44,9 +44,6 @@ namespace dolfin
   {
   public:
 
-    /// Create empty mesh markers
-    MeshMarkers();
-
     /// Create empty mesh markers of given dimension on given mesh
     ///
     /// *Arguments*
@@ -132,6 +129,9 @@ namespace dolfin
     ///         The value of the marker.
     void set_value(uint entity_index, const T& marker_value);
 
+    /// Clear all markers
+    void clear();
+
     /// Extract data for corresponding MeshFunction
     ///
     /// *Arguments*
@@ -165,13 +165,6 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   // Implementation of MeshMarkers
-  //---------------------------------------------------------------------------
-  template <class T>
-  MeshMarkers<T>::MeshMarkers()
-    : Variable("m", "unnamed MeshMarkers"), _dim(0)
-  {
-    // Do nothing
-  }
   //---------------------------------------------------------------------------
   template <class T>
   MeshMarkers<T>::MeshMarkers(const Mesh& mesh, uint dim)
@@ -250,6 +243,12 @@ namespace dolfin
     // Add marker
     std::pair<uint, uint> pos(std::make_pair(cell.index(), local_entity));
     _markers.push_back(std::make_pair(pos, marker_value));
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  void MeshMarkers<T>::clear()
+  {
+    _markers.clear();
   }
   //---------------------------------------------------------------------------
   template <class T>

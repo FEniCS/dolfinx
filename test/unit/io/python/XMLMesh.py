@@ -1,4 +1,4 @@
-"""Unit tests for the XML io library for meshes"""
+"Unit tests for XML input/output of Mesh (class XMLMesh)"
 
 # Copyright (C) 2011 Garth N. Wells
 #
@@ -17,14 +17,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2011-06-17
-# Last changed:
+# Last changed: 2011-09-02
 
 import unittest
 from dolfin import *
 
-class xml_mesh_io(unittest.TestCase):
-    """Test output of Meshes to XML files"""
+class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
         if MPI.num_processes() == 1:
@@ -38,6 +39,21 @@ class xml_mesh_io(unittest.TestCase):
             f = File("unit_cube.xml")
             f << mesh
 
+    def test_vmtk_io(self):
+        "Test input/output for VMTK data"
+
+        # Read mesh with boundary indicators
+        mesh = Mesh()
+        f = File("../../../../data/meshes/aneurysm.xml.gz")
+        f >> mesh
+
+        # Check for generated exterior_facet_domains
+        mf = mesh.data().mesh_function("exterior_facet_domains")
+        self.assertEqual(mf.size(), 59912)
+
+        # Write mesh with boundary indicators
+        g = File("XMLMesh_test_vmtk_io.xml")
+        g << mesh
 
 if __name__ == "__main__":
     unittest.main()

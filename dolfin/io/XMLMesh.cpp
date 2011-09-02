@@ -53,7 +53,7 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Get mesh node
   const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
   if (!mesh_node)
-    error("Not a DOLFIN Mesh file.");
+    error("Not a DOLFIN XML Mesh file.");
 
   // Read mesh
   read_mesh(mesh, mesh_node);
@@ -160,7 +160,6 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     if (node_name != "data_entry")
       error("Expecting XML node called \"data_entry\", but got \"%s\".",
             node_name.c_str());
-
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
@@ -400,9 +399,6 @@ void XMLMesh::write_domains(const MeshDomains& domains,
 
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
-  {
-    cout << "d = " << d << endl;
     XMLMeshMarkers::write(domains.markers(d), "uint", domains_node, false);
-  }
 }
 //-----------------------------------------------------------------------------
