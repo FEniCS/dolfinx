@@ -170,7 +170,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     timer.start();
     adapt_problem(mesh.fine_shared_ptr());
     adapt(M, mesh.fine_shared_ptr());
-    adapt(ec, mesh.fine_shared_ptr());
+    adapt(ec, mesh.fine_shared_ptr(), false);
     datum->add("time_adapt_forms", timer.stop());
     end();
   }
