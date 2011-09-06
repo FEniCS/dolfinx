@@ -77,6 +77,11 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
   _E = e_tmp.function_space_ptr();
 
+  const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
+  _B = bubble.function_space_ptr();
+  _cell_bubble.reset(new Function(_B));
+  _cell_bubble->vector() = 1.0;
+
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space_ptr();
   _cell_cone.reset(new Function(_C));
@@ -223,11 +228,15 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation.");
 
+  // Attach cell bubble to _a_R_T and _L_R_T
+  const uint num_coeffs = _L_R_T->num_coefficients();
+  _a_R_T->set_coefficient(0, _cell_bubble);
+  _L_R_T->set_coefficient(num_coeffs - 1, _cell_bubble);
+
   // Attach primal approximation to left-hand side form (residual) if
-  // necessary
+  // necessary.
   if (_is_linear)
   {
-    const uint num_coeffs = _L_R_T->num_coefficients();
     boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
     _L_R_T->set_coefficient(num_coeffs - 2, _u);
   }

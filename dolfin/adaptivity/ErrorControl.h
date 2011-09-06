@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-09-02
+// Last changed: 2011-09-06
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -177,7 +177,8 @@ namespace dolfin
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
     friend const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                               boost::shared_ptr<const Mesh> refined_mesh);
+                                                     boost::shared_ptr<const Mesh> refined_mesh,
+                                                     bool adapt_coefficients);
 
   private:
 
@@ -206,11 +207,14 @@ namespace dolfin
 
     bool _is_linear;
 
-    // Pointers to other function spaces
+    // Function spaces for extrapolation, cell bubble and cell cone:
     boost::shared_ptr<const FunctionSpace> _E;
+    boost::shared_ptr<const FunctionSpace> _B;
     boost::shared_ptr<const FunctionSpace> _C;
 
-    // Pointers to other functions
+    // Functions for cell bubble, cell cone, computed cell residual,
+    // computed facet residual, and interpolated extrapolated(!) dual:
+    boost::shared_ptr<Function> _cell_bubble;
     boost::shared_ptr<Function> _cell_cone;
     boost::shared_ptr<Function> _R_T;
     boost::shared_ptr<SpecialFacetFunction> _R_dT;
