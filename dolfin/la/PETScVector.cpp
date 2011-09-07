@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells 2005-2010.
 // Modified by Martin Sandve Alnes 2008
 // Modified by Johannes Ring, 2011.
+// Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2004
-// Last changed: 2011-05-11
+// Last changed: 2011-09-07
 
 #ifdef HAS_PETSC
 
@@ -630,9 +631,15 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   VecScatterEnd(scatter,   *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
 
   // Clean up
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
+#else
+  ISDestroy(&from);
+  ISDestroy(&to);
+  VecScatterDestroy(&scatter);
+#endif
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
@@ -663,7 +670,11 @@ void PETScVector::gather_on_zero(Array<double>& x) const
   VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
   VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
 
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   VecScatterDestroy(scatter);
+#else
+  VecScatterDestroy(&scatter);
+#endif
 
   // Wrap PETSc vector
   if (MPI::process_number() == 0)
