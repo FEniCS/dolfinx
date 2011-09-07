@@ -123,7 +123,7 @@ int main()
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   ierr = EPSDestroy(&eps); CHKERRQ(ierr);
 #else
-  ierr = EPSDestroy(eps); CHKERRQ(ierr);
+  ierr = EPSDestroy(&eps); CHKERRQ(ierr);
 #endif
   ierr = SlepcFinalize(); CHKERRQ(ierr);
   return 0;
