@@ -22,6 +22,7 @@
 
 #ifdef HAS_MPI
 #include <mpi.h>
+#include <iostream>
 #endif
 
 #ifdef HAS_PETSC
