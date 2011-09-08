@@ -19,9 +19,10 @@
 // Modified by Andy R. Terrel 2005.
 // Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004
-// Last changed: 2010-08-10
+// Last changed: 2011-09-07
 
 #ifdef HAS_PETSC
 
@@ -112,7 +113,7 @@ void PETScMatrix::resize(uint M, uint N)
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
     #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -174,7 +175,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
 
     // Set some options
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
     #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -211,7 +212,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
            PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
 
     // Set some options
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
     #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -331,7 +332,11 @@ void PETScMatrix::zero(uint m, const uint* rows)
                   reinterpret_cast<const int*>(rows), &is);
   MatZeroRowsIS(*A, is, null);
 #endif
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   ISDestroy(is);
+#else
+  ISDestroy(&is);
+#endif
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
@@ -350,7 +355,11 @@ void PETScMatrix::ident(uint m, const uint* rows)
                   reinterpret_cast<const int*>(rows), &is);
   MatZeroRowsIS(*A, is, one);
 #endif
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   ISDestroy(is);
+#else
+  ISDestroy(&is);
+#endif
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
@@ -451,7 +460,11 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
                         FILE_MODE_WRITE, &view_out);
   MatView(*(A.get()), view_out);
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   PetscViewerDestroy(view_out);
+#else
+  PetscViewerDestroy(&view_out);
+#endif
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
