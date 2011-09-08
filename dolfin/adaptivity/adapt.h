@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-06-22
+// Last changed: 2011-09-06
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -63,13 +63,32 @@ namespace dolfin
 
   //--- Refinement of functions ---
 
-  /// Refine coefficient based on refined mesh
+  /// Adapt Function based on adapted mesh
+  ///
+  /// *Arguments*
+  ///     function  (_Function_)
+  ///         The function that should be adapted
+  ///     refined_mesh  (_Mesh_)
+  ///         The new mesh
+  ///     interpolate (bool)
+  ///         Optional argument, default is true. If false, the
+  ///         function's function space is adapted, but the values are
+  ///         not interpolated.
+  ///
+  /// *Returns*
+  ///     _Function__
+  ///         The adapted function
   const Function& adapt(const Function& function,
-                        boost::shared_ptr<const Mesh> refined_mesh);
+                        boost::shared_ptr<const Mesh> refined_mesh,
+                        bool interpolate=true);
+
+  /// Refine GenericFunction based on refined mesh
+  const GenericFunction& adapt(const GenericFunction& function,
+                               boost::shared_ptr<const Mesh> refined_mesh);
 
   /// Refine mesh function<uint> based on mesh
   const MeshFunction<dolfin::uint>& adapt(const MeshFunction<uint>& mesh_function,
-                                  boost::shared_ptr<const Mesh> refined_mesh);
+                                          boost::shared_ptr<const Mesh> refined_mesh);
 
   //--- Refinement of boundary conditions ---
 
@@ -86,9 +105,24 @@ namespace dolfin
 
   //--- Refinement of forms ---
 
-  /// Refine form based on refined mesh
+  /// Adapt form based on adapted mesh
+  ///
+  /// *Arguments*
+  ///     form  (_Form_)
+  ///         The form that should be adapted
+  ///     refined_mesh  (_Mesh_)
+  ///         The new mesh
+  ///     adapt_coefficients (bool)
+  ///         Optional argument, default is true. If false, the form
+  ///         coefficients are not explictly adapted, but pre-adapted
+  ///         coefficients will be transferred.
+  ///
+  /// *Returns*
+  ///     _Form__
+  ///         The adapted form
   const Form& adapt(const Form& form,
-                    boost::shared_ptr<const Mesh> refined_mesh);
+                    boost::shared_ptr<const Mesh> refined_mesh,
+                    bool adapt_coefficients=true);
 
   //--- Refinement of variational problems ---
 
@@ -100,9 +134,24 @@ namespace dolfin
   const NonlinearVariationalProblem& adapt(const NonlinearVariationalProblem& problem,
                                            boost::shared_ptr<const Mesh> refined_mesh);
 
-  /// Refine error control object based on mesh
+  /// Adapt error control object based on adapted mesh
+  ///
+  /// *Arguments*
+  ///     ec  (_ErrorControl_)
+  ///         The error control object to be adapted
+  ///     refined_mesh  (_Mesh_)
+  ///         The new mesh
+  ///     adapt_coefficients (bool)
+  ///         Optional argument, default is true. If false, any form
+  ///         coefficients are not explictly adapted, but pre-adapted
+  ///         coefficients will be transferred.
+  ///
+  /// *Returns*
+  ///     _ErrorControl__
+  ///         The adapted error control object
   const ErrorControl& adapt(const ErrorControl& ec,
-                            boost::shared_ptr<const Mesh> refined_mesh);
+                            boost::shared_ptr<const Mesh> refined_mesh,
+                            bool adapt_coefficients=true);
 
 
 }

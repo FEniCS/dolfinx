@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-07-17
+// Last changed: 2011-09-06
 
 #include <map>
 
@@ -159,7 +159,8 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Function& dolfin::adapt(const Function& function,
-                                      boost::shared_ptr<const Mesh> refined_mesh)
+                                      boost::shared_ptr<const Mesh> refined_mesh,
+                                      bool interpolate)
 {
   // Skip refinement if already refined
   if (function.has_child())
@@ -176,7 +177,8 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 
   // Create new function on refined space and interpolate
   boost::shared_ptr<Function> refined_function(new Function(refined_space));
-  refined_function->interpolate(function);
+  if (interpolate)
+    refined_function->interpolate(function);
 
   // Set parent / child
   set_parent_child(function, refined_function);
@@ -184,8 +186,20 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   return *refined_function;
 }
 //-----------------------------------------------------------------------------
+const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
+                                             boost::shared_ptr<const Mesh> refined_mesh)
+{
+  // Try casting to a function
+  const Function* f = dynamic_cast<const Function*>(&function);
+  if (f)
+    return adapt(*f, refined_mesh);
+  else
+    return function;
+}
+//-----------------------------------------------------------------------------
 const dolfin::Form& dolfin::adapt(const Form& form,
-                                  boost::shared_ptr<const Mesh> refined_mesh)
+                                  boost::shared_ptr<const Mesh> refined_mesh,
+                                  bool adapt_coefficients)
 {
   // Skip refinement if already refined
   if (form.has_child())
@@ -210,7 +224,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
-  // Refine coefficients
+  // Refine coefficients:
   std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
   for (uint i = 0; i < coefficients.size(); i++)
   {
@@ -218,16 +232,12 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     const Function*
       function = dynamic_cast<const Function*>(coefficients[i].get());
 
-    // If we have a Function, refine
-    if (function != 0)
+    if (function)
     {
-      adapt(*function, refined_mesh);
+      adapt(*function, refined_mesh, adapt_coefficients);
       refined_coefficients.push_back(function->child_shared_ptr());
-      continue;
-    }
-
-    // If not function, just reuse the same coefficient
-    refined_coefficients.push_back(coefficients[i]);
+    } else
+      refined_coefficients.push_back(coefficients[i]);
   }
 
   /// Create new form (constructor used from Python interface)
@@ -421,26 +431,31 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     V.reset(new SubSpace(S.child(), component));
   }
 
-  // Extract markers
-  const std::vector<std::pair<uint, uint> >& markers = bc.markers();
+  // Get refined value
+  const GenericFunction& g = adapt(*(bc.value()), refined_mesh);
+  boost::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
 
-  // Create refined markers
-  std::vector<std::pair<uint, uint> > refined_markers;
-  adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
-
-  // Extract value
-  const Function* g = dynamic_cast<const Function*>(bc.value().get());
+  // Extract user_sub_domain
+  boost::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
 
   // Create refined boundary condition
   boost::shared_ptr<DirichletBC> refined_bc;
-  if (g != 0)
+  if (user_sub_domain)
   {
-    adapt(*g, refined_mesh);
-    refined_bc.reset(new DirichletBC(V, g->child_shared_ptr(),
-                                     refined_markers));
+    // Use user defined sub domain if defined
+    refined_bc.reset(new DirichletBC(V, g_ptr, user_sub_domain, bc.method()));
   }
   else
-    refined_bc.reset(new DirichletBC(V, bc.value(), refined_markers));
+  {
+    // Extract markers
+    const std::vector<std::pair<uint, uint> >& markers = bc.markers();
+
+    // Create refined markers
+    std::vector<std::pair<uint, uint> > refined_markers;
+    adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
+
+    refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
+  }
 
   // Set parent / child
   set_parent_child(bc, refined_bc);
@@ -449,7 +464,8 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 }
 //-----------------------------------------------------------------------------
 const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                          boost::shared_ptr<const Mesh> refined_mesh)
+                                          boost::shared_ptr<const Mesh> refined_mesh,
+                                          bool adapt_coefficients)
 {
   // Skip refinement if already refined
   if (ec.has_child())
@@ -459,14 +475,14 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
   }
 
   // Refine data
-  adapt(*ec._a_star, refined_mesh);
-  adapt(*ec._L_star, refined_mesh);
-  adapt(*ec._residual, refined_mesh);
-  adapt(*ec._a_R_T, refined_mesh);
-  adapt(*ec._L_R_T, refined_mesh);
-  adapt(*ec._a_R_dT, refined_mesh);
-  adapt(*ec._L_R_dT, refined_mesh);
-  adapt(*ec._eta_T, refined_mesh);
+  adapt(*ec._residual, refined_mesh, adapt_coefficients);
+  adapt(*ec._L_star, refined_mesh, adapt_coefficients);
+  adapt(*ec._a_star, refined_mesh, adapt_coefficients);
+  adapt(*ec._a_R_T, refined_mesh, adapt_coefficients);
+  adapt(*ec._L_R_T, refined_mesh, adapt_coefficients);
+  adapt(*ec._a_R_dT, refined_mesh, adapt_coefficients);
+  adapt(*ec._L_R_dT, refined_mesh, adapt_coefficients);
+  adapt(*ec._eta_T, refined_mesh, adapt_coefficients);
 
   // Create refined error control
   boost::shared_ptr<ErrorControl>

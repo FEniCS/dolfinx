@@ -77,6 +77,11 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
   _E = e_tmp.function_space_ptr();
 
+  const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
+  _B = bubble.function_space_ptr();
+  _cell_bubble.reset(new Function(_B));
+  _cell_bubble->vector() = 1.0;
+
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space_ptr();
   _cell_cone.reset(new Function(_C));
@@ -157,37 +162,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
   _Ez_h.reset(new Function(_E));
   _Ez_h->extrapolate(z);
 
-  // Apply homogeneous boundary conditions to extrapolated dual
-  for (uint i = 0; i < bcs.size(); i++)
-  {
-    // Add check here.
-    DirichletBC bc(*dynamic_cast<const DirichletBC*>(bcs[i].get()));
-
-    // Extract SubSpace component
-    const std::vector<uint> component = bc.function_space().component();
-
-    // If bcs[i].function_space is non subspace:
-    if (component.size() == 0)
-    {
-      // Create corresponding boundary condition for extrapolation
-      DirichletBC e_bc(_E, bc.value(), bc.markers());
-      e_bc.homogenize();
-
-      // Apply boundary condition to extrapolation
-      e_bc.apply(_Ez_h->vector());
-      continue;
-    }
-
-    // Create Subspace of _Ez_h
-    boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
-
-    // Create corresponding boundary condition for extrapolation
-    DirichletBC e_bc(S, bc.value(), bc.markers());
-    e_bc.homogenize();
-
-    // Apply boundary condition to extrapolation
-    e_bc.apply(_Ez_h->vector());
-  }
+  // Apply appropriate boundary conditions to extrapolation
+  apply_bcs_to_extrapolation(bcs);
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
@@ -252,11 +228,15 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation.");
 
+  // Attach cell bubble to _a_R_T and _L_R_T
+  const uint num_coeffs = _L_R_T->num_coefficients();
+  _a_R_T->set_coefficient(0, _cell_bubble);
+  _L_R_T->set_coefficient(num_coeffs - 1, _cell_bubble);
+
   // Attach primal approximation to left-hand side form (residual) if
-  // necessary
+  // necessary.
   if (_is_linear)
   {
-    const uint num_coeffs = _L_R_T->num_coefficients();
     boost::shared_ptr<const GenericFunction> _u(&u, NoDeleter());
     _L_R_T->set_coefficient(num_coeffs - 2, _u);
   }
@@ -408,5 +388,51 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     }
   }
   end();
+}
+//-----------------------------------------------------------------------------
+void ErrorControl::apply_bcs_to_extrapolation(
+const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+{
+  // Create boundary conditions for extrapolated dual, and apply
+  // these.
+  for (uint i = 0; i < bcs.size(); i++)
+  {
+    // Only handle DirichletBCs
+    const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
+    assert(bc);
+
+    // Extract SubSpace component
+    const std::vector<uint> component = bc->function_space().component();
+
+    // Extract sub-domain
+    boost::shared_ptr<const SubDomain> sub_domain = bc->user_sub_domain();
+
+    // Create zero-valued boundary condition on extrapolation space.
+    // (Sub-spaces need special handling, and boundary conditions can
+    // be defined and handled in many different ways -- hence the
+    // level of logic.)
+    DirichletBC* e_bc;
+    if (component.size() == 0)
+    {
+      if (sub_domain)
+        e_bc = new DirichletBC(_E, bc->value(), sub_domain, bc->method());
+      else
+        e_bc = new DirichletBC(_E, bc->value(), bc->markers(), bc->method());
+    }
+    else
+    {
+      boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
+      if (sub_domain)
+        e_bc = new DirichletBC(S, bc->value(), sub_domain, bc->method());
+      else
+        e_bc = new DirichletBC(S, bc->value(), bc->markers(), bc->method());
+    }
+    e_bc->homogenize();
+
+    // Apply boundary condition
+    e_bc->apply(_Ez_h->vector());
+
+    delete e_bc;
+  }
 }
 //-----------------------------------------------------------------------------

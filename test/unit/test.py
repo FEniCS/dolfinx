@@ -67,11 +67,9 @@ else:
 if "DISABLE_PARALLEL_TESTING" in os.environ:
     prefixes = [""]
 
-# Run in serial, then in parallel
+failed = []
+# Run tests in serial, then in parallel
 for prefix in prefixes:
-
-    # Run tests
-    failed = []
     for test, subtests in tests.items():
         for subtest in subtests:
             print "Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix)

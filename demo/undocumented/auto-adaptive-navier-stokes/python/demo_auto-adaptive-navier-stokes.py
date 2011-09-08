@@ -98,3 +98,10 @@ solver.solve(tol, M)
 
 # Write a summary
 summary()
+
+# Extract solutions on coarsest and finest mesh:
+(u0, p0) = w.coarse().split()
+(u1, p1) = w.fine().split()
+plot(p0, title="Pressure on initial mesh")
+plot(p1, title="Pressure on final mesh")
+interactive()

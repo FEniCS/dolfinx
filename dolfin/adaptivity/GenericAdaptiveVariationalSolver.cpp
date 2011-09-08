@@ -170,7 +170,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     timer.start();
     adapt_problem(mesh.fine_shared_ptr());
     adapt(M, mesh.fine_shared_ptr());
-    adapt(ec, mesh.fine_shared_ptr());
+    adapt(ec, mesh.fine_shared_ptr(), false);
     datum->add("time_adapt_forms", timer.stop());
     end();
   }
@@ -192,7 +192,7 @@ void GenericAdaptiveVariationalSolver::summary()
   info("");
   info("Parameters used for adaptive solve:");
   info("");
-  info(parameters, true);
+  info(parameters, false);
 
   Table table("Level");
   Table time_table("Level");
