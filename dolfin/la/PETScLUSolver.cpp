@@ -58,8 +58,8 @@ namespace dolfin
   };
 }
 
-// Forward compatibility with petsc-dev
-#if (PETSC_VERSION_RELEASE == 0)
+// Compatibility with petsc 3.2
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
