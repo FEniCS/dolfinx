@@ -288,7 +288,7 @@ double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
   double x_norm = cholmod_l_norm_dense(x, 0, &c);
   double b_norm = cholmod_l_norm_dense(b, 0, &c);
   double A_norm = cholmod_l_norm_sparse(A_chol, 0, &c);
-  double Axb_norm = A_norm*x_norm+b_norm;
+  double Axb_norm = A_norm*x_norm + b_norm;
 
   return r_norm/Axb_norm;
 }
