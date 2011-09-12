@@ -70,7 +70,7 @@ dolfin::uint Form::rank() const
   else
   {
     assert(_ufc_form->rank() == _rank);
-    return rank();
+    return _rank;
   }
 }
 //-----------------------------------------------------------------------------
