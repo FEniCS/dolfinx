@@ -85,7 +85,7 @@ void Assembler::assemble(GenericTensor& A,
 
   // Assemble
   assemble(A, a,
-           cell_domains.get(), facet_domains, facet_domains,
+           cell_domains.get(), facet_domains.get(), facet_domains.get(),
            reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
