@@ -19,7 +19,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2011-03-23
+// Last changed: 2011-09-13
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -28,11 +28,11 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
-#include "Equation.h"
+#include <dolfin/mesh/MeshFunction.h>
 #include "DomainAssigner.h"
+#include "Equation.h"
 
 // Forward declaration
 namespace ufc

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Garth N. Wells
+// Copyright (C) 2007-2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2011-03-23
+// Last changed: 2011-09-12
 
 #include <string>
 #include <boost/scoped_ptr.hpp>

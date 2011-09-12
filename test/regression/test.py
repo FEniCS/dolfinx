@@ -163,10 +163,14 @@ if only_python:
 # Build prefix list
 prefixes = [""]
 mpi_prefix = "mpirun -np 3 "
-if "RUN_REGRESSION_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
+if has_mpi() and has_parmetis():
     prefixes.append(mpi_prefix)
 else:
     print "Not running regression tests in parallel."
+
+# Allow to disable parallel testing
+if "DISABLE_PARALLEL_TESTING" in os.environ:
+    prefixes = [""]
 
 # Run in serial, then in parallel
 for prefix in prefixes:
