@@ -42,7 +42,7 @@ using namespace dolfin;
 Form::Form(uint rank, uint num_coefficients)
   : Hierarchical<Form>(*this),
     dx(*this), ds(*this), dS(*this),
-    _function_spaces(rank), _coefficients(num_coefficients)
+    _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing
 }
@@ -51,8 +51,9 @@ Form::Form(boost::shared_ptr<const ufc::form> ufc_form,
            std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces,
            std::vector<boost::shared_ptr<const GenericFunction> > coefficients)
   : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this),
-    _ufc_form(ufc_form), _function_spaces(function_spaces), _coefficients(coefficients)
+    dx(*this), ds(*this), dS(*this), _ufc_form(ufc_form),
+    _function_spaces(function_spaces), _coefficients(coefficients),
+    _rank(ufc_form->rank())
 {
   // Do nothing
 }
@@ -64,14 +65,24 @@ Form::~Form()
 //-----------------------------------------------------------------------------
 dolfin::uint Form::rank() const
 {
-  assert(_ufc_form);
-  return _ufc_form->rank();
+  if (!_ufc_form)
+    return _rank;
+  else
+  {
+    assert(_ufc_form->rank() == _rank);
+    return rank();
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Form::num_coefficients() const
 {
-  assert(_ufc_form);
-  return _ufc_form->num_coefficients();
+  if (!_ufc_form)
+    return _coefficients.size();
+  else
+  {
+    assert(_ufc_form->num_coefficients() == _coefficients.size());
+    return _coefficients.size();
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
@@ -268,6 +279,8 @@ boost::shared_ptr<const ufc::form> Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
+  assert(_ufc_form);
+
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
   {
@@ -294,23 +307,6 @@ void Form::check() const
       error("Wrong type of function space for argument %d.", i);
     }
   }
-
-  // Unable to check function spaces for coefficients (only works for Functions)
-
-  /*
-  // Check coefficients
-  for (uint i = 0; i < _coefficients.size(); ++i)
-  {
-    if (!_coefficients[i])
-      error("Coefficient %d with name '%s' has not been defined.", i, coefficient_name(i).c_str());
-
-    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(_ufc_form->rank() + i));
-    assert(element.get());
-    if (element->signature() != _coefficients[i]->function_space().element().signature())
-      error("Wrong type of function space for coefficient %d with name '%s', form expects\n%s\nbut we got\n%s\n...",
-        i, coefficient_name(i).c_str(), element->signature(), _coefficients[i]->function_space().element().signature().c_str());
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 Equation Form::operator==(const Form& rhs) const

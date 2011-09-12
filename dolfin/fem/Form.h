@@ -344,6 +344,10 @@ namespace dolfin
     // Markers for interior facet domains
     boost::shared_ptr<const MeshFunction<uint> > _interior_facet_domains;
 
+  private:
+
+    const uint _rank;
+
   };
 
 }
