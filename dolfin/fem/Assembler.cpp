@@ -59,12 +59,14 @@ void Assembler::assemble(GenericTensor& A,
                          bool reset_sparsity,
                          bool add_values)
 {
+  assert(a.ufc_form());
+
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
-  if (a.ufc_form().num_cell_domains() > 0)
+  if (a.ufc_form()->num_cell_domains() > 0)
   {
     cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim(), 1);
     sub_domain.mark(*cell_domains, 0);
@@ -72,8 +74,8 @@ void Assembler::assemble(GenericTensor& A,
 
   // Extract facet domains
   MeshFunction<uint>* facet_domains = 0;
-  if (a.ufc_form().num_exterior_facet_domains() > 0 ||
-      a.ufc_form().num_interior_facet_domains() > 0)
+  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
+      a.ufc_form()->num_interior_facet_domains() > 0)
   {
     facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1);
     sub_domain.mark(*facet_domains, 0);
