@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2011
+//
 // First added:  2005-01-17
-// Last changed: 2011-03-24
+// Last changed: 2011-09-07
 
 #ifndef __PETSC_BASE_MATRIX_H
 #define __PETSC_BASE_MATRIX_H
@@ -41,7 +43,11 @@ namespace dolfin
     void operator() (Mat* A)
     {
       if (*A)
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         MatDestroy(*A);
+        #else
+        MatDestroy(A);
+        #endif
       delete A;
     }
   };
