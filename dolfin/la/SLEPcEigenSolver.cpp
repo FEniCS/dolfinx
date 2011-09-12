@@ -18,9 +18,10 @@
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008-2009.
 // Modified by Marie Rognes, 2009.
+// Modified by Fredrik Valdmanis, 2011.
 //
 // First added:  2005-08-31
-// Last changed: 2011-03-17
+// Last changed: 2011-09-07
 
 #ifdef HAS_SLEPC
 
@@ -105,7 +106,11 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
   if (eps)
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
     EPSDestroy(eps);
+#else
+    EPSDestroy(&eps);
+#endif
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()

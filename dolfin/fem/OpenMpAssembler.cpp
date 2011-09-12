@@ -72,7 +72,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   if (MPI::num_processes() > 1)
     error("OpenMpAssembler has not been tested in combination with MPI.");
 
-  //warning("OpenMpAssembler is experimental.");
+   assert(a.ufc_form());
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -96,10 +96,10 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 
   // FIXME: The below selections should be made robust
 
-  if (a.ufc_form().num_interior_facet_domains() != 0)
+  if (a.ufc_form()->num_interior_facet_domains() != 0)
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
-  if (a.ufc_form().num_exterior_facet_domains() != 0)
+  if (a.ufc_form()->num_exterior_facet_domains() != 0)
     assemble_cells_and_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);

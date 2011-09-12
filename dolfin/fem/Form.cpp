@@ -261,13 +261,7 @@ void Form::set_interior_facet_domains
   _interior_facet_domains = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-const ufc::form& Form::ufc_form() const
-{
-  assert(_ufc_form);
-  return *_ufc_form;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const ufc::form> Form::ufc_form_shared_ptr() const
+boost::shared_ptr<const ufc::form> Form::ufc_form() const
 {
   return _ufc_form;
 }

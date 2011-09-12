@@ -17,9 +17,10 @@
 //
 // Modified by Anders Logg, 2005-2010.
 // Modified by Garth N. Wells, 2005-2010.
+// Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2005-12-02
-// Last changed: 2011-03-28
+// Last changed: 2011-09-07
 
 #ifdef HAS_PETSC
 
@@ -48,7 +49,11 @@ namespace dolfin
     void operator() (KSP* _ksp)
     {
       if (_ksp)
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         KSPDestroy(*_ksp);
+        #else
+        KSPDestroy(_ksp);
+        #endif
       delete _ksp;
     }
   };

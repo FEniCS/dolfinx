@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells, 2009-2010.
 // Modified by Niclas Jansson, 2009.
+// Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2005
-// Last changed: 2011-03-24
+// Last changed: 2011-09-07
 
 #ifdef HAS_PETSC
 
@@ -47,14 +48,18 @@ namespace dolfin
     void operator() (KSP* ksp)
     {
       if (ksp)
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         KSPDestroy(*ksp);
+        #else
+        KSPDestroy(ksp);
+        #endif
       delete ksp;
     }
   };
 }
 
-// Forward compatibility with petsc-dev
-#if (PETSC_VERSION_RELEASE == 0)
+// Compatibility with petsc 3.2
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -288,7 +293,7 @@ void PETScLUSolver::init_solver(std::string& lu_package)
   PCFactorSetMatSolverPackage(pc, solver_package);
 
   // Allow matrices with zero diagonals to be solved
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
   PCFactorSetShiftAmount(pc, PETSC_DECIDE);
   #else

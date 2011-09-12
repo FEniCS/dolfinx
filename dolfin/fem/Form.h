@@ -300,19 +300,12 @@ namespace dolfin
     ///         The interior facet domains.
     void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
 
-    /// Return UFC form
-    ///
-    /// *Returns*
-    ///     ufc::form
-    ///         The UFC form.
-    const ufc::form& ufc_form() const;
-
     /// Return UFC form shared pointer
     ///
     /// *Returns*
     ///     ufc::form
     ///         The UFC form.
-    boost::shared_ptr<const ufc::form> ufc_form_shared_ptr() const;
+    boost::shared_ptr<const ufc::form> ufc_form() const;
 
     /// Check function spaces and coefficients
     void check() const;

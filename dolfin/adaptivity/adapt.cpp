@@ -213,7 +213,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
     spaces = form.function_spaces();
   std::vector<boost::shared_ptr<const GenericFunction> >
     coefficients = form.coefficients();
-  boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form_shared_ptr();
+  boost::shared_ptr<const ufc::form> ufc_form = form.ufc_form();
 
   // Refine function spaces
   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;

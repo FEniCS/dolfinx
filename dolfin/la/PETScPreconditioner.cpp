@@ -97,7 +97,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
 
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, PETSC_DECIDE);
     #else
@@ -132,7 +132,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     #if PETSC_HAVE_ML
     PCSetType(pc, PCML);
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
       PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
       PCFactorSetShiftAmount(pc, PETSC_DECIDE);
       #else
@@ -180,7 +180,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   else if (type != "default")
   {
     PCSetType(pc, methods.find(type)->second);
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
     #else

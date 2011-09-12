@@ -45,6 +45,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void AssemblerTools::check(const Form& a)
 {
+  assert(a.ufc_form());
+
   // Check the form
   a.check();
 
@@ -53,10 +55,10 @@ void AssemblerTools::check(const Form& a)
   const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
-  if (coefficients.size() != a.ufc_form().num_coefficients())
+  if (coefficients.size() != a.num_coefficients())
   {
     error("Incorrect number of coefficients for form: %d given but %d required.",
-          coefficients.size(), a.ufc_form().num_coefficients());
+          coefficients.size(), a.num_coefficients());
   }
 
   // Check that all coefficients have valid value dimensions
@@ -66,7 +68,7 @@ void AssemblerTools::check(const Form& a)
       error("Got NULL Function as coefficient %d.", i);
 
     // auto_ptr deletes its object when it exits its scope
-    boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
+    boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
     // Checks outcommented since they only work for Functions, not Expressions
     const uint r = coefficients[i]->value_rank();
@@ -90,9 +92,9 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
   }
 
   // Check that the cell dimension matches the mesh dimension
-  if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
+  if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
-    boost::scoped_ptr<ufc::finite_element> element(a.ufc_form().create_finite_element(0));
+    boost::scoped_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
     assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
       error("Mesh cell type (intervals) does not match cell type of form.");
@@ -110,6 +112,8 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
                                         bool reset_sparsity, bool add_values)
 {
+  assert(a.ufc_form());
+
   // Check that we should not add values
   if (reset_sparsity && add_values)
     error("Can not add values when the sparsity pattern is reset");
@@ -129,8 +133,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
       // Build sparsity pattern
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
-                                    a.ufc_form().num_cell_domains(),
-                                    a.ufc_form().num_interior_facet_domains());
+                                    a.ufc_form()->num_cell_domains(),
+                                    a.ufc_form()->num_interior_facet_domains());
     }
     t0.stop();
 

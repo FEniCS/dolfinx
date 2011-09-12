@@ -23,6 +23,7 @@
 
 #include <ostream>
 #include <string>
+#include <boost/lexical_cast.hpp>
 #include "dolfin/common/Array.h"
 #include "dolfin/log/log.h"
 #include "pugixml.hpp"
@@ -95,7 +96,9 @@ namespace dolfin
     {
       pugi::xml_node element_node = array_node.append_child("element");
       element_node.append_attribute("index") = i;
-      element_node.append_attribute("value") = x[i];
+      // NOTE: Casting to a string to avoid loss of precision when
+      //       pugixml performs double-to-char conversion
+      element_node.append_attribute("value") = boost::lexical_cast<std::string>(x[i]).c_str();
     }
   }
   //-----------------------------------------------------------------------------

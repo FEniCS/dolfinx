@@ -22,6 +22,8 @@
 // First added:  2007-01-17
 // Last changed: 2011-08-10
 
+#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -59,34 +61,32 @@ void Assembler::assemble(GenericTensor& A,
                          bool reset_sparsity,
                          bool add_values)
 {
+  assert(a.ufc_form());
+
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
   // Extract cell domains
-  MeshFunction<uint>* cell_domains = 0;
-  if (a.ufc_form().num_cell_domains() > 0)
+  boost::scoped_ptr<MeshFunction<uint> > cell_domains;
+  if (a.ufc_form()->num_cell_domains() > 0)
   {
-    cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim(), 1);
+    cell_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim(), 1));
     sub_domain.mark(*cell_domains, 0);
   }
 
   // Extract facet domains
-  MeshFunction<uint>* facet_domains = 0;
-  if (a.ufc_form().num_exterior_facet_domains() > 0 ||
-      a.ufc_form().num_interior_facet_domains() > 0)
+  boost::scoped_ptr<MeshFunction<uint> > facet_domains;
+  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
+      a.ufc_form()->num_interior_facet_domains() > 0)
   {
-    facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1);
+    facet_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1));
     sub_domain.mark(*facet_domains, 0);
   }
 
   // Assemble
   assemble(A, a,
-           cell_domains, facet_domains, facet_domains,
+           cell_domains.get(), facet_domains.get(), facet_domains.get(),
            reset_sparsity, add_values);
-
-  // Delete domains
-  delete cell_domains;
-  delete facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,

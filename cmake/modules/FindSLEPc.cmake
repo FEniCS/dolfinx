@@ -119,8 +119,12 @@ int main()
   ierr = SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
   EPS eps;
   ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
-  ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
+  //ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   ierr = EPSDestroy(eps); CHKERRQ(ierr);
+#else
+  ierr = EPSDestroy(&eps); CHKERRQ(ierr);
+#endif
   ierr = SlepcFinalize(); CHKERRQ(ierr);
   return 0;
 }
