@@ -91,8 +91,6 @@ namespace dolfin
     array_node.append_attribute("type") = type.c_str();
     array_node.append_attribute("size") = size;
 
-    std::cout << std::setprecision(20);
-
     // Add data
     for (uint i = 0; i < size; ++i)
     {
