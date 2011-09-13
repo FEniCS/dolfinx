@@ -31,17 +31,20 @@ class XMLMeshValueCollection(unittest.TestCase):
         # FIXME: Need to expose MeshValueCollection in Python
 
         # Create markers and add some data
-#        mesh = UnitCube(5, 5, 5)
-#        markers = MeshValueCollection(mesh, 2)
-#        markers.set_value(1, 1);
-#        markers.set_value(2, 3);
-#        markers.set_value(5, 8);
-#        markers.set_value(13, 21);
+        mesh = UnitCube(5, 5, 5)
+
+        # FIXME: Init mesh otherwise it crashes
+        mesh.init()
+        markers = MeshValueCollection("uint", mesh, 2)
+        markers.set_value(1, 1);
+        markers.set_value(2, 3);
+        markers.set_value(5, 8);
+        markers.set_value(13, 21);
 
         # Write to file
 
-        #f = File("XMLMeshValueCollection_test_io.xml")
-        #f << markers
+        f = File("XMLMeshValueCollection_test_io.xml")
+        f << markers
 
         # FIXME: Add test here
         self.assertEqual(0, 0)

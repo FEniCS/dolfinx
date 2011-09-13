@@ -227,6 +227,7 @@ namespace dolfin
     const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
 
     // Find the cell
+    // FIXME: Make this an if statement? It crashes if not initialized.
     assert(connectivity.size(entity_index) > 0);
     MeshEntity entity(*_mesh, _dim, entity_index);
     Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
@@ -263,7 +264,7 @@ namespace dolfin
     assert(_mesh);
 
     // Initialize mesh function
-    mesh_function.init(_mesh, _dim);
+    mesh_function.init(*_mesh, _dim);
 
     // Get mesh connectivity D --> d
     const uint D = _mesh->topology().dim();

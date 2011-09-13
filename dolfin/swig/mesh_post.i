@@ -191,7 +191,63 @@ CellFunction = type("CellFunction", (),\
                     {"__new__":_new_closure("CellFunction"),\
                      "__doc__":"Create MeshFunction of topological"\
                      " codimension 0 on given mesh."})
+%}
 
+//-----------------------------------------------------------------------------
+// MeshValueCollection macro
+//-----------------------------------------------------------------------------
+%define DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, TYPE, TYPENAME)
+%shared_ptr(dolfin::MESHVALUECOLLECTION<TYPE>)
+%template(MESHVALUECOLLECTION ## TYPENAME) dolfin::MESHVALUECOLLECTION<TYPE>;
+
+%enddef
+
+//-----------------------------------------------------------------------------
+// Macro for declaring MeshValueCollection
+//-----------------------------------------------------------------------------
+%define DECLARE_MESHVALUECOLLECTIONS(MESHVALUECOLLECTION)
+DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, unsigned int, UInt)
+DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, int, Int)
+DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, double, Double)
+DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, bool, Bool)
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run Macros to declare the different MeshValueCollections
+//-----------------------------------------------------------------------------
+DECLARE_MESHVALUECOLLECTIONS(MeshValueCollection)
+
+// Create docstrings to the MeshValueCollection
+%pythoncode
+%{
+_meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__
+_meshvaluecollection_doc_string += """
+  *Arguments*
+    tp (str)
+      String defining the type of the MeshValueCollection
+      Allowed: 'int', 'uint', 'double', and 'bool'
+    mesh (_Mesh_)
+      A DOLFIN mesh.
+    dim (uint)
+      The topological dimension of the MeshValueCollection.
+"""
+class MeshValueCollection(object):
+    __doc__ = _meshvaluecollection_doc_string
+    def __new__(cls, tp, *args):
+        if not isinstance(tp, str):
+            raise TypeError, "expected a 'str' as first argument"
+        if tp == "int":
+            return MeshValueCollectionInt(*args)
+        if tp == "uint":
+            return MeshValueCollectionUInt(*args)
+        elif tp == "double":
+            return MeshValueCollectionDouble(*args)
+        elif tp == "bool":
+            return MeshValueCollectionBool(*args)
+        else:
+            raise RuntimeError, "Cannot create a MeshValueCollection of type '%s'." % (tp,)
+
+del _meshvaluecollection_doc_string
 %}
 
 //-----------------------------------------------------------------------------
