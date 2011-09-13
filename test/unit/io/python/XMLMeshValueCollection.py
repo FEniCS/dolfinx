@@ -28,8 +28,7 @@ class XMLMeshValueCollection(unittest.TestCase):
     def test_io(self):
         "Test input/output"
 
-        # FIXME: Not working at the moment, need to expose
-        # FIXME: MeshValueCollection in Python
+        # FIXME: Need to expose MeshValueCollection in Python
 
         # Create markers and add some data
 #        mesh = UnitCube(5, 5, 5)
