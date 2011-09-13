@@ -61,14 +61,16 @@ namespace dolfin
 
     // Check for old tag
     if (xml_mesh.child("meshfunction"))
+    {
       dolfin_error("XMLMeshFunction.h",
                    "read DOLFIN MeshFunction from XML file",
                    "The XML tag <meshfunction> has been changed to <mesh_function>");
+    }
 
     // Read main tag
     const pugi::xml_node xml_meshfunction = xml_mesh.child("mesh_function");
     if (!xml_meshfunction)
-      std::cout << "Not a DOLFIN MeshFunction." << std::endl;
+      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
     // Get type and size
     const std::string file_data_type = xml_meshfunction.attribute("type").value();

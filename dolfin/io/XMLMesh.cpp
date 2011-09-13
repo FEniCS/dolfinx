@@ -52,7 +52,7 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Get mesh node
   const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
   if (!mesh_node)
-    error("Not a DOLFIN Mesh file.");
+    error("Not a DOLFIN Mesh XML file.");
 
   // Read mesh
   read_mesh(mesh, mesh_node);
