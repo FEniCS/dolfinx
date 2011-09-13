@@ -21,7 +21,7 @@
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
 
-#include <vector>
+#include <map>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include "MeshEntity.h"
@@ -44,37 +44,37 @@ namespace dolfin
   {
   public:
 
-    /// Create empty mesh markers of given dimension on given mesh
+    /// Create empty mesh value collection of given dimension on given mesh
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to create mesh markers on.
+    ///         The mesh to create mesh value collection on.
     ///     dim (uint)
-    ///         The mesh entity dimension for the mesh markers.
+    ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(const Mesh& mesh, uint dim);
 
-    /// Create empty mesh markers of given dimension on given mesh
+    /// Create empty mesh value collection of given dimension on given mesh
     /// (shared pointer version)
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to create mesh markers on.
+    ///         The mesh to create mesh value collection on.
     ///     dim (uint)
-    ///         The mesh entity dimension for the mesh markers.
+    ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(boost::shared_ptr<const Mesh> mesh, uint dim);
 
     /// Destructor
     ~MeshValueCollection()
     {}
 
-    /// Return mesh associated with mesh markers
+    /// Return mesh associated with mesh value collection
     ///
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
     const Mesh& mesh() const;
 
-    /// Return mesh associated with mesh markers (shared pointer version)
+    /// Return mesh associated with mesh value collection (shared pointer version)
     ///
     /// *Returns*
     ///     _Mesh_
@@ -95,19 +95,6 @@ namespace dolfin
     ///         The size.
     uint size() const;
 
-    /// Get entity index and value for given marker
-    ///
-    /// *Arguments*
-    ///     i (uint)
-    ///         The number of the marker.
-    ///
-    /// *Returns*
-    ///     ((cell_index, local_entity), marker_value)
-    ///         A pair of (cell_index, local_entity) and the value
-    ///         of the marker at the given local_entity of the cell
-    ///         with index cell_index.
-    const std::pair<std::pair<uint, uint>, T>& get_marker(uint i) const;
-
     /// Set marker value for given entity defined by a cell index and
     /// a local entity index
     ///
@@ -118,18 +105,32 @@ namespace dolfin
     ///         The local index of the entity relative to the cell.
     ///     marker_value (T)
     ///         The value of the marker.
-    void set_marker(uint cell_index, uint local_entity, const T& marker_value);
+    void set_value(uint cell_index, uint local_entity, const T& marker_value);
 
-    /// Set marker value for given entity index
+    /// Set value for given entity index
     ///
     /// *Arguments*
     ///     entity_index (uint)
     ///         Index of the entity.
-    ///     marker_value (T).
-    ///         The value of the marker.
-    void set_value(uint entity_index, const T& marker_value);
+    ///     value (T).
+    ///         The value.
+    void set_value(uint entity_index, const T& value);
 
-    /// Clear all markers
+    /// Get all values
+    ///
+    /// *Returns*
+    ///     std::map<std::pair<uint, uint>, T>
+    ///         A map from positions to values.
+    std::map<std::pair<uint, uint>, T>& values();
+
+    /// Get all values (const version)
+    ///
+    /// *Returns*
+    ///     std::map<std::pair<uint, uint>, T>
+    ///         A map from positions to values.
+    const std::map<std::pair<uint, uint>, T>& values() const;
+
+    /// Clear all values
     void clear();
 
     /// Extract data for corresponding MeshFunction
@@ -155,8 +156,8 @@ namespace dolfin
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
 
-    // The markers
-    std::vector<std::pair<std::pair<uint, uint>, T> > _markers;
+    // The values
+    std::map<std::pair<uint, uint>, T> _values;
 
     /// Topological dimension
     uint _dim;
@@ -204,27 +205,20 @@ namespace dolfin
   template <class T>
   uint MeshValueCollection<T>::size() const
   {
-    return _markers.size();
+    return _values.size();
   }
   //---------------------------------------------------------------------------
   template <class T>
-  const std::pair<std::pair<uint, uint>, T>& MeshValueCollection<T>::get_marker(uint i) const
-  {
-    assert(i < _markers.size());
-    return _markers[i];
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  void MeshValueCollection<T>::set_marker(uint cell_index,
-                                  uint local_entity,
-                                  const T& marker_value)
+  void MeshValueCollection<T>::set_value(uint cell_index,
+                                         uint local_entity,
+                                         const T& value)
   {
     std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
-    _markers.push_back(std::make_pair(pos, marker_value));
+    _values[pos] = value;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshValueCollection<T>::set_value(uint entity_index, const T& marker_value)
+  void MeshValueCollection<T>::set_value(uint entity_index, const T& value)
   {
     assert(_mesh);
 
@@ -240,15 +234,27 @@ namespace dolfin
     // Find the local entity index
     const uint local_entity = cell.index(entity);
 
-    // Add marker
+    // Add value
     std::pair<uint, uint> pos(std::make_pair(cell.index(), local_entity));
-    _markers.push_back(std::make_pair(pos, marker_value));
+    _values[pos] = value;
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values()
+  {
+    return _values;
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  const std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values() const
+  {
+    return _values;
   }
   //---------------------------------------------------------------------------
   template <class T>
   void MeshValueCollection<T>::clear()
   {
-    _markers.clear();
+    _values.clear();
   }
   //---------------------------------------------------------------------------
   template <class T>
@@ -263,31 +269,31 @@ namespace dolfin
     const uint D = _mesh->topology().dim();
     const MeshConnectivity& connectivity = _mesh->topology()(D, _dim);
 
-    // Get maximum value of marker. Note that this requires that the
-    // type T can be intialized to zero, supports std::max and can
-    // be incremented by 1.
+    // Get maximum value. Note that this requires that the type T can
+    // be intialized to zero, supports std::max and can be incremented
+    // by 1.
     T maxval = T(0);
-    for (uint i = 0; i < _markers.size(); i++)
-      maxval = std::max(maxval, _markers[i][2]);
+    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
+    for (it = _values.begin(); it != _values.end(); ++it)
+      maxval = std::max(maxval, it->second);
 
     // Set all value of mesh function to maximum value (not all will
     // be set) by markers below
-    mesh_function.set_all(maxval);
+    mesh_function.set_all(maxval + 1);
 
-    // Iterate over all markers
-    for (uint i = 0; i < _markers.size(); i++)
+    // Iterate over all values
+    for (it = _values.begin(); it != _values.end(); ++it)
     {
       // Get marker data
-      const std::vector<uint>& marker = _markers[i];
-      const uint cell_index   = marker[0];
-      const uint local_entity = marker[1];
-      const T marker_value    = marker[2];
+      const uint cell_index   = it->first.first;
+      const uint local_entity = it->first.second;
+      const T value    = it->second;
 
       // Get global entity index
       const uint entity_index = connectivity(cell_index)[local_entity];
 
       // Set boundary indicator for facet
-      mesh_function[entity_index] = marker_value;
+      mesh_function[entity_index] = value;
     }
   }
   //---------------------------------------------------------------------------

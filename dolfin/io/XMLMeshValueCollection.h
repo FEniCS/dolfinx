@@ -134,7 +134,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<class T>
-  void XMLMeshValueCollection::write(const MeshValueCollection<T>& mesh_markers,
+  void XMLMeshValueCollection::write(const MeshValueCollection<T>& mesh_value_collection,
                              const std::string type,
                              pugi::xml_node xml_node,
                              bool write_mesh)
@@ -143,22 +143,23 @@ namespace dolfin
 
     // Write mesh if requested
     if (write_mesh)
-      XMLMesh::write(mesh_markers.mesh(), xml_node);
+      XMLMesh::write(mesh_value_collection.mesh(), xml_node);
 
     // Add mesh function node and attributes
-    pugi::xml_node mf_node = xml_node.append_child("mesh_markers");
+    pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");
     mf_node.append_attribute("type") = type.c_str();
-    mf_node.append_attribute("dim") = mesh_markers.dim();
-    mf_node.append_attribute("size") = mesh_markers.size();
+    mf_node.append_attribute("dim") = mesh_value_collection.dim();
+    mf_node.append_attribute("size") = mesh_value_collection.size();
 
     // Add data
-    for (uint i = 0; i < mesh_markers.size(); ++i)
+    const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
+    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
+    for (it = values.begin(); it != values.end(); ++it)
     {
-      pugi::xml_node entity_node = mf_node.append_child("marker");
-      const std::pair<std::pair<uint, uint>, T>& marker = mesh_markers.get_marker(i);
-      entity_node.append_attribute("cell_index") = marker.first.first;
-      entity_node.append_attribute("local_entity") = marker.first.second;
-      entity_node.append_attribute("marker_value") = marker.second;
+      pugi::xml_node entity_node = mf_node.append_child("value");
+      entity_node.append_attribute("cell_index") = it->first.first;
+      entity_node.append_attribute("local_entity") = it->first.second;
+      entity_node.append_attribute("marker_value") = it->second;
     }
   }
   //---------------------------------------------------------------------------
