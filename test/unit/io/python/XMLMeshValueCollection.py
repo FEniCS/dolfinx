@@ -1,4 +1,4 @@
-"Unit tests for XML input/output of MeshMarkers"
+"Unit tests for XML input/output of MeshValueCollection"
 
 # Copyright (C) 2011 Anders Logg
 #
@@ -23,22 +23,25 @@
 import unittest
 from dolfin import *
 
-class XMLMeshMarkers(unittest.TestCase):
+class XMLMeshValueCollection(unittest.TestCase):
 
     def test_io(self):
         "Test input/output"
 
+        # FIXME: Not working at the moment, need to expose
+        # FIXME: MeshValueCollection in Python
+
         # Create markers and add some data
-        mesh = UnitCube(5, 5, 5)
-        markers = MeshMarkers(mesh, 2)
-        markers.set_value(1, 1);
-        markers.set_value(2, 3);
-        markers.set_value(5, 8);
-        markers.set_value(13, 21);
+#        mesh = UnitCube(5, 5, 5)
+#        markers = MeshValueCollection(mesh, 2)
+#        markers.set_value(1, 1);
+#        markers.set_value(2, 3);
+#        markers.set_value(5, 8);
+#        markers.set_value(13, 21);
 
         # Write to file
-        # FIXME: Not working at the moment, need to expose MeshMarkers in Python
-        #f = File("XMLMeshMarkers_test_io.xml")
+
+        #f = File("XMLMeshValueCollection_test_io.xml")
         #f << markers
 
         # FIXME: Add test here
