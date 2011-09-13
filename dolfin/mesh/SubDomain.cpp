@@ -29,7 +29,7 @@
 #include "ParallelData.h"
 #include "Vertex.h"
 #include "MeshFunction.h"
-#include "MeshMarkers.h"
+#include "MeshValueCollection.h"
 #include "SubDomain.h"
 
 using namespace dolfin;
@@ -91,22 +91,26 @@ void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
   apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshMarkers<uint>& sub_domains, uint sub_domain) const
+void SubDomain::mark(MeshValueCollection<uint>& sub_domains,
+                     uint sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshMarkers<int>& sub_domains, int sub_domain) const
+void SubDomain::mark(MeshValueCollection<int>& sub_domains,
+                     int sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshMarkers<double>& sub_domains, double sub_domain) const
+void SubDomain::mark(MeshValueCollection<double>& sub_domains,
+                     double sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshMarkers<bool>& sub_domains, bool sub_domain) const
+void SubDomain::mark(MeshValueCollection<bool>& sub_domains,
+                     bool sub_domain) const
 {
   apply_markers(sub_domains, sub_domain);
 }

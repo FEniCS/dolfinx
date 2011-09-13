@@ -16,31 +16,31 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-09-02
+// Last changed: 2011-09-13
 
 #ifndef __XML_MESH_MARKERS_H
 #define __XML_MESH_MARKERS_H
 
 #include "pugixml.hpp"
-#include <dolfin/mesh/MeshMarkers.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include "XMLMesh.h"
 
 namespace dolfin
 {
 
-  class XMLMeshMarkers
+  class XMLMeshValueCollection
   {
   public:
 
     // Read mesh markers from XML file
     template <class T>
-    static void read(MeshMarkers<T>& mesh_markers,
+    static void read(MeshValueCollection<T>& mesh_markers,
                      const std::string type,
                      const pugi::xml_node xml_node);
 
     /// Write mesh markers to XML file
     template<class T>
-    static void write(const MeshMarkers<T>& mesh_markers,
+    static void write(const MeshValueCollection<T>& mesh_markers,
                       const std::string type,
                       pugi::xml_node xml_node,
                       bool write_mesh=true);
@@ -49,16 +49,16 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   template <class T>
-  inline void XMLMeshMarkers::read(MeshMarkers<T>& mesh_markers,
+  inline void XMLMeshValueCollection::read(MeshValueCollection<T>& mesh_markers,
                                    const std::string type,
                                    const pugi::xml_node xml_node)
   {
-    not_working_in_parallel("Reading XML MeshMarkers");
+    not_working_in_parallel("Reading XML MeshValueCollection");
 
     // Get mesh markers node
     const pugi::xml_node markers_node = xml_node.child("mesh_markers");
     if (!markers_node)
-      error("Not a DOLFIN XML MeshMarkers file.");
+      error("Not a DOLFIN XML MeshValueCollection file.");
 
     // Get attributes
     const std::string type_file = markers_node.attribute("type").value();
@@ -67,14 +67,14 @@ namespace dolfin
 
     // Check that types match
     if (type != type_file)
-      dolfin_error("XMLMeshMarkers.h",
+      dolfin_error("XMLMeshValueCollection.h",
                    "Read mesh markers from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
 
     // Check that dimension matches
     if (mesh_markers.dim() != dim)
-      dolfin_error("XMLMeshMarkers.h",
+      dolfin_error("XMLMeshValueCollection.h",
                    "Read mesh markers from XML file",
                    "Dimension mismatch, found %d but expecting %d",
                    dim, mesh_markers.dim());
@@ -134,12 +134,12 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<class T>
-  void XMLMeshMarkers::write(const MeshMarkers<T>& mesh_markers,
+  void XMLMeshValueCollection::write(const MeshValueCollection<T>& mesh_markers,
                              const std::string type,
                              pugi::xml_node xml_node,
                              bool write_mesh)
   {
-    not_working_in_parallel("Writing XML MeshMarkers");
+    not_working_in_parallel("Writing XML MeshValueCollection");
 
     // Write mesh if requested
     if (write_mesh)

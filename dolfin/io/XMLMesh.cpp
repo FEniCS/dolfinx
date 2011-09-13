@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2011-09-01
+// Last changed: 2011-09-13
 
 #include <map>
 #include <iomanip>
@@ -42,7 +42,7 @@
 #include "dolfin/mesh/Vertex.h"
 #include "dolfin/mesh/MeshFunction.h"
 #include "XMLMeshFunction.h"
-#include "XMLMeshMarkers.h"
+#include "XMLMeshValueCollection.h"
 #include "XMLMesh.h"
 
 using namespace dolfin;
@@ -399,6 +399,6 @@ void XMLMesh::write_domains(const MeshDomains& domains,
 
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
-    XMLMeshMarkers::write(domains.markers(d), "uint", domains_node, false);
+    XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node, false);
 }
 //-----------------------------------------------------------------------------

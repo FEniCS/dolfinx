@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-02
+// Last changed: 2011-09-13
 
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
-#include "MeshMarkers.h"
+#include "MeshValueCollection.h"
 #include "MeshDomains.h"
 
 using namespace dolfin;
@@ -51,14 +51,14 @@ dolfin::uint MeshDomains::num_marked(uint dim) const
   return _markers[dim]->size();
 }
 //-----------------------------------------------------------------------------
-MeshMarkers<unsigned int>& MeshDomains::markers(uint dim)
+MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim)
 {
   assert(dim < _markers.size());
   assert(_markers[dim]);
   return *_markers[dim];
 }
 //-----------------------------------------------------------------------------
-const MeshMarkers<unsigned int>& MeshDomains::markers(uint dim) const
+const MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim) const
 {
   assert(dim < _markers.size());
   assert(_markers[dim]);
@@ -77,10 +77,10 @@ void MeshDomains::init(boost::shared_ptr<const Mesh> mesh, uint dim)
 
   // Add markers for each topological dimension. Notice that to save
   // space we don't initialize the MeshFunctions here, only the
-  // MeshMarkers which require minimal storage when empty.
+  // MeshValueCollection which require minimal storage when empty.
   for (uint d = 0; d <= dim; d++)
   {
-    boost::shared_ptr<MeshMarkers<uint> > m(new MeshMarkers<uint>(mesh, d));
+    boost::shared_ptr<MeshValueCollection<uint> > m(new MeshValueCollection<uint>(mesh, d));
     boost::shared_ptr<MeshFunction<uint> > f(new MeshFunction<uint>());
 
     _markers.push_back(m);
@@ -96,7 +96,7 @@ void MeshDomains::clear()
 //-----------------------------------------------------------------------------
 void init_subdomains()
 {
-  // FIXME: initialize and call function in MeshMarkers
+  // FIXME: initialize and call function in MeshValueCollection
 
 }
 //-----------------------------------------------------------------------------

@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-02
+// Last changed: 2011-09-13
 
-#ifndef __MESH_MARKERS_H
-#define __MESH_MARKERS_H
+#ifndef __MESH_VALUE_COLLECTION_H
+#define __MESH_VALUE_COLLECTION_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -31,16 +31,16 @@
 namespace dolfin
 {
 
-  /// The MeshMarkers class can be used to store data associated with
-  /// a subset of the entities of a mesh of a given topological
-  /// dimension. It differs from the MeshFunction class in two ways.
-  /// First, data does not need to be associated with all entities
-  /// (only a subset). Second, data is associated with entities
-  /// through the corresponding cell index and local entity number
-  /// (relative to the cell), not by global entity index, which means
-  /// that data may be stored robustly to file.
+  /// The MeshValueCollection class can be used to store data
+  /// associated with a subset of the entities of a mesh of a given
+  /// topological dimension. It differs from the MeshFunction class in
+  /// two ways. First, data does not need to be associated with all
+  /// entities (only a subset). Second, data is associated with
+  /// entities through the corresponding cell index and local entity
+  /// number (relative to the cell), not by global entity index, which
+  /// means that data may be stored robustly to file.
 
-  template <class T> class MeshMarkers : public Variable
+  template <class T> class MeshValueCollection : public Variable
   {
   public:
 
@@ -51,7 +51,7 @@ namespace dolfin
     ///         The mesh to create mesh markers on.
     ///     dim (uint)
     ///         The mesh entity dimension for the mesh markers.
-    MeshMarkers(const Mesh& mesh, uint dim);
+    MeshValueCollection(const Mesh& mesh, uint dim);
 
     /// Create empty mesh markers of given dimension on given mesh
     /// (shared pointer version)
@@ -61,10 +61,10 @@ namespace dolfin
     ///         The mesh to create mesh markers on.
     ///     dim (uint)
     ///         The mesh entity dimension for the mesh markers.
-    MeshMarkers(boost::shared_ptr<const Mesh> mesh, uint dim);
+    MeshValueCollection(boost::shared_ptr<const Mesh> mesh, uint dim);
 
     /// Destructor
-    ~MeshMarkers()
+    ~MeshValueCollection()
     {}
 
     /// Return mesh associated with mesh markers
@@ -164,58 +164,58 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
-  // Implementation of MeshMarkers
+  // Implementation of MeshValueCollection
   //---------------------------------------------------------------------------
   template <class T>
-  MeshMarkers<T>::MeshMarkers(const Mesh& mesh, uint dim)
-    : Variable("m", "unnamed MeshMarkers"),
+  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh, uint dim)
+    : Variable("m", "unnamed MeshValueCollection"),
       _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class T>
-  MeshMarkers<T>::MeshMarkers(boost::shared_ptr<const Mesh> mesh, uint dim)
-    : Variable("m", "unnamed MeshMarkers"),
+  MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh> mesh, uint dim)
+    : Variable("m", "unnamed MeshValueCollection"),
       _mesh(mesh), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class T>
-  const Mesh& MeshMarkers<T>::mesh() const
+  const Mesh& MeshValueCollection<T>::mesh() const
   {
     assert(_mesh);
     return *_mesh;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  boost::shared_ptr<const Mesh> MeshMarkers<T>::mesh_ptr() const
+  boost::shared_ptr<const Mesh> MeshValueCollection<T>::mesh_ptr() const
   {
     return _mesh;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  uint MeshMarkers<T>::dim() const
+  uint MeshValueCollection<T>::dim() const
   {
     return _dim;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  uint MeshMarkers<T>::size() const
+  uint MeshValueCollection<T>::size() const
   {
     return _markers.size();
   }
   //---------------------------------------------------------------------------
   template <class T>
-  const std::pair<std::pair<uint, uint>, T>& MeshMarkers<T>::get_marker(uint i) const
+  const std::pair<std::pair<uint, uint>, T>& MeshValueCollection<T>::get_marker(uint i) const
   {
     assert(i < _markers.size());
     return _markers[i];
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::set_marker(uint cell_index,
+  void MeshValueCollection<T>::set_marker(uint cell_index,
                                   uint local_entity,
                                   const T& marker_value)
   {
@@ -224,7 +224,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::set_value(uint entity_index, const T& marker_value)
+  void MeshValueCollection<T>::set_value(uint entity_index, const T& marker_value)
   {
     assert(_mesh);
 
@@ -246,13 +246,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::clear()
+  void MeshValueCollection<T>::clear()
   {
     _markers.clear();
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshMarkers<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
+  void MeshValueCollection<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
   {
     assert(_mesh);
 
@@ -292,17 +292,17 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  std::string MeshMarkers<T>::str(bool verbose) const
+  std::string MeshValueCollection<T>::str(bool verbose) const
   {
     std::stringstream s;
 
     if (verbose)
     {
       s << str(false) << std::endl << std::endl;
-      warning("Verbose output of MeshMarkers must be implemented manually.");
+      warning("Verbose output of MeshValueCollection must be implemented manually.");
     }
     else
-      s << "<MeshMarkers of topological dimension " << dim()
+      s << "<MeshValueCollection of topological dimension " << dim()
         << " containing " << size() << " values>";
 
     return s.str();

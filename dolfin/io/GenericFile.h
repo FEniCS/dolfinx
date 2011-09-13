@@ -39,7 +39,7 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
   template <class T> class MeshFunction;
-  template <class T> class MeshMarkers;
+  template <class T> class MeshValueCollection;
   class Parameters;
 
   class GenericFile
@@ -61,10 +61,10 @@ namespace dolfin
     virtual void operator>> (MeshFunction<unsigned int>& mesh_function);
     virtual void operator>> (MeshFunction<double>& mesh_function);
     virtual void operator>> (MeshFunction<bool>& mesh_function);
-    virtual void operator>> (MeshMarkers<int>& mesh_markers);
-    virtual void operator>> (MeshMarkers<unsigned int>& mesh_markers);
-    virtual void operator>> (MeshMarkers<double>& mesh_markers);
-    virtual void operator>> (MeshMarkers<bool>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<int>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<unsigned int>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<double>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<bool>& mesh_markers);
     virtual void operator>> (Parameters& parameters);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
@@ -86,10 +86,10 @@ namespace dolfin
     virtual void operator<< (const MeshFunction<unsigned int>& mesh_function);
     virtual void operator<< (const MeshFunction<double>& mesh_function);
     virtual void operator<< (const MeshFunction<bool>& mesh_function);
-    virtual void operator<< (const MeshMarkers<int>& mesh_markers);
-    virtual void operator<< (const MeshMarkers<unsigned int>& mesh_markers);
-    virtual void operator<< (const MeshMarkers<double>& mesh_markers);
-    virtual void operator<< (const MeshMarkers<bool>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<int>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<unsigned int>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<double>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<bool>& mesh_markers);
     virtual void operator<< (const Function& u);
 
     // Output function with time
