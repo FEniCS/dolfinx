@@ -91,7 +91,8 @@ std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
 
   // Get mesh from first function space
   assert(_function_spaces[0]);
-  const Mesh& mesh = _function_spaces[0]->mesh();
+  assert(_function_spaces[0]->mesh());
+  const Mesh& mesh = *_function_spaces[0]->mesh();
   const uint cell_dim = mesh.topology().dim();
 
   std::vector<uint> _coloring;
@@ -127,16 +128,19 @@ const Mesh& Form::mesh() const
   // by calling set_mesh().
 
   // Extract meshes from function spaces
-  std::vector<const Mesh*> meshes;
+  std::vector<boost::shared_ptr<const Mesh> > meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
   {
     if (_function_spaces[i])
-      meshes.push_back(&_function_spaces[i]->mesh());
+    {
+      assert(_function_spaces[i]->mesh());
+      meshes.push_back(_function_spaces[i]->mesh());
+    }
   }
 
   // Add common mesh if any
   if (_mesh)
-    meshes.push_back(&*_mesh);
+    meshes.push_back(_mesh);
 
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
@@ -146,8 +150,8 @@ const Mesh& Form::mesh() const
     for (uint i = 0; i < _coefficients.size(); i++)
     {
       const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
-      if (function)
-        meshes.push_back(&function->function_space().mesh());
+      if (function && function->function_space().mesh())
+        meshes.push_back(function->function_space().mesh());
     }
   }
 

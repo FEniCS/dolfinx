@@ -53,7 +53,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                                 bool binary, bool compress)
 {
   // For brevity
-  const Mesh& mesh = u.function_space().mesh();
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
   const GenericDofMap& dofmap = u.function_space().dofmap();
   const uint num_cells = mesh.num_cells();
 

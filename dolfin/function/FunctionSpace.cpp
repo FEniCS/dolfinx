@@ -91,10 +91,9 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Mesh& FunctionSpace::mesh() const
+boost::shared_ptr<const Mesh> FunctionSpace::mesh() const
 {
-  assert(_mesh);
-  return *_mesh;
+  return _mesh;
 }
 //-----------------------------------------------------------------------------
 const FiniteElement& FunctionSpace::element() const
@@ -215,6 +214,8 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 boost::shared_ptr<FunctionSpace>
 FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
 {
+  assert(_mesh);
+
   if (_component.size() == 0)
     error("Can only collapse function spaces that a sub-spaces.");
 
@@ -249,6 +250,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
+  assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     const uint n = _dofmap->cell_dimension(cell->index());

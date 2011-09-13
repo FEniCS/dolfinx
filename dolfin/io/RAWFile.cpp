@@ -85,7 +85,8 @@ void RAWFile::ResultsWrite(const Function& u) const
 
   // For brevity
   const FunctionSpace& V = u.function_space();
-  const Mesh& mesh(V.mesh());
+  assert(V.mesh());
+  const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap(V.dofmap());
 
   // Get rank of Function
