@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2003-07-15
-// Last changed: 2011-08-29
+// Last changed: 2011-09-02
 
-#ifndef __XMLMESH_H
-#define __XMLMESH_H
+#ifndef __XML_MESH_H
+#define __XML_MESH_H
 
 #include <ostream>
 #include <string>
@@ -41,10 +43,10 @@ namespace dolfin
   {
   public:
 
-    /// Read XML vector
+    /// Read mesh from XML
     static void read(Mesh& mesh, const pugi::xml_node mesh_node);
 
-    /// Write the XML file
+    /// Write mesh to XML
     static void write(const Mesh& mesh, pugi::xml_node mesh_node);
 
   private:
@@ -57,10 +59,9 @@ namespace dolfin
     static void read_data(MeshData& data,
                           const pugi::xml_node mesh_node);
 
-    // Read mesh markers
-    static void read_markers(MeshDomains& domains,
+    // Read mesh domains
+    static void read_domains(MeshDomains& domains,
                              const pugi::xml_node mesh_node);
-
 
     // Read array
     static void read_array_uint(std::vector<unsigned int>& array,
@@ -75,7 +76,7 @@ namespace dolfin
                            pugi::xml_node mesh_node);
 
     // Write mesh markers
-    static void write_markers(const MeshDomains& domains,
+    static void write_domains(const MeshDomains& domains,
                               pugi::xml_node mesh_node);
 
   };

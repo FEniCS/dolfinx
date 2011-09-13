@@ -1,6 +1,6 @@
-"""Unit tests for the XML io library for meshes"""
+"Unit tests for XML input/output of MeshValueCollection"
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,27 +17,34 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-06-17
-# Last changed:
+# First added:  2011-09-01
+# Last changed: 2011-09-01
 
 import unittest
 from dolfin import *
 
-class xml_mesh_io(unittest.TestCase):
-    """Test output of Meshes to XML files"""
+class XMLMeshValueCollection(unittest.TestCase):
 
-    def test_save_plain_mesh2D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitSquare(8, 8)
-            f = File("unit_square.xml")
-            f << mesh
+    def test_io(self):
+        "Test input/output"
 
-    def test_save_plain_mesh3D(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitCube(8, 8, 8)
-            f = File("unit_cube.xml")
-            f << mesh
+        # FIXME: Need to expose MeshValueCollection in Python
 
+        # Create markers and add some data
+#        mesh = UnitCube(5, 5, 5)
+#        markers = MeshValueCollection(mesh, 2)
+#        markers.set_value(1, 1);
+#        markers.set_value(2, 3);
+#        markers.set_value(5, 8);
+#        markers.set_value(13, 21);
+
+        # Write to file
+
+        #f = File("XMLMeshValueCollection_test_io.xml")
+        #f << markers
+
+        # FIXME: Add test here
+        self.assertEqual(0, 0)
 
 if __name__ == "__main__":
     unittest.main()

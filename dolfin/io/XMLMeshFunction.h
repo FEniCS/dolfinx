@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2011-06-30
-// Last changed:
+// Last changed: 2011-09-01
 
-#ifndef __XMLMESHFUNCTION_H
-#define __XMLMESHFUNCTION_H
+#ifndef __XML_MESH_FUNCTION_H
+#define __XML_MESH_FUNCTION_H
 
 #include <iomanip>
 #include <iostream>
@@ -48,7 +50,6 @@ namespace dolfin
                       const std::string type, pugi::xml_node xml_node,
                       bool write_mesh=true);
 
-
   };
 
   //---------------------------------------------------------------------------
@@ -60,15 +61,18 @@ namespace dolfin
     not_working_in_parallel("Reading XML MeshFunctions");
 
     // Check for old tag
+    std::string tag_name("mesh_function");
     if (xml_mesh.child("meshfunction"))
     {
-      dolfin_error("XMLMeshFunction.h",
-                   "read DOLFIN MeshFunction from XML file",
-                   "The XML tag <meshfunction> has been changed to <mesh_function>");
+      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+              "I'll be nice and read your XML data anyway, for now, but you will "
+              "need to update your XML files (a simple search and replace) to use "
+              "future versions of DOLFIN.");
+      tag_name = "meshfunction";
     }
 
     // Read main tag
-    const pugi::xml_node xml_meshfunction = xml_mesh.child("mesh_function");
+    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
     if (!xml_meshfunction)
       std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
