@@ -509,15 +509,18 @@ void DirichletBC::check() const
   check_equal(g->value_rank(), _function_space->element().value_rank(),
               "create boundary condition", "value rank");
   for (uint i = 0; i < g->value_rank(); i++)
+  {
     check_equal(g->value_dimension(i), _function_space->element().value_dimension(i),
                 "create boundary condition", "value dimension");
+  }
 
   // Check that boundary condition method is known
   if (methods.count(_method) == 0)
     error("Unable to create boundary condition, unknown method specified.");
 
   // Check that the mesh is ordered
-  if (!_function_space->mesh().ordered())
+  assert(_function_space->mesh());
+  if (!_function_space->mesh()->ordered())
     error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
@@ -530,13 +533,16 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Create mesh function for sub domain markers on facets
-  const uint dim = _function_space->mesh().topology().dim();
-  _function_space->mesh().init(dim - 1);
-  MeshFunction<uint> sub_domains(_function_space->mesh(), dim - 1);
+  const uint dim = mesh.topology().dim();
+  _function_space->mesh()->init(dim - 1);
+  MeshFunction<uint> sub_domains(mesh, dim - 1);
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = _function_space->mesh().geometry().dim();
+  sub_domain->_geometric_dimension = mesh.geometry().dim();
 
   // Mark everything as sub domain 1
   sub_domains = 1;
@@ -553,19 +559,22 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
 {
   assert(facets.size() == 0);
 
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Make sure we have the facet - cell connectivity
-  const uint dim = _function_space->mesh().topology().dim();
-  _function_space->mesh().init(dim - 1, dim);
+  const uint dim = mesh.topology().dim();
+  mesh.init(dim - 1, dim);
 
   // Build set of boundary facets
-  for (FacetIterator facet(_function_space->mesh()); !facet.end(); ++facet)
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Skip facets not on this boundary
     if (sub_domains[*facet] != sub_domain)
       continue;
 
     // Get cell to which facet belongs (there may be two, but pick first)
-    const Cell cell(_function_space->mesh(), facet->entities(dim)[0]);
+    const Cell cell(mesh, facet->entities(dim)[0]);
 
     // Get local index of facet with respect to the cell
     const uint facet_number = cell.index(*facet);
@@ -585,9 +594,10 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // or it won't do anything good (since the markers are wrong anyway).
   // In conclusion: we don't need to order the mesh here.
 
-  // Extract data for boundary indicators
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
+  // Extract data for boundary indicators
   boost::shared_ptr<const std::vector<uint> >
     boundary_indicators = mesh.data().array("boundary_indicators");
   boost::shared_ptr<const std::vector<uint> >
@@ -664,7 +674,8 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Create UFC cell object
@@ -717,7 +728,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   }
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Initialize facets, needed for geometric search
@@ -787,7 +799,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   assert(_user_sub_domain);
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Geometric dim

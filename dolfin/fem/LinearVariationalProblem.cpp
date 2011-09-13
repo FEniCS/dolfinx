@@ -137,25 +137,31 @@ void LinearVariationalProblem::check_forms() const
   // Check rank of bilinear form a
   assert(_a);
   if (_a->rank() != 2)
+  {
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) == L(v) for all v",
                  "Expecting the left-hand side to be a bilinear form (not rank %d)",
                  _a->rank());
+  }
 
   // Check rank of linear form L
   assert(_L);
   if (_L->rank() != 1)
+  {
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
                  "Expecting the right-hand side to be a linear form (not rank %d)",
                  _L->rank());
+  }
 
   // Check that function space of solution variable matches trial space
   assert(_a);
   assert(_u);
   if (!_u->in(*_a->function_space(1)))
+  {
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
                  "Expecting the solution variable u to be a member of the trial space");
+  }
 }
 //-----------------------------------------------------------------------------

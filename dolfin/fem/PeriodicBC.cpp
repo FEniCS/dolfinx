@@ -254,7 +254,8 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   assert(function_space.element().num_sub_elements() == 0);
 
   // Get mesh and dofmap
-  const Mesh& mesh = function_space.mesh();
+  assert(function_space.mesh());
+  const Mesh& mesh = *function_space.mesh();
   const GenericDofMap& dofmap = function_space.dofmap();
 
   // Get dimensions

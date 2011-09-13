@@ -133,7 +133,8 @@ void VTKFile::operator<<(const std::pair<const Function*, double> u)
 //----------------------------------------------------------------------------
 void VTKFile::write(const Function& u, double time)
 {
-  const Mesh& mesh = u.function_space().mesh();
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
 
   // Get vtu file name and intialise
   std::string vtu_filename = init(mesh, mesh.topology().dim());
@@ -212,7 +213,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   }
 
   // Test for cell-based element type
-  const Mesh& mesh(u.function_space().mesh());
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
@@ -486,8 +488,9 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   // Test for cell-based element type
   std::string data_type = "point";
   uint cell_based_dim = 1;
+  assert(u.function_space().mesh());
   for (uint i = 0; i < rank; i++)
-    cell_based_dim *= u.function_space().mesh().topology().dim();
+    cell_based_dim *= u.function_space().mesh()->topology().dim();
   if (u.function_space().dofmap().max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 

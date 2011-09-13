@@ -82,7 +82,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    FunctionSpace(boost::shared_ptr<const Mesh> mesh);
+    explicit FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
 
@@ -122,7 +122,7 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    const Mesh& mesh() const;
+    boost::shared_ptr<const Mesh> mesh() const;
 
     /// Return finite element
     ///

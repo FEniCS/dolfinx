@@ -111,11 +111,13 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
 {
+  assert(space.mesh());
+
   // Refine mesh
-  adapt(space.mesh());
+  adapt(*space.mesh());
 
   // Refine space
-  adapt(space, space.mesh().child_shared_ptr());
+  adapt(space, space.mesh()->child_shared_ptr());
 
   return space.child();
 }
@@ -123,11 +125,13 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
                                            const MeshFunction<bool>& cell_markers)
 {
+  assert(space.mesh());
+
   // Refine mesh
-  adapt(space.mesh(), cell_markers);
+  adapt(*space.mesh(), cell_markers);
 
   // Refine space
-  adapt(space, space.mesh().child_shared_ptr());
+  adapt(space, space.mesh()->child_shared_ptr());
 
   return space.child();
 }
@@ -405,9 +409,11 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 }
 //-----------------------------------------------------------------------------
 const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                         boost::shared_ptr<const Mesh> refined_mesh,
-                                         const FunctionSpace& S)
+                                    boost::shared_ptr<const Mesh> refined_mesh,
+                                    const FunctionSpace& S)
 {
+  assert(refined_mesh);
+
   // Skip refinement if already refined
   if (bc.has_child())
   {
@@ -416,7 +422,9 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   }
 
   boost::shared_ptr<const FunctionSpace> W = bc.function_space_ptr();
+  assert(W);
   boost::shared_ptr<const FunctionSpace> V;
+
 
   // Refine function space
   const std::vector<uint> component = W->component();
@@ -451,8 +459,9 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     const std::vector<std::pair<uint, uint> >& markers = bc.markers();
 
     // Create refined markers
+    assert(W->mesh());
     std::vector<std::pair<uint, uint> > refined_markers;
-    adapt_markers(refined_markers, *refined_mesh, markers, W->mesh());
+    adapt_markers(refined_markers, *refined_mesh, markers, *W->mesh());
 
     refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
   }
@@ -464,9 +473,11 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 }
 //-----------------------------------------------------------------------------
 const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                          boost::shared_ptr<const Mesh> refined_mesh,
-                                          bool adapt_coefficients)
+                                    boost::shared_ptr<const Mesh> refined_mesh,
+                                    bool adapt_coefficients)
 {
+  assert(refined_mesh);
+
   // Skip refinement if already refined
   if (ec.has_child())
   {

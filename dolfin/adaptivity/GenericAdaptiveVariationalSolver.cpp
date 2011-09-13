@@ -101,7 +101,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     // Extract views to primal trial space and mesh
     assert(u);
     const FunctionSpace& V = u->function_space();
-    const Mesh& mesh = V.mesh();
+    assert(V.mesh());
+    const Mesh& mesh = *V.mesh();
 
     // Evaluate goal functional
     info("Evaluating goal functional.");
@@ -123,7 +124,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     datum->add("num_dofs", num_dofs);
     datum->add("error_estimate", error_estimate);
     datum->add("functional_value", functional_value);
-    //info(*datum, true);
 
     // Stop if error estimate is less than tolerance
     if (std::abs(error_estimate) < tol)

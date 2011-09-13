@@ -247,7 +247,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Extract common space, mesh and dofmap
   const FunctionSpace& V(R_T.function_space());
-  const Mesh& mesh(V.mesh());
+  assert(V.mesh());
+  const Mesh& mesh(*V.mesh());
   const GenericDofMap& dofmap = V.dofmap();
 
   // Define matrices for cell-residual problems
@@ -296,7 +297,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const uint N = V.element().space_dimension();
 
   // Extract mesh
-  const Mesh& mesh(V.mesh());
+  assert(V.mesh());
+  const Mesh& mesh = *V.mesh();
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})

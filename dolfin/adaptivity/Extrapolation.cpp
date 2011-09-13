@@ -53,13 +53,14 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   //     w.function_space().element().signature().c_str());
 
   // Check that the meshes are the same
-  if (&w.function_space().mesh() != &v.function_space().mesh())
+  if (w.function_space().mesh() != v.function_space().mesh())
     error("Extrapolation must be computed on the same mesh.");
 
   // Extract mesh and function spaces
-  const FunctionSpace& V(v.function_space());
-  const FunctionSpace& W(w.function_space());
-  const Mesh& mesh(V.mesh());
+  const FunctionSpace& V = v.function_space();
+  const FunctionSpace& W = w.function_space();
+  assert(V.mesh());
+  const Mesh& mesh = *V.mesh();
 
   // Initialize cell-cell connectivity
   const uint D = mesh.topology().dim();
@@ -107,7 +108,10 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   if (num_sub_spaces > 0)
   {
     for (uint k = 0; k < num_sub_spaces; k++)
-      compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0, c0, dofs, offset);
+    {
+      compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0, c0,
+                           dofs, offset);
+    }
     return;
   }
 
@@ -124,7 +128,8 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
 
   // Add equations on cell and neighboring cells
   add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v, cell2dof2row[cell0.index()]);
-  UFCCell c1(V.mesh());
+  assert(V.mesh());
+  UFCCell c1(*V.mesh());
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
     if (cell2dof2row[cell1->index()].size() == 0)
@@ -153,7 +158,8 @@ void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
 {
   // Counter for matrix row index
   uint row = 0;
-  UFCCell c1(V.mesh());
+  assert(V.mesh());
+  UFCCell c1(*V.mesh());
 
   // Compute unique dofs on center cell
   cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, c0, V, row, unique_dofs);

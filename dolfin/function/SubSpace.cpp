@@ -27,8 +27,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, uint component)
-  : FunctionSpace(reference_to_no_delete_pointer(V.mesh()), 
-                  reference_to_no_delete_pointer(V.element()), 
+  : FunctionSpace(V.mesh(),
+                  reference_to_no_delete_pointer(V.element()),
                   reference_to_no_delete_pointer(V.dofmap()))
 {
   // Create array
@@ -41,8 +41,8 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component)
 }
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
-  : FunctionSpace(reference_to_no_delete_pointer(V.mesh()), 
-                  reference_to_no_delete_pointer(V.element()), 
+  : FunctionSpace(V.mesh(),
+                  reference_to_no_delete_pointer(V.element()),
                   reference_to_no_delete_pointer(V.dofmap()))
 {
   // Create array
@@ -56,8 +56,8 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
 }
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, const std::vector<uint>& component)
-  : FunctionSpace(reference_to_no_delete_pointer(V.mesh()), 
-                  reference_to_no_delete_pointer(V.element()), 
+  : FunctionSpace(V.mesh(),
+                  reference_to_no_delete_pointer(V.element()),
                   reference_to_no_delete_pointer(V.dofmap()))
 {
   // Extract subspace and assign

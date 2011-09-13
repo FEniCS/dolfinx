@@ -82,7 +82,8 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
 void dolfin::plot(const Function& v,
                   std::string title, std::string mode)
 {
-  FunctionPlotData w(v, v.function_space().mesh());
+  assert(v.function_space().mesh());
+  FunctionPlotData w(v, *v.function_space().mesh());
   plot_object(w, title, mode);
 }
 //-----------------------------------------------------------------------------
