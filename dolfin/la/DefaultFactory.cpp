@@ -21,6 +21,7 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 #include "EpetraFactory.h"
 #include "MTL4Factory.h"
 #include "STLFactory.h"
@@ -80,6 +81,14 @@ LinearAlgebraFactory& DefaultFactory::factory() const
     return PETScFactory::instance();
 #else
     error("PETSc linear algebra backend is not available.");
+#endif
+  }
+  else if (backend == "PETScCusp")
+  {
+#ifdef PETSC_HAVE_CUSP
+    return PETScCuspFactory::instance();
+#else
+    error("PETSc-Cusp linear algebra backend is not available.");
 #endif
   }
   else if (backend == "Epetra")

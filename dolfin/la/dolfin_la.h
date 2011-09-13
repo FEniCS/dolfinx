@@ -22,6 +22,7 @@
 #include <dolfin/la/uBLASMatrix.h>
 #include <dolfin/la/uBLASKrylovMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScCuspMatrix.h>
 #include <dolfin/la/PETScKrylovMatrix.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/EpetraLUSolver.h>
@@ -39,6 +40,7 @@
 #include <dolfin/la/STLMatrix.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/PETScCuspVector.h>
 #include <dolfin/la/MTL4Vector.h>
 
 #include <dolfin/la/SparsityPattern.h>
@@ -48,6 +50,7 @@
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
+#include <dolfin/la/PETScCuspFactory.h>
 #include <dolfin/la/EpetraFactory.h>
 #include <dolfin/la/MTL4Factory.h>
 #include <dolfin/la/STLFactory.h>
