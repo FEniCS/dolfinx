@@ -59,6 +59,9 @@ namespace dolfin
     /// Return number of marked entities of given dimension
     uint num_marked(uint dim) const;
 
+    /// Check whether domain data is empty
+    bool is_empty() const;
+
     /// Get subdomain markers for given dimension
     MeshValueCollection<uint>& markers(uint dim);
 

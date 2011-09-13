@@ -390,7 +390,7 @@ void XMLMesh::write_domains(const MeshDomains& domains,
                             pugi::xml_node mesh_node)
 {
   // Check if there is any data to write
-  if (domains.dim() == 0)
+  if (domains.is_empty())
     return;
 
   // Add mesh domains node

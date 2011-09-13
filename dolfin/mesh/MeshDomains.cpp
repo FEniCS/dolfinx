@@ -51,6 +51,17 @@ dolfin::uint MeshDomains::num_marked(uint dim) const
   return _markers[dim]->size();
 }
 //-----------------------------------------------------------------------------
+bool MeshDomains::is_empty() const
+{
+  uint size = 0;
+  for (uint i = 0; i < _markers.size(); i++)
+  {
+    assert(_markers[i]);
+    size += _markers[i]->size();
+  }
+  return size == 0;
+}
+//-----------------------------------------------------------------------------
 MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim)
 {
   assert(dim < _markers.size());
