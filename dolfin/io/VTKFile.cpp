@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2005-2006.
-// Modified by Kristian Oelgaard 2006.
-// Modified by Martin Alnes 2008.
-// Modified by Niclas Jansson 2009.
+// Modified by Anders Logg 2005-2011
+// Modified by Kristian Oelgaard 2006
+// Modified by Martin Alnes 2008
+// Modified by Niclas Jansson 2009
 //
 // First added:  2005-07-05
-// Last changed: 2011-03-17
+// Last changed: 2011-09-14
 
 #include <ostream>
 #include <sstream>
@@ -49,8 +49,8 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
-               : GenericFile(filename), encoding(encoding), binary(false),
-                 compress(false)
+  : GenericFile(filename, "VTK"),
+    encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
     error("Requested VTK file encoding '%s' is unknown. Options are 'ascii', \n 'base64' or 'compressed'.");

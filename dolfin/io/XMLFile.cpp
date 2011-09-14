@@ -53,12 +53,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
+XMLFile::XMLFile(const std::string filename)
+  : GenericFile(filename, "XML")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(std::ostream& s) : GenericFile(""), outstream(&s, NoDeleter())
+XMLFile::XMLFile(std::ostream& s)
+  : GenericFile("", "XML"), outstream(&s, NoDeleter())
 {
   // Do nothing
 }

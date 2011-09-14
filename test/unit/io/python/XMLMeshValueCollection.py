@@ -39,9 +39,10 @@ class XMLMeshValueCollection(unittest.TestCase):
         markers.set_value(13, 21);
 
         # Write to file
-
         f = File("XMLMeshValueCollection_test_io.xml")
         f << markers
+
+        #
 
         # FIXME: Add test here
         self.assertEqual(0, 0)

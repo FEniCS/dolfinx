@@ -100,17 +100,15 @@ class XMLMesh(unittest.TestCase):
         input_mesh = Mesh()
         input_file >> input_mesh
 
-        # FIXME: Need to expose MeshValueCollection in Python
-
         # Get some data and check that it matches
-        #self.assertEqual(input_mesh.domains().markers(0).size(),
-        #                 output_mesh.domains().markers(0).size());
-        #self.assertEqual(input_mesh.domains().markers(1).size(),
-        #                 output_mesh.domains().markers(1).size());
-        #self.assertEqual(input_mesh.domains().markers(2).size(),
-        #                 output_mesh.domains().markers(2).size());
-        #self.assertEqual(input_mesh.domains().markers(3).size(),
-        #                 output_mesh.domains().markers(3).size());
+        self.assertEqual(input_mesh.domains().markers(0).size(),
+                         output_mesh.domains().markers(0).size());
+        self.assertEqual(input_mesh.domains().markers(1).size(),
+                         output_mesh.domains().markers(1).size());
+        self.assertEqual(input_mesh.domains().markers(2).size(),
+                         output_mesh.domains().markers(2).size());
+        self.assertEqual(input_mesh.domains().markers(3).size(),
+                         output_mesh.domains().markers(3).size());
 
 if __name__ == "__main__":
     unittest.main()
