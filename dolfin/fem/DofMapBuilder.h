@@ -27,6 +27,11 @@
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>
 
+namespace ufc
+{
+  class dofmap;
+}
+
 namespace dolfin
 {
 
@@ -68,9 +73,25 @@ namespace dolfin
                                   const DofMap& dofmap,
                                   const Mesh& mesh);
 
-    static void parallel_renumber(const set& owned_dofs, const set& shared_owned_dofs,
+    static void parallel_renumber(const set& owned_dofs, 
+                                  const set& shared_owned_dofs,
                                   const set& shared_unowned_dofs,
                                   DofMap& dofmap, const Mesh& mesh);
+    public:
+
+    /// Compute set of global dofs (e.g. Reals associated with global
+    /// Lagrnage multipliers) based on UFC numbering. Global dofs
+    /// are not associated with any mesh entity
+    static std::set<uint> compute_global_dofs(const DofMap& dofmap, 
+                                              const Mesh& dolfin_mesh);
+
+    private:
+
+    // Iterate recursively over all sub-dof maps to find global
+    // degrees of freedom
+    static void compute_global_dofs(std::set<uint>& global_dofs, uint& offset,
+                            boost::shared_ptr<const ufc::dofmap> dofmap, 
+                            const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 
 
   };
