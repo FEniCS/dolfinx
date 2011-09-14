@@ -32,9 +32,6 @@ class XMLMeshValueCollection(unittest.TestCase):
 
         # Create markers and add some data
         mesh = UnitCube(5, 5, 5)
-
-        # FIXME: Init mesh otherwise it crashes
-        mesh.init()
         markers = MeshValueCollection("uint", mesh, 2)
         markers.set_value(1, 1);
         markers.set_value(2, 3);
