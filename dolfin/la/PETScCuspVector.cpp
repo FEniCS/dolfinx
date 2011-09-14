@@ -732,7 +732,7 @@ void PETScCuspVector::reset()
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScCuspVector::factory() const
 {
-  return PETScFactory::instance();
+  return PETScCuspFactory::instance();
 }
 //-----------------------------------------------------------------------------
 #endif

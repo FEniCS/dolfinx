@@ -489,7 +489,7 @@ std::string PETScCuspMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScCuspMatrix::factory() const
 {
-  return PETScFactory::instance();
+  return PETScCuspFactory::instance();
 }
 //-----------------------------------------------------------------------------
 
