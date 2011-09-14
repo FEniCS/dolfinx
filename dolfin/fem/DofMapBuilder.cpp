@@ -21,6 +21,7 @@
 // First added:  2008-08-12
 // Last changed: 2011-03-17
 
+#include <ufc.h>
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -309,3 +310,82 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
+std::set<dolfin::uint> DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
+                                                       const Mesh& dolfin_mesh)
+{
+  cout << "DofMap global dimension: " << dofmap.global_dimension() << endl;
+
+  // Wrap UFC dof map
+  boost::shared_ptr<const ufc::dofmap> _dofmap(dofmap._ufc_dofmap.get(), 
+                                               NoDeleter());
+
+  // Create UFCMesh
+  const UFCMesh ufc_mesh(dolfin_mesh);
+
+  // Compute global dof indices
+  uint offset = 0;
+  std::set<uint> global_dof_indices;
+  compute_global_dofs(global_dof_indices, offset, _dofmap, dolfin_mesh, ufc_mesh);
+
+  return global_dof_indices;
+}
+//-----------------------------------------------------------------------------
+void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs, 
+                            uint& offset,
+                            boost::shared_ptr<const ufc::dofmap> dofmap,
+                            const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
+{
+  assert(dofmap);
+  const uint D = dolfin_mesh.topology().dim();  
+
+  if (dofmap->num_sub_dofmaps() == 0)
+  {
+    // Check if dofmap is for global dofs
+    bool global_dof = true;
+    for (uint d = 0; d <= D; ++d)
+    {
+      if (dofmap->needs_mesh_entities(d))
+      {
+        global_dof = false;
+        break;
+      }
+    }
+
+    if (global_dof)
+    {
+      //cout << "Global dim: " << dofmap->global_dimension() << endl; 
+
+      // Check that we have just one dof
+      if (dofmap->global_dimension() != 1)
+        error("Global dof has dimension != 1.");
+
+      boost::scoped_ptr<ufc::mesh> ufc_mesh(new ufc::mesh);
+      boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
+      uint dof = 0;
+      dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
+
+      // Insert global dof index
+      global_dofs.insert(dof + offset);
+      cout << "Local dof index:  " << dof << endl;
+      cout << "Global dof index: " << dof + offset << endl;
+    }
+  }
+  else
+  {
+    for (uint i = 0; i < dofmap->num_sub_dofmaps(); ++i)
+    {
+      // Extract sub-dofmap and intialise
+      boost::shared_ptr<ufc::dofmap> sub_dofmap(dofmap->create_sub_dofmap(i));
+      DofMap::init_ufc_dofmap(*sub_dofmap, ufc_mesh, dolfin_mesh);
+
+      compute_global_dofs(global_dofs, offset, sub_dofmap, dolfin_mesh, 
+                          ufc_mesh);
+
+      // Get offset
+      //cout << "Offset: " << sub_dofmap->global_dimension() << endl;
+      offset += sub_dofmap->global_dimension();
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+
