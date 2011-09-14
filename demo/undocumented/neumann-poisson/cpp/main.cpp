@@ -44,7 +44,6 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include <dolfin/fem/DofMapBuilder.h>
 
 using namespace dolfin;
 
@@ -77,9 +76,6 @@ int main()
   UnitSquare mesh(64, 64);
   Poisson::FunctionSpace V(mesh);
 
-  const DofMap& dofmap = dynamic_cast<const DofMap&>(V.dofmap());
-  DofMapBuilder::compute_global_dofs(dofmap, mesh);
-
   // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
@@ -96,7 +92,7 @@ int main()
   solver.solve();
 
   // Plot solution
-  //plot(u);
+  plot(u);
 
   return 0;
 }
