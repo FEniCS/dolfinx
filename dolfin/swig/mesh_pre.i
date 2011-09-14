@@ -40,15 +40,15 @@
 					  self->geometry().dim(),
 					  self->coordinates(), true);
     }
-    
+
     PyObject* cells() {
       int n = 4;
-      
+
       if(self->topology().dim() == 1)
 	n = 2;
       else if(self->topology().dim() == 2)
 	n = 3;
-      
+
       return %make_numpy_array(2, uint)(self->num_cells(),
 					n, self->cells(), false);
     }
@@ -177,3 +177,9 @@ namespace dolfin {
     dolfin::Hierarchical<dolfin::MeshFunction<bool> >;
 %template (HierarchicalMeshFunctionDouble) \
     dolfin::Hierarchical<dolfin::MeshFunction<double> >;
+
+//-----------------------------------------------------------------------------
+// Use shared_ptr version of MeshDomains::marker()
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshDomains::markers;
+%rename(markers) dolfin::MeshDomains::markers_shared_ptr;
