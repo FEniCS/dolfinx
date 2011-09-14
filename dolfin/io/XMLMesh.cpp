@@ -155,10 +155,10 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
   // Iterate over data
   for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
   {
-    // Check that node is data_entry
+    // Check that node is <data_entry>
     const std::string node_name = it->name();
     if (node_name != "data_entry")
-      error("Expecting XML node called \"data_entry\", but got \"%s\".",
+      error("Expecting XML node <data_entry> but got <%s>.",
             node_name.c_str());
 
     // Get name of data set
@@ -218,11 +218,37 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
 void XMLMesh::read_domains(MeshDomains& domains,
                            const pugi::xml_node mesh_node)
 {
+  // Check if we have any domains
+  const pugi::xml_node xml_domains = mesh_node.child("domains");
+  if (!xml_domains)
+    return;
 
+  // Iterate over data
+  for (pugi::xml_node_iterator it = xml_domains.begin();
+       it != xml_domains.end(); ++it)
+  {
+    // Check that node is <mesh_value_collection>
+    const std::string node_name = it->name();
+    if (node_name != "mesh_value_collection")
+      error("Expecting XML node <mesh_value_collection> but got <%s>.",
+            node_name.c_str());
 
+    // Get attributes
+    const std::string type = it->attribute("type").value();
+    const uint dim = it->attribute("dim").as_uint();
 
+    // Check that the type is uint
+    if (type != "uint")
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read DOLFIN mesh from XML file",
+                   "Mesh domains must be marked as uint, not %s",
+                   type.c_str());
+    }
 
-
+    // Read MeshValueCollection
+    XMLMeshValueCollection::read(domains.markers(dim), type, *it);
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_array_uint(std::vector<unsigned int>& array,

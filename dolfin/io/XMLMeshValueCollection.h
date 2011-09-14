@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-09-14
+// Last changed: 2011-09-15
 
 #ifndef __XML_MESH_VALUE_COLLECTION_H
 #define __XML_MESH_VALUE_COLLECTION_H
 
-#include "pugixml.hpp"
 #include <dolfin/mesh/MeshValueCollection.h>
+#include "pugixml.hpp"
+#include "xmlutils.h"
 #include "XMLMesh.h"
 
 namespace dolfin
@@ -55,28 +56,32 @@ namespace dolfin
   {
     not_working_in_parallel("Reading XML MeshValueCollection");
 
-    // Get main node
-    const pugi::xml_node mvc_node = xml_node.child("mesh_value_collection");
-    if (!mvc_node)
-      error("Not a DOLFIN XML MeshValueCollection file.");
+    // Get node
+    boost::shared_ptr<const pugi::xml_node>
+      mvc_node = get_node(xml_node, "mesh_value_collection");
+    assert(mvc_node);
 
     // Get attributes
-    const std::string type_file = mvc_node.attribute("type").value();
-    const uint dim = mvc_node.attribute("dim").as_uint();
+    const std::string type_file = mvc_node->attribute("type").value();
+    const uint dim = mvc_node->attribute("dim").as_uint();
 
     // Check that types match
     if (type != type_file)
+    {
       dolfin_error("XMLMeshValueCollection.h",
                    "Read mesh value collection from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
+    }
 
     // Check that dimension matches
     if (mesh_value_collection.dim() != dim)
+    {
       dolfin_error("XMLMeshValueCollection.h",
                    "Read mesh value collection from XML file",
                    "Dimension mismatch, found %d but expecting %d",
                    dim, mesh_value_collection.dim());
+    }
 
     // Clear old values
     mesh_value_collection.clear();
@@ -84,8 +89,8 @@ namespace dolfin
     // Choose data type
     if (type == "uint")
     {
-      for (pugi::xml_node_iterator it = mvc_node.begin();
-           it != mvc_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
@@ -95,8 +100,8 @@ namespace dolfin
     }
     else if (type == "int")
     {
-      for (pugi::xml_node_iterator it = mvc_node.begin();
-           it != mvc_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
@@ -106,8 +111,8 @@ namespace dolfin
     }
     else if (type == "double")
     {
-      for (pugi::xml_node_iterator it = mvc_node.begin();
-           it != mvc_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
@@ -117,8 +122,8 @@ namespace dolfin
     }
     else if (type == "bool")
     {
-      for (pugi::xml_node_iterator it = mvc_node.begin();
-           it != mvc_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
