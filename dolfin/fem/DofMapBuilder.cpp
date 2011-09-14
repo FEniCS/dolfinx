@@ -365,7 +365,9 @@ void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs,
       dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
 
       // Insert global dof index
-      global_dofs.insert(dof + offset);
+      std::pair<std::set<uint>::iterator, bool> ret = global_dofs.insert(dof + offset);
+      if (!ret.second)
+        error("Problem inserting global dof into set. Dof index aready exists.");
       cout << "Local dof index:  " << dof << endl;
       cout << "Global dof index: " << dof + offset << endl;
     }
