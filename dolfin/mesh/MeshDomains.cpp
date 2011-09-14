@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-13
+// Last changed: 2011-09-14
 
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
@@ -74,6 +74,22 @@ const MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim) const
   assert(dim < _markers.size());
   assert(_markers[dim]);
   return *_markers[dim];
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<MeshValueCollection<unsigned int> >
+MeshDomains::markers_shared_ptr(uint dim)
+{
+  assert(dim < _markers.size());
+  assert(_markers[dim]);
+  return _markers[dim];
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const MeshValueCollection<unsigned int> >
+MeshDomains::markers_shared_ptr(uint dim) const
+{
+  assert(dim < _markers.size());
+  assert(_markers[dim]);
+  return _markers[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::init(const Mesh& mesh, uint dim)

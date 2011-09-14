@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-13
+// Last changed: 2011-09-14
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -224,10 +224,11 @@ namespace dolfin
 
     // Get mesh connectivity d --> D
     const uint D = _mesh->topology().dim();
+    _mesh->init(_dim, D);
     const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
 
     // Find the cell
-    // FIXME: Make this an if statement? It crashes if not initialized.
+    assert(connectivity.size() > 0);
     assert(connectivity.size(entity_index) > 0);
     MeshEntity entity(*_mesh, _dim, entity_index);
     Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first

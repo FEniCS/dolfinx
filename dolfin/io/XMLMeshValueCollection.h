@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-09-13
+// Last changed: 2011-09-15
 
-#ifndef __XML_MESH_MARKERS_H
-#define __XML_MESH_MARKERS_H
+#ifndef __XML_MESH_VALUE_COLLECTION_H
+#define __XML_MESH_VALUE_COLLECTION_H
 
-#include "pugixml.hpp"
 #include <dolfin/mesh/MeshValueCollection.h>
+#include "pugixml.hpp"
+#include "xmlutils.h"
 #include "XMLMesh.h"
 
 namespace dolfin
@@ -32,15 +33,15 @@ namespace dolfin
   {
   public:
 
-    // Read mesh markers from XML file
+    // Read mesh value collection from XML file
     template <class T>
-    static void read(MeshValueCollection<T>& mesh_markers,
+    static void read(MeshValueCollection<T>& mesh_value_collection,
                      const std::string type,
                      const pugi::xml_node xml_node);
 
-    /// Write mesh markers to XML file
+    /// Write mesh value collection to XML file
     template<class T>
-    static void write(const MeshValueCollection<T>& mesh_markers,
+    static void write(const MeshValueCollection<T>& mesh_value_collection,
                       const std::string type,
                       pugi::xml_node xml_node,
                       bool write_mesh=true);
@@ -49,88 +50,93 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   template <class T>
-  inline void XMLMeshValueCollection::read(MeshValueCollection<T>& mesh_markers,
-                                   const std::string type,
-                                   const pugi::xml_node xml_node)
+  void XMLMeshValueCollection::read(MeshValueCollection<T>& mesh_value_collection,
+                                    const std::string type,
+                                    const pugi::xml_node xml_node)
   {
     not_working_in_parallel("Reading XML MeshValueCollection");
 
-    // Get mesh markers node
-    const pugi::xml_node markers_node = xml_node.child("mesh_markers");
-    if (!markers_node)
-      error("Not a DOLFIN XML MeshValueCollection file.");
+    // Get node
+    boost::shared_ptr<const pugi::xml_node>
+      mvc_node = get_node(xml_node, "mesh_value_collection");
+    assert(mvc_node);
 
     // Get attributes
-    const std::string type_file = markers_node.attribute("type").value();
-    const uint dim = markers_node.attribute("dim").as_uint();
-    const uint size = markers_node.attribute("size").as_uint();
+    const std::string type_file = mvc_node->attribute("type").value();
+    const uint dim = mvc_node->attribute("dim").as_uint();
 
     // Check that types match
     if (type != type_file)
+    {
       dolfin_error("XMLMeshValueCollection.h",
-                   "Read mesh markers from XML file",
+                   "Read mesh value collection from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
+    }
 
     // Check that dimension matches
-    if (mesh_markers.dim() != dim)
+    if (mesh_value_collection.dim() != dim)
+    {
       dolfin_error("XMLMeshValueCollection.h",
-                   "Read mesh markers from XML file",
+                   "Read mesh value collection from XML file",
                    "Dimension mismatch, found %d but expecting %d",
-                   dim, mesh_markers.dim());
+                   dim, mesh_value_collection.dim());
+    }
 
-    // Clear old markers
-    mesh_markers.clear();
+    // Clear old values
+    mesh_value_collection.clear();
 
     // Choose data type
     if (type == "uint")
     {
-      for (pugi::xml_node_iterator it = markers_node.begin();
-           it != markers_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
-        const uint marker_value = it->attribute("marker_value").as_uint();
-        mesh_markers.set_marker(cell_index, local_entity, marker_value);
+        const uint value = it->attribute("value").as_uint();
+        mesh_value_collection.set_value(cell_index, local_entity, value);
       }
     }
     else if (type == "int")
     {
-      for (pugi::xml_node_iterator it = markers_node.begin();
-           it != markers_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
-        const int marker_value = it->attribute("marker_value").as_int();
-        mesh_markers.set_marker(cell_index, local_entity, marker_value);
+        const int value = it->attribute("value").as_int();
+        mesh_value_collection.set_value(cell_index, local_entity, value);
       }
     }
     else if (type == "double")
     {
-      for (pugi::xml_node_iterator it = markers_node.begin();
-           it != markers_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
-        const double marker_value = it->attribute("marker_value").as_double();
-        mesh_markers.set_marker(cell_index, local_entity, marker_value);
+        const double value = it->attribute("value").as_double();
+        mesh_value_collection.set_value(cell_index, local_entity, value);
       }
     }
     else if (type == "bool")
     {
-      for (pugi::xml_node_iterator it = markers_node.begin();
-           it != markers_node.end(); ++it)
+      for (pugi::xml_node_iterator it = mvc_node->begin();
+           it != mvc_node->end(); ++it)
       {
         const uint cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
-        const bool marker_value = it->attribute("marker_value").as_bool();
-        mesh_markers.set_marker(cell_index, local_entity, marker_value);
+        const bool value = it->attribute("value").as_bool();
+        mesh_value_collection.set_value(cell_index, local_entity, value);
       }
     }
     else
-      dolfin_error("XMLMarkers.h",
-                   "Read mesh markers from XML file",
-                   "Unhandled marker type \"%s\"", type.c_str());
+    {
+      dolfin_error("XMLValueCollection.h",
+                   "Read mesh value collection from XML file",
+                   "Unhandled value type \"%s\"", type.c_str());
+    }
   }
   //---------------------------------------------------------------------------
   template<class T>
@@ -149,17 +155,17 @@ namespace dolfin
     pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");
     mf_node.append_attribute("type") = type.c_str();
     mf_node.append_attribute("dim") = mesh_value_collection.dim();
-    mf_node.append_attribute("size") = mesh_value_collection.size();
 
     // Add data
-    const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
+    const std::map<std::pair<uint, uint>, T>&
+      values = mesh_value_collection.values();
     typename std::map<std::pair<uint, uint>, T>::const_iterator it;
     for (it = values.begin(); it != values.end(); ++it)
     {
       pugi::xml_node entity_node = mf_node.append_child("value");
       entity_node.append_attribute("cell_index") = it->first.first;
       entity_node.append_attribute("local_entity") = it->first.second;
-      entity_node.append_attribute("marker_value") = it->second;
+      entity_node.append_attribute("value") = it->second;
     }
   }
   //---------------------------------------------------------------------------

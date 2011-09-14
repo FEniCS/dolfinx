@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2003-07-15
-// Last changed: 2011-09-01
+// Last changed: 2011-09-14
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -47,7 +47,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericFile(const std::string filename);
+    GenericFile(std::string filename,
+                std::string filetype);
 
     /// Destructor
     virtual ~GenericFile();
@@ -116,7 +117,7 @@ namespace dolfin
     void write_not_impl(const std::string object) const;
 
     std::string filename;
-    std::string type;
+    std::string filetype;
 
     bool opened_read;
     bool opened_write;

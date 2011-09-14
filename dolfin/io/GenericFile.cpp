@@ -30,14 +30,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericFile::GenericFile(const std::string filename) : filename(filename),
-                                                     type("Unknown file type"),
-                                                     opened_read(false),
-                                                     opened_write(false),
-                                                     check_header(false),
-                                                     counter(0),
-                                                     counter1(0),
-                                                     counter2(0)
+GenericFile::GenericFile(std::string filename,
+                         std::string filetype)
+ : filename(filename),
+   filetype(filetype),
+   opened_read(false),
+   opened_write(false),
+   check_header(false),
+   counter(0),
+   counter1(0),
+   counter2(0)
 {
   // Do nothing
 }
@@ -298,7 +300,7 @@ void GenericFile::read()
 void GenericFile::write()
 {
   // pvd files should only be cleared by one process
-  if (type == "VTK" && MPI::process_number() > 0)
+  if (filetype == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
   // Open file
@@ -316,12 +318,12 @@ void GenericFile::write()
 void GenericFile::read_not_impl(const std::string object) const
 {
   error("Unable to read objects of type %s from %s files.",
-        object.c_str(), type.c_str());
+        object.c_str(), filetype.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object) const
 {
-  error("Unable to write objects of type %s to %s files.",
-        object.c_str(), type.c_str());
+  error("Unable to write objects of type %s to file of type %s.",
+        object.c_str(), filetype.c_str());
 }
 //-----------------------------------------------------------------------------

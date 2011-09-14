@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg
+// Copyright (C) 2003-2011 Johan Hoffman and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet 2009.
 
 // First added:  2003-05-06
-// Last changed: 2010-09-03
+// Last changed: 2011-09-14
 
 #include <fstream>
 #include <iostream>
@@ -36,10 +36,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
+PythonFile::PythonFile(const std::string filename)
+  : GenericFile(filename, "Python")
 {
-  type = "Python";
-
   std::string prefix = filename.substr(0, filename.rfind("."));
   filename_t = prefix + "_t.data";
   filename_u = prefix + "_u.data";
@@ -54,11 +53,11 @@ PythonFile::~PythonFile()
 //-----------------------------------------------------------------------------
 void PythonFile::operator<<(const std::pair<double, DoubleArrayRef> sample)
 {
-  const double& t      = sample.first;
+  const double& t = sample.first;
   const Array<double>& u = sample.second;
 
   // First time
-  if ( counter2 == 0 )
+  if (counter2 == 0)
   {
     std::ofstream fp(filename.c_str());
     if (!fp.is_open())

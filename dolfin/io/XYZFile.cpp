@@ -37,9 +37,10 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XYZFile::XYZFile(const std::string filename) : GenericFile(filename)
+XYZFile::XYZFile(const std::string filename)
+  : GenericFile(filename, "XYZ")
 {
-  type = "XYZ";
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 XYZFile::~XYZFile()

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-13
+// Last changed: 2011-09-14
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -67,6 +67,14 @@ namespace dolfin
 
     /// Get subdomain markers for given dimension (const version)
     const MeshValueCollection<uint>& markers(uint dim) const;
+
+    /// Get subdomain markers for given dimension (shared pointer version)
+    boost::shared_ptr<MeshValueCollection<uint> >
+    markers_shared_ptr(uint dim);
+
+    /// Get subdomain markers for given dimension (const shared pointer version)
+    boost::shared_ptr<const MeshValueCollection<uint> >
+    markers_shared_ptr(uint dim) const;
 
     /// Initialize mesh domains for given topological dimension
     void init(const Mesh& mesh, uint dim);
