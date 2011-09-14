@@ -89,7 +89,7 @@ void PointSource::apply(GenericVector& b)
 
   // Add values to vector
   assert(V->element().space_dimension() == V->dofmap().cell_dimension(cell.index()));
-  b.set(&values[0], V->element().space_dimension(), &dofs[0]);
+  b.add(&values[0], V->element().space_dimension(), &dofs[0]);
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
