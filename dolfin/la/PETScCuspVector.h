@@ -21,7 +21,7 @@
 #ifndef __PETSC_CUSP_VECTOR_H
 #define __PETSC_CUSP_VECTOR_H
 
-#ifdef PETSC_CUSP
+#ifdef PETSC_HAVE_CUSP
 
 #include <map>
 #include <string>
