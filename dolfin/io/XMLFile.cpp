@@ -15,14 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-06-30
+// Last changed: 2011-09-14
 
-//#include <iostream>
 #include <iostream>
-
 #include <fstream>
 
 #include <boost/filesystem.hpp>
@@ -46,6 +44,7 @@
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
+#include "XMLMeshValueCollection.h"
 #include "XMLParameters.h"
 #include "XMLVector.h"
 #include "XMLFile.h"
@@ -213,12 +212,9 @@ void XMLFile::operator<< (const FunctionPlotData& output)
 template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
-  // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
   load_xml_doc(xml_doc);
   const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-
-  // Read MeshFunction
   XMLMeshFunction::read(t, type, dolfin_node);
 }
 //-----------------------------------------------------------------------------
@@ -227,10 +223,32 @@ template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
 {
   not_working_in_parallel("MeshFunction XML output in parallel not yet supported.");
 
-  pugi::xml_document doc;
-  pugi::xml_node node = write_dolfin(doc);
+  pugi::xml_document xml_doc;
+  pugi::xml_node node = write_dolfin(xml_doc);
   XMLMeshFunction::write(t, type, node);
-  save_xml_doc(doc);
+  save_xml_doc(xml_doc);
+}
+//-----------------------------------------------------------------------------
+template<class T>
+void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
+                                         const std::string type) const
+{
+  pugi::xml_document xml_doc;
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+  XMLMeshValueCollection::read(t, type, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+template<class T>
+void XMLFile::write_mesh_value_collection(const MeshValueCollection<T>& t,
+                                          const std::string type)
+{
+  not_working_in_parallel("MeshValueCollection XML output in parallel not yet supported.");
+
+  pugi::xml_document xml_doc;
+  pugi::xml_node node = write_dolfin(xml_doc);
+  XMLMeshValueCollection::write(t, type, node);
+  save_xml_doc(xml_doc);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const

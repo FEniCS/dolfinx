@@ -30,22 +30,25 @@ class XMLMeshValueCollection(unittest.TestCase):
 
         # FIXME: Need to expose MeshValueCollection in Python
 
-        # Create markers and add some data
+        # Create mesh value collection and add some data
         mesh = UnitCube(5, 5, 5)
-        markers = MeshValueCollection("uint", mesh, 2)
-        markers.set_value(1, 1);
-        markers.set_value(2, 3);
-        markers.set_value(5, 8);
-        markers.set_value(13, 21);
+        output_values = MeshValueCollection("uint", mesh, 2)
+        output_values.set_value(1, 1);
+        output_values.set_value(2, 3);
+        output_values.set_value(5, 8);
+        output_values.set_value(13, 21);
 
         # Write to file
-        f = File("XMLMeshValueCollection_test_io.xml")
-        f << markers
+        output_file = File("XMLMeshValueCollection_test_io.xml")
+        output_file << output_values
 
-        #
+        # Read from file
+        input_file = File("XMLMeshValueCollection_test_io.xml")
+        input_values = MeshValueCollection("uint", mesh, 2)
+        input_file >> input_values
 
-        # FIXME: Add test here
-        self.assertEqual(0, 0)
+        # Get some data and check that it matches
+        self.assertEqual(input_values.size(), output_values.size())
 
 if __name__ == "__main__":
     unittest.main()

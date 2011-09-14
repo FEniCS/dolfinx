@@ -33,7 +33,7 @@ using namespace dolfin;
 GenericFile::GenericFile(std::string filename,
                          std::string filetype)
  : filename(filename),
-   filetype("<unknown>"),
+   filetype(filetype),
    opened_read(false),
    opened_write(false),
    check_header(false),

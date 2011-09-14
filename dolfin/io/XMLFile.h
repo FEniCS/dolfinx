@@ -42,6 +42,7 @@ namespace dolfin
   class Mesh;
   class Parameters;
   template<class T> class MeshFunction;
+  template<class T> class MeshValueCollection;
 
   class XMLFile: public GenericFile
   {
@@ -75,35 +76,73 @@ namespace dolfin
     void operator>> (FunctionPlotData& input);
     void operator<< (const FunctionPlotData& output);
 
-    void operator>> (MeshFunction<int>& input)
-    { read_mesh_function(input, "int"); }
-    void operator<< (const MeshFunction<int>& output)
-    { write_mesh_function(output, "int"); }
-
+    // MeshFunction (uint)
     void operator>> (MeshFunction<unsigned int>& input)
     { read_mesh_function(input, "uint"); }
     void operator<< (const MeshFunction<unsigned int>& output)
     { write_mesh_function(output, "uint"); }
 
+    // MeshFunction (int)
+    void operator>> (MeshFunction<int>& input)
+    { read_mesh_function(input, "int"); }
+    void operator<< (const MeshFunction<int>& output)
+    { write_mesh_function(output, "int"); }
+
+    // MeshFunction (double)
     void operator>> (MeshFunction<double>& input)
     { read_mesh_function(input, "double"); }
     void operator<< (const MeshFunction<double>& output)
     { write_mesh_function(output, "double"); }
 
+    // MeshFunction (bool)
     void operator>> (MeshFunction<bool>& input)
     { read_mesh_function(input, "bool"); }
     void operator<< (const MeshFunction<bool>& input)
     { write_mesh_function(input, "bool"); }
 
+    // MeshValueCollection (uint)
+    void operator>> (MeshValueCollection<unsigned int>& input)
+    { read_mesh_value_collection(input, "uint"); }
+    void operator<< (const MeshValueCollection<unsigned int>& output)
+    { write_mesh_value_collection(output, "uint"); }
+
+    // MeshValueCollection (int)
+    void operator>> (MeshValueCollection<int>& input)
+    { read_mesh_value_collection(input, "int"); }
+    void operator<< (const MeshValueCollection<int>& output)
+    { write_mesh_value_collection(output, "int"); }
+
+    // MeshValueCollection (double)
+    void operator>> (MeshValueCollection<double>& input)
+    { read_mesh_value_collection(input, "double"); }
+    void operator<< (const MeshValueCollection<double>& output)
+    { write_mesh_value_collection(output, "double"); }
+
+    // MeshValueCollection (bool)
+    void operator>> (MeshValueCollection<bool>& input)
+    { read_mesh_value_collection(input, "bool"); }
+    void operator<< (const MeshValueCollection<bool>& input)
+    { write_mesh_value_collection(input, "bool"); }
+
   private:
 
-    // Write MeshFunction
+    // Read MeshFunction
     template<class T> void read_mesh_function(MeshFunction<T>& t,
                                               const std::string type) const;
 
-    // Read MeshFunction
+    // Write MeshFunction
     template<class T> void write_mesh_function(const MeshFunction<T>& t,
                                                const std::string type);
+
+    // Read MeshValueCollection
+    template<class T>
+    void read_mesh_value_collection(MeshValueCollection<T>& t,
+                                    const std::string type) const;
+
+    // Write MeshValueCollection
+    template<class T>
+    void write_mesh_value_collection(const MeshValueCollection<T>& t,
+                                     const std::string type);
 
     // Load/open XML doc (from file)
     void load_xml_doc(pugi::xml_document& xml_doc) const;
