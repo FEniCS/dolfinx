@@ -16,62 +16,61 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2008.
+// Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2008-08-19
+// Last changed: 2011-09-15
+
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/Timer.h>
-#include "LinearSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
+#include "LinearSolver.h"
 #include "solve.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
+dolfin::uint dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
                    std::string solver_type, std::string pc_type)
 {
   Timer timer("Solving linear system");
   LinearSolver solver(solver_type, pc_type);
-  solver.solve(A, x, b);
+  return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A, const GenericVector& x, 
+double dolfin::residual(const GenericMatrix& A, const GenericVector& x,
                         const GenericVector& b)
 {
-  GenericVector* y = A.factory().create_vector();
+  boost::scoped_ptr<GenericVector> y(A.factory().create_vector());
   A.mult(x, *y);
   *y -= b;
-  const double norm = y->norm("l2");
-  delete y;
-  return norm;
+  return y->norm("l2");
 }
 //-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
+  double c = 0.0;
   if (normalization_type == "l2")
   {
-    const double c = x.norm("l2");
+    c = x.norm("l2");
     x /= c;
-    return c;
   }
   else if (normalization_type == "average")
   {
-    GenericVector* y = x.factory().create_vector();
+    boost::scoped_ptr<GenericVector> y(x.factory().create_vector());
     y->resize(x.size());
     (*y) = 1.0 / static_cast<double>(x.size());
-    const double c = x.inner(*y);
+    c = x.inner(*y);
     (*y) = c;
     x -= (*y);
-    delete y;
-    return c;
   }
   else
     error("Unknown normalization type.");
 
-  return 0.0;
+  return c;
 }
 //-----------------------------------------------------------------------------
 
