@@ -42,7 +42,14 @@ typedef std::map<std::string, boost::shared_ptr<std::vector<dolfin::uint> > >
 //-----------------------------------------------------------------------------
 MeshData::MeshData(Mesh& mesh) : mesh(mesh)
 {
-  // Do nothing
+  // Add list of deprecated names
+  _deprecated_names.push_back("boundary_facet_cells");
+  _deprecated_names.push_back("boundary_facet_numbers");
+  _deprecated_names.push_back("boundary_indicators");
+  _deprecated_names.push_back("material_indicators");
+  _deprecated_names.push_back("cell_domains");
+  _deprecated_names.push_back("interior_facet_domains");
+  _deprecated_names.push_back("exterior_facet_domains");
 }
 //-----------------------------------------------------------------------------
 MeshData::~MeshData()
@@ -92,6 +99,9 @@ MeshData::create_mesh_function(std::string name)
     return it->second;
   }
 
+  // Check if name is deprecated
+  check_deprecated(name);
+
   // Create new data
   boost::shared_ptr<MeshFunction<unsigned int> > f(new MeshFunction<uint>(mesh));
   assert(f);
@@ -127,6 +137,9 @@ MeshData::create_array(std::string name, uint size)
     warning("Mesh data named \"%s\" already exists.", name.c_str());
     return it->second;
   }
+
+  // Check if name is deprecated
+  check_deprecated(name);
 
   // Create new data
   boost::shared_ptr<std::vector<uint> > a(new std::vector<uint>(size));
@@ -210,5 +223,15 @@ std::string MeshData::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void MeshData::check_deprecated(std::string name) const
+{
+  for (uint i = 0; i < _deprecated_names.size(); i++)
+  {
+    if (name == _deprecated_names[i])
+      warning("Mesh data named \"%s\" is no longer recognized by DOLFIN.",
+              name.c_str());
+  }
 }
 //-----------------------------------------------------------------------------

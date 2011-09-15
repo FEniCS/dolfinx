@@ -194,6 +194,9 @@ namespace dolfin
 
   private:
 
+    // Check if name is deprecated
+    void check_deprecated(std::string name) const;
+
     // The mesh
     Mesh& mesh;
 
@@ -202,6 +205,9 @@ namespace dolfin
 
     // A map from named mesh data to vector
     std::map<std::string, boost::shared_ptr<std::vector<uint> > > arrays;
+
+    // List of depcrecated named data
+    std::vector<std::string> _deprecated_names;
 
   };
 
