@@ -42,9 +42,7 @@ class XMLMesh(unittest.TestCase):
     def test_mesh_domains_io(self):
         "Test input/output for mesh domains"
 
-        # The same example is used in another unit test
-
-        # Define subdomains for 5 of the 6 faces of the unit cube
+        # Define subdomains for the 6 faces of the unit cube
         class F0(SubDomain):
             def inside(self, x, inside):
                 return near(x[0], 0.0)
@@ -60,20 +58,41 @@ class XMLMesh(unittest.TestCase):
         class F4(SubDomain):
             def inside(self, x, inside):
                 return near(x[2], 0.0)
+        class F5(SubDomain):
+            def inside(self, x, inside):
+                return near(x[2], 1.0)
 
-        f0 = F0()
-        f1 = F1()
-        f2 = F2()
-        f3 = F3()
-        f4 = F4()
+        # Define subdomains for left and right of x = 0.5
+        class S0(SubDomain):
+            def inside(self, x, inside):
+                return x[0] < 0.5 + DOLFIN_EPS
 
-        # Apply markers to unit cube
+        class S1(SubDomain):
+            def inside(self, x, inside):
+                return x[0] > 0.5 - DOLFIN_EPS
+
+        # Create a mesh
         output_mesh = UnitCube(3, 3, 3)
+
+        # Apply facet markers
+        f0 = F0()
         f0.mark_facets(output_mesh, 0)
+        f1 = F1()
         f1.mark_facets(output_mesh, 1)
+        f2 = F2()
         f2.mark_facets(output_mesh, 2)
+        f3 = F3()
         f3.mark_facets(output_mesh, 3)
+        f4 = F4()
         f4.mark_facets(output_mesh, 4)
+        f5 = F5()
+        f5.mark_facets(output_mesh, 5)
+
+        # Apply cell markers
+        s0 = S0()
+        s0.mark_cells(output_mesh, 0)
+        s1 = S1()
+        s1.mark_cells(output_mesh, 1)
 
         # Write to file
         output_file = File("XMLMesh_test_mesh_domains_io.xml")
