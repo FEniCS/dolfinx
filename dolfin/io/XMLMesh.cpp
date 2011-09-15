@@ -427,6 +427,9 @@ void XMLMesh::write_domains(const MeshDomains& domains,
 
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
-    XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node, false);
+  {
+    if (domains.markers(d).size() > 0)
+      XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node, false);
+  }
 }
 //-----------------------------------------------------------------------------
