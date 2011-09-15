@@ -39,22 +39,6 @@ class XMLMesh(unittest.TestCase):
             f = File("unit_cube.xml")
             f << mesh
 
-    def test_vmtk_io(self):
-        "Test input/output for VMTK data"
-
-        # Read mesh with boundary indicators
-        mesh = Mesh()
-        f = File("../../../../data/meshes/aneurysm.xml.gz")
-        f >> mesh
-
-        # Check for generated exterior_facet_domains
-        mf = mesh.data().mesh_function("exterior_facet_domains")
-        self.assertEqual(mf.size(), 59912)
-
-        # Write mesh with boundary indicators
-        g = File("XMLMesh_test_vmtk_io.xml")
-        g << mesh
-
     def test_mesh_domains_io(self):
         "Test input/output for mesh domains"
 
