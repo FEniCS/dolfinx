@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2011-03-10
+// Last changed: 2011-09-15
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -50,26 +50,13 @@ namespace dolfin
   /// used internally by DOLFIN to communicate data associated with
   /// meshes. The following named mesh data are recognized by DOLFIN:
   ///
-  /// Boundary indicators
-  ///
-  ///   * "boundary_facet_cells"   -  _Array_ <uint> of size num_facets
-  ///   * "boundary_facet_numbers" -  _Array_ <uint> of size num_facets
-  ///   * "boundary_indicators"    -  _Array_ <uint> of size num_facets
-  ///   * "material_indicators"    -  _MeshFunction_ <uint> of dimension D
-  ///
-  /// Subdomain indicators
-  ///
-  ///   * "cell_domains"           - _MeshFunction_ <uint> of dimension D
-  ///   * "interior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
-  ///   * "exterior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
-  ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet_orientation"      - _MeshFunction_ <uint> of dimension D - 1
+  ///   * "facet_orientation"     - _MeshFunction_ <uint> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "parent_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
+  ///   * "parent_vertex_indices" - _MeshFunction_ <uint> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 
