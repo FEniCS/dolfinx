@@ -22,13 +22,14 @@
 
 #include <iomanip>
 #include <iostream>
-#include <string>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "Table.h"
 #include "Logger.h"
 
@@ -254,6 +255,11 @@ void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
   if (!active || log_level < this->log_level)
+    return;
+
+  // Check if we want output on root process only
+  const bool std_out_all_processes = parameters["std_out_all_processes"];
+  if (process_number > 0 && !std_out_all_processes)
     return;
 
   // Prefix with process number if running in parallel

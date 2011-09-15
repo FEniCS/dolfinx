@@ -80,6 +80,9 @@ public:
 
 int main()
 {
+  // Print log messages only from the root process in parallel
+  parameters["std_out_all_processes"] = false;
+
   // Load mesh from file
   Mesh mesh("lshape.xml.gz");
 

@@ -27,6 +27,9 @@ on an L-shaped domain using Chorin's splitting method."""
 
 from dolfin import *
 
+# Print log messages only from the root process in parallel
+parameters["std_out_all_processes"] = False;
+
 # Load mesh from file
 mesh = Mesh("lshape.xml.gz")
 

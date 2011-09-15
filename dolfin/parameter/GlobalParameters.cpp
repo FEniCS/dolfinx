@@ -45,15 +45,15 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
 
   // Search paths to parameter files in order of increasing priority
   std::vector<std::string> parameter_files;
-#ifdef _WIN32
+  #ifdef _WIN32
   std::string home_directory(std::getenv("USERPROFILE"));
   parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml.gz");
   parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml");
-#else
+  #else
   std::string home_directory(std::getenv("HOME"));
   parameter_files.push_back(home_directory + "/.dolfin/parameters.xml.gz");
   parameter_files.push_back(home_directory + "/.dolfin/parameters.xml");
-#endif
+  #endif
   parameter_files.push_back("parameters.xml.gz");
   parameter_files.push_back("parameters.xml");
 
