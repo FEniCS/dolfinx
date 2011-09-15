@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-14
+// Last changed: 2011-09-15
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -76,12 +76,11 @@ namespace dolfin
     boost::shared_ptr<const MeshValueCollection<uint> >
     markers_shared_ptr(uint dim) const;
 
-    /// Initialize mesh domains for given topological dimension
-    void init(const Mesh& mesh, uint dim);
+    /// Initialize mesh domains
+    void init(const Mesh& mesh);
 
-    /// Initialize mesh domains for given topological dimension
-    /// (shared pointer version)
-    void init(boost::shared_ptr<const Mesh> mesh, uint dim);
+    /// Initialize mesh domains (shared pointer version)
+    void init(boost::shared_ptr<const Mesh> mesh);
 
     /// Clear all data
     void clear();

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-09-01
+// Last changed: 2011-09-15
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -83,7 +83,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   mesh._topology.init(tdim);
 
   // Initialize domains
-  mesh._domains.init(mesh, tdim);
+  mesh._domains.init(mesh);
 
   // Initialize temporary storage for local cell data
   vertices.resize(mesh.type().num_vertices(tdim));

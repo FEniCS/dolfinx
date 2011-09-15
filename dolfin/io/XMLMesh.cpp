@@ -424,7 +424,6 @@ void XMLMesh::write_domains(const MeshDomains& domains,
 
   // Add mesh domains node
   pugi::xml_node domains_node = mesh_node.append_child("domains");
-  domains_node.append_attribute("dim") = domains.dim();
 
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
