@@ -30,6 +30,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include "LogLevel.h"
 #include "Table.h"
 #include "Logger.h"
 
@@ -259,7 +260,7 @@ void Logger::write(int log_level, std::string msg) const
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
-  if (process_number > 0 && !std_out_all_processes)
+  if (process_number > 0 && !std_out_all_processes && log_level < WARNING)
     return;
 
   // Prefix with process number if running in parallel
