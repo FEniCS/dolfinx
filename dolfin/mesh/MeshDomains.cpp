@@ -38,8 +38,8 @@ MeshDomains::~MeshDomains()
 //-----------------------------------------------------------------------------
 dolfin::uint MeshDomains::dim() const
 {
-  if (_mesh)
-    return _mesh->topology().dim();
+  if (_markers.size() > 0)
+    return _markers.size() - 1;
   else
     return 0;
 }
@@ -93,57 +93,57 @@ MeshDomains::markers_shared_ptr(uint dim) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-MeshDomains::cell_domains() const
+MeshDomains::cell_domains(const Mesh& mesh) const
 {
   // Check if data already exists
   if (_cell_domains)
     return _cell_domains;
 
+  // Check if any markers have been set
+  const uint D = mesh.topology().dim();
+  assert(_markers.size() == D + 1);
+  if (_markers[D]->size() == 0)
+    return _cell_domains;
+
   // Compute cell domains
-  assert(_mesh);
   _cell_domains = boost::shared_ptr<MeshFunction<uint> >(new MeshFunction<uint>());
-  _cell_domains->init(*_mesh, _mesh->topology().dim());
+  _cell_domains->init(mesh, D);
   init_domains(*_cell_domains);
 
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-MeshDomains::facet_domains() const
+MeshDomains::facet_domains(const Mesh& mesh) const
 {
   // Check if data already exists
   if (_facet_domains)
     return _facet_domains;
 
+  // Check if any markers have been set
+  const uint D = mesh.topology().dim();
+  assert(_markers.size() == D + 1);
+  if (_markers[D - 1]->size() == 0)
+    return _facet_domains;
+
   // Compute facet domains
-  assert(_mesh);
   _facet_domains = boost::shared_ptr<MeshFunction<uint> >(new MeshFunction<uint>());
-  _cell_domains->init(*_mesh, _mesh->topology().dim() - 1);
+  _cell_domains->init(mesh, D - 1);
   init_domains(*_facet_domains);
 
   return _facet_domains;
 }
 //-----------------------------------------------------------------------------
-void MeshDomains::init(const Mesh& mesh)
-{
-  init(reference_to_no_delete_pointer(mesh));
-}
-//-----------------------------------------------------------------------------
-void MeshDomains::init(boost::shared_ptr<const Mesh> mesh)
+void MeshDomains::init(uint dim)
 {
   // Clear old data
   clear();
 
-  // Store mesh
-  _mesh = mesh;
-
-  // Add markers for each topological dimension. Notice that to save
-  // space we don't initialize the MeshFunctions here, only the
-  // MeshValueCollection which require minimal storage when empty.
-  for (uint d = 0; d <= mesh->topology().dim(); d++)
+  // Add markers for each topological dimension
+  for (uint d = 0; d <= dim; d++)
   {
     boost::shared_ptr<MeshValueCollection<uint> >
-      m(new MeshValueCollection<uint>(mesh, d));
+      m(new MeshValueCollection<uint>(d));
     _markers.push_back(m);
   }
 }
@@ -155,13 +155,14 @@ void MeshDomains::clear()
 //-----------------------------------------------------------------------------
 void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
 {
-  assert(_mesh);
+  // Get mesh
+  const Mesh& mesh = mesh_function.mesh();
 
   // Get mesh connectivity D --> d
   const uint d = mesh_function.dim();
-  const uint D = _mesh->topology().dim();
+  const uint D = mesh.topology().dim();
   assert(d <= D);
-  const MeshConnectivity& connectivity = _mesh->topology()(D, d);
+  const MeshConnectivity& connectivity = mesh.topology()(D, d);
   assert(connectivity.size() > 0);
 
   // Get maximum value

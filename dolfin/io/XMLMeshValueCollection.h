@@ -43,8 +43,7 @@ namespace dolfin
     template<class T>
     static void write(const MeshValueCollection<T>& mesh_value_collection,
                       const std::string type,
-                      pugi::xml_node xml_node,
-                      bool write_mesh=true);
+                      pugi::xml_node xml_node);
 
   };
 
@@ -141,15 +140,10 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<class T>
   void XMLMeshValueCollection::write(const MeshValueCollection<T>& mesh_value_collection,
-                             const std::string type,
-                             pugi::xml_node xml_node,
-                             bool write_mesh)
+                                     const std::string type,
+                                     pugi::xml_node xml_node)
   {
     not_working_in_parallel("Writing XML MeshValueCollection");
-
-    // Write mesh if requested
-    if (write_mesh)
-      XMLMesh::write(mesh_value_collection.mesh(), xml_node);
 
     // Add mesh function node and attributes
     pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");

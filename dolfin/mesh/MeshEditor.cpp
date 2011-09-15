@@ -83,7 +83,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   mesh._topology.init(tdim);
 
   // Initialize domains
-  mesh._domains.init(mesh);
+  mesh._domains.init(tdim);
 
   // Initialize temporary storage for local cell data
   vertices.resize(mesh.type().num_vertices(tdim));

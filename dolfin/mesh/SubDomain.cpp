@@ -68,51 +68,55 @@ void SubDomain::mark_facets(Mesh& mesh, unsigned int sub_domain) const
 //-----------------------------------------------------------------------------
 void SubDomain::mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const
 {
-  mark(mesh.domains().markers(dim), sub_domain);
+  mark(mesh.domains().markers(dim), sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<int>& sub_domains, int sub_domain) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<double>& sub_domains, double sub_domain) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<uint>& sub_domains,
-                     uint sub_domain) const
+                     uint sub_domain,
+                     const Mesh& mesh) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<int>& sub_domains,
-                     int sub_domain) const
+                     int sub_domain,
+                     const Mesh& mesh) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<double>& sub_domains,
-                     double sub_domain) const
+                     double sub_domain,
+                     const Mesh& mesh) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<bool>& sub_domains,
-                     bool sub_domain) const
+                     bool sub_domain,
+                     const Mesh& mesh) const
 {
-  apply_markers(sub_domains, sub_domain);
+  apply_markers(sub_domains, sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SubDomain::geometric_dimension() const
@@ -125,7 +129,9 @@ dolfin::uint SubDomain::geometric_dimension() const
 }
 //-----------------------------------------------------------------------------
 template<class S, class T>
-void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
+void SubDomain::apply_markers(S& sub_domains,
+                              T sub_domain,
+                              const Mesh& mesh) const
 {
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
@@ -133,7 +139,6 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
   const uint dim = sub_domains.dim();
 
   // Compute facet - cell connectivity if necessary
-  const Mesh& mesh = sub_domains.mesh();
   const uint D = mesh.topology().dim();
   if (dim == D - 1)
   {
@@ -191,7 +196,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain) const
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains.set_value(entity->index(), sub_domain);
+      sub_domains.set_value(entity->index(), sub_domain, mesh);
 
     p++;
   }

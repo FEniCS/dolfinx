@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Marie E. Rognes, 2011
+# Modified by Marie E. Rognes 2011
+# Modified by Anders Logg 2011
 #
 # First added:  2011-03-12
 # Last changed: 2011-03-12
@@ -49,12 +50,12 @@ class Assembly(unittest.TestCase):
 
         # Define bilinear form
         a = dot(grad(v), grad(u))*dx \
-           - dot(avg(grad(v)), jump(u, n))*dS \
-           - dot(jump(v, n), avg(grad(u)))*dS \
-           + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-           - dot(grad(v), u*n)*ds \
-           - dot(v*n, grad(u))*ds \
-           + 8.0/h*v*u*ds
+            - dot(avg(grad(v)), jump(u, n))*dS \
+            - dot(jump(v, n), avg(grad(u)))*dS \
+            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+            - dot(grad(v), u*n)*ds \
+            - dot(v*n, grad(u))*ds \
+            + 8.0/h*v*u*ds
 
         # Define linear form
         L = v*f*dx

@@ -232,6 +232,10 @@ namespace dolfin
     ///         The value.
     void set_value(uint index, T& value);
 
+    /// Compatibility function for use in SubDomains
+    void set_value(uint index, T& value, const Mesh& mesh)
+    { set_value(index, value); }
+
     /// Set values
     ///
     /// *Arguments*

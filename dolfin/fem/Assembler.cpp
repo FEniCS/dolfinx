@@ -115,7 +115,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
-      cell_domains = a.mesh().domains().cell_domains().get();
+      cell_domains = a.mesh().domains().cell_domains(a.mesh()).get();
   }
 
   // Get exterior facet domains
@@ -123,7 +123,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
-      exterior_facet_domains = a.mesh().domains().facet_domains().get();
+      exterior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Get interior facet domains
@@ -131,7 +131,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
-      interior_facet_domains = a.mesh().domains().facet_domains().get();
+      interior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Check whether we should call the multi-core assembler

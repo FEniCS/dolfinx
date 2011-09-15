@@ -38,8 +38,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
-                                 const std::vector<unsigned int> coloring_type)
+dolfin::Mesh
+MeshRenumbering::renumber_by_color(const Mesh& mesh,
+                                   const std::vector<unsigned int> coloring_type)
 {
   // Start timer
   Timer timer("Renumber mesh by color");
@@ -84,7 +85,8 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   {
     std::vector<uint> c(vertices_per_cell);
     std::copy(new_connections.begin() + i*vertices_per_cell,
-              new_connections.begin() + i*vertices_per_cell + vertices_per_cell, c.begin());
+              new_connections.begin() + i*vertices_per_cell + vertices_per_cell,
+              c.begin());
     editor.add_cell(i, c);
   }
 
@@ -95,13 +97,15 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
            std::vector<std::vector<uint> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
-  ConstMeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+  ConstMeshColoringData mesh_coloring
+    = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
     error("Requested mesh coloring has not been computed. Cannot renumber");
 
   // Get old coloring data
   const MeshFunction<uint>& colors = mesh_coloring->second.first;
-  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<uint> >&
+    entities_of_color = mesh_coloring->second.second;
   assert(colors.size() == num_cells);
   assert(entities_of_color.size() > 0);
   const uint num_colors = entities_of_color.size();
@@ -174,7 +178,8 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
   const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
-  const std::vector<std::vector<uint> >& entities_of_color_old = mesh_coloring->second.second;
+  const std::vector<std::vector<uint> >&
+    entities_of_color_old = mesh_coloring->second.second;
   assert(colors_old.size() == num_cells);
   assert(entities_of_color_old.size() > 0);
 

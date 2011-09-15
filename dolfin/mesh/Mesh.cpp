@@ -114,6 +114,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
+  _domains = mesh._domains;
   _data = mesh._data;
   _parallel_data.reset(new ParallelData(*mesh._parallel_data));
   if (mesh._cell_type)
