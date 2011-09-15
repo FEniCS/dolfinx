@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-14
+// Last changed: 2011-09-15
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -132,13 +132,6 @@ namespace dolfin
 
     /// Clear all values
     void clear();
-
-    /// Extract data for corresponding MeshFunction
-    ///
-    /// *Arguments*
-    ///     mesh_function (_MeshFunction_)
-    ///         The MeshFunction to be computed.
-    void extract_mesh_function(MeshFunction<T>& mesh_function) const;
 
     /// Return informal string representation (pretty-print)
     ///
@@ -257,46 +250,6 @@ namespace dolfin
   void MeshValueCollection<T>::clear()
   {
     _values.clear();
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  void MeshValueCollection<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
-  {
-    assert(_mesh);
-
-    // Initialize mesh function
-    mesh_function.init(*_mesh, _dim);
-
-    // Get mesh connectivity D --> d
-    const uint D = _mesh->topology().dim();
-    const MeshConnectivity& connectivity = _mesh->topology()(D, _dim);
-
-    // Get maximum value. Note that this requires that the type T can
-    // be intialized to zero, supports std::max and can be incremented
-    // by 1.
-    T maxval = T(0);
-    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
-    for (it = _values.begin(); it != _values.end(); ++it)
-      maxval = std::max(maxval, it->second);
-
-    // Set all value of mesh function to maximum value (not all will
-    // be set) by markers below
-    mesh_function.set_all(maxval + 1);
-
-    // Iterate over all values
-    for (it = _values.begin(); it != _values.end(); ++it)
-    {
-      // Get marker data
-      const uint cell_index   = it->first.first;
-      const uint local_entity = it->first.second;
-      const T value    = it->second;
-
-      // Get global entity index
-      const uint entity_index = connectivity(cell_index)[local_entity];
-
-      // Set boundary indicator for facet
-      mesh_function[entity_index] = value;
-    }
   }
   //---------------------------------------------------------------------------
   template <class T>
