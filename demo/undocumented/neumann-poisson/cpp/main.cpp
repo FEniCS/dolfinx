@@ -88,7 +88,7 @@ int main()
   solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
-  // Extract subfunctions
+  // Extract subfunction
   Function u = w[0];
   
   // Plot solution
