@@ -38,7 +38,8 @@ tests = {
     "meshconvert":    ["test"],
     "refinement":     ["refine"],
     "la":             ["test", "Scalar", "Vector", "Matrix"],
-    "io":             ["test", "vtk", "xml_mesh", "xml_vector"],
+    "io":             ["test", "vtk", "XMLMesh", "XMLMeshFunction", \
+                       "XMLMeshValueCollection", "xml_vector"],
     "parameter":      ["test"],
     "python-extras":  ["test"],
     "quadrature":     ["test"],

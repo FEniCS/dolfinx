@@ -79,7 +79,7 @@ namespace dolfin
     ///         The local index of the entity relative to the cell.
     ///     marker_value (T)
     ///         The value of the marker.
-    void set_value(uint cell_index, uint local_entity, const T& marker_value);
+    void set_value(uint cell_index, uint local_entity, const T& value);
 
     /// Set value for given entity index
     ///

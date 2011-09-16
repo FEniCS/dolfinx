@@ -28,15 +28,13 @@ class XMLMeshValueCollection(unittest.TestCase):
     def test_io(self):
         "Test input/output"
 
-        # FIXME: Need to expose MeshValueCollection in Python
-
         # Create mesh value collection and add some data
         mesh = UnitCube(5, 5, 5)
-        output_values = MeshValueCollection("uint", mesh, 2)
-        output_values.set_value(1, 1);
-        output_values.set_value(2, 3);
-        output_values.set_value(5, 8);
-        output_values.set_value(13, 21);
+        output_values = MeshValueCollection("uint", 2)
+        output_values.set_value(1, 1, 1);
+        output_values.set_value(2, 1, 3);
+        output_values.set_value(5, 1, 8);
+        output_values.set_value(13, 1, 21);
 
         # Write to file
         output_file = File("XMLMeshValueCollection_test_io.xml")
@@ -44,7 +42,7 @@ class XMLMeshValueCollection(unittest.TestCase):
 
         # Read from file
         input_file = File("XMLMeshValueCollection_test_io.xml")
-        input_values = MeshValueCollection("uint", mesh, 2)
+        input_values = MeshValueCollection("uint", 2)
         input_file >> input_values
 
         # Get some data and check that it matches
