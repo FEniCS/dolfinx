@@ -168,7 +168,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   // Get maximum value
   uint maxval = 0;
   std::map<std::pair<uint, uint>, uint> values = _markers[d]->values();
-  typename std::map<std::pair<uint, uint>, uint>::const_iterator it;
+  std::map<std::pair<uint, uint>, uint>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
     maxval = std::max(maxval, it->second);
 
