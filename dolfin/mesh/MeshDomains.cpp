@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-15
+// Last changed: 2011-09-16
 
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
@@ -128,7 +128,7 @@ MeshDomains::facet_domains(const Mesh& mesh) const
 
   // Compute facet domains
   _facet_domains = boost::shared_ptr<MeshFunction<uint> >(new MeshFunction<uint>());
-  _cell_domains->init(mesh, D - 1);
+  _facet_domains->init(mesh, D - 1);
   init_domains(*_facet_domains);
 
   return _facet_domains;

@@ -225,7 +225,7 @@ class Assembly(unittest.TestCase):
 
     def test_subdomains_assembly(self):
         """
-        Test assembly with sub-domains specified in a form directly
+        Test assembly with subdomains specified in a form directly
         and of derived forms.
         """
 
@@ -282,6 +282,51 @@ class Assembly(unittest.TestCase):
         # Check that domain data carries across transformations:
         reference = 0.0626219513355
         self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+
+    def test_meshdomains_assembly(self):
+        "Test assembly with subdomains marked directly as part of the mesh"
+
+        # Create a mesh of the unit cube
+        mesh = UnitCube(4, 4, 4)
+
+        # Define subdomains for 3 faces of the unit cube
+        class F0(SubDomain):
+            def inside(self, x, inside):
+                return near(x[0], 0.0)
+        class F1(SubDomain):
+            def inside(self, x, inside):
+                return near(x[1], 0.0)
+        class F2(SubDomain):
+            def inside(self, x, inside):
+                return near(x[2], 0.0)
+
+        # Define subdomain for left of x = 0.5
+        class S0(SubDomain):
+            def inside(self, x, inside):
+                return x[0] < 0.5 + DOLFIN_EPS
+
+        # Mark mesh
+        f0 = F0()
+        f1 = F1()
+        f2 = F2()
+        s0 = S0()
+        f0.mark_facets(mesh, 0)
+        f1.mark_facets(mesh, 1)
+        f2.mark_facets(mesh, 2)
+        s0.mark_cells(mesh, 0)
+
+        # Assemble a form on marked subdomains
+        M0 = Constant(1.0)*dx(0) + \
+             Constant(2.0)*ds(0) + Constant(3.0)*ds(1) + Constant(4.0)*ds(2)
+        m0 = assemble(M0, mesh=mesh)
+
+        # Assemble a form on unmarked subdomains (marked automatically)
+        M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(3)
+        m1 = assemble(M1, mesh=mesh)
+
+        # Check values
+        self.assertAlmostEqual(m0, 9.5)
+        self.assertAlmostEqual(m1, 6.5)
 
 if __name__ == "__main__":
     print ""
