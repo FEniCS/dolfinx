@@ -124,8 +124,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
-   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
    os.path.join(demodir, 'undocumented', 'partitioning',                'cpp'),    \
