@@ -1,3 +1,13 @@
+ - Add new class MeshValueCollection
+ - Add new class MeshDomains replacing old storage of boundary markers
+   as part of MeshData. The following names are no longer supported:
+   * boundary_facet_cells
+   * boundary_facet_numbers
+   * boundary_indicators
+   * material_indicators
+   * cell_domains
+   * interior_facet_domains
+   * exterior_facet_domains
  - Rename XML tag <meshfunction> --> <mesh_function>
  - Rename SubMesh data "global_vertex_indices" --> "parent_vertex_indices"
  - Get XML input/output of boundary markers working again

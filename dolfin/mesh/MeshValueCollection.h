@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-14
+// Last changed: 2011-09-15
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -47,39 +47,13 @@ namespace dolfin
     /// Create empty mesh value collection of given dimension on given mesh
     ///
     /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh value collection on.
     ///     dim (uint)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(const Mesh& mesh, uint dim);
-
-    /// Create empty mesh value collection of given dimension on given mesh
-    /// (shared pointer version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh value collection on.
-    ///     dim (uint)
-    ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(boost::shared_ptr<const Mesh> mesh, uint dim);
+    MeshValueCollection(uint dim);
 
     /// Destructor
     ~MeshValueCollection()
     {}
-
-    /// Return mesh associated with mesh value collection
-    ///
-    /// *Returns*
-    ///     _Mesh_
-    ///         The mesh.
-    const Mesh& mesh() const;
-
-    /// Return mesh associated with mesh value collection (shared pointer version)
-    ///
-    /// *Returns*
-    ///     _Mesh_
-    ///         The mesh.
-    boost::shared_ptr<const Mesh> mesh_ptr() const;
 
     /// Return topological dimension
     ///
@@ -114,7 +88,9 @@ namespace dolfin
     ///         Index of the entity.
     ///     value (T).
     ///         The value.
-    void set_value(uint entity_index, const T& value);
+    ///     mesh (Mesh)
+    ///         The mesh.
+    void set_value(uint entity_index, const T& value, const Mesh& mesh);
 
     /// Get all values
     ///
@@ -133,13 +109,6 @@ namespace dolfin
     /// Clear all values
     void clear();
 
-    /// Extract data for corresponding MeshFunction
-    ///
-    /// *Arguments*
-    ///     mesh_function (_MeshFunction_)
-    ///         The MeshFunction to be computed.
-    void extract_mesh_function(MeshFunction<T>& mesh_function) const;
-
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*
@@ -153,9 +122,6 @@ namespace dolfin
 
   private:
 
-    // The mesh
-    boost::shared_ptr<const Mesh> _mesh;
-
     // The values
     std::map<std::pair<uint, uint>, T> _values;
 
@@ -168,32 +134,10 @@ namespace dolfin
   // Implementation of MeshValueCollection
   //---------------------------------------------------------------------------
   template <class T>
-  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh, uint dim)
-    : Variable("m", "unnamed MeshValueCollection"),
-      _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
+  MeshValueCollection<T>::MeshValueCollection(uint dim)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
   {
     // Do nothing
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh> mesh, uint dim)
-    : Variable("m", "unnamed MeshValueCollection"),
-      _mesh(mesh), _dim(dim)
-  {
-    // Do nothing
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  const Mesh& MeshValueCollection<T>::mesh() const
-  {
-    assert(_mesh);
-    return *_mesh;
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  boost::shared_ptr<const Mesh> MeshValueCollection<T>::mesh_ptr() const
-  {
-    return _mesh;
   }
   //---------------------------------------------------------------------------
   template <class T>
@@ -218,20 +162,20 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshValueCollection<T>::set_value(uint entity_index, const T& value)
+  void MeshValueCollection<T>::set_value(uint entity_index,
+                                         const T& value,
+                                         const Mesh& mesh)
   {
-    assert(_mesh);
-
     // Get mesh connectivity d --> D
-    const uint D = _mesh->topology().dim();
-    _mesh->init(_dim, D);
-    const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
+    const uint D = mesh.topology().dim();
+    mesh.init(_dim, D);
+    const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
 
     // Find the cell
     assert(connectivity.size() > 0);
     assert(connectivity.size(entity_index) > 0);
-    MeshEntity entity(*_mesh, _dim, entity_index);
-    Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+    MeshEntity entity(mesh, _dim, entity_index);
+    Cell cell(mesh, connectivity(entity_index)[0]); // choose first
 
     // Find the local entity index
     const uint local_entity = cell.index(entity);
@@ -257,46 +201,6 @@ namespace dolfin
   void MeshValueCollection<T>::clear()
   {
     _values.clear();
-  }
-  //---------------------------------------------------------------------------
-  template <class T>
-  void MeshValueCollection<T>::extract_mesh_function(MeshFunction<T>& mesh_function) const
-  {
-    assert(_mesh);
-
-    // Initialize mesh function
-    mesh_function.init(*_mesh, _dim);
-
-    // Get mesh connectivity D --> d
-    const uint D = _mesh->topology().dim();
-    const MeshConnectivity& connectivity = _mesh->topology()(D, _dim);
-
-    // Get maximum value. Note that this requires that the type T can
-    // be intialized to zero, supports std::max and can be incremented
-    // by 1.
-    T maxval = T(0);
-    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
-    for (it = _values.begin(); it != _values.end(); ++it)
-      maxval = std::max(maxval, it->second);
-
-    // Set all value of mesh function to maximum value (not all will
-    // be set) by markers below
-    mesh_function.set_all(maxval + 1);
-
-    // Iterate over all values
-    for (it = _values.begin(); it != _values.end(); ++it)
-    {
-      // Get marker data
-      const uint cell_index   = it->first.first;
-      const uint local_entity = it->first.second;
-      const T value    = it->second;
-
-      // Get global entity index
-      const uint entity_index = connectivity(cell_index)[local_entity];
-
-      // Set boundary indicator for facet
-      mesh_function[entity_index] = value;
-    }
   }
   //---------------------------------------------------------------------------
   template <class T>

@@ -20,7 +20,7 @@
 // Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-08-10
+// Last changed: 2011-09-15
 
 #include <boost/scoped_ptr.hpp>
 
@@ -99,16 +99,23 @@ void Assembler::assemble(GenericTensor& A,
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
-  // cells, exterior and interior facets. Note the importance of
-  // treating empty mesh functions as null pointers for the PyDOLFIN
-  // interface.
+  // cells, exterior and interior facets.
+  //
+  // Important notes:
+  //
+  // 1. Note the importance of treating empty mesh functions as null
+  // pointers for the PyDOLFIN interface.
+  //
+  // 2. Note that subdomains given as input to this function override
+  // subdomains attached to forms, which in turn override subdomains
+  // stored as part of the mesh.
 
   // Get cell domains
   if (!cell_domains || cell_domains->size() == 0)
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
-      cell_domains = a.mesh().data().mesh_function("cell_domains").get();
+      cell_domains = a.mesh().domains().cell_domains(a.mesh()).get();
   }
 
   // Get exterior facet domains
@@ -116,8 +123,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
-      exterior_facet_domains
-        = a.mesh().data().mesh_function("exterior_facet_domains").get();
+      exterior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Get interior facet domains
@@ -125,8 +131,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
-      interior_facet_domains
-        = a.mesh().data().mesh_function("interior_facet_domains").get();
+      interior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Check whether we should call the multi-core assembler

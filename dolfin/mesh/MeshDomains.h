@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-14
+// Last changed: 2011-09-15
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
@@ -76,26 +76,39 @@ namespace dolfin
     boost::shared_ptr<const MeshValueCollection<uint> >
     markers_shared_ptr(uint dim) const;
 
-    /// Initialize mesh domains for given topological dimension
-    void init(const Mesh& mesh, uint dim);
+    /// Get cell domains. This function computes the mesh function
+    /// corresponding to markers of dimension D. The mesh function is
+    /// cached for later access and will be computed on the first call
+    /// to this function.
+    boost::shared_ptr<const MeshFunction<uint> >
+    cell_domains(const Mesh& mesh) const;
+
+    /// Get facet domains. This function computes the mesh function
+    /// corresponding to markers of dimension D-1. The mesh function
+    /// is cached for later access and will be computed on the first
+    /// call to this function.
+    boost::shared_ptr<const MeshFunction<uint> >
+    facet_domains(const Mesh& mesh) const;
 
     /// Initialize mesh domains for given topological dimension
-    /// (shared pointer version)
-    void init(boost::shared_ptr<const Mesh> mesh, uint dim);
+    void init(uint dim);
 
     /// Clear all data
     void clear();
 
   private:
 
-    // Initialize mesh functions corresponding to markers
-    void init_subdomains();
+    // Initialize mesh function corresponding to markers
+    void init_domains(MeshFunction<uint>& mesh_function) const;
 
-    // Subdomain markers (input/storage)
+    // Subdomain markers
     std::vector<boost::shared_ptr<MeshValueCollection<uint> > > _markers;
 
-    // Subdomains corresponding to markers
-    std::vector<boost::shared_ptr<MeshFunction<uint> > > _subdomains;
+    // Mesh function for cell domains
+    mutable boost::shared_ptr<MeshFunction<uint> > _cell_domains;
+
+    // Mesh function for facet domains (exterior or interior)
+    mutable boost::shared_ptr<MeshFunction<uint> > _facet_domains;
 
   };
 
