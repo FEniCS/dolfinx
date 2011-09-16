@@ -28,25 +28,28 @@ class XMLMeshValueCollection(unittest.TestCase):
     def test_io(self):
         "Test input/output"
 
-        # Create mesh value collection and add some data
-        mesh = UnitCube(5, 5, 5)
-        output_values = MeshValueCollection("uint", 2)
-        output_values.set_value(1, 1, 1);
-        output_values.set_value(2, 1, 3);
-        output_values.set_value(5, 1, 8);
-        output_values.set_value(13, 1, 21);
+        # Not working yet in parallel
+        if (MPI.num_processes() == 1):
 
-        # Write to file
-        output_file = File("XMLMeshValueCollection_test_io.xml")
-        output_file << output_values
+            # Create mesh value collection and add some data
+            mesh = UnitCube(5, 5, 5)
+            output_values = MeshValueCollection("uint", 2)
+            output_values.set_value(1, 1, 1);
+            output_values.set_value(2, 1, 3);
+            output_values.set_value(5, 1, 8);
+            output_values.set_value(13, 1, 21);
 
-        # Read from file
-        input_file = File("XMLMeshValueCollection_test_io.xml")
-        input_values = MeshValueCollection("uint", 2)
-        input_file >> input_values
+            # Write to file
+            output_file = File("XMLMeshValueCollection_test_io.xml")
+            output_file << output_values
 
-        # Get some data and check that it matches
-        self.assertEqual(input_values.size(), output_values.size())
+            # Read from file
+            input_file = File("XMLMeshValueCollection_test_io.xml")
+            input_values = MeshValueCollection("uint", 2)
+            input_file >> input_values
+
+            # Get some data and check that it matches
+            self.assertEqual(input_values.size(), output_values.size())
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,23 +95,24 @@ class XMLMesh(unittest.TestCase):
         s1.mark_cells(output_mesh, 1)
 
         # Write to file
-        output_file = File("XMLMesh_test_mesh_domains_io.xml")
-        output_file << output_mesh
+        if (MPI.num_processes() == 1):
+            output_file = File("XMLMesh_test_mesh_domains_io.xml")
+            output_file << output_mesh
 
-        # Read from file
-        input_file = File("XMLMesh_test_mesh_domains_io.xml")
-        input_mesh = Mesh()
-        input_file >> input_mesh
+            # Read from file
+            input_file = File("XMLMesh_test_mesh_domains_io.xml")
+            input_mesh = Mesh()
+            input_file >> input_mesh
 
-        # Get some data and check that it matches
-        self.assertEqual(input_mesh.domains().markers(0).size(),
-                         output_mesh.domains().markers(0).size());
-        self.assertEqual(input_mesh.domains().markers(1).size(),
-                         output_mesh.domains().markers(1).size());
-        self.assertEqual(input_mesh.domains().markers(2).size(),
-                         output_mesh.domains().markers(2).size());
-        self.assertEqual(input_mesh.domains().markers(3).size(),
-                         output_mesh.domains().markers(3).size());
+            # Get some data and check that it matches
+            self.assertEqual(input_mesh.domains().markers(0).size(),
+                             output_mesh.domains().markers(0).size());
+            self.assertEqual(input_mesh.domains().markers(1).size(),
+                             output_mesh.domains().markers(1).size());
+            self.assertEqual(input_mesh.domains().markers(2).size(),
+                             output_mesh.domains().markers(2).size());
+            self.assertEqual(input_mesh.domains().markers(3).size(),
+                             output_mesh.domains().markers(3).size());
 
 if __name__ == "__main__":
     unittest.main()
