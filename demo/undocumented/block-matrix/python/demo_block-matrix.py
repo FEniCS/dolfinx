@@ -24,13 +24,15 @@
 
 from dolfin import *
 
-# Create a simple stiffness matrix
-mesh = UnitSquare(4, 4)
+# Create a simple stiffness matrix and vector
+mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 u = TrialFunction(V)
 v = TestFunction(V)
 a = dot(grad(u), grad(v))*dx
 A = assemble(a)
+L = sin(V.cell().x[0])*v*dx
+x = assemble(L)
 
 # Create a block matrix
 AA = BlockMatrix(2, 2)
@@ -39,16 +41,14 @@ AA[1, 0] = A
 AA[0, 1] = A
 AA[1, 1] = A
 
-# Create a block vector
-x = Vector(A.size(0))
-for i in range(x.size()):
-    x[i] = i
+# Create a block vector (that is compatible with A in parallel)
 xx = BlockVector(2)
 xx[0] = x
 xx[1] = x
 
-# Create another block vector
-y = Vector(A.size(1))
+# Create a another block vector (that is compatible with A in parallel)
+y = Vector()
+A.resize(y, 0)
 yy = BlockVector(2)
 yy[0] = y
 yy[1] = y

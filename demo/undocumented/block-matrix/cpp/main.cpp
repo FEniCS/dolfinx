@@ -30,14 +30,21 @@ using namespace dolfin;
 
 int main()
 {
-  // Create mesh
-  UnitSquare mesh(4, 4);
+  parameters["linear_algebra_backend"] = "Epetra";
 
-  // Create a simple stiffness matrix
+  // Create mesh
+  UnitSquare mesh(32, 32);
+
+  // Create a simple stiffness matrix and vector
   StiffnessMatrix::FunctionSpace V(mesh);
+
   StiffnessMatrix::BilinearForm a(V, V);
   boost::shared_ptr<GenericMatrix> A(new Matrix);
   assemble(*A, a);
+
+  StiffnessMatrix::LinearForm L(V);
+  boost::shared_ptr<GenericVector> x(new Vector);
+  assemble(*x, L);
 
   // Create a block matrix
   BlockMatrix AA(2, 2);
@@ -46,22 +53,14 @@ int main()
   AA.set_block(0, 1, A);
   AA.set_block(1, 1, A);
 
-  // Create vector
-  boost::shared_ptr<GenericVector> x(new Vector(A->size(0)));
-  Array<double> values(x->local_size());
-  const unsigned int offset = x->local_range().first;
-  for (unsigned int i = 0; i < x->local_size(); ++i)
-    values[i] = i + offset;
-  x->set_local(values);
-  x->apply("add");
-
   // Create block vector
   BlockVector xx(2);
   xx.set_block(0, x);
   xx.set_block(1, x);
 
   // Create another block vector
-  boost::shared_ptr<GenericVector> y(new Vector(A->size(1)));
+  boost::shared_ptr<GenericVector> y(new Vector);
+  A->resize(*y, 0);
   BlockVector yy(2);
   yy.set_block(0, y);
   yy.set_block(1, y);
