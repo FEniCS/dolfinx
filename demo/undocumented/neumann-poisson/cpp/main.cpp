@@ -69,9 +69,6 @@ class Flux : public Expression
 
 int main()
 {
-
-  not_working_in_parallel("neumann-poisson demo (with space of reals)");
-
   // Create mesh and function space
   UnitSquare mesh(64, 64);
   Poisson::FunctionSpace V(mesh);

@@ -72,19 +72,27 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
 
   // Build (renumber) dofmap when running in parallel
   if (distributed)
-    build_distributed(dofmap, dolfin_mesh);
+  {
+    // Build set of global dofs
+    const set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
+
+    // Build distributed dof map
+    build_distributed(dofmap, global_dofs, dolfin_mesh);
+  }
   else
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_distributed(DofMap& dofmap, const Mesh& mesh)
+void DofMapBuilder::build_distributed(DofMap& dofmap,
+                                      const DofMapBuilder::set& global_dofs,
+                                      const Mesh& mesh)
 {
   // Create data structures
-  set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
+  DofMapBuilder::set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
 
   // Computed owned and shared dofs (and owned and un-owned)
   compute_ownership(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
-                    dofmap, mesh);
+                    dofmap, global_dofs, mesh);
 
   // Renumber dofs owned dofs and received new numbering for unowned shared dofs
   parallel_renumber(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
@@ -93,7 +101,9 @@ void DofMapBuilder::build_distributed(DofMap& dofmap, const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                       set& shared_unowned_dofs,
-                                      const DofMap& dofmap, const Mesh& mesh)
+                                      const DofMap& dofmap,
+                                      const DofMapBuilder::set& global_dofs,
+                                      const Mesh& mesh)
 {
   log(TRACE, "Determining dof ownership for parallel dof map");
 
@@ -169,7 +179,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
       const uint received_vote = recv_buffer[i + 1];
       if (shared_owned_dofs.find(received_dof) != shared_owned_dofs.end())
       {
-        // Move dofs with higher ownership votes from shared to forbidden
+        // Move dofs with higher ownership votes from shared to shared but not owned
         if (received_vote < dof_vote[received_dof])
         {
           shared_unowned_dofs.insert(received_dof);
@@ -186,7 +196,29 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
     }
   }
 
-  // Mark all non-forbidden dofs as owned by the processes
+  // Add/remove global dofs to relevant sets (process 0 owns local dofs)
+  if (MPI::process_number() == 0)
+  {
+    shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    {
+      set::const_iterator _dof = shared_unowned_dofs.find(*dof);
+      if (_dof != shared_unowned_dofs.end())
+        shared_unowned_dofs.erase(_dof);
+    }
+  }
+  else
+  {
+    shared_unowned_dofs.insert(global_dofs.begin(), global_dofs.end());
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    {
+      set::const_iterator _dof = shared_owned_dofs.find(*dof);
+      if (_dof != shared_owned_dofs.end())
+        shared_owned_dofs.erase(_dof);
+    }
+  }
+
+  // Mark all shared and owned dofs as owned by the processes
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell->index());
@@ -310,13 +342,11 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
-std::set<dolfin::uint> DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
+DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
                                                        const Mesh& dolfin_mesh)
 {
-  cout << "DofMap global dimension: " << dofmap.global_dimension() << endl;
-
   // Wrap UFC dof map
-  boost::shared_ptr<const ufc::dofmap> _dofmap(dofmap._ufc_dofmap.get(), 
+  boost::shared_ptr<const ufc::dofmap> _dofmap(dofmap._ufc_dofmap.get(),
                                                NoDeleter());
 
   // Create UFCMesh
@@ -324,19 +354,19 @@ std::set<dolfin::uint> DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
 
   // Compute global dof indices
   uint offset = 0;
-  std::set<uint> global_dof_indices;
+  set global_dof_indices;
   compute_global_dofs(global_dof_indices, offset, _dofmap, dolfin_mesh, ufc_mesh);
 
   return global_dof_indices;
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs, 
+void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                             uint& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
 {
   assert(dofmap);
-  const uint D = dolfin_mesh.topology().dim();  
+  const uint D = dolfin_mesh.topology().dim();
 
   if (dofmap->num_sub_dofmaps() == 0)
   {
@@ -353,8 +383,6 @@ void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs,
 
     if (global_dof)
     {
-      //cout << "Global dim: " << dofmap->global_dimension() << endl; 
-
       // Check that we have just one dof
       if (dofmap->global_dimension() != 1)
         error("Global dof has dimension != 1.");
@@ -365,11 +393,9 @@ void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs,
       dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
 
       // Insert global dof index
-      std::pair<std::set<uint>::iterator, bool> ret = global_dofs.insert(dof + offset);
+      std::pair<DofMapBuilder::set::iterator, bool> ret = global_dofs.insert(dof + offset);
       if (!ret.second)
         error("Problem inserting global dof into set. Dof index aready exists.");
-      cout << "Local dof index:  " << dof << endl;
-      cout << "Global dof index: " << dof + offset << endl;
     }
   }
   else
@@ -380,14 +406,12 @@ void DofMapBuilder::compute_global_dofs(std::set<uint>& global_dofs,
       boost::shared_ptr<ufc::dofmap> sub_dofmap(dofmap->create_sub_dofmap(i));
       DofMap::init_ufc_dofmap(*sub_dofmap, ufc_mesh, dolfin_mesh);
 
-      compute_global_dofs(global_dofs, offset, sub_dofmap, dolfin_mesh, 
+      compute_global_dofs(global_dofs, offset, sub_dofmap, dolfin_mesh,
                           ufc_mesh);
 
       // Get offset
-      //cout << "Offset: " << sub_dofmap->global_dimension() << endl;
       offset += sub_dofmap->global_dimension();
     }
   }
 }
 //-----------------------------------------------------------------------------
-
