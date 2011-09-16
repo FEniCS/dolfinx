@@ -80,14 +80,17 @@ int main()
   Flux g;
   L.f = f;
   L.g = g;
-  Function u(V);
-  LinearVariationalProblem problem(a, L, u);
+  Function w(V);
+  LinearVariationalProblem problem(a, L, w);
 
   // Compute solution
   LinearVariationalSolver solver(problem);
   solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
+  // Extract subfunctions
+  Function u = w[0];
+  
   // Plot solution
   plot(u);
 
