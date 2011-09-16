@@ -30,94 +30,98 @@ class XMLMeshFunction(unittest.TestCase):
     def test_io_uint(self):
         "Test input/output for uint"
 
-        # Write some data
-        mesh = UnitSquare(5, 5)
-        f = MeshFunction("uint", mesh, 1)
-        f.set_all(0)
-        f[2] = 3
-        f[5] = 7
+        if (MPI.num_processes() == 1):
+            # Write some data
+            mesh = UnitSquare(5, 5)
+            f = MeshFunction("uint", mesh, 1)
+            f.set_all(0)
+            f[2] = 3
+            f[5] = 7
 
-        # Write
-        output_file = File("XMLMeshFunction_test_io_uint.xml")
-        output_file << f
+            # Write
+            output_file = File("XMLMeshFunction_test_io_uint.xml")
+            output_file << f
 
-        # Read from file
-        g = MeshFunction("uint", mesh, 1)
-        input_file = File("XMLMeshFunction_test_io_uint.xml")
-        input_file >> g
+            # Read from file
+            g = MeshFunction("uint", mesh, 1)
+            input_file = File("XMLMeshFunction_test_io_uint.xml")
+            input_file >> g
 
-        # Check values
-        for i in xrange(f.size()):
-            self.assertEqual(f[i], g[i])
+            # Check values
+            for i in xrange(f.size()):
+                self.assertEqual(f[i], g[i])
 
     def test_io_int(self):
         "Test input/output for int"
 
-        # Write some data
-        mesh = UnitSquare(5, 5)
-        f = MeshFunction("int", mesh, 1)
-        f.set_all(0)
-        f[2] = -3
-        f[5] = 7
+        if (MPI.num_processes() == 1):
+            # Write some data
+            mesh = UnitSquare(5, 5)
+            f = MeshFunction("int", mesh, 1)
+            f.set_all(0)
+            f[2] = -3
+            f[5] = 7
 
-        # Write
-        output_file = File("XMLMeshFunction_test_io_int.xml")
-        output_file << f
+            # Write
+            output_file = File("XMLMeshFunction_test_io_int.xml")
+            output_file << f
 
-        # Read from file
-        g = MeshFunction("int", mesh, 1)
-        input_file = File("XMLMeshFunction_test_io_int.xml")
-        input_file >> g
+            # Read from file
+            g = MeshFunction("int", mesh, 1)
+            input_file = File("XMLMeshFunction_test_io_int.xml")
+            input_file >> g
 
-        # Check values
-        for i in xrange(f.size()):
-            self.assertEqual(f[i], g[i])
+            # Check values
+            for i in xrange(f.size()):
+                self.assertEqual(f[i], g[i])
 
     def test_io_double(self):
         "Test input/output for double"
 
-        # Write some data
-        mesh = UnitSquare(5, 5)
-        f = MeshFunction("double", mesh, 1)
-        f.set_all(0.0)
-        f[2] = 3.14
-        f[5] = 10000000.0
+        if (MPI.num_processes() == 1):
+            # Write some data
+            mesh = UnitSquare(5, 5)
+            f = MeshFunction("double", mesh, 1)
+            f.set_all(0.0)
+            f[2] = 3.14
+            f[5] = 10000000.0
 
-        # Write
-        output_file = File("XMLMeshFunction_test_io_double.xml")
-        output_file << f
+            # Write
+            output_file = File("XMLMeshFunction_test_io_double.xml")
+            output_file << f
 
-        # Read from file
-        g = MeshFunction("double", mesh, 1)
-        input_file = File("XMLMeshFunction_test_io_double.xml")
-        input_file >> g
+            # Read from file
+            g = MeshFunction("double", mesh, 1)
+            input_file = File("XMLMeshFunction_test_io_double.xml")
+            input_file >> g
 
-        # Check values
-        for i in xrange(f.size()):
-            self.assertEqual(f[i], g[i])
+            # Check values
+            for i in xrange(f.size()):
+                self.assertEqual(f[i], g[i])
 
     def test_io_bool(self):
         "Test input/output for bool"
 
-        # Write some data
-        mesh = UnitSquare(5, 5)
-        f = MeshFunction("bool", mesh, 1)
-        f.set_all(False)
-        f[2] = True
-        f[5] = False
+        if (MPI.num_processes() == 1):
+            # Write some data
+            mesh = UnitSquare(5, 5)
+            f = MeshFunction("bool", mesh, 1)
+            f.set_all(False)
+            f[2] = True
+            f[5] = False
 
-        # Write
-        output_file = File("XMLMeshFunction_test_io_bool.xml")
-        output_file << f
+            # Write
+            output_file = File("XMLMeshFunction_test_io_bool.xml")
+            output_file << f
 
-        # Read from file
-        g = MeshFunction("bool", mesh, 1)
-        input_file = File("XMLMeshFunction_test_io_bool.xml")
-        input_file >> g
+            # Read from file
+            g = MeshFunction("bool", mesh, 1)
+            input_file = File("XMLMeshFunction_test_io_bool.xml")
+            input_file >> g
 
-        # Check values
-        for i in xrange(f.size()):
-            self.assertEqual(f[i], g[i])
+            # Check values
+            for i in xrange(f.size()):
+                self.assertEqual(f[i], g[i])
 
 if __name__ == "__main__":
     unittest.main()
