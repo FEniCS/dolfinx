@@ -28,7 +28,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
