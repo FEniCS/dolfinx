@@ -339,6 +339,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::
   ignored_entity_indices.clear();
   ignored_entity_processes.clear();
 
+  // Get process number
   const uint process_number = MPI::process_number();
 
   // Iterate over all entities

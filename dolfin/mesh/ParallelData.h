@@ -104,7 +104,7 @@ namespace dolfin
     // Mesh
     const Mesh& mesh;
 
-    // Global indices for entity of dimension d
+    // For entity of dimension d, MeshFunction holding global indices
     std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
 
     // FIXME: Use better name
@@ -115,6 +115,7 @@ namespace dolfin
     // the vertex
     std::map<uint, std::vector<uint> > _shared_vertices;
 
+    // Global number of entities of dimension d
     std::vector<uint> _num_global_entities;
 
     // True if a facet is an exterior facet, false otherwise
