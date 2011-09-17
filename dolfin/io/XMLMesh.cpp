@@ -63,9 +63,6 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
 
   // Read mesh domains (if any)
   read_domains(mesh.domains(), mesh_node);
-
-  // Initialize boundary indicators
-  mesh.initialize_exterior_facet_domains();
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)

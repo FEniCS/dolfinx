@@ -30,10 +30,8 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Vertex.h>
 #include "DofMap.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"

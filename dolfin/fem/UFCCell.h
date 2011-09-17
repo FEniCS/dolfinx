@@ -39,7 +39,8 @@ namespace dolfin
 {
 
   /// This class is simple wrapper for a UFC cell and provides
-  /// a layer between a DOLFIN cell and a UFC cell.
+  /// a layer between a DOLFIN cell and a UFC cell. When run in
+  /// parallel, it attempts to use global numbering.
 
   class UFCCell : public ufcexp::cell
   {
@@ -72,8 +73,6 @@ namespace dolfin
       // Clear old data
       clear();
 
-      const Mesh& mesh = cell.mesh();
-
       // Set cell shape
       switch (cell.type())
       {
@@ -92,6 +91,9 @@ namespace dolfin
       default:
         error("Unknown cell type.");
       }
+
+      // Mesh
+      const Mesh& mesh = cell.mesh();
 
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
@@ -171,7 +173,7 @@ namespace dolfin
       // Otherwise, local entities are used. It is the responsibility
       // of the DofMap class to create the local-to-global mapping of
       // entity indices when running in parallel. In that sense, this
-      // class is non parallel aware. It just uses the local-to-global
+      // class is not parallel aware. It just uses the local-to-global
       // mapping when it is available.
 
       // Set mesh identifier

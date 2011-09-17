@@ -23,13 +23,12 @@
 // First added:  2007-03-01
 // Last changed: 2011-02-24
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"

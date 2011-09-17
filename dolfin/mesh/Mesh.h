@@ -617,12 +617,6 @@ namespace dolfin
     friend class BinaryFile;
     friend class XMLMesh;
 
-    // Initialize mesh data "exterior_facet_domains". This function
-    // should be called to initialize DOLFINs internal storage of
-    // boundary indicators ("exterior_facet_domains") from an external
-    // specification (XML) of boundary indicators.
-    void initialize_exterior_facet_domains();
-
     // Mesh topology
     MeshTopology _topology;
 
