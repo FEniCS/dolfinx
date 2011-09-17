@@ -121,7 +121,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   pugi::xml_node xml_cells = mesh_node.child("cells");
   assert(xml_cells);
 
-  // Get number of cels and init editor
+  // Get number of cells and init editor
   const unsigned int num_cells = xml_cells.attribute("size").as_uint();
   editor.init_cells(num_cells);
 
@@ -158,8 +158,10 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     // Check that node is <data_entry>
     const std::string node_name = it->name();
     if (node_name != "data_entry")
+    {
       error("Expecting XML node <data_entry> but got <%s>.",
             node_name.c_str());
+    }
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
@@ -210,8 +212,10 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
                    "The XML tag <meshfunction> has been changed to <mesh_function>");
     }
     else
+    {
       error("Reading of MeshData \"%s\" is not yet supported.",
             data_set_type.c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -230,8 +234,10 @@ void XMLMesh::read_domains(MeshDomains& domains,
     // Check that node is <mesh_value_collection>
     const std::string node_name = it->name();
     if (node_name != "mesh_value_collection")
+    {
       error("Expecting XML node <mesh_value_collection> but got <%s>.",
             node_name.c_str());
+    }
 
     // Get attributes
     const std::string type = it->attribute("type").value();

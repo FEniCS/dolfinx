@@ -107,6 +107,7 @@ MeshData::create_mesh_function(std::string name)
   assert(f);
 
   // Add to map
+  cout << "XXXX Add to map: " << name << endl;
   mesh_functions[name] = f;
 
   return f;
@@ -202,23 +203,20 @@ std::string MeshData::str(bool verbose) const
     // Mesh functions
     s << "  MeshFunction<uint>" << std::endl;
     s << "  ------------------" << std::endl;
-    for (mf_const_iterator it = mesh_functions.begin();
-         it != mesh_functions.end(); ++it)
+    for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
 
     // Arrays
     s << "  std::vector<uint>" << std::endl;
     s << "  -----------------" << std::endl;
-    for (a_const_iterator it = arrays.begin();
-         it != arrays.end(); ++it)
+    for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
   }
   else
   {
-    const uint num_objects =
-      mesh_functions.size() + arrays.size();
+    const uint num_objects = mesh_functions.size() + arrays.size();
     s << "<MeshData containing " << num_objects << " objects>";
   }
 
@@ -230,8 +228,10 @@ void MeshData::check_deprecated(std::string name) const
   for (uint i = 0; i < _deprecated_names.size(); i++)
   {
     if (name == _deprecated_names[i])
-      warning("Mesh data named \"%s\" is no longer recognized by DOLFIN.",
+    {
+      error("Mesh data named \"%s\" is no longer recognized by DOLFIN.",
               name.c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------

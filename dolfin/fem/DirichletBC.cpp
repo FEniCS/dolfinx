@@ -22,6 +22,8 @@
 // First added:  2007-04-10
 // Last changed: 2011-04-13
 
+#include <map>
+#include <utility>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/constants.h>
@@ -33,7 +35,9 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -597,47 +601,14 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
-  // Extract data for boundary indicators
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_indicators = mesh.data().array("boundary_indicators");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_cells = mesh.data().array("boundary_facet_cells");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_numbers = mesh.data().array("boundary_facet_numbers");
-
-  // Need indicators
-  if (!boundary_indicators)
-    dolfin_error("Mesh.cpp",
-                 "initialize boundary indicators",
-                 "Mesh has no boundary indicators");
-
-  // Need facet cells and numbers if indicators are present
-  if (!boundary_facet_cells || !boundary_facet_numbers)
-    dolfin_error("Mesh.cpp",
-                 "initialize boundary indicators",
-                 "Mesh has boundary indicators but missing data for \"boundary_facet_cells\" and \"boundary_facet_numbers\"");
-  const uint num_facets = boundary_indicators->size();
-  assert(num_facets > 0);
-  assert(boundary_facet_cells->size() == num_facets);
-  assert(boundary_facet_numbers->size() == num_facets);
-
-  // Initialize facets
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-
   // Assign domain numbers for each facet
-  for (uint i = 0; i < num_facets; i++)
+  const uint D = mesh.topology().dim() - 1;
+  const std::map<std::pair<uint, uint>, uint> markers = mesh.domains().markers(D).values();
+  std::map<std::pair<uint, uint>, uint>::const_iterator mark;
+  for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
-    // Skip facets not on this boundary
-    if ((*boundary_indicators)[i] != sub_domain)
-      continue;
-
-    // Get cell index and local facet index
-    const uint cell_index = (*boundary_facet_cells)[i];
-    const uint local_facet = (*boundary_facet_numbers)[i];
-
-    // Store cell/facet data
-    facets.push_back(std::pair<uint, uint>(cell_index, local_facet));
+    if (mark->second == sub_domain)
+      facets.push_back(mark->first);
   }
 }
 //-----------------------------------------------------------------------------
