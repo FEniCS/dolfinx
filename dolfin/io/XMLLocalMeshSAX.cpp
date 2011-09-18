@@ -67,9 +67,8 @@ void XMLLocalMeshSAX::read()
     error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::start_element(const xmlChar* name,
-                                                const xmlChar** attrs,
-                                                uint num_attributes)
+void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
+                                    uint num_attributes)
 {
   switch (state)
   {
@@ -94,8 +93,14 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name,
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
+      error("Reading of MeshData in parallel is not yet supported.");
       //read_mesh_data(name, attrs, num_attributes);
       state = INSIDE_DATA;
+    }
+    else if (xmlStrcasecmp(name, (xmlChar* ) "domains") == 0)
+    {
+      read_mesh_domains(name, attrs, num_attributes);
+      state = INSIDE_DOMAINS;
     }
     break;
 
@@ -139,6 +144,22 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name,
     }
     break;
 
+  case INSIDE_DOMAINS:
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh_value_collection") == 0)
+    {
+      read_mesh_domain_type(name, attrs, num_attributes);
+      state = INSIDE_MESH_VALUE_COLLECTION;
+    }
+    break;
+
+  case INSIDE_MESH_VALUE_COLLECTION:
+    if (xmlStrcasecmp(name, (xmlChar* ) "value") == 0)
+    {
+      read_mesh_value_collection(name, attrs, num_attributes);
+      state = INSIDE_MESH_VALUE_COLLECTION;
+    }
+    break;
+
   case INSIDE_DATA_ENTRY:
     if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
@@ -176,6 +197,16 @@ void XMLLocalMeshSAX::end_element(const xmlChar *name)
   case INSIDE_DATA:
     if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
       state = INSIDE_MESH;
+    break;
+
+  case INSIDE_DOMAINS:
+    if (xmlStrcasecmp(name, (xmlChar* ) "domains") == 0)
+      state = INSIDE_MESH;
+    break;
+
+  case INSIDE_MESH_VALUE_COLLECTION:
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh_value_collection") == 0)
+      state = INSIDE_DOMAINS;
     break;
 
   case INSIDE_MESH_FUNCTION:
@@ -447,6 +478,27 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
 
   // Vertices per cell
   mesh_data.num_vertices_per_cell = 4;
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_domains(const xmlChar* name,
+                                        const xmlChar** attrs,
+                                        uint num_attributes)
+{
+  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_domain_type(const xmlChar* name,
+                                            const xmlChar** attrs,
+                                            uint num_attributes)
+{
+  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
+                                                 const xmlChar** attrs,
+                                                 uint num_attributes)
+{
+  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshSAX::num_local_vertices() const

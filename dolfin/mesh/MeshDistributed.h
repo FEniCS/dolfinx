@@ -21,9 +21,12 @@
 #ifndef __MESH_DISTRIBUTED_H
 #define __MESH_DISTRIBUTED_H
 
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -38,18 +41,43 @@ namespace dolfin
   public:
 
     /// Find processes that own or share list of mesh entities (using
-    /// entity global indices)
-    static std::vector<uint>
-    host_processes(const std::vector<uint> entity_indices, uint dim,
-                   const Mesh& mesh);
+    /// entity global indices). Returns
+    /// (global_dof, set(process_num, local_index)). Exclusively local
+    /// entities will not appear in the map. Works only for vertices and
+    /// cells
+    static std::map<uint, std::set<std::pair<uint, uint> > >
+    off_process_indices(const std::vector<uint>& entity_indices, uint dim,
+                        const Mesh& mesh);
 
+    /*
     /// Find processes that own or share list of mesh entities (using
-    /// global cell index + cell-wise entity index)
-    static std::vector<uint>
-    host_processes(const std::vector<std::pair<uint, uint> > entity_indices,
+    /// entity global indices). Returns
+    /// (global_cell_dof, set(process_num, local_index)). Exclusively local
+    /// entities will not appear in the map.
+    static std::map<uint, std::set<std::pair<uint, uint> > >
+    host_processes(const std::vector<std::pair<uint, uint> >& entity_indices,
                    uint dim, const Mesh& mesh);
+    */
 
+    /// Create MeshFunction from collection of pairs (global entity, value)
+    template<typename T>
+    static MeshFunction<T>
+    create_mesh_function(const std::vector<std::pair<uint, T> >& entity_indices,
+                         uint dim, const Mesh& mesh);
   };
+
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshFunction<T>
+  MeshDistributed::create_mesh_function(const std::vector<std::pair<uint, T> >& entity_indices,
+                                        uint dim, const Mesh& mesh)
+  {
+    error("MeshDistributed::create_mesh_function not implemented");
+
+    MeshFunction<T> mesh_function(mesh, dim);
+    return mesh_function;
+  }
+  //---------------------------------------------------------------------------
 
 }
 

@@ -50,8 +50,9 @@ namespace dolfin
 
     enum ParserState {OUTSIDE,
                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
-                      INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
-                      INSIDE_DATA_ENTRY,
+                      INSIDE_DATA, INSIDE_DOMAINS, INSIDE_MESH_VALUE_COLLECTION,
+                      INSIDE_MESH_FUNCTION,
+                      INSIDE_ARRAY, INSIDE_DATA_ENTRY,
                       DONE};
 
     static void sax_start_document(void *ctx);
@@ -60,22 +61,20 @@ namespace dolfin
     //static void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
     //static void sax_end_element(void *ctx, const xmlChar *name);
 
+    static void sax_start_element(void* ctx,
+                                  const xmlChar* name,
+                                  const xmlChar* prefix,
+                                  const xmlChar* URI,
+                                  int nb_namespaces,
+                                  const xmlChar** namespaces,
+                                  int nb_attributes,
+                                  int nb_defaulted,
+                                  const xmlChar** attrs);
 
-
-    static void sax_start_element( void * ctx,
-                               const xmlChar * name,
-                               const xmlChar * prefix,
-                               const xmlChar * URI,
-                               int nb_namespaces,
-                               const xmlChar ** namespaces,
-                               int nb_attributes,
-                               int nb_defaulted,
-                               const xmlChar ** attrs);
-
-    static void sax_end_element(void * ctx,
-					 const xmlChar * name,
-					 const xmlChar * prefix,
-					 const xmlChar * URI);
+    static void sax_end_element(void* ctx,
+                                const xmlChar* name,
+                                const xmlChar* prefix,
+                                const xmlChar* URI);
 
 
     static void sax_warning     (void *ctx, const char *msg, ...);
@@ -83,13 +82,18 @@ namespace dolfin
     static void sax_fatal_error (void *ctx, const char *msg, ...);
 
     // Callbacks for reading XML data
-    void read_mesh        (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertices    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertex      (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_cells       (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_interval    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_triangle    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_tetrahedron (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh       (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_vertices   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_vertex     (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_cells      (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_interval   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_triangle   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+
+    void read_mesh_domains(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh_domain_type(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+
     /*
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);

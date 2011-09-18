@@ -165,10 +165,10 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   std::vector<uint> recv_buffer(max_recv);
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
-    uint src  = (proc_num - k + num_proc) % num_proc;
-    uint dest = (proc_num +k) % num_proc;
-    uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), dest,
-				                             &recv_buffer[0], max_recv, src);
+    const uint src  = (proc_num - k + num_proc) % num_proc;
+    const uint dest = (proc_num + k) % num_proc;
+    const uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), dest,
+				                                    &recv_buffer[0], max_recv, src);
 
     for (uint i = 0; i < recv_count; i += 2)
     {

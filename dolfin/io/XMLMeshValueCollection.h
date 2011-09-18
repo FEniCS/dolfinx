@@ -53,8 +53,6 @@ namespace dolfin
                                     const std::string type,
                                     const pugi::xml_node xml_node)
   {
-    not_working_in_parallel("Reading XML MeshValueCollection");
-
     // Get node
     boost::shared_ptr<const pugi::xml_node>
       mvc_node = get_node(xml_node, "mesh_value_collection");
