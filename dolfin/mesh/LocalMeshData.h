@@ -122,11 +122,7 @@ namespace dolfin
     /// Topological dimension
     uint tdim;
 
-    // A map from named mesh data to arrays
-    std::map<std::string, std::vector<uint>* > arrays;
-
     // Friends
-    friend class XMLLocalMeshDOM;
     friend class XMLLocalMeshSAX;
     friend class MeshPartitioning;
     friend class GraphBuilder;

@@ -93,13 +93,12 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
-      error("Reading of MeshData in parallel is not yet supported.");
+      //error("Reading of MeshData in parallel is not yet supported.");
       //read_mesh_data(name, attrs, num_attributes);
       state = INSIDE_DATA;
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "domains") == 0)
     {
-      read_mesh_domains(name, attrs, num_attributes);
       state = INSIDE_DOMAINS;
     }
     break;
@@ -147,7 +146,7 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
   case INSIDE_DOMAINS:
     if (xmlStrcasecmp(name, (xmlChar* ) "mesh_value_collection") == 0)
     {
-      read_mesh_domain_type(name, attrs, num_attributes);
+      read_mesh_value_collection(name, attrs, num_attributes);
       state = INSIDE_MESH_VALUE_COLLECTION;
     }
     break;
@@ -155,7 +154,7 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
   case INSIDE_MESH_VALUE_COLLECTION:
     if (xmlStrcasecmp(name, (xmlChar* ) "value") == 0)
     {
-      read_mesh_value_collection(name, attrs, num_attributes);
+      read_mesh_value_collection_entry(name, attrs, num_attributes);
       state = INSIDE_MESH_VALUE_COLLECTION;
     }
     break;
@@ -480,25 +479,43 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
   mesh_data.num_vertices_per_cell = 4;
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::read_mesh_domains(const xmlChar* name,
-                                        const xmlChar** attrs,
-                                        uint num_attributes)
-{
-  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
-}
-//-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::read_mesh_domain_type(const xmlChar* name,
-                                            const xmlChar** attrs,
-                                            uint num_attributes)
-{
-  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
-}
-//-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
                                                  const xmlChar** attrs,
                                                  uint num_attributes)
 {
-  error("XMLLocalMeshSAX::read_mesh_domains not implemented.");
+  // Parse values
+  const std::string type = SAX2AttributeParser::parse<std::string>(name, attrs, "type", num_attributes);
+  const uint dim = SAX2AttributeParser::parse<uint>(name, attrs, "dim", num_attributes);
+  const uint size = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+
+  // Compute domain value range
+  domain_value_range = MPI::local_range(size);
+
+  cout << "Type and dim: " << type << ", " << dim << ", " << size << endl;
+  cout << "Range: " << domain_value_range.first << ", " << domain_value_range.second << endl;
+
+  if (type != "uint")
+    error("XMLLocalMeshSAX can only read unisgned integer domain values.");
+
+  // Reset counter
+  domain_value_counter = 0;
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
+                                                       const xmlChar** attrs,
+                                                       uint num_attributes)
+{
+  if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
+  {
+    // Parse values
+    const uint cell_index = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
+    const uint local_entity = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
+    const uint value = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
+
+    cout << "Type, dim size: " << cell_index << ", " << local_entity << ", " << value << endl;
+  }
+
+  ++domain_value_counter;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshSAX::num_local_vertices() const

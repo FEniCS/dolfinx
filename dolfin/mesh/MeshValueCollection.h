@@ -24,8 +24,8 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
-#include "MeshEntity.h"
 #include "Cell.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 
 namespace dolfin

@@ -760,9 +760,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   for(uint i = 0; i < gci.size(); ++i)
     global_cell_indices[i] = gci[i];
 
-  // distribute data
-  distribute_data(mesh, mesh_data, glob2loc, gci);
-
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
   editor.close();
@@ -871,6 +868,7 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     exterior[entities.find(it->first)->second] = false;
 }
 //-----------------------------------------------------------------------------
+/*
 void MeshPartitioning::distribute_data(Mesh& mesh,
                                        const LocalMeshData& local_mesh_data,
                                        std::map<uint, uint>& glob2loc,
@@ -910,4 +908,5 @@ void MeshPartitioning::distribute_data(Mesh& mesh,
     }
   }
 }
+*/
 //-----------------------------------------------------------------------------

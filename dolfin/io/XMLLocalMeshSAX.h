@@ -90,9 +90,8 @@ namespace dolfin
     void read_triangle   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
     void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
 
-    void read_mesh_domains(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_mesh_domain_type(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
     void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh_value_collection_entry(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
 
     /*
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
@@ -117,6 +116,11 @@ namespace dolfin
 
     // Range for cells
     std::pair<uint, uint> cell_range;
+
+    // Range for domain data and counter
+    std::pair<uint, uint> domain_value_range;
+    uint domain_value_counter;
+
 
     // State of parser
     ParserState state;

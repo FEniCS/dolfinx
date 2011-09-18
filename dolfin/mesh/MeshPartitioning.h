@@ -120,9 +120,9 @@ namespace dolfin
                                     std::map<uint, uint>& glob2loc);
 
     // Distribute boundary indicators
-    static void distribute_data(Mesh& mesh, const LocalMeshData& data,
-                                    std::map<uint, uint>& glob2loc,
-                                    const std::vector<uint>& gci);
+    //static void distribute_data(Mesh& mesh, const LocalMeshData& data,
+    //                                std::map<uint, uint>& glob2loc,
+    //                                const std::vector<uint>& gci);
 
     // Build mesh
     static void build_mesh(Mesh& mesh, const LocalMeshData& data,
