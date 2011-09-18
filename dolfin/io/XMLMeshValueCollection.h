@@ -147,6 +147,7 @@ namespace dolfin
     pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");
     mf_node.append_attribute("type") = type.c_str();
     mf_node.append_attribute("dim") = mesh_value_collection.dim();
+    mf_node.append_attribute("size") = mesh_value_collection.size();
 
     // Add data
     const std::map<std::pair<uint, uint>, T>&
