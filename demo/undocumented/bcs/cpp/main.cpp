@@ -62,6 +62,8 @@ int main()
   File file("u.pvd");
   file << u;
 
+  cout << "Norm: " << u.vector().norm("l2") << endl;
+
   // Plot solution
   plot(u);
 

@@ -51,8 +51,5 @@ bc3 = DirichletBC(V, u3, 3)
 u = Function(V)
 solve(a == L, u, [bc0, bc1, bc2, bc3])
 
-# Write solution to file
-File("u.pvd") << u
-
 # Plot solution
 plot(u, interactive=True)
