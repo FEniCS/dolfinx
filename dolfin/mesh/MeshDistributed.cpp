@@ -64,7 +64,6 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   // FIXME: work on optimising below code
 
   // List of indices to send
-  /*
   std::vector<uint> my_entities = entity_indices;
   assert(my_entities.size() > 0);
 
@@ -80,8 +79,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
         my_entities.erase(it);
     }
   }
-  */
 
+  /*
   std::vector<uint> my_entities;
   if (dim == D)
   {
@@ -96,11 +95,10 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
   else
     my_entities = entity_indices;
+  */
 
   // FIXME: handle case when my_entities.size() == 0
   assert(my_entities.size() > 0);
-
-  const uint number_expected = my_entities.size();
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();
@@ -158,10 +156,11 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
 
   // Sanity check
+  const std::set<uint> test_set(my_entities.begin(), my_entities.end());
+  const uint number_expected = test_set.size();
   if (number_expected != processes.size())
     error("Size problem in MeshDistributed::off_process_indices.");
 
   return processes;
 }
 //-----------------------------------------------------------------------------
-
