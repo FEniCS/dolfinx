@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-04-13
+// Last changed: 2011-09-19
 
 #include <map>
 #include <utility>
@@ -236,7 +236,9 @@ void DirichletBC::zero(GenericMatrix& A) const
   A.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::zero_columns(GenericMatrix& A, GenericVector& b, double diag_val) const
+void DirichletBC::zero_columns(GenericMatrix& A,
+                               GenericVector& b,
+                               double diag_val) const
 {
   Map bv_map;
   get_boundary_values(bv_map, _method);
@@ -602,8 +604,9 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   const Mesh& mesh = *_function_space->mesh();
 
   // Assign domain numbers for each facet
-  const uint D = mesh.topology().dim() - 1;
-  const std::map<std::pair<uint, uint>, uint> markers = mesh.domains().markers(D).values();
+  const uint D = mesh.topology().dim();
+  const std::map<std::pair<uint, uint>, uint>&
+    markers = mesh.domains().markers(D - 1).values();
   std::map<std::pair<uint, uint>, uint>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
