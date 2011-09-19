@@ -1,6 +1,6 @@
-"""Unit tests for assembly"""
+"""Unit tests for Dirichlet boundary conditions"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011 Anders Logg and Kent-Andre Mardal
 #
 # This file is part of DOLFIN.
 #
@@ -17,36 +17,46 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-04-25
-# Last changed: 2011-04-25
+# First added:  2011-09-19
+# Last changed: 2011-09-19
 
 import unittest
-import numpy
 from dolfin import *
-
-# FIXME: Not complete
 
 class DirichletBCTest(unittest.TestCase):
 
-    def test_director_lifetime(self):
-        """Test for any problems with objects with directors going out
-        of scope"""
+    def test_meshdomain_bcs(self):
+        """Test application of Dirichlet boundary conditions stored as
+        part of the mesh. This test is also a compatibility test for
+        VMTK."""
 
-        class Boundary(SubDomain):
-            def inside(self, x, on_boundary): return on_boundary
-        class BoundaryFunction(Expression):
-            def eval(self, values, x): values[0] = 1.0
+        mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
+        V = FunctionSpace(mesh, "CG", 1)
 
-        mesh = UnitSquare(8, 8)
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        v, u = TestFunction(V), TrialFunction(V)
-        A = assemble(v*u*dx)
-        bc = DirichletBC(V, BoundaryFunction(), Boundary())
-        bc.apply(A)
+        u = TrialFunction(V)
+        v = TestFunction(V)
 
+        f = Constant(0)
+        u1 = Constant(1)
+        u2 = Constant(2)
+        u3 = Constant(3)
+
+        bc1 = DirichletBC(V, u1, 1)
+        bc2 = DirichletBC(V, u2, 2)
+        bc3 = DirichletBC(V, u3, 3)
+
+        bcs = [bc1, bc2, bc3]
+
+        a = inner(grad(u), grad(v))*dx
+        L = f*v*dx
+
+        u = Function(V)
+        solve(a == L, u, bcs)
+
+        self.assertAlmostEqual(u.vector().norm("l2"), 98.9500304934, 10)
 
 if __name__ == "__main__":
     print ""
-    print "Testing basic DOLFIN DirichletBC operations"
+    print "Testing Dirichlet boundary conditions"
     print "------------------------------------------------"
     unittest.main()
