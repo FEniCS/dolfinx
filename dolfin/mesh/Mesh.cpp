@@ -22,7 +22,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-08-29
+// Last changed: 2011-09-19
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -158,6 +158,13 @@ dolfin::uint Mesh::init(uint dim) const
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
 
+  // Skip if mesh is empty
+  if (num_cells() == 0)
+  {
+    warning("Mesh is empty, unable to create entities of dimension %d.", dim);
+    return 0;
+  }
+
   // Skip if already computed
   if (_topology.size(dim) > 0)
     return _topology.size(dim);
@@ -187,6 +194,13 @@ void Mesh::init(uint d0, uint d1) const
   // new connectivity. However, in a sense all connectivity of a mesh always
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
+
+  // Skip if mesh is empty
+  if (num_cells() == 0)
+  {
+    warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
+    return;
+  }
 
   // Skip if already computed
   if (_topology(d0, d1).size() > 0)
