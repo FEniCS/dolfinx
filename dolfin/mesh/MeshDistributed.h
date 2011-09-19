@@ -49,35 +49,7 @@ namespace dolfin
     off_process_indices(const std::vector<uint>& entity_indices, uint dim,
                         const Mesh& mesh);
 
-    /*
-    /// Find processes that own or share list of mesh entities (using
-    /// entity global indices). Returns
-    /// (global_cell_dof, set(process_num, local_index)). Exclusively local
-    /// entities will not appear in the map.
-    static std::map<uint, std::set<std::pair<uint, uint> > >
-    host_processes(const std::vector<std::pair<uint, uint> >& entity_indices,
-                   uint dim, const Mesh& mesh);
-    */
-
-    /// Create MeshFunction from collection of pairs (global entity, value)
-    template<typename T>
-    static MeshFunction<T>
-    create_mesh_function(const std::vector<std::pair<uint, T> >& entity_indices,
-                         uint dim, const Mesh& mesh);
   };
-
-  //---------------------------------------------------------------------------
-  template <typename T>
-  MeshFunction<T>
-  MeshDistributed::create_mesh_function(const std::vector<std::pair<uint, T> >& entity_indices,
-                                        uint dim, const Mesh& mesh)
-  {
-    error("MeshDistributed::create_mesh_function not implemented");
-
-    MeshFunction<T> mesh_function(mesh, dim);
-    return mesh_function;
-  }
-  //---------------------------------------------------------------------------
 
 }
 

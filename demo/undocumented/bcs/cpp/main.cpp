@@ -25,7 +25,6 @@
 #include <dolfin.h>
 #include "Poisson.h"
 #include <boost/assign/list_of.hpp>
-#include <dolfin/mesh/MeshDistributed.h>
 
 using namespace dolfin;
 
@@ -61,8 +60,6 @@ int main()
   // Write solution to file
   File file("u.pvd");
   file << u;
-
-  cout << "Norm: " << u.vector().norm("l2") << endl;
 
   // Plot solution
   plot(u);

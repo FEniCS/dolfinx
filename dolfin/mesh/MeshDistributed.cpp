@@ -132,9 +132,6 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
       if (it != global_entity_indices.end())
       {
         const uint local_index = std::distance(global_entity_indices.begin(), it);
-        assert(global_entity_indices[local_index] == *it);
-        assert(global_entity_indices[local_index] == received_entity);
-
         my_hosted_entities.push_back(received_entity);
         my_hosted_entities.push_back(local_index);
       }
@@ -162,23 +159,9 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
 
   // Sanity check
   if (number_expected != processes.size())
-    error("Size problem");
+    error("Size problem in MeshDistributed::off_process_indices.");
 
   return processes;
 }
 //-----------------------------------------------------------------------------
-/*
-std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
-MeshDistributed::off_process_indices(const std::vector<std::pair<uint, uint> >& entity_indices,
-                                     uint dim, const Mesh& mesh)
-{
-  // Function is for facets and edges
-  std::vector<uint> cell_indices(entity_indices.size());
-  for (uint i = 0; i < entity_indices.size(); ++i)
-    cell_indices[i] = entity_indices[i].first;
 
-  const uint d = mesh.topology().dim();
-  return host_processes(cell_indices, d, mesh);
-}
-*/
-//-----------------------------------------------------------------------------
