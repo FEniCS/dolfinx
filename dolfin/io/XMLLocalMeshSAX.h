@@ -120,7 +120,7 @@ namespace dolfin
     // Range for domain data and counter
     std::pair<uint, uint> domain_value_range;
     uint domain_value_counter;
-
+    uint domain_dim;
 
     // State of parser
     ParserState state;

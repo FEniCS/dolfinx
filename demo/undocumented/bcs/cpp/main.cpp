@@ -25,6 +25,7 @@
 #include <dolfin.h>
 #include "Poisson.h"
 #include <boost/assign/list_of.hpp>
+#include <dolfin/mesh/MeshDistributed.h>
 
 using namespace dolfin;
 
@@ -33,6 +34,67 @@ int main()
   // Create mesh and finite element
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
 
+  //Poisson::FunctionSpace V(mesh);
+
+  File mf("mf.pvd");
+  mf << *mesh.domains().facet_domains(mesh);
+
+  /*
+  MeshFunction<dolfin::uint> testing(mesh, 2);
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+
+
+  }
+  */
+
+  //File mf_cells("mf_cells.pvd");
+  //mf_cells << *mesh.domains().cell_domains(mesh);
+
+  //Mesh mesh("mesh.xml");
+
+  /*
+  MeshValueCollection<dolfin::uint> & coll
+       = mesh.domains().markers(2);
+  cout << "Size: " << coll.size() << endl;
+
+  File collection("mesh.xml");
+  collection << mesh;
+  */
+
+  /*
+  MeshValueCollection<dolfin::uint> coll(2);
+  File collection("value_collection.xml");
+  collection >> coll;
+
+  cout << "Size: " << coll.size() << endl;
+
+  // Build list of cell indices
+  const std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>& _coll = coll.values();
+
+  std::vector<dolfin::uint> cells;
+  std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>::const_iterator it;
+  for (it = _coll.begin(); it != _coll.end(); ++it)
+    cells.push_back(it->first.first);
+
+  //Poisson::FunctionSpace V(mesh);
+
+  MeshPartitioning::number_entities(mesh, 3);
+  const std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >  hosts
+        = MeshDistributed::off_process_indices(cells, 3, mesh);
+
+  std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator ent;
+  for (ent = hosts.begin(); ent != hosts.end(); ++ent)
+  {
+    const std::set<std::pair<dolfin::uint, dolfin::uint> > procs = ent->second;
+    std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator proc;
+    cout << "Global dof: " << ent->first;
+    for (proc = procs.begin(); proc != procs.end(); ++proc)
+      cout << "  Local indec: " << proc->second << endl;
+  }
+  */
+
+  /*
   // Define variational problem
   Constant f(0.0);
   Poisson::FunctionSpace V(mesh);
@@ -57,9 +119,12 @@ int main()
   Function u(V);
   solve(a == L, u, bcs);
 
+  // Write solution to file
+  File file("u.pvd");
+  file << u;
+
   // Plot solution
   plot(u);
-
-
+  */
   return 0;
 }

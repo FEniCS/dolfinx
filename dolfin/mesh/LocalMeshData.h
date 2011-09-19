@@ -26,6 +26,7 @@
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
+#include <map>
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -121,6 +122,9 @@ namespace dolfin
 
     /// Topological dimension
     uint tdim;
+
+    // Mesh domain data [dim](cell_index, local_index, value)
+    std::map<uint, std::vector<std::vector<dolfin::uint> > > domain_data;
 
     // Friends
     friend class XMLLocalMeshSAX;

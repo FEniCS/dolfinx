@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <numeric>
 
 #include <dolfin/log/log.h>
@@ -34,9 +35,11 @@
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
+#include "MeshDistributed.h"
 #include "MeshEditor.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "MeshValueCollection.h"
 #include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
@@ -182,9 +185,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
                            shared_entity_processes, ignored_entity_indices,
                            ignored_entity_processes);
 
-
-
-
   // Qualify boundary entities. We need to find out if the ignored
   // (shared with lower ranked process) entities are entities of a
   // lower ranked process.  If not, this process becomes the lower
@@ -301,6 +301,160 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     assert(i < global_entity_indices.size());
 
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::mesh_domains(Mesh& mesh,
+                                    const LocalMeshData& local_data)
+{
+  mesh.init();
+
+  // Local domain data
+  const std::map<uint, std::vector<std::vector<dolfin::uint> > > domain_data = local_data.domain_data;
+  if (domain_data.size() == 0)
+    return;
+
+  // Topological dimension
+  const uint D = mesh.topology().dim();
+
+  // Initialse mesh domains
+  mesh.domains().init(D);
+
+  // Determine which processes to send data for each dom
+  std::map<uint, std::vector<std::vector<dolfin::uint> > >::const_iterator dim_data;
+  for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
+  {
+    // Initialise global numbering
+    const uint dim = dim_data->first;
+    MeshPartitioning::number_entities(mesh, dim);
+    MeshPartitioning::number_entities(mesh, D);
+
+    if (dim == 0)
+      error("MeshPartitioning::mesh_domains needs updating for vertices.");
+
+    // Get value collection
+    MeshValueCollection<uint>& markers = mesh.domains().markers(dim);
+
+    // Get local mesh data
+    const std::vector<std::vector<dolfin::uint> >& ldata = dim_data->second;
+
+    // Get local local-to-global map
+    if (!mesh.parallel_data().have_global_entity_indices(D))
+      error("Do not have have_global_entity_indices");
+
+    const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(D);
+    const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
+                  _global_entity_indices.values() + _global_entity_indices.size());
+
+    // Add local data to domain marker
+    uint counter = 0;
+    std::vector<uint>::iterator it;
+    for (uint i = 0; i < ldata.size(); ++i)
+    {
+      const uint global_cell_index = ldata[i][0];
+
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_cell_index);
+      if (it != global_entity_indices.end())
+      {
+        //if (MPI::process_number() == 1)
+        //{
+        //  cout << "Data: " << global_cell_index << "  " << ldata[i][1] << "  "  << ldata[i][2] << endl;
+        //  cout << "    : " << it - global_entity_indices.begin() << endl;;
+        //}
+
+        const uint local_cell_index = it - global_entity_indices.begin();
+        markers.set_value(local_cell_index, ldata[i][1], ldata[i][2]);
+      }
+      else
+      {
+        ++counter;
+        //cout << "off-process" << endl;
+      }
+    }
+    cout << "Number of off-process things: " << counter << endl;
+
+    // Determine where to send data
+    std::vector<dolfin::uint> global_entities;
+    for (uint i = 0; i < ldata.size(); ++i)
+      global_entities.push_back(ldata[i][0]);
+
+    // Get destinations and local cell index at destination
+    const std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
+      hosts = MeshDistributed::off_process_indices(global_entities, D, mesh);
+
+    cout << "Off-process data " << hosts.size() << endl;
+
+    /*
+    std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator host_data;
+    for (host_data = hosts.begin(); host_data != hosts.end(); ++host_data)
+    {
+      const uint index = host_data->first;
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), index);
+      if (it != global_entity_indices.end())
+        cout << "Have some overlap" << endl;
+    }
+    */
+
+    // Pack data to send
+    std::vector<uint> send_data;
+    std::vector<uint> destinations;
+    for (uint i = 0; i < ldata.size(); ++i)
+    {
+      const std::vector<dolfin::uint>& values = ldata[i];
+      const uint global_index = values[0];
+      const uint local_entity_index = values[1];
+      const uint domain_value = values[2];
+
+     //cout << "Global index: " << global_index << endl;
+
+      std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator host_data;
+      //for (host_data = hosts.begin(); host_data != hosts.end(); ++host_data)
+      //{
+      // //cout << "Testing: " << global_index << ", " << host_data->first << endl;
+      //  if (global_index == host_data->first)
+      //    cout << "Bingo"  << endl;
+      //}
+
+      host_data = hosts.find(global_index);
+      if (host_data != hosts.end())
+      {
+        //cout << "data to send" << endl;
+
+        const std::set<std::pair<dolfin::uint, dolfin::uint> >& processes_data = host_data->second;
+        std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
+        for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+        {
+          const uint proc = process_data->first;
+          const uint local_cell_entity = process_data->second;
+          destinations.push_back(proc);
+          send_data.push_back(local_cell_entity);
+          destinations.push_back(proc);
+          send_data.push_back(local_entity_index);
+          destinations.push_back(proc);
+          send_data.push_back(domain_value);
+        }
+      }
+
+    }
+
+    cout << "Send size " << send_data.size() << endl;
+
+    // Send/receive data
+    MPI::distribute(send_data, destinations);
+
+    cout << "Received size " << send_data.size() << endl;
+
+    // Add received data to mesh domain
+    for (uint i = 0; i < send_data.size(); i += 3)
+    {
+      //const uint local_cell_entity = send_data[i];
+      //const uint local_entity_index = send_data[i + 1];
+      //const uint domain_value = send_data[i + 2];
+      //cout << "Adding vals" << endl;
+      //markers.set_value(local_cell_entity, local_entity_index, domain_value);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -867,46 +1021,4 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
   for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
     exterior[entities.find(it->first)->second] = false;
 }
-//-----------------------------------------------------------------------------
-/*
-void MeshPartitioning::distribute_data(Mesh& mesh,
-                                       const LocalMeshData& local_mesh_data,
-                                       std::map<uint, uint>& glob2loc,
-                                       const std::vector<uint>& gci)
-{
-  // FIXME: This piece of code looks suspicious
-
-  // Make global to local mapping lci (inverse of gci)
-  std::map<uint,uint> lci;
-  for (uint i=0; i< gci.size(); i++)
-    lci[gci[i]] = i;
-
-  // Loop through the arrays
-  std::map<std::string, std::vector<uint>* >::const_iterator it;
-  for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)
-  {
-    const std::string name = it->first;
-    const std::vector<uint>* array = it->second;
-    if (name == "boundary_facet_cells")
-    {
-      boost::shared_ptr<std::vector<uint> >
-        cell_array(new std::vector<uint>(array->size()));
-      for (uint i=0; i< array->size(); i++)
-      {
-        if (lci.find((*array)[i]) != lci.end())
-          (*cell_array)[i] = lci[(*array)[i]];
-        else
-          (*cell_array)[i] = 0;
-      }
-      mesh.data().arrays[name] = cell_array;
-    }
-    else
-    {
-       boost::shared_ptr<std::vector<uint> >
-         non_const_array((std::vector<uint>*) array);
-       mesh.data().arrays[name] = non_const_array;
-    }
-  }
-}
-*/
 //-----------------------------------------------------------------------------

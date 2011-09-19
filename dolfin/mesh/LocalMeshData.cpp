@@ -114,6 +114,7 @@ void LocalMeshData::clear()
   num_global_cells = 0;
   gdim = 0;
   tdim = 0;
+  domain_data.clear();
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::extract_mesh_data(const Mesh& mesh)

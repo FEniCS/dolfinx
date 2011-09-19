@@ -33,18 +33,20 @@ std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
 MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
                                      uint dim, const Mesh& mesh)
 {
-  warning("MeshDistributed::host_processes not tested.");
+  warning("MeshDistributed::host_processes has has limited testing.");
+
+  const uint D = mesh.topology().dim();
 
   // Check that entity is a vertex or a cell
-  if (dim != 0 && dim != mesh.topology().dim())
+  if (dim != 0 && dim != D)
     error("This version of MeshDistributed::host_processes is only for vertices or cells.");
 
   // Check that global numbers have been computed.
   if (!mesh.parallel_data().have_global_entity_indices(dim))
     error("Global mesh entity numbers have not been computed.");
 
-  // Get global entity indices on this process
-  const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(dim);
+  // Get global cell entity indices on this process
+  const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(D);
   const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
                 _global_entity_indices.values() + _global_entity_indices.size());
 
@@ -55,7 +57,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   std::vector<uint> my_entities = entity_indices;
 
   // Remove local cells from my_entities to reduce communication
-  if (dim != mesh.topology().dim())
+  /*
+  if (dim == D)
   {
     std::vector<uint>::iterator it;
     for (uint i = 0; i < global_entity_indices.size(); ++i)
@@ -66,6 +69,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
         my_entities.erase(it);
     }
   }
+  */
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();
@@ -114,7 +118,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     //cout << "Size of received . . . " << recv_hostproc_count << endl;
     //cout << "Sum:                   " << MPI::sum(recv_hostproc_count) << endl;
     for (uint i = 0; i < recv_hostproc_count; i += 2)
-      processes[ host_processes[i] ].insert(std::make_pair(src, host_processes[i+ 1 ]));
+      processes[ host_processes[i] ].insert(std::make_pair(src, host_processes[i + 1]));
 
     // FIXME: Do later for efficiency
     // Remove entries from entities (my_entities) to be sent that cannot

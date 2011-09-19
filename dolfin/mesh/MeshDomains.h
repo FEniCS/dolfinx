@@ -23,7 +23,6 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-
 #include <dolfin/common/types.h>
 
 namespace dolfin
