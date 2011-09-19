@@ -1,6 +1,6 @@
 """Unit tests for Dirichlet boundary conditions"""
 
-# Copyright (C) 2011 Anders Logg and Kent-Andre Mardal
+# Copyright (C) 2011 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Kent-Andre Mardal 2011
+# Modified by Anders Logg 2011
+#
 # First added:  2011-09-19
 # Last changed: 2011-09-19
 
@@ -24,6 +27,24 @@ import unittest
 from dolfin import *
 
 class DirichletBCTest(unittest.TestCase):
+
+    def test_director_lifetime(self):
+        """Test for any problems with objects with directors going out
+        of scope"""
+
+        class Boundary(SubDomain):
+            def inside(self, x, on_boundary): return on_boundary
+
+        class BoundaryFunction(Expression):
+            def eval(self, values, x): values[0] = 1.0
+
+        mesh = UnitSquare(8, 8)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        v, u = TestFunction(V), TrialFunction(V)
+        A = assemble(v*u*dx)
+        bc = DirichletBC(V, BoundaryFunction(), Boundary())
+
+        bc.apply(A)
 
     def test_meshdomain_bcs(self):
         """Test application of Dirichlet boundary conditions stored as
