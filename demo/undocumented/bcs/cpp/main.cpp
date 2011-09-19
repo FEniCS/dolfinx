@@ -34,19 +34,11 @@ int main()
   // Create mesh and finite element
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
 
+
   //Poisson::FunctionSpace V(mesh);
 
   File mf("mf.pvd");
   mf << *mesh.domains().facet_domains(mesh);
-
-  /*
-  MeshFunction<dolfin::uint> testing(mesh, 2);
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-
-
-  }
-  */
 
   //File mf_cells("mf_cells.pvd");
   //mf_cells << *mesh.domains().cell_domains(mesh);

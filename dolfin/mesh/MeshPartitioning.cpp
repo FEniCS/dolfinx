@@ -347,7 +347,6 @@ void MeshPartitioning::mesh_domains(Mesh& mesh,
                   _global_entity_indices.values() + _global_entity_indices.size());
 
     // Add local data to domain marker
-    uint counter = 0;
     std::vector<uint>::iterator it;
     for (uint i = 0; i < ldata.size(); ++i)
     {
@@ -357,23 +356,12 @@ void MeshPartitioning::mesh_domains(Mesh& mesh,
       it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_cell_index);
       if (it != global_entity_indices.end())
       {
-        //if (MPI::process_number() == 1)
-        //{
-        //  cout << "Data: " << global_cell_index << "  " << ldata[i][1] << "  "  << ldata[i][2] << endl;
-        //  cout << "    : " << it - global_entity_indices.begin() << endl;;
-        //}
-
         const uint local_cell_index = it - global_entity_indices.begin();
         markers.set_value(local_cell_index, ldata[i][1], ldata[i][2]);
       }
-      else
-      {
-        ++counter;
-        //cout << "off-process" << endl;
-      }
     }
-    cout << "Number of off-process things: " << counter << endl;
 
+    /*
     // Determine where to send data
     std::vector<dolfin::uint> global_entities;
     for (uint i = 0; i < ldata.size(); ++i)
@@ -385,75 +373,128 @@ void MeshPartitioning::mesh_domains(Mesh& mesh,
 
     cout << "Off-process data " << hosts.size() << endl;
 
-    /*
     std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator host_data;
+    uint counter0(0), counter1(0);
     for (host_data = hosts.begin(); host_data != hosts.end(); ++host_data)
     {
       const uint index = host_data->first;
       std::vector<uint>::const_iterator it;
       it = std::find(global_entity_indices.begin(), global_entity_indices.end(), index);
       if (it != global_entity_indices.end())
-        cout << "Have some overlap" << endl;
+        ++counter0;
+      else
+        ++counter1;
+    }
+    cout << "Counters: " << counter0 << ", " << counter1 << ". Sums: " << counter0 + counter1 << ", " << global_entity_indices.size() << endl;
+    cout << "Size: " << _global_entity_indices.size() << endl;
+    cout << "Hosts Size: " << hosts.size() << endl;
+    cout << "Data Size: " << ldata.size() << endl;
+    cout << "Global ind size: " << global_entity_indices.size() << endl;
+    */
+
+    /*
+    // Pack data to send to appropriate process
+    std::vector<uint> send_data;
+    std::vector<uint> destinations;
+    for (host_data = hosts.begin(); host_data != hosts.end(); ++host_data)
+    {
+      const uint global_cell_index = host_data->first;
+      const std::set<std::pair<dolfin::uint, dolfin::uint> > processes_data = host_data->second;
+
+      for (uint i = 0; i < ldata.size(); ++i)
+      {
+        if (ldata[i][0] == global_cell_index)
+        {
+          std::vector<uint> domain_data = ldata[i];
+          //const uint global_index = domain_data[0];
+          const uint local_entity_index = domain_data[1];
+          const uint domain_value = domain_data[2];
+
+          std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
+          for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+          {
+            const uint proc = process_data->first;
+            const uint local_cell_entity = process_data->second;
+
+            destinations.push_back(proc);
+            send_data.push_back(local_cell_entity);
+
+            destinations.push_back(proc);
+            send_data.push_back(local_entity_index);
+
+            destinations.push_back(proc);
+            send_data.push_back(domain_value);
+          }
+        }
+      }
+    }
+
+    // Send/receive data
+    cout << "Send size " << send_data.size() << endl;
+    MPI::distribute(send_data, destinations);
+    cout << "Received size " << send_data.size() << endl;
+    assert(send_data.size() == destinations.size());
+
+    // Add received data to mesh domain
+    for (uint i = 0; i < send_data.size(); i += 3)
+    {
+      const uint local_cell_entity = send_data[i];
+      const uint local_entity_index = send_data[i + 1];
+      //const uint domain_value = send_data[i + 2];
+      markers.set_value(local_cell_entity, local_entity_index, 0);
     }
     */
 
-    // Pack data to send
-    std::vector<uint> send_data;
-    std::vector<uint> destinations;
+    // Pack data all to send (or testing)
+    std::vector<uint> send_data, destinations;
     for (uint i = 0; i < ldata.size(); ++i)
     {
-      const std::vector<dolfin::uint>& values = ldata[i];
-      const uint global_index = values[0];
-      const uint local_entity_index = values[1];
-      const uint domain_value = values[2];
+      const uint global_index = ldata[i][0];
+      const uint local_entity_index = ldata[i][1];
+      const uint domain_value = ldata[i][2];
 
-     //cout << "Global index: " << global_index << endl;
+      // Skip local indices
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_index);
+      if (it != global_entity_indices.end())
+        continue;
 
-      std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator host_data;
-      //for (host_data = hosts.begin(); host_data != hosts.end(); ++host_data)
-      //{
-      // //cout << "Testing: " << global_index << ", " << host_data->first << endl;
-      //  if (global_index == host_data->first)
-      //    cout << "Bingo"  << endl;
-      //}
-
-      host_data = hosts.find(global_index);
-      if (host_data != hosts.end())
+      for (uint i = 0; i < MPI::num_processes(); ++i)
       {
-        //cout << "data to send" << endl;
+        if (i == MPI::process_number())
+          continue;
 
-        const std::set<std::pair<dolfin::uint, dolfin::uint> >& processes_data = host_data->second;
-        std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
-        for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
-        {
-          const uint proc = process_data->first;
-          const uint local_cell_entity = process_data->second;
-          destinations.push_back(proc);
-          send_data.push_back(local_cell_entity);
-          destinations.push_back(proc);
-          send_data.push_back(local_entity_index);
-          destinations.push_back(proc);
-          send_data.push_back(domain_value);
-        }
+        const uint proc = i;
+
+        destinations.push_back(proc);
+        send_data.push_back(global_index);
+
+        destinations.push_back(proc);
+        send_data.push_back(local_entity_index);
+
+        destinations.push_back(proc);
+        send_data.push_back(domain_value);
       }
-
     }
 
-    cout << "Send size " << send_data.size() << endl;
-
     // Send/receive data
+    cout << "Send size " << send_data.size() << endl;
     MPI::distribute(send_data, destinations);
-
     cout << "Received size " << send_data.size() << endl;
 
     // Add received data to mesh domain
     for (uint i = 0; i < send_data.size(); i += 3)
     {
-      //const uint local_cell_entity = send_data[i];
-      //const uint local_entity_index = send_data[i + 1];
-      //const uint domain_value = send_data[i + 2];
-      //cout << "Adding vals" << endl;
-      //markers.set_value(local_cell_entity, local_entity_index, domain_value);
+      const uint global_cell_entity = send_data[i];
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_cell_entity);
+      if (it != global_entity_indices.end())
+      {
+        const uint local_cell_entity = it - global_entity_indices.begin();
+        const uint local_entity_index = send_data[i + 1];
+        const uint domain_value = send_data[i + 2];
+        markers.set_value(local_cell_entity, local_entity_index, domain_value);
+      }
     }
   }
 }
