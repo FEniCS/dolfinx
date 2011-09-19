@@ -91,8 +91,11 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
     file >> local_data;
     timer.stop();
 
-    // Partition data
+    // Partition mesh
     MeshPartitioning::partition(*this, local_data);
+
+    // Create MeshDomains from local_data
+    MeshPartitioning::mesh_domains(*this, local_data);
   }
   else
   {

@@ -18,6 +18,7 @@
 // First added:  2011-08-29
 // Last changed: 2011-09-16
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
@@ -171,6 +172,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   std::map<std::pair<uint, uint>, uint>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
     maxval = std::max(maxval, it->second);
+  maxval = MPI::max(maxval);
 
   // Set all values of mesh function to maximum value + 1
   mesh_function.set_all(maxval + 1);

@@ -387,8 +387,8 @@ void XMLLocalMeshSAX::read_cells(const xmlChar* name,
   mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::read_interval(const xmlChar *name,
-                                                const xmlChar **attrs, uint num_attributes)
+void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
+                                    uint num_attributes)
 {
   // Check dimension
   if (tdim != 1)
@@ -491,11 +491,15 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
   // Compute domain value range
   domain_value_range = MPI::local_range(size);
 
+  domain_dim = dim;
+
   cout << "Type and dim: " << type << ", " << dim << ", " << size << endl;
   cout << "Range: " << domain_value_range.first << ", " << domain_value_range.second << endl;
 
   if (type != "uint")
     error("XMLLocalMeshSAX can only read unisgned integer domain values.");
+
+  mesh_data.domain_data.insert(std::make_pair(dim, 0));
 
   // Reset counter
   domain_value_counter = 0;
@@ -505,14 +509,16 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
                                                        const xmlChar** attrs,
                                                        uint num_attributes)
 {
+  // Parse values
+  std::vector<uint> entry_data(3);
+  entry_data[0] = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
+  entry_data[1] = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
+  entry_data[2] = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
+
   if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
   {
-    // Parse values
-    const uint cell_index = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
-    const uint local_entity = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
-    const uint value = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
-
-    cout << "Type, dim size: " << cell_index << ", " << local_entity << ", " << value << endl;
+    std::vector<std::vector<uint> >& data = mesh_data.domain_data.find(domain_dim)->second;
+    data.push_back(entry_data);
   }
 
   ++domain_value_counter;

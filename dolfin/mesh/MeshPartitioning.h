@@ -88,6 +88,9 @@ namespace dolfin
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, uint d);
 
+    /// Create distributed MeshDomans from local_data
+    static void mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
+
   private:
 
     // Compute and return (number of global entities, process offset)
@@ -118,11 +121,6 @@ namespace dolfin
     // Distribute vertices
     static void distribute_vertices(LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc);
-
-    // Distribute boundary indicators
-    //static void distribute_data(Mesh& mesh, const LocalMeshData& data,
-    //                                std::map<uint, uint>& glob2loc,
-    //                                const std::vector<uint>& gci);
 
     // Build mesh
     static void build_mesh(Mesh& mesh, const LocalMeshData& data,
