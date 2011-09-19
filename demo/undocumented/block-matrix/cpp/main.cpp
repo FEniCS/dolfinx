@@ -30,8 +30,6 @@ using namespace dolfin;
 
 int main()
 {
-  parameters["linear_algebra_backend"] = "Epetra";
-
   // Create mesh
   UnitSquare mesh(32, 32);
 
