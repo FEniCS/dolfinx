@@ -107,7 +107,6 @@ MeshData::create_mesh_function(std::string name)
   assert(f);
 
   // Add to map
-  cout << "XXXX Add to map: " << name << endl;
   mesh_functions[name] = f;
 
   return f;
