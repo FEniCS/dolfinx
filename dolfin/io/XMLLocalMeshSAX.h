@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-10
-// Last changed: 2011-05-30
-//
 // Modified by Kent-Andre Mardal, 2011.
+//
+// First added:  2009-03-10
+// Last changed: 2011-09-17
 
 #ifndef __XMLLOCALMESHDATASAX_H
 #define __XMLLOCALMESHDATASAX_H
@@ -57,9 +57,6 @@ namespace dolfin
 
     static void sax_start_document(void *ctx);
     static void sax_end_document(void *ctx);
-
-    //static void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
-    //static void sax_end_element(void *ctx, const xmlChar *name);
 
     static void sax_start_element(void* ctx,
                                   const xmlChar* name,

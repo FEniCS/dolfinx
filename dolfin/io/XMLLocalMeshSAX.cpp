@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-28
-// Last changed: 2011-06-30
+// Last changed: 2011-09-19
 //
 // Modified by Anders Logg, 2008.
 
@@ -490,11 +490,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
 
   // Compute domain value range
   domain_value_range = MPI::local_range(size);
-
   domain_dim = dim;
-
-  cout << "Type and dim: " << type << ", " << dim << ", " << size << endl;
-  cout << "Range: " << domain_value_range.first << ", " << domain_value_range.second << endl;
 
   if (type != "uint")
     error("XMLLocalMeshSAX can only read unisgned integer domain values.");
@@ -509,14 +505,14 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
                                                        const xmlChar** attrs,
                                                        uint num_attributes)
 {
-  // Parse values
-  std::vector<uint> entry_data(3);
-  entry_data[0] = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
-  entry_data[1] = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
-  entry_data[2] = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
-
   if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
   {
+    // Parse values
+    std::vector<uint> entry_data(3);
+    entry_data[0] = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
+    entry_data[1] = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
+    entry_data[2] = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
+
     std::vector<std::vector<uint> >& data = mesh_data.domain_data.find(domain_dim)->second;
     data.push_back(entry_data);
   }

@@ -22,6 +22,7 @@
 #define __MESH_VALUE_COLLECTION_H
 
 #include <map>
+#include <utility>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include "Cell.h"
@@ -79,7 +80,12 @@ namespace dolfin
     ///         The local index of the entity relative to the cell.
     ///     marker_value (T)
     ///         The value of the marker.
-    void set_value(uint cell_index, uint local_entity, const T& value);
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True is a new value is inserted, false if overwriting
+    ///         an existing value.
+    bool set_value(uint cell_index, uint local_entity, const T& value);
 
     /// Set value for given entity index
     ///
@@ -90,7 +96,13 @@ namespace dolfin
     ///         The value.
     ///     mesh (Mesh)
     ///         The mesh.
-    void set_value(uint entity_index, const T& value, const Mesh& mesh);
+    ///         The value of the marker.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True is a new value is inserted, false if overwriting
+    ///         an existing value.
+    bool set_value(uint entity_index, const T& value, const Mesh& mesh);
 
     /// Get all values
     ///
@@ -153,16 +165,18 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshValueCollection<T>::set_value(uint cell_index,
+  bool MeshValueCollection<T>::set_value(uint cell_index,
                                          uint local_entity,
                                          const T& value)
   {
     std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
-    _values[pos] = value;
+    std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+    it = _values.insert(std::make_pair(pos, value));
+    return it.second;
   }
   //---------------------------------------------------------------------------
   template <class T>
-  void MeshValueCollection<T>::set_value(uint entity_index,
+  bool MeshValueCollection<T>::set_value(uint entity_index,
                                          const T& value,
                                          const Mesh& mesh)
   {
@@ -182,7 +196,9 @@ namespace dolfin
 
     // Add value
     std::pair<uint, uint> pos(std::make_pair(cell.index(), local_entity));
-    _values[pos] = value;
+    std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+    it = _values.insert(std::make_pair(pos, value));
+    return it.second;
   }
   //---------------------------------------------------------------------------
   template <class T>

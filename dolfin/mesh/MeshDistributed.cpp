@@ -16,12 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed:
+// Last changed: 2011-09-19
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/log/log.h"
 #include "dolfin/mesh/Mesh.h"
-#include "MeshFunction.h"
 #include "ParallelData.h"
 
 #include "MeshDistributed.h"
@@ -33,8 +32,10 @@ std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
 MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
                                      uint dim, const Mesh& mesh)
 {
-  warning("MeshDistributed::host_processes has has limited testing.");
+  if (dim == 0)
+    warning("MeshDistributed::host_processes has not been tested for vertices.");
 
+  // Mesh topology dim
   const uint D = mesh.topology().dim();
 
   // Check that entity is a vertex or a cell
@@ -50,7 +51,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     error("Global mesh entity numbers have not been computed.");
 
   // Get global cell entity indices on this process
-  const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(D);
+  const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(dim);
   const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
                 _global_entity_indices.values() + _global_entity_indices.size());
 
@@ -59,13 +60,15 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   // Prepare map to hold process numbers
   std::map<uint, std::set<std::pair<uint, uint> > > processes;
 
-  // List of indices to send
-  std::vector<uint> my_entities = entity_indices;
 
+  // FIXME: work on optimising below code
+
+  // List of indices to send
+  /*
+  std::vector<uint> my_entities = entity_indices;
   assert(my_entities.size() > 0);
 
   // Remove local cells from my_entities to reduce communication
-  /*
   if (dim == D)
   {
     std::vector<uint>::iterator it;
@@ -79,6 +82,26 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
   */
 
+  std::vector<uint> my_entities;
+  if (dim == D)
+  {
+    for (uint i = 0; i < entity_indices.size(); ++i)
+    {
+      const uint global_index = entity_indices[i];
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_index);
+      if (it == global_entity_indices.end())
+        my_entities.push_back(global_index);
+    }
+  }
+  else
+    my_entities = entity_indices;
+
+  // FIXME: handle case when my_entities.size() == 0
+  assert(my_entities.size() > 0);
+
+  const uint number_expected = my_entities.size();
+
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
@@ -90,51 +113,56 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   {
     const uint src  = (proc_num - k + num_proc) % num_proc;
     const uint dest = (proc_num + k) % num_proc;
-    cout << "Src, dest: " << src << ", " << dest << endl;
 
-
-    // Send/receive list of entities (global indices)
+    // Send/receive list of non-owned entities (global indices)
     const uint recv_enitity_count = MPI::send_recv(&my_entities[0],
                                         my_entities.size(), dest,
                                         &off_process_entities[0],
                                         off_process_entities.size(), src);
 
-    // Check if this process 'hosts' received entities, and if so
-    // store process number and local index
+    // Check if this process owns received entities, and if so
+    // store local index
     std::vector<uint> my_hosted_entities;
     for (uint j = 0; j < recv_enitity_count; ++j)
     {
-      const uint received_entity = off_process_entities[j];
-
       // Check if this process hosts 'received_entity'
+      const uint received_entity = off_process_entities[j];
       std::vector<uint>::const_iterator it;
       it = std::find(global_entity_indices.begin(), global_entity_indices.end(), received_entity);
       if (it != global_entity_indices.end())
       {
-        const uint local_index  = std::distance(global_entity_indices.begin(), it);
+        const uint local_index = std::distance(global_entity_indices.begin(), it);
         assert(global_entity_indices[local_index] == *it);
-        my_hosted_entities.push_back(*it);
+        assert(global_entity_indices[local_index] == received_entity);
+
+        my_hosted_entities.push_back(received_entity);
         my_hosted_entities.push_back(local_index);
       }
     }
 
-    // Send/receive back 'hosting' processes
+    // Send/receive hosted cells
     const uint max_recv_host_proc = MPI::max(my_hosted_entities.size());
     std::vector<uint> host_processes(max_recv_host_proc);
     const uint recv_hostproc_count = MPI::send_recv(&my_hosted_entities[0],
-                                            my_hosted_entities.size(), dest,
+                                            my_hosted_entities.size(), src,
                                             &host_processes[0],
-                                            host_processes.size(), src);
+                                            host_processes.size(), dest);
 
-    //cout << "Size of received . . . " << recv_hostproc_count << endl;
-    //cout << "Sum:                   " << MPI::sum(recv_hostproc_count) << endl;
     for (uint j = 0; j < recv_hostproc_count; j += 2)
-      processes[ host_processes[j] ].insert(std::make_pair(src, host_processes[j + 1]));
+    {
+      const uint global_index = host_processes[j];
+      const uint local_index  = host_processes[j + 1];
+      processes[global_index].insert(std::make_pair(dest, local_index));
+    }
 
     // FIXME: Do later for efficiency
-    // Remove entries from entities (my_entities) to be sent that cannot
+    // Remove entries from entities (from my_entities) that cannot
     // reside on more processes (i.e., cells)
   }
+
+  // Sanity check
+  if (number_expected != processes.size())
+    error("Size problem");
 
   return processes;
 }
