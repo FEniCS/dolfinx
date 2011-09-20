@@ -196,6 +196,15 @@ LA_PRE_FACTORY(PETScFactory)
 #endif
 
 //-----------------------------------------------------------------------------
+// Run macros for PETScCUSP backend
+//-----------------------------------------------------------------------------
+#ifdef PETSC_HAVE_CUSP
+LA_PRE_FACTORY(PETScCuspFactory)
+%newobject dolfin::PETScCuspMatrix::copy;
+%newobject dolfin::PETScCuspVector::copy;
+#endif
+
+//-----------------------------------------------------------------------------
 // Run macros for Trilinos backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS

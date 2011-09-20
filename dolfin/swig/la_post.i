@@ -762,6 +762,15 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 %}
 #endif
 
+#ifdef PETSC_HAVE_CUSP
+DOWN_CAST_MACRO(PETScCuspVector)
+DOWN_CAST_MACRO(PETScCuspMatrix)
+
+%pythoncode %{
+_matrix_vector_mul_map[PETScCuspMatrix] = [PETScCuspVector]
+%}
+#endif
+
 #ifdef HAS_TRILINOS
 DOWN_CAST_MACRO(EpetraVector)
 DOWN_CAST_MACRO(EpetraMatrix)
