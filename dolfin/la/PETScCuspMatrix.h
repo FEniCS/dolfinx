@@ -28,7 +28,7 @@
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
 #include "GenericMatrix.h"
-#include "PETScBaseMatrix.h"
+#include "PETScCuspBaseMatrix.h"
 
 namespace dolfin
 {
@@ -43,7 +43,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScCuspMatrix : public GenericMatrix, public PETScBaseMatrix
+  class PETScCuspMatrix : public GenericMatrix, public PETScCuspBaseMatrix
   {
   public:
 
@@ -71,11 +71,11 @@ namespace dolfin
     virtual PETScCuspMatrix* copy() const;
 
     /// Return size of given dimension
-    uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
+    uint size(uint dim) const { return PETScCuspBaseMatrix::size(dim); }
 
     /// Return local ownership range
     std::pair<uint, uint> local_range(uint dim) const
-    { return PETScBaseMatrix::local_range(dim); };
+    { return PETScCuspBaseMatrix::local_range(dim); };
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -95,7 +95,7 @@ namespace dolfin
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
     void resize(GenericVector& y, uint dim) const
-    { PETScBaseMatrix::resize(y, dim); }
+    { PETScCuspBaseMatrix::resize(y, dim); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;

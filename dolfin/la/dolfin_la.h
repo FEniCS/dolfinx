@@ -17,6 +17,7 @@
 
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
+#include <dolfin/la/PETScCuspBaseMatrix.h>
 #include <dolfin/la/uBLASFactory.h>
 
 #include <dolfin/la/uBLASMatrix.h>

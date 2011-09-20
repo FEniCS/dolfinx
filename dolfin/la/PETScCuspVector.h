@@ -218,8 +218,8 @@ namespace dolfin
     /// Assignment operator
     const PETScCuspVector& operator= (const PETScCuspVector& x);
 
-    friend class PETScBaseMatrix;
-    friend class PETScMatrix;
+    friend class PETScCuspBaseMatrix;
+    friend class PETScCuspMatrix;
 
   private:
 

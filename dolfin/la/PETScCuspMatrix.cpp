@@ -47,7 +47,7 @@ PETScCuspMatrix::PETScCuspMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScCuspMatrix::PETScCuspMatrix(boost::shared_ptr<Mat> A) : PETScBaseMatrix(A)
+PETScCuspMatrix::PETScCuspMatrix(boost::shared_ptr<Mat> A) : PETScCuspBaseMatrix(A)
 {
   // Do nothing
 }
@@ -89,7 +89,7 @@ void PETScCuspMatrix::resize(uint M, uint N)
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
     error("Cannot resize PETScCuspMatrix. More than one object points to the underlying PETSc object.");
-  A.reset(new Mat, PETScMatrixDeleter());
+  A.reset(new Mat, PETScCuspMatrixDeleter());
 
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -132,7 +132,7 @@ void PETScCuspMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
     error("Cannot initialise PETScCuspMatrix. More than one object points to the underlying PETSc object.");
-  A.reset(new Mat, PETScMatrixDeleter());
+  A.reset(new Mat, PETScCuspMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -224,7 +224,7 @@ PETScCuspMatrix* PETScCuspMatrix::copy() const
   else
   {
     // Create copy of PETSc matrix
-    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+    boost::shared_ptr<Mat> _Acopy(new Mat, PETScCuspMatrixDeleter());
     MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
     // Create PETScCuspMatrix
@@ -443,7 +443,7 @@ const PETScCuspMatrix& PETScCuspMatrix::operator= (const PETScCuspMatrix& A)
   {
     if (this->A && !this->A.unique())
       error("Cannot assign PETScCuspMatrix because more than one object points to the underlying PETSc object.");
-    this->A.reset(new Mat, PETScMatrixDeleter());
+    this->A.reset(new Mat, PETScCuspMatrixDeleter());
 
     // Duplicate with the same pattern as A.A
     MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());

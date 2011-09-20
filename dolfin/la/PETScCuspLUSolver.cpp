@@ -151,7 +151,7 @@ dolfin::uint PETScCuspLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Check dimensions
   if (A->size(0) != b.size())
-    error("Cannot LU factorize non-square PETSc Cusp matrix.");
+    error("Cannot solve system with incompatible dimensions.");
 
   // Initialize solution vector if required (make compatible with A in parallel)
   if (A->size(1) != x.size())
