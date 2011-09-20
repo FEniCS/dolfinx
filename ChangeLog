@@ -1,3 +1,5 @@
+ - Remove deprecated function Variable::disp()
+ - Remove deprecated function logging()
  - Add new class MeshValueCollection
  - Add new class MeshDomains replacing old storage of boundary markers
    as part of MeshData. The following names are no longer supported:
