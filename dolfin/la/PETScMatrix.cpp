@@ -154,7 +154,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
     // Set matrix type
     MatSetType(*A, MATSEQAIJ);
-
+    
+    // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 

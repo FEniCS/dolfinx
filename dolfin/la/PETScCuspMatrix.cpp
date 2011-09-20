@@ -101,13 +101,18 @@ void PETScCuspMatrix::resize(uint M, uint N)
     // and number of off-diagonal non-zeroes (50 in this case).
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
-                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    error("Cannot create distributed PETScCusp matrix as of yet.");
+    // FIXME: Implement distributed Cusp matrices
+    //MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
+    //                50, PETSC_NULL, 50, PETSC_NULL, A.get());
   }
   else
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
+    MatCreate(PETSC_COMM_SELF, A.get());
+    MatSetSizes(*A, M, N, M, N); // TODO: Use PETSC_DETERMINE for the last two dimensions?
+    MatSetType(*A, MATSEQAIJCUSP); 
+    //MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
     #else
@@ -148,7 +153,7 @@ void PETScCuspMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     MatSetSizes(*A, M, N, M, N);
 
     // Set matrix type
-    MatSetType(*A, MATSEQAIJ);
+    MatSetType(*A, MATSEQAIJCUSP);
 
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
@@ -180,6 +185,9 @@ void PETScCuspMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
+    // FIXME: Implement distributed Cusp matrices
+    error("Cannot create distributed PETScCusp matrix as of yet.");
+    /*
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
     //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
@@ -214,6 +222,7 @@ void PETScCuspMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     #endif
 
     MatSetFromOptions(*A);
+    */
   }
 }
 //-----------------------------------------------------------------------------

@@ -113,9 +113,10 @@ bool PETScCuspVector::distributed() const
   bool _distributed = false;
   if (strcmp(petsc_type, VECMPI) == 0)
     _distributed = true;
-  else if (strcmp(petsc_type, VECSEQ) == 0)
+  else if (strcmp(petsc_type, VECSEQCUSP) == 0)
     _distributed =  false;
   else
+    // FIXME: Output the type of the vector
     error("Unknown PETSc vector type.");
 
   return _distributed;
@@ -690,14 +691,20 @@ void PETScCuspVector::init(std::pair<uint, uint> range,
   const uint local_size = range.second - range.first;
   assert(range.second - range.first >= 0);
 
-  // Initialize vector, either default or MPI vector
+  // Initialize vector
   if (!distributed)
   {
-    VecCreateSeq(PETSC_COMM_SELF, local_size, x.get());
+    // Initialize vector as sequential Cusp vector
+    VecCreate(PETSC_COMM_SELF, x.get());
+    VecSetType(*x, VECSEQCUSP);
+    VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
   }
   else
   {
+    // FIXME: Can we have ghosted vectors of VECMPICUSP type?
+    error("Cannot create distributed PETScCusp vector as of yet.");
+    /*
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
@@ -715,6 +722,7 @@ void PETScCuspVector::init(std::pair<uint, uint> range,
     // Create ghost view
     x_ghosted.reset(new Vec(0), PETScCuspVectorDeleter());
     VecGhostGetLocalForm(*x, x_ghosted.get());
+    */
   }
 }
 //-----------------------------------------------------------------------------
