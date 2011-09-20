@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-11
-// Last changed: 2010-11-30
+// Last changed: 2011-09-20
 
 #ifndef __MARKING_H
 #define __MARKING_H
@@ -32,7 +32,7 @@ namespace dolfin
   /// Mark cells based on indicators and given marking strategy
   ///
   /// *Arguments*
-  ///     markers (_MeshFunction<bool>_)
+  ///     markers (_MeshFunction_ <bool>)
   ///         the cell markers (to be computed)
   ///
   ///     indicators (_Vector_)
@@ -49,7 +49,7 @@ namespace dolfin
   /// Mark cells using Dorfler marking
   ///
   /// *Arguments*
-  ///     markers (_MeshFunction<bool>_)
+  ///     markers (_MeshFunction_ <bool>)
   ///         the cell markers (to be computed)
   ///
   ///     indicators (_Vector_)

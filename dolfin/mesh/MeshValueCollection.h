@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-15
+// Last changed: 2011-09-20
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -55,7 +55,7 @@ namespace dolfin
     /// Create a mesh value collection from a MeshFunction
     ///
     /// *Arguments*
-    ///     mesh_function (MeshFunction<T>)
+    ///     mesh_function (_MeshFunction_ <T>)
     ///         The mesh function for creating a MeshValueCollection.
     explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
@@ -100,10 +100,9 @@ namespace dolfin
     ///     entity_index (uint)
     ///         Index of the entity.
     ///     value (T).
-    ///         The value.
-    ///     mesh (Mesh)
-    ///         The mesh.
     ///         The value of the marker.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     ///
     /// *Returns*
     ///     bool

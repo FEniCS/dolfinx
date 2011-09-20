@@ -156,7 +156,13 @@ def replace_example(text, classname, signature):
 
 def handle_std_pair(cpp_type, classnames):
     """Map std::pair to Python object."""
-    arg1, arg2 = cpp_type.split(">")[0].split("<")[1].split(",")
+
+    args = cpp_type.split(">")[0].split("<")[1].split(",")
+    if (len(args) != 2):
+        print "No typemap handler implemented for %s" % cpp_type
+        return cpp_type
+
+    arg1, arg2 = args
     arg1 = arg1.strip()
     arg2 = arg2.strip()
 
