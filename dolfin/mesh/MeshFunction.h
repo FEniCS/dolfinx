@@ -25,6 +25,7 @@
 #define __MESH_FUNCTION_H
 
 #include <vector>
+#include <boost/unordered_set.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
@@ -57,7 +58,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    MeshFunction(const Mesh& mesh);
+    explicit MeshFunction(const Mesh& mesh);
 
     /// Create mesh function of given dimension on given mesh
     ///
@@ -88,6 +89,16 @@ namespace dolfin
     ///     filename (std::string)
     ///         The filename to create mesh function from.
     MeshFunction(const Mesh& mesh, const std::string filename);
+
+    /// Create function from a MeshValueCollecion
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
+    ///     value_collection MeshValueCollection<T>)
+    ///         The mesh value collection for the mesh function data.
+    MeshFunction(const Mesh& mesh, 
+                 const MeshValueCollection<T>& value_collection);
 
     /// Copy constructor
     ///
@@ -327,6 +338,49 @@ namespace dolfin
     not_working_in_parallel("Reading MeshFunctions from file");
     File file(filename);
     file >> *this;
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  MeshFunction<T>::MeshFunction(const Mesh& mesh, 
+                              const MeshValueCollection<T>& value_collection) :
+      Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
+      _values(0), _mesh(&mesh), _dim(value_collection.dim()), _size(0)
+  {
+    init(_dim);
+
+    // Get mesh connectivity D --> d
+    const uint d = _dim;
+    const uint D = mesh.topology().dim();
+    assert(d <= D);
+    const MeshConnectivity& connectivity = mesh.topology()(D, d);
+    assert(connectivity.size() > 0);
+
+    // Iterate over all values
+    boost::unordered_set<uint> entities_values_set;
+    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
+    const std::map<std::pair<uint, uint>, T>& values = value_collection.values();
+    for (it = values.begin(); it != values.end(); ++it)
+    {
+      // Get value collection entry data
+      const uint cell_index = it->first.first;
+      const uint local_entity = it->first.second;
+      const uint value = it->second;
+
+      // Get global entity index
+      const uint entity_index = connectivity(cell_index)[local_entity];
+
+      // Set value for entity
+      assert(entity_index < _size);
+      _values[entity_index] = value;
+
+      // Add entity index to set (used to check that all values are set) 
+      entities_values_set.insert(entity_index);
+    }
+    
+    // Check that all values have been set
+    if (entities_values_set.size() != _size)
+      error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");
   }
   //---------------------------------------------------------------------------
   template <class T>

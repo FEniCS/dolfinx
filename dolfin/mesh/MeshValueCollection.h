@@ -50,14 +50,14 @@ namespace dolfin
     /// *Arguments*
     ///     dim (uint)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(uint dim);
+    explicit MeshValueCollection(uint dim);
 
     /// Create a mesh value collection from a MeshFunction
     ///
     /// *Arguments*
     ///     mesh_function (MeshFunction<T>)
     ///         The mesh function for creating a MeshValueCollection.
-    MeshValueCollection(const MeshFunction<T>& mesh_function);
+    explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
     /// Destructor
     ~MeshValueCollection()
