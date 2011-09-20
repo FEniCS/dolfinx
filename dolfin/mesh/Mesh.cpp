@@ -82,26 +82,21 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _intersection_operator(*this),
                                    _ordered(false)
 {
-  if (MPI::num_processes() > 1)
-  {
-    // Read local mesh data
-    Timer timer("PARALLEL 0: Parse local mesh data");
-    File file(filename);
-    LocalMeshData local_data;
-    file >> local_data;
-    timer.stop();
-
-    // Partition mesh
-    MeshPartitioning::partition(*this, local_data);
-
-    // Create MeshDomains from local_data
-    MeshPartitioning::mesh_domains(*this, local_data);
-  }
-  else
-  {
-    File file(filename);
-    file >> *this;
-  }
+  File file(filename);
+  file >> *this;
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(LocalMeshData& local_mesh_data)
+                                 : Variable("mesh", "DOLFIN mesh"),
+                                   Hierarchical<Mesh>(*this),
+                                   _data(*this),
+                                   _parallel_data(new ParallelData(*this)),
+                                   _cell_type(0),
+                                   unique_id(UniqueIdGenerator::id()),
+                                   _intersection_operator(*this),
+                                   _ordered(false)
+{
+  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

@@ -34,7 +34,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
                        std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
@@ -43,7 +43,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
     error("Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".",
             transformation.c_str());
 
-  uint ny = nx;
+  const uint ny = nx;
 
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -148,7 +148,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 }
 //-----------------------------------------------------------------------------
 void UnitCircle::transform(double* trans, double x, double y, std::string transformation)

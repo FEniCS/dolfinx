@@ -35,7 +35,7 @@ Box::Box(double x0, double y0, double z0,
          uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   const double a = x0;
   const double b = x1;
@@ -105,6 +105,6 @@ Box::Box(double x0, double y0, double z0,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 }
 //-----------------------------------------------------------------------------
