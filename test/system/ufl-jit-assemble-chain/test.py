@@ -85,27 +85,31 @@ class IntegrateDerivatives(unittest.TestCase):
         reg2([dev(xx)])
         reg2([sym(xx)])
 
+        debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
             f = diff(F, x)
-            # Apply integration with DOLFIN
-            # (also passes through form compilation and jit)
-            M = f*dx
-
-            # Debugging prints
-            if 0:
+            if debug:
                 print F
                 print x
                 print f
+
+            # Apply integration with DOLFIN
+            # (also passes through form compilation and jit)
+            M = f*dx
+            if debug:
                 print M
                 print M.compute_form_data().preprocessed_form
-
             f_integral = assemble(M, mesh=mesh)
+
             # Compute integral of f manually from anti-derivative F
             # (passes through PyDOLFIN interface and uses UFL evaluation)
             F_diff = F((x1,)) - F((x0,))
-            # Compare results!
-            self.assertAlmostEqual(f_integral/F_diff, 1.0, acc)
+
+            # Compare results. Using custom relative delta instead
+            # of decimal digits here because some numbers are >> 1.
+            delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
+            self.assertAlmostEqual(f_integral, F_diff, delta=delta)
 
 
 if __name__ == "__main__":
