@@ -19,7 +19,7 @@
 // Modified by Anders logg, 2005-2009.
 // Modified by Ola Skavhaug, 2007-2009.
 // Modified by Kent-Andre Mardal, 2008-2009.
-// Modified by Johan Hake, 2008-2009.
+// Modified by Johan Hake, 2008-2011.
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005-10-24
@@ -52,6 +52,10 @@ import_array();
 // Global exceptions
 %include <exception.i>
 %include "dolfin/swig/exceptions.i"
+
+// Do not expand default arguments in C++ by generating two an extra 
+// function in the SWIG layer. This reduces code bloat.
+%feature("compactdefaultargs");
 
 // STL SWIG string class
 %include <std_string.i>
