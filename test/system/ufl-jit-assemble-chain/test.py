@@ -93,7 +93,7 @@ class IntegrateDerivatives(unittest.TestCase):
             M = f*dx
 
             # Debugging prints
-            if 1:
+            if 0:
                 print F
                 print x
                 print f
