@@ -21,7 +21,7 @@
 //#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
 
 #include "SparsityPattern.h"
-#include "PETScLUSolver.h"
+#include "PETScCuspLUSolver.h"
 #include "PETScCuspMatrix.h"
 #include "PETScCuspVector.h"
 #include "PETScCuspFactory.h"
@@ -52,9 +52,9 @@ SparsityPattern* PETScCuspFactory::create_pattern() const
   return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver* PETScCuspFactory::create_lu_solver() const
+PETScCuspLUSolver* PETScCuspFactory::create_lu_solver() const
 {
-  return new PETScLUSolver();
+  return new PETScCuspLUSolver();
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver* PETScCuspFactory::create_krylov_solver(std::string method,

@@ -25,7 +25,7 @@
 
 // TODO: FREDRIK: Should the solver includes be changed?
 #include "PETScKrylovSolver.h"
-#include "PETScLUSolver.h"
+#include "PETScCuspLUSolver.h"
 #include "PETScCuspMatrix.h"
 #include "PETScCuspVector.h"
 #include "SparsityPattern.h"
@@ -54,7 +54,7 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    PETScLUSolver* create_lu_solver() const;
+    PETScCuspLUSolver* create_lu_solver() const;
 
     /// Create Krylov solver
     PETScKrylovSolver* create_krylov_solver(std::string method,
