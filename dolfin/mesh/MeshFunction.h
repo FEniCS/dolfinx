@@ -97,7 +97,7 @@ namespace dolfin
     ///         The mesh to create mesh function on.
     ///     value_collection MeshValueCollection<T>)
     ///         The mesh value collection for the mesh function data.
-    MeshFunction(const Mesh& mesh, 
+    MeshFunction(const Mesh& mesh,
                  const MeshValueCollection<T>& value_collection);
 
     /// Copy constructor
@@ -341,7 +341,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh, 
+  MeshFunction<T>::MeshFunction(const Mesh& mesh,
                               const MeshValueCollection<T>& value_collection) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
@@ -374,10 +374,10 @@ namespace dolfin
       assert(entity_index < _size);
       _values[entity_index] = value;
 
-      // Add entity index to set (used to check that all values are set) 
+      // Add entity index to set (used to check that all values are set)
       entities_values_set.insert(entity_index);
     }
-    
+
     // Check that all values have been set
     if (entities_values_set.size() != _size)
       error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");

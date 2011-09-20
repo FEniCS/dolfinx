@@ -138,7 +138,16 @@ namespace dolfin
     static void scatter(std::vector<uint>& values, uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<bool> >& values,
+                        uint sending_process=0)
+    { error("dolfin::MPI::scatter does not yet support bool."); }
+
+    /// Scatter values (wrapper for MPI_Scatterv)
     static void scatter(std::vector<std::vector<uint> >& values,
+                        uint sending_process=0);
+
+    /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<int> >& values,
                         uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)

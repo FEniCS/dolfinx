@@ -21,16 +21,23 @@
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
 
+
 #include <map>
 #include <utility>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include "Cell.h"
+//#include "LocalMeshValueCollection.h"
+#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
+#include "MeshPartitioning.h"
 
 namespace dolfin
 {
+  template <class T> class LocalMeshValueCollection;
+  //class MeshPartitioning;
 
   /// The MeshValueCollection class can be used to store data
   /// associated with a subset of the entities of a mesh of a given
@@ -41,7 +48,8 @@ namespace dolfin
   /// number (relative to the cell), not by global entity index, which
   /// means that data may be stored robustly to file.
 
-  template <class T> class MeshValueCollection : public Variable
+  template <class T>
+  class MeshValueCollection : public Variable
   {
   public:
 
@@ -58,6 +66,18 @@ namespace dolfin
     ///     mesh_function (MeshFunction<T>)
     ///         The mesh function for creating a MeshValueCollection.
     explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
+
+    /// Create a mesh value collection from a file.
+    ///
+    /// *Arguments*
+    ///     mesh (Mesh)
+    ///         A mesh associated with the collection. The mesh is used to
+    ///         map collection values to the appropriate process.
+    ///     filename (std::string)
+    ///         The XML file name.
+    ///     dim (uint)
+    ///         The mesh entity dimension for the mesh value collection.
+    MeshValueCollection(const Mesh& mesh, const std::string filename, uint dim);
 
     /// Destructor
     ~MeshValueCollection()
@@ -182,6 +202,33 @@ namespace dolfin
       // Insert into map
       const std::pair<uint, uint> key(cell.index(), local_entity);
       _values.insert(std::make_pair(key, mesh_function[entity_index]));
+    }
+  }
+  //---------------------------------------------------------------------------
+  template <class T>
+  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
+    const std::string filename, uint dim)
+  : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
+  {
+    if (MPI::num_processes() == 1)
+    {
+      File file(filename);
+      file >> *this;
+    }
+    else
+    {
+      // Read file on process 0
+      MeshValueCollection<T> tmp(dim);
+      if (MPI::process_number() == 0)
+      {
+        File file(filename);
+        file >> tmp;
+      }
+
+      // Create local data and build value collection
+      LocalMeshValueCollection<T> local_data(tmp, dim);
+      //MeshPartitioning::build_mesh_value_collection(*this, local_data, mesh);
+      MeshPartitioning::build_mesh_value_collection(*this, mesh);
     }
   }
   //---------------------------------------------------------------------------
