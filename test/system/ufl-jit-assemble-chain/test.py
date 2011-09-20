@@ -69,13 +69,16 @@ class IntegrateDerivatives(unittest.TestCase):
         reg([asin(xs), acos(xs)], 1)
         reg([tan(xs)], 7)
 
-        # FIXME: Add tests for all UFL operators.
         # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
-        xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
         def reg2(exprs, acc=10):
             for expr in exprs:
                 F_list.append((inner(expr,expr), acc))
+        xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
+        x3v = as_vector([3*x**2, 5*x**3, 7*x**4])
+        cc = as_matrix([[2, 3], [4, 5]])
         reg2([xx])
+        reg2([x3v])
+        reg2([cross(3*x3v, as_vector([-x3v[1], x3v[0], x3v[2]]))])
         reg2([xx.T])
         reg2([tr(xx)])
         reg2([det(xx)])
@@ -83,6 +86,24 @@ class IntegrateDerivatives(unittest.TestCase):
         reg2([outer(xx,xx.T)])
         reg2([dev(xx)])
         reg2([sym(xx)])
+        reg2([skew(xx)])
+        reg2([elem_mult(7*xx, cc)])
+        reg2([elem_div(7*xx, xx+cc)])
+        reg2([elem_pow(1e-3*xx, 1e-3*cc)])
+        reg2([elem_pow(1e-3*cc, 1e-3*xx)])
+        reg2([elem_op(lambda z: sin(z)+2, 0.03*xx)], 2) # pretty inaccurate...
+
+        # FIXME: Add tests for all UFL operators:
+        # These cause discontinuities and may be harder to test in the above fashion:
+        #'inv', 'cofac',
+        #'eq', 'ne', 'le', 'ge', 'lt', 'gt', 'And', 'Or', 'Not',
+        #'conditional', 'sign',
+        #'jump', 'avg',
+        #'LiftingFunction', 'LiftingOperator',
+
+        # FIXME: Test other derivatives: (but algorithms for operator derivatives are the same!):
+        #'variable', 'diff',
+        #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
 
         debug = 0
         for F, acc in F_list:
