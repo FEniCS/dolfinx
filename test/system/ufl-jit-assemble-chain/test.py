@@ -29,6 +29,7 @@ class IntegrateDerivatives(unittest.TestCase):
     def test_diff_then_integrate(self):
 
         if MPI.num_processes() > 1:
+            # Not attempted, check and enable!
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
@@ -125,6 +126,41 @@ class IntegrateDerivatives(unittest.TestCase):
             # Compute integral of f manually from anti-derivative F
             # (passes through PyDOLFIN interface and uses UFL evaluation)
             F_diff = F((x1,)) - F((x0,))
+
+            # Compare results. Using custom relative delta instead
+            # of decimal digits here because some numbers are >> 1.
+            delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
+            self.assertAlmostEqual(f_integral, F_diff, delta=delta)
+
+    def test_div_grad_then_integrate_over_cells_and_boundary(self):
+
+        if MPI.num_processes() > 1:
+            # Not attempted, check and enable!
+            print "FIXME: This unit test does not work in parallel, skipping"
+            return
+
+        # Define 1D geometry
+        n = 21
+        mesh = UnitSquare(n, n)
+
+        # Shift and scale mesh
+        x0, x1 = 1.5, 3.14
+        mesh.coordinates()[:] *= (x1-x0)
+        mesh.coordinates()[:] += x0
+
+        cell = mesh.ufl_cell()
+        x = cell.x
+        #xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
+        n = cell.n
+
+        # FIXME: Test all operators in 2D as well:
+        F_list = []
+
+        for F,acc in F_list:
+
+            # Integrate over domain and its boundary
+            int_dx = assemble(div(grad(F))*dx, mesh=mesh)
+            int_ds = assemble(dot(grad(F), n)*ds, mesh=mesh)
 
             # Compare results. Using custom relative delta instead
             # of decimal digits here because some numbers are >> 1.
