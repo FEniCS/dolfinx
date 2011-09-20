@@ -67,19 +67,18 @@ class IntegrateDerivatives(unittest.TestCase):
         reg([sin(x), cos(x), exp(x)], 5)
         reg([ln(xs), pow(x, 2.7), pow(2.7, x)], 3)
         reg([asin(xs), acos(xs)], 1)
-        # This gives completely wrong result:
-        F_list_fails = [tan(x)]
+        reg([tan(xs)], 7)
 
         # FIXME: Add tests for all UFL operators.
         # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
-        xx = as_matrix([[p*x**q for p in (2,3)] for q in [2,3]])
+        xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
         def reg2(exprs, acc=10):
             for expr in exprs:
                 F_list.append((inner(expr,expr), acc))
         reg2([xx])
         reg2([xx.T])
         reg2([tr(xx)])
-        #reg2([det(xx)]) # FIXME: Fails miserably! 60% wrong!
+        reg2([det(xx)])
         reg2([dot(xx,0.1*xx)])
         reg2([outer(xx,xx.T)])
         reg2([dev(xx)])
