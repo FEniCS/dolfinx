@@ -35,7 +35,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
                      uint nx, uint ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; } 
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   // Check options
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
@@ -137,7 +137,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         else
           local_diagonal = "right";
       }
-      
+
       for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
@@ -169,6 +169,6 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 }
 //-----------------------------------------------------------------------------

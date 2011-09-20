@@ -83,8 +83,7 @@ void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
   info(msg_stream.str());
 }
 
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh)
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
   // Create and distribute local mesh data
   dolfin_debug("creating local mesh data");
@@ -95,29 +94,14 @@ void MeshPartitioning::partition(Mesh& mesh)
   partition(mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh, LocalMeshData& data)
 {
-  // Compute cell partition
-  std::vector<uint> cell_partition;
-  const std::string partitioner = parameters["mesh_partitioner"];
-  if (partitioner == "SCOTCH")
-    SCOTCH::compute_partition(cell_partition, mesh_data);
-  else if (partitioner == "ParMETIS")
-    ParMETIS::compute_partition(cell_partition, mesh_data);
-  else
-    error("Unknown mesh partition '%s'.", partitioner.c_str());
+  // Partition mesh
+  partition(mesh, data);
 
-  // Distribute cells
-  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
-  distribute_cells(mesh_data, cell_partition);
-
-  // Distribute vertices
-  std::map<uint, uint> vertex_global_to_local;
-  distribute_vertices(mesh_data, vertex_global_to_local);
-  timer.stop();
-
-  // Build mesh
-  build_mesh(mesh, mesh_data, vertex_global_to_local);
+  // Create MeshDomains from local_data
+  mesh_domains(mesh, data);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
@@ -302,6 +286,31 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
     global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
   }
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
+{
+  // Compute cell partition
+  std::vector<uint> cell_partition;
+  const std::string partitioner = parameters["mesh_partitioner"];
+  if (partitioner == "SCOTCH")
+    SCOTCH::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "ParMETIS")
+    ParMETIS::compute_partition(cell_partition, mesh_data);
+  else
+    error("Unknown mesh partition '%s'.", partitioner.c_str());
+
+  // Distribute cells
+  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
+  distribute_cells(mesh_data, cell_partition);
+
+  // Distribute vertices
+  std::map<uint, uint> vertex_global_to_local;
+  distribute_vertices(mesh_data, vertex_global_to_local);
+  timer.stop();
+
+  // Build mesh
+  build_mesh(mesh, mesh_data, vertex_global_to_local);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::mesh_domains(Mesh& mesh,

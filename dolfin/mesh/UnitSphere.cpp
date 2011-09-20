@@ -32,7 +32,7 @@ using namespace dolfin;
 UnitSphere::UnitSphere(uint nx) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   const uint ny = nx;
   const uint nz = nx;
@@ -98,7 +98,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); }
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::transformx(double x,double y,double z)

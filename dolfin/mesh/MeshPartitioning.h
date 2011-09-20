@@ -79,19 +79,22 @@ namespace dolfin
   {
   public:
 
-    /// Create a partitioned mesh based on local meshes
-    static void partition(Mesh& mesh);
+    /// Build a partitioned mesh based on local meshes
+    static void build_distributed_mesh(Mesh& mesh);
 
-    /// Create a partitioned mesh based on local mesh data
-    static void partition(Mesh& mesh, LocalMeshData& data);
+    /// Build a partitioned mesh based on local mesh data
+    static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
 
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, uint d);
 
-    /// Create distributed MeshDomans from local_data
-    static void mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
-
   private:
+
+    /// Create a partitioned mesh based on local mesh data
+    static void partition(Mesh& mesh, LocalMeshData& data);
+
+    /// Create and attach distributed MeshDomans from local_data
+    static void mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,

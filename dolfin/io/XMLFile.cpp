@@ -89,7 +89,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
     xml_object.read();
 
     // Partition and build mesh
-    MeshPartitioning::partition(input_mesh, local_mesh_data);
+    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
   }
 }
 //-----------------------------------------------------------------------------

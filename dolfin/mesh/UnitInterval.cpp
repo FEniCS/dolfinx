@@ -29,7 +29,7 @@ using namespace dolfin;
 UnitInterval::UnitInterval(uint nx) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   if ( nx < 1 )
     error("Size of unit interval must be at least 1.");
@@ -62,6 +62,6 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 }
 //-----------------------------------------------------------------------------

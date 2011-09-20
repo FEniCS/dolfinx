@@ -47,6 +47,7 @@ namespace dolfin
 
   class BoundaryMesh;
   class Function;
+  class LocalMeshData;
   class MeshEntity;
   template <class T> class MeshFunction;
   class ParallelData;
@@ -107,6 +108,13 @@ namespace dolfin
     ///     filename (std::string)
     ///         Name of file to load.
     explicit Mesh(std::string filename);
+
+    /// Create a distributed mesh from local (per process) data.
+    ///
+    /// *Arguments*
+    ///     local_mesh_data (LocalMeshData)
+    ///         Data from which to build the mesh.
+    explicit Mesh(LocalMeshData& local_mesh_data);
 
     /// Destructor.
     ~Mesh();
