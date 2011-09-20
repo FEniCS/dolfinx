@@ -18,7 +18,7 @@
 //
 // Modified by Ola Skavhaug, 2007-2009.
 // Modified by Garth N. Wells, 2007.
-// Modified by Johan Hake, 2008-2009.
+// Modified by Johan Hake, 2008-2011.
 //
 // First added:  2006-04-16
 // Last changed: 2011-05-02
@@ -39,10 +39,16 @@
   SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
   {
     return  PyInt_Check(in) || (PyArray_CheckScalar(in) &&
-  			      PyArray_IsScalar(in,Integer));
+				PyArray_IsScalar(in,Integer));
   }
 }
 
+
+//-----------------------------------------------------------------------------
+// Home brewed versions of the SWIG provided SWIG_AsVal(Type). These are needed
+// as long as we need the PyInteger_Check. Whenever Python 2.6 is not supported
+// we can scrap them.
+//-----------------------------------------------------------------------------
 #define Py_convert_frag(Type) "Py_convert_" {Type}
 
 %fragment("Py_convert_double", "header") {
@@ -59,8 +65,7 @@
   {
     if (!PyInteger_Check(in))
       return false;
-    long tmp = static_cast<long>(PyInt_AsLong(in));
-    value = static_cast<dolfin::uint>(tmp);
+    value = static_cast<dolfin::uint>(PyInt_AS_LONG(in));
     return true;
   }
 }
@@ -69,52 +74,38 @@
   // A check for int and converter to uint
   SWIGINTERNINLINE bool Py_convert_uint(PyObject* in, dolfin::uint& value)
   {
-    if (!PyInteger_Check(in))
+    if (!(PyInteger_Check(in) && PyInt_AS_LONG(in)>=0))
       return false;
-    long tmp = static_cast<long>(PyInt_AsLong(in));
-    if (tmp<=0)
-      return false;
-    value = static_cast<dolfin::uint>(tmp);
+    value = static_cast<dolfin::uint>(PyInt_AS_LONG(in));
     return true;
   }
 }
 
 //-----------------------------------------------------------------------------
-// Apply the builtin out-typemap for int to dolfin::uint
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 // Typemaps for dolfin::uint and int
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// The typecheck (unsigned int)
+// Out typemap (unsigned int)
+//-----------------------------------------------------------------------------
+%typemap(out, fragment=SWIG_From_frag(unsigned int)) unsigned int
+{
+  // Typemap unsigned int
+  $result = SWIG_From(unsigned int)($1);
+}
+
+//-----------------------------------------------------------------------------
+// Typecheck and in typemap (unsigned int)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_INTEGER) unsigned int
 {
   $1 = PyInteger_Check($input) ? 1 : 0;
 }
 
-//-----------------------------------------------------------------------------
-// The typemap (unsigned int)
-//-----------------------------------------------------------------------------
-%typemap(in, fragment="PyInteger_Check") unsigned int
+%typemap(in, fragment="Py_convert_uint") unsigned int
 {
-  if (PyInteger_Check($input))
-  {
-    long tmp = static_cast<long>(PyInt_AsLong($input));
-    if (tmp>=0)
-      $1 = static_cast<unsigned int>(tmp);
-    else
-      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
-  }
-  else
+  if (!Py_convert_uint($input, $1))
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
-}
-
-%typemap(out, fragment=SWIG_From_frag(unsigned int)) unsigned int
-{
-  // Typemap unsigned int
-  $result = SWIG_From(unsigned int)($1);
 }
 
 //-----------------------------------------------------------------------------
@@ -128,13 +119,8 @@
 //-----------------------------------------------------------------------------
 // The typemap (int)
 //-----------------------------------------------------------------------------
-%typemap(in, fragment="PyInteger_Check") int
+%typemap(in, fragment="Py_convert_int") int
 {
-  if (PyInteger_Check($input))
-  {
-    long tmp = static_cast<long>(PyInt_AsLong($input));
-    $1 = static_cast<int>(tmp);
-  }
-  else
+  if (!Py_convert_int($input, $1))
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
