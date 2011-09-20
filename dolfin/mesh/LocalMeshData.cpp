@@ -24,6 +24,7 @@
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"
+#include "MeshDomains.h"
 #include "Vertex.h"
 #include "LocalMeshData.h"
 
@@ -119,6 +120,9 @@ void LocalMeshData::clear()
 //-----------------------------------------------------------------------------
 void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 {
+  if (!mesh.domains().is_empty())
+    error("LocalMeshData::extract_mesh_data does not yet support marked domains.");
+
   // Clear old data
   clear();
 

@@ -34,6 +34,7 @@ namespace dolfin
 
   class Mesh;
   template <class T> class MeshFunction;
+  template <class T> class MeshValueCollection;
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
@@ -93,8 +94,14 @@ namespace dolfin
     /// Create a partitioned mesh based on local mesh data
     static void partition(Mesh& mesh, LocalMeshData& data);
 
-    /// Create and attach distributed MeshDomans from local_data
-    static void mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
+    /// Create and attach distributed MeshDomains from local_data
+    static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
+
+    /// Create and attach distributed MeshDomains from local_data
+    /// [entry, (cell_index, local_index, value)]
+    static void build_mesh_value_collection(const Mesh& mesh,
+         const std::vector<std::vector<dolfin::uint> >& local_value_data,
+         MeshValueCollection<uint>& mesh_values);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,

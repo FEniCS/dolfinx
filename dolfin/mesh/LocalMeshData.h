@@ -123,7 +123,7 @@ namespace dolfin
     /// Topological dimension
     uint tdim;
 
-    // Mesh domain data [dim](cell_index, local_index, value)
+    // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<uint, std::vector<std::vector<dolfin::uint> > > domain_data;
 
     // Friends
