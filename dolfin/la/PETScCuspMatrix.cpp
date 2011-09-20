@@ -19,7 +19,7 @@
 // Last changed: 2011-09-13
 
 //FIXME: FREDRIK: Should we test for both HAS_PETSC and PETSC_HAVE_CUSP?
-#ifdef PETSC_HAVE_CUSP
+//#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
 
 #include <iostream>
 #include <sstream>
@@ -89,7 +89,7 @@ void PETScCuspMatrix::resize(uint M, uint N)
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
     error("Cannot resize PETScCuspMatrix. More than one object points to the underlying PETSc object.");
-  A.reset(new Mat, PETScCuspMatrixDeleter());
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -132,7 +132,7 @@ void PETScCuspMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
     error("Cannot initialise PETScCuspMatrix. More than one object points to the underlying PETSc object.");
-  A.reset(new Mat, PETScCuspMatrixDeleter());
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -224,7 +224,7 @@ PETScCuspMatrix* PETScCuspMatrix::copy() const
   else
   {
     // Create copy of PETSc matrix
-    boost::shared_ptr<Mat> _Acopy(new Mat, PETScCuspMatrixDeleter());
+    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
     MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
     // Create PETScCuspMatrix
@@ -363,8 +363,8 @@ void PETScCuspMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
   assert(A);
 
-  const PETScVector& xx = x.down_cast<PETScVector>();
-  PETScVector& yy = y.down_cast<PETScVector>();
+  const PETScCuspVector& xx = x.down_cast<PETScCuspVector>();
+  PETScCuspVector& yy = y.down_cast<PETScCuspVector>();
 
   if (size(1) != xx.size())
     error("Matrix and vector dimensions don't match for matrix-vector product.");
@@ -377,8 +377,8 @@ void PETScCuspMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 {
   assert(A);
 
-  const PETScVector& xx = x.down_cast<PETScVector>();
-  PETScVector& yy = y.down_cast<PETScVector>();
+  const PETScCuspVector& xx = x.down_cast<PETScCuspVector>();
+  PETScCuspVector& yy = y.down_cast<PETScCuspVector>();
 
   if (size(0) != xx.size())
     error("Matrix and vector dimensions don't match for matrix-vector product.");
@@ -443,7 +443,7 @@ const PETScCuspMatrix& PETScCuspMatrix::operator= (const PETScCuspMatrix& A)
   {
     if (this->A && !this->A.unique())
       error("Cannot assign PETScCuspMatrix because more than one object points to the underlying PETSc object.");
-    this->A.reset(new Mat, PETScCuspMatrixDeleter());
+    this->A.reset(new Mat, PETScMatrixDeleter());
 
     // Duplicate with the same pattern as A.A
     MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
@@ -493,4 +493,4 @@ LinearAlgebraFactory& PETScCuspMatrix::factory() const
 }
 //-----------------------------------------------------------------------------
 
-#endif
+//#endif

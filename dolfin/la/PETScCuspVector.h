@@ -21,7 +21,7 @@
 #ifndef __PETSC_CUSP_VECTOR_H
 #define __PETSC_CUSP_VECTOR_H
 
-#ifdef PETSC_HAVE_CUSP
+//#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
 
 #include <map>
 #include <string>
@@ -245,4 +245,4 @@ namespace dolfin
 
 #endif
 
-#endif
+//#endif

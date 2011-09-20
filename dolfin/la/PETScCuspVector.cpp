@@ -18,7 +18,7 @@
 // First added:  2011-09-13
 // Last changed: 2011-09-13
 
-#ifdef PETSC_HAVE_CUSP
+//#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
 
 #include <cmath>
 #include <numeric>
@@ -735,4 +735,4 @@ LinearAlgebraFactory& PETScCuspVector::factory() const
   return PETScCuspFactory::instance();
 }
 //-----------------------------------------------------------------------------
-#endif
+//#endif
