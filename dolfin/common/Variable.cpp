@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2009 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-02-26
-// Last changed: 2009-08-11
+// Last changed: 2011-09-20
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -66,10 +66,5 @@ std::string Variable::str(bool verbose) const
   s << "<DOLFIN object "
     << _name << " (" << _label << ")>";
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void Variable::disp() const
-{
-  warning("disp() function is deprecated, use info(foo) or info(foo, true) instead.");
 }
 //-----------------------------------------------------------------------------

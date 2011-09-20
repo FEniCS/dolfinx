@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-02-26
-// Last changed: 2009-10-29
+// Last changed: 2011-09-20
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
@@ -53,9 +53,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
-
-    /// Deprecated, to be removed
-    void disp() const;
 
     // Parameters
     Parameters parameters;
