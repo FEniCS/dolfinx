@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-07-22
-// Last changed: 2010-05-03
+// Last changed: 2011-09-21
 
 #include <string>
 #include <vector>
@@ -50,7 +50,7 @@ double reassemble_form(Form& form)
 int main(int argc, char* argv[])
 {
   info("Assembly for various forms and backends");
-  logging(false);
+  set_log_active(false);
 
   // Forms
   std::vector<std::string> forms;
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
   }
 
   // Display results
-  logging(true);
+  set_log_active(true);
   std::cout << std::endl; info(t0, true);
   std::cout << std::endl; info(t1, true);
   std::cout << std::endl; info(t2, true);
