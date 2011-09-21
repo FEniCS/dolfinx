@@ -24,7 +24,7 @@
 #define __PETSC_CUSP_FACTORY_H
 
 // TODO: FREDRIK: Should the solver includes be changed?
-#include "PETScKrylovSolver.h"
+#include "PETScCuspKrylovSolver.h"
 #include "PETScCuspLUSolver.h"
 #include "PETScCuspMatrix.h"
 #include "PETScCuspVector.h"
@@ -57,7 +57,7 @@ namespace dolfin
     PETScCuspLUSolver* create_lu_solver() const;
 
     /// Create Krylov solver
-    PETScKrylovSolver* create_krylov_solver(std::string method,
+    PETScCuspKrylovSolver* create_krylov_solver(std::string method,
                                             std::string pc) const;
 
     /// Return singleton instance

@@ -26,12 +26,14 @@
 #include <dolfin/la/PETScCuspMatrix.h>
 #include <dolfin/la/PETScKrylovMatrix.h>
 #include <dolfin/la/PETScPreconditioner.h>
+#include <dolfin/la/PETScCuspPreconditioner.h>
 #include <dolfin/la/EpetraLUSolver.h>
 #include <dolfin/la/EpetraKrylovSolver.h>
 #include <dolfin/la/EpetraMatrix.h>
 #include <dolfin/la/EpetraVector.h>
 
 #include <dolfin/la/PETScKrylovSolver.h>
+#include <dolfin/la/PETScCuspKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/CholmodCholeskySolver.h>
 #include <dolfin/la/UmfpackLUSolver.h>
