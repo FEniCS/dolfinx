@@ -130,7 +130,16 @@ class IntegrateDerivatives(unittest.TestCase):
             # Compare results. Using custom relative delta instead
             # of decimal digits here because some numbers are >> 1.
             delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
-            self.assertAlmostEqual(f_integral, F_diff, delta=delta)
+            self.assertAlmostEqualDelta(f_integral, F_diff, delta=delta)
+
+    def assertAlmostEqualDelta(self, a, b, delta):
+        # Keyword delta to assertAlmostEqual is not supported in Python < 2.7
+        r = abs(a - b) <= delta
+        if not r:
+            print "Not equal within delta %g:" % delta
+            print a
+            print b
+        self.assertTrue(r)
 
     def test_div_grad_then_integrate_over_cells_and_boundary(self):
 
@@ -165,7 +174,7 @@ class IntegrateDerivatives(unittest.TestCase):
             # Compare results. Using custom relative delta instead
             # of decimal digits here because some numbers are >> 1.
             delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
-            self.assertAlmostEqual(f_integral, F_diff, delta=delta)
+            self.assertAlmostEqualDelta(f_integral, F_diff, delta=delta)
 
 
 if __name__ == "__main__":

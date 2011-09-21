@@ -343,7 +343,7 @@ if has_la_backend("Epetra"):
 
 if __name__ == "__main__":
     # Turn of DOLFIN output
-    logging(False)
+    set_log_active(False);
 
     print ""
     print "Testing basic PyDOLFIN linear algebra operations"
