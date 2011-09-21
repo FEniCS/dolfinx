@@ -321,33 +321,5 @@ class Interpolate(unittest.TestCase):
             f.interpolate(f1)
             self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
 
-class Constants(unittest.TestCase):
-
-     def testConstantInit(self):
-          c0 = Constant(1.)
-          c1 = Constant([2,3], interval)
-          c2 = Constant([[2,3], [3,4]], triangle)
-          c3 = Constant(array([2,3]), tetrahedron)
-
-          self.assertTrue(c0.cell().is_undefined())
-          self.assertTrue(c1.cell() == interval)
-          self.assertTrue(c2.cell() == triangle)
-          self.assertTrue(c3.cell() == tetrahedron)
-
-          self.assertTrue(c0.shape() == ())
-          self.assertTrue(c1.shape() == (2,))
-          self.assertTrue(c2.shape() == (2,2))
-          self.assertTrue(c3.shape() == (2,))
-
-     def testGrad(self):
-          import ufl
-          zero = ufl.constantvalue.Zero((2,3))
-          c0 = Constant(1.)
-          c3 = Constant(array([2,3]), tetrahedron)
-          def gradient(c):
-               return grad(c)
-          self.assertRaises(UFLException, gradient, c0)
-          self.assertEqual(zero, gradient(c3))
-
 if __name__ == "__main__":
     unittest.main()
