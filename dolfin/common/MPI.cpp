@@ -240,6 +240,101 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
   delete [] recv_buffer;
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<int> >& values,
+                          uint sending_process)
+{
+  // Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Receive buffer
+  int recv_count = 0;
+  int* recv_buffer = 0;
+
+  // Prepare arguments differently depending on whether we're sending
+  if (process_number() == sending_process)
+  {
+    // Check size of values
+    if (values.size() != num_processes())
+      dolfin_error("MPI.cpp",
+                   "scatter values across processes",
+                   "The number of values (%d) does not match the number of processes (%d)",
+                   values.size(), num_processes());
+
+    // Extract sizes and compute size of send buffer
+    std::vector<uint> sizes;
+    for (uint i = 0; i < values.size(); ++i)
+      sizes.push_back(values[i].size());
+    int send_buffer_size = std::accumulate(sizes.begin(), sizes.end(), 0);
+
+    // Build send data
+    int* send_buffer = new int[send_buffer_size];
+    int* send_counts = new int[values.size()];
+    int* send_offsets = new int[values.size()];
+    send_offsets[0] = 0;
+    uint offset = 0;
+    for (uint i = 0; i < values.size(); ++i)
+    {
+      send_counts[i] = sizes[i];
+      send_offsets[i] = offset;
+      for (uint j = 0; j < values[i].size(); ++j)
+        send_buffer[offset++] = values[i][j];
+    }
+
+    // Scatter number of values that will be scattered (note that sizes will be modified)
+    scatter(sizes, sending_process);
+
+    // Prepare receive buffer
+    recv_count = sizes[0];
+    recv_buffer = new int[recv_count];
+
+    // Call MPI to send values
+    MPI_Scatterv(send_buffer,
+                 send_counts,
+                 send_offsets,
+                 MPI_UNSIGNED,
+                 recv_buffer,
+                 recv_count,
+                 MPI_UNSIGNED,
+                 static_cast<int>(sending_process),
+                 *comm);
+
+    // Cleanup
+    delete [] send_buffer;
+    delete [] send_counts;
+    delete [] send_offsets;
+  }
+  else
+  {
+    // Receive number of values that will be scattered
+    std::vector<uint> sizes;
+    scatter(sizes, sending_process);
+
+    // Prepare receive buffer
+    recv_count = sizes[0];
+    recv_buffer = new int[recv_count];
+
+    // Call MPI to receive values
+    MPI_Scatterv(0,
+                 0,
+                 0,
+                 MPI_INT,
+                 recv_buffer,
+                 recv_count,
+                 MPI_INT,
+                 static_cast<int>(sending_process),
+                 *comm);
+  }
+
+  // Copy values from receive buffer
+  values.clear();
+  values.resize(1);
+  for (int i = 0; i < recv_count; ++i)
+    values[0].push_back(recv_buffer[i]);
+
+  // Cleanup
+  delete [] recv_buffer;
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {

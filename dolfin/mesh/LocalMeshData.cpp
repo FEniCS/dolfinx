@@ -187,7 +187,7 @@ void LocalMeshData::broadcast_mesh_data()
     std::vector<std::vector<double> > values(num_processes);
     for (uint p = 0; p < num_processes; p++)
     {
-      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
@@ -206,7 +206,7 @@ void LocalMeshData::broadcast_mesh_data()
     std::vector<std::vector<uint> > values(num_processes);
     for (uint p = 0; p < num_processes; p++)
     {
-      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
       for (uint i = local_range.first; i < local_range.second; i++)
         values[p].push_back(vertex_indices[i]);
     }
@@ -220,7 +220,7 @@ void LocalMeshData::broadcast_mesh_data()
     std::vector<std::vector<uint> > values(num_processes);
     for (uint p = 0; p < num_processes; p++)
     {
-      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
+      const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)

@@ -28,10 +28,14 @@
 #include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
+#include "LocalMeshValueCollection.h"
+#include "MeshPartitioning.h"
 
 namespace dolfin
 {
 
+  template <class T> class LocalMeshValueCollection;
   class Mesh;
   template <class T> class MeshFunction;
   template <class T> class MeshValueCollection;
@@ -80,11 +84,18 @@ namespace dolfin
   {
   public:
 
-    /// Build a partitioned mesh based on local meshes
+    template<class T>
+    static void build_distributed_value_collection(MeshValueCollection<T>& values,const Mesh& mesh) {}
+
+   /// Build a partitioned mesh based on local meshes
     static void build_distributed_mesh(Mesh& mesh);
 
     /// Build a partitioned mesh based on local mesh data
     static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
+
+    template<class T>
+    static void build_distributed_value_collection(MeshValueCollection<T>& values,
+               const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, uint d);
@@ -99,9 +110,10 @@ namespace dolfin
 
     /// Create and attach distributed MeshDomains from local_data
     /// [entry, (cell_index, local_index, value)]
+    template<class T>
     static void build_mesh_value_collection(const Mesh& mesh,
-         const std::vector<std::vector<dolfin::uint> >& local_value_data,
-         MeshValueCollection<uint>& mesh_values);
+         const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
+         MeshValueCollection<T>& mesh_values);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,
@@ -146,6 +158,15 @@ namespace dolfin
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
                MeshFunction<bool>& exterior_facets);
   };
+
+  //---------------------------------------------------------------------------
+  template<class T>
+  inline void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<T>& values,
+             const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
+  {
+    error("MeshPartitioning::build_distributed_value_collection not implemented.");
+  }
+  //---------------------------------------------------------------------------
 
 }
 
