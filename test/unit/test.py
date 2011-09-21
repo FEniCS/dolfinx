@@ -31,21 +31,21 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-#    "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
+    "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
     "function":       ["Function", "FunctionSpace", "Expression", "Constant"],
-#    "math":           ["basic"],
-#    "mesh":           ["test", "MeshFunction", "Edge", "Face"],
-#    "meshconvert":    ["test"],
-#    "refinement":     ["refine"],
-#    "la":             ["test", "Scalar", "Vector", "Matrix"],
-#    "io":             ["test", "vtk", "XMLMesh", "XMLMeshFunction", \
-#                       "XMLMeshValueCollection", "xml_vector"],
-#    "parameter":      ["test"],
-#    "python-extras":  ["test"],
-#    "quadrature":     ["test"],
-#    "adaptivity":     ["errorcontrol", "timeseries"],
-#    "jit":            ["test"],
-#    "bc-indicators" : ["test"]
+    "math":           ["basic"],
+    "mesh":           ["test", "MeshFunction", "Edge", "Face"],
+    "meshconvert":    ["test"],
+    "refinement":     ["refine"],
+    "la":             ["test", "Scalar", "Vector", "Matrix"],
+    "io":             ["test", "vtk", "XMLMesh", "XMLMeshFunction", \
+                       "XMLMeshValueCollection", "xml_vector"],
+    "parameter":      ["test"],
+    "python-extras":  ["test"],
+    "quadrature":     ["test"],
+    "adaptivity":     ["errorcontrol", "timeseries"],
+    "jit":            ["test"],
+    "bc-indicators" : ["test"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
