@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005
-// Last changed: 2010-05-03
+// Last changed: 2011-09-21
 
 #include <dolfin.h>
 #include "forms/Poisson2D_1.h"
@@ -221,7 +221,7 @@ double solve3D(int q, int n)
 
 int main()
 {
-  logging(false);
+  set_log_active(false);
 
   const int qmax = 5;
   const int num_meshes = 3;
