@@ -65,7 +65,6 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
 
   // List of indices to send
   std::vector<uint> my_entities = entity_indices;
-  assert(my_entities.size() > 0);
 
   // Remove local cells from my_entities to reduce communication
   if (dim == D)
@@ -98,7 +97,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   */
 
   // FIXME: handle case when my_entities.size() == 0
-  assert(my_entities.size() > 0);
+  //assert(my_entities.size() > 0);
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();

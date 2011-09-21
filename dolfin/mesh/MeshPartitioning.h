@@ -161,10 +161,15 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   template<class T>
-  inline void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<T>& values,
+  void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<T>& values,
              const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
   {
-    error("MeshPartitioning::build_distributed_value_collection not implemented.");
+    // Extract data
+    const std::vector<std::pair<std::pair<uint, uint>, T> >& local_values
+      = local_data.values();
+
+    // Build MeshValueCollection from local data
+    build_mesh_value_collection(mesh, local_values, values);
   }
   //---------------------------------------------------------------------------
 

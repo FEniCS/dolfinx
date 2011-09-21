@@ -224,7 +224,10 @@ namespace dolfin
 
       // Create local data and build value collection
       LocalMeshValueCollection<T> local_data(tmp_collection, dim);
-      MeshPartitioning::build_distributed_value_collection(*this, local_data, mesh);
+
+      // Build mesh value collection
+      MeshPartitioning::build_distributed_value_collection(*this, local_data,
+                                                           mesh);
     }
   }
   //---------------------------------------------------------------------------
