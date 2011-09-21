@@ -116,8 +116,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_MeshValueCollection_)
     ///         A _MeshValueCollection_ object used to construct a MeshFunction.
-    template <typename X>
-    const MeshFunction<T>& operator=(const MeshValueCollection<X>& mesh);
+    const MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
 
     /// Return mesh associated with mesh function
     ///
@@ -367,8 +366,8 @@ namespace dolfin
     *this = f;
   }
   //---------------------------------------------------------------------------
-  template <typename T> template<typename X>
-  const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<X>& mesh_value_collection)
+  template <typename T>
+  const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
   {
     _dim = mesh_value_collection.dim();
     init(_dim);
@@ -390,7 +389,7 @@ namespace dolfin
       // Get value collection entry data
       const uint cell_index = it->first.first;
       const uint local_entity = it->first.second;
-      const uint value = it->second;
+      const T value = it->second;
 
       // Get global entity index
       const uint entity_index = connectivity(cell_index)[local_entity];

@@ -150,7 +150,6 @@ namespace dolfin
       mvc_node = get_node(xml_node, "mesh_value_collection");
     assert(mvc_node);
     const uint dim = mvc_node->attribute("dim").as_uint();
-    cout << "Dim from file: " << dim << endl;
 
     // Create mesh value collection and read
     MeshValueCollection<T> mesh_value_collection(dim);

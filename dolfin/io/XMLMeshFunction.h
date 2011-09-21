@@ -88,7 +88,6 @@ namespace dolfin
     else
     {
       // Read old-style MeshFunction
-
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
       const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
