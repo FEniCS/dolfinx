@@ -37,7 +37,7 @@ namespace dolfin
   class GenericMatrix;
   class uBLASVector;
   class uBLASKrylovMatrix;
-  template<class Mat> class uBLASMatrix;
+  template<typename Mat> class uBLASMatrix;
 
   /// This class implements the direct solution (LU factorization) of
   /// linear systems of the form Ax = b using UMFPACK

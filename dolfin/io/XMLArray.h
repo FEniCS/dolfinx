@@ -41,18 +41,18 @@ namespace dolfin
   public:
 
     // Read XML vector. Vector must have correct size.
-    template<class T>
+    template<typename T>
     static void read(Array<T>& x, const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
-    template<class T>
+    template<typename T>
     static void write(const Array<T>& x, const std::string type,
                       pugi::xml_node xml_node);
 
   };
 
   //-----------------------------------------------------------------------------
-  template<class T>
+  template<typename T>
   void XMLArray::read(Array<T>& x, const pugi::xml_node xml_node)
   {
     // Check that we have a XML Array
@@ -79,7 +79,7 @@ namespace dolfin
     }
   }
   //-----------------------------------------------------------------------------
-  template<class T>
+  template<typename T>
   void XMLArray::write(const Array<T>& x, const std::string type,
                        pugi::xml_node xml_node)
   {

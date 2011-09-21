@@ -33,7 +33,7 @@
 namespace dolfin
 {
 
-  template<class T> class Array;
+  template<typename T> class Array;
 
   /// This class provides the default DOLFIN vector class,
   /// based on the default DOLFIN linear algebra backend.

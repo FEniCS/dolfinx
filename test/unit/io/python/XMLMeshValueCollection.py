@@ -25,8 +25,8 @@ from dolfin import *
 
 class XMLMeshValueCollection(unittest.TestCase):
 
-    def test_io(self):
-        "Test input/output"
+    def test_insertion_extraction_io(self):
+        "Test input/output via << and >>."
 
         # Not working yet in parallel
         if (MPI.num_processes() == 1):
@@ -34,10 +34,12 @@ class XMLMeshValueCollection(unittest.TestCase):
             # Create mesh value collection and add some data
             mesh = UnitCube(5, 5, 5)
             output_values = MeshValueCollection("uint", 2)
-            output_values.set_value(1, 1, 1);
-            output_values.set_value(2, 1, 3);
-            output_values.set_value(5, 1, 8);
+            output_values.set_value(1,  1, 1);
+            output_values.set_value(2,  1, 3);
+            output_values.set_value(5,  1, 8);
             output_values.set_value(13, 1, 21);
+            output_values.set_value(7,  2, 13);
+            output_values.set_value(4,  2, 2);
 
             # Write to file
             output_file = File("XMLMeshValueCollection_test_io.xml")
@@ -50,6 +52,18 @@ class XMLMeshValueCollection(unittest.TestCase):
 
             # Get some data and check that it matches
             self.assertEqual(input_values.size(), output_values.size())
+
+    def test_constructor_input(self):
+        "Test input via constructor."
+
+        # Create mesh
+        mesh = UnitCube(5, 5, 5)
+
+        # Read from file
+        input_values = MeshValueCollection("uint", mesh, "xml_value_collection_ref.xml", 2)
+
+        # Check that size is correct
+        self.assertEqual(MPI.sum(input_values.size()), 6)
 
 if __name__ == "__main__":
     unittest.main()

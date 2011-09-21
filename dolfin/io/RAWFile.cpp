@@ -190,7 +190,7 @@ void RAWFile::rawNameUpdate(const int counter)
   file.close();
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void RAWFile::MeshFunctionWrite(T& meshfunction)
 {
   // Update raw file name and clear file

@@ -30,7 +30,7 @@
 namespace dolfin
 {
 
-  template<class Mat> class uBLASMatrix;
+  template<typename Mat> class uBLASMatrix;
   class uBLASVector;
 
   /// This class implements an incomplete LU factorization (ILU)

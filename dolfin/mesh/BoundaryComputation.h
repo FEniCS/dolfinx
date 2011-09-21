@@ -32,7 +32,7 @@ namespace dolfin
   class BoundaryMesh;
   class Facet;
   class Mesh;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// This class implements provides a set of basic algorithms for
   /// the computation of boundaries.

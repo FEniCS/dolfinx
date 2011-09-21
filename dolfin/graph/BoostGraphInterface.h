@@ -31,7 +31,7 @@
 namespace dolfin
 {
 
-  template<class T> class Array;
+  template<typename T> class Array;
   class Mesh;
 
   /// This class colors a graph using the Boost Graph Library.
@@ -45,7 +45,7 @@ namespace dolfin
     static uint compute_local_vertex_coloring(const Graph& graph, Array<uint>& colors);
 
     /// Compute vertex colors
-    template<class T>
+    template<typename T>
     static uint compute_local_vertex_coloring(const T& graph, Array<uint>& colors)
     {
       // Number of vertices in graph

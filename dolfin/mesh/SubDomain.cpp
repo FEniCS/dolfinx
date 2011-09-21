@@ -128,7 +128,7 @@ dolfin::uint SubDomain::geometric_dimension() const
   return _geometric_dimension;
 }
 //-----------------------------------------------------------------------------
-template<class S, class T>
+template<typename S, typename T>
 void SubDomain::apply_markers(S& sub_domains,
                               T sub_domain,
                               const Mesh& mesh) const

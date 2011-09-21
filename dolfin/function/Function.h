@@ -50,7 +50,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class SubDomain;
-  template<class T> class Array;
+  template<typename T> class Array;
 
   /// This class represents a function :math:`u_h` in a finite
   /// element function space :math:`V_h`, given by

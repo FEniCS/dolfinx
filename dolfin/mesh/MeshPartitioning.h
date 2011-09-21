@@ -31,14 +31,16 @@
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
 #include "MeshPartitioning.h"
+#include "MeshDistributed.h"
+#include "ParallelData.h"
 
 namespace dolfin
 {
 
-  template <class T> class LocalMeshValueCollection;
+  template <typename T> class LocalMeshValueCollection;
   class Mesh;
-  template <class T> class MeshFunction;
-  template <class T> class MeshValueCollection;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
@@ -84,7 +86,7 @@ namespace dolfin
   {
   public:
 
-    template<class T>
+    template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,const Mesh& mesh) {}
 
    /// Build a partitioned mesh based on local meshes
@@ -93,7 +95,7 @@ namespace dolfin
     /// Build a partitioned mesh based on local mesh data
     static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
 
-    template<class T>
+    template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
                const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
@@ -110,10 +112,10 @@ namespace dolfin
 
     /// Create and attach distributed MeshDomains from local_data
     /// [entry, (cell_index, local_index, value)]
-    template<class T>
+    template<typename T, typename MeshValueCollection>
     static void build_mesh_value_collection(const Mesh& mesh,
          const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
-         MeshValueCollection<T>& mesh_values);
+         MeshValueCollection& mesh_values);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,
@@ -160,7 +162,7 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
-  template<class T>
+  template<typename T>
   void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<T>& values,
              const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
   {
@@ -172,6 +174,108 @@ namespace dolfin
     build_mesh_value_collection(mesh, local_values, values);
   }
   //---------------------------------------------------------------------------
+  template<typename T, typename MeshValueCollection>
+  void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
+    const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
+    MeshValueCollection& mesh_values)
+  {
+    // Topological dimension
+    const uint D = mesh.topology().dim();
+
+    const uint dim = mesh_values.dim();
+
+    // Initialise global entity numbering
+    MeshPartitioning::number_entities(mesh, dim);
+    MeshPartitioning::number_entities(mesh, D);
+
+    if (dim == 0)
+      error("MeshPartitioning::build_mesh_value_collection needs updating for vertices.");
+
+    // Get mesh value collection used for marking
+    MeshValueCollection& markers = mesh_values;
+
+    // Get local mesh data for domains
+    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >& ldata = local_value_data;
+
+    // Get local local-to-global map
+    if (!mesh.parallel_data().have_global_entity_indices(D))
+      error("Do not have have_global_entity_indices");
+
+    // Get global indices on local process
+    const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(D);
+    const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
+                  _global_entity_indices.values() + _global_entity_indices.size());
+
+    // Add local (to this process) data to domain marker
+    std::vector<uint>::iterator it;
+    std::vector<dolfin::uint> off_process_global_cell_entities;
+    for (uint i = 0; i < ldata.size(); ++i)
+    {
+      const uint global_cell_index = ldata[i].first.first;
+      std::vector<uint>::const_iterator it;
+      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_cell_index);
+      if (it != global_entity_indices.end())
+      {
+        const uint local_cell_index = std::distance(global_entity_indices.begin(), it);
+        const uint entity_local_index = ldata[i].first.second;
+        const uint value = ldata[i].second;
+        markers.set_value(local_cell_index, entity_local_index, value);
+      }
+      else
+        off_process_global_cell_entities.push_back(global_cell_index);
+    }
+
+    // Get destinations and local cell index at destination for off-process cells
+    const std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
+      entity_hosts = MeshDistributed::off_process_indices(off_process_global_cell_entities, D, mesh);
+
+    // Pack data to send to appropriate process
+    std::vector<uint> send_data;
+    std::vector<uint> destinations;
+    std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator entity_host;
+    for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
+    {
+      const uint host_global_cell_index = entity_host->first;
+      const std::set<std::pair<dolfin::uint, dolfin::uint> >& processes_data = entity_host->second;
+
+      // Loop over local data
+      for (uint i = 0; i < ldata.size(); ++i)
+      {
+        const uint local_global_cell_index = ldata[i].first.first;
+        if (local_global_cell_index == host_global_cell_index)
+        {
+          const uint local_entity_index = ldata[i].first.second;
+          const uint domain_value = ldata[i].second;
+
+          std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
+          for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+          {
+            const uint proc = process_data->first;
+            const uint local_cell_entity = process_data->second;
+
+            send_data.push_back(local_cell_entity);
+            send_data.push_back(local_entity_index);
+            send_data.push_back(domain_value);
+            destinations.insert(destinations.end(), 3, proc);
+          }
+        }
+      }
+    }
+
+    // Send/receive data
+    MPI::distribute(send_data, destinations);
+    assert(send_data.size() == destinations.size());
+
+    // Add received data to mesh domain
+    for (uint i = 0; i < send_data.size(); i += 3)
+    {
+      const uint local_cell_entity = send_data[i];
+      const uint local_entity_index = send_data[i + 1];
+      const uint domain_value = send_data[i + 2];
+      markers.set_value(local_cell_entity, local_entity_index, domain_value);
+    }
+  }
+//-----------------------------------------------------------------------------
 
 }
 

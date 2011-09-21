@@ -209,7 +209,7 @@ void XMLFile::operator<< (const FunctionPlotData& output)
   save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
-template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
+template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
   pugi::xml_document xml_doc;
@@ -218,7 +218,7 @@ template<class T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
   XMLMeshFunction::read(t, type, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
+template<typename T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
                                                     const std::string type)
 {
   not_working_in_parallel("MeshFunction XML output in parallel not yet supported.");
@@ -229,7 +229,7 @@ template<class T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
   save_xml_doc(xml_doc);
 }
 //-----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
                                          const std::string type) const
 {
@@ -252,7 +252,7 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   //}
 }
 //-----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XMLFile::write_mesh_value_collection(const MeshValueCollection<T>& t,
                                           const std::string type)
 {

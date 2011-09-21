@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 // Template function for plotting objects
-template <class T>
+template <typename T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
   info("Plotting %s (%s).",

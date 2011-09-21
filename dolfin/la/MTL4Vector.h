@@ -45,7 +45,7 @@
 namespace dolfin
 {
 
-  template<class T> class Array;
+  template<typename T> class Array;
 
   class MTL4Vector: public GenericVector
   {

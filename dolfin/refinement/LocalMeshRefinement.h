@@ -25,7 +25,7 @@ namespace dolfin
 {
 
   class Mesh;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class is provides functionality for local (adaptive) mesh
   /// refinement. It is a wrapper for various algorithms for local

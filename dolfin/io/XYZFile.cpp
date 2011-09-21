@@ -125,7 +125,7 @@ void XYZFile::xyz_name_update(int counter)
     error("Unable to open file %s", filename.c_str());
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XYZFile::mesh_function_write(T& meshfunction)
 {
   // Update xyz file name and clear file

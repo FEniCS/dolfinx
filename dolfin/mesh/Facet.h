@@ -113,7 +113,7 @@ namespace dolfin
 
   /// A FacetFunction is a MeshFunction of topological codimension 1.
 
-  template <class T> class FacetFunction : public MeshFunction<T>
+  template <typename T> class FacetFunction : public MeshFunction<T>
   {
   public:
 

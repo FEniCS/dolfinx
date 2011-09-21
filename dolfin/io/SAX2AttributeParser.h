@@ -38,7 +38,7 @@ namespace dolfin
   {
   public:
 
-    template<class T>
+    template<typename T>
     static T parse(const xmlChar* name, const xmlChar** attrs,
 			                 const char* attribute, uint num_attributes)
     {

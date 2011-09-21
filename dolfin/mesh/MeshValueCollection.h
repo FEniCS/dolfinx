@@ -46,7 +46,7 @@ namespace dolfin
   /// number (relative to the cell), not by global entity index, which
   /// means that data may be stored robustly to file.
 
-  template <class T>
+  template <typename T>
   class MeshValueCollection : public Variable
   {
   public:
@@ -169,14 +169,14 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of MeshValueCollection
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshValueCollection<T>::MeshValueCollection(uint dim)
     : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
     : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim())
   {
@@ -202,7 +202,7 @@ namespace dolfin
     }
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
     const std::string filename, uint dim)
   : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
@@ -231,19 +231,19 @@ namespace dolfin
     }
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   uint MeshValueCollection<T>::dim() const
   {
     return _dim;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   uint MeshValueCollection<T>::size() const
   {
     return _values.size();
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   bool MeshValueCollection<T>::set_value(uint cell_index,
                                          uint local_entity,
                                          const T& value)
@@ -254,7 +254,7 @@ namespace dolfin
     return it.second;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   bool MeshValueCollection<T>::set_value(uint entity_index,
                                          const T& value,
                                          const Mesh& mesh)
@@ -280,25 +280,25 @@ namespace dolfin
     return it.second;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values()
   {
     return _values;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values() const
   {
     return _values;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshValueCollection<T>::clear()
   {
     _values.clear();
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   std::string MeshValueCollection<T>::str(bool verbose) const
   {
     std::stringstream s;

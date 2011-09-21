@@ -35,7 +35,7 @@ namespace dolfin
   class Function;
   class FunctionSpace;
   class GoalFunctional;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class is deprecated and is only here to give an informative error
   /// message to users about the new interface.

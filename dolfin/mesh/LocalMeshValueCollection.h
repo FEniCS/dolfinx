@@ -38,12 +38,12 @@
 namespace dolfin
 {
 
-  template <class T> class MeshValueCollection;
+  template <typename T> class MeshValueCollection;
 
   /// This class stores mesh data on a local processor corresponding
   /// to a portion of a MeshValueCollection.
 
-  template <class T>
+  template <typename T>
   class LocalMeshValueCollection
   {
   public:
@@ -75,7 +75,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of LocalMeshValueCollection
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   LocalMeshValueCollection<T>::LocalMeshValueCollection(const MeshValueCollection<T>& values,
                                                         dolfin::uint dim)
       : _dim(dim)

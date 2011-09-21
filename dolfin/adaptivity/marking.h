@@ -27,7 +27,7 @@ namespace dolfin
 {
 
   class Vector;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// Mark cells based on indicators and given marking strategy
   ///

@@ -41,7 +41,7 @@ namespace dolfin
   class GenericTensor;
   class GenericMatrix;
   class GenericVector;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
   class SubDomain;
 
   //--- Copies of assembly functions in Assembler.h ---

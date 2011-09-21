@@ -38,8 +38,8 @@ namespace dolfin
   class GenericVector;
   class LocalMeshData;
   class Mesh;
-  template <class T> class MeshFunction;
-  template <class T> class MeshValueCollection;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
   class Parameters;
 
   class GenericFile

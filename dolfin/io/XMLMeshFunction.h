@@ -40,12 +40,12 @@ namespace dolfin
   public:
 
     // Read XML MeshFunction
-    template <class T>
+    template <typename T>
     static void read(MeshFunction<T>& mesh_function, const std::string type,
                      const pugi::xml_node xml_mesh);
 
     /// Write the XML file
-    template<class T>
+    template<typename T>
     static void write(const MeshFunction<T>& mesh_function,
                       const std::string type, pugi::xml_node xml_node,
                       bool write_mesh=true);
@@ -53,7 +53,7 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   inline void XMLMeshFunction::read(MeshFunction<T>& mesh_function,
                                     const std::string type,
                                     const pugi::xml_node xml_mesh)
@@ -129,7 +129,7 @@ namespace dolfin
       error("Type unknown in XMLMeshFunction::read.");
   }
   //---------------------------------------------------------------------------
-  template<class T>
+  template<typename T>
   void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
                               const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)

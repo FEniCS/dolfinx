@@ -37,7 +37,7 @@ namespace dolfin
   class Form;
   class SubDomain;
   class UFC;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given

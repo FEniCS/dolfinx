@@ -41,7 +41,7 @@ namespace dolfin
 
   class Cell;
   class Mesh;
-  template<class T> class Set;
+  template<typename T> class Set;
 
   /// This class provides a generic interface for dof maps
 
