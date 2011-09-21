@@ -40,7 +40,7 @@
 					self->geometry().dim(),
 					self->coordinates(), true);
   }
-  
+
   PyObject* cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
@@ -159,7 +159,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 //-----------------------------------------------------------------------------
 namespace dolfin {
   class Mesh;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 }
 
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;

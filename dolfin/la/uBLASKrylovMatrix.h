@@ -28,7 +28,7 @@ namespace dolfin
 {
 
   class uBLASVector;
-  template<class Mat> class uBLASMatrix;
+  template<typename Mat> class uBLASMatrix;
 
   /// This class provides an interface for matrices that define linear
   /// systems for the uBLASKrylovSolver. This interface is implemented

@@ -41,8 +41,8 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
   class Parameters;
-  template<class T> class MeshFunction;
-  template<class T> class MeshValueCollection;
+  template<typename T> class MeshFunction;
+  template<typename T> class MeshValueCollection;
 
   class XMLFile: public GenericFile
   {
@@ -127,20 +127,20 @@ namespace dolfin
   private:
 
     // Read MeshFunction
-    template<class T> void read_mesh_function(MeshFunction<T>& t,
+    template<typename T> void read_mesh_function(MeshFunction<T>& t,
                                               const std::string type) const;
 
     // Write MeshFunction
-    template<class T> void write_mesh_function(const MeshFunction<T>& t,
+    template<typename T> void write_mesh_function(const MeshFunction<T>& t,
                                                const std::string type);
 
     // Read MeshValueCollection
-    template<class T>
+    template<typename T>
     void read_mesh_value_collection(MeshValueCollection<T>& t,
                                     const std::string type) const;
 
     // Write MeshValueCollection
-    template<class T>
+    template<typename T>
     void write_mesh_value_collection(const MeshValueCollection<T>& t,
                                      const std::string type);
 

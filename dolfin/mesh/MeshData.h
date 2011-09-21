@@ -37,7 +37,7 @@ namespace dolfin
 {
 
   class Mesh;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as _MeshFunction_ over topological mesh

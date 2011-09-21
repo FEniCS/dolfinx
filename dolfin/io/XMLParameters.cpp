@@ -124,7 +124,7 @@ void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_
   }
 }
 //-----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XMLParameters::add_parameter(Parameters& p, const std::string& key,
                                   T value)
 {

@@ -31,7 +31,7 @@ namespace dolfin
 
   class UFC;
   class Cell;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   ///
   class LocalAssembler

@@ -43,7 +43,7 @@ class Epetra_BlockMap;
 namespace dolfin
 {
 
-  template <class T> class Array;
+  template <typename T> class Array;
   class GenericVector;
 
   /// This class provides a simple vector class based on Epetra.

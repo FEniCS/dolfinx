@@ -29,7 +29,7 @@ namespace dolfin
   class Edge;
   class Vertex;
   class MeshEditor;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// This class implements local mesh coarsening for different mesh types.
 

@@ -27,9 +27,9 @@ namespace dolfin
 {
 
   // Forward declarations
-  template <class T> class MeshFunction;
-  template <class T> class MeshValueCollection;
-  template <class T> class Array;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
+  template <typename T> class Array;
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
@@ -205,7 +205,7 @@ namespace dolfin
 
     /// Apply marker of type T (most likely an uint) to object of class
     /// S (most likely MeshFunction or MeshValueCollection)
-    template<class S, class T>
+    template<typename S, typename T>
     void apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh) const;
 
     // Friends

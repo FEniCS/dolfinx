@@ -66,7 +66,7 @@ namespace dolfin
 // Forward declare Hierarchical template class
 //-----------------------------------------------------------------------------
 namespace dolfin {
-  template<class T>
+  template<typename T>
     class Hierarchical;
 }
 

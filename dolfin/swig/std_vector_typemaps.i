@@ -35,7 +35,7 @@
 //-----------------------------------------------------------------------------
 namespace std
 {
-  template <class T> class vector
+  template <typename T> class vector
   {
   };
 }

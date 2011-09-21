@@ -34,13 +34,13 @@ namespace dolfin
   public:
 
     // Read mesh value collection from XML file
-    template <class T>
+    template <typename T>
     static void read(MeshValueCollection<T>& mesh_value_collection,
                      const std::string type,
                      const pugi::xml_node xml_node);
 
     /// Write mesh value collection to XML file
-    template<class T>
+    template<typename T>
     static void write(const MeshValueCollection<T>& mesh_value_collection,
                       const std::string type,
                       pugi::xml_node xml_node);
@@ -48,7 +48,7 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void XMLMeshValueCollection::read(MeshValueCollection<T>& mesh_value_collection,
                                     const std::string type,
                                     const pugi::xml_node xml_node)
@@ -136,7 +136,7 @@ namespace dolfin
     }
   }
   //---------------------------------------------------------------------------
-  template<class T>
+  template<typename T>
   void XMLMeshValueCollection::write(const MeshValueCollection<T>& mesh_value_collection,
                                      const std::string type,
                                      pugi::xml_node xml_node)

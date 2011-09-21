@@ -27,7 +27,7 @@ namespace dolfin
 {
 
   class Form;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// These classes are used for assignment of domains to forms:
   ///

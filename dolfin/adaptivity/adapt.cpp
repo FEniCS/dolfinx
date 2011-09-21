@@ -49,7 +49,7 @@
 using namespace dolfin;
 
 // Common function for setting parent/child
-template <class T>
+template <typename T>
 void set_parent_child(const T& parent, boost::shared_ptr<T> child)
 {
   // Use a const_cast so we can set the parent/child

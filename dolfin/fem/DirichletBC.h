@@ -47,7 +47,7 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   class SubDomain;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential

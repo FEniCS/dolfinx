@@ -28,7 +28,7 @@ namespace dolfin
 {
   // Forward declarations
   class Mesh;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class implements local mesh refinement by edge bisection.
 

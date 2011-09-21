@@ -574,7 +574,7 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
   return newfilename.str();
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();

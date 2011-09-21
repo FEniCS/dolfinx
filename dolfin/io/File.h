@@ -106,7 +106,7 @@ namespace dolfin
     ~File();
 
     /// Read from file
-    template<class T> void operator>>(T& t)
+    template<typename T> void operator>>(T& t)
     {
       file->read();
       *file >> t;
@@ -126,7 +126,7 @@ namespace dolfin
     void operator<<(const std::pair<const Function*, double> u);
 
     /// Write object to file
-    template<class T> void operator<<(const T& t)
+    template<typename T> void operator<<(const T& t)
     {
       file->write();
       *file << t;

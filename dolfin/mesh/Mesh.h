@@ -49,7 +49,7 @@ namespace dolfin
   class Function;
   class LocalMeshData;
   class MeshEntity;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
   class ParallelData;
   class SubDomain;
   class XMLMesh;

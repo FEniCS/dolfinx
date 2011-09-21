@@ -31,7 +31,7 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
   class FunctionSpace;
   class GenericFunction;
   class DirichletBC;

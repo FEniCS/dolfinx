@@ -27,7 +27,7 @@ namespace dolfin
 {
 
   class Mesh;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
   class IndexSet;
 
   /// This class implements local mesh refinement by a regular cut of

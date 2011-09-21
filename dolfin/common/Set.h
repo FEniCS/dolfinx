@@ -33,7 +33,7 @@ namespace dolfin
   /// a std::vector. It uses linear search, and can be faster than std::set
   // and boost::unordered_set in some cases.
 
-  template<class T>
+  template<typename T>
   class Set
   {
   public:
@@ -75,7 +75,7 @@ namespace dolfin
     }
 
     /// Insert entries
-    template <class InputIt>
+    template <typename InputIt>
     void insert(const InputIt first, const InputIt last)
     {
       for (InputIt position = first; position != last; ++position)

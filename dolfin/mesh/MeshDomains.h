@@ -30,8 +30,8 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  template <class T> class MeshFunction;
-  template <class T> class MeshValueCollection;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
 
   /// The class _MeshDomains_ stores the division of a _Mesh_ into
   /// subdomains. For each topological dimension 0 <= d <= D, where D

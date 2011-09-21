@@ -86,7 +86,7 @@ namespace dolfin
 
     void clear_file(std::string file) const;
 
-    template<class T>
+    template<typename T>
     void mesh_function_write(T& meshfunction);
 
     // Strip path from file

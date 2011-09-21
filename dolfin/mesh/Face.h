@@ -73,7 +73,7 @@ namespace dolfin
 
   /// A FaceFunction is a MeshFunction of topological dimension 2.
 
-  template <class T> class FaceFunction : public MeshFunction<T>
+  template <typename T> class FaceFunction : public MeshFunction<T>
   {
   public:
 

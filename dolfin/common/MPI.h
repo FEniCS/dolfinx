@@ -97,7 +97,7 @@ namespace dolfin
 
     // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
     // // Broadcast value from broadcaster process to all processes
-    // template<class T> static void broadcast(T& value, uint broadcaster=0)
+    // template<typename T> static void broadcast(T& value, uint broadcaster=0)
     // {
     //   #ifdef HAS_MPI
     //   MPICommunicator mpi_comm;
@@ -107,7 +107,7 @@ namespace dolfin
     // }
 
     /// Broadcast value from broadcaster process to all processes
-    template<class T> static void broadcast(T& value, uint broadcaster=0)
+    template<typename T> static void broadcast(T& value, uint broadcaster=0)
     {
       #ifdef HAS_MPI
       MPICommunicator comm;
@@ -116,7 +116,7 @@ namespace dolfin
     }
 
     /// Broadcast value from broadcaster process to all processes
-    template<class T> static void broadcast(std::vector<T>& values, uint broadcaster=0)
+    template<typename T> static void broadcast(std::vector<T>& values, uint broadcaster=0)
     {
       #ifdef HAS_MPI
       // Communicate size
@@ -138,7 +138,16 @@ namespace dolfin
     static void scatter(std::vector<uint>& values, uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<bool> >& values,
+                        uint sending_process=0)
+    { error("dolfin::MPI::scatter does not yet support bool."); }
+
+    /// Scatter values (wrapper for MPI_Scatterv)
     static void scatter(std::vector<std::vector<uint> >& values,
+                        uint sending_process=0);
+
+    /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<int> >& values,
                         uint sending_process=0);
 
     /// Scatter values (wrapper for MPI_Scatterv)
@@ -149,7 +158,7 @@ namespace dolfin
     static std::vector<uint> gather(uint value);
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)
-    template<class T>
+    template<typename T>
     static void gather(std::vector<T>& values)
     {
       #ifdef HAS_MPI
@@ -180,7 +189,7 @@ namespace dolfin
     // NOTE: This is commented out since Boost.MPI is not well supported
     //       on older platforms
     // // Gather values, one from each process (wrapper for boost::mpi::all_gather)
-    // template<class T> static void gather_all(const T& in_value,
+    // template<typename T> static void gather_all(const T& in_value,
     //                                          std::vector<T>& out_values)
     // {
     //   #ifdef HAS_MPI
@@ -193,7 +202,7 @@ namespace dolfin
     // }
 
     /// Return  maximum value
-    template<class T> static T max(const T& value)
+    template<typename T> static T max(const T& value)
     {
       #ifdef HAS_MPI
       T _max(0);
@@ -207,7 +216,7 @@ namespace dolfin
     }
 
     /// Return minimum value
-    template<class T> static T min(const T& value)
+    template<typename T> static T min(const T& value)
     {
       #ifdef HAS_MPI
       T _min(0);
@@ -221,7 +230,7 @@ namespace dolfin
     }
 
     /// Return sum across all processes
-    template<class T> static T sum(const T& value)
+    template<typename T> static T sum(const T& value)
     {
       #ifdef HAS_MPI
       T _sum(0);
@@ -237,7 +246,7 @@ namespace dolfin
     // NOTE: This is commented out since Boost.MPI is not well supported
     //       on older platforms
     // // Return global max value
-    // template<class T> static T max(const T& value)
+    // template<typename T> static T max(const T& value)
     // {
     //   #ifdef HAS_MPI
     //   return all_reduce(value, boost::mpi::maximum<T>());
@@ -247,7 +256,7 @@ namespace dolfin
     // }
 
     // // Return global min value
-    // template<class T> static T min(const T& value)
+    // template<typename T> static T min(const T& value)
     // {
     //   #ifdef HAS_MPI
     //   return all_reduce(value, boost::mpi::minimum<T>());
@@ -257,7 +266,7 @@ namespace dolfin
     // }
 
     // // Sum values and return sum
-    // template<class T> static T sum(const T& value)
+    // template<typename T> static T sum(const T& value)
     // {
     //   #ifdef HAS_MPI
     //   return all_reduce(value, std::plus<T>());
@@ -267,7 +276,7 @@ namespace dolfin
     // }
 
     // // All reduce
-    // template<class T, class X> static T all_reduce(const T& value, X op)
+    // template<typename T, typename X> static T all_reduce(const T& value, X op)
     // {
     //   #ifdef HAS_MPI
     //   MPICommunicator mpi_comm;
@@ -314,7 +323,7 @@ namespace dolfin
 
     #ifdef HAS_MPI
     // Return MPI data type
-    template<class T> static MPI_Datatype mpi_type()
+    template<typename T> static MPI_Datatype mpi_type()
     {
       error("MPI data type unknown.");
       return MPI_CHAR;

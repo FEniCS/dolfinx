@@ -35,7 +35,7 @@ namespace dolfin
 
   namespace ublas = boost::numeric::ublas;
 
-  template<class T> class Array;
+  template<typename T> class Array;
 
   /// This class provides a simple vector class based on uBLAS.
   /// It is a simple wrapper for a uBLAS vector implementing the

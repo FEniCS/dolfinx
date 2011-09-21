@@ -48,7 +48,7 @@ namespace dolfin
     void results_write(const Function& u) const;
     void xyz_name_update(int counter);
 
-    template<class T>
+    template<typename T>
     void mesh_function_write(T& meshfunction);
 
     // raw filename

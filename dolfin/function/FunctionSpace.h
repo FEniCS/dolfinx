@@ -47,7 +47,7 @@ namespace dolfin
   class Function;
   class GenericFunction;
   class GenericVector;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the

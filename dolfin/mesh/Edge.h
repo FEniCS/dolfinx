@@ -117,7 +117,7 @@ namespace dolfin
 
   /// An EdgeFunction is a _MeshFunction_ of topological dimension 1.
 
-  template <class T> class EdgeFunction : public MeshFunction<T>
+  template <typename T> class EdgeFunction : public MeshFunction<T>
   {
   public:
 
