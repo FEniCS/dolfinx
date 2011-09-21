@@ -33,6 +33,8 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 
+#include <dolfin/log/dolfin_log.h>
+
 namespace dolfin
 {
 
@@ -109,10 +111,10 @@ namespace dolfin
     // Scatter data
     MPI::scatter(indices);
     MPI::scatter(v);
-    assert(2*v.size() == indices.size());
+    assert(2*v[0].size() == indices[0].size());
 
     // Unpack
-    for (uint i = 0; i < v.size(); ++i)
+    for (uint i = 0; i < v[0].size(); ++i)
     {
       const uint cell_index = indices[0][2*i];
       const uint local_entity_index = indices[0][2*i + 1];
