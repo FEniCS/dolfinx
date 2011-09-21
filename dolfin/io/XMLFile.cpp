@@ -219,7 +219,7 @@ template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
 }
 //-----------------------------------------------------------------------------
 template<typename T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
-                                                    const std::string type)
+                                                       const std::string type)
 {
   not_working_in_parallel("MeshFunction XML output in parallel not yet supported.");
 
