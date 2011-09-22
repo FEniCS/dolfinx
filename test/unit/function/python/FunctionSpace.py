@@ -33,7 +33,7 @@ class Interface(unittest.TestCase):
         Vs = W.sub(2)
         self.assertNotEqual(Vs.dofmap().cell_dofs(0)[0], \
                             V.dofmap().cell_dofs(0)[0],)
-        Vc = V.collapse()
+        Vc = Vs.collapse()
         self.assertEqual(Vc.dofmap().cell_dofs(0)[0], \
                          V.dofmap().cell_dofs(0)[0],)
         
