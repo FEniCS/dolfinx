@@ -18,15 +18,21 @@
 // First added:  2011-01-17
 // Last changed: 2011-01-17
 
+#include "MeshFunction.h"
 #include "ParallelData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ParallelData::ParallelData(const Mesh& mesh) : mesh(mesh),
-    _exterior_facet(mesh)
+    _exterior_facet(new MeshFunction<bool>(mesh))
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+ParallelData::ParallelData(const ParallelData& data) : mesh(data.mesh)
+{
+  error("ParallelData copy constructor not implemented.");
 }
 //-----------------------------------------------------------------------------
 ParallelData::~ParallelData()
@@ -55,6 +61,12 @@ const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) co
   return _global_entity_indices.find(d)->second;
 }
 //-----------------------------------------------------------------------------
+std::vector<uint> ParallelData::global_entity_indices_as_vector(uint d) const
+{
+  const MeshFunction<uint>& x = global_entity_indices(d); 
+  return std::vector<uint>(x.values(), x.values() + x.size());
+}
+//-----------------------------------------------------------------------------
 std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices()
 {
   return _shared_vertices;
@@ -67,12 +79,14 @@ const std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_v
 //-----------------------------------------------------------------------------
 MeshFunction<bool>& ParallelData::exterior_facet()
 {
-  return _exterior_facet;
+  assert(_exterior_facet);
+  return *_exterior_facet;
 }
 //-----------------------------------------------------------------------------
 const MeshFunction<bool>& ParallelData::exterior_facet() const
 {
-  return _exterior_facet;
+  assert(_exterior_facet);
+  return *_exterior_facet;
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint>& ParallelData::num_global_entities()

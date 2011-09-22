@@ -32,7 +32,6 @@
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshDistributed.h"
-//#include "MeshFunction.h"
 #include "ParallelData.h"
 
 namespace dolfin
@@ -87,15 +86,15 @@ namespace dolfin
   {
   public:
 
-    template<typename T>
-    static void build_distributed_value_collection(MeshValueCollection<T>& values,
-                                                   const Mesh& mesh) {}
-
    /// Build a partitioned mesh based on local meshes
     static void build_distributed_mesh(Mesh& mesh);
 
     /// Build a partitioned mesh based on local mesh data
     static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
+
+    //template<typename T, typename MeshValueCollection, typename MeshFunctionUint>
+    //static void build_distributed_value_collection(MeshValueCollection& values,
+    //           const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
     template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
@@ -116,8 +115,8 @@ namespace dolfin
     /// [entry, (cell_index, local_index, value)]
     template<typename T, typename MeshValueCollection>
     static void build_mesh_value_collection(const Mesh& mesh,
-         const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
-         MeshValueCollection& mesh_values);
+      const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
+      MeshValueCollection& mesh_values);
 
     // Compute and return (number of global entities, process offset)
     static std::pair<uint, uint> compute_num_global_entities(uint num_local_entities,
@@ -204,9 +203,8 @@ namespace dolfin
       error("Do not have have_global_entity_indices");
 
     // Get global indices on local process
-    const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(D);
-    const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
-                  _global_entity_indices.values() + _global_entity_indices.size());
+    const std::vector<uint> global_entity_indices 
+      = mesh.parallel_data().global_entity_indices_as_vector(D);
 
     // Add local (to this process) data to domain marker
     std::vector<uint>::iterator it;

@@ -24,13 +24,14 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 #include "dolfin/common/types.h"
-#include "MeshFunction.h"
 
 namespace dolfin
 {
 
   class Mesh;
+  template<typename T> class MeshFunction;
 
   /// This class stores auxiliary mesh data for parallel computing.
 
@@ -40,6 +41,9 @@ namespace dolfin
 
     /// Constructor
     ParallelData(const Mesh& mesh);
+
+    /// Copy constructor
+    ParallelData(const ParallelData& data);
 
     /// Destructor
     ~ParallelData();
@@ -55,6 +59,9 @@ namespace dolfin
 
     /// Return global indices for entity of dimension d (const version)
     const MeshFunction<uint>& global_entity_indices(uint d) const;
+
+    /// Return global indices for entity of dimension d in a vector
+    std::vector<uint> global_entity_indices_as_vector(uint d) const;
 
     /// FIXME: Add description and use better name
     std::map<uint, std::vector<uint> >& shared_vertices();
@@ -100,7 +107,7 @@ namespace dolfin
     std::vector<uint> _num_global_entities;
 
     // True if a facet is an exterior facet, false otherwise
-    MeshFunction<bool> _exterior_facet;
+    boost::scoped_ptr<MeshFunction<bool> >_exterior_facet;
 
     /*
     // Some typedefs for complex types
