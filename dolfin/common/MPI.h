@@ -28,7 +28,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
+#include <dolfin/log/dolfin_log.h>
 
 // NOTE: It would be convenient to use Boost.MPI, but it is not yet well
 //       supported by packaged versions of Boost. Boost.MPI code is therefore
@@ -110,8 +110,10 @@ namespace dolfin
     template<typename T> static void broadcast(T& value, uint broadcaster=0)
     {
       #ifdef HAS_MPI
+      cout << "About to call MPI bcast" << endl;
       MPICommunicator comm;
       MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, *comm);
+      cout << "End call MPI bcast" << endl;
       #endif
     }
 

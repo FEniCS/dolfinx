@@ -63,7 +63,5 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-//template void MeshFunction<unsigned int>::build_distributed(MeshFunction<unsigned int>& mesh_function,
-//                                  const MeshFunction<unsigned int>& local_mesh_function, unsigned int dim);
 
 }

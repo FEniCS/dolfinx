@@ -52,7 +52,11 @@ namespace dolfin
   {
   public:
 
-    /// Create empty mesh value collection of given dimension on given mesh
+    /// Create empty mesh value collection
+    ///
+    MeshValueCollection();
+
+    /// Create empty mesh value collection of given dimension 
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -81,6 +85,13 @@ namespace dolfin
     /// Destructor
     ~MeshValueCollection()
     {}
+
+    /// Set the topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The mesh entity dimension for the mesh value collection.
+    void set_dim(uint dim);
 
     /// Return topological dimension
     ///
@@ -163,12 +174,19 @@ namespace dolfin
     std::map<std::pair<uint, uint>, T> _values;
 
     /// Topological dimension
-    const uint _dim;
+    uint _dim;
 
   };
 
   //---------------------------------------------------------------------------
   // Implementation of MeshValueCollection
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>::MeshValueCollection()
+    : Variable("m", "unnamed MeshValueCollection"), _dim(0)
+  {
+    // Do nothing
+  }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(uint dim)
@@ -230,6 +248,12 @@ namespace dolfin
       MeshPartitioning::build_distributed_value_collection(*this, local_data,
                                                            mesh);
     }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  void MeshValueCollection<T>::set_dim(uint dim)
+  {
+    _dim = dim;
   }
   //---------------------------------------------------------------------------
   template <typename T>

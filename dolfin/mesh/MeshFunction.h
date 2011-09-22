@@ -286,11 +286,6 @@ namespace dolfin
 
   private:
 
-    // Build a distributed MeshFunction from a MesFunction on the root process
-    void build_distributed(MeshFunction<T>& mesh_function,
-                           const MeshFunction<T>& local_mesh_function,
-                           uint dim) const;
-
     /// Values at the set of mesh entities
     T* _values;
 
@@ -352,28 +347,8 @@ namespace dolfin
       Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
-    if (MPI::num_processes() == 1)
-    {
-      File file(filename);
-      file >> *this;
-    }
-    else
-    {
-      // Create temporary MeshFunction
-      MeshFunction<T> tmp_meshfunction;
-
-      // Read MeshFunction on process 0
-      uint dim = 0;
-      if (MPI::process_number() == 0)
-      {
-        File file(filename);
-        file >> tmp_meshfunction;
-      }
-      MPI::broadcast(dim);
-
-      // Build distributed MeshFunction
-      build_distributed(*this, tmp_meshfunction, dim);
-    }
+    File file(filename);
+    file >> *this;
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -398,6 +373,7 @@ namespace dolfin
   template <typename T>
   const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
   {
+    cout << "Set some dims " << mesh_value_collection.dim() << endl;
     _dim = mesh_value_collection.dim();
     init(_dim);
     assert(_mesh);
@@ -406,10 +382,13 @@ namespace dolfin
     const uint d = _dim;
     const uint D = _mesh->topology().dim();
     assert(d <= D);
+    cout << "Get connecticity " << endl;
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
+    cout << "Get connecticity " << endl;
     assert(connectivity.size() > 0);
 
     // Iterate over all values
+    cout << "Iterate " << endl;
     boost::unordered_set<uint> entities_values_set;
     typename std::map<std::pair<uint, uint>, T>::const_iterator it;
     const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
@@ -418,18 +397,19 @@ namespace dolfin
       // Get value collection entry data
       const uint cell_index = it->first.first;
       const uint local_entity = it->first.second;
-      const T value = it->second;
+      //const T value = it->second;
 
-      // Get global entity index
+      // Get global (local to to process) entity index
       const uint entity_index = connectivity(cell_index)[local_entity];
 
       // Set value for entity
-      assert(entity_index < _size);
-      _values[entity_index] = value;
+      //assert(entity_index < _size);
+      //_values[entity_index] = value;
 
       // Add entity index to set (used to check that all values are set)
       entities_values_set.insert(entity_index);
     }
+    cout << "End iterate" << endl; 
 
     // Check that all values have been set
     if (entities_values_set.size() != _size)
@@ -618,25 +598,6 @@ namespace dolfin
     return s.str();
   }
   //---------------------------------------------------------------------------
-  template <typename T>
-  void MeshFunction<T>::build_distributed(MeshFunction<T>& mesh_function,
-                                  const MeshFunction<T>& local_mesh_function,
-                                  uint dim) const
-  {
-    // Create temporary MeshValueCollection
-    MeshValueCollection<T> tmp_collection(local_mesh_function);
-
-    // Create loca data
-    LocalMeshValueCollection<T> local_data(tmp_collection, dim);
-
-    // Build distributed mesh value collection
-    //MeshPartitioning::build_distributed_value_collection(tmp_collection,
-    //                                                     local_data, *_mesh);
-
-    mesh_function = tmp_collection;
-  }
-  //---------------------------------------------------------------------------
-
 
 }
 

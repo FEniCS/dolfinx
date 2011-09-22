@@ -36,9 +36,11 @@
 
 namespace dolfin
 {
+  // Note: MeshFunction and MeshValueCollection cannot apear in the 
+  // implementations that appear in this file of the templated functions
+  // as this leads to a circular dependency. Therefore the functions are
+  // templated over these types.
 
-  template <typename T> class LocalMeshValueCollection;
-  //class Mesh;
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
   class LocalMeshData;

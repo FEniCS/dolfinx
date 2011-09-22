@@ -152,6 +152,7 @@ dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
 {
   assert(connectivity);
   assert(d0 <= _dim && d1 <= _dim);
+  assert(connectivity[d0][d1]);
   return *connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
@@ -159,6 +160,7 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) cons
 {
   assert(connectivity);
   assert(d0 <= _dim && d1 <= _dim);
+  assert(connectivity[d0][d1]);
   return *connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
