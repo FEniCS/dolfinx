@@ -397,14 +397,15 @@ namespace dolfin
       // Get value collection entry data
       const uint cell_index = it->first.first;
       const uint local_entity = it->first.second;
-      //const T value = it->second;
+      const T value = it->second;
 
       // Get global (local to to process) entity index
+      assert(cell_index < _mesh->num_cells());
       const uint entity_index = connectivity(cell_index)[local_entity];
 
       // Set value for entity
-      //assert(entity_index < _size);
-      //_values[entity_index] = value;
+      assert(entity_index < _size);
+      _values[entity_index] = value;
 
       // Add entity index to set (used to check that all values are set)
       entities_values_set.insert(entity_index);
@@ -412,8 +413,8 @@ namespace dolfin
     cout << "End iterate" << endl; 
 
     // Check that all values have been set
-    if (entities_values_set.size() != _size)
-      error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");
+    //if (entities_values_set.size() != _size)
+    //  error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");
 
     return *this;
   }

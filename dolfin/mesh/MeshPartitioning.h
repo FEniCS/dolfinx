@@ -187,6 +187,9 @@ namespace dolfin
 
     const uint dim = mesh_values.dim();
 
+    // Clear MeshValueCollection values
+    mesh_values.values().clear();
+
     // Initialise global entity numbering
     MeshPartitioning::number_entities(mesh, dim);
     MeshPartitioning::number_entities(mesh, D);

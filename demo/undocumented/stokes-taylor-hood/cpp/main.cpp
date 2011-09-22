@@ -81,7 +81,7 @@ int main()
   cout << "End read" << endl; 
   */
   
-  /*
+ 
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);
@@ -129,5 +129,7 @@ int main()
   ufile_pvd << u;
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
-  */
+  
+  File pfile_mf("mf.pvd");
+  pfile_mf << sub_domains;
 }
