@@ -21,11 +21,13 @@
 #ifndef __FACET_CELL_H
 #define __FACET_CELL_H
 
+#include <dolfin/common/types.h>
 #include "Cell.h"
-#include "BoundaryMesh.h"
 
 namespace dolfin
 {
+
+  class BoundaryMesh;
 
   /// This class represents a cell in a mesh incident to a facet on
   /// the boundary. It is useful in cases where one needs to iterate

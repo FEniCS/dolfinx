@@ -189,7 +189,6 @@ namespace dolfin
 
     /// Friends
     friend class XMLMesh;
-    friend class OldXMLMeshData;
     friend class MeshPartitioning;
 
   private:

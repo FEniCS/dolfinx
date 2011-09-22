@@ -26,6 +26,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 #include "BinaryFile.h"
 

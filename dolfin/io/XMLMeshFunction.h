@@ -29,7 +29,10 @@
 #include <string>
 
 #include "pugixml.hpp"
-#include "dolfin/mesh/MeshFunction.h"
+#include <dolfin/mesh/LocalMeshValueCollection.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLMesh.h"
 #include "XMLMeshValueCollection.h"
 
@@ -45,6 +48,11 @@ namespace dolfin
     static void read(MeshFunction<T>& mesh_function, const std::string type,
                      const pugi::xml_node xml_mesh);
 
+    // Read XML MeshFunction as a MeshValueCollection
+    template <typename T>
+    static void read(MeshValueCollection<T>& mesh_value_collection,
+                     const std::string type, const pugi::xml_node xml_mesh);
+
     /// Write the XML file
     template<typename T>
     static void write(const MeshFunction<T>& mesh_function,
@@ -59,8 +67,6 @@ namespace dolfin
                                     const std::string type,
                                     const pugi::xml_node xml_mesh)
   {
-    not_working_in_parallel("Reading XML MeshFunctions");
-
     // Check for old tag
     std::string tag_name("mesh_function");
     if (xml_mesh.child("meshfunction"))
@@ -80,14 +86,40 @@ namespace dolfin
     // Check for new (MeshValueCollection) / old storage
     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
     {
+      const Mesh& mesh = mesh_function.mesh();
+
       // Read new-style MeshFunction
-      const MeshValueCollection<T> mesh_value_collection
-          = XMLMeshValueCollection::read<T>(type, xml_meshfunction);
+      MeshValueCollection<T> mesh_value_collection;
+      if (MPI::num_processes() == 1)
+      {
+        XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+      }
+      else
+      {
+        uint dim = 0;
+        if (MPI::process_number() == 0)
+        {
+          XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+          dim = mesh_value_collection.dim();
+        }
+        MPI::broadcast(dim);
+        mesh_value_collection.set_dim(dim);
+
+        // Build local data
+        LocalMeshValueCollection<T> local_data(mesh_value_collection, dim);
+
+        // Distribute MeshValueCollection
+        MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
+                                                               local_data, mesh);
+      }
+
+      // Assign collection to mesh function (this is a local operation)
       mesh_function = mesh_value_collection;
     }
     else
     {
       // Read old-style MeshFunction
+
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
       const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
@@ -140,6 +172,38 @@ namespace dolfin
       else
         error("Type unknown in XMLMeshFunction::read.");
     }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  inline void XMLMeshFunction::read(MeshValueCollection<T>& mesh_value_collection,
+                                    const std::string type,
+                                    const pugi::xml_node xml_mesh)
+  {
+    // Check for old tag
+    std::string tag_name("mesh_function");
+    if (xml_mesh.child("meshfunction"))
+    {
+      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+              "I'll be nice and read your XML data anyway, for now, but you will "
+              "need to update your XML files (a simple search and replace) to use "
+              "future versions of DOLFIN.");
+      tag_name = "meshfunction";
+    }
+
+    // Read main tag
+    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
+    if (!xml_meshfunction)
+      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+
+    // Check for new (MeshValueCollection) / old storage
+    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+    {
+      // Read new-style MeshFunction
+      XMLMeshValueCollection::read<T>(mesh_value_collection, type,
+                                      xml_meshfunction);
+    }
+    else
+      error("Cannot read old-style MeshFunction XML files as a MeshValueCollection.");
   }
   //---------------------------------------------------------------------------
   template<typename T>

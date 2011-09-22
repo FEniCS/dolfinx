@@ -103,12 +103,15 @@ int main()
   cout << w.vector().norm("l2") << endl;
 
   // Plot solution
-  plot(u);
-  plot(p);
+  //plot(u);
+  //plot(p);
 
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");
   ufile_pvd << u;
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
+
+  File pfile_mf("mf.pvd");
+  pfile_mf << sub_domains;
 }

@@ -22,6 +22,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
+#include "MeshTopology.h"
 #include "Vertex.h"
 #include "MeshEntity.h"
 
@@ -51,6 +52,35 @@ MeshEntity::~MeshEntity()
 {
   // Do nothing
 }
+//-----------------------------------------------------------------------------
+/*
+bool MeshEntity::operator==(const MeshEntity& another) const
+{
+  return (_mesh == another._mesh && _dim == another._dim && _index == another._index);
+}
+//-----------------------------------------------------------------------------
+bool MeshEntity::operator!=(const MeshEntity& another) const
+{
+ return !operator==(another);
+}
+//-----------------------------------------------------------------------------
+*/
+dolfin::uint MeshEntity::num_entities(uint dim) const
+{
+  return _mesh->topology()(_dim, dim).size(_index);
+}
+//-----------------------------------------------------------------------------
+const dolfin::uint* MeshEntity::entities(uint dim) const
+{
+  return _mesh->topology()(_dim, dim)(_index);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MeshEntity::mesh_id() const
+{
+  return _mesh->id();
+}
+
+
 //-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
 {

@@ -25,12 +25,11 @@
 
 #include <vector>
 #include "dolfin/common/types.h"
-#include "Mesh.h"
 
 namespace dolfin
 {
 
-  //class Mesh;
+  class Mesh;
 
   /// This class implements renumbering algorithms for meshes.
 

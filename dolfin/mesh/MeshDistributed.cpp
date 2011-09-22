@@ -22,6 +22,7 @@
 #include "dolfin/log/log.h"
 #include "dolfin/mesh/Mesh.h"
 #include "ParallelData.h"
+#include "MeshFunction.h"
 
 #include "MeshDistributed.h"
 

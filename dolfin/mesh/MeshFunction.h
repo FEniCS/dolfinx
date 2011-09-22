@@ -26,12 +26,17 @@
 
 #include <vector>
 #include <boost/unordered_set.hpp>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
+#include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
+#include "LocalMeshValueCollection.h"
 #include "MeshEntity.h"
 #include "Mesh.h"
+#include "MeshConnectivity.h"
+#include "MeshPartitioning.h"
 
 namespace dolfin
 {
@@ -342,7 +347,6 @@ namespace dolfin
       Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
-    not_working_in_parallel("Reading MeshFunctions from file");
     File file(filename);
     file >> *this;
   }
@@ -391,7 +395,8 @@ namespace dolfin
       const uint local_entity = it->first.second;
       const T value = it->second;
 
-      // Get global entity index
+      // Get global (local to to process) entity index
+      assert(cell_index < _mesh->num_cells());
       const uint entity_index = connectivity(cell_index)[local_entity];
 
       // Set value for entity
@@ -496,9 +501,7 @@ namespace dolfin
   const MeshFunction<T>& MeshFunction<T>::operator= (const T& value)
   {
     set_all(value);
-
     //Hierarchical<MeshFunction<T> >::operator=(value);
-
     return *this;
   }
   //---------------------------------------------------------------------------

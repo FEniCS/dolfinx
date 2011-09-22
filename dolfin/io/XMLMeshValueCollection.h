@@ -39,11 +39,6 @@ namespace dolfin
                      const std::string type,
                      const pugi::xml_node xml_node);
 
-    // Create a mesh value collection from XML file
-    template <typename T>
-    static MeshValueCollection<T> read(const std::string type,
-                                       const pugi::xml_node xml_node);
-
     /// Write mesh value collection to XML file
     template<typename T>
     static void write(const MeshValueCollection<T>& mesh_value_collection,
@@ -66,6 +61,9 @@ namespace dolfin
     // Get attributes
     const std::string type_file = mvc_node->attribute("type").value();
     const uint dim = mvc_node->attribute("dim").as_uint();
+
+    // Set dim 
+    mesh_value_collection.set_dim(dim);
 
     // Check that types match
     if (type != type_file)
@@ -139,22 +137,6 @@ namespace dolfin
                    "Read mesh value collection from XML file",
                    "Unhandled value type \"%s\"", type.c_str());
     }
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  dolfin::MeshValueCollection<T> XMLMeshValueCollection::read(const std::string type,
-                                                 const pugi::xml_node xml_node)
-  {
-    // Get dimension
-    boost::shared_ptr<const pugi::xml_node>
-      mvc_node = get_node(xml_node, "mesh_value_collection");
-    assert(mvc_node);
-    const uint dim = mvc_node->attribute("dim").as_uint();
-
-    // Create mesh value collection and read
-    MeshValueCollection<T> mesh_value_collection(dim);
-    read(mesh_value_collection, type, xml_node);
-    return mesh_value_collection;
   }
   //---------------------------------------------------------------------------
   template<typename T>

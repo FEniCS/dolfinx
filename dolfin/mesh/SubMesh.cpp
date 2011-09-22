@@ -22,10 +22,12 @@
 #include <vector>
 
 #include "Cell.h"
-#include "Vertex.h"
+#include "Mesh.h"
 #include "MeshEditor.h"
+#include "MeshFunction.h"
 #include "SubDomain.h"
 #include "SubMesh.h"
+#include "Vertex.h"
 
 using namespace dolfin;
 

@@ -18,22 +18,94 @@
 // First added:  2011-01-17
 // Last changed: 2011-01-17
 
+#include "MeshFunction.h"
 #include "ParallelData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ParallelData::ParallelData(const Mesh& mesh) : mesh(mesh),
-    _exterior_facet(mesh)
+    _exterior_facet(new MeshFunction<bool>(mesh))
 {
   // Do nothing
 }
-/*
+//-----------------------------------------------------------------------------
+ParallelData::ParallelData(const ParallelData& data) : mesh(data.mesh),
+  _global_entity_indices(data._global_entity_indices),
+  _shared_vertices(data._shared_vertices),
+  _num_global_entities(data._num_global_entities),
+  _exterior_facet(new MeshFunction<bool>(*data._exterior_facet))
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 ParallelData::~ParallelData()
 {
   // Do nothing
 }
+//-----------------------------------------------------------------------------
+bool ParallelData::have_global_entity_indices(uint d) const
+{
+  if (_global_entity_indices.find(d) != _global_entity_indices.end())
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d)
+{
+  if (!have_global_entity_indices(d))
+    _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
+  return _global_entity_indices.find(d)->second;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) const
+{
+  assert(have_global_entity_indices(d));
+  return _global_entity_indices.find(d)->second;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::uint> ParallelData::global_entity_indices_as_vector(uint d) const
+{
+  const MeshFunction<uint>& x = global_entity_indices(d);
+  return std::vector<uint>(x.values(), x.values() + x.size());
+}
+//-----------------------------------------------------------------------------
+std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices()
+{
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+const std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices() const
+{
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<bool>& ParallelData::exterior_facet()
+{
+  assert(_exterior_facet);
+  return *_exterior_facet;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<bool>& ParallelData::exterior_facet() const
+{
+  assert(_exterior_facet);
+  return *_exterior_facet;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::uint>& ParallelData::num_global_entities()
+{
+  return _num_global_entities;
+}
+//-----------------------------------------------------------------------------
+const std::vector<dolfin::uint>& ParallelData::num_global_entities() const
+{
+  return _num_global_entities;
+}
+//-----------------------------------------------------------------------------
+
+
+/*
 //-----------------------------------------------------------------------------
 dolfin::uint ParallelData::num_colors(uint D, uint d, uint rho) const
 {

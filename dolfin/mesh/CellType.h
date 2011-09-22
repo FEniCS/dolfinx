@@ -25,7 +25,6 @@
 #define __CELL_TYPE_H
 
 #include <string>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin

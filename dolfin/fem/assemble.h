@@ -30,7 +30,6 @@
 #define __ASSEMBLE_H
 
 #include <vector>
-//#include <dolfin/mesh/MeshFunction.h>
 #include "DirichletBC.h"
 
 namespace dolfin

@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
@@ -51,7 +52,11 @@ namespace dolfin
   {
   public:
 
-    /// Create empty mesh value collection of given dimension on given mesh
+    /// Create empty mesh value collection
+    ///
+    MeshValueCollection();
+
+    /// Create empty mesh value collection of given dimension
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -80,6 +85,13 @@ namespace dolfin
     /// Destructor
     ~MeshValueCollection()
     {}
+
+    /// Set the topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The mesh entity dimension for the mesh value collection.
+    void set_dim(uint dim);
 
     /// Return topological dimension
     ///
@@ -162,12 +174,19 @@ namespace dolfin
     std::map<std::pair<uint, uint>, T> _values;
 
     /// Topological dimension
-    const uint _dim;
+    uint _dim;
 
   };
 
   //---------------------------------------------------------------------------
   // Implementation of MeshValueCollection
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>::MeshValueCollection()
+    : Variable("m", "unnamed MeshValueCollection"), _dim(0)
+  {
+    // Do nothing
+  }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(uint dim)
@@ -191,14 +210,18 @@ namespace dolfin
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(mesh, _dim, entity_index);
-      const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
+      for (uint i = 0; i < entity.num_entities(D) ; ++i)
+      {
+        // Create cell
+        const Cell cell(mesh, connectivity(entity_index)[i]);
 
-      // Find the local entity index
-      const uint local_entity = cell.index(entity);
+        // Find the local entity index
+        const uint local_entity = cell.index(entity);
 
-      // Insert into map
-      const std::pair<uint, uint> key(cell.index(), local_entity);
-      _values.insert(std::make_pair(key, mesh_function[entity_index]));
+        // Insert into map
+        const std::pair<uint, uint> key(cell.index(), local_entity);
+        _values.insert(std::make_pair(key, mesh_function[entity_index]));
+      }
     }
   }
   //---------------------------------------------------------------------------
@@ -229,6 +252,12 @@ namespace dolfin
       MeshPartitioning::build_distributed_value_collection(*this, local_data,
                                                            mesh);
     }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  void MeshValueCollection<T>::set_dim(uint dim)
+  {
+    _dim = dim;
   }
   //---------------------------------------------------------------------------
   template <typename T>

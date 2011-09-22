@@ -76,6 +76,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
+  //const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
   // Determine boundary facet, count boundary vertices and facets,

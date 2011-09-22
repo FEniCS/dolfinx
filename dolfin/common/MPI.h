@@ -28,7 +28,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
+#include <dolfin/log/dolfin_log.h>
 
 // NOTE: It would be convenient to use Boost.MPI, but it is not yet well
 //       supported by packaged versions of Boost. Boost.MPI code is therefore
