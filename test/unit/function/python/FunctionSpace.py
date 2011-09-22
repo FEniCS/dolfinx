@@ -31,11 +31,16 @@ class Interface(unittest.TestCase):
 
     def test_collapse(self):
         Vs = W.sub(2)
+        self.assertRaises(RuntimeError, Function, Vs)
         self.assertNotEqual(Vs.dofmap().cell_dofs(0)[0], \
                             V.dofmap().cell_dofs(0)[0],)
+        # Collapse the space it should now be the same as V
         Vc = Vs.collapse()
         self.assertEqual(Vc.dofmap().cell_dofs(0)[0], \
                          V.dofmap().cell_dofs(0)[0],)
+        f0 = Function(V)
+        f1 = Function(Vc)
+        self.assertEqual(len(f0.vector()), len(f1.vector()))
         
 if __name__ == "__main__":
     unittest.main()
