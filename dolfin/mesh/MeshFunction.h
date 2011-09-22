@@ -285,6 +285,11 @@ namespace dolfin
 
   private:
 
+    // Build a distributed MeshFunction from a MesFunction on the root process
+    void build_distributed(MeshFunction<T>& mesh_function,
+                           const MeshFunction<T>& local_mesh_function,
+                           uint dim) const;
+
     /// Values at the set of mesh entities
     T* _values;
 
@@ -353,24 +358,20 @@ namespace dolfin
     }
     else
     {
-      not_working_in_parallel("Reading MeshFunctions from file");
+      // Create temporary MeshFunction
+      MeshFunction<T> tmp_meshfunction;
 
       // Read MeshFunction on process 0
+      uint dim = 0;
       if (MPI::process_number() == 0)
       {
-        MeshFunction<T> tmp_meshfunction;
         File file(filename);
         file >> tmp_meshfunction;
-
-        MeshValueCollection<T> tmp_collection(tmp_meshfunction);
-
-        // Create local data and build value collection
-        LocalMeshValueCollection<T> local_data(tmp_collection, tmp_meshfunction.dim());
-
-        // Build mesh value collection
-        //MeshPartitioning::build_distributed_value_collection(tmp_collection,
-        //                                                     local_data, mesh);
       }
+      MPI::broadcast(dim);
+
+      // Build distributed MeshFunction
+      build_distributed(*this, tmp_meshfunction, dim);
     }
   }
   //---------------------------------------------------------------------------
@@ -523,9 +524,7 @@ namespace dolfin
   const MeshFunction<T>& MeshFunction<T>::operator= (const T& value)
   {
     set_all(value);
-
     //Hierarchical<MeshFunction<T> >::operator=(value);
-
     return *this;
   }
   //---------------------------------------------------------------------------
@@ -618,6 +617,25 @@ namespace dolfin
     return s.str();
   }
   //---------------------------------------------------------------------------
+  template <typename T>
+  void MeshFunction<T>::build_distributed(MeshFunction<T>& mesh_function,
+                                  const MeshFunction<T>& local_mesh_function,
+                                  uint dim) const
+  {
+    // Create temporary MeshValueCollection
+    MeshValueCollection<T> tmp_collection(local_mesh_function);
+
+    // Create loca data
+    LocalMeshValueCollection<T> local_data(tmp_collection);
+
+    // Build distributed mesh value collection
+    //MeshPartitioning::build_distributed_value_collection(tmp_collection,
+    //                                                     local_data, *_mesh);
+
+    mesh_function = MeshFunction<T>(tmp_collection);
+  }
+  //---------------------------------------------------------------------------
+
 
 }
 
