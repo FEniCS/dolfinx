@@ -25,7 +25,7 @@
 #define __EDGE_H
 
 #include <dolfin/common/types.h>
-#include "Point.h"
+#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"

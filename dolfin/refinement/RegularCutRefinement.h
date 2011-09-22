@@ -26,6 +26,7 @@
 namespace dolfin
 {
 
+  class Cell;
   class Mesh;
   template<typename T> class MeshFunction;
   class IndexSet;

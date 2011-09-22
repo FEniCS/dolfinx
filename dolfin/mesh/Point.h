@@ -25,7 +25,6 @@
 #define __POINT_H
 
 #include <iostream>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 
 #ifdef HAS_CGAL

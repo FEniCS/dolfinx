@@ -18,7 +18,8 @@
 // First added:  2006-05-08
 // Last changed: 2010-11-25
 
-#include <dolfin/log/dolfin_log.h>
+#include <sstream>
+#include <dolfin/log/log.h>
 #include <dolfin/common/utils.h>
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
@@ -71,6 +72,18 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   }
 
   return *this;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MeshTopology::dim() const
+{
+  return _dim;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MeshTopology::size(uint dim) const
+{
+  assert(num_entities);
+  assert(dim <= _dim);
+  return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear()
@@ -133,6 +146,20 @@ void MeshTopology::init(uint dim, uint size)
   assert(dim <= _dim);
 
   num_entities[dim] = size;
+}
+//-----------------------------------------------------------------------------
+dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
+{
+  assert(connectivity);
+  assert(d0 <= _dim && d1 <= _dim);
+  return *connectivity[d0][d1];
+}
+//-----------------------------------------------------------------------------
+const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) const
+{
+  assert(connectivity);
+  assert(d0 <= _dim && d1 <= _dim);
+  return *connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const

@@ -23,10 +23,17 @@
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
 
+#include <string>
+#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
 {
+
+  class Cell;
+  class MeshEditor;
+  class MeshEntity;
+  template<typename T> class MeshFunction;
 
   /// This class implements functionality for interval meshes.
 

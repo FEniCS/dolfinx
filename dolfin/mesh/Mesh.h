@@ -36,15 +36,16 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
-#include "CellType.h"
 #include "MeshData.h"
 #include "MeshGeometry.h"
+#include "MeshConnectivity.h"
 #include "MeshTopology.h"
 #include "MeshDomains.h"
 
 namespace dolfin
 {
 
+  class CellType;
   class BoundaryMesh;
   class Function;
   class LocalMeshData;
@@ -52,7 +53,6 @@ namespace dolfin
   template <typename T> class MeshFunction;
   class ParallelData;
   class SubDomain;
-  class XMLMesh;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -623,7 +623,6 @@ namespace dolfin
     friend class TopologyComputation;
     friend class MeshOrdering;
     friend class BinaryFile;
-    friend class XMLMesh;
 
     // Mesh topology
     MeshTopology _topology;

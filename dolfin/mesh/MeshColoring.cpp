@@ -35,6 +35,8 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshFunction.h"
+#include "ParallelData.h"
 #include "Vertex.h"
 #include "MeshColoring.h"
 

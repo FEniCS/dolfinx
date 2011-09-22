@@ -28,12 +28,66 @@ ParallelData::ParallelData(const Mesh& mesh) : mesh(mesh),
 {
   // Do nothing
 }
-/*
 //-----------------------------------------------------------------------------
 ParallelData::~ParallelData()
 {
   // Do nothing
 }
+//-----------------------------------------------------------------------------
+bool ParallelData::have_global_entity_indices(uint d) const
+{
+  if (_global_entity_indices.find(d) != _global_entity_indices.end())
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d)
+{
+  if (!have_global_entity_indices(d))
+    _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
+  return _global_entity_indices.find(d)->second;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) const
+{
+  assert(have_global_entity_indices(d));
+  return _global_entity_indices.find(d)->second;
+}
+//-----------------------------------------------------------------------------
+std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices()
+{
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+const std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices() const
+{
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<bool>& ParallelData::exterior_facet()
+{
+  return _exterior_facet;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<bool>& ParallelData::exterior_facet() const
+{
+  return _exterior_facet;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::uint>& ParallelData::num_global_entities()
+{
+  return _num_global_entities;
+}
+//-----------------------------------------------------------------------------
+const std::vector<dolfin::uint>& ParallelData::num_global_entities() const
+{
+  return _num_global_entities;
+}
+//-----------------------------------------------------------------------------
+
+
+/*
 //-----------------------------------------------------------------------------
 dolfin::uint ParallelData::num_colors(uint D, uint d, uint rho) const
 {

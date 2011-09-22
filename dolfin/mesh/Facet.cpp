@@ -21,6 +21,7 @@
 // Last changed: 2011-02-22
 
 #include "Cell.h"
+#include "ParallelData.h"
 #include "Point.h"
 #include "Facet.h"
 
@@ -59,3 +60,38 @@ Point Facet::normal() const
   return cell.normal(local_facet);
 }
 //-----------------------------------------------------------------------------
+bool Facet::exterior() const
+{
+  if (_mesh->parallel_data().exterior_facet().size() > 0)
+    return _mesh->parallel_data().exterior_facet()[*this];
+  else
+    return num_entities(dim() + 1) == 1;
+}
+//-----------------------------------------------------------------------------
+std::pair<const Cell, const Cell>
+Facet::adjacent_cells(const MeshFunction<uint>* facet_orientation) const
+{
+  assert(num_entities(dim() + 1) == 2);
+
+  // Get cell indices
+  const uint D = dim() + 1;
+  const uint c0 = entities(D)[0];
+  const uint c1 = entities(D)[1];
+
+  // Normal ordering
+  if (!facet_orientation || (*facet_orientation)[*this] == c0)
+    return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
+
+  // Sanity check
+  if ((*facet_orientation)[*this] != c1)
+  {
+    error("Illegal facet orientation specified, cell %d is not a neighbor of facet %d.",
+         (*facet_orientation)[*this], index());
+  }
+
+  // Opposite ordering
+  return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
+}
+//-----------------------------------------------------------------------------
+
+

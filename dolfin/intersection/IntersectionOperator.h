@@ -21,9 +21,9 @@
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
 
-#include <vector>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>

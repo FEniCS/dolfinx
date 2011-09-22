@@ -24,7 +24,6 @@
 #define __FACE_H
 
 #include "dolfin/common/types.h"
-#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
@@ -32,6 +31,7 @@
 namespace dolfin
 {
 
+  class Mesh;
   class Point;
 
   /// A Face is a MeshEntity of topological dimension 2.

@@ -30,16 +30,17 @@
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
-#include "MeshPartitioning.h"
+#include "Mesh.h"
 #include "MeshDistributed.h"
+#include "MeshFunction.h"
 #include "ParallelData.h"
 
 namespace dolfin
 {
 
   template <typename T> class LocalMeshValueCollection;
-  class Mesh;
-  template <typename T> class MeshFunction;
+  //class Mesh;
+  //template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
   class LocalMeshData;
 
@@ -87,7 +88,8 @@ namespace dolfin
   public:
 
     template<typename T>
-    static void build_distributed_value_collection(MeshValueCollection<T>& values,const Mesh& mesh) {}
+    static void build_distributed_value_collection(MeshValueCollection<T>& values,
+                                                   const Mesh& mesh) {}
 
    /// Build a partitioned mesh based on local meshes
     static void build_distributed_mesh(Mesh& mesh);

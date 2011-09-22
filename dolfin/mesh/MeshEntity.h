@@ -31,6 +31,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/intersection/PrimitiveIntersector.h>
+#include "Point.h"
 
 namespace dolfin
 {

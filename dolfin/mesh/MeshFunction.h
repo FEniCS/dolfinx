@@ -26,12 +26,15 @@
 
 #include <vector>
 #include <boost/unordered_set.hpp>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/io/File.h>
+#include "LocalMeshValueCollection.h"
 #include "MeshEntity.h"
 #include "Mesh.h"
+#include "MeshConnectivity.h"
 
 namespace dolfin
 {
@@ -342,9 +345,32 @@ namespace dolfin
       Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
-    not_working_in_parallel("Reading MeshFunctions from file");
-    File file(filename);
-    file >> *this;
+    if (MPI::num_processes() == 1)
+    {
+      File file(filename);
+      file >> *this;
+    }
+    else
+    {
+      not_working_in_parallel("Reading MeshFunctions from file");
+
+      // Read MeshFunction on process 0
+      if (MPI::process_number() == 0)
+      {
+        MeshFunction<T> tmp_meshfunction;
+        File file(filename);
+        file >> tmp_meshfunction;
+
+        MeshValueCollection<T> tmp_collection(tmp_meshfunction);
+
+        // Create local data and build value collection
+        LocalMeshValueCollection<T> local_data(tmp_collection, tmp_meshfunction.dim());
+
+        // Build mesh value collection
+        //MeshPartitioning::build_distributed_value_collection(tmp_collection,
+        //                                                     local_data, mesh);
+      }
+    }
   }
   //---------------------------------------------------------------------------
   template <typename T>

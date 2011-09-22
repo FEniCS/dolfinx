@@ -23,8 +23,9 @@
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
 
-#include "Point.h"
+#include <string>
 #include <dolfin/common/types.h>
+#include "Point.h"
 
 namespace dolfin
 {

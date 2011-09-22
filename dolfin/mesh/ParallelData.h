@@ -22,7 +22,9 @@
 #define __PARALLEL_DATA_H
 
 #include <map>
+#include <utility>
 #include <vector>
+#include "dolfin/common/types.h"
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -40,54 +42,33 @@ namespace dolfin
     ParallelData(const Mesh& mesh);
 
     /// Destructor
-    //~ParallelData();
+    ~ParallelData();
 
     //--- Data for distributed memory parallelism ---
 
     /// Return true if global indices have been computed for entity of
     /// dimension d
-    bool have_global_entity_indices(uint d) const
-    {
-      if (_global_entity_indices.find(d) != _global_entity_indices.end())
-        return true;
-      else
-        return false;
-    }
+    bool have_global_entity_indices(uint d) const;
 
     /// Return global indices for entity of dimension d
-    MeshFunction<uint>& global_entity_indices(uint d)
-    {
-      if (!have_global_entity_indices(d))
-        _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
-      return _global_entity_indices.find(d)->second;
-    }
+    MeshFunction<uint>& global_entity_indices(uint d);
 
     /// Return global indices for entity of dimension d (const version)
-    const MeshFunction<uint>& global_entity_indices(uint d) const
-    {
-      assert(have_global_entity_indices(d));
-      return _global_entity_indices.find(d)->second;
-    }
+    const MeshFunction<uint>& global_entity_indices(uint d) const;
 
     /// FIXME: Add description and use better name
-    std::map<uint, std::vector<uint> >& shared_vertices()
-    { return _shared_vertices; }
+    std::map<uint, std::vector<uint> >& shared_vertices();
 
     /// FIXME: Add description and use better name
-    const std::map<uint, std::vector<uint> >& shared_vertices() const
-    { return _shared_vertices; }
+    const std::map<uint, std::vector<uint> >& shared_vertices() const;
 
-    MeshFunction<bool>& exterior_facet()
-    { return _exterior_facet; }
+    MeshFunction<bool>& exterior_facet();
 
-    const MeshFunction<bool>& exterior_facet() const
-    { return _exterior_facet; }
+    const MeshFunction<bool>& exterior_facet() const;
 
-    std::vector<uint>& num_global_entities()
-    { return _num_global_entities; }
+    std::vector<uint>& num_global_entities();
 
-    const std::vector<uint>& num_global_entities() const
-    { return _num_global_entities; }
+    const std::vector<uint>& num_global_entities() const;
 
     //--- Data for shared memory parallelism (multicore) ---
 

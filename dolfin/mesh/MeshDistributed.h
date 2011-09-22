@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {

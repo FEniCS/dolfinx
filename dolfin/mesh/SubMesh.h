@@ -21,13 +21,13 @@
 #ifndef __SUB_MESH_H
 #define __SUB_MESH_H
 
-#include "MeshFunction.h"
 #include "Mesh.h"
 
 namespace dolfin
 {
 
   class SubDomain;
+  template <typename T> class MeshFunction;
 
   /// A SubMesh is a mesh defined as a subset of a given mesh. It
   /// provides a convenient way to create matching meshes for
@@ -44,7 +44,8 @@ namespace dolfin
     SubMesh(const Mesh& mesh, const SubDomain& sub_domain);
 
     /// Create subset of given mesh marked by mesh function
-    SubMesh(const Mesh& mesh, const MeshFunction<unsigned int>& sub_domains, uint sub_domain);
+    SubMesh(const Mesh& mesh, const MeshFunction<unsigned int>& sub_domains,
+            uint sub_domain);
 
     /// Destructor
     ~SubMesh();

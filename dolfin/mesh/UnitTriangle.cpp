@@ -19,6 +19,7 @@
 // Last changed: 2010-10-19
 
 #include <dolfin/common/MPI.h>
+#include "CellType.h"
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitTriangle.h"
