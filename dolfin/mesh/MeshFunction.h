@@ -373,7 +373,6 @@ namespace dolfin
   template <typename T>
   const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
   {
-    cout << "Set some dims " << mesh_value_collection.dim() << endl;
     _dim = mesh_value_collection.dim();
     init(_dim);
     assert(_mesh);
@@ -382,13 +381,10 @@ namespace dolfin
     const uint d = _dim;
     const uint D = _mesh->topology().dim();
     assert(d <= D);
-    cout << "Get connecticity " << endl;
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
-    cout << "Get connecticity " << endl;
     assert(connectivity.size() > 0);
 
     // Iterate over all values
-    cout << "Iterate " << endl;
     boost::unordered_set<uint> entities_values_set;
     typename std::map<std::pair<uint, uint>, T>::const_iterator it;
     const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
@@ -410,11 +406,10 @@ namespace dolfin
       // Add entity index to set (used to check that all values are set)
       entities_values_set.insert(entity_index);
     }
-    cout << "End iterate" << endl; 
 
     // Check that all values have been set
-    //if (entities_values_set.size() != _size)
-    //  error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");
+    if (entities_values_set.size() != _size)
+      error("MeshValueCollection does contain all values for all entities. Cannot construct MeshFunction.");
 
     return *this;
   }

@@ -61,9 +61,9 @@ const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) co
   return _global_entity_indices.find(d)->second;
 }
 //-----------------------------------------------------------------------------
-std::vector<uint> ParallelData::global_entity_indices_as_vector(uint d) const
+std::vector<dolfin::uint> ParallelData::global_entity_indices_as_vector(uint d) const
 {
-  const MeshFunction<uint>& x = global_entity_indices(d); 
+  const MeshFunction<uint>& x = global_entity_indices(d);
   return std::vector<uint>(x.values(), x.values() + x.size());
 }
 //-----------------------------------------------------------------------------

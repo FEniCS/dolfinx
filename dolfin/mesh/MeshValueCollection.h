@@ -56,7 +56,7 @@ namespace dolfin
     ///
     MeshValueCollection();
 
-    /// Create empty mesh value collection of given dimension 
+    /// Create empty mesh value collection of given dimension
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -210,14 +210,18 @@ namespace dolfin
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(mesh, _dim, entity_index);
-      const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
+      for (uint i = 0; i < entity.num_entities(D) ; ++i)
+      {
+        // Create cell
+        const Cell cell(mesh, connectivity(entity_index)[i]);
 
-      // Find the local entity index
-      const uint local_entity = cell.index(entity);
+        // Find the local entity index
+        const uint local_entity = cell.index(entity);
 
-      // Insert into map
-      const std::pair<uint, uint> key(cell.index(), local_entity);
-      _values.insert(std::make_pair(key, mesh_function[entity_index]));
+        // Insert into map
+        const std::pair<uint, uint> key(cell.index(), local_entity);
+        _values.insert(std::make_pair(key, mesh_function[entity_index]));
+      }
     }
   }
   //---------------------------------------------------------------------------

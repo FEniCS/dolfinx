@@ -110,10 +110,8 @@ namespace dolfin
     template<typename T> static void broadcast(T& value, uint broadcaster=0)
     {
       #ifdef HAS_MPI
-      cout << "About to call MPI bcast" << endl;
       MPICommunicator comm;
       MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, *comm);
-      cout << "End call MPI bcast" << endl;
       #endif
     }
 

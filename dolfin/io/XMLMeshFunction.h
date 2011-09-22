@@ -50,7 +50,7 @@ namespace dolfin
 
     // Read XML MeshFunction as a MeshValueCollection
     template <typename T>
-    static void read(MeshValueCollection<T>& mesh_value_collection, 
+    static void read(MeshValueCollection<T>& mesh_value_collection,
                      const std::string type, const pugi::xml_node xml_mesh);
 
     /// Write the XML file
@@ -86,8 +86,6 @@ namespace dolfin
     // Check for new (MeshValueCollection) / old storage
     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
     {
-      cout << "Reading new-style mesh function" << endl;
-
       const Mesh& mesh = mesh_function.mesh();
 
       // Read new-style MeshFunction
@@ -103,30 +101,23 @@ namespace dolfin
         {
           XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
           dim = mesh_value_collection.dim();
-        }    
+        }
         MPI::broadcast(dim);
         mesh_value_collection.set_dim(dim);
 
         // Build local data
-        cout << "Build local data" << endl;
         LocalMeshValueCollection<T> local_data(mesh_value_collection, dim);
-        cout << "End build local data" << endl;
 
         // Distribute MeshValueCollection
-        cout << "Build dist value collection" << endl;
         MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
                                                                local_data, mesh);
-        cout << "End build dist value collection" << endl;
       }
 
       // Assign collection to mesh function (this is a local operation)
-      cout << "Copy to mesh function" << endl;
       mesh_function = mesh_value_collection;
-      cout << "End copy to mesh function" << endl;
     }
     else
     {
-   
       // Read old-style MeshFunction
 
       // Get type and size
@@ -207,10 +198,8 @@ namespace dolfin
     // Check for new (MeshValueCollection) / old storage
     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
     {
-      cout << "Reading new-style mesh function (2)" << endl;
-
       // Read new-style MeshFunction
-      XMLMeshValueCollection::read<T>(mesh_value_collection, type, 
+      XMLMeshValueCollection::read<T>(mesh_value_collection, type,
                                       xml_meshfunction);
     }
     else

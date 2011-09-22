@@ -63,25 +63,7 @@ int main()
 
   // Read mesh and sub domain markers
   Mesh mesh("../dolfin-2.xml.gz");
-  //MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
-
-  mesh.init(1, 2);
-  mesh.init();
-
-  cout << "Create sub domains" << endl; 
-  MeshFunction<unsigned int> sub_domains(mesh, "subdomains.xml");
-  cout << "End Create sub domains" << endl; 
-
-  /*
-  MeshFunction<unsigned int> sub_domains(mesh);
-  File mf("subdomains.xml");
-  //mf << sub_domains;
-  cout << "Start read" << endl; 
-  mf >> sub_domains;
-  cout << "End read" << endl; 
-  */
-  
- 
+  MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);
@@ -129,7 +111,7 @@ int main()
   ufile_pvd << u;
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
-  
+
   File pfile_mf("mf.pvd");
   pfile_mf << sub_domains;
 }
