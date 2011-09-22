@@ -30,14 +30,13 @@
 #endif
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/intersection/PrimitiveIntersector.h>
-#include "Mesh.h"
-#include "MeshTopology.h"
-#include "Point.h"
 
 namespace dolfin
 {
+
+  class Mesh;
+  class Point;
 
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some _Mesh_.
@@ -120,8 +119,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The number of incident MeshEntity objects of given dimension.
-    uint num_entities(uint dim) const
-    { return _mesh->topology()(_dim, dim).size(_index); }
+    uint num_entities(uint dim) const;
 
     /// Return array of indices for incident mesh entitites of given
     /// topological dimension
@@ -133,16 +131,14 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The index for incident mesh entities of given dimension.
-    const uint* entities(uint dim) const
-    { return _mesh->topology()(_dim, dim)(_index); }
+    const uint* entities(uint dim) const;
 
     /// Return unique mesh ID
     ///
     /// *Returns*
     ///     uint
     ///         The unique mesh ID.
-    uint mesh_id() const
-    { return _mesh->id(); }
+    uint mesh_id() const;
 
     /// Check if given entity is incident
     ///
@@ -166,7 +162,7 @@ namespace dolfin
     ///     bool
     ///         True if the given point intersects.
     bool intersects(const Point& point) const
-    { return PrimitiveIntersector::do_intersect(*this,point); }
+    { return PrimitiveIntersector::do_intersect(*this, point); }
 
     /// Check if given entity intersects (using inexact but fast
     /// numerics)
@@ -227,7 +223,8 @@ namespace dolfin
     #ifdef HAS_CGAL
     /// Returns a 3D bounding box of the mesh entity. For lower
     /// dimension it may be a degenerated box.
-    template <typename K> CGAL::Bbox_3 bbox() const;
+    template <typename K>
+    CGAL::Bbox_3 bbox() const;
     #endif
 
     // Note: Not a subclass of Variable for efficiency!
