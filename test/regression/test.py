@@ -106,8 +106,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'python'), \
    os.path.join(demodir, 'undocumented', 'advection-diffusion',         'cpp'),    \
    os.path.join(demodir, 'undocumented', 'advection-diffusion',         'python'), \
    os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
@@ -120,8 +118,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
@@ -136,8 +132,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
