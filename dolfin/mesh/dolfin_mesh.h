@@ -22,6 +22,7 @@
 #include <dolfin/mesh/MeshConnectivity.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/DynamicMeshEditor.h>
+#include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
