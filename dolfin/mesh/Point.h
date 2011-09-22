@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 #ifdef HAS_CGAL
 #include <CGAL/Bbox_3.h>

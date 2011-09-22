@@ -25,6 +25,7 @@
 
 #include <string>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 #include "Point.h"
 
 namespace dolfin

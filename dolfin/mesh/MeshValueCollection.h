@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
