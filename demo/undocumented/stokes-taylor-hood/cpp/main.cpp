@@ -65,6 +65,10 @@ int main()
   Mesh mesh("../dolfin-2.xml.gz");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
+  MeshFunction<unsigned int> new_domains(mesh);
+  File mf("subdomains.xml");
+  mf >> new_domains;
+
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);
   SubSpace W0(W, 0);
@@ -103,8 +107,8 @@ int main()
   cout << w.vector().norm("l2") << endl;
 
   // Plot solution
-  plot(u);
-  plot(p);
+  //plot(u);
+  //plot(p);
 
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");

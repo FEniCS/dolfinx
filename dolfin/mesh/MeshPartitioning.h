@@ -32,7 +32,7 @@
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshDistributed.h"
-#include "MeshFunction.h"
+//#include "MeshFunction.h"
 #include "ParallelData.h"
 
 namespace dolfin
@@ -40,7 +40,7 @@ namespace dolfin
 
   template <typename T> class LocalMeshValueCollection;
   //class Mesh;
-  //template <typename T> class MeshFunction;
+  template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
   class LocalMeshData;
 

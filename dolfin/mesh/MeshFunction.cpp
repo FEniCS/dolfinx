@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ola Skavhaug
+// Copyright (C) 2009-2011 Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-25
-// Last changed: 2011-08-23
+// Last changed: 2011-09-22
 
-// Template specializations of str for simple types
-
+#include <sstream>
+#include <string>
+#include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
+#include "MeshPartitioning.h"
 #include "MeshFunction.h"
+#include "MeshValueCollection.h"
 
 namespace dolfin
 {
@@ -60,5 +63,7 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+//template void MeshFunction<unsigned int>::build_distributed(MeshFunction<unsigned int>& mesh_function,
+//                                  const MeshFunction<unsigned int>& local_mesh_function, unsigned int dim);
 
 }
