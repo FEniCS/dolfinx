@@ -20,7 +20,6 @@
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEditor.h"
 %import(module="dolfin.cpp") "dolfin/mesh/DynamicMeshEditor.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshFunction.h"
-%import(module="dolfin.cpp") "dolfin/mesh/LocalMeshValueCollection.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshPartitioning.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshValueCollection.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshColoring.h"

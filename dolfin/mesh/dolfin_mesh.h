@@ -23,11 +23,8 @@
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/DynamicMeshEditor.h>
 #include <dolfin/mesh/MeshFunction.h>
-
-#include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-
 #include <dolfin/mesh/MeshColoring.h>
 #include <dolfin/mesh/MeshRenumbering.h>
 #include <dolfin/mesh/LocalMeshData.h>
