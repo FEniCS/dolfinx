@@ -1,3 +1,4 @@
+ - Solver parameters can now be passed to solve
  - Remove deprecated function Variable::disp()
  - Remove deprecated function logging()
  - Add new class MeshValueCollection
