@@ -225,7 +225,7 @@ template<typename T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
 
   pugi::xml_document xml_doc;
   pugi::xml_node node = write_dolfin(xml_doc);
-  XMLMeshFunction::write(t, type, node);
+  XMLMeshFunction::write(t, type, node, false);
   save_xml_doc(xml_doc);
 }
 //-----------------------------------------------------------------------------
