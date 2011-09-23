@@ -319,7 +319,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell ufc_cell(cell);
+  const UFCCell ufc_cell(cell, false);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -460,7 +460,7 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell new_ufc_cell(cell);
+  const UFCCell new_ufc_cell(cell, false);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -524,7 +524,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
+  UFCCell ufc_cell(mesh, false);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell

@@ -130,8 +130,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \

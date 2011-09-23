@@ -141,7 +141,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   std::vector<double> cell_coefficients(_dofmap->max_cell_dimension());
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell(*_mesh);
+  UFCCell ufc_cell(*_mesh, false);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell

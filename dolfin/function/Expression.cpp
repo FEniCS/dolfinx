@@ -67,7 +67,7 @@ Expression::~Expression()
 //-----------------------------------------------------------------------------
 void Expression::eval(Array<double>& values,
                       const Array<double>& x,
-		      const ufc::cell& cell) const
+                      const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
@@ -86,8 +86,10 @@ dolfin::uint Expression::value_rank() const
 dolfin::uint Expression::value_dimension(uint i) const
 {
   if (i >= value_shape.size())
+  {
     error("Illegal axis %d for value dimension for value of rank %d.",
           i, value_shape.size());
+  }
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
@@ -108,7 +110,7 @@ void Expression::compute_vertex_values(Array<double>& vertex_values,
   Array<double> local_vertex_values(size);
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  UFCCell ufc_cell(mesh);
+  UFCCell ufc_cell(mesh, false);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update cell data

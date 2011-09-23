@@ -78,8 +78,6 @@ namespace dolfin
       tag_name = "meshfunction";
     }
 
-    cout << "Type:  " << type << endl;
-
     // Read main tag
     const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
     if (!xml_meshfunction)
@@ -106,6 +104,7 @@ namespace dolfin
           XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
           dim = mesh_value_collection.dim();
 
+          /*
           const std::map<std::pair<uint, uint>, T> values = mesh_value_collection.values();  
           typename std::map<std::pair<uint, uint>, T>::const_iterator it;  
           for (it = values.begin(); it != values.end(); ++it)
@@ -114,7 +113,7 @@ namespace dolfin
             if (it->second < 0.2)
               error("val(0)");
           }
-
+          */
         }
         MPI::broadcast(dim);
         mesh_value_collection.set_dim(dim);

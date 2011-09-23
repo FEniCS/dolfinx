@@ -80,7 +80,6 @@ public:
     values[0] = (*c00)[cell_index];
     values[1] = (*c01)[cell_index];
     values[2] = (*c11)[cell_index];
-    cout << "Vals (n): " << cell_index << ", " << c00->size() << ", " << values[0] << ", " << values[1] << ", " << values[1] << endl;
   }
 
   // The data stored in mesh functions
@@ -96,15 +95,6 @@ c00 = MeshFunction("double", mesh, "c00.xml.gz")
 c01 = MeshFunction("double", mesh, "c01.xml.gz")
 c11 = MeshFunction("double", mesh, "c11.xml.gz")
 
-print "Sizes", c00.size(), c01.size(), c11.size()
-
-#for i in range(c11.size()):
-#    print "test:", i, c00[i], c01[i], c11[i], MPI.process_number()
-if MPI.process_number() == 0:
-    print "Num cells:", mesh.num_cells(), 1949
-    print "Test:", c00[1949]
-
-
 c = Expression(cppcode=conductivity_code)
 c.c00 = c00
 c.c01 = c01
@@ -118,17 +108,13 @@ f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 a = inner(C*grad(u), grad(v))*dx
 L = f*v*dx
 
-A = assemble(a)
-
 # Compute solution
-#u = Function(V)
-#solve(a == L, u, bc)
-
-#print "Norm: ", u.vector().norm("l2")
+u = Function(V)
+solve(a == L, u, bc)
 
 # Save solution in VTK format
-#file = File("poisson.pvd")
-#file << u
+file = File("poisson.pvd")
+file << u
 
 # Plot solution
-#plot(u, interactive=True)
+plot(u, interactive=True)
