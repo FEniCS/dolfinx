@@ -52,9 +52,11 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     error("Global mesh entity numbers have not been computed.");
 
   // Get global cell entity indices on this process
-  const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(dim);
-  const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
-                _global_entity_indices.values() + _global_entity_indices.size());
+  //const MeshFunction<uint>& _global_entity_indices = mesh.parallel_data().global_entity_indices(dim);
+  //const std::vector<uint> global_entity_indices(_global_entity_indices.values(),
+  //              _global_entity_indices.values() + _global_entity_indices.size());
+  const std::vector<uint> global_entity_indices 
+      = mesh.parallel_data().global_entity_indices_as_vector(dim);
 
   assert(global_entity_indices.size() == mesh.num_cells());
 
@@ -68,6 +70,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   std::vector<uint> my_entities = entity_indices;
 
   // Remove local cells from my_entities to reduce communication
+  /*
   if (dim == D)
   {
     std::vector<uint>::iterator it;
@@ -79,6 +82,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
         my_entities.erase(it);
     }
   }
+  */
 
   /*
   std::vector<uint> my_entities;

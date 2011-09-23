@@ -182,9 +182,8 @@ namespace dolfin
     const std::vector<std::pair<std::pair<uint, uint>, T> >& local_value_data,
     MeshValueCollection& mesh_values)
   {
-    // Topological dimension
+    // Get topological dimensions
     const uint D = mesh.topology().dim();
-
     const uint dim = mesh_values.dim();
 
     // Clear MeshValueCollection values
@@ -201,7 +200,8 @@ namespace dolfin
     MeshValueCollection& markers = mesh_values;
 
     // Get local mesh data for domains
-    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >& ldata = local_value_data;
+    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >& 
+      ldata = local_value_data;
 
     // Get local local-to-global map
     if (!mesh.parallel_data().have_global_entity_indices(D))
@@ -223,7 +223,7 @@ namespace dolfin
       {
         const uint local_cell_index = std::distance(global_entity_indices.begin(), it);
         const uint entity_local_index = ldata[i].first.second;
-        const uint value = ldata[i].second;
+        const T value = ldata[i].second;
         markers.set_value(local_cell_index, entity_local_index, value);
       }
       else
@@ -235,8 +235,10 @@ namespace dolfin
       entity_hosts = MeshDistributed::off_process_indices(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
-    std::vector<uint> send_data;
-    std::vector<uint> destinations;
+    std::vector<uint> send_data0;
+    std::vector<T> send_data1;
+    std::vector<uint> destinations0;
+    std::vector<uint> destinations1;
     std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator entity_host;
     for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
     {
@@ -250,7 +252,7 @@ namespace dolfin
         if (local_global_cell_index == host_global_cell_index)
         {
           const uint local_entity_index = ldata[i].first.second;
-          const uint domain_value = ldata[i].second;
+          const T domain_value = ldata[i].second;
 
           std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
           for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
@@ -258,27 +260,35 @@ namespace dolfin
             const uint proc = process_data->first;
             const uint local_cell_entity = process_data->second;
 
-            send_data.push_back(local_cell_entity);
-            send_data.push_back(local_entity_index);
-            send_data.push_back(domain_value);
-            destinations.insert(destinations.end(), 3, proc);
+            send_data0.push_back(local_cell_entity);
+            send_data0.push_back(local_entity_index);
+            destinations0.insert(destinations0.end(), 2, proc);
+
+            send_data1.push_back(domain_value);
+            destinations1.push_back(proc);
           }
         }
       }
     }
 
     // Send/receive data
-    MPI::distribute(send_data, destinations);
-    assert(send_data.size() == destinations.size());
+    MPI::distribute(send_data0, destinations0);
+    MPI::distribute(send_data1, destinations1);
+    assert(send_data0.size() == destinations0.size());
+    assert(send_data1.size() == destinations1.size());
+    assert(2*send_data1.size() == send_data0.size());
 
     // Add received data to mesh domain
-    for (uint i = 0; i < send_data.size(); i += 3)
+    for (uint i = 0; i < send_data1.size(); ++i)
     {
-      const uint local_cell_entity = send_data[i];
-      const uint local_entity_index = send_data[i + 1];
-      const uint domain_value = send_data[i + 2];
+      const uint local_cell_entity = send_data0[2*i];
+      const uint local_entity_index = send_data0[2*i + 1];
+      const T domain_value = send_data1[i];
+      assert(local_cell_entity < mesh.num_cells());
       markers.set_value(local_cell_entity, local_entity_index, domain_value);
+      //cout << "Setting non-local value: " << local_cell_entity << ", " << domain_value << endl;
     }
+    //cout << "Finished partitioning " << endl; 
   }
 //-----------------------------------------------------------------------------
 

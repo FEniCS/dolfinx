@@ -54,14 +54,20 @@ namespace dolfin
     /// dimension d
     bool have_global_entity_indices(uint d) const;
 
-    /// Return global indices for entity of dimension d
+    /// Return global indices (local-to-global) for entity of dimension d
     MeshFunction<uint>& global_entity_indices(uint d);
 
-    /// Return global indices for entity of dimension d (const version)
+    /// Return global indices (local-to-global) for entity of dimension d (const version)
     const MeshFunction<uint>& global_entity_indices(uint d) const;
 
-    /// Return global indices for entity of dimension d in a vector
+    /// Return global indices (local-to-global) for entity of dimension d in a vector
     std::vector<uint> global_entity_indices_as_vector(uint d) const;
+
+    /// Return global-to-local indices for entity of dimension d
+    const std::map<uint, uint>& global_to_local_entity_indices(uint d);
+
+    /// Return global-to-local indices for entity of dimension d (const version)
+    const std::map<uint, uint>& global_to_local_entity_indices(uint d) const;
 
     /// FIXME: Add description and use better name
     std::map<uint, std::vector<uint> >& shared_vertices();
@@ -69,13 +75,20 @@ namespace dolfin
     /// FIXME: Add description and use better name
     const std::map<uint, std::vector<uint> >& shared_vertices() const;
 
+    /// Return MeshFunction that is true for globally exterior facets,
+    /// false otherwise
     MeshFunction<bool>& exterior_facet();
 
+    /// Return MeshFunction that is true for globally exterior facets,
+    /// false otherwise (const version)
     const MeshFunction<bool>& exterior_facet() const;
 
+    // Return the number of global entities of each dimension
     std::vector<uint>& num_global_entities();
 
+    // Return the number of global entities of each dimension (const version)
     const std::vector<uint>& num_global_entities() const;
+
 
     //--- Data for shared memory parallelism (multicore) ---
 
@@ -94,6 +107,9 @@ namespace dolfin
 
     // For entity of dimension d, MeshFunction holding global indices
     std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
+
+    // Global-to-local maps For entity of dimension d, MeshFunction holding global indices
+    std::map<uint, std::map<uint, uint> > _global_to_local_entity_indices;
 
     // FIXME: Use better name
     // FIXME: Use unordered map?

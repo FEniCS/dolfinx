@@ -85,10 +85,22 @@ void dolfin::MPI::distribute(std::vector<uint>& values,
   dolfin::distribute(values, partition);
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<int>& values,
+                             std::vector<uint>& partition)
+{
+  dolfin::distribute(values, partition);
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<double>& values,
                              std::vector<uint>& partition)
 {
   dolfin::distribute(values, partition);
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<bool>& values,
+                             std::vector<uint>& partition)
+{
+  error("MPI::distribute does not yet support bool. It needs to be manage as a special case."); 
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
@@ -486,6 +498,27 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
   return static_cast<uint>(num_received);
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(int* send_buffer, uint send_size, uint dest,
+                                    int* recv_buffer, uint recv_size, uint source)
+{
+  MPI_Status status;
+
+  // Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Send and receive data
+  MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_INT, static_cast<int>(dest), 0,
+               recv_buffer, static_cast<int>(recv_size), MPI_INT, static_cast<int>(source),  0,
+               *comm, &status);
+
+  // Check number of received values
+  int num_received = 0;
+  MPI_Get_count(&status, MPI_INT, &num_received);
+  assert(num_received >= 0);
+
+  return static_cast<uint>(num_received);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
                                     double* recv_buffer, uint recv_size, uint source)
 {
@@ -505,6 +538,13 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
   assert(num_received >= 0);
 
   return static_cast<uint>(num_received);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(bool* send_buffer, uint send_size, uint dest,
+                                    bool* recv_buffer, uint recv_size, uint source)
+{
+  error("MPI::send_recv does not yet support bool. It needs to be manage as a special case."); 
+  return 0;
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
@@ -600,7 +640,23 @@ void dolfin::MPI::distribute(std::vector<uint>& values,
                "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<int>& values,
+                             std::vector<uint>& partition)
+{
+  dolfin_error("MPI.cpp",
+               "call MPI::distribute",
+               "Your DOLFIN installation has been built without MPI support");
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<double>& values,
+                             std::vector<uint>& partition)
+{
+  dolfin_error("MPI.cpp",
+               "call MPI::distribute",
+               "Your DOLFIN installation has been built without MPI support");
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<bool>& values,
                              std::vector<uint>& partition)
 {
   dolfin_error("MPI.cpp",
@@ -661,8 +717,26 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(int* send_buffer, uint send_size, uint dest,
+                                    int* recv_buffer, uint recv_size, uint source)
+{
+  dolfin_error("MPI.cpp",
+               "call MPI::send_recv",
+               "Your DOLFIN installation has been built without MPI support");
+  return 0;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
                                     double* recv_buffer, uint recv_size, uint source)
+{
+  dolfin_error("MPI.cpp",
+               "call MPI::send_recv",
+               "Your DOLFIN installation has been built without MPI support");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(bool* send_buffer, uint send_size, uint dest,
+                                    bool* recv_buffer, uint recv_size, uint source)
 {
   dolfin_error("MPI.cpp",
                "call MPI::send_recv",

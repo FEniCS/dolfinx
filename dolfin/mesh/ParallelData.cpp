@@ -71,6 +71,39 @@ std::vector<dolfin::uint> ParallelData::global_entity_indices_as_vector(uint d) 
   return std::vector<uint>(x.values(), x.values() + x.size());
 }
 //-----------------------------------------------------------------------------
+const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity_indices(uint d)
+{
+  std::map<uint, std::map<uint, uint> >::iterator it;
+  it = _global_to_local_entity_indices.find(d);
+  if (it == _global_to_local_entity_indices.end())
+  {
+    // Build data for map
+    const MeshFunction<uint>& local_global = global_entity_indices(d);
+    std::vector<std::pair<uint, uint> > data;
+    for (uint i = 0; i < local_global.size(); ++i)
+      data.push_back(std::make_pair(local_global[i], i));
+
+    // Insert a map
+    std::map<uint, uint> tmp;
+    std::pair<std::map<uint, std::map<uint, uint> >::iterator, bool> ret;
+    ret = _global_to_local_entity_indices.insert(std::make_pair(d, tmp));
+    assert(ret.second);
+    ret.first->second.insert(data.begin(), data.end());
+    it = ret.first;
+    assert(it->second.size() == local_global.size());
+  }
+  return it->second;
+}
+//-----------------------------------------------------------------------------
+const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity_indices(uint d) const
+{
+  std::map<uint, std::map<uint, uint> >::const_iterator it;
+  it = _global_to_local_entity_indices.find(d);
+  if (it == _global_to_local_entity_indices.end())
+    error("ParallelData::global_to_local_entity_indices: global-to-local map has not been computed.");
+  return it->second;
+}
+//-----------------------------------------------------------------------------
 std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices()
 {
   return _shared_vertices;

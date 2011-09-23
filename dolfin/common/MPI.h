@@ -92,7 +92,15 @@ namespace dolfin
                            std::vector<uint>& partition);
 
     /// Distribute local arrays on all processors according to given partition
+    static void distribute(std::vector<int>& values,
+                           std::vector<uint>& partition);
+
+    /// Distribute local arrays on all processors according to given partition
     static void distribute(std::vector<double>& values,
+                           std::vector<uint>& partition);
+
+    /// Distribute local arrays on all processors according to given partition
+    static void distribute(std::vector<bool>& values,
                            std::vector<uint>& partition);
 
     // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
@@ -300,8 +308,16 @@ namespace dolfin
                           uint* recv_buffer, uint recv_size, uint source);
 
     /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
+    static uint send_recv(int* send_buffer, uint send_size, uint dest,
+                          int* recv_buffer, uint recv_size, uint source);
+
+    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
     static uint send_recv(double* send_buffer, uint send_size, uint dest,
                           double* recv_buffer, uint recv_size, uint source);
+
+    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
+    static uint send_recv(bool* send_buffer, uint send_size, uint dest,
+                          bool* recv_buffer, uint recv_size, uint source);
 
     /// Return local range for local process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size

@@ -39,7 +39,7 @@ namespace dolfin
   {
   public:
 
-    /// Find processes that own or share list of mesh entities (using
+    /// Find processes that own or share a vector of mesh entities (using
     /// entity global indices). Returns
     /// (global_dof, set(process_num, local_index)). Exclusively local
     /// entities will not appear in the map. Works only for vertices and

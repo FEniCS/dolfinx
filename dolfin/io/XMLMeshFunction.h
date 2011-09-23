@@ -78,6 +78,8 @@ namespace dolfin
       tag_name = "meshfunction";
     }
 
+    cout << "Type:  " << type << endl;
+
     // Read main tag
     const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
     if (!xml_meshfunction)
@@ -92,7 +94,9 @@ namespace dolfin
       MeshValueCollection<T> mesh_value_collection;
       if (MPI::num_processes() == 1)
       {
+        cout << "Read collection on root" << endl;
         XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+        cout << "End read collection on root" << endl;
       }
       else
       {
@@ -101,6 +105,16 @@ namespace dolfin
         {
           XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
           dim = mesh_value_collection.dim();
+
+          const std::map<std::pair<uint, uint>, T> values = mesh_value_collection.values();  
+          typename std::map<std::pair<uint, uint>, T>::const_iterator it;  
+          for (it = values.begin(); it != values.end(); ++it)
+          {
+            cout << "Dist val(0): " << it->second << endl; 
+            if (it->second < 0.2)
+              error("val(0)");
+          }
+
         }
         MPI::broadcast(dim);
         mesh_value_collection.set_dim(dim);
@@ -108,13 +122,39 @@ namespace dolfin
         // Build local data
         LocalMeshValueCollection<T> local_data(mesh_value_collection, dim);
 
+        /*
+        const std::vector<std::pair<std::pair<uint, uint>, T> >& lvalues = local_data.values();
+        for (uint j = 0; j < lvalues.size(); ++j)
+        {
+          cout << "Local val: " << lvalues[j].second << endl; 
+          if (lvalues[j].second < 0.2)
+            error("local val");
+        }
+        */
+
         // Distribute MeshValueCollection
         MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
                                                                local_data, mesh);
+
+        /*
+        const std::map<std::pair<uint, uint>, T> values = mesh_value_collection.values();  
+        typename std::map<std::pair<uint, uint>, T>::const_iterator it;  
+        for (it = values.begin(); it != values.end(); ++it)
+        {
+          cout << "Dist val: " << it->second << endl; 
+          if (it->second < 0.2)
+            error("dist val");
+        }
+        */
       }
 
+
       // Assign collection to mesh function (this is a local operation)
+      //cout << "Start assign" << endl;
       mesh_function = mesh_value_collection;
+      //cout << "End assign" << endl;
+      //for (uint i = 0; i < mesh_function.size(); ++i)
+      //  cout << "MF: " << mesh_function[i] << ", " << i << ", " << mesh_function.size() << endl;
     }
     else
     {
