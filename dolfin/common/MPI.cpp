@@ -623,6 +623,14 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
                "Your DOLFIN installation has been built without MPI support");
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<int> >& values,
+                          uint sending_process)
+{
+  dolfin_error("MPI.cpp",
+               "call MPI::scatter",
+               "Your DOLFIN installation has been built without MPI support");
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {
