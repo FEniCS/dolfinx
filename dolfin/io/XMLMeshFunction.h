@@ -119,6 +119,8 @@ namespace dolfin
     else
     {
       // Read old-style MeshFunction
+      if (MPI::num_processes() > 1)
+        error("Reading old-style XML MeshFunctions is not supported in parallel. Consider using the new format.");
 
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
