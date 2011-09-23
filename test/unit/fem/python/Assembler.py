@@ -328,6 +328,43 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(m0, 9.5)
         self.assertAlmostEqual(m1, 6.5)
 
+
+    def test_reference_assembly(self):
+        "Test assembly against a reference solution"
+
+        if MPI.num_processes() == 1:
+
+            # Load reference mesh (just a simple tetrahedron)
+            mesh = Mesh("tetrahedron.xml.gz");
+
+            # Assemble stiffness and mass matrices
+            V = FunctionSpace(mesh, "Lagrange", 1)
+            u, v = TrialFunction(V), TestFunction(V)
+            A, M = uBLASDenseMatrix(), uBLASDenseMatrix()
+            assemble(dot(grad(v), grad(u))*dx, tensor=A)
+            assemble(v*u*dx, tensor=M)
+
+            # Create reference matrices and set entries
+            A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
+            pos = numpy.array([0, 1, 2, 3], dtype='I')
+            A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
+                          [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                          [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                          [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
+
+            M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
+            A0.apply("insert")
+            M0.apply("insert")
+
+            C = A - A0
+            self.assertAlmostEqual(C.norm("frobenius"), 0.0)
+            D = M - M0
+            self.assertAlmostEqual(D.norm("frobenius"), 0.0)
+
+
 if __name__ == "__main__":
     print ""
     print "Testing basic DOLFIN assembly operations"
