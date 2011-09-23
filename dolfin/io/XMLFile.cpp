@@ -237,19 +237,6 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   load_xml_doc(xml_doc);
   const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
   XMLMeshValueCollection::read(t, type, dolfin_node);
-
-  //if (MPI::process_number() == 0)
-  //{
-  //  load_xml_doc(xml_doc);
-  //  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-  //  XMLMeshValueCollection::read(t, type, dolfin_node);
-  //}
-
-  // Distribute data if running in parallel
-  //if (MPI::num_processes() > 1)
-  //{
-  //  LocalMeshValueCollection<T> local_data(t, t.dim());
-  //}
 }
 //-----------------------------------------------------------------------------
 template<typename T>

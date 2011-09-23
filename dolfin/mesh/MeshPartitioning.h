@@ -36,7 +36,7 @@
 
 namespace dolfin
 {
-  // Note: MeshFunction and MeshValueCollection cannot apear in the 
+  // Note: MeshFunction and MeshValueCollection cannot apear in the
   // implementations that appear in this file of the templated functions
   // as this leads to a circular dependency. Therefore the functions are
   // templated over these types.
@@ -93,10 +93,6 @@ namespace dolfin
 
     /// Build a partitioned mesh based on local mesh data
     static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
-
-    //template<typename T, typename MeshValueCollection, typename MeshFunctionUint>
-    //static void build_distributed_value_collection(MeshValueCollection& values,
-    //           const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
     template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
@@ -200,7 +196,7 @@ namespace dolfin
     MeshValueCollection& markers = mesh_values;
 
     // Get local mesh data for domains
-    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >& 
+    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >&
       ldata = local_value_data;
 
     // Get local local-to-global map
@@ -208,7 +204,7 @@ namespace dolfin
       error("Do not have have_global_entity_indices");
 
     // Get global indices on local process
-    const std::vector<uint> global_entity_indices 
+    const std::vector<uint> global_entity_indices
       = mesh.parallel_data().global_entity_indices_as_vector(D);
 
     // Add local (to this process) data to domain marker
@@ -283,12 +279,10 @@ namespace dolfin
     {
       const uint local_cell_entity = send_data0[2*i];
       const uint local_entity_index = send_data0[2*i + 1];
-      const T domain_value = send_data1[i];
+      const T value = send_data1[i];
       assert(local_cell_entity < mesh.num_cells());
-      markers.set_value(local_cell_entity, local_entity_index, domain_value);
-      //cout << "Setting non-local value: " << local_cell_entity << ", " << domain_value << endl;
+      markers.set_value(local_cell_entity, local_entity_index, value);
     }
-    //cout << "Finished partitioning " << endl; 
   }
 //-----------------------------------------------------------------------------
 
