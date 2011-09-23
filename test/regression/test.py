@@ -122,8 +122,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-   os.path.join(demodir, 'undocumented', 'partitioning',                'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'partitioning',                'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'simple'      ,                'python'), \
    os.path.join(demodir, 'undocumented', 'periodic',                    'cpp'),    \
