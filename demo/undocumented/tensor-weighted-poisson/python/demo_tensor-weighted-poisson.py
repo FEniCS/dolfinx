@@ -94,7 +94,6 @@ public:
 c00 = MeshFunction("double", mesh, "c00.xml.gz")
 c01 = MeshFunction("double", mesh, "c01.xml.gz")
 c11 = MeshFunction("double", mesh, "c11.xml.gz")
-"""
 c = Expression(cppcode=conductivity_code)
 c.c00 = c00
 c.c01 = c01
@@ -118,4 +117,3 @@ file << u
 
 # Plot solution
 plot(u, interactive=True)
-"""
