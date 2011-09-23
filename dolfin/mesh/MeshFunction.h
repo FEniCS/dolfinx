@@ -395,9 +395,19 @@ namespace dolfin
       const uint local_entity = it->first.second;
       const T value = it->second;
 
-      // Get global (local to to process) entity index
-      assert(cell_index < _mesh->num_cells());
-      const uint entity_index = connectivity(cell_index)[local_entity];
+      uint entity_index = 0;
+      if (d != D)
+      {
+        // Get global (local to to process) entity index
+        assert(cell_index < _mesh->num_cells());
+        entity_index = connectivity(cell_index)[local_entity];
+
+      }
+      else
+      {
+        entity_index = cell_index;
+        assert(local_entity == 0);
+      }
 
       // Set value for entity
       assert(entity_index < _size);
