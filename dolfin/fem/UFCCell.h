@@ -47,15 +47,17 @@ namespace dolfin
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0),
-                                num_higher_order_vertices(0)
+    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(), 
+        use_global_indices(use_global_indices),
+        num_vertices(0), num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0),
-                                num_higher_order_vertices(0)
+    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(), 
+        use_global_indices(use_global_indices),
+        num_vertices(0), num_higher_order_vertices(0) 
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -63,9 +65,7 @@ namespace dolfin
 
     /// Destructor
     ~UFCCell()
-    {
-      clear();
-    }
+    { clear(); }
 
     /// Initialize UFC cell data
     void init(const Cell& cell)
@@ -197,13 +197,13 @@ namespace dolfin
       // Map to global entity indices (if any)
       for (uint d = 0; d < D; ++d)
       {
-        if (global_entities[d])
+        if (use_global_indices && global_entities[d])
         {
           for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = (*global_entities[d])[entity_indices[d][i]];
         }
       }
-      if (global_entities[D])
+      if (use_global_indices && global_entities[D])
         entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
 
       // Set vertex coordinates
@@ -222,6 +222,9 @@ namespace dolfin
     }
 
   private:
+
+    // True it global entity indices should be used
+    const bool use_global_indices;
 
     // Number of cell vertices
     uint num_vertices;
