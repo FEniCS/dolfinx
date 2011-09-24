@@ -40,6 +40,10 @@ namespace dolfin
     // Read XML vector. Vector must have correct size.
     static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
+    // Read XML vector in Array. Vector must have correct size.
+    static void read(Array<double>& x, Array<uint>& indices,
+                     const pugi::xml_node xml_dolfin);
+
     // Read XML vector size
     static uint read_size(const pugi::xml_node xml_dolfin);
 
