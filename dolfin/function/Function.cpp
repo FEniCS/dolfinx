@@ -183,6 +183,9 @@ const Function& Function::operator= (const Function& v)
 
     // Copy vector
     _vector.reset(v._vector->copy());
+
+    // Clear subfunction cache
+    sub_functions.clear();
   }
   else
   {
