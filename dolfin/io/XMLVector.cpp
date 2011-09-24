@@ -34,6 +34,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
+  // Read data in to Arraya
+  Array<double> data;
+  Array<uint> indices;
+  read(data, indices, xml_dolfin);
+
+  // Set data (GenericVector::apply will be called by calling function)
+  x.set(data.data().get(), data.size(), indices.data().get());
+}
+//-----------------------------------------------------------------------------
+void XMLVector::read(Array<double>& x, Array<uint>& indices,
+                     const pugi::xml_node xml_dolfin)
+{
   // Check that we have a XML Vector
   const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
   if (!xml_vector_node)
@@ -48,19 +60,16 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   const std::string type  = array.attribute("type").value();
 
   // Iterate over array entries
-  Array<double> data(size);
-  Array<unsigned int> indices(size);
+  x.resize(size);
+  indices.resize(size);
   for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
   {
     const unsigned int index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_double();
     assert(index < size);
     indices[index] = index;
-    data[index] = value;
+    x[index] = value;
   }
-
-  // Set data (GenericVector::apply will be called by calling function)
-  x.set(data.data().get(), size, indices.data().get());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLVector::read_size(const pugi::xml_node xml_dolfin)

@@ -64,6 +64,11 @@ void GenericFile::operator>> (GenericMatrix& A)
   read_not_impl("Matrix");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (GenericDofMap& data)
+{
+  read_not_impl("GenericDofMap");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (LocalMeshData& data)
 {
   read_not_impl("LocalMeshData");
@@ -177,6 +182,11 @@ void GenericFile::operator<< (const GenericVector& x)
 void GenericFile::operator<< (const GenericMatrix& A)
 {
   write_not_impl("Matrix");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const GenericDofMap& dofmap)
+{
+  write_not_impl("GenericDofMap");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const LocalMeshData& data)

@@ -32,6 +32,7 @@
 namespace dolfin
 {
 
+  class GenericDofMap;
   class Function;
   class FunctionPlotData;
   class GenericMatrix;
@@ -57,6 +58,7 @@ namespace dolfin
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
+    virtual void operator>> (GenericDofMap& dofmap);
     virtual void operator>> (LocalMeshData& data);
     virtual void operator>> (MeshFunction<int>& mesh_function);
     virtual void operator>> (MeshFunction<unsigned int>& mesh_function);
@@ -82,6 +84,7 @@ namespace dolfin
     virtual void operator<< (const GenericVector& x);
     virtual void operator<< (const GenericMatrix& A);
     virtual void operator<< (const Mesh& mesh);
+    virtual void operator<< (const GenericDofMap& dofmap);
     virtual void operator<< (const LocalMeshData& data);
     virtual void operator<< (const MeshFunction<int>& mesh_function);
     virtual void operator<< (const MeshFunction<unsigned int>& mesh_function);

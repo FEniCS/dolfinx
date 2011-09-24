@@ -46,7 +46,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
   Timer t0("Init dofmap");
 
   // Create space for dof map
-  dofmap.dofmap.resize(dolfin_mesh.num_cells());
+  dofmap._dofmap.resize(dolfin_mesh.num_cells());
 
   dofmap._off_process_owner.clear();
 
@@ -61,10 +61,10 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
 
     // Get standard local dimension
     const unsigned int local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
-    dofmap.dofmap[cell->index()].resize(local_dim);
+    dofmap._dofmap[cell->index()].resize(local_dim);
 
     // Tabulate standard UFC dof map
-    dofmap._ufc_dofmap->tabulate_dofs(&dofmap.dofmap[cell->index()][0], ufc_mesh, ufc_cell);
+    dofmap._ufc_dofmap->tabulate_dofs(&dofmap._dofmap[cell->index()][0], ufc_mesh, ufc_cell);
   }
 
   // Build (renumber) dofmap when running in parallel
@@ -246,7 +246,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   if (dofmap.ufc_map_to_dofmap.size() > 0)
     error("DofMaps cannot yet be renumbered twice.");
 
-  const std::vector<std::vector<uint> >& old_dofmap = dofmap.dofmap;
+  const std::vector<std::vector<uint> >& old_dofmap = dofmap._dofmap;
   std::vector<std::vector<uint> > new_dofmap(old_dofmap.size());
   assert(old_dofmap.size() == mesh.num_cells());
 
@@ -331,7 +331,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Set new dof map
-  dofmap.dofmap = new_dofmap;
+  dofmap._dofmap = new_dofmap;
 
   // Set ownership range
   dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, process_offset + owned_dofs.size());

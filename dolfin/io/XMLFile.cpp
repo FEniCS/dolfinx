@@ -40,6 +40,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include "XMLDofMap.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
@@ -166,6 +167,25 @@ void XMLFile::operator<< (const GenericVector& output)
   }
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator>> (GenericDofMap& input)
+{
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+
+  // Read parameters
+  XMLDofMap::read(input, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const GenericDofMap& output)
+{
+  pugi::xml_document doc;
+  pugi::xml_node node = write_dolfin(doc);
+  XMLDofMap::write(output, node);
+  save_xml_doc(doc);
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator>> (Parameters& input)
 {
   // Create XML doc and get DOLFIN node
@@ -201,7 +221,7 @@ void XMLFile::operator>> (FunctionPlotData& input)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const FunctionPlotData& output)
 {
-  not_working_in_parallel("Mesh XML output in parallel not yet supported.");
+  not_working_in_parallel("FunctionPlotData XML output in parallel not yet supported.");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);

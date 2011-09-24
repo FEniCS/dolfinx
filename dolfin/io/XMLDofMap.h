@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2003-07-15
-// Last changed: 2006-05-23
+// First added:  2011-09-24
+// Last changed:
 
-#ifndef __XMLVECTOR_H
-#define __XMLVECTOR_H
+#ifndef __XMLDOFMAP_H
+#define __XMLDOFMAP_H
 
 #include <ostream>
 
@@ -31,25 +31,17 @@ namespace pugi
 namespace dolfin
 {
 
-  class GenericVector;
+  class GenericDofMap;
 
-  class XMLVector
+  class XMLDofMap
   {
   public:
 
-    // Read XML vector. Vector must have correct size.
-    static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
+    // Read XML GenericDofMap
+    static void read(GenericDofMap& dofmap, const pugi::xml_node xml_dolfin);
 
-    // Read XML vector in Array. Vector must have correct size.
-    static void read(Array<double>& x, Array<uint>& indices,
-                     const pugi::xml_node xml_dolfin);
-
-    // Read XML vector size
-    static uint read_size(const pugi::xml_node xml_dolfin);
-
-    /// Write the XML file
-    static void write(const GenericVector& vector, pugi::xml_node xml_node,
-                      bool write_to_stream);
+    /// Write GenericDofMap to XML file
+    static void write(const GenericDofMap& dofmap, pugi::xml_node xml_node);
 
   };
 
