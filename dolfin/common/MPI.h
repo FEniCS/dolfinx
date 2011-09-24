@@ -128,72 +128,18 @@ namespace dolfin
        #endif
     }
 
-    /// Scatter values, one to each process
-    static void scatter(std::vector<uint>& values, uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<bool> >& values,
-                        uint sending_process=0)
-    { error("dolfin::MPI::scatter does not yet support bool."); }
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<uint> >& values,
-                        uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<int> >& values,
-                        uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<double> >& values,
-                        uint sending_process=0);
-
-    /// Gather values, one from each process (wrapper for MPI_Allgather)
-    static std::vector<uint> gather(uint value);
-
-    /// Gather values, one from each process (wrapper for MPI_Allgather)
+    // Gather values, one from each process (wrapper for boost::mpi::all_gather)
     template<typename T>
-    static void gather(std::vector<T>& values)
-    {
-      #ifdef HAS_MPI
-      assert(values.size() == num_processes());
-
-      // Prepare arrays
-      T send_value = values[process_number()];
-      T* received_values = new T[values.size()];
-
-      // Create communicator (copy of MPI_COMM_WORLD)
-      MPICommunicator comm;
-
-      // Call MPI
-      MPI_Allgather(&send_value,     1, mpi_type<T>(),
-                    received_values, 1, mpi_type<T>(), *comm);
-
-      // Copy values
-      for (uint i = 0; i < values.size(); i++)
-        values[i] = received_values[i];
-
-      // Cleanup
-      delete [] received_values;
-      #else
-      error("MPI::gather() requires MPI.");
-      #endif
-    }
-
-    // NOTE: This is commented out since Boost.MPI is not well supported
-    //       on older platforms
-    // // Gather values, one from each process (wrapper for boost::mpi::all_gather)
-    // template<typename T> static void gather_all(const T& in_value,
-    //                                          std::vector<T>& out_values)
-    // {
-    //   #ifdef HAS_MPI
-    //   MPICommunicator mpi_comm;
-    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-    //   boost::mpi::all_gather(comm, in_value, out_values);
-    //   #else
-    //   out_values.clear();
-    //   #endif
-    // }
+    static void all_gather(const T& in_value, std::vector<T>& out_values)
+     {
+       #ifdef HAS_MPI
+       MPICommunicator mpi_comm;
+       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+       boost::mpi::all_gather(comm, in_value, out_values);
+       #else
+       out_values.clear();
+       #endif
+     }
 
      // Return global max value
      template<typename T> static T max(const T& value)

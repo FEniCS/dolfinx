@@ -333,9 +333,8 @@ std::pair<unsigned int, unsigned int>
                                                 uint process_number)
 {
   // Communicate number of local entities
-  std::vector<uint> num_entities_to_number(num_processes, 0);
-  num_entities_to_number[process_number] = num_local_entities;
-  MPI::gather(num_entities_to_number);
+  std::vector<uint> num_entities_to_number;
+  MPI::all_gather(num_local_entities, num_entities_to_number);
 
   // Compute offset
   const uint offset = std::accumulate(num_entities_to_number.begin(),
@@ -809,9 +808,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::sort(global_vertex_send.begin(), global_vertex_send.end());
 
   // Distribute boundaries' sizes
-  std::vector<uint> boundary_sizes(num_processes);
-  boundary_sizes[process_number] = boundary_size;
-  MPI::gather(boundary_sizes);
+  std::vector<uint> boundary_sizes;
+  MPI::all_gather(boundary_size, boundary_sizes);
 
   // Find largest boundary size (for recv buffer)
   const uint max_boundary_size = *std::max_element(boundary_sizes.begin(), boundary_sizes.end());
