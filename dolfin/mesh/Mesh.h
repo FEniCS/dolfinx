@@ -276,13 +276,6 @@ namespace dolfin
     /// Get mesh (sub)domains.
     const MeshDomains& domains() const { return _domains; }
 
-    /// Get unique mesh identifier.
-    ///
-    /// *Returns*
-    ///     _uint_
-    ///         The unique integer identifier associated with the mesh.
-    uint id() const { return unique_id; }
-
     /// Get intersection operator.
     ///
     /// *Returns*
@@ -642,9 +635,6 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
-
-    // Unique mesh identifier
-    const uint unique_id;
 
     // Intersection detector
     IntersectionOperator _intersection_operator;

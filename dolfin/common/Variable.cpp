@@ -15,26 +15,34 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2011
+//
 // First added:  2003-02-26
-// Last changed: 2011-09-20
-
-#include <dolfin/log/dolfin_log.h>
+// Last changed: 2011-09-24
 
 #include <sstream>
 #include <dolfin/parameter/Parameters.h>
+#include "UniqueIdGenerator.h"
 #include "Variable.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Variable::Variable()
-  : _name("x"), _label("unnamed data")
+  : _name("x"), _label("unnamed data"), unique_id(UniqueIdGenerator::id())
+
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Variable::Variable(const std::string name, const std::string label)
-  : _name(name), _label(label)
+  : _name(name), _label(label), unique_id(UniqueIdGenerator::id())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Variable::Variable(const Variable& variable) : _name(variable._name),
+  _label(variable._label), unique_id(UniqueIdGenerator::id())
 {
   // Do nothing
 }

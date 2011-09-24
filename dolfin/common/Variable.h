@@ -15,14 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2011
+//
 // First added:  2003-02-26
-// Last changed: 2011-09-20
+// Last changed: 2011-09-24
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
 
 #include <string>
 #include <dolfin/parameter/Parameters.h>
+#include "types.h"
 
 namespace dolfin
 {
@@ -39,6 +42,9 @@ namespace dolfin
     /// Create variable with given name and label
     Variable(const std::string name, const std::string label);
 
+    /// Copy constructor
+    Variable(const Variable& variable);
+
     /// Destructor
     virtual ~Variable();
 
@@ -50,6 +56,14 @@ namespace dolfin
 
     /// Return label (description)
     const std::string& label() const;
+
+    /// Get unique identifier.
+    ///
+    /// *Returns*
+    ///     _uint_
+    ///         The unique integer identifier associated with the object.
+    uint id() const { return unique_id; }
+
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -64,6 +78,9 @@ namespace dolfin
 
     // Label
     std::string _label;
+
+    // Unique identifier
+    const uint unique_id;
 
   };
 

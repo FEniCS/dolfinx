@@ -26,7 +26,6 @@
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
@@ -54,7 +53,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _data(*this),
                _parallel_data(new ParallelData(*this)),
                _cell_type(0),
-               unique_id(UniqueIdGenerator::id()),
                _intersection_operator(*this),
                _ordered(false)
 {
@@ -66,7 +64,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                _data(*this),
                                _parallel_data(new ParallelData(*this)),
                                _cell_type(0),
-                               unique_id(UniqueIdGenerator::id()),
                                _intersection_operator(*this),
                                _ordered(false)
 {
@@ -78,7 +75,6 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _data(*this),
                                    _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
-                                   unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
                                    _ordered(false)
 {
@@ -92,7 +88,6 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                    _data(*this),
                                    _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
-                                   unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
                                    _ordered(false)
 {
