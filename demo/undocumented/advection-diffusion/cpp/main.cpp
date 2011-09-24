@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 {
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
-  mesh.init();
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
