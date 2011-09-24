@@ -95,7 +95,7 @@ solver = LUSolver(A)
 solver.parameters["reuse_factorization"] = True
 
 # Output file
-out_file = File("temperature.pvd")
+out_file = File("results/temperature.pvd")
 
 # Set intial condition
 u = u0

@@ -37,6 +37,7 @@ namespace pugi
 namespace dolfin
 {
 
+  class GenericDofMap;
   class GenericVector;
   class LocalMeshData;
   class Mesh;
@@ -67,6 +68,10 @@ namespace dolfin
     // Vector
     void operator>> (GenericVector& input);
     void operator<< (const GenericVector& output);
+
+    // GenericDofMap
+    void operator>> (GenericDofMap& input);
+    void operator<< (const GenericDofMap& output);
 
     // Parameters
     void operator>> (Parameters& input);

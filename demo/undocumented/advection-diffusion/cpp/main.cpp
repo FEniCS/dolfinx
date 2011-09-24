@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   double t = k;
 
   // Output file
-  File file("temperature.pvd");
+  File file("results/temperature.pvd");
 
   // Time-stepping
   Progress p("Time-stepping");
@@ -103,7 +103,6 @@ int main(int argc, char *argv[])
     p = t / T;
     t += k;
   }
-  std::cout << "Test vector norm: " << u.vector().norm("l2") << std::endl;
 
   // Plot solution
   plot(u);
