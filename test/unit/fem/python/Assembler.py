@@ -142,10 +142,6 @@ class Assembly(unittest.TestCase):
         # Define mesh
         mesh = UnitSquare(8, 8)
 
-        # This is a hack to get around a DOLFIN bug
-        if MPI.num_processes() > 1:
-            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
-
         # Define domain for lower left corner
         class MyDomain(SubDomain):
             def inside(self, x, on_boundary):

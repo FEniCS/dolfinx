@@ -55,42 +55,7 @@ void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator it
   std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
 }
 
-/*
-template<typename InputIterator>
-void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
-{
-  std::stringstream msg_stream;
-  msg_stream << msg;
-  print_container(msg_stream, itbegin, itend);
-  info(msg_stream.str());
-}
-
-template<typename Map>
-void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
-{
-  for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
-  {
-    print_container(ostr, it->first.begin(), it->first.end(), " ");
-    ostr << ": " << it->second << delimiter;
-  }
-}
-
-template<typename Map>
-void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
-{
-  std::stringstream msg_stream;
-  msg_stream << msg << " ";
-  print_vec_map(msg_stream, map, delimiter);
-  info(msg_stream.str());
-}
-*/
-
 // Explicitly instantiate some templated functions to help the Python wrappers
-//template void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<uint>& values, const Mesh& mesh);
-//template void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<int>& values, const Mesh& mesh);
-//template void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<bool>& values, const Mesh& mesh);
-//template void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<double>& values, const Mesh& mesh);
-
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<uint, uint>, uint> >& local_value_data,
    MeshValueCollection<uint>& mesh_values);
@@ -109,20 +74,23 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
   // Create and distribute local mesh data
   dolfin_debug("creating local mesh data");
-  LocalMeshData mesh_data(mesh);
+  LocalMeshData local_mesh_data(mesh);
   dolfin_debug("created local mesh data");
 
   // Partition mesh based on local mesh data
-  partition(mesh, mesh_data);
+  partition(mesh, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_distributed_mesh(Mesh& mesh, LocalMeshData& data)
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh, LocalMeshData& local_data)
 {
   // Partition mesh
-  partition(mesh, data);
+  partition(mesh, local_data);
 
   // Create MeshDomains from local_data
-  build_mesh_domains(mesh, data);
+  build_mesh_domains(mesh, local_data);
+
+  // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
+  number_entities(mesh, mesh.topology().dim() - 1);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
