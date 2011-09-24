@@ -419,10 +419,7 @@ namespace dolfin
 
     // Check that all values have been set
     if (entities_values_set.size() != _size)
-    {
-      cout << "Sizes: " << entities_values_set.size() << ", " << _size << endl;
       error("MeshFunction<T>::operator=: MeshValueCollection does not contain all values for all entities. Cannot construct MeshFunction.");
-    }
 
     return *this;
   }
