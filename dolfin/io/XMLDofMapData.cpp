@@ -27,18 +27,43 @@
 #include "pugixml.hpp"
 
 #include "dolfin/common/MPI.h"
+#include "dolfin/fem/DofMap.h"
 #include "dolfin/fem/GenericDofMap.h"
-#include "XMLDofMap.h"
+#include "XMLDofMapData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLDofMap::read(GenericDofMap& dofmap, const pugi::xml_node xml_dolfin)
+void XMLDofMapData::read(std::vector<std::vector<uint> >& dofmap,
+                     const pugi::xml_node xml_dolfin)
 {
-  error("XMLDofMap::read not implemented.");
+  // Check that we have a XML dof map
+  const pugi::xml_node xml_dofmap_node = xml_dolfin.child("dof_map");
+  if (!xml_dofmap_node)
+    error("XMLDofMap::read: not a DOLFIN dof map file.");
+
+  // Get size
+  const unsigned int size = xml_dofmap_node.attribute("size").as_uint();
+
+  dofmap.resize(size);
+
+  // Iterate over each cell entry
+  for (pugi::xml_node_iterator it = xml_dofmap_node.begin(); it != xml_dofmap_node.end(); ++it)
+  {
+    const uint cell_index = it->attribute("cell_index").as_uint();
+    assert(cell_index < size);
+    std::vector<dolfin::uint>& cell_map = dofmap[cell_index];
+    const uint local_size = it->attribute("local_size").as_uint();
+    cell_map.resize(local_size);
+    for (uint i = 0; i < local_size; ++i)
+    {
+      const std::string label = "dof" + boost::lexical_cast<std::string>(i);
+      cell_map[i] = it->attribute(label.c_str()).as_uint();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
-void XMLDofMap::write(const GenericDofMap& dofmap, pugi::xml_node xml_node)
+void XMLDofMapData::write(const GenericDofMap& dofmap, pugi::xml_node xml_node)
 {
   // FIXME: Need to gather dof map from each process, and to use
   //        global cell indices
@@ -56,8 +81,9 @@ void XMLDofMap::write(const GenericDofMap& dofmap, pugi::xml_node xml_node)
   for (uint i = 0; i < size; ++i)
   {
     pugi::xml_node cell_node = array_node.append_child("cell_map");
-    cell_node.append_attribute("cell_index") = i;
     const std::vector<dolfin::uint>& cell_map = dofmap.cell_dofs(i);
+    cell_node.append_attribute("cell_index") = i;
+    cell_node.append_attribute("local_size") = (uint) cell_map.size();
     for (dof = cell_map.begin(); dof != cell_map.end(); ++dof)
     {
       const std::string label = "dof" + boost::lexical_cast<std::string>(std::distance(cell_map.begin(), dof));

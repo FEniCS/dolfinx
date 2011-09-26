@@ -22,6 +22,8 @@
 #define __XMLDOFMAP_H
 
 #include <ostream>
+#include <vector>
+#include <dolfin/common/types.h>
 
 namespace pugi
 {
@@ -31,16 +33,18 @@ namespace pugi
 namespace dolfin
 {
 
+  class DofMap;
   class GenericDofMap;
 
-  class XMLDofMap
+  class XMLDofMapData
   {
   public:
 
-    // Read XML GenericDofMap
-    static void read(GenericDofMap& dofmap, const pugi::xml_node xml_dolfin);
+    // Read XML DofMap
+    static void read(std::vector<std::vector<uint> >& dofmap,
+                     const pugi::xml_node xml_dolfin);
 
-    /// Write GenericDofMap to XML file
+    /// Write GenericDofMap data to XML file
     static void write(const GenericDofMap& dofmap, pugi::xml_node xml_node);
 
   };

@@ -69,9 +69,9 @@ namespace dolfin
     void operator>> (GenericVector& input);
     void operator<< (const GenericVector& output);
 
-    // GenericDofMap
-    void operator>> (GenericDofMap& input);
-    void operator<< (const GenericDofMap& output);
+    // GenericDofMap data
+    void read_dofmap_data(std::vector<std::vector<uint> >& input);
+    void write_dofmap_data(const GenericDofMap& output);
 
     // Parameters
     void operator>> (Parameters& input);
