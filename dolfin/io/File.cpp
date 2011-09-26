@@ -16,7 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2005-2010.
-// Modified by Haiko Etzel 2005.
 // Modified by Magnus Vikstrom 2007.
 // Modified by Nuno Lopes 2008.
 // Modified by Niclas Jansson 2008.
