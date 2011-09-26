@@ -103,7 +103,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
-  std::vector<uint> proccnttab = MPI::gather(local_graph.size());
+  std::vector<uint> proccnttab;
+  const uint local_graph_size = local_graph.size();
+  MPI::all_gather(local_graph_size, proccnttab);
 
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)

@@ -175,7 +175,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   local_graph.resize(num_local_cells);
 
   // Get number of cells on each process
-  std::vector<uint> cells_per_process = MPI::gather(num_local_cells);
+  std::vector<uint> cells_per_process;
+  MPI::all_gather(num_local_cells, cells_per_process);
 
   // Compute offset for going from local to (internal) global numbering
   std::vector<uint> process_offsets(MPI::num_processes());
@@ -204,7 +205,9 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   }
 
   // Get number of possible ghost cells coming from each process
-  std::vector<uint> boundary_cells_per_process = MPI::gather(local_boundary_cells.size());
+  std::vector<uint> boundary_cells_per_process;
+  const uint local_boundary_cells_size = local_boundary_cells.size();
+  MPI::all_gather(local_boundary_cells_size, boundary_cells_per_process);
 
   // Pack local data for candidate ghost cells (global cell index and vertices)
   std::vector<uint> connected_cell_data;

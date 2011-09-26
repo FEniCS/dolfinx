@@ -30,12 +30,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 
-// NOTE: It would be convenient to use Boost.MPI, but it is not yet well
-//       supported by packaged versions of Boost. Boost.MPI code is therefore
-//       commented out for now.
-
 #ifdef HAS_MPI
-//#include <boost/mpi.hpp>
+#include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
 
@@ -103,201 +99,93 @@ namespace dolfin
     static void distribute(std::vector<bool>& values,
                            std::vector<uint>& partition);
 
-    // NOTE: This is commented out since Boost.MPI is not well supported on older platforms
-    // // Broadcast value from broadcaster process to all processes
-    // template<typename T> static void broadcast(T& value, uint broadcaster=0)
-    // {
-    //   #ifdef HAS_MPI
-    //   MPICommunicator mpi_comm;
-    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-    //   boost::mpi::broadcast(comm, value, broadcaster);
-    //   #endif
-    // }
-
-    /// Broadcast value from broadcaster process to all processes
-    template<typename T> static void broadcast(T& value, uint broadcaster=0)
+    // Broadcast value from broadcaster process to all processes
+    template<typename T>
+    static void broadcast(T& value, uint broadcaster=0)
     {
-      #ifdef HAS_MPI
-      MPICommunicator comm;
-      MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, *comm);
-      #endif
-    }
-
-    /// Broadcast value from broadcaster process to all processes
-    template<typename T> static void broadcast(std::vector<T>& values, uint broadcaster=0)
-    {
-      #ifdef HAS_MPI
-      // Communicate size
-      uint size = values.size();
-      broadcast(size, broadcaster);
-
-      // Resize (will not affect broadcaster)
-      values.resize(size);
-
-      // Communicate
-      MPICommunicator comm;
-      MPI_Bcast(&values[0], size, mpi_type<T>(), broadcaster, *comm);
-      #endif
+       #ifdef HAS_MPI
+       MPICommunicator mpi_comm;
+       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+       boost::mpi::broadcast(comm, value, broadcaster);
+       #endif
     }
 
     // FIXME: Use common template function for uint and double scatter below
 
-    /// Scatter values, one to each process
-    static void scatter(std::vector<uint>& values, uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<bool> >& values,
-                        uint sending_process=0)
-    { error("dolfin::MPI::scatter does not yet support bool."); }
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<uint> >& values,
-                        uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<int> >& values,
-                        uint sending_process=0);
-
-    /// Scatter values (wrapper for MPI_Scatterv)
-    static void scatter(std::vector<std::vector<double> >& values,
-                        uint sending_process=0);
-
-    /// Gather values, one from each process (wrapper for MPI_Allgather)
-    static std::vector<uint> gather(uint value);
-
-    /// Gather values, one from each process (wrapper for MPI_Allgather)
+    /// Scatter in_values[i] to process i
     template<typename T>
-    static void gather(std::vector<T>& values)
+    static void scatter(const std::vector<T>& in_values,
+                        T& out_value, uint sending_process=0)
     {
-      #ifdef HAS_MPI
-      assert(values.size() == num_processes());
-
-      // Prepare arrays
-      T send_value = values[process_number()];
-      T* received_values = new T[values.size()];
-
-      // Create communicator (copy of MPI_COMM_WORLD)
-      MPICommunicator comm;
-
-      // Call MPI
-      MPI_Allgather(&send_value,     1, mpi_type<T>(),
-                    received_values, 1, mpi_type<T>(), *comm);
-
-      // Copy values
-      for (uint i = 0; i < values.size(); i++)
-        values[i] = received_values[i];
-
-      // Cleanup
-      delete [] received_values;
-      #else
-      error("MPI::gather() requires MPI.");
-      #endif
+       #ifdef HAS_MPI
+       MPICommunicator mpi_comm;
+       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+       boost::mpi::scatter(comm, in_values, out_value, sending_process);
+       #else
+       dolfin_error("MPI.cpp",
+                    "call MPI::scatter",
+                    "Your DOLFIN installation has been built without MPI support");
+       #endif
     }
 
-    // NOTE: This is commented out since Boost.MPI is not well supported
-    //       on older platforms
-    // // Gather values, one from each process (wrapper for boost::mpi::all_gather)
-    // template<typename T> static void gather_all(const T& in_value,
-    //                                          std::vector<T>& out_values)
-    // {
-    //   #ifdef HAS_MPI
-    //   MPICommunicator mpi_comm;
-    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-    //   boost::mpi::all_gather(comm, in_value, out_values);
-    //   #else
-    //   out_values.clear();
-    //   #endif
-    // }
+    // Gather values, one from each process (wrapper for boost::mpi::all_gather)
+    template<typename T>
+    static void all_gather(const T& in_value, std::vector<T>& out_values)
+     {
+       #ifdef HAS_MPI
+       MPICommunicator mpi_comm;
+       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+       boost::mpi::all_gather(comm, in_value, out_values);
+       #else
+       out_values.clear();
+       #endif
+     }
 
-    /// Return  maximum value
-    template<typename T> static T max(const T& value)
-    {
-      #ifdef HAS_MPI
-      T _max(0);
-      T _value = value;
-      MPICommunicator comm;
-      MPI_Allreduce(&_value, &_max, 1, mpi_type<T>(), MPI_MAX, *comm);
-      return _max;
-      #else
-      return value;
-      #endif
-    }
+     // Return global max value
+     template<typename T> static T max(const T& value)
+     {
+       #ifdef HAS_MPI
+       return all_reduce(value, boost::mpi::maximum<T>());
+       #else
+       return value;
+       #endif
+     }
 
-    /// Return minimum value
+    // Return global min value
     template<typename T> static T min(const T& value)
     {
-      #ifdef HAS_MPI
-      T _min(0);
-      T _value = value;
-      MPICommunicator comm;
-      MPI_Allreduce(&_value, &_min, 1, mpi_type<T>(), MPI_MIN, *comm);
-      return _min;
-      #else
-      return value;
-      #endif
-    }
+       #ifdef HAS_MPI
+       return all_reduce(value, boost::mpi::minimum<T>());
+       #else
+       return value;
+       #endif
+     }
 
-    /// Return sum across all processes
+    // Sum values and return sum
     template<typename T> static T sum(const T& value)
     {
+       #ifdef HAS_MPI
+       return all_reduce(value, std::plus<T>());
+       #else
+       return value;
+       #endif
+    }
+
+    // All reduce
+    template<typename T, typename X> static T all_reduce(const T& value, X op)
+    {
       #ifdef HAS_MPI
-      T _sum(0);
-      T _value = value;
-      MPICommunicator comm;
-      MPI_Allreduce(&_value, &_sum, 1, mpi_type<T>(), MPI_SUM, *comm);
-      return _sum;
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      T out;
+      boost::mpi::all_reduce(comm, value, out, op);
+      return out;
       #else
-      return value;
+      error("MPI::all_reduce requires MPI to be configured.");
+      return T(0);
       #endif
     }
 
-    // NOTE: This is commented out since Boost.MPI is not well supported
-    //       on older platforms
-    // // Return global max value
-    // template<typename T> static T max(const T& value)
-    // {
-    //   #ifdef HAS_MPI
-    //   return all_reduce(value, boost::mpi::maximum<T>());
-    //   #else
-    //   return value;
-    //   #endif
-    // }
-
-    // // Return global min value
-    // template<typename T> static T min(const T& value)
-    // {
-    //   #ifdef HAS_MPI
-    //   return all_reduce(value, boost::mpi::minimum<T>());
-    //   #else
-    //   return value;
-    //   #endif
-    // }
-
-    // // Sum values and return sum
-    // template<typename T> static T sum(const T& value)
-    // {
-    //   #ifdef HAS_MPI
-    //   return all_reduce(value, std::plus<T>());
-    //   #else
-    //   return value;
-    //   #endif
-    // }
-
-    // // All reduce
-    // template<typename T, typename X> static T all_reduce(const T& value, X op)
-    // {
-    //   #ifdef HAS_MPI
-    //   MPICommunicator mpi_comm;
-    //   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-    //   T out;
-    //   boost::mpi::all_reduce(comm, value, out, op);
-    //   return out;
-    //   #else
-    //   error("MPI::all_reduce requires MPI to be configured.");
-    //   return T(0);
-    //   #endif
-    // }
-    //
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)

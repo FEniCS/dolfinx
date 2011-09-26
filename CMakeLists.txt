@@ -184,11 +184,11 @@ set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1)
 
 # Test for Boost.MPI is commented out since it is not well supported in older Boost versions
-#if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
-#  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi REQUIRED)
-#else()
-#  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
-#endif()
+if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi REQUIRED)
+else()
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
+endif()
 find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
 
 # Check for required packages

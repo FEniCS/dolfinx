@@ -44,7 +44,6 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
 
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
@@ -55,9 +54,8 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
     error("ParMETIS cannot partition graphs if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead.");
 
   // Communicate number of cells between all processors
-  std::vector<uint> num_cells(num_processes);
-  num_cells[process_number] = num_local_cells;
-  MPI::gather(num_cells);
+  std::vector<uint> num_cells;
+  MPI::all_gather(num_local_cells, num_cells);
 
   // Build elmdist array with cell offsets for all processors
   std::vector<int> elmdist(num_processes + 1, 0);
