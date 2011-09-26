@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,8 +20,10 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-04-13
+// Last changed: 2011-09-19
 
+#include <map>
+#include <utility>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/constants.h>
@@ -33,7 +35,9 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -232,7 +236,9 @@ void DirichletBC::zero(GenericMatrix& A) const
   A.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::zero_columns(GenericMatrix& A, GenericVector& b, double diag_val) const
+void DirichletBC::zero_columns(GenericMatrix& A,
+                               GenericVector& b,
+                               double diag_val) const
 {
   Map bv_map;
   get_boundary_values(bv_map, _method);
@@ -509,15 +515,18 @@ void DirichletBC::check() const
   check_equal(g->value_rank(), _function_space->element().value_rank(),
               "create boundary condition", "value rank");
   for (uint i = 0; i < g->value_rank(); i++)
+  {
     check_equal(g->value_dimension(i), _function_space->element().value_dimension(i),
                 "create boundary condition", "value dimension");
+  }
 
   // Check that boundary condition method is known
   if (methods.count(_method) == 0)
     error("Unable to create boundary condition, unknown method specified.");
 
   // Check that the mesh is ordered
-  if (!_function_space->mesh().ordered())
+  assert(_function_space->mesh());
+  if (!_function_space->mesh()->ordered())
     error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
@@ -530,13 +539,16 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Create mesh function for sub domain markers on facets
-  const uint dim = _function_space->mesh().topology().dim();
-  _function_space->mesh().init(dim - 1);
-  MeshFunction<uint> sub_domains(_function_space->mesh(), dim - 1);
+  const uint dim = mesh.topology().dim();
+  _function_space->mesh()->init(dim - 1);
+  MeshFunction<uint> sub_domains(mesh, dim - 1);
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = _function_space->mesh().geometry().dim();
+  sub_domain->_geometric_dimension = mesh.geometry().dim();
 
   // Mark everything as sub domain 1
   sub_domains = 1;
@@ -553,19 +565,22 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
 {
   assert(facets.size() == 0);
 
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
+
   // Make sure we have the facet - cell connectivity
-  const uint dim = _function_space->mesh().topology().dim();
-  _function_space->mesh().init(dim - 1, dim);
+  const uint dim = mesh.topology().dim();
+  mesh.init(dim - 1, dim);
 
   // Build set of boundary facets
-  for (FacetIterator facet(_function_space->mesh()); !facet.end(); ++facet)
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Skip facets not on this boundary
     if (sub_domains[*facet] != sub_domain)
       continue;
 
     // Get cell to which facet belongs (there may be two, but pick first)
-    const Cell cell(_function_space->mesh(), facet->entities(dim)[0]);
+    const Cell cell(mesh, facet->entities(dim)[0]);
 
     // Get local index of facet with respect to the cell
     const uint facet_number = cell.index(*facet);
@@ -585,49 +600,18 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // or it won't do anything good (since the markers are wrong anyway).
   // In conclusion: we don't need to order the mesh here.
 
-  // Extract data for boundary indicators
-  const Mesh& mesh = _function_space->mesh();
-
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_indicators = mesh.data().array("boundary_indicators");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_cells = mesh.data().array("boundary_facet_cells");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_numbers = mesh.data().array("boundary_facet_numbers");
-
-  // Need indicators
-  if (!boundary_indicators)
-    dolfin_error("Mesh.cpp",
-                 "initialize boundary indicators",
-                 "Mesh has no boundary indicators");
-
-  // Need facet cells and numbers if indicators are present
-  if (!boundary_facet_cells || !boundary_facet_numbers)
-    dolfin_error("Mesh.cpp",
-                 "initialize boundary indicators",
-                 "Mesh has boundary indicators but missing data for \"boundary_facet_cells\" and \"boundary_facet_numbers\"");
-  const uint num_facets = boundary_indicators->size();
-  assert(num_facets > 0);
-  assert(boundary_facet_cells->size() == num_facets);
-  assert(boundary_facet_numbers->size() == num_facets);
-
-  // Initialize facets
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
   // Assign domain numbers for each facet
-  for (uint i = 0; i < num_facets; i++)
+  const uint D = mesh.topology().dim();
+  const std::map<std::pair<uint, uint>, uint>&
+    markers = mesh.domains().markers(D - 1).values();
+  std::map<std::pair<uint, uint>, uint>::const_iterator mark;
+  for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
-    // Skip facets not on this boundary
-    if ((*boundary_indicators)[i] != sub_domain)
-      continue;
-
-    // Get cell index and local facet index
-    const uint cell_index = (*boundary_facet_cells)[i];
-    const uint local_facet = (*boundary_facet_numbers)[i];
-
-    // Store cell/facet data
-    facets.push_back(std::pair<uint, uint>(cell_index, local_facet));
+    if (mark->second == sub_domain)
+      facets.push_back(mark->first);
   }
 }
 //-----------------------------------------------------------------------------
@@ -659,12 +643,14 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Special case
   if (facets.size() == 0)
   {
-    warning("Found no facets matching domain for boundary condition.");
+    if (MPI::num_processes() == 1)
+      warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Create UFC cell object
@@ -712,12 +698,14 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   // Special case
   if (facets.size() == 0)
   {
-    warning("Found no facets matching domain for boundary condition.");
+    if (MPI::num_processes() == 1)
+      warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Initialize facets, needed for geometric search
@@ -787,7 +775,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   assert(_user_sub_domain);
 
   // Get mesh and dofmap
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Geometric dim

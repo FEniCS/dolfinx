@@ -15,10 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Nuno Lopes 2008.
-// Modified by Martin Alnes 2008.
+// Modified by Nuno Lopes 2008
+// Modified by Martin Alnes 2008
+// Modified by Anders Logg 2011
 //
 // First added:  2008-05-29
+// Last changed: 2011-09-14
 
 #include <fstream>
 #include <sstream>
@@ -37,9 +39,10 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-RAWFile::RAWFile(const std::string filename) : GenericFile(filename)
+RAWFile::RAWFile(const std::string filename)
+  : GenericFile(filename, "RAW")
 {
-  type = "RAW";
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 RAWFile::~RAWFile()
@@ -85,7 +88,8 @@ void RAWFile::ResultsWrite(const Function& u) const
 
   // For brevity
   const FunctionSpace& V = u.function_space();
-  const Mesh& mesh(V.mesh());
+  assert(V.mesh());
+  const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap(V.dofmap());
 
   // Get rank of Function
@@ -186,7 +190,7 @@ void RAWFile::rawNameUpdate(const int counter)
   file.close();
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void RAWFile::MeshFunctionWrite(T& meshfunction)
 {
   // Update raw file name and clear file

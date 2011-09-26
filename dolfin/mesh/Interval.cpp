@@ -20,9 +20,10 @@
 // First added:  2007-11-23
 // Last changed: 2008-11-13
 
+#include "dolfin/common/constants.h"
+#include "CellType.h"
 #include "MeshEditor.h"
 #include "Interval.h"
-#include "dolfin/common/constants.h"
 
 using namespace dolfin;
 

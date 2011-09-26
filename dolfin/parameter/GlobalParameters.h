@@ -54,6 +54,9 @@ namespace dolfin
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
       p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
 
+      // Ouput
+      p.add("std_out_all_processes", true);                  // Print stanard output on all processes
+
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
       p.add("optimize_use_dofmap_cache", false);             // Store dof maps in cache for reuse

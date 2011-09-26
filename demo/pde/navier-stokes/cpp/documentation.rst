@@ -197,6 +197,14 @@ start our C++ program by writing
     int main()
     {
 
+For the parallel case, we turn off log messages from processes other than
+the the root process to avoid excessive output:
+
+.. code-block:: c++
+
+    // Print log messages only from the root process in parallel
+    parameters["std_out_all_processes"] = false;
+
 We then load the mesh for the L-shaped domain from file:
 
 .. code-block:: c++

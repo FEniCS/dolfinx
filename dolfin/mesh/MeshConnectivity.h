@@ -21,6 +21,7 @@
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin

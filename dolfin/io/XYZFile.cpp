@@ -37,9 +37,10 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XYZFile::XYZFile(const std::string filename) : GenericFile(filename)
+XYZFile::XYZFile(const std::string filename)
+  : GenericFile(filename, "XYZ")
 {
-  type = "XYZ";
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 XYZFile::~XYZFile()
@@ -78,7 +79,8 @@ void XYZFile::results_write(const Function& u) const
   for (uint i = 0; i < rank; i++)
     dim *= u.function_space().element().value_dimension(i);
 
-  const Mesh& mesh = u.function_space().mesh();
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
@@ -123,7 +125,7 @@ void XYZFile::xyz_name_update(int counter)
     error("Unable to open file %s", filename.c_str());
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XYZFile::mesh_function_write(T& meshfunction)
 {
   // Update xyz file name and clear file

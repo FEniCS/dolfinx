@@ -25,12 +25,18 @@
 #define __MESH_FUNCTION_H
 
 #include <vector>
+#include <boost/unordered_set.hpp>
+#include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
+#include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
+#include "LocalMeshValueCollection.h"
 #include "MeshEntity.h"
 #include "Mesh.h"
+#include "MeshConnectivity.h"
+#include "MeshPartitioning.h"
 
 namespace dolfin
 {
@@ -44,7 +50,7 @@ namespace dolfin
   /// numbering scheme for the entities of a (parallel) mesh, marking
   /// sub domains or boolean markers for mesh refinement.
 
-  template <class T> class MeshFunction : public Variable,
+  template <typename T> class MeshFunction : public Variable,
     public Hierarchical<MeshFunction<T> >
   {
   public:
@@ -57,7 +63,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    MeshFunction(const Mesh& mesh);
+    explicit MeshFunction(const Mesh& mesh);
 
     /// Create mesh function of given dimension on given mesh
     ///
@@ -89,6 +95,16 @@ namespace dolfin
     ///         The filename to create mesh function from.
     MeshFunction(const Mesh& mesh, const std::string filename);
 
+    /// Create function from a MeshValueCollecion
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create mesh function on.
+    ///     value_collection (_MeshValueCollection_ <T>)
+    ///         The mesh value collection for the mesh function data.
+    MeshFunction(const Mesh& mesh,
+                 const MeshValueCollection<T>& value_collection);
+
     /// Copy constructor
     ///
     /// *Arguments*
@@ -99,6 +115,13 @@ namespace dolfin
     /// Destructor
     ~MeshFunction()
     { delete [] _values; }
+
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh (_MeshValueCollection_)
+    ///         A _MeshValueCollection_ object used to construct a MeshFunction.
+    const MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
 
     /// Return mesh associated with mesh function
     ///
@@ -232,6 +255,10 @@ namespace dolfin
     ///         The value.
     void set_value(uint index, T& value);
 
+    /// Compatibility function for use in SubDomains
+    void set_value(uint index, T& value, const Mesh& mesh)
+    { set_value(index, value); }
+
     /// Set values
     ///
     /// *Arguments*
@@ -278,7 +305,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of MeshFunction
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshFunction<T>::MeshFunction() : Variable("f", "unnamed MeshFunction"),
     Hierarchical<MeshFunction<T> >(*this),
     _values(0), _mesh(0), _dim(0), _size(0)
@@ -286,7 +313,7 @@ namespace dolfin
     // Do nothing
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
@@ -295,7 +322,7 @@ namespace dolfin
     // Do nothing
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, uint dim) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
@@ -304,7 +331,7 @@ namespace dolfin
     init(dim);
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, uint dim, const T& value) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
@@ -314,18 +341,27 @@ namespace dolfin
     set_all(value);
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, const std::string filename) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
   {
-    not_working_in_parallel("Reading MeshFunctions from file");
     File file(filename);
     file >> *this;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
+  MeshFunction<T>::MeshFunction(const Mesh& mesh,
+      const MeshValueCollection<T>& value_collection) :
+      Variable("f", "unnamed MeshFunction"),
+      Hierarchical<MeshFunction<T> >(*this),
+      _values(0), _mesh(&mesh), _dim(value_collection.dim()), _size(0)
+  {
+    *this = value_collection;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
   MeshFunction<T>::MeshFunction(const MeshFunction<T>& f) :
       Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this),
@@ -334,38 +370,92 @@ namespace dolfin
     *this = f;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
+  const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
+  {
+    _dim = mesh_value_collection.dim();
+    init(_dim);
+    assert(_mesh);
+
+    // Get mesh connectivity D --> d
+    const uint d = _dim;
+    const uint D = _mesh->topology().dim();
+    assert(d <= D);
+    const MeshConnectivity& connectivity = _mesh->topology()(D, d);
+    assert(connectivity.size() > 0);
+
+    // Iterate over all values
+    boost::unordered_set<uint> entities_values_set;
+    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
+    const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
+    for (it = values.begin(); it != values.end(); ++it)
+    {
+      // Get value collection entry data
+      const uint cell_index = it->first.first;
+      const uint local_entity = it->first.second;
+      const T value = it->second;
+
+      uint entity_index = 0;
+      if (d != D)
+      {
+        // Get global (local to to process) entity index
+        assert(cell_index < _mesh->num_cells());
+        entity_index = connectivity(cell_index)[local_entity];
+
+      }
+      else
+      {
+        entity_index = cell_index;
+        assert(local_entity == 0);
+      }
+
+      // Set value for entity
+      assert(entity_index < _size);
+      _values[entity_index] = value;
+
+      // Add entity index to set (used to check that all values are set)
+      entities_values_set.insert(entity_index);
+    }
+
+    // Check that all values have been set
+    if (entities_values_set.size() != _size)
+      error("MeshFunction<T>::operator=: MeshValueCollection does not contain all values for all entities. Cannot construct MeshFunction.");
+
+    return *this;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
   const Mesh& MeshFunction<T>::mesh() const
   {
     assert(_mesh);
     return *_mesh;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   uint MeshFunction<T>::dim() const
   {
     return _dim;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   uint MeshFunction<T>::size() const
   {
     return _size;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const T* MeshFunction<T>::values() const
   {
     return _values;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   T* MeshFunction<T>::values()
   {
     return _values;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   T& MeshFunction<T>::operator[] (const MeshEntity& entity)
   {
     assert(_values);
@@ -375,7 +465,7 @@ namespace dolfin
     return _values[entity.index()];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const T& MeshFunction<T>::operator[] (const MeshEntity& entity) const
   {
     assert(_values);
@@ -385,7 +475,7 @@ namespace dolfin
     return _values[entity.index()];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   T& MeshFunction<T>::operator[] (uint index)
   {
     assert(_values);
@@ -393,7 +483,7 @@ namespace dolfin
     return _values[index];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const T& MeshFunction<T>::operator[] (uint index) const
   {
     assert(_values);
@@ -401,7 +491,7 @@ namespace dolfin
     return _values[index];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const MeshFunction<T>& MeshFunction<T>::operator= (const MeshFunction<T>& f)
   {
     _mesh = f._mesh;
@@ -417,17 +507,15 @@ namespace dolfin
     return *this;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   const MeshFunction<T>& MeshFunction<T>::operator= (const T& value)
   {
     set_all(value);
-
     //Hierarchical<MeshFunction<T> >::operator=(value);
-
     return *this;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::init(uint dim)
   {
     if (!_mesh)
@@ -436,7 +524,7 @@ namespace dolfin
     init(*_mesh, dim, _mesh->size(dim));
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::init(uint dim, uint size)
   {
     if (!_mesh)
@@ -445,14 +533,14 @@ namespace dolfin
     init(*_mesh, dim, size);
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::init(const Mesh& mesh, uint dim)
   {
     mesh.init(dim);
     init(mesh, dim, mesh.size(dim));
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::init(const Mesh& mesh, uint dim, uint size)
   {
     // Initialize mesh for entities of given dimension
@@ -467,7 +555,7 @@ namespace dolfin
     _values = new T[size];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::set_value(uint index, T& value)
   {
     assert(_values);
@@ -475,7 +563,7 @@ namespace dolfin
     _values[index] = value;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::set_values(const std::vector<T>& values)
   {
     assert(_values);
@@ -484,7 +572,7 @@ namespace dolfin
       _values[i] = values[i];
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   void MeshFunction<T>::set_all(const T& value)
   {
     assert(_values);
@@ -492,7 +580,7 @@ namespace dolfin
       _values[i] = value;
   }
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   std::string MeshFunction<T>::str(bool verbose) const
   {
     std::stringstream s;

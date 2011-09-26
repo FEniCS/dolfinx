@@ -36,7 +36,7 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
-  template<class Mat = ublas_sparse_matrix>
+  template<typename Mat = ublas_sparse_matrix>
   class uBLASFactory : public LinearAlgebraFactory
   {
   public:
@@ -83,6 +83,6 @@ namespace dolfin
 }
 
 // Initialise static data
-template<class Mat> dolfin::uBLASFactory<Mat> dolfin::uBLASFactory<Mat>::factory;
+template<typename Mat> dolfin::uBLASFactory<Mat> dolfin::uBLASFactory<Mat>::factory;
 
 #endif

@@ -64,7 +64,8 @@ void PointSource::apply(GenericVector& b)
   // Find the cell containing the point (may be more than one cell but
   // we only care about the first). Well-defined if the basis
   // functions are continuous but may give unexpected results for DG.
-  const Mesh& mesh = V->mesh();
+  assert(V->mesh());
+  const Mesh& mesh = *V->mesh();
   int cell_index = mesh.intersected_cell(p);
   if (cell_index < 0)
     error("Unable to apply point source; point is outside of domain: %s", p.str().c_str());
@@ -88,7 +89,7 @@ void PointSource::apply(GenericVector& b)
 
   // Add values to vector
   assert(V->element().space_dimension() == V->dofmap().cell_dimension(cell.index()));
-  b.set(&values[0], V->element().space_dimension(), &dofs[0]);
+  b.add(&values[0], V->element().space_dimension(), &dofs[0]);
   b.apply("add");
 }
 //-----------------------------------------------------------------------------

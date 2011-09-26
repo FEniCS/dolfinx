@@ -42,7 +42,7 @@ namespace dolfin
   /// of this class is to enable the simple and safe exchange of data between
   /// C++ and Python.
 
-  template <class T> class Array
+  template <typename T> class Array
   {
   public:
 
@@ -194,7 +194,7 @@ namespace dolfin
 
   };
 
-  template <class T>
+  template <typename T>
   inline void Array<T>::zero_eps(double eps)
   {
     error("Array<T>::zero_eps can only be used for T=double.");

@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2011-06-30
-// Last changed:
+// Last changed: 2011-09-01
 
-#ifndef __XMLMESHFUNCTION_H
-#define __XMLMESHFUNCTION_H
+#ifndef __XML_MESH_FUNCTION_H
+#define __XML_MESH_FUNCTION_H
 
 #include <iomanip>
 #include <iostream>
@@ -27,8 +29,12 @@
 #include <string>
 
 #include "pugixml.hpp"
-#include "dolfin/mesh/MeshFunction.h"
+#include <dolfin/mesh/LocalMeshValueCollection.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLMesh.h"
+#include "XMLMeshValueCollection.h"
 
 namespace dolfin
 {
@@ -38,92 +44,170 @@ namespace dolfin
   public:
 
     // Read XML MeshFunction
-    template <class T>
+    template <typename T>
     static void read(MeshFunction<T>& mesh_function, const std::string type,
                      const pugi::xml_node xml_mesh);
 
+    // Read XML MeshFunction as a MeshValueCollection
+    template <typename T>
+    static void read(MeshValueCollection<T>& mesh_value_collection,
+                     const std::string type, const pugi::xml_node xml_mesh);
+
     /// Write the XML file
-    template<class T>
+    template<typename T>
     static void write(const MeshFunction<T>& mesh_function,
                       const std::string type, pugi::xml_node xml_node,
                       bool write_mesh=true);
 
-
   };
 
   //---------------------------------------------------------------------------
-  template <class T>
+  template <typename T>
   inline void XMLMeshFunction::read(MeshFunction<T>& mesh_function,
                                     const std::string type,
                                     const pugi::xml_node xml_mesh)
   {
-    not_working_in_parallel("Reading XML MeshFunctions");
-
     // Check for old tag
+    std::string tag_name("mesh_function");
     if (xml_mesh.child("meshfunction"))
-      dolfin_error("XMLMeshFunction.h",
-                   "read DOLFIN MeshFunction from XML file",
-                   "The XML tag <meshfunction> has been changed to <mesh_function>");
+    {
+      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+              "I'll be nice and read your XML data anyway, for now, but you will "
+              "need to update your XML files (a simple search and replace) to use "
+              "future versions of DOLFIN.");
+      tag_name = "meshfunction";
+    }
 
     // Read main tag
-    const pugi::xml_node xml_meshfunction = xml_mesh.child("mesh_function");
+    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
     if (!xml_meshfunction)
-      std::cout << "Not a DOLFIN MeshFunction." << std::endl;
+      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
-    // Get type and size
-    const std::string file_data_type = xml_meshfunction.attribute("type").value();
-    const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
-    const unsigned int size = xml_meshfunction.attribute("size").as_uint();
+    // Check for new (MeshValueCollection) / old storage
+    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+    {
+      const Mesh& mesh = mesh_function.mesh();
 
-    // Check that types match
-    if (type != file_data_type)
-      error("Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".", file_data_type.c_str(), type.c_str());
+      // Read new-style MeshFunction
+      MeshValueCollection<T> mesh_value_collection;
+      if (MPI::num_processes() == 1)
+        XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+      else
+      {
+        uint dim = 0;
+        if (MPI::process_number() == 0)
+        {
+          XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
+          dim = mesh_value_collection.dim();
+        }
+        MPI::broadcast(dim);
+        mesh_value_collection.set_dim(dim);
 
-    // Initialise MeshFunction
-    mesh_function.init(dim, size);
+        // Build local data
+        LocalMeshValueCollection<T> local_data(mesh_value_collection, dim);
 
-    // Iterate over entries (choose data type)
-    if (type == "uint")
-    {
-      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
-      {
-        const unsigned int index = it->attribute("index").as_uint();
-        assert(index < size);
-        mesh_function[index] = it->attribute("value").as_uint();
+        // Distribute MeshValueCollection
+        MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
+                                                               local_data, mesh);
       }
-    }
-    else if (type == "int")
-    {
-      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
-      {
-        const unsigned int index = it->attribute("index").as_uint();
-        assert(index < size);
-        mesh_function[index] = it->attribute("value").as_int();
-      }
-    }
-    else if (type == "double")
-    {
-      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
-      {
-        const unsigned int index = it->attribute("index").as_uint();
-        assert(index < size);
-        mesh_function[index] = it->attribute("value").as_double();
-      }
-    }
-    else if (type == "bool")
-    {
-      for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
-      {
-        const unsigned int index = it->attribute("index").as_uint();
-        assert(index < size);
-        mesh_function[index] = it->attribute("value").as_bool();
-      }
+
+
+      // Assign collection to mesh function (this is a local operation)
+      mesh_function = mesh_value_collection;
     }
     else
-      error("Type unknown in XMLMeshFunction::read.");
+    {
+      // Read old-style MeshFunction
+      if (MPI::num_processes() > 1)
+        error("Reading old-style XML MeshFunctions is not supported in parallel. Consider using the new format.");
+
+      // Get type and size
+      const std::string file_data_type = xml_meshfunction.attribute("type").value();
+      const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
+      const unsigned int size = xml_meshfunction.attribute("size").as_uint();
+
+      // Check that types match
+      if (type != file_data_type)
+        error("Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".", file_data_type.c_str(), type.c_str());
+
+      // Initialise MeshFunction
+      mesh_function.init(dim, size);
+
+      // Iterate over entries (choose data type)
+      if (type == "uint")
+      {
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        {
+          const unsigned int index = it->attribute("index").as_uint();
+          assert(index < size);
+          mesh_function[index] = it->attribute("value").as_uint();
+        }
+      }
+      else if (type == "int")
+      {
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        {
+          const unsigned int index = it->attribute("index").as_uint();
+          assert(index < size);
+          mesh_function[index] = it->attribute("value").as_int();
+        }
+      }
+      else if (type == "double")
+      {
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        {
+          const unsigned int index = it->attribute("index").as_uint();
+          assert(index < size);
+          mesh_function[index] = it->attribute("value").as_double();
+        }
+      }
+      else if (type == "bool")
+      {
+        for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
+        {
+          const unsigned int index = it->attribute("index").as_uint();
+          assert(index < size);
+          mesh_function[index] = it->attribute("value").as_bool();
+        }
+      }
+      else
+        error("Type unknown in XMLMeshFunction::read.");
+    }
   }
   //---------------------------------------------------------------------------
-  template<class T>
+  template <typename T>
+  inline void XMLMeshFunction::read(MeshValueCollection<T>& mesh_value_collection,
+                                    const std::string type,
+                                    const pugi::xml_node xml_mesh)
+  {
+    // Check for old tag
+    std::string tag_name("mesh_function");
+    if (xml_mesh.child("meshfunction"))
+    {
+      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+              "I'll be nice and read your XML data anyway, for now, but you will "
+              "need to update your XML files (a simple search and replace) to use "
+              "future versions of DOLFIN.");
+      tag_name = "meshfunction";
+    }
+
+    // Read main tag
+    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
+    if (!xml_meshfunction)
+      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+
+    // Check for new (MeshValueCollection) / old storage
+    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+    {
+      // Read new-style MeshFunction
+      XMLMeshValueCollection::read<T>(mesh_value_collection, type,
+                                      xml_meshfunction);
+    }
+    else
+      error("Cannot read old-style MeshFunction XML files as a MeshValueCollection.");
+  }
+  //---------------------------------------------------------------------------
+  template<typename T>
   void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
                               const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)
@@ -136,17 +220,12 @@ namespace dolfin
 
     // Add mesh function node and attributes
     pugi::xml_node mf_node = xml_node.append_child("mesh_function");
-    mf_node.append_attribute("type") = type.c_str();
-    mf_node.append_attribute("dim") = mesh_function.dim();
-    mf_node.append_attribute("size") = mesh_function.size();
 
-    // Add data
-    for (uint i = 0; i < mesh_function.size(); ++i)
-    {
-      pugi::xml_node entity_node = mf_node.append_child("entity");
-      entity_node.append_attribute("index") = i;
-      entity_node.append_attribute("value") = mesh_function[i];
-    }
+    // Create MeshValueCollection for output
+    const MeshValueCollection<T> mesh_value_collection(mesh_function);
+
+    // Write MeshValueCollection
+    XMLMeshValueCollection::write(mesh_value_collection, type, mf_node);
   }
   //---------------------------------------------------------------------------
 

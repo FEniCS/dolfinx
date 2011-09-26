@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2011-08-22
+// Last changed: 2011-09-13
 
 #include <map>
 #include <iomanip>
@@ -42,6 +42,7 @@
 #include "dolfin/mesh/Vertex.h"
 #include "dolfin/mesh/MeshFunction.h"
 #include "XMLMeshFunction.h"
+#include "XMLMeshValueCollection.h"
 #include "XMLMesh.h"
 
 using namespace dolfin;
@@ -52,7 +53,7 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Get mesh node
   const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
   if (!mesh_node)
-    error("Not a DOLFIN Mesh file.");
+    error("Not a DOLFIN XML Mesh file.");
 
   // Read mesh
   read_mesh(mesh, mesh_node);
@@ -60,11 +61,8 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Read mesh data (if any)
   read_data(mesh.data(), mesh_node);
 
-  // Read mesh markers (if any)
-  read_markers(mesh.domains(), mesh_node);
-
-  // Initialize boundary indicators
-  mesh.initialize_exterior_facet_domains();
+  // Read mesh domains (if any)
+  read_domains(mesh.domains(), mesh_node);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
@@ -79,7 +77,7 @@ void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
   write_data(mesh.data(), mesh_node);
 
   // Write mesh markers (if any)
-  write_markers(mesh.domains(), mesh_node);
+  write_domains(mesh.domains(), mesh_node);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
@@ -120,7 +118,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   pugi::xml_node xml_cells = mesh_node.child("cells");
   assert(xml_cells);
 
-  // Get number of cels and init editor
+  // Get number of cells and init editor
   const unsigned int num_cells = xml_cells.attribute("size").as_uint();
   editor.init_cells(num_cells);
 
@@ -154,12 +152,13 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
   // Iterate over data
   for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
   {
-    // Check that node is data_entry
+    // Check that node is <data_entry>
     const std::string node_name = it->name();
     if (node_name != "data_entry")
-      error("Expecting XML node called \"data_entry\", but got \"%s\".",
+    {
+      error("Expecting XML node <data_entry> but got <%s>.",
             node_name.c_str());
-
+    }
 
     // Get name of data set
     const std::string data_set_name = it->attribute("name").value();
@@ -210,16 +209,49 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
                    "The XML tag <meshfunction> has been changed to <mesh_function>");
     }
     else
+    {
       error("Reading of MeshData \"%s\" is not yet supported.",
             data_set_type.c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_markers(MeshDomains& domains,
+void XMLMesh::read_domains(MeshDomains& domains,
                            const pugi::xml_node mesh_node)
 {
+  // Check if we have any domains
+  const pugi::xml_node xml_domains = mesh_node.child("domains");
+  if (!xml_domains)
+    return;
 
+  // Iterate over data
+  for (pugi::xml_node_iterator it = xml_domains.begin();
+       it != xml_domains.end(); ++it)
+  {
+    // Check that node is <mesh_value_collection>
+    const std::string node_name = it->name();
+    if (node_name != "mesh_value_collection")
+    {
+      error("Expecting XML node <mesh_value_collection> but got <%s>.",
+            node_name.c_str());
+    }
 
+    // Get attributes
+    const std::string type = it->attribute("type").value();
+    const uint dim = it->attribute("dim").as_uint();
+
+    // Check that the type is uint
+    if (type != "uint")
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read DOLFIN mesh from XML file",
+                   "Mesh domains must be marked as uint, not %s",
+                   type.c_str());
+    }
+
+    // Read MeshValueCollection
+    XMLMeshValueCollection::read(domains.markers(dim), type, *it);
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
@@ -325,6 +357,10 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 //-----------------------------------------------------------------------------
 void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 {
+  // Check if there is any data to write
+  if (data.mesh_functions.size() + data.arrays.size() == 0)
+    return;
+
   // Add mesh data node
   pugi::xml_node mesh_data_node = mesh_node.append_child("data");
 
@@ -382,11 +418,21 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::write_markers(const MeshDomains& domains,
+void XMLMesh::write_domains(const MeshDomains& domains,
                             pugi::xml_node mesh_node)
 {
+  // Check if there is any data to write
+  if (domains.is_empty())
+    return;
 
+  // Add mesh domains node
+  pugi::xml_node domains_node = mesh_node.append_child("domains");
 
-
+  // Write mesh markers
+  for (uint d = 0; d <= domains.dim(); d++)
+  {
+    if (domains.markers(d).size() > 0)
+      XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node);
+  }
 }
 //-----------------------------------------------------------------------------

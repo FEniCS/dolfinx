@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 // Template function for storing objects
-template <class T>
+template <typename T>
 void store_object(const T& object, double t,
                   std::vector<double>& times,
                   std::string series_name,

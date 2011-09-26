@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-10
-// Last changed: 2011-05-30
-//
 // Modified by Kent-Andre Mardal, 2011.
+//
+// First added:  2009-03-10
+// Last changed: 2011-09-17
 
 #ifndef __XMLLOCALMESHDATASAX_H
 #define __XMLLOCALMESHDATASAX_H
@@ -50,32 +50,28 @@ namespace dolfin
 
     enum ParserState {OUTSIDE,
                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
-                      INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
-                      INSIDE_DATA_ENTRY,
+                      INSIDE_DATA, INSIDE_DOMAINS, INSIDE_MESH_VALUE_COLLECTION,
+                      INSIDE_MESH_FUNCTION,
+                      INSIDE_ARRAY, INSIDE_DATA_ENTRY,
                       DONE};
 
     static void sax_start_document(void *ctx);
     static void sax_end_document(void *ctx);
 
-    //static void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
-    //static void sax_end_element(void *ctx, const xmlChar *name);
+    static void sax_start_element(void* ctx,
+                                  const xmlChar* name,
+                                  const xmlChar* prefix,
+                                  const xmlChar* URI,
+                                  int nb_namespaces,
+                                  const xmlChar** namespaces,
+                                  int nb_attributes,
+                                  int nb_defaulted,
+                                  const xmlChar** attrs);
 
-
-
-    static void sax_start_element( void * ctx,
-                               const xmlChar * name,
-                               const xmlChar * prefix,
-                               const xmlChar * URI,
-                               int nb_namespaces,
-                               const xmlChar ** namespaces,
-                               int nb_attributes,
-                               int nb_defaulted,
-                               const xmlChar ** attrs);
-
-    static void sax_end_element(void * ctx,
-					 const xmlChar * name,
-					 const xmlChar * prefix,
-					 const xmlChar * URI);
+    static void sax_end_element(void* ctx,
+                                const xmlChar* name,
+                                const xmlChar* prefix,
+                                const xmlChar* URI);
 
 
     static void sax_warning     (void *ctx, const char *msg, ...);
@@ -83,13 +79,17 @@ namespace dolfin
     static void sax_fatal_error (void *ctx, const char *msg, ...);
 
     // Callbacks for reading XML data
-    void read_mesh        (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertices    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertex      (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_cells       (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_interval    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_triangle    (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_tetrahedron (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh       (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_vertices   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_vertex     (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_cells      (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_interval   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_triangle   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+
+    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh_value_collection_entry(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+
     /*
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
@@ -113,6 +113,11 @@ namespace dolfin
 
     // Range for cells
     std::pair<uint, uint> cell_range;
+
+    // Range for domain data and counter
+    std::pair<uint, uint> domain_value_range;
+    uint domain_value_counter;
+    uint domain_dim;
 
     // State of parser
     ParserState state;

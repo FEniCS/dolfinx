@@ -18,12 +18,10 @@
 // First added:  2007-05-29
 // Last changed: 2007-05-29
 //
-// Unit tests for the graph library
 
 #include <dolfin.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/common/unittest.h>
-#include <cstdlib>
 
 using namespace dolfin;
 
@@ -45,7 +43,38 @@ public:
 };
 
 
+class MeshValueCollectionIO : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(MeshValueCollectionIO);
+  CPPUNIT_TEST(test_read);
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void test_read()
+  {
+    // Create mesh and read file
+    UnitCube mesh(5, 5, 5);
+    MeshValueCollection<dolfin::uint> markers(mesh, "xml_value_collection_ref.xml", 2);
+
+    // Check size
+    CPPUNIT_ASSERT(dolfin::MPI::sum(markers.size()) == 6);
+
+    // Check sum of values
+    const std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>& values = markers.values();
+    std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>::const_iterator it;
+    dolfin::uint sum = 0;
+    for (it = values.begin(); it != values.end(); ++it)
+      sum += it->second;
+    CPPUNIT_ASSERT(dolfin::MPI::sum(sum) == 48);
+
+  }
+
+};
+
+
 CPPUNIT_TEST_SUITE_REGISTRATION(LocalMeshDataIO);
+CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollectionIO);
 
 int main()
 {

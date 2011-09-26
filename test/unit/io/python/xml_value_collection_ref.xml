@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<dolfin xmlns:dolfin="http://www.fenicsproject.org">
+  <mesh_value_collection type="uint" dim="2" size="6">
+    <value cell_index="1" local_entity="1" value="1" />
+    <value cell_index="2" local_entity="1" value="3" />
+    <value cell_index="4" local_entity="2" value="2" />
+    <value cell_index="5" local_entity="1" value="8" />
+    <value cell_index="7" local_entity="2" value="13" />
+    <value cell_index="13" local_entity="1" value="21" />
+  </mesh_value_collection>
+</dolfin>

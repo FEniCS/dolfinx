@@ -23,7 +23,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2010-09-23
+// Last changed: 2011-09-21
 
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -32,7 +32,6 @@
 #include <dolfin/common/MPI.h>
 #include "File.h"
 #include "XMLFile.h"
-#include "PythonFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
 #include "XYZFile.h"
@@ -68,8 +67,6 @@ File::File(const std::string filename, std::string encoding)
   }
   else if (extension == ".xml")
     file.reset(new XMLFile(filename));
-  else if (extension == ".py")
-    file.reset(new PythonFile(filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
   else if (extension == ".raw")
@@ -88,9 +85,6 @@ File::File(const std::string filename, Type type, std::string encoding)
   {
   case xml:
     file.reset(new XMLFile(filename));
-    break;
-  case python:
-    file.reset(new PythonFile(filename));
     break;
   case vtk:
     file.reset(new VTKFile(filename, encoding));

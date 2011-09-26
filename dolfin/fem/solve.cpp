@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-07-17
+// Last changed: 2011-09-22
 
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -27,36 +27,39 @@
 
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
-                   Function& u)
+                   Function& u, Parameters params)
 {
   // Create empty list of boundary conditions
   std::vector<const BoundaryCondition*> bcs;
 
   // Call common solve function
-  solve(equation, u, bcs);
+  solve(equation, u, bcs, params);
 }
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const BoundaryCondition& bc)
+                   const BoundaryCondition& bc, 
+		   Parameters params)
 {
   // Create list containing single boundary condition
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc);
 
   // Call common solve function
-  solve(equation, u, bcs);
+  solve(equation, u, bcs, params);
 }
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   std::vector<const BoundaryCondition*> bcs)
+                   std::vector<const BoundaryCondition*> bcs, 
+		   Parameters params)
 {
   // Solve linear problem
   if (equation.is_linear())
   {
     LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
     LinearVariationalSolver solver(problem);
+    solver.parameters.update(params);
     solver.solve();
   }
 
@@ -65,38 +68,42 @@ void dolfin::solve(const Equation& equation,
   {
     NonlinearVariationalProblem problem(*equation.lhs(), u, bcs);
     NonlinearVariationalSolver solver(problem);
+    solver.parameters.update(params);
     solver.solve();
   }
 }
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const Form& J)
+                   const Form& J, 
+		   Parameters params)
 {
   // Create empty list of boundary conditions
   std::vector<const BoundaryCondition*> bcs;
 
   // Call common solve function
-  solve(equation, u, bcs, J);
+  solve(equation, u, bcs, J, params);
 }
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
                    const BoundaryCondition& bc,
-                   const Form& J)
+                   const Form& J, 
+		   Parameters params)
 {
   // Create list containing single boundary condition
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc);
 
   // Call common solve function
-  solve(equation, u, bcs, J);
+  solve(equation, u, bcs, J, params);
 }
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
                    std::vector<const BoundaryCondition*> bcs,
-                   const Form& J)
+                   const Form& J, 
+		   Parameters params)
 {
   // Check that the problem is linear
   if (equation.is_linear())
@@ -107,6 +114,7 @@ void dolfin::solve(const Equation& equation,
   // Solve nonlinear problem
   NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
   NonlinearVariationalSolver solver(problem);
+  solver.parameters.update(params);
   solver.solve();
 }
 //-----------------------------------------------------------------------------

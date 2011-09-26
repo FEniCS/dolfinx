@@ -28,7 +28,7 @@ namespace dolfin
   class Cell;
   class Mesh;
   class MeshHierarchy;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// This class implements algorithms on a MeshHierarchy
 

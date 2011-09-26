@@ -34,8 +34,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
@@ -47,7 +45,7 @@ namespace dolfin
   class Function;
   class GenericFunction;
   class GenericVector;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -82,7 +80,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    FunctionSpace(boost::shared_ptr<const Mesh> mesh);
+    explicit FunctionSpace(boost::shared_ptr<const Mesh> mesh);
 
   public:
 
@@ -122,7 +120,7 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    const Mesh& mesh() const;
+    boost::shared_ptr<const Mesh> mesh() const;
 
     /// Return finite element
     ///

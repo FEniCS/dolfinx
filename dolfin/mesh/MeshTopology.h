@@ -16,17 +16,17 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2011-08-29
+// Last changed: 2011-09-01
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include "MeshConnectivity.h"
 
 namespace dolfin
 {
+
+  class MeshConnectivity;
 
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
@@ -55,16 +55,10 @@ namespace dolfin
     const MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
-    uint dim() const
-    { return _dim; }
+    uint dim() const;
 
     /// Return number of entities for given dimension
-    uint size(uint dim) const
-    {
-      assert(num_entities);
-      assert(dim <= _dim);
-      return num_entities[dim];
-    }
+    uint size(uint dim) const;
 
     /// Clear all data
     void clear();
@@ -79,20 +73,10 @@ namespace dolfin
     void init(uint dim, uint size);
 
     /// Return connectivity for given pair of topological dimensions
-    dolfin::MeshConnectivity& operator() (uint d0, uint d1)
-    {
-      assert(connectivity);
-      assert(d0 <= _dim && d1 <= _dim);
-      return *connectivity[d0][d1];
-    }
+    dolfin::MeshConnectivity& operator() (uint d0, uint d1);
 
     /// Return connectivity for given pair of topological dimensions
-    const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
-    {
-      assert(connectivity);
-      assert(d0 <= _dim && d1 <= _dim);
-      return *connectivity[d0][d1];
-    }
+    const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

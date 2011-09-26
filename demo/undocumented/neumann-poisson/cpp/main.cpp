@@ -69,9 +69,6 @@ class Flux : public Expression
 
 int main()
 {
-
-  not_working_in_parallel("neumann-poisson demo (with space of reals)");
-
   // Create mesh and function space
   UnitSquare mesh(64, 64);
   Poisson::FunctionSpace V(mesh);
@@ -83,14 +80,17 @@ int main()
   Flux g;
   L.f = f;
   L.g = g;
-  Function u(V);
-  LinearVariationalProblem problem(a, L, u);
+  Function w(V);
+  LinearVariationalProblem problem(a, L, w);
 
   // Compute solution
   LinearVariationalSolver solver(problem);
   solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
+  // Extract subfunction
+  Function u = w[0];
+  
   // Plot solution
   plot(u);
 

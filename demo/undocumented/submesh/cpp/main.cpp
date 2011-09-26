@@ -64,6 +64,6 @@ int main()
   fluid_mesh.smooth();
 
   // Plot meshes
-  //plot(fluid_mesh);
-  //plot(structure_mesh);
+  plot(fluid_mesh);
+  plot(structure_mesh);
 }

@@ -38,7 +38,7 @@ namespace dolfin
   /// assignment operator at the *end* of the subclass assignment
   /// operator. See the Mesh class for an example.
 
-  template<class T>
+  template <typename T>
   class Hierarchical
   {
   public:

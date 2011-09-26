@@ -28,6 +28,7 @@
 namespace dolfin
 {
 
+  class CellType;
   class Mesh;
   class Point;
 

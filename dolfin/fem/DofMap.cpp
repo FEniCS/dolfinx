@@ -23,13 +23,12 @@
 // First added:  2007-03-01
 // Last changed: 2011-02-24
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
@@ -128,7 +127,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
 
   // Resize dofmap data structure
-  dofmap.resize(mesh.num_cells());
+  _dofmap.resize(mesh.num_cells());
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -140,14 +139,14 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     ufc_cell.update(*cell);
 
     // Resize list for cell
-    dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
+    _dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    _ufc_dofmap->tabulate_dofs(&dofmap[cell_index][0], ufc_mesh, ufc_cell);
+    _ufc_dofmap->tabulate_dofs(&_dofmap[cell_index][0], ufc_mesh, ufc_cell);
 
     // Add UFC offset
-    for (uint i = 0; i < dofmap[cell_index].size(); ++i)
-      dofmap[cell_index][i] += offset;
+    for (uint i = 0; i < _dofmap[cell_index].size(); ++i)
+      _dofmap[cell_index][i] += offset;
   }
 
   // Modify dofmap for non-UFC numbering
@@ -158,7 +157,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
     std::vector<std::vector<uint> >::iterator cell_map;
     std::vector<uint>::iterator dof;
-    for (cell_map = dofmap.begin(); cell_map != dofmap.end(); ++cell_map)
+    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     {
       for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
       {
@@ -202,9 +201,9 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   DofMapBuilder::build(*this, mesh, ufc_mesh, _distributed);
 
   // Dimension checks
-  assert(dofmap_view.dofmap.size() == mesh.num_cells());
+  assert(dofmap_view._dofmap.size() == mesh.num_cells());
   assert(global_dimension() == dofmap_view.global_dimension());
-  assert(dofmap.size() == mesh.num_cells());
+  assert(_dofmap.size() == mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map if the collapsed
   //        dof map is contiguous (0, . . . , n)?
@@ -213,8 +212,8 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   collapsed_map.clear();
   for (uint i = 0; i < mesh.num_cells(); ++i)
   {
-    const std::vector<uint>& view_cell_dofs = dofmap_view.dofmap[i];
-    const std::vector<uint>& cell_dofs = dofmap[i];
+    const std::vector<uint>& view_cell_dofs = dofmap_view._dofmap[i];
+    const std::vector<uint>& cell_dofs = _dofmap[i];
     assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (uint j = 0; j < view_cell_dofs.size(); ++j)
@@ -242,8 +241,8 @@ unsigned int DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(uint cell_index) const
 {
-  assert(cell_index < dofmap.size());
-  return dofmap[cell_index].size();
+  assert(cell_index < _dofmap.size());
+  return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::max_cell_dimension() const
@@ -267,7 +266,7 @@ unsigned int DofMap::num_facet_dofs() const
 std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 {
   if (is_view())
-    error("Cannot determine ownership range for sub dofmaps.");
+    error("Cannot determine ownership range for sub-dofmaps.");
 
   return _ownership_range;
 }
@@ -419,7 +418,7 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
   // Build set of dofs
   boost::unordered_set<dolfin::uint> dof_list;
   std::vector<std::vector<uint> >::const_iterator cell_dofs;
-  for (cell_dofs = dofmap.begin(); cell_dofs != dofmap.end(); ++cell_dofs)
+  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
     dof_list.insert(cell_dofs->begin(), cell_dofs->end());
 
   return dof_list;
@@ -432,7 +431,7 @@ void DofMap::renumber(const std::vector<uint>& renumbering_map)
   // Update or build ufc-to-dofmap
   if (ufc_map_to_dofmap.size() == 0)
   {
-    for (uint i = 0; i < dofmap.size(); ++i)
+    for (uint i = 0; i < _dofmap.size(); ++i)
       ufc_map_to_dofmap[i] = renumbering_map[i];
   }
   else
@@ -445,7 +444,7 @@ void DofMap::renumber(const std::vector<uint>& renumbering_map)
   // Re-number dofs for cell
   std::vector<std::vector<uint> >::iterator cell_map;
   std::vector<uint>::iterator dof;
-  for (cell_map = dofmap.begin(); cell_map != dofmap.end(); ++cell_map)
+  for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
       *dof = renumbering_map[*dof];
 }
@@ -464,13 +463,13 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    for (uint i = 0; i < dofmap.size(); ++i)
+    for (uint i = 0; i < _dofmap.size(); ++i)
     {
-      s << prefix.str() << "Local cell index, cell dofmap dimension: " << i << ", " << dofmap[i].size() << std::endl;
+      s << prefix.str() << "Local cell index, cell dofmap dimension: " << i << ", " << _dofmap[i].size() << std::endl;
 
       // Local dof loop
-      for (uint j = 0; j < dofmap[i].size(); ++j)
-        s << prefix.str() <<  "  " << "Local, global dof indices: " << j << ", " << dofmap[i][j] << std::endl;
+      for (uint j = 0; j < _dofmap[i].size(); ++j)
+        s << prefix.str() <<  "  " << "Local, global dof indices: " << j << ", " << _dofmap[i][j] << std::endl;
     }
   }
 

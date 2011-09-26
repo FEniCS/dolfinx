@@ -16,10 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-28
-// Last changed: 2011-06-30
+// Last changed: 2011-09-19
 //
 // Modified by Anders Logg, 2008.
 
+#include <map>
+#include <utility>
+#include <vector>
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -67,9 +70,8 @@ void XMLLocalMeshSAX::read()
     error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::start_element(const xmlChar* name,
-                                                const xmlChar** attrs,
-                                                uint num_attributes)
+void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
+                                    uint num_attributes)
 {
   switch (state)
   {
@@ -94,8 +96,13 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name,
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
+      //error("Reading of MeshData in parallel is not yet supported.");
       //read_mesh_data(name, attrs, num_attributes);
       state = INSIDE_DATA;
+    }
+    else if (xmlStrcasecmp(name, (xmlChar* ) "domains") == 0)
+    {
+      state = INSIDE_DOMAINS;
     }
     break;
 
@@ -139,6 +146,22 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name,
     }
     break;
 
+  case INSIDE_DOMAINS:
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh_value_collection") == 0)
+    {
+      read_mesh_value_collection(name, attrs, num_attributes);
+      state = INSIDE_MESH_VALUE_COLLECTION;
+    }
+    break;
+
+  case INSIDE_MESH_VALUE_COLLECTION:
+    if (xmlStrcasecmp(name, (xmlChar* ) "value") == 0)
+    {
+      read_mesh_value_collection_entry(name, attrs, num_attributes);
+      state = INSIDE_MESH_VALUE_COLLECTION;
+    }
+    break;
+
   case INSIDE_DATA_ENTRY:
     if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
@@ -176,6 +199,16 @@ void XMLLocalMeshSAX::end_element(const xmlChar *name)
   case INSIDE_DATA:
     if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
       state = INSIDE_MESH;
+    break;
+
+  case INSIDE_DOMAINS:
+    if (xmlStrcasecmp(name, (xmlChar* ) "domains") == 0)
+      state = INSIDE_MESH;
+    break;
+
+  case INSIDE_MESH_VALUE_COLLECTION:
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh_value_collection") == 0)
+      state = INSIDE_DOMAINS;
     break;
 
   case INSIDE_MESH_FUNCTION:
@@ -357,8 +390,8 @@ void XMLLocalMeshSAX::read_cells(const xmlChar* name,
   mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
-void XMLLocalMeshSAX::read_interval(const xmlChar *name,
-                                                const xmlChar **attrs, uint num_attributes)
+void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
+                                    uint num_attributes)
 {
   // Check dimension
   if (tdim != 1)
@@ -447,6 +480,48 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
 
   // Vertices per cell
   mesh_data.num_vertices_per_cell = 4;
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
+                                                 const xmlChar** attrs,
+                                                 uint num_attributes)
+{
+  // Parse values
+  const std::string type = SAX2AttributeParser::parse<std::string>(name, attrs, "type", num_attributes);
+  const uint dim = SAX2AttributeParser::parse<uint>(name, attrs, "dim", num_attributes);
+  const uint size = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+
+  // Compute domain value range
+  domain_value_range = MPI::local_range(size);
+  domain_dim = dim;
+
+  if (type != "uint")
+    error("XMLLocalMeshSAX can only read unisgned integer domain values.");
+
+  mesh_data.domain_data.insert(std::make_pair(dim, 0));
+
+  // Reset counter
+  domain_value_counter = 0;
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
+                                                       const xmlChar** attrs,
+                                                       uint num_attributes)
+{
+  if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
+  {
+    // Parse values
+    std::pair<std::pair<uint, uint>, uint> entry_data;
+    entry_data.first.first  = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
+    entry_data.first.second = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
+    entry_data.second       = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
+
+    std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >& data
+      = mesh_data.domain_data.find(domain_dim)->second;
+    data.push_back(entry_data);
+  }
+
+  ++domain_value_counter;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshSAX::num_local_vertices() const

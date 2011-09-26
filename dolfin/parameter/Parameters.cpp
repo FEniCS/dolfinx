@@ -564,3 +564,8 @@ Parameters* Parameters::find_parameter_set(std::string key) const
   return p->second;
 }
 //-----------------------------------------------------------------------------
+namespace dolfin
+{
+  Parameters empty_parameters("empy");
+}
+//-----------------------------------------------------------------------------

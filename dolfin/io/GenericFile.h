@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2008 Johan Hoffman and Anders Logg
+// Copyright (C) 2003-2011 Johan Hoffman and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2003-07-15
-// Last changed: 2009-03-16
+// Last changed: 2011-09-14
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -32,13 +32,15 @@
 namespace dolfin
 {
 
+  class GenericDofMap;
   class Function;
   class FunctionPlotData;
   class GenericMatrix;
   class GenericVector;
   class LocalMeshData;
   class Mesh;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
   class Parameters;
 
   class GenericFile
@@ -46,7 +48,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericFile(const std::string filename);
+    GenericFile(std::string filename,
+                std::string filetype);
 
     /// Destructor
     virtual ~GenericFile();
@@ -55,11 +58,16 @@ namespace dolfin
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
+    virtual void operator>> (GenericDofMap& dofmap);
     virtual void operator>> (LocalMeshData& data);
-    virtual void operator>> (MeshFunction<int>& meshfunction);
-    virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
-    virtual void operator>> (MeshFunction<double>& meshfunction);
-    virtual void operator>> (MeshFunction<bool>& meshfunction);
+    virtual void operator>> (MeshFunction<int>& mesh_function);
+    virtual void operator>> (MeshFunction<unsigned int>& mesh_function);
+    virtual void operator>> (MeshFunction<double>& mesh_function);
+    virtual void operator>> (MeshFunction<bool>& mesh_function);
+    virtual void operator>> (MeshValueCollection<int>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<unsigned int>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<double>& mesh_markers);
+    virtual void operator>> (MeshValueCollection<bool>& mesh_markers);
     virtual void operator>> (Parameters& parameters);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
@@ -76,11 +84,16 @@ namespace dolfin
     virtual void operator<< (const GenericVector& x);
     virtual void operator<< (const GenericMatrix& A);
     virtual void operator<< (const Mesh& mesh);
+    virtual void operator<< (const GenericDofMap& dofmap);
     virtual void operator<< (const LocalMeshData& data);
-    virtual void operator<< (const MeshFunction<int>& meshfunction);
-    virtual void operator<< (const MeshFunction<unsigned int>& meshfunction);
-    virtual void operator<< (const MeshFunction<double>& meshfunction);
-    virtual void operator<< (const MeshFunction<bool>& meshfunction);
+    virtual void operator<< (const MeshFunction<int>& mesh_function);
+    virtual void operator<< (const MeshFunction<unsigned int>& mesh_function);
+    virtual void operator<< (const MeshFunction<double>& mesh_function);
+    virtual void operator<< (const MeshFunction<bool>& mesh_function);
+    virtual void operator<< (const MeshValueCollection<int>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<unsigned int>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<double>& mesh_markers);
+    virtual void operator<< (const MeshValueCollection<bool>& mesh_markers);
     virtual void operator<< (const Function& u);
 
     // Output function with time
@@ -107,7 +120,7 @@ namespace dolfin
     void write_not_impl(const std::string object) const;
 
     std::string filename;
-    std::string type;
+    std::string filetype;
 
     bool opened_read;
     bool opened_write;

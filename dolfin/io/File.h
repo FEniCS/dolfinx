@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2008 Johan Hoffman and Anders Logg
+// Copyright (C) 2002-2011 Johan Hoffman and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2010-02-10
+// Last changed: 2011-09-22
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -43,7 +43,6 @@ namespace dolfin
   /// GenericFile.h. Compatible file formats include:
   ///     * XML (.xml)
   ///     * VTK (.pvd)
-  ///     * Python (.py)
   ///     * RAW (.raw)
   ///     * XYZ (.xyz)
   ///     * Binary (.bin)
@@ -53,7 +52,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum Type {xml, vtk, python, raw, xyz, binary};
+    enum Type {xml, vtk, raw, xyz, binary};
 
     /// Create a file with given name
     ///
@@ -107,7 +106,7 @@ namespace dolfin
     ~File();
 
     /// Read from file
-    template<class T> void operator>>(T& t)
+    template<typename T> void operator>>(T& t)
     {
       file->read();
       *file >> t;
@@ -127,7 +126,7 @@ namespace dolfin
     void operator<<(const std::pair<const Function*, double> u);
 
     /// Write object to file
-    template<class T> void operator<<(const T& t)
+    template<typename T> void operator<<(const T& t)
     {
       file->write();
       *file << t;

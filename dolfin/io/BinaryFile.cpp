@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2010-06-07
+// Last changed: 2011-09-14
 
 #include <fstream>
 #include <istream>
@@ -26,13 +26,15 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 #include "BinaryFile.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BinaryFile::BinaryFile(const std::string filename) : GenericFile(filename)
+BinaryFile::BinaryFile(const std::string filename)
+  : GenericFile(filename, "Binary")
 {
   // Do nothing
 }

@@ -28,7 +28,7 @@ from dolfin_utils.commands import getstatusoutput
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["parallel-assembly-solve"]
+tests = ["parallel-assembly-solve", "ufl-jit-assemble-chain"]
 
 failed = []
 

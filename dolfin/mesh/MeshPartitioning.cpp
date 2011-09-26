@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <numeric>
 
 #include <dolfin/log/log.h>
@@ -34,9 +35,11 @@
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
+#include "MeshDistributed.h"
 #include "MeshEditor.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "MeshValueCollection.h"
 #include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
@@ -52,69 +55,42 @@ void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator it
   std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
 }
 
-template<typename InputIterator>
-void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
-{
-  std::stringstream msg_stream;
-  msg_stream << msg;
-  print_container(msg_stream, itbegin, itend);
-  info(msg_stream.str());
-}
-
-template<typename Map>
-void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
-{
-  for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
-  {
-    print_container(ostr, it->first.begin(), it->first.end(), " ");
-    ostr << ": " << it->second << delimiter;
-  }
-}
-
-template<typename Map>
-void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
-{
-  std::stringstream msg_stream;
-  msg_stream << msg << " ";
-  print_vec_map(msg_stream, map, delimiter);
-  info(msg_stream.str());
-}
+// Explicitly instantiate some templated functions to help the Python wrappers
+template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
+   const std::vector<std::pair<std::pair<uint, uint>, uint> >& local_value_data,
+   MeshValueCollection<uint>& mesh_values);
+template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
+   const std::vector<std::pair<std::pair<uint, uint>, int> >& local_value_data,
+   MeshValueCollection<int>& mesh_values);
+template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
+   const std::vector<std::pair<std::pair<uint, uint>, double> >& local_value_data,
+   MeshValueCollection<double>& mesh_values);
+template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
+   const std::vector<std::pair<std::pair<uint, uint>, bool> >& local_value_data,
+   MeshValueCollection<bool>& mesh_values);
 
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh)
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
   // Create and distribute local mesh data
   dolfin_debug("creating local mesh data");
-  LocalMeshData mesh_data(mesh);
+  LocalMeshData local_mesh_data(mesh);
   dolfin_debug("created local mesh data");
 
   // Partition mesh based on local mesh data
-  partition(mesh, mesh_data);
+  partition(mesh, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh, LocalMeshData& local_data)
 {
-  // Compute cell partition
-  std::vector<uint> cell_partition;
-  const std::string partitioner = parameters["mesh_partitioner"];
-  if (partitioner == "SCOTCH")
-    SCOTCH::compute_partition(cell_partition, mesh_data);
-  else if (partitioner == "ParMETIS")
-    ParMETIS::compute_partition(cell_partition, mesh_data);
-  else
-    error("Unknown mesh partition '%s'.", partitioner.c_str());
+  // Partition mesh
+  partition(mesh, local_data);
 
-  // Distribute cells
-  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
-  distribute_cells(mesh_data, cell_partition);
+  // Create MeshDomains from local_data
+  build_mesh_domains(mesh, local_data);
 
-  // Distribute vertices
-  std::map<uint, uint> vertex_global_to_local;
-  distribute_vertices(mesh_data, vertex_global_to_local);
-  timer.stop();
-
-  // Build mesh
-  build_mesh(mesh, mesh_data, vertex_global_to_local);
+  // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
+  number_entities(mesh, mesh.topology().dim() - 1);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
@@ -181,9 +157,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
                            owned_entity_indices, shared_entity_indices,
                            shared_entity_processes, ignored_entity_indices,
                            ignored_entity_processes);
-
-
-
 
   // Qualify boundary entities. We need to find out if the ignored
   // (shared with lower ranked process) entities are entities of a
@@ -304,6 +277,56 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 }
 //-----------------------------------------------------------------------------
+void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
+{
+  // Compute cell partition
+  std::vector<uint> cell_partition;
+  const std::string partitioner = parameters["mesh_partitioner"];
+  if (partitioner == "SCOTCH")
+    SCOTCH::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "ParMETIS")
+    ParMETIS::compute_partition(cell_partition, mesh_data);
+  else
+    error("Unknown mesh partition '%s'.", partitioner.c_str());
+
+  // Distribute cells
+  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
+  distribute_cells(mesh_data, cell_partition);
+
+  // Distribute vertices
+  std::map<uint, uint> vertex_global_to_local;
+  distribute_vertices(mesh_data, vertex_global_to_local);
+  timer.stop();
+
+  // Build mesh
+  build_mesh(mesh, mesh_data, vertex_global_to_local);
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_mesh_domains(Mesh& mesh,
+                                          const LocalMeshData& local_data)
+{
+  // Local domain data
+  const std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > > domain_data
+      = local_data.domain_data;
+  if (domain_data.size() == 0)
+    return;
+
+  // Initialse mesh domains
+  const uint D = mesh.topology().dim();
+  mesh.domains().init(D);
+
+  std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > >::const_iterator dim_data;
+  for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
+  {
+    // Get mesh value collection used for marking
+    const uint dim = dim_data->first;
+    MeshValueCollection<uint>& markers = mesh.domains().markers(dim);
+
+    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >& local_value_data = dim_data->second;
+    build_mesh_value_collection(mesh, local_value_data, markers);
+  }
+}
+//-----------------------------------------------------------------------------
 std::pair<unsigned int, unsigned int>
   MeshPartitioning::compute_num_global_entities(uint num_local_entities,
                                                 uint num_processes,
@@ -339,6 +362,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::
   ignored_entity_indices.clear();
   ignored_entity_processes.clear();
 
+  // Get process number
   const uint process_number = MPI::process_number();
 
   // Iterate over all entities
@@ -759,9 +783,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   for(uint i = 0; i < gci.size(); ++i)
     global_cell_indices[i] = gci[i];
 
-  // distribute data
-  distribute_data(mesh, mesh_data, glob2loc, gci);
-
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
   editor.close();
@@ -868,45 +889,5 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     exterior[entities.find(it->first)->second] = false;
   for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
     exterior[entities.find(it->first)->second] = false;
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_data(Mesh& mesh,
-                                       const LocalMeshData& local_mesh_data,
-                                       std::map<uint, uint>& glob2loc,
-                                       const std::vector<uint>& gci)
-{
-  // FIXME: This piece of code looks suspicious
-
-  // Make global to local mapping lci (inverse of gci)
-  std::map<uint,uint> lci;
-  for (uint i=0; i< gci.size(); i++)
-    lci[gci[i]] = i;
-
-  // Loop through the arrays
-  std::map<std::string, std::vector<uint>* >::const_iterator it;
-  for (it = local_mesh_data.arrays.begin(); it != local_mesh_data.arrays.end(); ++it)
-  {
-    const std::string name = it->first;
-    const std::vector<uint>* array = it->second;
-    if (name == "boundary_facet_cells")
-    {
-      boost::shared_ptr<std::vector<uint> >
-        cell_array(new std::vector<uint>(array->size()));
-      for (uint i=0; i< array->size(); i++)
-      {
-        if (lci.find((*array)[i]) != lci.end())
-          (*cell_array)[i] = lci[(*array)[i]];
-        else
-          (*cell_array)[i] = 0;
-      }
-      mesh.data().arrays[name] = cell_array;
-    }
-    else
-    {
-       boost::shared_ptr<std::vector<uint> >
-         non_const_array((std::vector<uint>*) array);
-       mesh.data().arrays[name] = non_const_array;
-    }
-  }
 }
 //-----------------------------------------------------------------------------

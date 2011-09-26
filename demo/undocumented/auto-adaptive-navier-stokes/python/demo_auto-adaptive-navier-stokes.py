@@ -32,6 +32,11 @@ class Outflow(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] > 4.0 - DOLFIN_EPS
 
+# Use compiler optimizations
+parameters["form_compiler"]["cpp_optimize"] = True
+
+# Allow approximating values for points that may be generated outside
+# of domain (because of numerical inaccuracies)
 parameters["allow_extrapolation"] = True
 
 # Material parameters

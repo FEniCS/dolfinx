@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-08-19
+// Last changed: 2011-09-19
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -35,7 +35,7 @@
 //-----------------------------------------------------------------------------
 namespace std
 {
-  template <class T> class vector
+  template <typename T> class vector
   {
   };
 }
@@ -86,53 +86,48 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
 dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR)
-  if (PyList_Check($input))
+  if (!PyList_Check($input))
+    SWIG_exception(SWIG_TypeError, "list of TYPE expected");
+  int size = PyList_Size($input);
+  int res = 0;
+  PyObject * py_item = 0;
+  void * itemp = 0;
+  int newmem = 0;
+  tmp_vec.reserve(size);
+  for (int i = 0; i < size; i++)
   {
-    int size = PyList_Size($input);
-    int res = 0;
-    PyObject * py_item = 0;
-    void * itemp = 0;
-    int newmem = 0;
-    tmp_vec.reserve(size);
-    for (int i = 0; i < size; i++)
+    py_item = PyList_GetItem($input,i);
+    res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE *), 0);
+    if (SWIG_IsOK(res))
     {
-      py_item = PyList_GetItem($input,i);
-      res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE *), 0);
+      tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
+    }
+    else
+    {
+      // If failed with normal pointer conversion then
+      // try with shared_ptr conversion
+      newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
-        tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
+	if (itemp)
+	{
+	  tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
+	  tmp_vec.push_back(tempshared.get());
+	}
+	// If we need to release memory
+	if (newmem & SWIG_CAST_NEW_MEMORY)
+	{
+	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	}
       }
       else
       {
-        // If failed with normal pointer conversion then
-        // try with shared_ptr conversion
-        newmem = 0;
-        res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-        if (SWIG_IsOK(res))
-        {
-	  if (itemp)
-	  {
-	    tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
-	    tmp_vec.push_back(tempshared.get());
-	  }
-          // If we need to release memory
-          if (newmem & SWIG_CAST_NEW_MEMORY)
-          {
-            delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-          }
-        }
-        else
-        {
-          SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-        }
+	SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
       }
     }
-    $1 = &tmp_vec;
   }
-  else
-  {
-    SWIG_exception(SWIG_TypeError, "list of TYPE expected");
-  }
+  $1 = &tmp_vec;
 }
 
 
@@ -150,8 +145,7 @@ dolfin::TYPE * arg)
 %typemap (in) CONST_VECTOR std::vector<SWIG_SHARED_PTR_QNAMESPACE::
               shared_ptr<CONST dolfin::TYPE> > (
 std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec,
-SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
-dolfin::TYPE * arg)
+SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
   if (PyList_Check($input))

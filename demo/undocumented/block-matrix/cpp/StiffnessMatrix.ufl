@@ -22,7 +22,10 @@
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
+x = triangle.x[0]
+
 u = TrialFunction(element)
 v = TestFunction(element)
 
 a = dot(grad(u), grad(v))*dx
+L = sin(x)*v*dx

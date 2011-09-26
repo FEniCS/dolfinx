@@ -20,7 +20,9 @@
 // Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-08-10
+// Last changed: 2011-09-15
+
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -59,34 +61,32 @@ void Assembler::assemble(GenericTensor& A,
                          bool reset_sparsity,
                          bool add_values)
 {
+  assert(a.ufc_form());
+
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
   // Extract cell domains
-  MeshFunction<uint>* cell_domains = 0;
-  if (a.ufc_form().num_cell_domains() > 0)
+  boost::scoped_ptr<MeshFunction<uint> > cell_domains;
+  if (a.ufc_form()->num_cell_domains() > 0)
   {
-    cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim(), 1);
+    cell_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim(), 1));
     sub_domain.mark(*cell_domains, 0);
   }
 
   // Extract facet domains
-  MeshFunction<uint>* facet_domains = 0;
-  if (a.ufc_form().num_exterior_facet_domains() > 0 ||
-      a.ufc_form().num_interior_facet_domains() > 0)
+  boost::scoped_ptr<MeshFunction<uint> > facet_domains;
+  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
+      a.ufc_form()->num_interior_facet_domains() > 0)
   {
-    facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1);
+    facet_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1));
     sub_domain.mark(*facet_domains, 0);
   }
 
   // Assemble
   assemble(A, a,
-           cell_domains, facet_domains, facet_domains,
+           cell_domains.get(), facet_domains.get(), facet_domains.get(),
            reset_sparsity, add_values);
-
-  // Delete domains
-  delete cell_domains;
-  delete facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -99,16 +99,23 @@ void Assembler::assemble(GenericTensor& A,
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
-  // cells, exterior and interior facets. Note the importance of
-  // treating empty mesh functions as null pointers for the PyDOLFIN
-  // interface.
+  // cells, exterior and interior facets.
+  //
+  // Important notes:
+  //
+  // 1. Note the importance of treating empty mesh functions as null
+  // pointers for the PyDOLFIN interface.
+  //
+  // 2. Note that subdomains given as input to this function override
+  // subdomains attached to forms, which in turn override subdomains
+  // stored as part of the mesh.
 
   // Get cell domains
   if (!cell_domains || cell_domains->size() == 0)
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
-      cell_domains = a.mesh().data().mesh_function("cell_domains").get();
+      cell_domains = a.mesh().domains().cell_domains(a.mesh()).get();
   }
 
   // Get exterior facet domains
@@ -116,7 +123,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
-      exterior_facet_domains = a.mesh().data().mesh_function("exterior_facet_domains").get();
+      exterior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Get interior facet domains
@@ -124,7 +131,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
-      interior_facet_domains = a.mesh().data().mesh_function("interior_facet_domains").get();
+      interior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
   }
 
   // Check whether we should call the multi-core assembler
@@ -148,7 +155,8 @@ void Assembler::assemble(GenericTensor& A,
   UFC ufc(a);
 
   // Gather off-process coefficients
-  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
@@ -261,7 +269,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Exterior facet integral
-  const ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
+  const ufc::exterior_facet_integral*
+    integral = ufc.exterior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();
@@ -270,7 +279,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
+  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"),
+             mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider exterior facets
@@ -347,7 +357,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   std::vector<std::vector<uint> > macro_dofs(form_rank);
 
   // Interior facet integral
-  const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
+  const ufc::interior_facet_integral*
+    integral = ufc.interior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();
@@ -356,7 +367,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
+  boost::shared_ptr<MeshFunction<unsigned int> >
+    facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != D - 1)
   {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
@@ -364,7 +376,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
+  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"),
+             mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider interior facets
@@ -389,7 +402,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       continue;
 
     // Get cells incident with facet
-    std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation.get());
+    std::pair<const Cell, const Cell>
+      cells = facet->adjacent_cells(facet_orientation.get());
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 
@@ -411,8 +425,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
 
       // Copy cell dofs into macro dof vector
-      std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
-      std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
+      std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+                macro_dofs[i].begin());
+      std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                macro_dofs[i].begin() + cell_dofs0.size());
     }
 
     // Tabulate exterior interior facet tensor on macro element

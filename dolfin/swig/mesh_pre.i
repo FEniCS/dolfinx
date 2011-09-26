@@ -19,7 +19,7 @@
 // Modified by Johan Jansson 2006-2007
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007
-// Modified by Johan Hake 2008-2009
+// Modified by Johan Hake 2008-2011
 //
 // First added:  2006-09-20
 // Last changed: 2011-04-04
@@ -35,23 +35,17 @@
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
-    PyObject* coordinates() {
-      return %make_numpy_array(2, double)(self->num_vertices(),
-					  self->geometry().dim(),
-					  self->coordinates(), true);
-    }
-    
-    PyObject* cells() {
-      int n = 4;
-      
-      if(self->topology().dim() == 1)
-	n = 2;
-      else if(self->topology().dim() == 2)
-	n = 3;
-      
-      return %make_numpy_array(2, uint)(self->num_cells(),
-					n, self->cells(), false);
-    }
+  PyObject* coordinates() {
+    return %make_numpy_array(2, double)(self->num_vertices(),
+					self->geometry().dim(),
+					self->coordinates(), true);
+  }
+
+  PyObject* cells() {
+    // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
+    return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
+				      self->cells(), false);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -165,7 +159,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 //-----------------------------------------------------------------------------
 namespace dolfin {
   class Mesh;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 }
 
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
@@ -177,3 +171,9 @@ namespace dolfin {
     dolfin::Hierarchical<dolfin::MeshFunction<bool> >;
 %template (HierarchicalMeshFunctionDouble) \
     dolfin::Hierarchical<dolfin::MeshFunction<double> >;
+
+//-----------------------------------------------------------------------------
+// Use shared_ptr version of MeshDomains::marker()
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshDomains::markers;
+%rename(markers) dolfin::MeshDomains::markers_shared_ptr;

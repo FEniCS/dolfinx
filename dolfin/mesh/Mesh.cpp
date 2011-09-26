@@ -22,11 +22,10 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-08-29
+// Last changed: 2011-09-19
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
@@ -54,7 +53,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _data(*this),
                _parallel_data(new ParallelData(*this)),
                _cell_type(0),
-               unique_id(UniqueIdGenerator::id()),
                _intersection_operator(*this),
                _ordered(false)
 {
@@ -66,7 +64,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                _data(*this),
                                _parallel_data(new ParallelData(*this)),
                                _cell_type(0),
-                               unique_id(UniqueIdGenerator::id()),
                                _intersection_operator(*this),
                                _ordered(false)
 {
@@ -78,27 +75,23 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _data(*this),
                                    _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
-                                   unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
                                    _ordered(false)
 {
-  if (MPI::num_processes() > 1)
-  {
-    // Read local mesh data
-    Timer timer("PARALLEL 0: Parse local mesh data");
-    File file(filename);
-    LocalMeshData local_data;
-    file >> local_data;
-    timer.stop();
-
-    // Partition data
-    MeshPartitioning::partition(*this, local_data);
-  }
-  else
-  {
-    File file(filename);
-    file >> *this;
-  }
+  File file(filename);
+  file >> *this;
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(LocalMeshData& local_mesh_data)
+                                 : Variable("mesh", "DOLFIN mesh"),
+                                   Hierarchical<Mesh>(*this),
+                                   _data(*this),
+                                   _parallel_data(new ParallelData(*this)),
+                                   _cell_type(0),
+                                   _intersection_operator(*this),
+                                   _ordered(false)
+{
+  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
@@ -114,6 +107,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
+  _domains = mesh._domains;
   _data = mesh._data;
   _parallel_data.reset(new ParallelData(*mesh._parallel_data));
   if (mesh._cell_type)
@@ -157,6 +151,13 @@ dolfin::uint Mesh::init(uint dim) const
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
 
+  // Skip if mesh is empty
+  if (num_cells() == 0)
+  {
+    warning("Mesh is empty, unable to create entities of dimension %d.", dim);
+    return 0;
+  }
+
   // Skip if already computed
   if (_topology.size(dim) > 0)
     return _topology.size(dim);
@@ -186,6 +187,13 @@ void Mesh::init(uint d0, uint d1) const
   // new connectivity. However, in a sense all connectivity of a mesh always
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
+
+  // Skip if mesh is empty
+  if (num_cells() == 0)
+  {
+    warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
+    return;
+  }
 
   // Skip if already computed
   if (_topology(d0, d1).size() > 0)
@@ -435,61 +443,5 @@ std::string Mesh::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void Mesh::initialize_exterior_facet_domains()
-{
-  // Do nothing if mesh function "exterior_facet_domains" is present
-  if (_data.mesh_function("exterior_facet_domains"))
-    return;
-
-  // Extract data for boundary indicators
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_indicators = _data.array("boundary_indicators");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_cells = _data.array("boundary_facet_cells");
-  boost::shared_ptr<const std::vector<uint> >
-    boundary_facet_numbers = _data.array("boundary_facet_numbers");
-
-  // Do nothing if there are no indicators
-  if (!boundary_indicators)
-    return;
-
-  // Need facet cells and numbers if indicators are present
-  if (!boundary_facet_cells || !boundary_facet_numbers)
-    dolfin_error("Mesh.cpp",
-                 "initialize boundary indicators",
-                 "Mesh has boundary indicators but missing data for \"boundary_facet_cells\" and \"boundary_facet_numbers\"");
-  const uint num_facets = boundary_indicators->size();
-  assert(num_facets > 0);
-  assert(boundary_facet_cells->size() == num_facets);
-  assert(boundary_facet_numbers->size() == num_facets);
-
-  // Initialize facets
-  const uint D = _topology.dim();
-  order();
-  init(D - 1);
-
-  // Create mesh function "exterior_facet_domains"
-  boost::shared_ptr<MeshFunction<unsigned int> > exterior_facet_domains
-    = _data.create_mesh_function("exterior_facet_domains", D - 1);
-  assert(exterior_facet_domains);
-
-  // Initialize meshfunction to zero
-  exterior_facet_domains->set_all(0);
-
-  // Assign domain numbers for each facet
-  for (uint i = 0; i < num_facets; i++)
-  {
-    // Get cell index and local facet index
-    const uint cell_index = (*boundary_facet_cells)[i];
-    const uint local_facet = (*boundary_facet_numbers)[i];
-
-    // Get global facet index
-    const uint global_facet = _topology(D, D - 1)(cell_index)[local_facet];
-
-    // Set boundary indicator for facet
-    (*exterior_facet_domains)[global_facet] = (*boundary_indicators)[i];
-  }
 }
 //-----------------------------------------------------------------------------

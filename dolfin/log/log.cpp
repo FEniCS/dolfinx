@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-06-21
+// Last changed: 2011-09-20
 
 #include <cstdarg>
 #include <cstdlib>
@@ -167,13 +167,6 @@ void dolfin::end()
 //-----------------------------------------------------------------------------
 void dolfin::set_log_active(bool active)
 {
-  LogManager::logger.set_log_active(active);
-}
-//-----------------------------------------------------------------------------
-void dolfin::logging(bool active)
-{
-  // FIXME: Remove this function before the release of 1.0
-  warning("The function 'logging' is deprecated, use 'set_log_active'.");
   LogManager::logger.set_log_active(active);
 }
 //-----------------------------------------------------------------------------

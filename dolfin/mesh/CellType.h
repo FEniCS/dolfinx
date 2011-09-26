@@ -25,7 +25,6 @@
 #define __CELL_TYPE_H
 
 #include <string>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -34,7 +33,7 @@ namespace dolfin
   class Cell;
   class MeshEditor;
   class MeshEntity;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
   class Point;
 
   /// This class provides a common interface for different cell types.

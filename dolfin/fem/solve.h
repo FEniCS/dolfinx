@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-07-17
+// Last changed: 2011-09-23
 
 #ifndef __SOLVE_FEM_H
 #define __SOLVE_FEM_H
 
 #include <vector>
+#include <dolfin/parameter/Parameters.h>
 
 namespace dolfin
 {
@@ -35,45 +36,59 @@ namespace dolfin
 
   /// Solve linear variational problem a(u, v) == L(v) or nonlinear
   /// variational problem F(u; v) = 0 without boundary conditions
+  /// Parameters to the Linear/Nonlinear VariationalSolver can be passed 
+  /// using params
   void solve(const Equation& equation,
-             Function& u);
+             Function& u, Parameters params=empty_parameters);
 
   /// Solve linear variational problem a(u, v) == L(v) or nonlinear
   /// variational problem F(u; v) = 0 with a single boundary condition
+  /// Parameters to the Linear/Nonlinear VariationalSolver can be passed 
+  /// using params
   void solve(const Equation& equation,
              Function& u,
-             const BoundaryCondition& bc);
+             const BoundaryCondition& bc, 
+	     Parameters params=empty_parameters);
 
   /// Solve linear variational problem a(u, v) == L(v) or nonlinear
   /// variational problem F(u; v) = 0 with a list of boundary conditions
+  /// Parameters to the Linear/Nonlinear VariationalSolver can be passed 
+  /// using params
   void solve(const Equation& equation,
              Function& u,
-             std::vector<const BoundaryCondition*> bcs);
+             std::vector<const BoundaryCondition*> bcs, 
+	     Parameters params=empty_parameters);
 
   //--- Nonlinear problems (Jacobian specified) ---
 
   /// Solve nonlinear variational problem F(u; v) == 0 without boundary
   /// conditions. The argument J should provide the Jacobian bilinear
-  /// form J = dF/du.
+  /// form J = dF/du. Parameters to the Nonlinear VariationalSolver 
+  /// can be passed using params
   void solve(const Equation& equation,
              Function& u,
-             const Form& J);
+             const Form& J, 
+	     Parameters params=empty_parameters);
 
   /// Solve nonlinear variational problem F(u; v) == 0 with a single
   /// boundary condition. The argument J should provide the Jacobian
-  /// bilinear form J = dF/du.
+  /// bilinear form J = dF/du. Parameters to the Nonlinear 
+  /// VariationalSolver can be passed using params
   void solve(const Equation& equation,
              Function& u,
              const BoundaryCondition& bc,
-             const Form& J);
+             const Form& J, 
+	     Parameters params=empty_parameters);
 
   /// Solve nonlinear variational problem F(u; v) == 0 with a list of
   /// boundary conditions. The argument J should provide the Jacobian
-  /// bilinear form J = dF/du.
+  /// bilinear form J = dF/du. Parameters to the Nonlinear 
+  /// VariationalSolver can be passed using params
   void solve(const Equation& equation,
              Function& u,
              std::vector<const BoundaryCondition*> bcs,
-             const Form& J);
+             const Form& J, 
+	     Parameters params=empty_parameters);
 
 }
 

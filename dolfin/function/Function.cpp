@@ -183,6 +183,9 @@ const Function& Function::operator= (const Function& v)
 
     // Copy vector
     _vector.reset(v._vector->copy());
+
+    // Clear subfunction cache
+    sub_functions.clear();
   }
   else
   {
@@ -287,24 +290,27 @@ bool Function::in(const FunctionSpace& V) const
 dolfin::uint Function::geometric_dimension() const
 {
   assert(_function_space);
-  return _function_space->mesh().geometry().dim();
+  assert(_function_space->mesh());
+  return _function_space->mesh()->geometry().dim();
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x) const
 {
   assert(_function_space);
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
   const double* _x = x.data().get();
-  const Point point(_function_space->mesh().geometry().dim(), _x);
-  int id = _function_space->mesh().intersected_cell(point);
+  const Point point(mesh.geometry().dim(), _x);
+  int id = mesh.intersected_cell(point);
 
   // If not found, use the closest cell
   if (id == -1)
   {
     if (allow_extrapolation)
     {
-      id = _function_space->mesh().closest_cell(point);
+      id = mesh.closest_cell(point);
       cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
     }
     else
@@ -315,8 +321,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   }
 
   // Create cell that contains point
-  const Cell cell(_function_space->mesh(), id);
-  const UFCCell ufc_cell(cell);
+  const Cell cell(mesh, id);
+  const UFCCell ufc_cell(cell, false);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -383,11 +389,13 @@ void Function::extrapolate(const Function& v)
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const
 {
+  assert(_function_space);
   return _function_space->element().value_rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_dimension(uint i) const
 {
+  assert(_function_space);
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
@@ -395,12 +403,14 @@ void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
   assert(_function_space);
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
   // Check if UFC cell comes from mesh, otherwise redirect to
   // evaluate on non-matching cell
-  if (ufc_cell.mesh_identifier == (int) _function_space->mesh().id())
+  if (ufc_cell.mesh_identifier == (int) mesh.id())
   {
-    const Cell cell(_function_space->mesh(), ufc_cell.index);
+    const Cell cell(mesh, ufc_cell.index);
     eval(values, x, cell, ufc_cell);
   }
   else
@@ -412,20 +422,22 @@ void Function::non_matching_eval(Array<double>& values,
                                  const ufc::cell& ufc_cell) const
 {
   assert(_function_space);
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
   const double* _x = x.data().get();
-  const uint dim = _function_space->mesh().geometry().dim();
+  const uint dim = mesh.geometry().dim();
   const Point point(dim, _x);
 
   // Alternative 1: Find cell that point (x) intersects
-  int id = _function_space->mesh().intersected_cell(point);
+  int id = mesh.intersected_cell(point);
 
   if (id == -1 && !allow_extrapolation)
     error("Unable to evaluate function at given point (not inside domain). Set parameter 'allow_extrapolation' to true to allow extrapolation'.");
 
   // Alternative 2: Compute closest cell to point (x)
   if (id == -1 && allow_extrapolation && dim == 2)
-    id = _function_space->mesh().closest_cell(point);
+    id = mesh.closest_cell(point);
 
   // Alternative 3: Compute cell that contains barycenter of ufc_cell
   // NB: This is slightly heuristic, but should work well for
@@ -442,7 +454,7 @@ void Function::non_matching_eval(Array<double>& values,
       barycenter += vertex;
     }
     barycenter /= (dim + 1);
-    id = _function_space->mesh().intersected_cell(barycenter);
+    id = mesh.intersected_cell(barycenter);
   }
 
   // Throw error if all alternatives failed.
@@ -450,8 +462,8 @@ void Function::non_matching_eval(Array<double>& values,
     error("Cannot evaluate function at given point. No matching cell found.");
 
   // Create cell that contains point
-  const Cell cell(_function_space->mesh(), id);
-  const UFCCell new_ufc_cell(cell);
+  const Cell cell(mesh, id);
+  const UFCCell new_ufc_cell(cell, false);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -486,7 +498,9 @@ void Function::restrict(double* w,
 void Function::compute_vertex_values(Array<double>& vertex_values,
                                      const Mesh& mesh) const
 {
-  assert(&mesh == &_function_space->mesh());
+  assert(_function_space);
+  assert(_function_space->mesh());
+  assert(&mesh == _function_space->mesh().get());
 
   // Gather ghosts dofs
   gather();
@@ -503,7 +517,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     num_tensor_entries *= element.value_dimension(i);
 
   // Resize Array for holding vertex values
-  vertex_values.resize(num_tensor_entries*(_function_space->mesh().num_vertices()));
+  vertex_values.resize(num_tensor_entries*(_function_space->mesh()->num_vertices()));
 
   // Create vector to hold cell vertex values
   std::vector<double> cell_vertex_values(num_tensor_entries*num_cell_vertices);
@@ -513,7 +527,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
+  UFCCell ufc_cell(mesh, false);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
@@ -584,7 +598,8 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
 
   // Get mesh
   assert(_function_space);
-  const Mesh& mesh = _function_space->mesh();
+  assert(_function_space->mesh());
+  const Mesh& mesh = *_function_space->mesh();
 
   // Get dof map
   const GenericDofMap& dofmap = _function_space->dofmap();

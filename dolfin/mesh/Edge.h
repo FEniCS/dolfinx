@@ -25,7 +25,7 @@
 #define __EDGE_H
 
 #include <dolfin/common/types.h>
-#include "Point.h"
+#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
@@ -117,7 +117,7 @@ namespace dolfin
 
   /// An EdgeFunction is a _MeshFunction_ of topological dimension 1.
 
-  template <class T> class EdgeFunction : public MeshFunction<T>
+  template <typename T> class EdgeFunction : public MeshFunction<T>
   {
   public:
 

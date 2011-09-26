@@ -26,12 +26,12 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
 {
 
-  class Mesh;
+   class Mesh;
+   template<typename T> class MeshFunction;
 
   /// This class computes colorings for a local mesh. It supports
   /// vertex, edge, and facet-based colorings.

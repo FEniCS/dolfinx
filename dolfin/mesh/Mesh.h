@@ -36,22 +36,24 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
-#include "CellType.h"
+#include <dolfin/log/log.h>
 #include "MeshData.h"
 #include "MeshGeometry.h"
+#include "MeshConnectivity.h"
 #include "MeshTopology.h"
 #include "MeshDomains.h"
 
 namespace dolfin
 {
 
+  class CellType;
   class BoundaryMesh;
   class Function;
+  class LocalMeshData;
   class MeshEntity;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
   class ParallelData;
   class SubDomain;
-  class XMLMesh;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -107,6 +109,13 @@ namespace dolfin
     ///     filename (std::string)
     ///         Name of file to load.
     explicit Mesh(std::string filename);
+
+    /// Create a distributed mesh from local (per process) data.
+    ///
+    /// *Arguments*
+    ///     local_mesh_data (LocalMeshData)
+    ///         Data from which to build the mesh.
+    explicit Mesh(LocalMeshData& local_mesh_data);
 
     /// Destructor.
     ~Mesh();
@@ -266,13 +275,6 @@ namespace dolfin
 
     /// Get mesh (sub)domains.
     const MeshDomains& domains() const { return _domains; }
-
-    /// Get unique mesh identifier.
-    ///
-    /// *Returns*
-    ///     _uint_
-    ///         The unique integer identifier associated with the mesh.
-    uint id() const { return unique_id; }
 
     /// Get intersection operator.
     ///
@@ -615,13 +617,6 @@ namespace dolfin
     friend class TopologyComputation;
     friend class MeshOrdering;
     friend class BinaryFile;
-    friend class XMLMesh;
-
-    // Initialize mesh data "exterior_facet_domains". This function
-    // should be called to initialize DOLFINs internal storage of
-    // boundary indicators ("exterior_facet_domains") from an external
-    // specification (XML) of boundary indicators.
-    void initialize_exterior_facet_domains();
 
     // Mesh topology
     MeshTopology _topology;
@@ -640,9 +635,6 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
-
-    // Unique mesh identifier
-    const uint unique_id;
 
     // Intersection detector
     IntersectionOperator _intersection_operator;

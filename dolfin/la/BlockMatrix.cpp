@@ -128,12 +128,13 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
     // Resize y and zero
     assert(matrices[row][0]);
-    _y.resize(matrices[row][0]->size(0));
+    const GenericMatrix& _A = *matrices[row][0];
+    _A.resize(_y, 0);
     _y.zero();
 
     // Resize z_tmp and zero
     z_tmp->resize(_y.size());
-    z_tmp->zero();
+    _A.resize(*z_tmp, 0);
 
     // Loop over block columns
     for(uint col = 0; col < matrices.shape()[1]; ++col)

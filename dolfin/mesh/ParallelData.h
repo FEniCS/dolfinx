@@ -22,13 +22,16 @@
 #define __PARALLEL_DATA_H
 
 #include <map>
+#include <utility>
 #include <vector>
-#include "MeshFunction.h"
+#include <boost/scoped_ptr.hpp>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
 
   class Mesh;
+  template<typename T> class MeshFunction;
 
   /// This class stores auxiliary mesh data for parallel computing.
 
@@ -39,55 +42,53 @@ namespace dolfin
     /// Constructor
     ParallelData(const Mesh& mesh);
 
+    /// Copy constructor
+    ParallelData(const ParallelData& data);
+
     /// Destructor
-    //~ParallelData();
+    ~ParallelData();
 
     //--- Data for distributed memory parallelism ---
 
     /// Return true if global indices have been computed for entity of
     /// dimension d
-    bool have_global_entity_indices(uint d) const
-    {
-      if (_global_entity_indices.find(d) != _global_entity_indices.end())
-        return true;
-      else
-        return false;
-    }
+    bool have_global_entity_indices(uint d) const;
 
-    /// Return global indices for entity of dimension d
-    MeshFunction<uint>& global_entity_indices(uint d)
-    {
-      if (!have_global_entity_indices(d))
-        _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
-      return _global_entity_indices.find(d)->second;
-    }
+    /// Return global indices (local-to-global) for entity of dimension d
+    MeshFunction<uint>& global_entity_indices(uint d);
 
-    /// Return global indices for entity of dimension d (const version)
-    const MeshFunction<uint>& global_entity_indices(uint d) const
-    {
-      assert(have_global_entity_indices(d));
-      return _global_entity_indices.find(d)->second;
-    }
+    /// Return global indices (local-to-global) for entity of dimension d (const version)
+    const MeshFunction<uint>& global_entity_indices(uint d) const;
+
+    /// Return global indices (local-to-global) for entity of dimension d in a vector
+    std::vector<uint> global_entity_indices_as_vector(uint d) const;
+
+    /// Return global-to-local indices for entity of dimension d
+    const std::map<uint, uint>& global_to_local_entity_indices(uint d);
+
+    /// Return global-to-local indices for entity of dimension d (const version)
+    const std::map<uint, uint>& global_to_local_entity_indices(uint d) const;
 
     /// FIXME: Add description and use better name
-    std::map<uint, std::vector<uint> >& shared_vertices()
-    { return _shared_vertices; }
+    std::map<uint, std::vector<uint> >& shared_vertices();
 
     /// FIXME: Add description and use better name
-    const std::map<uint, std::vector<uint> >& shared_vertices() const
-    { return _shared_vertices; }
+    const std::map<uint, std::vector<uint> >& shared_vertices() const;
 
-    MeshFunction<bool>& exterior_facet()
-    { return _exterior_facet; }
+    /// Return MeshFunction that is true for globally exterior facets,
+    /// false otherwise
+    MeshFunction<bool>& exterior_facet();
 
-    const MeshFunction<bool>& exterior_facet() const
-    { return _exterior_facet; }
+    /// Return MeshFunction that is true for globally exterior facets,
+    /// false otherwise (const version)
+    const MeshFunction<bool>& exterior_facet() const;
 
-    std::vector<uint>& num_global_entities()
-    { return _num_global_entities; }
+    // Return the number of global entities of each dimension
+    std::vector<uint>& num_global_entities();
 
-    const std::vector<uint>& num_global_entities() const
-    { return _num_global_entities; }
+    // Return the number of global entities of each dimension (const version)
+    const std::vector<uint>& num_global_entities() const;
+
 
     //--- Data for shared memory parallelism (multicore) ---
 
@@ -104,8 +105,11 @@ namespace dolfin
     // Mesh
     const Mesh& mesh;
 
-    // Global indices for entity of dimension d
+    // For entity of dimension d, MeshFunction holding global indices
     std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
+
+    // Global-to-local maps For entity of dimension d, MeshFunction holding global indices
+    std::map<uint, std::map<uint, uint> > _global_to_local_entity_indices;
 
     // FIXME: Use better name
     // FIXME: Use unordered map?
@@ -115,10 +119,11 @@ namespace dolfin
     // the vertex
     std::map<uint, std::vector<uint> > _shared_vertices;
 
+    // Global number of entities of dimension d
     std::vector<uint> _num_global_entities;
 
     // True if a facet is an exterior facet, false otherwise
-    MeshFunction<bool> _exterior_facet;
+    boost::scoped_ptr<MeshFunction<bool> >_exterior_facet;
 
     /*
     // Some typedefs for complex types

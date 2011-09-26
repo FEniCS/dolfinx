@@ -32,7 +32,7 @@ void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
   // Check that we have a XML Parameters
   const pugi::xml_node xml_parameters = xml_dolfin.child("parameters");
   if (!xml_parameters)
-    error("Not a DOLFIN Parameters file.");
+    error("Not a DOLFIN Parameters XML file.");
 
   // Check that there is only one root parameters set
   if (xml_dolfin.first_child().next_sibling())
@@ -124,7 +124,7 @@ void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_
   }
 }
 //-----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void XMLParameters::add_parameter(Parameters& p, const std::string& key,
                                   T value)
 {

@@ -16,19 +16,22 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2011-04-11
+// Last changed: 2011-09-15
 
 #include <iomanip>
 #include <iostream>
-#include <string>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
+#include <dolfin/parameter/GlobalParameters.h>
+#include "LogLevel.h"
 #include "Table.h"
 #include "Logger.h"
 
@@ -254,6 +257,11 @@ void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
   if (!active || log_level < this->log_level)
+    return;
+
+  // Check if we want output on root process only
+  const bool std_out_all_processes = parameters["std_out_all_processes"];
+  if (process_number > 0 && !std_out_all_processes && log_level < WARNING)
     return;
 
   // Prefix with process number if running in parallel

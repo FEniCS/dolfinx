@@ -94,8 +94,14 @@ int main()
   NonlinearPoisson::JacobianForm J(V, V);
   J.u = u;
 
+  // Create solver Parameters
+  Parameters params("nonlinear_variational_solver");
+  Parameters newton_params("newton_solver");
+  newton_params.add("relative_tolerance", 1e-6);
+  params.add(newton_params);
+
   // Solve nonlinear variational problem
-  solve(F == 0, u, bc, J);
+  solve(F == 0, u, bc, J, params);
 
   // Plot solution
   plot(u);

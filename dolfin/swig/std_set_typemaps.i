@@ -25,7 +25,7 @@
 
 namespace std
 {
-  template <class T> class set 
+  template <typename T> class set
   {
   };
 }
@@ -63,14 +63,14 @@ namespace std
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-  for (std::set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end(); ++it) 
+  for (std::set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end(); ++it)
   {
     data[i] = *it;
     ++i;
   }
   o0 = PyArray_Return(ret);
   // If the $result is not already set
-  if ((!$result) || ($result == Py_None)) 
+  if ((!$result) || ($result == Py_None))
   {
     $result = o0;
   }
@@ -78,7 +78,7 @@ namespace std
   else
   {
     // If the the argument is set but is not a tuple make one and put the result in it
-    if (!PyTuple_Check($result)) 
+    if (!PyTuple_Check($result))
     {
       o1 = $result;
       $result = PyTuple_New(1);

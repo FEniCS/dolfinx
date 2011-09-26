@@ -92,21 +92,21 @@ namespace dolfin
   private:
 
     /// Select solver and solve linear system Ax = b and return number of iterations
-    template<class Mat>
+    template<typename Mat>
     uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
 
     /// Solve linear system Ax = b using CG
-    template<class Mat>
+    template<typename Mat>
     uint solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
                  bool& converged) const;
 
     /// Solve linear system Ax = b using restarted GMRES
-    template<class Mat>
+    template<typename Mat>
     uint solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
                         bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
-    template<class Mat>
+    template<typename Mat>
     uint solveBiCGStab(const Mat& A, uBLASVector& x, const uBLASVector& b,
                         bool& converged) const;
 
@@ -137,7 +137,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of template functions
   //---------------------------------------------------------------------------
-  template<class Mat>
+  template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
                                                uBLASVector& x,
                                                const uBLASVector& b)
@@ -198,7 +198,7 @@ namespace dolfin
     return iterations;
   }
   //-----------------------------------------------------------------------------
-  template<class Mat>
+  template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A,
                                           uBLASVector& x,
                                           const uBLASVector& b,
@@ -208,7 +208,7 @@ namespace dolfin
     return solveGMRES(A, x, b, converged);
   }
   //-----------------------------------------------------------------------------
-  template<class Mat>
+  template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
                                              const uBLASVector& b, bool& converged) const
   {
@@ -364,7 +364,7 @@ namespace dolfin
     return iteration;
   }
   //-----------------------------------------------------------------------------
-  template<class Mat>
+  template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A, uBLASVector& x,
                                                 const uBLASVector& b,
                                                 bool& converged) const

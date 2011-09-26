@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-05-19
-// Last changed: 2011-03-10
+// Last changed: 2011-09-15
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -37,7 +37,7 @@ namespace dolfin
 {
 
   class Mesh;
-  template <class T> class MeshFunction;
+  template <typename T> class MeshFunction;
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as _MeshFunction_ over topological mesh
@@ -50,26 +50,13 @@ namespace dolfin
   /// used internally by DOLFIN to communicate data associated with
   /// meshes. The following named mesh data are recognized by DOLFIN:
   ///
-  /// Boundary indicators
-  ///
-  ///   * "boundary_facet_cells"   -  _Array_ <uint> of size num_facets
-  ///   * "boundary_facet_numbers" -  _Array_ <uint> of size num_facets
-  ///   * "boundary_indicators"    -  _Array_ <uint> of size num_facets
-  ///   * "material_indicators"    -  _MeshFunction_ <uint> of dimension D
-  ///
-  /// Subdomain indicators
-  ///
-  ///   * "cell_domains"           - _MeshFunction_ <uint> of dimension D
-  ///   * "interior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
-  ///   * "exterior_facet_domains" - _MeshFunction_ <uint> of dimension D - 1
-  ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet_orientation"      - _MeshFunction_ <uint> of dimension D - 1
+  ///   * "facet_orientation"     - _MeshFunction_ <uint> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "parent_vertex_indices"  - _MeshFunction_ <uint> of dimension 0
+  ///   * "parent_vertex_indices" - _MeshFunction_ <uint> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 
@@ -202,10 +189,12 @@ namespace dolfin
 
     /// Friends
     friend class XMLMesh;
-    friend class OldXMLMeshData;
     friend class MeshPartitioning;
 
   private:
+
+    // Check if name is deprecated
+    void check_deprecated(std::string name) const;
 
     // The mesh
     Mesh& mesh;
@@ -215,6 +204,9 @@ namespace dolfin
 
     // A map from named mesh data to vector
     std::map<std::string, boost::shared_ptr<std::vector<uint> > > arrays;
+
+    // List of depcrecated named data
+    std::vector<std::string> _deprecated_names;
 
   };
 

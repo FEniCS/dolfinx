@@ -235,6 +235,9 @@ namespace dolfin
   template<> inline void Parameters::add<bool>(std::string key)
   { _parameters[key] = new BoolParameter(key); }
 
+  // Default empty parameters
+  extern Parameters empty_parameters;
+
 }
 
 #endif

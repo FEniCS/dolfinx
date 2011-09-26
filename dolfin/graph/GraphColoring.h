@@ -27,7 +27,7 @@
 namespace dolfin
 {
 
-  template<class T> class Array;
+  template<typename T> class Array;
   class Mesh;
 
   /// This class provides a common interface to graph coloring libraries

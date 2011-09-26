@@ -16,14 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-09-01
+// Last changed: 2011-09-15
 
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -31,8 +30,8 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  template <class T> class MeshFunction;
-  template <class T> class MeshMarkers;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
 
   /// The class _MeshDomains_ stores the division of a _Mesh_ into
   /// subdomains. For each topological dimension 0 <= d <= D, where D
@@ -53,31 +52,62 @@ namespace dolfin
     /// Destructor
     ~MeshDomains();
 
+    /// Return maximal topological dimension of stored markers
+    uint dim() const;
+
     /// Return number of marked entities of given dimension
     uint num_marked(uint dim) const;
 
+    /// Check whether domain data is empty
+    bool is_empty() const;
+
     /// Get subdomain markers for given dimension
-    MeshMarkers<uint>& markers(uint dim);
+    MeshValueCollection<uint>& markers(uint dim);
 
     /// Get subdomain markers for given dimension (const version)
-    const MeshMarkers<uint>& markers(uint dim) const;
+    const MeshValueCollection<uint>& markers(uint dim) const;
+
+    /// Get subdomain markers for given dimension (shared pointer version)
+    boost::shared_ptr<MeshValueCollection<uint> >
+    markers_shared_ptr(uint dim);
+
+    /// Get subdomain markers for given dimension (const shared pointer version)
+    boost::shared_ptr<const MeshValueCollection<uint> >
+    markers_shared_ptr(uint dim) const;
+
+    /// Get cell domains. This function computes the mesh function
+    /// corresponding to markers of dimension D. The mesh function is
+    /// cached for later access and will be computed on the first call
+    /// to this function.
+    boost::shared_ptr<const MeshFunction<uint> >
+    cell_domains(const Mesh& mesh) const;
+
+    /// Get facet domains. This function computes the mesh function
+    /// corresponding to markers of dimension D-1. The mesh function
+    /// is cached for later access and will be computed on the first
+    /// call to this function.
+    boost::shared_ptr<const MeshFunction<uint> >
+    facet_domains(const Mesh& mesh) const;
+
+    /// Initialize mesh domains for given topological dimension
+    void init(uint dim);
 
     /// Clear all data
     void clear();
 
   private:
 
-    // Initialize mesh functions corresponding to markers
-    void init_subdomains();
+    // Initialize mesh function corresponding to markers
+    void init_domains(MeshFunction<uint>& mesh_function) const;
 
-    // The mesh
-    boost::shared_ptr<Mesh> _mesh;
+    // Subdomain markers
+    std::vector<boost::shared_ptr<MeshValueCollection<uint> > > _markers;
 
-    // Subdomain markers (input/storage)
-    std::vector<boost::shared_ptr<MeshMarkers<uint> > > _markers;
+    // Mesh function for cell domains
+    mutable boost::shared_ptr<MeshFunction<uint> > _cell_domains;
 
-    // Subdomains corresponding to markers
-    std::vector<boost::shared_ptr<MeshFunction<uint> > > _subdomains;
+    // Mesh function for facet domains (exterior or interior)
+    mutable boost::shared_ptr<MeshFunction<uint> > _facet_domains;
 
   };
 

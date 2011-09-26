@@ -73,7 +73,7 @@ namespace dolfin
 
   /// A VertexFunction is a MeshFunction of topological dimension 0.
 
-  template <class T> class VertexFunction : public MeshFunction<T>
+  template <typename T> class VertexFunction : public MeshFunction<T>
   {
   public:
 

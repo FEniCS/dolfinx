@@ -38,7 +38,7 @@ namespace dolfin
 
   /// Helper function to construct shared pointer with NoDeleter with cleaner syntax
 
-  template<class T>
+  template <typename T>
   boost::shared_ptr<T> reference_to_no_delete_pointer(T& r)
   {
     return boost::shared_ptr<T>(&r, NoDeleter());

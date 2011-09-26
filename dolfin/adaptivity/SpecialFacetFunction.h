@@ -36,7 +36,7 @@ namespace dolfin
   /// function that is in P(f) for each _Facet_ f in a _Mesh_
   /// for some _FunctionSpace_ P
 
-  template <class T> class Array;
+  template <typename T> class Array;
   class Function;
 
   class SpecialFacetFunction : public Expression

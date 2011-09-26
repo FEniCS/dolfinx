@@ -106,8 +106,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-stabilized',           'python'), \
    os.path.join(demodir, 'undocumented', 'advection-diffusion',         'cpp'),    \
    os.path.join(demodir, 'undocumented', 'advection-diffusion',         'python'), \
    os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
@@ -120,26 +118,16 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-taylor-hood',          'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
-   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'neumann-poisson',             'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-   os.path.join(demodir, 'undocumented', 'partitioning',                'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'partitioning',                'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'simple'      ,                'python'), \
    os.path.join(demodir, 'undocumented', 'periodic',                    'cpp'),    \
    os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'tensor-weighted-poisson',     'python'), \
-   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'stokes-mini',                 'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
@@ -163,10 +151,14 @@ if only_python:
 # Build prefix list
 prefixes = [""]
 mpi_prefix = "mpirun -np 3 "
-if "RUN_REGRESSION_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
+if has_mpi() and has_parmetis():
     prefixes.append(mpi_prefix)
 else:
     print "Not running regression tests in parallel."
+
+# Allow to disable parallel testing
+if "DISABLE_PARALLEL_TESTING" in os.environ:
+    prefixes = [""]
 
 # Run in serial, then in parallel
 for prefix in prefixes:

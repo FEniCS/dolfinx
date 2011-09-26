@@ -18,13 +18,13 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-06-22
+// Last changed: 2011-09-12
 
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
 #include "assemble.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
@@ -67,14 +67,25 @@ void LinearVariationalSolver::solve()
   boost::shared_ptr<Function> u(problem->solution());
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
 
-  // Create matrix and vector
+  assert(a);
+  assert(L);
   assert(u);
+
+  // Create matrix and vector
   boost::scoped_ptr<GenericMatrix> A(u->vector().factory().create_matrix());
   boost::scoped_ptr<GenericVector> b(u->vector().factory().create_vector());
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
   {
+    // Check that rhs (L) is not empty
+    if (!L->ufc_form())
+    {
+      dolfin_error("LinearVariationalSolver.cpp",
+                    "symmetric assembly in linear variational solver",
+                    "Empty linear forms cannot be used with symmetric assmebly");
+    }
+
     // Need to cast to DirichletBC to use assemble_system
     std::vector<const DirichletBC*> _bcs;
     for (uint i = 0; i < bcs.size(); i++)
@@ -82,15 +93,15 @@ void LinearVariationalSolver::solve()
       assert(bcs[i]);
       const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
       if (!_bc)
+      {
         dolfin_error("LinearVariationalSolver.cpp",
                      "apply boundary condition in linear variational solver",
                      "Only Dirichlet boundary conditions may be used for symmetric systems");
+      }
       _bcs.push_back(_bc);
     }
 
     // Assemble linear system and apply boundary conditions
-    assert(a);
-    assert(L);
     assemble_system(*A, *b,
                     *a, *L,
                     _bcs,
@@ -101,10 +112,19 @@ void LinearVariationalSolver::solve()
   else
   {
     // Assemble linear system
-    assert(a);
-    assert(L);
     assemble(*A, *a);
-    assemble(*b, *L);
+    if (L->ufc_form())
+      assemble(*b, *L);
+    else
+    {
+      if (L->num_coefficients() != 0)
+      {
+        dolfin_error("LinearVariationalSolver.cpp",
+                     "assemble linear form in linear variational solver",
+                     "Empty linear forms cannot have coefficient.");
+      }
+      A->resize(*b, 0);
+    }
 
     // Apply boundary conditions
     for (uint i = 0; i < bcs.size(); i++)

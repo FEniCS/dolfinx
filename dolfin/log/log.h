@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-06-21
+// Last changed: 2011-09-20
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -80,11 +80,8 @@ namespace dolfin
   /// End task (decrease indentation level)
   void end();
 
-  /// Turn logging on or off (deprecated)
+  /// Turn logging on or off
   void set_log_active(bool active=true);
-
-  /// Turn logging on or off (deprecated, will be removed)
-  void logging(bool active=true);
 
   /// Set log level
   void set_log_level(int level);

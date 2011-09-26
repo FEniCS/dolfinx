@@ -31,7 +31,7 @@ using namespace dolfin;
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
@@ -93,6 +93,6 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
+  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 }
 //-----------------------------------------------------------------------------

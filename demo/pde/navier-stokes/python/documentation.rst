@@ -22,6 +22,14 @@ First, the :py:mod:`dolfin` module is imported:
 
     from dolfin import *
 
+For the parallel case, we turn off log messages from processes other than
+the the root process to avoid excessive output:
+
+.. code-block:: python
+
+    # Print log messages only from the root process in parallel
+    parameters["std_out_all_processes"] = False;
+
 We then load the mesh for the L-shaped domain from file:
 
 .. code-block:: python

@@ -32,8 +32,8 @@
 
 namespace arma
 {
-  template <class T> class Mat;
-  template <class T> class Col;
+  template <typename T> class Mat;
+  template <typename T> class Col;
 }
 
 namespace ufc

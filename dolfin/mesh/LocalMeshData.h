@@ -26,6 +26,7 @@
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
+#include <map>
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -35,7 +36,6 @@ namespace dolfin
 {
 
   class Mesh;
-  class XMLLocalMeshDataDistributed;
 
   /// This class stores mesh data on a local processor corresponding
   /// to a portion of a (larger) global mesh.
@@ -122,11 +122,11 @@ namespace dolfin
     /// Topological dimension
     uint tdim;
 
-    // A map from named mesh data to arrays
-    std::map<std::string, std::vector<uint>* > arrays;
+    // Mesh domain data [dim](line, (cell_index, local_index, value))
+    //std::map<uint, std::vector<std::vector<dolfin::uint> > > domain_data;
+    std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > > domain_data;
 
     // Friends
-    friend class XMLLocalMeshDOM;
     friend class XMLLocalMeshSAX;
     friend class MeshPartitioning;
     friend class GraphBuilder;

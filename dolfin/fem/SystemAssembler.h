@@ -42,7 +42,7 @@ namespace dolfin
   class Cell;
   class Facet;
   class Function;
-  template<class T> class MeshFunction;
+  template<typename T> class MeshFunction;
 
   /// This class provides implements an assembler for systems
   /// of the form Ax = b. It differs from the default DOLFIN

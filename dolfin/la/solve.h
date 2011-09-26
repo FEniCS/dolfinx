@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2008.
+// Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2008-08-25
+// Last changed: 2011-09-15
 
 #ifndef __SOLVE_LA_H
 #define __SOLVE_LA_H
@@ -33,14 +34,16 @@ namespace dolfin
   class GenericVector;
 
   /// Solve linear system Ax = b
-  void solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
+  uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
              std::string solver_type = "lu", std::string pc_type = "default");
 
   /// Compute residual ||Ax - b||
-  double residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
+  double residual(const GenericMatrix& A, const GenericVector& x,
+                  const GenericVector& b);
 
   /// Normalize vector according to given normalization type
-  double normalize(GenericVector& x, std::string normalization_type = "average");
+  double normalize(GenericVector& x,
+                   std::string normalization_type = "average");
 
 }
 

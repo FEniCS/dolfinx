@@ -33,6 +33,19 @@ int main()
   // Create mesh and finite element
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
 
+  /*
+  File mesh_file("mesh.xml");
+  File domain_file("markers.xml");
+  mesh_file << mesh;
+  domain_file << mesh.domains().markers(2);
+  */
+
+  /*
+  MeshValueCollection<dolfin::uint> markers(2);
+  File domain_file("markers.xml");
+  domain_file >> markers;
+  */
+
   // Define variational problem
   Constant f(0.0);
   Poisson::FunctionSpace V(mesh);
@@ -56,6 +69,10 @@ int main()
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);
+
+  // Write solution to file
+  File file("u.pvd");
+  file << u;
 
   // Plot solution
   plot(u);

@@ -30,7 +30,7 @@ namespace dolfin
 
   class uBLASVector;
   class uBLASKrylovMatrix;
-  template<class Mat> class uBLASMatrix;
+  template<typename Mat> class uBLASMatrix;
 
   /// This class specifies the interface for preconditioners for the
   /// uBLAS Krylov solver.

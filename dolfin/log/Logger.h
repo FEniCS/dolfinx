@@ -25,9 +25,9 @@
 #ifndef __LOGGER_H
 #define __LOGGER_H
 
-#include <string>
-#include <ostream>
 #include <map>
+#include <ostream>
+#include <string>
 #include <dolfin/common/types.h>
 #include "LogLevel.h"
 

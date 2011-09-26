@@ -189,8 +189,8 @@ namespace dolfin
     ///         Local-to-global mapping of dofs.
     const std::vector<uint>& cell_dofs(uint cell_index) const
     {
-      assert(cell_index < dofmap.size());
-      return dofmap[cell_index];
+      assert(cell_index < _dofmap.size());
+      return _dofmap[cell_index];
     }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
@@ -203,8 +203,8 @@ namespace dolfin
     void tabulate_dofs(uint* dofs, const Cell& cell) const
     {
       const uint cell_index = cell.index();
-      assert(cell_index < dofmap.size());
-      std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
+      assert(cell_index < _dofmap.size());
+      std::copy(_dofmap[cell_index].begin(), _dofmap[cell_index].end(), dofs);
     }
 
     /// Tabulate local-local facet dofs
@@ -280,6 +280,15 @@ namespace dolfin
     ///         The set of dof indices.
     boost::unordered_set<dolfin::uint> dofs() const;
 
+    /// Return the underlying dof map data. Intended for internal library
+    /// use only.
+    ///
+    /// *Returns*
+    ///     std::vector<std::vector<dolfin::uint> >
+    ///         The local-to-global map for each cell.
+    const std::vector<std::vector<dolfin::uint> >& data() const
+    { return _dofmap; }
+
     /// Renumber dofs
     ///
     /// *Arguments*
@@ -315,7 +324,7 @@ namespace dolfin
                                 const Mesh& dolfin_mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<dolfin::uint> > dofmap;
+    std::vector<std::vector<dolfin::uint> > _dofmap;
 
     // UFC dof map
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;

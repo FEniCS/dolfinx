@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2009 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,26 +15,34 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2011
+//
 // First added:  2003-02-26
-// Last changed: 2009-08-11
-
-#include <dolfin/log/dolfin_log.h>
+// Last changed: 2011-09-24
 
 #include <sstream>
 #include <dolfin/parameter/Parameters.h>
+#include "UniqueIdGenerator.h"
 #include "Variable.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Variable::Variable()
-  : _name("x"), _label("unnamed data")
+  : _name("x"), _label("unnamed data"), unique_id(UniqueIdGenerator::id())
+
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Variable::Variable(const std::string name, const std::string label)
-  : _name(name), _label(label)
+  : _name(name), _label(label), unique_id(UniqueIdGenerator::id())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Variable::Variable(const Variable& variable) : _name(variable._name),
+  _label(variable._label), unique_id(UniqueIdGenerator::id())
 {
   // Do nothing
 }
@@ -66,10 +74,5 @@ std::string Variable::str(bool verbose) const
   s << "<DOLFIN object "
     << _name << " (" << _label << ")>";
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void Variable::disp() const
-{
-  warning("disp() function is deprecated, use info(foo) or info(foo, true) instead.");
 }
 //-----------------------------------------------------------------------------

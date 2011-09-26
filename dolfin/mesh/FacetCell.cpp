@@ -18,6 +18,7 @@
 // First added:  2010-02-08
 // Last changed: 2010-02-08
 
+#include "BoundaryMesh.h"
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"

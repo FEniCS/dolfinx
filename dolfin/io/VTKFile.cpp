@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2005-2006.
-// Modified by Kristian Oelgaard 2006.
-// Modified by Martin Alnes 2008.
-// Modified by Niclas Jansson 2009.
+// Modified by Anders Logg 2005-2011
+// Modified by Kristian Oelgaard 2006
+// Modified by Martin Alnes 2008
+// Modified by Niclas Jansson 2009
 //
 // First added:  2005-07-05
-// Last changed: 2011-03-17
+// Last changed: 2011-09-14
 
 #include <ostream>
 #include <sstream>
@@ -49,8 +49,8 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
-               : GenericFile(filename), encoding(encoding), binary(false),
-                 compress(false)
+  : GenericFile(filename, "VTK"),
+    encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
     error("Requested VTK file encoding '%s' is unknown. Options are 'ascii', \n 'base64' or 'compressed'.");
@@ -133,7 +133,8 @@ void VTKFile::operator<<(const std::pair<const Function*, double> u)
 //----------------------------------------------------------------------------
 void VTKFile::write(const Function& u, double time)
 {
-  const Mesh& mesh = u.function_space().mesh();
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
 
   // Get vtu file name and intialise
   std::string vtu_filename = init(mesh, mesh.topology().dim());
@@ -212,7 +213,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   }
 
   // Test for cell-based element type
-  const Mesh& mesh(u.function_space().mesh());
+  assert(u.function_space().mesh());
+  const Mesh& mesh = *u.function_space().mesh();
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
@@ -486,8 +488,9 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   // Test for cell-based element type
   std::string data_type = "point";
   uint cell_based_dim = 1;
+  assert(u.function_space().mesh());
   for (uint i = 0; i < rank; i++)
-    cell_based_dim *= u.function_space().mesh().topology().dim();
+    cell_based_dim *= u.function_space().mesh()->topology().dim();
   if (u.function_space().dofmap().max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
@@ -571,7 +574,7 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
   return newfilename.str();
 }
 //----------------------------------------------------------------------------
-template<class T>
+template<typename T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();

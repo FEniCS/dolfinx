@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Marie E. Rognes, 2011
+# Modified by Marie E. Rognes 2011
+# Modified by Anders Logg 2011
 #
 # First added:  2011-03-12
 # Last changed: 2011-03-12
@@ -49,12 +50,12 @@ class Assembly(unittest.TestCase):
 
         # Define bilinear form
         a = dot(grad(v), grad(u))*dx \
-           - dot(avg(grad(v)), jump(u, n))*dS \
-           - dot(jump(v, n), avg(grad(u)))*dS \
-           + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-           - dot(grad(v), u*n)*ds \
-           - dot(v*n, grad(u))*ds \
-           + 8.0/h*v*u*ds
+            - dot(avg(grad(v)), jump(u, n))*dS \
+            - dot(jump(v, n), avg(grad(u)))*dS \
+            + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
+            - dot(grad(v), u*n)*ds \
+            - dot(v*n, grad(u))*ds \
+            + 8.0/h*v*u*ds
 
         # Define linear form
         L = v*f*dx
@@ -141,10 +142,6 @@ class Assembly(unittest.TestCase):
         # Define mesh
         mesh = UnitSquare(8, 8)
 
-        # This is a hack to get around a DOLFIN bug
-        if MPI.num_processes() > 1:
-            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
-
         # Define domain for lower left corner
         class MyDomain(SubDomain):
             def inside(self, x, on_boundary):
@@ -224,7 +221,7 @@ class Assembly(unittest.TestCase):
 
     def test_subdomains_assembly(self):
         """
-        Test assembly with sub-domains specified in a form directly
+        Test assembly with subdomains specified in a form directly
         and of derived forms.
         """
 
@@ -281,6 +278,88 @@ class Assembly(unittest.TestCase):
         # Check that domain data carries across transformations:
         reference = 0.0626219513355
         self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+
+    def test_meshdomains_assembly(self):
+        "Test assembly with subdomains marked directly as part of the mesh"
+
+        # Create a mesh of the unit cube
+        mesh = UnitCube(4, 4, 4)
+
+        # Define subdomains for 3 faces of the unit cube
+        class F0(SubDomain):
+            def inside(self, x, inside):
+                return near(x[0], 0.0)
+        class F1(SubDomain):
+            def inside(self, x, inside):
+                return near(x[1], 0.0)
+        class F2(SubDomain):
+            def inside(self, x, inside):
+                return near(x[2], 0.0)
+
+        # Define subdomain for left of x = 0.5
+        class S0(SubDomain):
+            def inside(self, x, inside):
+                return x[0] < 0.5 + DOLFIN_EPS
+
+        # Mark mesh
+        f0 = F0()
+        f1 = F1()
+        f2 = F2()
+        s0 = S0()
+        f0.mark_facets(mesh, 0)
+        f1.mark_facets(mesh, 1)
+        f2.mark_facets(mesh, 2)
+        s0.mark_cells(mesh, 0)
+
+        # Assemble a form on marked subdomains
+        M0 = Constant(1.0)*dx(0) + \
+             Constant(2.0)*ds(0) + Constant(3.0)*ds(1) + Constant(4.0)*ds(2)
+        m0 = assemble(M0, mesh=mesh)
+
+        # Assemble a form on unmarked subdomains (marked automatically)
+        M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(3)
+        m1 = assemble(M1, mesh=mesh)
+
+        # Check values
+        self.assertAlmostEqual(m0, 9.5)
+        self.assertAlmostEqual(m1, 6.5)
+
+
+    def test_reference_assembly(self):
+        "Test assembly against a reference solution"
+
+        if MPI.num_processes() == 1:
+
+            # Load reference mesh (just a simple tetrahedron)
+            mesh = Mesh("tetrahedron.xml.gz");
+
+            # Assemble stiffness and mass matrices
+            V = FunctionSpace(mesh, "Lagrange", 1)
+            u, v = TrialFunction(V), TestFunction(V)
+            A, M = uBLASDenseMatrix(), uBLASDenseMatrix()
+            assemble(dot(grad(v), grad(u))*dx, tensor=A)
+            assemble(v*u*dx, tensor=M)
+
+            # Create reference matrices and set entries
+            A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
+            pos = numpy.array([0, 1, 2, 3], dtype='I')
+            A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
+                          [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
+                          [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
+                          [-1.0/6.0, 0.0, 0.0, 1.0/6.0]]), pos, pos)
+
+            M0.set(numpy.array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
+                          [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
+            A0.apply("insert")
+            M0.apply("insert")
+
+            C = A - A0
+            self.assertAlmostEqual(C.norm("frobenius"), 0.0)
+            D = M - M0
+            self.assertAlmostEqual(D.norm("frobenius"), 0.0)
+
 
 if __name__ == "__main__":
     print ""

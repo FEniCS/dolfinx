@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-04-10
-// Last changed: 2011-09-01
+// Last changed: 2011-09-15
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
@@ -27,9 +27,9 @@ namespace dolfin
 {
 
   // Forward declarations
-  template <class T> class MeshFunction;
-  template <class T> class MeshMarkers;
-  template <class T> class Array;
+  template <typename T> class MeshFunction;
+  template <typename T> class MeshValueCollection;
+  template <typename T> class Array;
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
@@ -81,18 +81,18 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to be marked
+    ///         The mesh to be marked.
     ///     sub_domain (unsigned int)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark_cells(Mesh& mesh, unsigned int sub_domain) const;
 
     /// Set subdomain markers (uint) on facets for given subdomain number
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to be marked
+    ///         The mesh to be marked.
     ///     sub_domain (unsigned int)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark_facets(Mesh& mesh, unsigned int sub_domain) const;
 
     /// Set subdomain markers (uint) for given topological dimension
@@ -100,11 +100,11 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to be marked
+    ///         The mesh to be marked.
     ///     dim (unsigned int)
-    ///         The topological dimension of entities to be marked
+    ///         The topological dimension of entities to be marked.
     ///     sub_domain (unsigned int)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const;
 
     //--- Marking of MeshFunction ---
@@ -113,9 +113,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     sub_domains (_MeshFunction_ <unsigned int>)
-    ///         The subdomain markers
+    ///         The subdomain markers.
     ///     sub_domain (unsigned int)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark(MeshFunction<unsigned int>& sub_domains,
               unsigned int sub_domain) const;
 
@@ -123,9 +123,9 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     sub_domains (_MeshFunction_ <int>)
-    ///         The subdomain markers
+    ///         The subdomain markers.
     ///     sub_domain (int)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark(MeshFunction<int>& sub_domains, int sub_domain) const;
 
     /// Set subdomain markers (double) for given subdomain number
@@ -134,56 +134,65 @@ namespace dolfin
     ///     sub_domains (_MeshFunction_ <double>)
     ///         The subdomain markers.
     ///     sub_domain (double)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark(MeshFunction<double>& sub_domains, double sub_domain) const;
 
     /// Set subdomain markers (bool) for given subdomain
     ///
     /// *Arguments*
     ///     sub_domains (_MeshFunction_ <bool>)
-    ///         The subdomain markers
+    ///         The subdomain markers.
     ///     sub_domain (bool)
-    ///         The subdomain number
+    ///         The subdomain number.
     void mark(MeshFunction<bool>& sub_domains, bool sub_domain) const;
 
-    //--- Marking of MeshMarkers ---
+    //--- Marking of MeshValueCollection ---
 
     /// Set subdomain markers (uint) for given subdomain number
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshMarkers_ <unsigned int>)
-    ///         The subdomain markers
+    ///     sub_domains (_MeshValueCollection_ <unsigned int>)
+    ///         The subdomain markers.
     ///     sub_domain (unsigned int)
-    ///         The subdomain number
-    void mark(MeshMarkers<unsigned int>& sub_domains,
-              unsigned int sub_domain) const;
+    ///         The subdomain number.
+    ///     mesn (_Mesh_)
+    ///         The mesh.
+    void mark(MeshValueCollection<unsigned int>& sub_domains,
+              unsigned int sub_domain,
+              const Mesh& mesh) const;
 
     /// Set subdomain markers (int) for given subdomain number
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshMarkers_ <int>)
+    ///     sub_domains (_MeshValueCollection_ <int>)
     ///         The subdomain markers
     ///     sub_domain (int)
     ///         The subdomain number
-    void mark(MeshMarkers<int>& sub_domains, int sub_domain) const;
+    void mark(MeshValueCollection<int>& sub_domains,
+              int sub_domain,
+              const Mesh& mesh) const;
 
     /// Set subdomain markers (double) for given subdomain number
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshMarkers_ <double>)
+    ///     sub_domains (_MeshValueCollection_ <double>)
     ///         The subdomain markers.
     ///     sub_domain (double)
     ///         The subdomain number
-    void mark(MeshMarkers<double>& sub_domains, double sub_domain) const;
+    void mark(MeshValueCollection<double>& sub_domains,
+              double sub_domain,
+              const Mesh& mesh) const;
 
     /// Set subdomain markers (bool) for given subdomain
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshMarkers_ <bool>)
+    ///     sub_domains (_MeshValueCollection_ <bool>)
     ///         The subdomain markers
     ///     sub_domain (bool)
     ///         The subdomain number
-    void mark(MeshMarkers<bool>& sub_domains, bool sub_domain) const;
+    void mark(MeshValueCollection<bool>& sub_domains,
+              bool sub_domain,
+              const Mesh& mesh) const;
 
     /// Return geometric dimension
     ///
@@ -195,9 +204,9 @@ namespace dolfin
   private:
 
     /// Apply marker of type T (most likely an uint) to object of class
-    /// S (most likely MeshFunction or MeshMarkers)
-    template<class S, class T>
-    void apply_markers(S& sub_domains, T sub_domain) const;
+    /// S (most likely MeshFunction or MeshValueCollection)
+    template<typename S, typename T>
+    void apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh) const;
 
     // Friends
     friend class DirichletBC;

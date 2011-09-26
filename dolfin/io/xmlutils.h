@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ola Skavhaug and Anders Logg
+// Copyright (C) 2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,33 +15,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-12-18
-// Last changed: 2008-12-18
-//
-// Run this demo in parallel by
-//
-//     mpirun -n <n> ./demo
-//
-// where <n> is the desired number of processes.
-// Then plot the partitions by
-//
-//     ./plotpartitions <n>
+// First added:  2011-09-15
+// Last changed: 2011-09-15
 
-#include <sstream>
-#include <dolfin.h>
+#ifndef __XML_UTILS_H
+#define __XML_UTILS_H
 
-using namespace dolfin;
+#include <string>
+#include <boost/shared_ptr.hpp>
+#include "pugixml.hpp"
 
-int main()
+
+namespace dolfin
 {
-  // Read in mesh from XML file in parallel and partition
-  Mesh mesh("unitsquare.xml.gz");
 
-  // Store partition to file
-  std::ostringstream filename;
-  filename << "unitsquare-" << dolfin::MPI::process_number() << ".xml";
-  File file(filename.str());
-  file << mesh;
+  // This file provides a small number of utility functions that may be
+  // useful when parsing XML using pugixml.
 
-  return 0;
+  /// Get XML node with given name, either the given node itself or a
+  /// child node. An error message is thrown if node is not found.
+  boost::shared_ptr<const pugi::xml_node> get_node(const pugi::xml_node& xml_node,
+                                                   std::string node_name);
+
 }
+
+#endif

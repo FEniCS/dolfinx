@@ -39,22 +39,25 @@ namespace dolfin
 {
 
   /// This class is simple wrapper for a UFC cell and provides
-  /// a layer between a DOLFIN cell and a UFC cell.
+  /// a layer between a DOLFIN cell and a UFC cell. When run in
+  /// parallel, it attempts to use global numbering.
 
   class UFCCell : public ufcexp::cell
   {
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0),
-                                num_higher_order_vertices(0)
+    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(), 
+        use_global_indices(use_global_indices),
+        num_vertices(0), num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0),
-                                num_higher_order_vertices(0)
+    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(), 
+        use_global_indices(use_global_indices),
+        num_vertices(0), num_higher_order_vertices(0) 
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -62,17 +65,13 @@ namespace dolfin
 
     /// Destructor
     ~UFCCell()
-    {
-      clear();
-    }
+    { clear(); }
 
     /// Initialize UFC cell data
     void init(const Cell& cell)
     {
       // Clear old data
       clear();
-
-      const Mesh& mesh = cell.mesh();
 
       // Set cell shape
       switch (cell.type())
@@ -92,6 +91,9 @@ namespace dolfin
       default:
         error("Unknown cell type.");
       }
+
+      // Mesh
+      const Mesh& mesh = cell.mesh();
 
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
@@ -171,7 +173,7 @@ namespace dolfin
       // Otherwise, local entities are used. It is the responsibility
       // of the DofMap class to create the local-to-global mapping of
       // entity indices when running in parallel. In that sense, this
-      // class is non parallel aware. It just uses the local-to-global
+      // class is not parallel aware. It just uses the local-to-global
       // mapping when it is available.
 
       // Set mesh identifier
@@ -195,13 +197,13 @@ namespace dolfin
       // Map to global entity indices (if any)
       for (uint d = 0; d < D; ++d)
       {
-        if (global_entities[d])
+        if (use_global_indices && global_entities[d])
         {
           for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = (*global_entities[d])[entity_indices[d][i]];
         }
       }
-      if (global_entities[D])
+      if (use_global_indices && global_entities[D])
         entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
 
       // Set vertex coordinates
@@ -220,6 +222,9 @@ namespace dolfin
     }
 
   private:
+
+    // True it global entity indices should be used
+    const bool use_global_indices;
 
     // Number of cell vertices
     uint num_vertices;

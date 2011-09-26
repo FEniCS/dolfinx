@@ -34,7 +34,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
   {
-    MeshPartitioning::partition(*this);
+    MeshPartitioning::build_distributed_mesh(*this);
     return;
   }
 
@@ -167,7 +167,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   // Broadcast mesh according to parallel policy
   if (MPI::is_broadcaster())
   {
-    MeshPartitioning::partition(*this);
+    MeshPartitioning::build_distributed_mesh(*this);
     return;
   }
 }

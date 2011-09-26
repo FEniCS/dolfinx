@@ -34,7 +34,7 @@
 namespace dolfin
 {
 
-  template<class T> class Array;
+  template<typename T> class Array;
   class GenericMatrix;
   class GenericVector;
   class FunctionSpace;

@@ -102,7 +102,7 @@ namespace dolfin
     virtual LinearAlgebraFactory& factory() const = 0;
 
     /// Cast a GenericTensor to its derived class (const version)
-    template<class T> const T& down_cast() const
+    template<typename T> const T& down_cast() const
     {
       try
       {
@@ -118,7 +118,7 @@ namespace dolfin
     }
 
     /// Cast a GenericTensor to its derived class (non-const version)
-    template<class T> T& down_cast()
+    template<typename T> T& down_cast()
     {
       try
       {
@@ -135,7 +135,7 @@ namespace dolfin
 
     /// Cast a GenericTensor shared ptr to its derived class. Caller
     /// must check for success (returns null if cast fails).
-    template<class X, class Y>
+    template<typename X, typename Y>
     static boost::shared_ptr<X> down_cast(const boost::shared_ptr<Y> A)
     {
       // Try to down cast shared pointer
@@ -152,7 +152,7 @@ namespace dolfin
     }
 
     /// Check whether the GenericTensor instance matches a specific type
-    template<class T> bool has_type() const
+    template<typename T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
 
     //--- Special functions, intended for library use only ---
