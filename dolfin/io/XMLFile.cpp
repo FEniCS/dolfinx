@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-09-14
+// Last changed: 2011-09-27
 
 #include <iostream>
 #include <fstream>
@@ -31,16 +31,18 @@
 
 #include "pugixml.hpp"
 
+#include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include "XMLDofMap.h"
+#include "XMLFunctionData.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
@@ -149,6 +151,17 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
+void XMLFile::read_vector(Array<double>& input, Array<uint>& indices)
+{
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+
+  // Read parameters
+  XMLVector::read(input, indices, dolfin_node);
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all processes
@@ -165,25 +178,6 @@ void XMLFile::operator<< (const GenericVector& output)
     pugi::xml_node node(0);
     XMLVector::write(output, node, false);
   }
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>> (GenericDofMap& input)
-{
-  // Create XML doc and get DOLFIN node
-  pugi::xml_document xml_doc;
-  load_xml_doc(xml_doc);
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-
-  // Read parameters
-  XMLDofMap::read(input, dolfin_node);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<< (const GenericDofMap& output)
-{
-  pugi::xml_document doc;
-  pugi::xml_node node = write_dolfin(doc);
-  XMLDofMap::write(output, node);
-  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Parameters& input)
@@ -205,6 +199,37 @@ void XMLFile::operator<< (const Parameters& output)
     pugi::xml_node node = write_dolfin(doc);
     XMLParameters::write(output, node);
     save_xml_doc(doc);
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(Function& input)
+{
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  pugi::xml_node dolfin_node(0);
+  if (MPI::process_number() == 0)
+  {
+    load_xml_doc(xml_doc);
+    dolfin_node = get_dolfin_xml_node(xml_doc);
+  }
+
+  // Read data
+  XMLFunctionData::read(input, dolfin_node);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Function& output)
+{
+  if (MPI::process_number() == 0)
+  {
+    pugi::xml_document doc;
+    pugi::xml_node node = write_dolfin(doc);
+    XMLFunctionData::write(output, node);
+    save_xml_doc(doc);
+  }
+  else
+  {
+    pugi::xml_node node(0);
+    XMLFunctionData::write(output, node);
   }
 }
 //-----------------------------------------------------------------------------

@@ -117,18 +117,33 @@ namespace dolfin
        #endif
     }
 
+    // Gather values on one process (wrapper for boost::mpi::gather)
+    template<typename T>
+    static void gather(const T& in_value, std::vector<T>& out_values,
+                       uint receiving_process=0)
+    {
+     #ifdef HAS_MPI
+     MPICommunicator mpi_comm;
+     boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+     boost::mpi::gather(comm, in_value, out_values, receiving_process);
+     #else
+     out_values.clear;
+     out_values.push_back(in_value);
+     #endif
+    }
+
     // Gather values, one from each process (wrapper for boost::mpi::all_gather)
     template<typename T>
     static void all_gather(const T& in_value, std::vector<T>& out_values)
-     {
-       #ifdef HAS_MPI
-       MPICommunicator mpi_comm;
-       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-       boost::mpi::all_gather(comm, in_value, out_values);
-       #else
-       out_values.clear();
-       #endif
-     }
+    {
+     #ifdef HAS_MPI
+     MPICommunicator mpi_comm;
+     boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+     boost::mpi::all_gather(comm, in_value, out_values);
+     #else
+     out_values.clear();
+     #endif
+    }
 
      // Return global max value
      template<typename T> static T max(const T& value)

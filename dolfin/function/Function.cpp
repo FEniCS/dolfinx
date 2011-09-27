@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <map>
 #include <utility>
+#include <vector>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
@@ -36,10 +37,13 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/io/File.h>
+#include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
@@ -112,13 +116,13 @@ Function::Function(const FunctionSpace& V, std::string filename)
   // Initialize vector
   init_vector();
 
-  // Read vector from file
-  File file(filename);
-  file >> *_vector;
-
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+
+  // Read function data from file
+  File file(filename);
+  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -137,13 +141,13 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // Initialize vector
   init_vector();
 
-  // Read vector from file
-  File file(filename);
-  file >> *_vector;
-
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+
+  // Read function data from file
+  File file(filename);
+  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)

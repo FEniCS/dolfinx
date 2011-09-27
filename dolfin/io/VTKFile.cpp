@@ -123,11 +123,14 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
+  u.gather();
   write(u, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
 {
+  assert(u.first);
+  u.first->gather();
   write(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------

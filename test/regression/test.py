@@ -90,8 +90,6 @@ if platform.system() == 'Windows':
 not_working_in_parallel = \
   [os.path.join(demodir, 'pde',          'biharmonic',                  'cpp'),    \
    os.path.join(demodir, 'pde',          'biharmonic',                  'python'), \
-   os.path.join(demodir, 'undocumented', 'advection-difusion',          'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'advection-difusion',          'python'), \
    os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
    os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \

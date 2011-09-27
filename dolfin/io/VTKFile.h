@@ -30,7 +30,7 @@
 #include <vector>
 #include "GenericFile.h"
 
-namespace pugixml
+namespace pugi
 {
   class xml_node;
 }

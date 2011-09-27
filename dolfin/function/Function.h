@@ -112,9 +112,11 @@ namespace dolfin
     /// *Arguments*
     ///     V (_FunctionSpace_)
     ///         The function space.
-    ///     filename (std::string)
+    ///     filename_vector (std::string)
     ///         The name of the file containing the vector.
-    Function(const FunctionSpace& V, std::string filename);
+    ///     filename_dofdata (std::string)
+    ///         The name of the file containing the dofmap data.
+    Function(const FunctionSpace& V, std::string filename_vector);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
@@ -123,7 +125,8 @@ namespace dolfin
     ///         The function space.
     ///     filename (std::string)
     ///         The name of the file containing the vector.
-    Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
+    Function(boost::shared_ptr<const FunctionSpace> V,
+             std::string filename_vector);
 
     /// Copy constructor
     ///

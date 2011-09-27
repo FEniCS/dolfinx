@@ -18,11 +18,12 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-03-03
-// Last changed: 2011-06-30
+// Last changed: 2011-09-17
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
 
+#include <map>
 #include <ostream>
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -37,11 +38,12 @@ namespace pugi
 namespace dolfin
 {
 
-  class GenericDofMap;
+  class Function;
   class GenericVector;
   class LocalMeshData;
   class Mesh;
   class Parameters;
+  template<typename T> class Array;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
 
@@ -67,15 +69,16 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
+    void read_vector(Array<double>& input, Array<uint>& indices);
     void operator<< (const GenericVector& output);
-
-    // GenericDofMap
-    void operator>> (GenericDofMap& input);
-    void operator<< (const GenericDofMap& output);
 
     // Parameters
     void operator>> (Parameters& input);
     void operator<< (const Parameters& output);
+
+    // Function data
+    void operator>>(Function& input);
+    void operator<<(const Function& output);
 
     // FunctionPlotData
     void operator>> (FunctionPlotData& input);

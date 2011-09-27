@@ -27,6 +27,7 @@
 #include <dolfin.h>
 #include "AdvectionDiffusion.h"
 #include "Velocity.h"
+#include <dolfin/io/XMLFile.h>
 
 using namespace dolfin;
 
@@ -39,7 +40,9 @@ int main(int argc, char *argv[])
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
-  Function velocity(V_u, "../velocity.xml.gz");
+  Function velocity(V_u);
+  XMLFile file_u("../velocity.xml.gz");
+  file_u >> velocity;
 
   // Read sub domain markers
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
