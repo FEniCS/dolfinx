@@ -106,7 +106,7 @@ namespace dolfin
                                     const Mesh& mesh) const = 0;
 
     /// Return the set of dof indices
-    virtual boost::unordered_set<dolfin::uint> dofs() const = 0;
+    virtual boost::unordered_set<uint> dofs() const = 0;
 
     /// Re-number based on provided re-numbering map
     virtual void renumber(const std::vector<uint>& renumbering_map) = 0;

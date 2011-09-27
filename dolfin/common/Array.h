@@ -187,7 +187,7 @@ namespace dolfin
   private:
 
     // Length of array
-    dolfin::uint _size;
+    uint _size;
 
     // Array data
     boost::shared_array<T> x;

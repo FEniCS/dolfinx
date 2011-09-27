@@ -196,7 +196,7 @@ namespace dolfin
     MeshValueCollection& markers = mesh_values;
 
     // Get local mesh data for domains
-    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, T> >&
+    const std::vector< std::pair<std::pair<uint, uint>, T> >&
       ldata = local_value_data;
 
     // Get local local-to-global map
@@ -209,7 +209,7 @@ namespace dolfin
 
     // Add local (to this process) data to domain marker
     std::vector<uint>::iterator it;
-    std::vector<dolfin::uint> off_process_global_cell_entities;
+    std::vector<uint> off_process_global_cell_entities;
     for (uint i = 0; i < ldata.size(); ++i)
     {
       const uint global_cell_index = ldata[i].first.first;
@@ -227,7 +227,7 @@ namespace dolfin
     }
 
     // Get destinations and local cell index at destination for off-process cells
-    const std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
+    const std::map<uint, std::set<std::pair<uint, uint> > >
       entity_hosts = MeshDistributed::off_process_indices(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
@@ -235,11 +235,11 @@ namespace dolfin
     std::vector<T> send_data1;
     std::vector<uint> destinations0;
     std::vector<uint> destinations1;
-    std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >::const_iterator entity_host;
+    std::map<uint, std::set<std::pair<uint, uint> > >::const_iterator entity_host;
     for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
     {
       const uint host_global_cell_index = entity_host->first;
-      const std::set<std::pair<dolfin::uint, dolfin::uint> >& processes_data = entity_host->second;
+      const std::set<std::pair<uint, uint> >& processes_data = entity_host->second;
 
       // Loop over local data
       for (uint i = 0; i < ldata.size(); ++i)
@@ -250,7 +250,7 @@ namespace dolfin
           const uint local_entity_index = ldata[i].first.second;
           const T domain_value = ldata[i].second;
 
-          std::set<std::pair<dolfin::uint, dolfin::uint> >::const_iterator process_data;
+          std::set<std::pair<uint, uint> >::const_iterator process_data;
           for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
           {
             const uint proc = process_data->first;
@@ -284,7 +284,7 @@ namespace dolfin
       markers.set_value(local_cell_entity, local_entity_index, value);
     }
   }
-//-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
 }
 

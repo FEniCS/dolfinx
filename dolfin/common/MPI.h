@@ -84,19 +84,8 @@ namespace dolfin
     //        need to do with MPI... :-)
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<uint>& values,
-                           std::vector<uint>& partition);
-
-    /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<int>& values,
-                           std::vector<uint>& partition);
-
-    /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<double>& values,
-                           std::vector<uint>& partition);
-
-    /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<bool>& values,
+    template<typename T>
+    static void distribute(std::vector<T>& values,
                            std::vector<uint>& partition);
 
     // Broadcast value from broadcaster process to all processes
@@ -186,26 +175,28 @@ namespace dolfin
       #endif
     }
 
-
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)
     static uint global_offset(uint range, bool exclusive);
 
-    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
-    static uint send_recv(uint* send_buffer, uint send_size, uint dest,
-                          uint* recv_buffer, uint recv_size, uint source);
+    /// Send-receive and data
+    template<typename T>
+    static void send_recv(const T& send_value, uint dest,
+                          T& recv_value, uint source)
+    {
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
 
-    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
-    static uint send_recv(int* send_buffer, uint send_size, uint dest,
-                          int* recv_buffer, uint recv_size, uint source);
-
-    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
-    static uint send_recv(double* send_buffer, uint send_size, uint dest,
-                          double* recv_buffer, uint recv_size, uint source);
-
-    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
-    static uint send_recv(bool* send_buffer, uint send_size, uint dest,
-                          bool* recv_buffer, uint recv_size, uint source);
+      // Non-blocking send-receive
+      boost::mpi::request reqs[2];
+      reqs[0] = comm.isend(dest, 0, send_value);
+      reqs[1] = comm.irecv(source, 0, recv_value);
+      boost::mpi::wait_all(reqs, reqs + 2);
+      #else
+      error("MPI::send_recv requires MPI to be configured.");
+      #endif
+    }
 
     /// Return local range for local process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
@@ -244,6 +235,72 @@ namespace dolfin
   template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long>() { return MPI_UNSIGNED_LONG; }
   #endif
+
+  //#include "mpiutils.h"
+
+  //---------------------------------------------------------------------------
+  #ifdef HAS_MPI
+  template<typename T>
+  void MPI::distribute(std::vector<T>& values,
+                         std::vector<uint>& partition)
+  {
+    assert(values.size() == partition.size());
+
+    // Get number of processes and process number
+    const uint num_processes  = MPI::num_processes();
+    const uint process_number = MPI::process_number();
+
+    // Sort out data that should be sent to other processes
+    std::vector<std::vector<T> > send_data(num_processes);
+    for (uint i = 0; i < values.size(); i++)
+    {
+      // Get process number data should be sent to
+      const uint p = partition[i];
+      assert(p < send_data.size());
+
+      // Append data to array for process p
+      send_data[p].push_back(values[i]);
+    }
+
+    // Store local data (don't send) and clear partition vector and reuse for
+    // storing sender of data
+    values.clear();
+    partition.clear();
+    const std::vector<T>& local_values = send_data[process_number];
+    for (uint i = 0; i < local_values.size(); i++)
+    {
+      values.push_back(local_values[i]);
+      partition.push_back(process_number);
+    }
+
+    // Exchange data
+    for (uint i = 1; i < send_data.size(); i++)
+    {
+      // We receive data from process p - i (i steps to the left)
+      const int source = (process_number - i + num_processes) % num_processes;
+
+      // We send data to process p + i (i steps to the right)
+      const int dest = (process_number + i) % num_processes;
+
+      // Send and receive data
+      std::vector<T> recv_buffer;
+      MPI::send_recv(send_data[dest], dest, recv_buffer, source);
+
+      // Copy data from receive buffer
+      values.insert(values.end(), recv_buffer.begin(), recv_buffer.end());
+      partition.insert(partition.end(), recv_buffer.size(), source);
+    }
+  }
+  #else
+  template<typename T>
+  void MPI::distribute(std::vector<T>& values,
+                         std::vector<uint>& partition)
+  {
+    error("Distribution of partitioned values requires MPI.");
+  }
+  #endif
+  //---------------------------------------------------------------------------
+
 
 }
 

@@ -161,16 +161,15 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Decide ownership of shared dofs
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  const uint max_recv = MPI::max(send_buffer.size());
-  std::vector<uint> recv_buffer(max_recv);
+  //const uint max_recv = MPI::max(send_buffer.size());
+  std::vector<uint> recv_buffer;
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
     const uint src  = (proc_num - k + num_proc) % num_proc;
     const uint dest = (proc_num + k) % num_proc;
-    const uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), dest,
-				                                    &recv_buffer[0], max_recv, src);
+    MPI::send_recv(send_buffer, dest, recv_buffer, src);
 
-    for (uint i = 0; i < recv_count; i += 2)
+    for (uint i = 0; i < recv_buffer.size(); i += 2)
     {
       const uint received_dof  = recv_buffer[i];
       const uint received_vote = recv_buffer[i + 1];
@@ -279,23 +278,19 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     }
   }
 
-  // FIXME: Use MPI::distribute here instead of send_recv
-
   // Exchange new dof numbers for dofs that are shared
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  const uint max_recv = MPI::max(send_buffer.size());
-  std::vector<uint> recv_buffer(max_recv);
+  //const uint max_recv = MPI::max(send_buffer.size());
+  std::vector<uint> recv_buffer;
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
     const uint src  = (proc_num - k + num_proc) % num_proc;
     const uint dest = (proc_num + k) % num_proc;
-    const uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(),
-                                           dest,
-                                           &recv_buffer[0], max_recv, src);
+    MPI::send_recv(send_buffer, dest, recv_buffer, src);
 
     // Add dofs renumbered by another process to the old-to-new map
-    for (uint i = 0; i < recv_count; i += 2)
+    for (uint i = 0; i < recv_buffer.size(); i += 2)
     {
       const uint received_old_dof_index = recv_buffer[i];
       const uint received_new_dof_index = recv_buffer[i + 1];
