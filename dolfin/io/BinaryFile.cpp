@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-09-14
+// Last changed: 2011-09-27
 
 #include <fstream>
 #include <istream>
@@ -115,6 +115,12 @@ void BinaryFile::operator>> (Mesh& mesh)
 
   // Read mesh data
   // FIXME: Not implemented
+
+  // Read mesh domains
+  // FIXME: Not implemented
+
+  // Initialize mesh domains
+  mesh._domains.init(D);
 
   // Close file
   close_read();
