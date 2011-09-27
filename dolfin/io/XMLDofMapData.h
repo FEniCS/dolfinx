@@ -21,6 +21,7 @@
 #ifndef __XMLDOFMAP_H
 #define __XMLDOFMAP_H
 
+#include <map>
 #include <ostream>
 #include <vector>
 #include <dolfin/common/types.h>
@@ -41,7 +42,7 @@ namespace dolfin
   public:
 
     // Read XML DofMap
-    static void read(std::vector<std::vector<uint> >& dofmap,
+    static void read(std::map<uint, std::vector<uint> >& dofmap,
                      const pugi::xml_node xml_dolfin);
 
     /// Write GenericDofMap data to XML file

@@ -33,7 +33,6 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include <dolfin/io/XMLFile.h>
 
 using namespace dolfin;
 
@@ -72,19 +71,6 @@ int main()
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
 
-  std::vector<std::vector<dolfin::uint> > map;
-  XMLFile file("dof.xml");
-  //file << V.dofmap();
-  file.read_dofmap_data(map);
-  cout << "Size" << map.size() << endl;
-  for (unsigned int i = 0; i < map.size(); ++i)
-  {
-    cout << "i = " << i << endl;
-    for (unsigned int j = 0; j < map[i].size(); ++j)
-    cout << "     " << map[i][j] << endl;
-  }
-
-  /*
   // Define boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
@@ -108,6 +94,6 @@ int main()
 
   // Plot solution
   plot(u);
-  */
+
   return 0;
 }

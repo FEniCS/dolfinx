@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLDofMapData::read(std::vector<std::vector<uint> >& dofmap,
+void XMLDofMapData::read(std::map<uint, std::vector<uint> >& dofmap,
                      const pugi::xml_node xml_dolfin)
 {
   // Check that we have a XML dof map
@@ -43,23 +43,22 @@ void XMLDofMapData::read(std::vector<std::vector<uint> >& dofmap,
     error("XMLDofMap::read: not a DOLFIN dof map file.");
 
   // Get size
-  const unsigned int size = xml_dofmap_node.attribute("size").as_uint();
-
-  dofmap.resize(size);
+  //const unsigned int size = xml_dofmap_node.attribute("size").as_uint();
 
   // Iterate over each cell entry
   for (pugi::xml_node_iterator it = xml_dofmap_node.begin(); it != xml_dofmap_node.end(); ++it)
   {
     const uint cell_index = it->attribute("cell_index").as_uint();
-    assert(cell_index < size);
-    std::vector<dolfin::uint>& cell_map = dofmap[cell_index];
     const uint local_size = it->attribute("local_size").as_uint();
+    std::vector<dolfin::uint> cell_map(local_size);
     cell_map.resize(local_size);
     for (uint i = 0; i < local_size; ++i)
     {
       const std::string label = "dof" + boost::lexical_cast<std::string>(i);
       cell_map[i] = it->attribute(label.c_str()).as_uint();
     }
+    dofmap.insert(std::make_pair(cell_index, cell_map));
+
   }
 }
 //-----------------------------------------------------------------------------

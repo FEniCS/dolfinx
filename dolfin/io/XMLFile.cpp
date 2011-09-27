@@ -31,6 +31,7 @@
 
 #include "pugixml.hpp"
 
+#include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -149,6 +150,17 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
+void XMLFile::read_vector(Array<double>& input, Array<uint>& indices)
+{
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  load_xml_doc(xml_doc);
+  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+
+  // Read parameters
+  XMLVector::read(input, indices, dolfin_node);
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all processes
@@ -167,7 +179,7 @@ void XMLFile::operator<< (const GenericVector& output)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_dofmap_data(std::vector<std::vector<uint> >& input)
+void XMLFile::read_dofmap_data(std::map<uint, std::vector<uint> >& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

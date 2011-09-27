@@ -407,4 +407,3 @@ Complete main file
 .. literalinclude:: main.cpp
    :start-after: // Begin demo
    :language: c++
-

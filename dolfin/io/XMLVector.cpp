@@ -34,7 +34,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
-  // Read data in to Arraya
+  // Read data in to Array
   Array<double> data;
   Array<uint> indices;
   read(data, indices, xml_dolfin);

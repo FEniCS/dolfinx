@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <map>
 #include <utility>
+#include <vector>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
@@ -36,6 +37,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/io/File.h>
+#include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/log/log.h>
@@ -100,7 +102,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, std::string filename)
+Function::Function(const FunctionSpace& V, std::string filename_vector,
+                   std::string filename_dofdata)
   : Hierarchical<Function>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
@@ -113,8 +116,13 @@ Function::Function(const FunctionSpace& V, std::string filename)
   init_vector();
 
   // Read vector from file
-  File file(filename);
-  file >> *_vector;
+  if (MPI::num_processes() == 1)
+  {
+    File file(filename_vector);
+    file >> *_vector;
+  }
+  else
+    distribute_vector_from_file(filename_vector, filename_dofdata);
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
@@ -122,7 +130,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
-                   std::string filename)
+                   std::string filename_vector, std::string filename_dofdata)
   : Hierarchical<Function>(*this), _function_space(V),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -138,8 +146,13 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   init_vector();
 
   // Read vector from file
-  File file(filename);
-  file >> *_vector;
+  if (MPI::num_processes() == 1)
+  {
+    File file(filename_vector);
+    file >> *_vector;
+  }
+  else
+    distribute_vector_from_file(filename_vector, filename_dofdata);
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
@@ -628,5 +641,53 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Function::distribute_vector_from_file(std::string filename_vector,
+                                           std::string filename_dofdata)
+{
+  not_working_in_parallel("Reading Functions from file.");
+
+  if (filename_dofdata.empty())
+    error("Reading vectors for Functions in parallel requires dofmap data.");
+
+  Array<double> vec;
+  Array<uint> vec_indices;
+  std::map<uint, std::vector<uint> > dofmap_data;
+  if (MPI::process_number() == 0)
+  {
+    // Read vector entries
+    XMLFile file_vector(filename_vector);
+    file_vector.read_vector(vec, vec_indices);
+
+    // Read dofmap data
+    XMLFile file_dofdata(filename_dofdata);
+    file_dofdata.read_dofmap_data(dofmap_data);
+  }
+
+  // Distribute chunk of data to each processes
+
+  // Commuicate off-process data
+
+  // Build map from global dof to (cell, local dof) pair
+  /*
+  std::map<uint, std::pair<uint, uint> > file_gdof_to_local_dof;
+  std::map<uint, std::vector<uint> >::const_iterator cell;
+  for (cell = dofmap_data.begin(); cell != dofmap_data.end(); ++cell)
+  {
+    const uint cell_index = cell->first;
+    const std::vector<uint>& cell_dofs = cell->second;
+    std::vector<uint>::const_iterator dof;
+    for (dof = cell_dofs.begin(); dof != cell_dofs.end(); ++dof)
+    {
+      const uint local_dof_index = std::distance(cell_dofs.begin(), dof);
+      const std::pair<uint, uint> cell_dof_pair(cell_index, local_dof_index);
+      file_gdof_to_local_dof.insert(std::make_pair(*dof, cell_dof_pair));
+    }
+  }
+  */
+
+  // Set vector entries
+
 }
 //-----------------------------------------------------------------------------

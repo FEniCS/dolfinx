@@ -23,6 +23,7 @@
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
 
+#include <map>
 #include <ostream>
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -42,6 +43,7 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
   class Parameters;
+  template<typename T> class Array;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
 
@@ -67,10 +69,11 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
+    void read_vector(Array<double>& input, Array<uint>& indices);
     void operator<< (const GenericVector& output);
 
     // GenericDofMap data
-    void read_dofmap_data(std::vector<std::vector<uint> >& input);
+    void read_dofmap_data(std::map<uint, std::vector<uint> >& input);
     void write_dofmap_data(const GenericDofMap& output);
 
     // Parameters
