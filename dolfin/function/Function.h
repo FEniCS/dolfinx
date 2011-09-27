@@ -116,8 +116,7 @@ namespace dolfin
     ///         The name of the file containing the vector.
     ///     filename_dofdata (std::string)
     ///         The name of the file containing the dofmap data.
-    Function(const FunctionSpace& V, std::string filename_vector,
-             std::string filename_dofdata="");
+    Function(const FunctionSpace& V, std::string filename_vector);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
@@ -127,8 +126,7 @@ namespace dolfin
     ///     filename (std::string)
     ///         The name of the file containing the vector.
     Function(boost::shared_ptr<const FunctionSpace> V,
-             std::string filename_vector,
-             std::string filename_dofdata="");
+             std::string filename_vector);
 
     /// Copy constructor
     ///
@@ -334,12 +332,6 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
-
-    // Set vector entries based on a provides map. This is for
-    // reading in vectors when he dofmap has changes, as is typical
-    // in parallel
-    void distribute_vector_from_file(std::string filename_vector,
-                                     std::string filename_dofdata);
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<uint, Function> sub_functions;

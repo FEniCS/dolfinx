@@ -39,7 +39,6 @@ namespace dolfin
 {
 
   class Function;
-  class GenericDofMap;
   class GenericVector;
   class LocalMeshData;
   class Mesh;
@@ -72,10 +71,6 @@ namespace dolfin
     void operator>> (GenericVector& input);
     void read_vector(Array<double>& input, Array<uint>& indices);
     void operator<< (const GenericVector& output);
-
-    // GenericDofMap data
-    void read_dofmap_data(std::map<uint, std::vector<uint> >& input);
-    void write_dofmap_data(const GenericDofMap& output);
 
     // Parameters
     void operator>> (Parameters& input);

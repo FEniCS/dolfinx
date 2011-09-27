@@ -42,7 +42,6 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include "XMLDofMapData.h"
 #include "XMLFunctionData.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshSAX.h"
@@ -179,25 +178,6 @@ void XMLFile::operator<< (const GenericVector& output)
     pugi::xml_node node(0);
     XMLVector::write(output, node, false);
   }
-}
-//-----------------------------------------------------------------------------
-void XMLFile::read_dofmap_data(std::map<uint, std::vector<uint> >& input)
-{
-  // Create XML doc and get DOLFIN node
-  pugi::xml_document xml_doc;
-  load_xml_doc(xml_doc);
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-
-  // Read parameters
-  XMLDofMapData::read(input, dolfin_node);
-}
-//-----------------------------------------------------------------------------
-void XMLFile::write_dofmap_data(const GenericDofMap& output)
-{
-  pugi::xml_document doc;
-  pugi::xml_node node = write_dolfin(doc);
-  XMLDofMapData::write(output, node);
-  save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Parameters& input)
