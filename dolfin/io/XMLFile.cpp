@@ -224,7 +224,17 @@ void XMLFile::operator<< (const Parameters& output)
 //-----------------------------------------------------------------------------
 void XMLFile::read_function_data(GenericVector& x, const FunctionSpace& V)
 {
-  error("Input of Function data not implemented.");
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  pugi::xml_node dolfin_node(0);
+  if (MPI::process_number() == 0)
+  {
+    load_xml_doc(xml_doc);
+    dolfin_node = get_dolfin_xml_node(xml_doc);
+  }
+
+  // Read data
+  XMLFunctionData::read(x, V, dolfin_node);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Function& output)

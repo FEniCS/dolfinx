@@ -22,6 +22,8 @@
 #define __XMLFUNCTIONDATA_H
 
 #include <ostream>
+#include <vector>
+#include <dolfin/common/types.h>
 
 namespace pugi
 {
@@ -45,6 +47,11 @@ namespace dolfin
     /// Write the XML file with function data
     static void write(const Function& u, pugi::xml_node xml_node,
                       bool write_to_stream);
+
+  private:
+
+    static void build_global_to_cell_dof(std::vector<std::vector<std::pair<uint, uint> > >& global_dof_to_cell_dof,
+                                         const FunctionSpace& V);
 
 
   };

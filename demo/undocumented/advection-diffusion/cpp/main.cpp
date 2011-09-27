@@ -27,6 +27,7 @@
 #include <dolfin.h>
 #include "AdvectionDiffusion.h"
 #include "Velocity.h"
+#include <dolfin/io/XMLFile.h>
 
 using namespace dolfin;
 
@@ -40,6 +41,12 @@ int main(int argc, char *argv[])
 
   // Create velocity function
   Function velocity(V_u, "../velocity.xml.gz");
+
+  //XMLFile file_u("v.xml");
+  //file_u.read_function_data(velocity.vector(), V_u);
+
+  //File file_u("v.xml");
+  //file_u << velocity;
 
   // Read sub domain markers
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
@@ -105,5 +112,7 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  plot(u);
+  //plot(u);
+  set_log_active(true);
+  cout << "Soln norm: " << u.vector().norm("l2") << endl;
 }
