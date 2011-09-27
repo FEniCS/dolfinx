@@ -70,10 +70,6 @@ int main(int argc, char *argv[])
   //Source term
   Constant f(0.0);
 
-  // Mesh-related functions
-  //CellSize h(mesh);
-  Constant h(10.0);
-
   // Penalty parameter
   Constant alpha(5.0);
 
@@ -82,7 +78,7 @@ int main(int argc, char *argv[])
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
-  a.u = u; a.h = h; a.kappa = c; a.alpha = alpha;
+  a.u = u; a.kappa = c; a.alpha = alpha;
   AdvectionDiffusion::LinearForm L(V);
   L.f = f;
 
