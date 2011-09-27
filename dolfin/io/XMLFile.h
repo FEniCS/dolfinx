@@ -80,6 +80,10 @@ namespace dolfin
     void operator>> (Parameters& input);
     void operator<< (const Parameters& output);
 
+    // Function data
+    void read_function_data(GenericVector& x, const FunctionSpace& V);
+    void operator<<(const Function& output);
+
     // FunctionPlotData
     void operator>> (FunctionPlotData& input);
     void operator<< (const FunctionPlotData& output);

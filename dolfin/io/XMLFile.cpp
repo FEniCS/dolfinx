@@ -36,12 +36,14 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLDofMapData.h"
+#include "XMLFunctionData.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
@@ -217,6 +219,27 @@ void XMLFile::operator<< (const Parameters& output)
     pugi::xml_node node = write_dolfin(doc);
     XMLParameters::write(output, node);
     save_xml_doc(doc);
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLFile::read_function_data(GenericVector& x, const FunctionSpace& V)
+{
+  error("Input of Function data not implemented.");
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<< (const Function& output)
+{
+  if (MPI::process_number() == 0)
+  {
+    pugi::xml_document doc;
+    pugi::xml_node node = write_dolfin(doc);
+    XMLFunctionData::write(output, node, true);
+    save_xml_doc(doc);
+  }
+  else
+  {
+    pugi::xml_node node(0);
+    XMLFunctionData::write(output, node, false);
   }
 }
 //-----------------------------------------------------------------------------

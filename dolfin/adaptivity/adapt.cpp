@@ -60,7 +60,7 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
   child->set_parent(reference_to_no_delete_pointer(_parent));
 }
 //-----------------------------------------------------------------------------
-const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
+const Mesh& dolfin::adapt(const Mesh& mesh)
 {
   // Skip refinement if already refined
   if (mesh.has_child())

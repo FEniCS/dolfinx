@@ -76,7 +76,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   LocalMeshValueCollection<T>::LocalMeshValueCollection(const MeshValueCollection<T>& values,
-                                                        dolfin::uint dim)
+                                                        uint dim)
       : _dim(dim)
   {
     // Prepare data

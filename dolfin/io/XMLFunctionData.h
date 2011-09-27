@@ -18,8 +18,8 @@
 // First added:  2003-07-15
 // Last changed: 2006-05-23
 
-#ifndef __XMLVECTOR_H
-#define __XMLVECTOR_H
+#ifndef __XMLFUNCTIONDATA_H
+#define __XMLFUNCTIONDATA_H
 
 #include <ostream>
 
@@ -34,22 +34,16 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
 
-  class XMLVector
+  class XMLFunctionData
   {
   public:
 
-    // Read XML vector. Vector must have correct size.
-    static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
+    /// Read the XML file with function data
+    static void read(GenericVector& vector, const FunctionSpace& V,
+                      pugi::xml_node xml_node);
 
-    // Read XML vector in Array
-    static void read(Array<double>& x, Array<uint>& indices,
-                     const pugi::xml_node xml_dolfin);
-
-    // Read XML vector size
-    static uint read_size(const pugi::xml_node xml_dolfin);
-
-    /// Write the XML file
-    static void write(const GenericVector& vector, pugi::xml_node xml_node,
+    /// Write the XML file with function data
+    static void write(const Function& u, pugi::xml_node xml_node,
                       bool write_to_stream);
 
 
