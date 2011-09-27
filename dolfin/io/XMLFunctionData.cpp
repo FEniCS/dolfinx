@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2002-12-06
-// Last changed: 2011-06-30
+// First added:  2011-09-27
+// Last changed: 2011-09-27
 
 #include <algorithm>
 #include <iomanip>
@@ -43,12 +43,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void XMLFunctionData::read(GenericVector& vector, const FunctionSpace& V,
-                           const pugi::xml_node xml_dolfin)
+void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 {
-    std::vector<std::pair<uint, uint> > global_to_cell_dof;
-    Array<double> x;
-    Array<uint> indices;
+  GenericVector& vector = u.vector();
+  const FunctionSpace& V = u.function_space();
+
+  std::vector<std::pair<uint, uint> > global_to_cell_dof;
+  Array<double> x;
+  Array<uint> indices;
 
   if (MPI::process_number() == 0)
   {
@@ -117,8 +119,7 @@ void XMLFunctionData::read(GenericVector& vector, const FunctionSpace& V,
   vector.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFunctionData::write(const Function& u,
-                            pugi::xml_node xml_node, bool write_to_stream)
+void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 {
   Array<double> x;
   if (MPI::num_processes() > 1)
@@ -215,4 +216,3 @@ void XMLFunctionData::build_global_to_cell_dof(
   }
 }
 //-----------------------------------------------------------------------------
-

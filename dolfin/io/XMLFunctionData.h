@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2003-07-15
-// Last changed: 2006-05-23
+// First added:  2011-09-27
+// Last changed: 2011-09-27
 
 #ifndef __XMLFUNCTIONDATA_H
 #define __XMLFUNCTIONDATA_H
@@ -33,20 +33,17 @@ namespace pugi
 namespace dolfin
 {
 
-  class FunctionSpace;
-  class GenericVector;
+  class Function;
 
   class XMLFunctionData
   {
   public:
 
     /// Read the XML file with function data
-    static void read(GenericVector& vector, const FunctionSpace& V,
-                      pugi::xml_node xml_node);
+    static void read(Function& u, pugi::xml_node xml_node);
 
     /// Write the XML file with function data
-    static void write(const Function& u, pugi::xml_node xml_node,
-                      bool write_to_stream);
+    static void write(const Function& u, pugi::xml_node xml_node);
 
   private:
 

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-03-03
-// Last changed: 2011-06-30
+// Last changed: 2011-09-17
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
@@ -38,6 +38,7 @@ namespace pugi
 namespace dolfin
 {
 
+  class Function;
   class GenericDofMap;
   class GenericVector;
   class LocalMeshData;
@@ -81,7 +82,7 @@ namespace dolfin
     void operator<< (const Parameters& output);
 
     // Function data
-    void read_function_data(GenericVector& x, const FunctionSpace& V);
+    void operator>>(Function& input);
     void operator<<(const Function& output);
 
     // FunctionPlotData

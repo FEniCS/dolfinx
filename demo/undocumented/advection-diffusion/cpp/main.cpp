@@ -40,13 +40,9 @@ int main(int argc, char *argv[])
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
-  Function velocity(V_u, "../velocity.xml.gz");
-
-  //XMLFile file_u("v.xml");
-  //file_u.read_function_data(velocity.vector(), V_u);
-
-  //File file_u("v.xml");
-  //file_u << velocity;
+  Function velocity(V_u);
+  XMLFile file_u("../velocity.xml.gz");
+  file_u >> velocity;
 
   // Read sub domain markers
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
@@ -112,7 +108,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  //plot(u);
-  set_log_active(true);
-  cout << "Soln norm: " << u.vector().norm("l2") << endl;
+  plot(u);
 }

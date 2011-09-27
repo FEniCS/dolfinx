@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-09-14
+// Last changed: 2011-09-27
 
 #include <iostream>
 #include <fstream>
@@ -222,7 +222,7 @@ void XMLFile::operator<< (const Parameters& output)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_function_data(GenericVector& x, const FunctionSpace& V)
+void XMLFile::operator>>(Function& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
@@ -234,7 +234,7 @@ void XMLFile::read_function_data(GenericVector& x, const FunctionSpace& V)
   }
 
   // Read data
-  XMLFunctionData::read(x, V, dolfin_node);
+  XMLFunctionData::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Function& output)
@@ -243,13 +243,13 @@ void XMLFile::operator<< (const Function& output)
   {
     pugi::xml_document doc;
     pugi::xml_node node = write_dolfin(doc);
-    XMLFunctionData::write(output, node, true);
+    XMLFunctionData::write(output, node);
     save_xml_doc(doc);
   }
   else
   {
     pugi::xml_node node(0);
-    XMLFunctionData::write(output, node, false);
+    XMLFunctionData::write(output, node);
   }
 }
 //-----------------------------------------------------------------------------

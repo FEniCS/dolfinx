@@ -33,7 +33,6 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include <dolfin/io/XMLFile.h>
 
 using namespace dolfin;
 
@@ -93,17 +92,8 @@ int main()
   File file("poisson.pvd");
   file << u;
 
-  cout << "Test norm (0): " << u.vector().norm("l2") << endl;;
-
-  XMLFile file_u("u_ref.xml");
-  GenericVector& x = u.vector();
-  x.zero();
-  file_u.read_function_data(x, V);
-  cout << "Test norm (1): " << x.norm("l2") << endl;
-
-
   // Plot solution
-  //plot(u);
+  plot(u);
 
   return 0;
 }
