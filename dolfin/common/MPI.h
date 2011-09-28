@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Magnus Vikstrøm
+// Copyright (C) 2007-2011 Magnus Vikstrøm and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2011.
 // Modified by Ola Skavhaug, 2008-2009.
 // Modified by Anders Logg, 2008-2009.
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2011-06-30
+// Last changed: 2011-09-28
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -122,14 +121,14 @@ namespace dolfin
     static void gather(const T& in_value, std::vector<T>& out_values,
                        uint receiving_process=0)
     {
-     #ifdef HAS_MPI
-     MPICommunicator mpi_comm;
-     boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-     boost::mpi::gather(comm, in_value, out_values, receiving_process);
-     #else
-     out_values.clear();
-     out_values.push_back(in_value);
-     #endif
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::gather(comm, in_value, out_values, receiving_process);
+      #else
+      out_values.clear();
+      out_values.push_back(in_value);
+      #endif
     }
 
     // Gather values, one from each process (wrapper for boost::mpi::all_gather)
@@ -159,21 +158,21 @@ namespace dolfin
     // Return global min value
     template<typename T> static T min(const T& value)
     {
-       #ifdef HAS_MPI
-       return all_reduce(value, boost::mpi::minimum<T>());
-       #else
-       return value;
-       #endif
-     }
+      #ifdef HAS_MPI
+      return all_reduce(value, boost::mpi::minimum<T>());
+      #else
+      return value;
+      #endif
+    }
 
     // Sum values and return sum
     template<typename T> static T sum(const T& value)
     {
-       #ifdef HAS_MPI
-       return all_reduce(value, std::plus<T>());
-       #else
-       return value;
-       #endif
+      #ifdef HAS_MPI
+      return all_reduce(value, std::plus<T>());
+      #else
+      return value;
+      #endif
     }
 
     // All reduce
