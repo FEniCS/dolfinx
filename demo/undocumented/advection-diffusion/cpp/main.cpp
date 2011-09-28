@@ -107,8 +107,6 @@ int main(int argc, char *argv[])
     t += k;
   }
 
-  cout << "Norm: " << u.vector().norm("l2") << endl;
-
   // Plot solution
   plot(u);
 }
