@@ -27,7 +27,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 #include "pugixml.hpp"
 
@@ -315,7 +315,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     // Decompress file
     std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
-    in.push(boost::iostreams::gzip_decompressor());
+    in.push(boost::iostreams::zlib_decompressor());
     in.push(file);
 
     // FIXME: Is this the best way to do it?
@@ -348,7 +348,7 @@ void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
 
       std::ofstream file(filename.c_str(), std::ios_base::out | std::ios_base::binary);
       boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
-      out.push(boost::iostreams::gzip_compressor());
+      out.push(boost::iostreams::zlib_compressor());
       out.push(file);
       boost::iostreams::copy(xml_stream, out);
     }
