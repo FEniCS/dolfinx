@@ -127,7 +127,7 @@ namespace dolfin
      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
      boost::mpi::gather(comm, in_value, out_values, receiving_process);
      #else
-     out_values.clear;
+     out_values.clear();
      out_values.push_back(in_value);
      #endif
     }
