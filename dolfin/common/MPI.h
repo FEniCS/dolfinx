@@ -111,8 +111,9 @@ namespace dolfin
       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
       boost::mpi::scatter(comm, in_values, out_value, sending_process);
       #else
+      assert(sending_process == 0);
       assert(in_values.size() == 1);
-      out_value.push_back(in_values[0]);
+      out_value = in_values[0];
       #endif
     }
 
