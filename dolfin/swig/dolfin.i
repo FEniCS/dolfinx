@@ -48,6 +48,7 @@ import_array();
 %include "dolfin/swig/array_typemaps.i"
 %include "dolfin/swig/std_vector_typemaps.i"
 %include "dolfin/swig/std_set_typemaps.i"
+%include "dolfin/swig/std_map_typemaps.i"
 
 // Global exceptions
 %include <exception.i>

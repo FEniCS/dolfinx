@@ -99,6 +99,8 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshConnectivity::operator=;
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
+%ignore dolfin::ParallelData::shared_vertices();
+%ignore dolfin::ParallelData::num_global_entities();
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
