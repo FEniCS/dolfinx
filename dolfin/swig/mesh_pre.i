@@ -99,6 +99,8 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshConnectivity::operator=;
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
+%ignore dolfin::ParallelData::shared_vertices();
+%ignore dolfin::ParallelData::num_global_entities();
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
@@ -163,14 +165,28 @@ namespace dolfin {
 }
 
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
-%template (HierarchicalMeshFunctionUInt) \
-    dolfin::Hierarchical<dolfin::MeshFunction<unsigned int> >;
-%template (HierarchicalMeshFunctionInt) \
-    dolfin::Hierarchical<dolfin::MeshFunction<int> >;
-%template (HierarchicalMeshFunctionBool) \
-    dolfin::Hierarchical<dolfin::MeshFunction<bool> >;
-%template (HierarchicalMeshFunctionDouble) \
-    dolfin::Hierarchical<dolfin::MeshFunction<double> >;
+
+%define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >)
+%template (HierarchicalMeshFunction ## TYPENAME) \
+    dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >;
+
+// Forward declaration of template
+%template() dolfin::MeshFunction<TYPE>;
+
+// Shared_ptr declarations
+%shared_ptr(dolfin::MeshFunction<TYPE>)
+%shared_ptr(dolfin::CellFunction<TYPE>)
+%shared_ptr(dolfin::EdgeFunction<TYPE>)
+%shared_ptr(dolfin::FaceFunction<TYPE>)
+%shared_ptr(dolfin::FacetFunction<TYPE>)
+%shared_ptr(dolfin::VertexFunction<TYPE>)
+%enddef
+
+FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
+FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
+FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
+FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
 
 //-----------------------------------------------------------------------------
 // Use shared_ptr version of MeshDomains::marker()
