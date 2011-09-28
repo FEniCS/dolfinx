@@ -332,6 +332,8 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     error("XML parsing error.");
 }
 //-----------------------------------------------------------------------------
+// Pragma to avoid Boost.iostreams error with strict compiler flags
+#pragma GCC diagnostic ignored "-Woverflow"
 void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
 {
   if (outstream)
