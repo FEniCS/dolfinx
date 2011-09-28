@@ -381,6 +381,9 @@ namespace dolfin
     const uint d = _dim;
     const uint D = _mesh->topology().dim();
     assert(d <= D);
+    
+    // Generate connectivity if it does not excist
+    _mesh->init(D, d);
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
     assert(connectivity.size() > 0);
 
