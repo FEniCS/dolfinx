@@ -50,7 +50,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 
 # Create velocity Function from file
 velocity = Function(V);
-File("../velovity.xml.gz") >> velocity
+File("../velocity.xml.gz") >> velocity
 
 # Initialise source function and previous solution function
 f  = Constant(0.0)
