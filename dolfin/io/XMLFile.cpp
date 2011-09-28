@@ -333,7 +333,9 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
 }
 //-----------------------------------------------------------------------------
 // Pragma to avoid Boost.iostreams error with strict compiler flags
+#if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Woverflow"
+#endif
 void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
 {
   if (outstream)
