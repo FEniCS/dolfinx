@@ -64,7 +64,7 @@ namespace dolfin
                                     data.size()*sizeof(T));
     }
 
-#ifdef HAS_ZLIB
+    #ifdef HAS_ZLIB
     template<typename T>
     static std::pair<boost::shared_array<unsigned char>, dolfin::uint> compress_data(const std::vector<T>& data)
     {
@@ -84,7 +84,7 @@ namespace dolfin
       // Make pair and return
       return std::make_pair(compressed_data, compressed_size);
     }
-#endif
+    #endif
 
   }
 }
