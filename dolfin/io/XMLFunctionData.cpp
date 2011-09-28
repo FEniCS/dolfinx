@@ -83,7 +83,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
     }
   }
 
-  // Build current map based on function space V
+  // Build current dof map based on function space V
   std::vector<std::vector<uint> > dof_map;
   build_dof_map(dof_map, V);
 
