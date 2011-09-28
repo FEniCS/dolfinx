@@ -50,6 +50,8 @@ namespace dolfin
     static void build_global_to_cell_dof(std::vector<std::vector<std::pair<uint, uint> > >& global_dof_to_cell_dof,
                                          const FunctionSpace& V);
 
+    static void build_dof_map(std::vector<std::vector<uint> >& global_dof_to_cell_dof,
+                         const FunctionSpace& V);
 
   };
 

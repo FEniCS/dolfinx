@@ -83,33 +83,26 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
     }
   }
 
-  // Build map new
-  std::vector<std::vector<std::pair<uint, uint> > > new_global_dof_to_cell_dof;
-  build_global_to_cell_dof(new_global_dof_to_cell_dof, V);
+  // Build current map based on function space V
+  std::vector<std::vector<uint> > dof_map;
+  build_dof_map(dof_map, V);
 
+  // Map old-to-current vector positions
   if (MPI::process_number() == 0)
   {
-    assert(global_to_cell_dof.size() == new_global_dof_to_cell_dof.size());
-    for (uint new_global_index = 0; new_global_index < new_global_dof_to_cell_dof.size(); ++new_global_index)
+    for (uint i = 0; i < dof_map.size(); ++i)
     {
-      const std::vector<std::pair<uint, uint> >& pairs = new_global_dof_to_cell_dof[new_global_index];
-      std::vector<std::pair<uint, uint> >::const_iterator it;
+      // Indices for data from file
+      const uint global_cell_index = global_to_cell_dof[i].first;
+      const uint local_dof_index   = global_to_cell_dof[i].second;
 
-      //for (uint i = 0; i < pairs.size(); ++i)
-      //  std::cout << "New: " << new_global_index << ", " << pairs[i].first << ", " << pairs[i].second << std::endl;
+      // Local dof vector for V
+      const std::vector<uint>& dofs = dof_map[global_cell_index];
+      assert(local_dof_index < dofs.size());
+      const uint new_index = dofs[local_dof_index];
 
-      for (uint old_global_index = 0; old_global_index < global_to_cell_dof.size(); ++old_global_index)
-      {
-        //std::cout << "   Old: " << old_global_index << ", " << global_to_cell_dof[old_global_index].first << ", " << global_to_cell_dof[old_global_index].second << std::endl;
-
-        it = std::find(pairs.begin(), pairs.end(), global_to_cell_dof[old_global_index]);
-        if (it != pairs.end())
-        {
-          indices[old_global_index] = new_global_index;
-          break;
-        }
-      }
-      assert(it != pairs.end());
+      // File to new
+      indices[i] = new_index;
     }
 
     vector.set(x.data().get(), x.size(), indices.data().get());
@@ -211,6 +204,69 @@ void XMLFunctionData::build_global_to_cell_dof(
         const uint global_cell_index = cell_dofs.back();
         for (uint i = 0; i < cell_dofs.size() - 1; ++i)
           global_dof_to_cell_dof[cell_dofs[i]].push_back(std::make_pair(global_cell_index, i));
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
+                                    const FunctionSpace& V)
+{
+  // Get mesh and dofmap
+  assert(V.mesh());
+  const Mesh& mesh = *V.mesh();
+  const GenericDofMap& dofmap = V.dofmap();
+
+  std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
+  std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
+
+  if (MPI::num_processes() > 1)
+  {
+    // Get local-to-global cell numbering
+    assert(mesh.parallel_data().have_global_entity_indices(mesh.topology().dim()));
+    const MeshFunction<uint>& global_cell_indices
+      = mesh.parallel_data().global_entity_indices(mesh.topology().dim());
+
+    // Build dof map data with global cell indices
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const uint local_cell_index = cell->index();
+      const uint global_cell_index = global_cell_indices[*cell];
+      local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
+      local_dofmap[local_cell_index].push_back(global_cell_index);
+    }
+  }
+  else
+  {
+    // Build dof map data
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const uint local_cell_index = cell->index();
+      local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
+      local_dofmap[local_cell_index].push_back(local_cell_index);
+    }
+  }
+
+  // Gather dof map data on root process
+  MPI::gather(local_dofmap, gathered_dofmap);
+
+  // Build global dof - (global cell, local dof) map on root process
+  if (MPI::process_number() == 0)
+  {
+    dof_map.resize(dofmap.global_dimension());
+
+    // Loop of dof map from each process
+    std::vector<std::vector<std::vector<uint > > > ::const_iterator proc_dofmap;
+    for (proc_dofmap = gathered_dofmap.begin(); proc_dofmap != gathered_dofmap.end(); ++proc_dofmap)
+    {
+      std::vector<std::vector<uint> >::const_iterator cell_dofmap;
+      for (cell_dofmap = proc_dofmap->begin(); cell_dofmap != proc_dofmap->end(); ++cell_dofmap)
+      {
+        const std::vector<uint>& cell_dofs = *cell_dofmap;
+        const uint global_cell_index = cell_dofs.back();
+        assert(global_cell_index < dof_map.size());
+        dof_map[global_cell_index] = *cell_dofmap;
+        dof_map[global_cell_index].pop_back();
       }
     }
   }
