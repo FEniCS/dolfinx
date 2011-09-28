@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-17
-// Last changed: 2011-01-17
+// Last changed: 2011-09-27
 
 #ifndef __PARALLEL_DATA_H
 #define __PARALLEL_DATA_H
@@ -55,10 +55,10 @@ namespace dolfin
     bool have_global_entity_indices(uint d) const;
 
     /// Return global indices (local-to-global) for entity of dimension d
-    MeshFunction<uint>& global_entity_indices(uint d);
+    MeshFunction<unsigned int>& global_entity_indices(uint d);
 
     /// Return global indices (local-to-global) for entity of dimension d (const version)
-    const MeshFunction<uint>& global_entity_indices(uint d) const;
+    const MeshFunction<unsigned int>& global_entity_indices(uint d) const;
 
     /// Return global indices (local-to-global) for entity of dimension d in a vector
     std::vector<uint> global_entity_indices_as_vector(uint d) const;

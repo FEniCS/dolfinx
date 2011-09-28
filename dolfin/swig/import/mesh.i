@@ -5,6 +5,7 @@
 %import(module="dolfin.cpp") "dolfin/mesh/MeshGeometry.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshDomains.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshData.h"
+%import(module="dolfin.cpp") "dolfin/mesh/ParallelData.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Mesh.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEntity.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEntityIterator.h"
