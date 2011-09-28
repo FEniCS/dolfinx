@@ -92,11 +92,11 @@ namespace dolfin
     template<typename T>
     static void broadcast(T& value, uint broadcaster=0)
     {
-       #ifdef HAS_MPI
-       MPICommunicator mpi_comm;
-       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-       boost::mpi::broadcast(comm, value, broadcaster);
-       #endif
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::broadcast(comm, value, broadcaster);
+      #endif
     }
 
     // FIXME: Use common template function for uint and double scatter below
@@ -106,15 +106,14 @@ namespace dolfin
     static void scatter(const std::vector<T>& in_values,
                         T& out_value, uint sending_process=0)
     {
-       #ifdef HAS_MPI
-       MPICommunicator mpi_comm;
-       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-       boost::mpi::scatter(comm, in_values, out_value, sending_process);
-       #else
-       dolfin_error("MPI.cpp",
-                    "call MPI::scatter",
-                    "Your DOLFIN installation has been built without MPI support");
-       #endif
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::scatter(comm, in_values, out_value, sending_process);
+      #else
+      assert(in_values.size() == 1);
+      out_value.push_back(in_values[0]);
+      #endif
     }
 
     // Gather values on one process (wrapper for boost::mpi::gather)
@@ -136,13 +135,14 @@ namespace dolfin
     template<typename T>
     static void all_gather(const T& in_value, std::vector<T>& out_values)
     {
-     #ifdef HAS_MPI
-     MPICommunicator mpi_comm;
-     boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
-     boost::mpi::all_gather(comm, in_value, out_values);
-     #else
-     out_values.clear();
-     #endif
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::all_gather(comm, in_value, out_values);
+      #else
+      out_values.clear();
+      out_values.push_back(in_value);
+      #endif
     }
 
      // Return global max value
