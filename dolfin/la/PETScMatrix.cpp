@@ -22,7 +22,7 @@
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004
-// Last changed: 2011-09-07
+// Last changed: 2011-09-29
 
 #ifdef HAS_PETSC
 
@@ -38,6 +38,7 @@
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 
 using namespace dolfin;
 
@@ -47,12 +48,13 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix()
+PETScMatrix::PETScMatrix(std::string matrix_arch) : arch(matrix_arch)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : PETScBaseMatrix(A)
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch) : 
+  PETScBaseMatrix(A), arch(matrix_arch)
 {
   // Do nothing
 }
@@ -152,9 +154,15 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // Set size
     MatSetSizes(*A, M, N, M, N);
 
-    // Set matrix type
-    MatSetType(*A, MATSEQAIJ);
-    
+    // Set matrix type according to chosen architecture
+    // FIXME: Insert PETSC_HAVE_CUSP type test
+    if (arch == "cpu")
+      MatSetType(*A, MATSEQAIJ);
+    else if (arch == "gpu")
+      MatSetType(*A, MATSEQAIJCUSP);
+    else
+      error("PETSc matrix architecture unknown");
+
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
@@ -495,6 +503,14 @@ std::string PETScMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
 {
+  if (arch == "cpu")
+    return PETScFactory::instance();
+  else if (arch == "gpu")
+    return PETScCuspFactory::instance();
+  else
+    error("PETSc vector architecture unknown");
+
+  // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

@@ -21,7 +21,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2004
-// Last changed: 2011-09-07
+// Last changed: 2011-09-29
 
 #ifdef HAS_PETSC
 
@@ -34,6 +34,7 @@
 #include "PETScVector.h"
 #include "uBLASVector.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 #include <dolfin/common/MPI.h>
 
 using namespace dolfin;
@@ -44,10 +45,16 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type)
+PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vector_arch)
 {
+  // FIXME: Is this the right way to set member variable arch?
+  // FIXME: Output the erroneous argument in below errors.
   if (type != "global" && type != "local")
     error("PETSc vector type unknown.");
+
+  // FIXME: Add PETSC_HAVE_CUSP test to check if gpu is illegaly chosen as arch
+  if (vector_arch != "cpu" && vector_arch != "gpu")
+    error("PETSc vector architechture unknown.");
 
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
@@ -61,7 +68,7 @@ PETScVector::PETScVector(std::string type)
     init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N, std::string type)
+PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : arch(vector_arch)
 {
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
@@ -118,7 +125,7 @@ bool PETScVector::distributed() const
   bool _distributed = false;
   if (strcmp(petsc_type, VECMPI) == 0)
     _distributed = true;
-  else if (strcmp(petsc_type, VECSEQ) == 0)
+  else if ((strcmp(petsc_type, VECSEQ) == 0) or strcmp(petsc_type, VECSEQCUSP) == 0)
     _distributed =  false;
   else
     error("Unknown PETSc vector type.");
@@ -698,11 +705,32 @@ void PETScVector::init(std::pair<uint, uint> range,
   // Initialize vector, either default or MPI vector
   if (!distributed)
   {
-    VecCreateSeq(PETSC_COMM_SELF, local_size, x.get());
+    // FIXME: Make it look better!
+    VecCreate(PETSC_COMM_SELF, x.get());
+    if (arch == "cpu")
+    {
+      // Set type to be standard sequential vector
+      VecSetType(*x, VECSEQ);
+    }
+    else if (arch == "gpu")
+    {
+      // Set type to be sequential Cusp vector
+      VecSetType(*x, VECSEQCUSP);
+    } 
+    else 
+    {
+      error("PETSc vector architecture unknown");
+    }
+    VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
+
   }
   else
   {
+    // FIXME: Implement VECMPICUSP vectors
+    if (arch == "gpu")
+      error("Distributed PETSc Cusp vectors not implemented yet.");
+    
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
@@ -737,6 +765,14 @@ void PETScVector::reset()
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const
 {
+  if (arch == "cpu")
+    return PETScFactory::instance();
+  else if (arch == "gpu")
+    return PETScCuspFactory::instance();
+  else
+    error("PETSc vector architecture unknown");
+
+  // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

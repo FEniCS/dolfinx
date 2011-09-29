@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13
-// Last changed:  2011-09-13
+// Last changed:  2011-09-29
 
 //#ifdef PETSC_HAVE_CUSP  // FIXME: Find a functioning test
 
@@ -24,10 +24,10 @@
 #define __PETSC_CUSP_FACTORY_H
 
 // TODO: FREDRIK: Should the solver includes be changed?
-#include "PETScCuspKrylovSolver.h"
-#include "PETScCuspLUSolver.h"
-#include "PETScCuspMatrix.h"
-#include "PETScCuspVector.h"
+#include "PETScKrylovSolver.h"
+#include "PETScLUSolver.h"
+#include "PETScMatrix.h"
+#include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 
@@ -42,22 +42,22 @@ namespace dolfin
     virtual ~PETScCuspFactory() {}
 
     /// Create empty matrix
-    PETScCuspMatrix* create_matrix() const;
+    PETScMatrix* create_matrix() const;
 
     /// Create empty vector (global)
-    PETScCuspVector* create_vector() const;
+    PETScVector* create_vector() const;
 
     /// Create empty vector (local)
-    PETScCuspVector* create_local_vector() const;
+    PETScVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    PETScCuspLUSolver* create_lu_solver() const;
+    PETScLUSolver* create_lu_solver() const;
 
     /// Create Krylov solver
-    PETScCuspKrylovSolver* create_krylov_solver(std::string method,
+    PETScKrylovSolver* create_krylov_solver(std::string method,
                                             std::string pc) const;
 
     /// Return singleton instance

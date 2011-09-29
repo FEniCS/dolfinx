@@ -16,14 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13 
-// Last changed: 2011-09-13
+// Last changed: 2011-09-29
 
 //#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
 
 #include "SparsityPattern.h"
-#include "PETScCuspLUSolver.h"
-#include "PETScCuspMatrix.h"
-#include "PETScCuspVector.h"
+#include "PETScLUSolver.h"
+#include "PETScMatrix.h"
+#include "PETScVector.h"
 #include "PETScCuspFactory.h"
 
 using namespace dolfin;
@@ -32,19 +32,19 @@ using namespace dolfin;
 PETScCuspFactory PETScCuspFactory::factory;
 
 //-----------------------------------------------------------------------------
-PETScCuspMatrix* PETScCuspFactory::create_matrix() const
+PETScMatrix* PETScCuspFactory::create_matrix() const
 {
-  return new PETScCuspMatrix();
+  return new PETScMatrix("gpu");
 }
 //-----------------------------------------------------------------------------
-PETScCuspVector* PETScCuspFactory:: create_vector() const
+PETScVector* PETScCuspFactory:: create_vector() const
 {
-  return new PETScCuspVector("global");
+  return new PETScVector("global", "gpu");
 }
 //-----------------------------------------------------------------------------
-PETScCuspVector* PETScCuspFactory:: create_local_vector() const
+PETScVector* PETScCuspFactory:: create_local_vector() const
 {
-  return new PETScCuspVector("local");
+  return new PETScVector("local", "gpu");
 }
 //-----------------------------------------------------------------------------
 SparsityPattern* PETScCuspFactory::create_pattern() const
@@ -52,15 +52,15 @@ SparsityPattern* PETScCuspFactory::create_pattern() const
   return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
-PETScCuspLUSolver* PETScCuspFactory::create_lu_solver() const
+PETScLUSolver* PETScCuspFactory::create_lu_solver() const
 {
-  return new PETScCuspLUSolver();
+  return new PETScLUSolver();
 }
 //-----------------------------------------------------------------------------
-PETScCuspKrylovSolver* PETScCuspFactory::create_krylov_solver(std::string method,
+PETScKrylovSolver* PETScCuspFactory::create_krylov_solver(std::string method,
                                                       std::string pc) const
 {
-  return new PETScCuspKrylovSolver(method, pc);
+  return new PETScKrylovSolver(method, pc);
 }
 //-----------------------------------------------------------------------------
 

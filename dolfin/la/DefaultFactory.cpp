@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2011
+//
 // First added:  2008-05-17
-// Last changed: 2011-03-17
+// Last changed: 2011-09-29
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
