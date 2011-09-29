@@ -59,9 +59,7 @@ namespace dolfin
     virtual dolfin::GenericLinearSolver*
         create_krylov_solver(std::string method, std::string pc) const;
 
-  private:
-
-    // Return instance of default backend
+    /// Return instance of default backend
     LinearAlgebraFactory& factory() const;
 
   };
