@@ -49,9 +49,9 @@ EpetraFactory::EpetraFactory()
   serial_comm.reset(new Epetra_SerialComm());
 
   // Why does this not work with dolfin::MPICommunicator?
-  MPICommunicator _mpi_comm;
-  mpi_comm.reset(new Epetra_MpiComm(*_mpi_comm));
-  //mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
+  //MPICommunicator _mpi_comm;
+  //mpi_comm.reset(new Epetra_MpiComm(*_mpi_comm));
+  mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
 }
 //-----------------------------------------------------------------------------
 EpetraFactory::~EpetraFactory()
