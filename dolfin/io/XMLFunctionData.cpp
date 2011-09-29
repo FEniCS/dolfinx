@@ -52,6 +52,8 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   Array<double> x;
   Array<uint> indices;
 
+  const uint num_dofs = V.dim();
+
   if (MPI::process_number() == 0)
   {
     // Check that we have a XML function data
@@ -61,10 +63,11 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 
     const uint size = xml_function_data_node.attribute("size").as_uint();
     assert(vector.size() == size);
+    assert(vector.size() == num_dofs);
 
-    global_to_cell_dof.resize(size);
-    x.resize(size);
-    indices.resize(size);
+    global_to_cell_dof.resize(num_dofs);
+    x.resize(num_dofs);
+    indices.resize(num_dofs);
 
     // Iterate over each cell entry
     for (pugi::xml_node_iterator it = xml_function_data_node.begin(); it != xml_function_data_node.end(); ++it)
@@ -90,9 +93,10 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   // Map old-to-current vector positions
   if (MPI::process_number() == 0)
   {
-    for (uint i = 0; i < dof_map.size(); ++i)
+    for (uint i = 0; i < num_dofs; ++i)
     {
       // Indices for data from file
+      assert(i < global_to_cell_dof.size());
       const uint global_cell_index = global_to_cell_dof[i].first;
       const uint local_dof_index   = global_to_cell_dof[i].second;
 
@@ -217,6 +221,8 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
   const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap = V.dofmap();
 
+  const uint num_cells = MPI::sum(mesh.num_cells());
+
   std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
   std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
 
@@ -250,10 +256,11 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
   // Gather dof map data on root process
   MPI::gather(local_dofmap, gathered_dofmap);
 
-  // Build global dof - (global cell, local dof) map on root process
+
+  // Build global dofmap on root process
   if (MPI::process_number() == 0)
   {
-    dof_map.resize(dofmap.global_dimension());
+    dof_map.resize(num_cells);
 
     // Loop of dof map from each process
     std::vector<std::vector<std::vector<uint > > > ::const_iterator proc_dofmap;
