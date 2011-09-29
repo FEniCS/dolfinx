@@ -35,7 +35,6 @@ namespace dolfin
 {
 
   class GenericVector;
-  class XMLMatrix;
 
   /// This class defines a common interface for matrices.
 
