@@ -24,6 +24,7 @@
 #define __EPETRA_FACTORY_H
 
 #include <string>
+#include <boost/scoped_ptr.hpp>
 #include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
@@ -46,7 +47,6 @@ namespace dolfin
 
     /// Destructor
     virtual ~EpetraFactory();
-
 
     /// --- LinearAlgebraFactory interface
 
@@ -90,10 +90,10 @@ namespace dolfin
     static EpetraFactory factory;
 
     // Communicator
-    Epetra_SerialComm* serial_comm;
+    boost::scoped_ptr<Epetra_SerialComm> serial_comm;
 
     // Communicator
-    Epetra_MpiComm* mpi_comm;
+    boost::scoped_ptr<Epetra_MpiComm> mpi_comm;
 
   };
 

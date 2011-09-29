@@ -44,8 +44,8 @@
 #include <dolfin/log/dolfin_log.h>
 #include "uBLASVector.h"
 #include "PETScVector.h"
-#include "EpetraFactory.h"
 #include "EpetraVector.h"
+#include "EpetraFactory.h"
 
 using namespace dolfin;
 
