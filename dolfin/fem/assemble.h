@@ -19,7 +19,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2007-01-17
-// Last changed: 2011-01-20
+// Last changed: 2011-09-29
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
@@ -49,14 +49,16 @@ namespace dolfin
   void assemble(GenericTensor& A,
                 const Form& a,
                 bool reset_sparsity=true,
-                bool add_values=false);
+                bool add_values=false,
+                bool finalize_tensor=true);
 
   /// Assemble tensor on sub domain
   void assemble(GenericTensor& A,
                 const Form& a,
                 const SubDomain& sub_domain,
                 bool reset_sparsity=true,
-                bool add_values=false);
+                bool add_values=false,
+                bool finalize_tensor=true);
 
   /// Assemble tensor on sub domains
   void assemble(GenericTensor& A,
@@ -65,7 +67,8 @@ namespace dolfin
                 const MeshFunction<unsigned int>* exterior_facet_domains,
                 const MeshFunction<unsigned int>* interior_facet_domains,
                 bool reset_sparsity=true,
-                bool add_values=false);
+                bool add_values=false,
+                bool finalize_tensor=true);
 
   /// Assemble system (A, b)
   void assemble_system(GenericMatrix& A,
@@ -111,13 +114,15 @@ namespace dolfin
   /// Assemble scalar
   double assemble(const Form& a,
                   bool reset_sparsity=true,
-                  bool add_values=false);
+                  bool add_values=false,
+                  bool finalize_tensor=true);
 
   /// Assemble scalar on sub domain
   double assemble(const Form& a,
                   const SubDomain& sub_domain,
                   bool reset_sparsity=true,
-                  bool add_values=false);
+                  bool add_values=false,
+                  bool finalize_tensor=true);
 
   /// Assemble scalar on sub domains
   double assemble(const Form& a,
@@ -125,7 +130,8 @@ namespace dolfin
                   const MeshFunction<unsigned int>* exterior_facet_domains,
                   const MeshFunction<unsigned int>* interior_facet_domains,
                   bool reset_sparsity=true,
-                  bool add_values=false);
+                  bool add_values=false,
+                  bool finalize_tensor=true);
 
 }
 

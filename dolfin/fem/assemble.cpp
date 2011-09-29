@@ -33,18 +33,21 @@ using namespace dolfin;
 void dolfin::assemble(GenericTensor& A,
                       const Form& a,
                       bool reset_sparsity,
-                      bool add_values)
+                      bool add_values,
+                      bool finalize_tensor)
 {
-  Assembler::assemble(A, a, reset_sparsity, add_values);
+  Assembler::assemble(A, a, reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A,
                       const Form& a,
                       const SubDomain& sub_domain,
                       bool reset_sparsity,
-                      bool add_values)
+                      bool add_values,
+                      bool finalize_tensor)
 {
-  Assembler::assemble(A, a, sub_domain, reset_sparsity, add_values);
+  Assembler::assemble(A, a, sub_domain,
+                      reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A,
@@ -53,10 +56,14 @@ void dolfin::assemble(GenericTensor& A,
                       const MeshFunction<uint>* exterior_facet_domains,
                       const MeshFunction<uint>* interior_facet_domains,
                       bool reset_sparsity,
-                      bool add_values)
+                      bool add_values,
+                      bool finalize_tensor)
 {
-  Assembler::assemble(A, a, cell_domains, exterior_facet_domains,
-                      interior_facet_domains, reset_sparsity, add_values);
+  Assembler::assemble(A, a,
+                      cell_domains,
+                      exterior_facet_domains,
+                      interior_facet_domains,
+                      reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -110,24 +117,27 @@ void dolfin::assemble_system(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
                         bool reset_sparsity,
-                        bool add_values)
+                        bool add_values,
+                        bool finalize_tensor)
 {
   if (a.rank() != 0)
     error("Unable to assemble, form is not scalar.");
   Scalar s;
-  Assembler::assemble(s, a, reset_sparsity, add_values);
+  Assembler::assemble(s, a, reset_sparsity, add_values, finalize_tensor);
   return s;
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
                         const SubDomain& sub_domain,
                         bool reset_sparsity,
-                        bool add_values)
+                        bool add_values,
+                        bool finalize_tensor)
 {
   if (a.rank() != 0)
     error("Unable to assemble, form is not scalar.");
   Scalar s;
-  Assembler::assemble(s, a, sub_domain, reset_sparsity, add_values);
+  Assembler::assemble(s, a, sub_domain,
+                      reset_sparsity, add_values, finalize_tensor);
   return s;
 }
 //-----------------------------------------------------------------------------
@@ -136,13 +146,15 @@ double dolfin::assemble(const Form& a,
                         const MeshFunction<uint>* exterior_facet_domains,
                         const MeshFunction<uint>* interior_facet_domains,
                         bool reset_sparsity,
-                        bool add_values)
+                        bool add_values,
+                        bool finalize_tensor)
 {
   if (a.rank() != 0)
     error("Unable to assemble, form is not scalar.");
   Scalar s;
   Assembler::assemble(s, a, cell_domains, exterior_facet_domains,
-                      interior_facet_domains, reset_sparsity, add_values);
+                      interior_facet_domains,
+                      reset_sparsity, add_values, finalize_tensor);
   return s;
 }
 //-----------------------------------------------------------------------------
