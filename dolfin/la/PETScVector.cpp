@@ -47,12 +47,15 @@ const std::map<std::string, NormType> PETScVector::norm_types
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vector_arch)
 {
+  // TODO: Should the interface be changed to allow one to say PETScVector(N, "gpu"), and
+  // omit the type argument? That would be a nice short-hand notation for instantiating
+  // PETSc Cusp vectors without setting linalg-backend.
   // FIXME: Is this the right way to set member variable arch?
   // FIXME: Output the erroneous argument in below errors.
   if (type != "global" && type != "local")
     error("PETSc vector type unknown.");
 
-  // FIXME: Add PETSC_HAVE_CUSP test to check if gpu is illegaly chosen as arch
+  // FIXME: Add PETSC_HAVE_CUSP test to check if gpu is illegaly chosen as arch?
   if (vector_arch != "cpu" && vector_arch != "gpu")
     error("PETSc vector architechture unknown.");
 
