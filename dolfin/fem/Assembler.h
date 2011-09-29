@@ -131,23 +131,26 @@ namespace dolfin
                          bool reset_sparsity=true,
                          bool add_values=false);
 
-  private:
-
-    // Assemble over cells
+    /// Assemble tensor from given form over cells. This function is
+    /// provided for users who wish to build a customized assembler.
     static void assemble_cells(GenericTensor& A,
                                const Form& a,
                                UFC& ufc,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values);
 
-    // Assemble over exterior facets
+    /// Assemble tensor from given form over exterior facets. This
+    /// function is provided for users who wish to build a customized
+    /// assembler.
     static void assemble_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
 
-    // Assemble over interior facets
+    /// Assemble tensor from given form over interior facets. This
+    /// function is provided for users who wish to build a customized
+    /// assembler.
     static void assemble_interior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
