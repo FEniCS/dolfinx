@@ -190,7 +190,7 @@ else()
 endif()
 
 # Check for required packages
-find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
+find_package(UFC 2.0.2 REQUIRED HINTS ${UFC_DIR})
 find_package(Armadillo REQUIRED)
 find_package(LibXml2 REQUIRED)
 
