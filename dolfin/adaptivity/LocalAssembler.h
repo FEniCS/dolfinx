@@ -29,8 +29,9 @@
 namespace dolfin
 {
 
-  class UFC;
   class Cell;
+  class Facet;
+  class UFC;
   template<typename T> class MeshFunction;
 
   ///
