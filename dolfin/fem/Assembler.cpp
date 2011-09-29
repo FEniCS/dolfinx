@@ -20,7 +20,7 @@
 // Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-09-15
+// Last changed: 2011-09-29
 
 #include <boost/scoped_ptr.hpp>
 
@@ -50,16 +50,18 @@ using namespace dolfin;
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_sparsity,
-                         bool add_values)
+                         bool add_values,
+                         bool finalize_tensor)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values);
+  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          const SubDomain& sub_domain,
                          bool reset_sparsity,
-                         bool add_values)
+                         bool add_values,
+                         bool finalize_tensor)
 {
   assert(a.ufc_form());
 
@@ -86,7 +88,7 @@ void Assembler::assemble(GenericTensor& A,
   // Assemble
   assemble(A, a,
            cell_domains.get(), facet_domains.get(), facet_domains.get(),
-           reset_sparsity, add_values);
+           reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -95,7 +97,8 @@ void Assembler::assemble(GenericTensor& A,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity,
-                         bool add_values)
+                         bool add_values,
+                         bool finalize_tensor)
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -143,7 +146,7 @@ void Assembler::assemble(GenericTensor& A,
                               cell_domains,
                               exterior_facet_domains,
                               interior_facet_domains,
-                              reset_sparsity, add_values);
+                              reset_sparsity, add_values, finalize_tensor);
     return;
   }
   #endif
@@ -173,7 +176,8 @@ void Assembler::assemble(GenericTensor& A,
   assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
   // Finalize assembly of global tensor
-  A.apply("add");
+  if (finalize_tensor)
+    A.apply("add");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_cells(GenericTensor& A,
