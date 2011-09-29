@@ -56,11 +56,7 @@ namespace dolfin
   ///        form.ds = exterior_facet_domains
   ///        form.dS = interior_facet_domains
   ///
-  /// 3. By _MeshFunction_ stored in _MeshData_ as
-  ///
-  ///    * "cell_domains"
-  ///    * "exterior_facet_domains"
-  ///    * "interior_facet_domains"
+  /// 3. By markers stored as part of the _Mesh_ (in _MeshDomains_)
   ///
   /// 4. By specifying a _SubDomain_ which specifies the domain numbered
   ///    as 0 (with the rest treated as domain number 1)
