@@ -76,7 +76,8 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        bool reset_sparsities=true,
-                       bool add_values=false);
+                       bool add_values=false,
+                       bool finalize_tensor=true);
 
   /// Assemble system (A, b) and apply Dirichlet boundary condition
   void assemble_system(GenericMatrix& A,
@@ -85,7 +86,8 @@ namespace dolfin
                        const Form& L,
                        const DirichletBC& bc,
                        bool reset_sparsities=true,
-                       bool add_values=false);
+                       bool add_values=false,
+                       bool finalize_tensor=true);
 
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
@@ -94,7 +96,8 @@ namespace dolfin
                        const Form& L,
                        const std::vector<const DirichletBC*>& bcs,
                        bool reset_sparsities=true,
-                       bool add_values=false);
+                       bool add_values=false,
+                       bool finalize_tensor=true);
 
   /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
@@ -107,7 +110,8 @@ namespace dolfin
                        const MeshFunction<unsigned int>* interior_facet_domains,
                        const GenericVector* x0,
                        bool reset_sparsities=true,
-                       bool add_values=false);
+                       bool add_values=false,
+                       bool finalize_tensor=true);
 
   //--- Specialized versions for scalars ---
 

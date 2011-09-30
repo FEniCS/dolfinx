@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008-2009.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
 // Last changed: 2011-03-17
@@ -44,28 +44,37 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
-                               bool reset_sparsity, bool add_values)
+                               bool reset_sparsities,
+                               bool add_values,
+                               bool finalize_tensors)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
+           reset_sparsities, add_values, finalize_tensors);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                const DirichletBC& bc,
-                               bool reset_sparsity, bool add_values)
+                               bool reset_sparsities,
+                               bool add_values,
+                               bool finalize_tensors)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
+           reset_sparsities, add_values, finalize_tensors);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                const std::vector<const DirichletBC*>& bcs,
-                               bool reset_sparsity, bool add_values)
+                               bool reset_sparsities,
+                               bool add_values,
+                               bool finalize_tensors)
 {
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
+           reset_sparsities, add_values, finalize_tensors);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -75,7 +84,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const MeshFunction<uint>* exterior_facet_domains,
                                const MeshFunction<uint>* interior_facet_domains,
                                const GenericVector* x0,
-                               bool reset_sparsity, bool add_values)
+                               bool reset_sparsities,
+                               bool add_values,
+                               bool finalize_tensors)
 {
   Timer timer("Assemble system");
   log(PROGRESS, "Assembling linear system and applying boundary conditions...");
@@ -122,8 +133,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsities, add_values);
+  AssemblerTools::init_global_tensor(b, L, reset_sparsities, add_values);
 
   // Allocate data
   Scratch data(a, L);
@@ -194,8 +205,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Finalise assembly
-  A.apply("add");
-  b.apply("add");
+  if (finalize_tensors)
+  {
+    A.apply("add");
+    b.apply("add");
+  }
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
