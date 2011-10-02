@@ -278,12 +278,21 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   assert(A);
-  const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   n, reinterpret_cast<const int*>(cols), block,
-                                   Epetra_FECrsMatrix::ROW_MAJOR);
 
-  if (err != 0)
-    error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
+  // Work around for a bug in Trilinos 10.8 
+  for (uint i = 0; i < m; ++i)
+  {
+    const uint row = rows[i];
+    const double* values = block + i*n;  
+    const int err = A->SumIntoGlobalValues(row, n, values, reinterpret_cast<const int*>(cols));
+    assert(!err);
+  }
+
+  //const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
+  //                                       n, reinterpret_cast<const int*>(cols), block,
+  //                                       Epetra_FECrsMatrix::ROW_MAJOR);
+  //if (err != 0)
+  //  error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)

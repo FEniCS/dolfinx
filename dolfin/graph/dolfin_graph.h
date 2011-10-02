@@ -3,6 +3,5 @@
 
 // DOLFIN graph
 
-#include <dolfin/graph/MatrixRenumbering.h>
 
 #endif

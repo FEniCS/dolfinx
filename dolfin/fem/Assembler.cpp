@@ -44,6 +44,8 @@
 #include "AssemblerTools.h"
 #include "Assembler.h"
 
+#include <dolfin/la/GenericMatrix.h>
+
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
@@ -174,6 +176,9 @@ void Assembler::assemble(GenericTensor& A,
 
   // Finalize assembly of global tensor
   A.apply("add");
+
+  if (a.rank() == 2)
+    std::cout << "Norm: " << dynamic_cast<GenericMatrix&>(A).norm("frobenius") << std::endl;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_cells(GenericTensor& A,
