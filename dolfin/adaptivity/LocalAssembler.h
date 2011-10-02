@@ -22,9 +22,13 @@
 #define __LOCAL_ASSEMBLER_H
 
 #include <vector>
-#include <armadillo>
 
 #include <dolfin/common/types.h>
+
+namespace arma
+{
+  template<typename T> class Mat;
+}
 
 namespace dolfin
 {
@@ -41,7 +45,7 @@ namespace dolfin
   public:
 
     ///
-    static void assemble(arma::mat& A,
+    static void assemble(arma::Mat<double>& A,
                          UFC& ufc,
                          const Cell& cell,
                          const MeshFunction<uint>* cell_domains,
@@ -49,13 +53,13 @@ namespace dolfin
                          const MeshFunction<uint>* interior_facet_domains);
 
     ///
-    static void assemble_cell(arma::mat& A,
+    static void assemble_cell(arma::Mat<double>& A,
                               UFC& ufc,
                               const Cell& cell,
                               const MeshFunction<uint>* domains);
 
     ///
-    static void assemble_exterior_facet(arma::mat& A,
+    static void assemble_exterior_facet(arma::Mat<double>& A,
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
@@ -63,7 +67,7 @@ namespace dolfin
                                         const MeshFunction<uint>* domains);
 
     ///
-    static void assemble_interior_facet(arma::mat& A,
+    static void assemble_interior_facet(arma::Mat<double>& A,
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
