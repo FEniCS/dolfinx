@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-02-21
+// Last changed: 2011-10-03
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -52,7 +52,8 @@ void AssemblerTools::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
+  const std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.num_coefficients())
@@ -65,7 +66,12 @@ void AssemblerTools::check(const Form& a)
   for (uint i = 0; i < coefficients.size(); ++i)
   {
     if (!coefficients[i])
-      error("Got NULL Function as coefficient %d.", i);
+    {
+      dolfin_error("AssemblerTools.cpp",
+                   "assemble form",
+                   "Coefficient number %d (\"%s\") has not been set",
+                   i, a.coefficient_name(i).c_str());
+    }
 
     // auto_ptr deletes its object when it exits its scope
     boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
