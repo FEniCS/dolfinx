@@ -75,7 +75,7 @@ namespace dolfin
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
-                       bool reset_sparsities=true,
+                       bool reset_sparsity=true,
                        bool add_values=false,
                        bool finalize_tensor=true);
 
@@ -85,7 +85,7 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const DirichletBC& bc,
-                       bool reset_sparsities=true,
+                       bool reset_sparsity=true,
                        bool add_values=false,
                        bool finalize_tensor=true);
 
@@ -95,7 +95,7 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const std::vector<const DirichletBC*>& bcs,
-                       bool reset_sparsities=true,
+                       bool reset_sparsity=true,
                        bool add_values=false,
                        bool finalize_tensor=true);
 
@@ -109,7 +109,7 @@ namespace dolfin
                        const MeshFunction<unsigned int>* exterior_facet_domains,
                        const MeshFunction<unsigned int>* interior_facet_domains,
                        const GenericVector* x0,
-                       bool reset_sparsities=true,
+                       bool reset_sparsity=true,
                        bool add_values=false,
                        bool finalize_tensor=true);
 

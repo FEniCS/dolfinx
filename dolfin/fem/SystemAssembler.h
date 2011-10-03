@@ -59,9 +59,9 @@ namespace dolfin
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         bool reset_sparsities=true,
+                         bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensors=true);
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
     static void assemble(GenericMatrix& A,
@@ -69,9 +69,9 @@ namespace dolfin
                          const Form& a,
                          const Form& L,
                          const DirichletBC& bc,
-                         bool reset_sparsities=true,
+                         bool reset_sparsity=true,
                          bool add_values=true,
-                         bool finalize_tensors=true);
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -79,9 +79,9 @@ namespace dolfin
                          const Form& a,
                          const Form& L,
                          const std::vector<const DirichletBC*>& bcs,
-                         bool reset_sparsities=true,
+                         bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensors=true);
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -93,9 +93,9 @@ namespace dolfin
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
                          const GenericVector* x0,
-                         bool reset_sparsities=true,
+                         bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensors=true);
+                         bool finalize_tensor=true);
 
   private:
 

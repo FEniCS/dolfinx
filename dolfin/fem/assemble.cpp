@@ -70,11 +70,11 @@ void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
                              const Form& L,
-                             bool reset_sparsities,
+                             bool reset_sparsity,
                              bool add_values,
                              bool finalize_tensor)
 {
-  SystemAssembler::assemble(A, b, a, L, reset_sparsities, add_values);
+  SystemAssembler::assemble(A, b, a, L, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -82,12 +82,12 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L,
                              const DirichletBC& bc,
-                             bool reset_sparsities,
+                             bool reset_sparsity,
                              bool add_values,
-                             bool finalize_tensors)
+                             bool finalize_tensor)
 {
   SystemAssembler::assemble(A, b, a, L, bc,
-                            reset_sparsities, add_values, finalize_tensors);
+                            reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -95,12 +95,12 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L,
                              const std::vector<const DirichletBC*>& bcs,
-                             bool reset_sparsities,
+                             bool reset_sparsity,
                              bool add_values,
-                             bool finalize_tensors)
+                             bool finalize_tensor)
 {
   SystemAssembler::assemble(A, b, a, L, bcs,
-                            reset_sparsities, add_values, finalize_tensors);
+                            reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -112,14 +112,14 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const MeshFunction<uint>* exterior_facet_domains,
                              const MeshFunction<uint>* interior_facet_domains,
                              const GenericVector* x0,
-                             bool reset_sparsities,
+                             bool reset_sparsity,
                              bool add_values,
-                             bool finalize_tensors)
+                             bool finalize_tensor)
 {
   SystemAssembler::assemble(A, b, a, L, bcs,
                             cell_domains, exterior_facet_domains,
                             interior_facet_domains, x0,
-                            reset_sparsities, add_values, finalize_tensors);
+                            reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
