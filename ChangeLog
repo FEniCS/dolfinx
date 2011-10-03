@@ -1,5 +1,5 @@
- - Rename assemble_system option reset_sparsity --> reset_sparsities
- - Add option finalize_tensor(s)=true to assemble functions
+ - Add option functionality apply("flush") to PETScMatrix
+ - Add option finalize_tensor=true to assemble functions
  - Solver parameters can now be passed to solve
  - Remove deprecated function Variable::disp()
  - Remove deprecated function logging()

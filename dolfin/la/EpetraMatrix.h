@@ -86,7 +86,11 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
-    /// Finalize assembly of tensor
+    /// Finalize assembly of tensor. The following values are recognized
+    /// for the mode parameter:
+    ///
+    ///   add    - corresponding to Epetra GlobalAssemble(Add)
+    ///   insert - corresponding to Epetra GlobalAssemble(Insert)
     virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)

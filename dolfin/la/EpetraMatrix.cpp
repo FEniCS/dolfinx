@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008-2010.
+// Modified by Anders Logg 2008-2011
+// Modified by Garth N. Wells 2008-2010
 //
 // First added:  2008-04-21
-// Last changed: 2010-11-26
+// Last changed: 2011-10-03
 
 #ifdef HAS_TRILINOS
 
@@ -329,7 +329,11 @@ void EpetraMatrix::apply(std::string mode)
   else if (mode == "insert")
     err = A->GlobalAssemble(Insert);
   else
-    error("Unknown apply mode in EpetraMatrix::apply.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "apply changes to matrix",
+                 "Unknown apply mode \"%s\"", mode.c_str());
+  }
 
   if (err != 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
