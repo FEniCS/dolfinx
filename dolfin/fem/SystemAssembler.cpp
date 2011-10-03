@@ -159,9 +159,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       bcs[i]->get_boundary_values(boundary_values);
   }
 
-
-  cout << "check 1" << endl;
-
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
   {
@@ -191,13 +188,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       bc_values[i] = x0_values[i] - bc_values[i];
   }
 
-  cout << "check 2" << endl;
-
   if (A_ufc.form.num_interior_facet_domains() == 0 &&
       b_ufc.form.num_interior_facet_domains() == 0)
   {
-    cout << "check 2.1" << endl;
-
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
                        cell_domains, exterior_facet_domains);
@@ -206,15 +199,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   {
     not_working_in_parallel("System assembly over interior facets");
 
-    cout << "check 2.2" << endl;
-
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
                         cell_domains, exterior_facet_domains,
                         interior_facet_domains);
   }
-
-  cout << "check 3" << endl;
 
   // Finalise assembly
   if (finalize_tensor)
@@ -222,8 +211,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     A.apply("add");
     b.apply("add");
   }
-
-  cout << "check 4" << endl;
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
@@ -243,8 +230,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
   assert(mesh.ordered());
-
-  return;
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -327,8 +312,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
 
     // Add entries to global tensor
-    //A.add(&(data.Ae)[0], a_dofs);
-    //b.add(&(data.be)[0], L_dofs);
+    A.add(&(data.Ae)[0], a_dofs);
+    b.add(&(data.be)[0], L_dofs);
 
     p++;
   }
