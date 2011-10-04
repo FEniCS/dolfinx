@@ -79,12 +79,12 @@ namespace dolfin
     const double* const * macro_w() const
     { return &macro_w_pointer[0]; }
 
-    private:
+  private:
 
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    public:
+  public:
 
     // Cell integrals
     std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;

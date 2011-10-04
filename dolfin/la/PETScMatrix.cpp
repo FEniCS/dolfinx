@@ -408,8 +408,27 @@ double PETScMatrix::norm(std::string norm_type) const
 void PETScMatrix::apply(std::string mode)
 {
   assert(A);
-  MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+  if (mode == "add")
+  {
+    MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+  }
+  else if (mode == "insert")
+  {
+    MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+  }
+  else if (mode == "flush")
+  {
+    MatAssemblyBegin(*A, MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(*A, MAT_FLUSH_ASSEMBLY);
+  }
+  else
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "apply changes to matrix",
+                 "Unknown apply mode \"%s\"", mode.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

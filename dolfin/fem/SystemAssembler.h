@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008-2009.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
 // Last changed: 2011-01-25
@@ -60,7 +60,8 @@ namespace dolfin
                          const Form& a,
                          const Form& L,
                          bool reset_sparsity=true,
-                         bool add_values=false);
+                         bool add_values=false,
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
     static void assemble(GenericMatrix& A,
@@ -69,7 +70,8 @@ namespace dolfin
                          const Form& L,
                          const DirichletBC& bc,
                          bool reset_sparsity=true,
-                         bool add_values=true);
+                         bool add_values=true,
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -78,7 +80,8 @@ namespace dolfin
                          const Form& L,
                          const std::vector<const DirichletBC*>& bcs,
                          bool reset_sparsity=true,
-                         bool add_values=false);
+                         bool add_values=false,
+                         bool finalize_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -91,7 +94,8 @@ namespace dolfin
                          const MeshFunction<uint>* interior_facet_domains,
                          const GenericVector* x0,
                          bool reset_sparsity=true,
-                         bool add_values=false);
+                         bool add_values=false,
+                         bool finalize_tensor=true);
 
   private:
 

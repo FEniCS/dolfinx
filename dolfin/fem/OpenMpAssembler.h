@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-18
+// Last changed: 2011-09-29
 
 #ifndef __OPENMP_ASSEMBLER_H
 #define __OPENMP_ASSEMBLER_H
@@ -57,7 +57,8 @@ namespace dolfin
     static void assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_sparsity=true,
-                         bool add_values=false);
+                         bool add_values=false,
+                         bool finalize_tensor=true);
 
   private:
 
@@ -70,7 +71,8 @@ namespace dolfin
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity=true,
-                         bool add_values=false);
+                         bool add_values=false,
+                         bool finalize_tensor=true);
 
     // Assemble over cells
     static void assemble_cells(GenericTensor& A,

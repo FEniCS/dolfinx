@@ -21,7 +21,7 @@
 // Modified by Anders Logg 2010-2011
 //
 // First added:  2010-11-10
-// Last changed: 2011-08-10
+// Last changed: 2011-09-29
 
 #ifdef HAS_OPENMP
 
@@ -56,9 +56,10 @@ using namespace dolfin;
 void OpenMpAssembler::assemble(GenericTensor& A,
                                const Form& a,
                                bool reset_sparsity,
-                               bool add_values)
+                               bool add_values,
+                               bool finalize_tensor)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values);
+  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
@@ -67,7 +68,8 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                const MeshFunction<uint>* exterior_facet_domains,
                                const MeshFunction<uint>* interior_facet_domains,
                                bool reset_sparsity,
-                               bool add_values)
+                               bool add_values,
+                               bool finalize_tensor)
 {
   if (MPI::num_processes() > 1)
     error("OpenMpAssembler has not been tested in combination with MPI.");
@@ -105,7 +107,8 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     assemble_cells(A, a, ufc, cell_domains, 0);
 
   // Finalize assembly of global tensor
-  A.apply("add");
+  if (finalize_tensor)
+    A.apply("add");
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells(GenericTensor& A,
