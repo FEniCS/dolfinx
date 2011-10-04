@@ -347,6 +347,11 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
   const std::vector<boost::shared_ptr<const GenericFunction> > A_coefficients = a.coefficients();
   const std::vector<boost::shared_ptr<const GenericFunction> > b_coefficients = L.coefficients();
 
+  // Compute facets and facet - cell connectivity if not already computed
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+
   // Form ranks
   const uint a_rank = a.rank();
   const uint L_rank = L.rank();
