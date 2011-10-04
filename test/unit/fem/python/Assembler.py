@@ -349,6 +349,6 @@ class Assembly(unittest.TestCase):
 
 if __name__ == "__main__":
     print ""
-    print "Testing basic DOLFIN assembly operations"
-    print "------------------------------------------------"
+    print "Testing class Assembler"
+    print "-----------------------"
     unittest.main()
