@@ -18,6 +18,7 @@
 // First added:  2011-01-04
 // Last changed: 2011-03-15
 
+#include <armadillo>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -26,7 +27,7 @@
 using namespace dolfin;
 
 //------------------------------------------------------------------------------
-void LocalAssembler::assemble(arma::mat& A,
+void LocalAssembler::assemble(arma::Mat<double>& A,
                               UFC& ufc,
                               const Cell& cell,
                               const MeshFunction<uint>* cell_domains,

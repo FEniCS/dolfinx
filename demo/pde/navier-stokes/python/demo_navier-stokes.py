@@ -111,7 +111,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", "amg")
+    solve(A2, p1.vector(), b2, "gmres", "ml_amg")
     end()
 
     # Velocity correction

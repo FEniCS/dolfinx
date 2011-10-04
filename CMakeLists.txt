@@ -190,7 +190,15 @@ else()
 endif()
 
 # Check for required packages
-find_package(UFC 2.0.2 REQUIRED HINTS ${UFC_DIR})
+find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
+if (NOT UFC_FOUND)
+  message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
+    "compatible with requested version 2.0.2.\n"
+    "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
+else()
+  message(STATUS "UFC version: ${UFC_VERSION_STRING}")
+endif()
+
 find_package(Armadillo REQUIRED)
 find_package(LibXml2 REQUIRED)
 

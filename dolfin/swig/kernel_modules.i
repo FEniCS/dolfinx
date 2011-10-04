@@ -164,7 +164,6 @@
 %include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
-%include "dolfin/graph/MatrixRenumbering.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"

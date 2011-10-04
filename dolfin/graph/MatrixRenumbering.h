@@ -27,10 +27,12 @@
 #include <zoltan_cpp.h>
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
-#include <dolfin/la/SparsityPattern.h>
 
 namespace dolfin
 {
+
+
+  class SparsityPattern;
 
   /// This class computes re-ordering based on a SparsityPattern graph
   /// representation of a sparse matrix. It uses Zoltan, which is part of

@@ -44,6 +44,8 @@
 #include "AssemblerTools.h"
 #include "Assembler.h"
 
+#include <dolfin/la/GenericMatrix.h>
+
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
