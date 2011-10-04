@@ -92,11 +92,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   log(PROGRESS, "Assembling linear system and applying boundary conditions...");
 
   const Mesh& mesh = a.mesh();
-
-  // Compute facets and facet - cell connectivity if not already computed
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
   assert(mesh.ordered());
 
   // FIXME: Some things can be simplified since we know it's a matrix and a vector
@@ -224,11 +219,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
-
-  // Compute facets and facet - cell connectivity if not already computed
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
   assert(mesh.ordered());
 
   // Form ranks
