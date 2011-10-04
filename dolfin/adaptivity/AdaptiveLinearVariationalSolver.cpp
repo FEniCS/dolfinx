@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010-2011.
-// Modified by Garth N. Wells, 2011.
+// Modified by Anders Logg 2010-2011
+// Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-07-05
+// Last changed: 2011-10-04
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
@@ -77,7 +77,7 @@ void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
 boost::shared_ptr<const Function>
 AdaptiveLinearVariationalSolver::solve_primal()
 {
-  LinearVariationalProblem& current = problem->fine();
+  LinearVariationalProblem& current = problem->leaf_node();
   LinearVariationalSolver solver(current);
   solver.parameters.update(parameters("linear_variational_solver"));
   solver.solve();
@@ -87,7 +87,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
 std::vector<boost::shared_ptr<const BoundaryCondition> >
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
-  const LinearVariationalProblem& current = problem->fine();
+  const LinearVariationalProblem& current = problem->leaf_node();
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
@@ -102,13 +102,13 @@ evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 void AdaptiveLinearVariationalSolver::
 adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
-  const LinearVariationalProblem& current = problem->fine();
+  const LinearVariationalProblem& current = problem->leaf_node();
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
 dolfin::uint AdaptiveLinearVariationalSolver::num_dofs_primal()
 {
-  const LinearVariationalProblem& current = problem->fine();
+  const LinearVariationalProblem& current = problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());
   return V.dim();
 }

@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-09-01
+# Last changed: 2011-10-04
 
 # Begin demo
 
@@ -58,12 +58,7 @@ solve(a == L, u, bc, tol=tol, M=M)
 # solver = AdaptiveLinearVariationalSolver(problem)
 # solver.solve(tol, M)
 
-# Extract the coarsest and finest (final) solutions
-coarse = u.coarse()
-fine = u.fine()
-
 # Plot solution(s)
-plot(coarse, title="Solution on initial mesh")
-plot(fine, title="Solution on final mesh")
+plot(u.root_node(), title="Solution on initial mesh")
+plot(u.leaf_node(), title="Solution on final mesh")
 interactive()
-

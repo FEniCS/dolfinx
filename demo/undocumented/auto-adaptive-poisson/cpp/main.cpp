@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg and Marie E. Rognes
+// Copyright (C) 2010-2011 Anders Logg and Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-09-01
+// Last changed: 2011-10-04
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -91,8 +91,8 @@ int main()
   // solver.solve(tol, M);
 
   // Plot final solution
-  plot(u.coarse(), "Solution on initial mesh");
-  plot(u.fine(), "Solution on final mesh");
+  plot(u.root_node(), "Solution on initial mesh");
+  plot(u.leaf_node(), "Solution on final mesh");
 
   return 0;
 }

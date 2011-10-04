@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-08-19
-// Last changed: 2011-09-01
+// Last changed: 2011-10-04
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -113,7 +115,7 @@ int main() {
   solver.solve(tol, M);
 
   // Plot solutions
-  Function solution = w.fine();
+  Function solution = w.leaf_node();
   plot(solution[0], "Velocity on finest mesh");
   plot(solution[1], "Pressure on finest mesh");
 
