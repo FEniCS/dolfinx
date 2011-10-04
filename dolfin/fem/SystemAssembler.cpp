@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
-// Last changed: 2011-03-17
+// Last changed: 2011-10-04
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -249,29 +249,46 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   std::vector<const std::vector<uint>* > L_dofs(L_rank);
 
   // Cell integrals
-  const ufc::cell_integral* A_integral = A_ufc.cell_integrals[0].get();
-  const ufc::cell_integral* b_integral = b_ufc.cell_integrals[0].get();
+  const ufc::cell_integral* A_integral(0);
+  const ufc::cell_integral* b_integral(0);
+  if (A_ufc.cell_integrals.size() > 0)
+    A_integral = A_ufc.cell_integrals[0].get();
+  if (b_ufc.cell_integrals.size() > 0)
+    b_integral = b_ufc.cell_integrals[0].get();
+
+  // FIXME: Subdomains not supported here!
 
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update to current cell
-    A_ufc.update(*cell);
-    b_ufc.update(*cell);
+    // Add cell tensor for A
+    if (A_integral)
+    {
+      // Update to current cell
+      A_ufc.update(*cell);
 
-    // Tabulate cell tensor (A)
-    A_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
-    for (uint i = 0; i < data.Ae.size(); ++i)
-      data.Ae[i] = A_ufc.A[i];
+      // Tabulate cell tensor
+      A_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
+      for (uint i = 0; i < data.Ae.size(); ++i)
+        data.Ae[i] = A_ufc.A[i];
+    }
 
-    // Tabulate cell tensor (b)
-    b_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
-    for (uint i = 0; i < data.be.size(); ++i)
-      data.be[i] = b_ufc.A[i];
+    // Add cell tensor for b
+    if (b_integral)
+    {
+      // Update to current cell
+      b_ufc.update(*cell);
+
+      // Tabulate cell tensor
+      b_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
+      for (uint i = 0; i < data.be.size(); ++i)
+        data.be[i] = b_ufc.A[i];
+    }
 
     // FIXME: Is assembly over facets more efficient?
     // Compute exterior facet integral if present
-    if (A_ufc.form.num_exterior_facet_domains() > 0 || b_ufc.form.num_exterior_facet_domains() > 0)
+    if (A_ufc.form.num_exterior_facet_domains() > 0 ||
+        b_ufc.form.num_exterior_facet_domains() > 0)
     {
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
@@ -283,8 +300,12 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           {
             A_ufc.update(*cell, local_facet);
 
-            const ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
-            A_facet_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell, local_facet);
+            const ufc::exterior_facet_integral*
+              A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+            A_facet_integral->tabulate_tensor(&A_ufc.A[0],
+                                              A_ufc.w(),
+                                              A_ufc.cell,
+                                              local_facet);
             for (uint i = 0; i < data.Ae.size(); i++)
               data.Ae[i] += A_ufc.A[i];
           }
@@ -292,8 +313,12 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           {
             b_ufc.update(*cell, local_facet);
 
-            const ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
-            b_facet_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell, local_facet);
+            const ufc::exterior_facet_integral*
+              b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
+            b_facet_integral->tabulate_tensor(&b_ufc.A[0],
+                                              b_ufc.w(),
+                                              b_ufc.cell,
+                                              local_facet);
             for (uint i = 0; i < data.be.size(); i++)
               data.be[i] += b_ufc.A[i];
           }

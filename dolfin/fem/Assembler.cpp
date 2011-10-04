@@ -206,6 +206,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Cell integral
+  assert(ufc.cell_integrals.size() > 0);
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
@@ -273,6 +274,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Exterior facet integral
+  assert(ufc.exterior_facet_integrals.size() > 0);
   const ufc::exterior_facet_integral*
     integral = ufc.exterior_facet_integrals[0].get();
 
@@ -361,6 +363,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   std::vector<std::vector<uint> > macro_dofs(form_rank);
 
   // Interior facet integral
+  assert(ufc.interior_facet_integrals.size() > 0);
   const ufc::interior_facet_integral*
     integral = ufc.interior_facet_integrals[0].get();
 
