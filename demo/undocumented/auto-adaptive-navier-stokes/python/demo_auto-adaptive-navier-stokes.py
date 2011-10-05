@@ -18,7 +18,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2010
-# Last changed: 2011-06-28
+# Last changed: 2011-10-04
 
 from dolfin import *
 import time
@@ -105,8 +105,8 @@ solver.solve(tol, M)
 summary()
 
 # Extract solutions on coarsest and finest mesh:
-(u0, p0) = w.coarse().split()
-(u1, p1) = w.fine().split()
+(u0, p0) = w.root_node().split()
+(u1, p1) = w.leaf_node().split()
 plot(p0, title="Pressure on initial mesh")
 plot(p1, title="Pressure on final mesh")
 interactive()

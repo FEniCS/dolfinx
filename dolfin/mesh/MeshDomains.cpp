@@ -188,7 +188,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
     // Get global entity index. Note that we ignore the local entity
     // index when the function is defined over cells.
     uint entity_index(0);
-    if (D == d)
+    if (d == D)
       entity_index = cell_index;
     else
       entity_index = connectivity(cell_index)[local_entity];
