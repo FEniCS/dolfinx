@@ -51,6 +51,7 @@
 #include "EpetraFactory.h"
 #include "EpetraMatrix.h"
 
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -267,21 +268,23 @@ void EpetraMatrix::set(const double* block,
 {
   assert(A);
 
-  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510) 
+  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  /*
   for (uint i = 0; i < m; ++i)
   {
     const uint row = rows[i];
-    const double* values = block + i*n;  
-    const int err = A->ReplaceGlobalValues(row, n, values, 
+    const double* values = block + i*n;
+    const int err = A->ReplaceGlobalValues(row, n, values,
                                            reinterpret_cast<const int*>(cols));
     assert(!err);
   }
+  */
 
-  //const int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
-  //                                 n, reinterpret_cast<const int*>(cols), block,
-  //                                 Epetra_FECrsMatrix::ROW_MAJOR);
-  //if (err != 0)
-  //  error("EpetraMatrix::set: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+  const int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
+                                   n, reinterpret_cast<const int*>(cols), block,
+                                   Epetra_FECrsMatrix::ROW_MAJOR);
+  if (err != 0)
+    error("EpetraMatrix::set: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
@@ -291,20 +294,22 @@ void EpetraMatrix::add(const double* block,
   assert(A);
 
   // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  /*
   for (uint i = 0; i < m; ++i)
   {
     const uint row = rows[i];
-    const double* values = block + i*n;  
-    const int err = A->SumIntoGlobalValues(row, n, values, 
+    const double* values = block + i*n;
+    const int err = A->SumIntoGlobalValues(row, n, values,
                                            reinterpret_cast<const int*>(cols));
     assert(!err);
   }
+  */
 
-  //const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
-  //                                       n, reinterpret_cast<const int*>(cols), block,
-  //                                       Epetra_FECrsMatrix::ROW_MAJOR);
-  //if (err != 0)
-  //  error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
+  const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
+                                         n, reinterpret_cast<const int*>(cols), block,
+                                         Epetra_FECrsMatrix::ROW_MAJOR);
+  if (err != 0)
+    error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)

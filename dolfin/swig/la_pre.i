@@ -200,8 +200,11 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
 LA_PRE_FACTORY(EpetraFactory)
+//%import(module="PyTrilinos.Epetra") "swig/Epetra.i"
 %rename(_mat) dolfin::EpetraMatrix::mat;
 %rename(_vec) dolfin::EpetraVector::vec;
+%ignore dolfin::EpetraMatrix::mat;
+%ignore dolfin::EpetraVector::vec;
 %newobject dolfin::EpetraMatrix::copy;
 %newobject dolfin::EpetraVector::copy;
 
