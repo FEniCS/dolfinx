@@ -37,4 +37,6 @@ if (Trilinos_FOUND)
     endif()
   endforeach()
 
+  message(STATUS "Found Trilinos (found version ${TRILINOS_VERSION})")
+
 endif()
