@@ -200,7 +200,6 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
 LA_PRE_FACTORY(EpetraFactory)
-//%import(module="PyTrilinos.Epetra") "swig/Epetra.i"
 %rename(_mat) dolfin::EpetraMatrix::mat;
 %rename(_vec) dolfin::EpetraVector::vec;
 %ignore dolfin::EpetraMatrix::mat;
@@ -208,11 +207,6 @@ LA_PRE_FACTORY(EpetraFactory)
 %newobject dolfin::EpetraMatrix::copy;
 %newobject dolfin::EpetraVector::copy;
 
-//-----------------------------------------------------------------------------
-// Create in and out typemaps for boost::shared_ptr<Foo>
-//-----------------------------------------------------------------------------
-FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FECrsMatrix)
-FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 #endif
 
 //-----------------------------------------------------------------------------
