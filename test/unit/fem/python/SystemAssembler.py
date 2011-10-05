@@ -147,7 +147,7 @@ class TestSystemAssembler(unittest.TestCase):
 
         # Assemble system
         #A0, b0 = assemble_system(a0, L0)
-        #A1, b1 = assemble_system(a1, L1)
+        A1, b1 = assemble_system(a1, L1)
 
         # Assemble and check values
         #self.assertAlmostEqual(A0.norm("frobenius"), 0.693043954566, 10)

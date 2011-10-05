@@ -88,19 +88,41 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                bool add_values,
                                bool finalize_tensor)
 {
+  // Set timer
   Timer timer("Assemble system");
-  log(PROGRESS, "Assembling linear system and applying boundary conditions...");
 
+  // Get mesh
   const Mesh& mesh = a.mesh();
   assert(mesh.ordered());
 
-  // FIXME: Some things can be simplified since we know it's a matrix and a vector
+  // Get cell domains
+  if (!cell_domains || cell_domains->size() == 0)
+  {
+    if (a.cell_domains_shared_ptr().get() ||
+        L.cell_domains_shared_ptr().get())
+      warning("Ignoring cell domains defined as part of form in system assembler.");
+    cell_domains = mesh.domains().cell_domains(mesh).get();
+  }
 
-  // Sub domains not supported
-  if (cell_domains || exterior_facet_domains || interior_facet_domains)
-    error("SystemAssembler does not yet support subdomains.");
+  // Get exterior facet domains
+  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  {
+    if (a.exterior_facet_domains_shared_ptr().get() ||
+        L.exterior_facet_domains_shared_ptr().get())
+      warning("Ignoring exterior facet domains defined as part of form in system assembler.");
+    exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
+  }
 
-  // Check arguments
+  // Get interior facet domains
+  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  {
+    if (a.interior_facet_domains_shared_ptr().get() ||
+        L.interior_facet_domains_shared_ptr().get())
+      warning("Ignoring interior facet domains defined as part of form in system assembler.");
+    interior_facet_domains = mesh.domains().facet_domains(mesh).get();
+  }
+
+  // Check forms
   AssemblerTools::check(a);
   AssemblerTools::check(L);
 
@@ -123,11 +145,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
-  // Create data structure for local assembly data
+  // Create data structures for local assembly data
   UFC A_ufc(a);
   UFC b_ufc(L);
 
-  // Initialize global tensor
+  // Initialize global tensors
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
   AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
 
@@ -183,20 +205,27 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       bc_values[i] = x0_values[i] - bc_values[i];
   }
 
+  // Check whether we should do cell-wise or facet-wise assembly
   if (A_ufc.form.num_interior_facet_domains() == 0 &&
       b_ufc.form.num_interior_facet_domains() == 0)
   {
     // Assemble cell-wise (no interior facet integrals)
-    cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
-                       cell_domains, exterior_facet_domains);
+    cell_wise_assembly(A, b, a, L,
+                       A_ufc, b_ufc,
+                       data, boundary_values,
+                       cell_domains,
+                       exterior_facet_domains);
   }
   else
   {
     not_working_in_parallel("System assembly over interior facets");
 
     // Assemble facet-wise (including cell assembly)
-    facet_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
-                        cell_domains, exterior_facet_domains,
+    facet_wise_assembly(A, b, a, L,
+                        A_ufc, b_ufc,
+                        data, boundary_values,
+                        cell_domains,
+                        exterior_facet_domains,
                         interior_facet_domains);
   }
 
