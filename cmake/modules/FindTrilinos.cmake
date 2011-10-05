@@ -5,6 +5,7 @@
 #  TRILINOS_INCLUDE_DIRS - include directories for Trilinos
 #  TRILINOS_LIBRARIES    - libraries for Trilinos
 #  TRILINOS_DEFINITIONS  - compiler flags for Trilinos
+#  TRILINOS_VERSION      - Trilinos version
 
 message(STATUS "Checking for package 'Trilinos'")
 
@@ -24,6 +25,9 @@ if (Trilinos_FOUND)
 
   # Trilinos definitons
   set(TRILINOS_DEFINITIONS)
+
+  # Trilinos version
+  set(TRILINOS_VERSION ${Trilinos_VERSION})
 
   # Loop over Trilinos libs and get full path
   foreach (lib ${Trilinos_LIBRARIES})
