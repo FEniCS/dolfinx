@@ -158,13 +158,13 @@ class Assembly(unittest.TestCase):
              Constant(2.0)*ds(0) + Constant(3.0)*ds(1) + Constant(4.0)*ds(2)
         m0 = assemble(M0, mesh=mesh)
 
-        # Assemble a form on unmarked subdomains (marked automatically)
+        # Assemble a form on unmarked subdomains
         M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(3)
         m1 = assemble(M1, mesh=mesh)
 
         # Check values
         self.assertAlmostEqual(m0, 9.5)
-        self.assertAlmostEqual(m1, 6.5)
+        self.assertAlmostEqual(m1, 0.0)
 
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"
