@@ -388,8 +388,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
   PyObject* _data() {
 
-    PyObject* rows = %make_numpy_array(1, ulong)(self->size(0)+1, 
-						 std::tr1::get<0>(self->data()), 
+    PyObject* rows = %make_numpy_array(1, ulong)(self->size(0)+1,
+						 std::tr1::get<0>(self->data()),
 						 false);
     PyObject* cols = %make_numpy_array(1, ulong)(std::tr1::get<3>(self->data()),
 						 std::tr1::get<1>(self->data()),
@@ -397,8 +397,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     PyObject* values = %make_numpy_array(1, double)(std::tr1::get<3>(self->data()),
 						    std::tr1::get<2>(self->data()),
 						    false);
-    
-    if ( rows == NULL || cols == NULL || values == NULL) 
+
+    if ( rows == NULL || cols == NULL || values == NULL)
       return NULL;
 
     return Py_BuildValue("NNN", rows, cols, values);
@@ -429,7 +429,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
         This method is only available for the uBLAS and MTL4 linear algebra
         backends.
-        
+
         *Arguments*
             deepcopy
                 Return a copy of the data. If set to False a reference
@@ -661,10 +661,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def data(self, deepcopy=True):
         """
         Return an array to underlaying data
-        
+
         This method is only available for the uBLAS and MTL4 linear algebra
         backends.
-        
+
         *Arguments*
             deepcopy
                 Return a copy of the data. If set to False a reference
@@ -674,7 +674,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         ret = self._data()
         if deepcopy:
             ret = ret.copy()
-            
+
         return ret
   %}
 }
@@ -765,6 +765,9 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #ifdef HAS_TRILINOS
 %runtime%{
 #include <Teuchos_RCP.hpp>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
 %}
 
 DOWN_CAST_MACRO(EpetraVector)
@@ -785,7 +788,7 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
     def mat(self):
         "Return the Epetra_FECrsMatrix"
         A = self._mat()
-        
+
         # Store the tensor to avoid garbage collection
         # Need to be in try clause as this wont work when PyTrilinos
         # is not installed
@@ -793,7 +796,7 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
             A._org_vec = self
         except:
             pass
-        
+
         return A
 %}
 }
@@ -817,7 +820,7 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
             v._org_vec = self
         except:
             pass
-        
+
         return v
 %}
 }
