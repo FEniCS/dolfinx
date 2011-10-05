@@ -267,80 +267,125 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   std::vector<const std::vector<uint>* > a_dofs(a_rank);
   std::vector<const std::vector<uint>* > L_dofs(L_rank);
 
-  // Cell integrals
-  const ufc::cell_integral* A_integral(0);
-  const ufc::cell_integral* b_integral(0);
-  if (A_ufc.cell_integrals.size() > 0)
-    A_integral = A_ufc.cell_integrals[0].get();
-  if (b_ufc.cell_integrals.size() > 0)
-    b_integral = b_ufc.cell_integrals[0].get();
+  // Create pointers to hold integral objects
+  const ufc::cell_integral* A_cell_integral(0);
+  const ufc::cell_integral* b_cell_integral(0);
+  const ufc::exterior_facet_integral* A_exterior_facet_integral(0);
+  const ufc::exterior_facet_integral* b_exterior_facet_integral(0);
 
-  // FIXME: Subdomains not supported here!
+  // Initialize integrals to first integral. These will be overwritten
+  // below if subdomains have been specified. Otherwise, the same integral
+  // will be used throughout the whole mesh
+  if (A_ufc.form.num_cell_domains() > 0)
+    A_cell_integral = A_ufc.cell_integrals[0].get();
+  if (b_ufc.form.num_cell_domains() > 0)
+    b_cell_integral = b_ufc.cell_integrals[0].get();
+  if (A_ufc.form.num_exterior_facet_domains() > 0)
+    A_exterior_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+  if (b_ufc.form.num_exterior_facet_domains() > 0)
+    b_exterior_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
+  // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Get cell integrals for sub domain (if any)
+    if (cell_domains && cell_domains->size() > 0)
+    {
+      const uint domain = (*cell_domains)[*cell];
+      if (domain < A_ufc.form.num_cell_domains())
+        A_cell_integral = A_ufc.cell_integrals[domain].get();
+      else
+        A_cell_integral = 0;
+      if (domain < b_ufc.form.num_cell_domains())
+        b_cell_integral = b_ufc.cell_integrals[domain].get();
+      else
+        b_cell_integral = 0;
+    }
+
     // Add cell tensor for A
-    if (A_integral)
+    if (A_cell_integral)
     {
       // Update to current cell
       A_ufc.update(*cell);
 
       // Tabulate cell tensor
-      A_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
+      A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
       for (uint i = 0; i < data.Ae.size(); ++i)
         data.Ae[i] = A_ufc.A[i];
     }
 
     // Add cell tensor for b
-    if (b_integral)
+    if (b_cell_integral)
     {
       // Update to current cell
       b_ufc.update(*cell);
 
       // Tabulate cell tensor
-      b_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
+      b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
       for (uint i = 0; i < data.be.size(); ++i)
         data.be[i] = b_ufc.A[i];
     }
 
-    // FIXME: Is assembly over facets more efficient?
     // Compute exterior facet integral if present
     if (A_ufc.form.num_exterior_facet_domains() > 0 ||
         b_ufc.form.num_exterior_facet_domains() > 0)
     {
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
-        // Assemble if we have an exterior facet
-        if (facet->exterior())
+        // Only consider exterior facets
+        if (!facet->exterior())
+          continue;
+
+        // Get exterior facet integrals for sub domain (if any)
+        if (exterior_facet_domains && exterior_facet_domains->size() > 0)
         {
-          const uint local_facet = cell->index(*facet);
-          if (A_ufc.form.num_exterior_facet_domains() > 0)
-          {
-            A_ufc.update(*cell, local_facet);
+          const uint domain = (*exterior_facet_domains)[*facet];
+          if (domain < A_ufc.form.num_exterior_facet_domains())
+            A_exterior_facet_integral = A_ufc.exterior_facet_integrals[domain].get();
+          else
+            A_exterior_facet_integral = 0;
+          if (domain < b_ufc.form.num_exterior_facet_domains())
+            b_exterior_facet_integral = b_ufc.exterior_facet_integrals[domain].get();
+          else
+            b_exterior_facet_integral = 0;
+        }
 
-            const ufc::exterior_facet_integral*
-              A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
-            A_facet_integral->tabulate_tensor(&A_ufc.A[0],
-                                              A_ufc.w(),
-                                              A_ufc.cell,
-                                              local_facet);
-            for (uint i = 0; i < data.Ae.size(); i++)
+        // Skip if there are no integrals
+        if (!A_exterior_facet_integral && !b_exterior_facet_integral)
+          continue;
+
+        // Extract local facet index
+        const uint local_facet = cell->index(*facet);
+
+        // Add exterior facet tensor for A
+        if (A_exterior_facet_integral)
+        {
+          // Update to current cell
+          A_ufc.update(*cell, local_facet);
+
+          // Tabulate exterior facet tensor
+          A_exterior_facet_integral->tabulate_tensor(&A_ufc.A[0],
+                                                     A_ufc.w(),
+                                                     A_ufc.cell,
+                                                     local_facet);
+          for (uint i = 0; i < data.Ae.size(); i++)
               data.Ae[i] += A_ufc.A[i];
-          }
-          if (b_ufc.form.num_exterior_facet_domains() > 0)
-          {
-            b_ufc.update(*cell, local_facet);
+        }
 
-            const ufc::exterior_facet_integral*
-              b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
-            b_facet_integral->tabulate_tensor(&b_ufc.A[0],
-                                              b_ufc.w(),
-                                              b_ufc.cell,
-                                              local_facet);
-            for (uint i = 0; i < data.be.size(); i++)
-              data.be[i] += b_ufc.A[i];
-          }
+        // Add exterior facet tensor for b
+        if (b_exterior_facet_integral)
+        {
+          // Update to current cell
+          b_ufc.update(*cell, local_facet);
+
+          // Tabulate exterior facet tensor
+          b_exterior_facet_integral->tabulate_tensor(&b_ufc.A[0],
+                                                     b_ufc.w(),
+                                                     b_ufc.cell,
+                                                     local_facet);
+          for (uint i = 0; i < data.be.size(); i++)
+            data.be[i] += b_ufc.A[i];
         }
       }
     }
