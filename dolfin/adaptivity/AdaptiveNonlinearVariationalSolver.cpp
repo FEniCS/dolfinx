@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010-2011.
-// Modified by Garth N. Wells, 2011.
+// Modified by Anders Logg 2010-2011
+// Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-07-05
+// Last changed: 2011-11-04
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
@@ -78,7 +78,7 @@ void AdaptiveNonlinearVariationalSolver::solve(const double tol,
 boost::shared_ptr<const Function>
 AdaptiveNonlinearVariationalSolver::solve_primal()
 {
-  NonlinearVariationalProblem& current = problem->fine();
+  NonlinearVariationalProblem& current = problem->leaf_node();
   NonlinearVariationalSolver solver(current);
   solver.parameters.update(parameters("nonlinear_variational_solver"));
   solver.solve();
@@ -88,7 +88,7 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
 std::vector<boost::shared_ptr<const BoundaryCondition> >
 AdaptiveNonlinearVariationalSolver::extract_bcs() const
 {
-  const NonlinearVariationalProblem& current = problem->fine();
+  const NonlinearVariationalProblem& current = problem->leaf_node();
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
@@ -101,13 +101,13 @@ evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 void AdaptiveNonlinearVariationalSolver::
 adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
-  const NonlinearVariationalProblem& current = problem->fine();
+  const NonlinearVariationalProblem& current = problem->leaf_node();
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
 dolfin::uint AdaptiveNonlinearVariationalSolver::num_dofs_primal()
 {
-  const NonlinearVariationalProblem& current = problem->fine();
+  const NonlinearVariationalProblem& current = problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());
   return V.dim();
 }

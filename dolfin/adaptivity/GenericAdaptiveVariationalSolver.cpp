@@ -89,8 +89,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     }
 
     // Deal with goal and error control on current mesh
-    Form& M = goal.fine();
-    ErrorControl& ec = control.fine();
+    Form& M = goal.leaf_node();
+    ErrorControl& ec = control.leaf_node();
 
     //--- Stage 0: Solve primal problem
     begin("Stage %d.0: Solving primal problem...", i);
@@ -168,9 +168,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
     timer.start();
-    adapt_problem(mesh.fine_shared_ptr());
-    adapt(M, mesh.fine_shared_ptr());
-    adapt(ec, mesh.fine_shared_ptr(), false);
+    adapt_problem(mesh.leaf_node_shared_ptr());
+    adapt(M, mesh.leaf_node_shared_ptr());
+    adapt(ec, mesh.leaf_node_shared_ptr(), false);
     datum->add("time_adapt_forms", timer.stop());
     end();
   }

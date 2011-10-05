@@ -106,8 +106,8 @@ class ErrorControlTest(unittest.TestCase):
         solver.solve(tol, self.goal)
 
         # Extract solution and update goal
-        w = Function(self.u.fine().function_space())
-        w.assign(self.u.fine())
+        w = Function(self.u.leaf_node().function_space())
+        w.assign(self.u.leaf_node())
         M = replace(self.goal, {self.u: w})
 
         # Compare computed goal with reference

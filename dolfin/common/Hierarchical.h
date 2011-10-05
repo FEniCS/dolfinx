@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-30
-// Last changed: 2011-08-25
+// Last changed: 2011-10-04
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H
@@ -59,7 +59,8 @@ namespace dolfin
     uint depth() const
     {
       uint d = 1;
-      for (boost::shared_ptr<const T> it = coarse_shared_ptr(); it->_child; it = it->_child)
+      for (boost::shared_ptr<const T> it = root_node_shared_ptr();
+           it->_child; it = it->_child)
         d++;
       return d;
     }
@@ -156,72 +157,72 @@ namespace dolfin
     boost::shared_ptr<const T> child_shared_ptr() const
     { return _child; }
 
-    /// Return coarsest object in hierarchy.
+    /// Return root node object in hierarchy.
     ///
     /// *Returns*
     ///     _T_
-    ///         The coarse object.
-    T& coarse()
+    ///         The root node object.
+    T& root_node()
     {
-      return *coarse_shared_ptr();
+      return *root_node_shared_ptr();
     }
 
-    /// Return coarsest object in hierarchy (const version).
-    const T& coarse() const
+    /// Return root node object in hierarchy (const version).
+    const T& root_node() const
     {
-      return *coarse_shared_ptr();
+      return *root_node_shared_ptr();
     }
 
-    /// Return shared pointer to coarsest object in hierarchy.
+    /// Return shared pointer to root node object in hierarchy.
     ///
     /// *Returns*
     ///     _T_
-    ///         The coarse object.
-    boost::shared_ptr<T> coarse_shared_ptr()
+    ///         The root node object.
+    boost::shared_ptr<T> root_node_shared_ptr()
     {
       boost::shared_ptr<T> it = _self;
       for (; it->_parent; it = it->_parent);
       return it;
     }
 
-    /// Return shared pointer to coarsest object in hierarchy (const version).
-    boost::shared_ptr<const T> coarse_shared_ptr() const
+    /// Return shared pointer to root node object in hierarchy (const version).
+    boost::shared_ptr<const T> root_node_shared_ptr() const
     {
       boost::shared_ptr<const T> it = _self;
       for (; it->_parent; it = it->_parent);
       return it;
     }
 
-    /// Return finest object in hierarchy.
+    /// Return leaf node object in hierarchy.
     ///
     /// *Returns*
     ///     _T_
-    ///         The fine object.
-    T& fine()
+    ///         The leaf node object.
+    T& leaf_node()
     {
-      return *fine_shared_ptr();
+      return *leaf_node_shared_ptr();
     }
 
-    /// Return finest object in hierarchy (const version).
-    const T& fine() const
+    /// Return leaf node object in hierarchy (const version).
+    const T& leaf_node() const
     {
-      return *fine_shared_ptr();
+      return *leaf_node_shared_ptr();
     }
 
-    /// Return shared pointer to finest object in hierarchy.
+    /// Return shared pointer to leaf node object in hierarchy.
     ///
     /// *Returns*
     ///     _T_
-    ///         The fine object.
-    boost::shared_ptr<T> fine_shared_ptr()
+    ///         The leaf node object.
+    boost::shared_ptr<T> leaf_node_shared_ptr()
     {
       boost::shared_ptr<T> it = _self;
       for (; it->_child; it = it->_child);
       return it;
     }
 
-    /// Return shared pointer to finest object in hierarchy (const version).
-    boost::shared_ptr<const T> fine_shared_ptr() const
+    /// Return shared pointer to leaf node object in hierarchy (const version).
+    boost::shared_ptr<const T> leaf_node_shared_ptr() const
     {
       boost::shared_ptr<const T> it = _self;
       for (; it->_child; it = it->_child);

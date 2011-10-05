@@ -155,6 +155,7 @@ void SubDomain::apply_markers(S& sub_domains,
   // Extract exterior (non shared) facets markers
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
+  // Array for vertex coordinate
   Array<double> x;
 
   // Compute sub domain markers

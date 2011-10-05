@@ -16,7 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-08-29
-// Last changed: 2011-10-04
+// Last changed: 2011-10-05
+
+#include <limits>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
@@ -166,18 +168,12 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   const MeshConnectivity& connectivity = mesh.topology()(D, d);
   assert(D == d || connectivity.size() > 0);
 
-  // Get maximum value
-  uint maxval = 0;
-  std::map<std::pair<uint, uint>, uint> values = _markers[d]->values();
-  std::map<std::pair<uint, uint>, uint>::const_iterator it;
-  for (it = values.begin(); it != values.end(); ++it)
-    maxval = std::max(maxval, it->second);
-  maxval = MPI::max(maxval);
-
-  // Set all values of mesh function to maximum value + 1
-  mesh_function.set_all(maxval + 1);
+  // Set all values of mesh function to maximum uint value
+  mesh_function.set_all(std::numeric_limits<unsigned int>::max());
 
   // Iterate over all values
+  const std::map<std::pair<uint, uint>, uint> values = _markers[d]->values();
+  std::map<std::pair<uint, uint>, uint>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get marker data
@@ -188,7 +184,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
     // Get global entity index. Note that we ignore the local entity
     // index when the function is defined over cells.
     uint entity_index(0);
-    if (D == d)
+    if (d == D)
       entity_index = cell_index;
     else
       entity_index = connectivity(cell_index)[local_entity];
