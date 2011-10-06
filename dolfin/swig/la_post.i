@@ -763,12 +763,16 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #endif
 
 #ifdef HAS_TRILINOS
+
+
+#ifdef TRILINOS_USE_RCP
 %runtime%{
 #include <Teuchos_RCP.hpp>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
 %}
+#endif
 
 DOWN_CAST_MACRO(EpetraVector)
 DOWN_CAST_MACRO(EpetraMatrix)
@@ -778,11 +782,18 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
 
 %extend dolfin::EpetraMatrix{
+  #ifdef TRILINOS_USE_RCP
   Teuchos::RCP<Epetra_FECrsMatrix> _mat ()
   {
     Epetra_FECrsMatrix* tmp = self->mat().get();
     return Teuchos::RCP<Epetra_FECrsMatrix>(tmp, false);
   }
+  #else
+  Epetra_FECrsMatrix* _mat ()
+  {
+    return self->mat().get();
+  }
+  #endif
 
 %pythoncode %{
     def mat(self):
@@ -802,11 +813,18 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 }
 
 %extend dolfin::EpetraVector{
+  #ifdef TRILINOS_USE_RCP
   Teuchos::RCP<Epetra_FEVector> _vec ()
   {
     Epetra_FEVector* tmp = self->vec().get();
     return Teuchos::RCP<Epetra_FEVector>(tmp, false);
   }
+  #else
+  Epetra_FEVector* _vec ()
+  {
+    return self->vec().get();
+  }
+  #endif
 
 %pythoncode %{
     def vec(self):

@@ -29,6 +29,10 @@ if (Trilinos_FOUND)
   # Trilinos version
   set(TRILINOS_VERSION ${Trilinos_VERSION})
 
+  if(NOT ${TRILINOS_VERSION} VERSION_LESS 10.8)
+    set(TRILINOS_DEFINITIONS ${TRILINOS_DEFINITIONS} -DTRILINOS_USE_RCP)
+  endif()
+
   # Loop over Trilinos libs and get full path
   foreach (lib ${Trilinos_LIBRARIES})
     find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${Trilinos_LIBRARY_DIRS})
