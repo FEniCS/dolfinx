@@ -200,8 +200,6 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 #ifdef PETSC_HAVE_CUSP
 LA_PRE_FACTORY(PETScCuspFactory)
-%newobject dolfin::PETScCuspMatrix::copy;
-%newobject dolfin::PETScCuspVector::copy;
 #endif
 
 //-----------------------------------------------------------------------------
