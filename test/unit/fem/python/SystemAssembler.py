@@ -137,8 +137,6 @@ class TestSystemAssembler(unittest.TestCase):
         a1 = 1*u*v*dx(1) + 2*u*v*ds(3)
         L1 = 1*v*dx(1) + 2*v*ds(3)
 
-        # FIXME: Currently disabled, need to fix bug
-
         # Used for computing reference values
         #A0 = assemble(a0)
         #b0 = assemble(L0)

@@ -304,6 +304,12 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Reset cell tensor and vector
+    for (uint i = 0; i < data.Ae.size(); ++i)
+      data.Ae[i] = 0.0;
+    for (uint i = 0; i < data.be.size(); ++i)
+      data.be[i] = 0.0;
+
     // Get cell integrals for sub domain (if any)
     if (cell_domains && cell_domains->size() > 0)
     {
@@ -318,7 +324,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
         b_cell_integral = 0;
     }
 
-    // Add cell tensor for A
+    // Compute cell tensor for A
     if (A_cell_integral)
     {
       // Update to current cell
@@ -327,10 +333,10 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       // Tabulate cell tensor
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
       for (uint i = 0; i < data.Ae.size(); ++i)
-        data.Ae[i] = A_ufc.A[i];
+        data.Ae[i] += A_ufc.A[i];
     }
 
-    // Add cell tensor for b
+    // Compute cell tensor for b
     if (b_cell_integral)
     {
       // Update to current cell
@@ -339,7 +345,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       // Tabulate cell tensor
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
       for (uint i = 0; i < data.be.size(); ++i)
-        data.be[i] = b_ufc.A[i];
+        data.be[i] += b_ufc.A[i];
     }
 
     // Compute exterior facet integral if present
