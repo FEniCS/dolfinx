@@ -52,7 +52,7 @@ if (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
   # Armadillo needs the location of the Boost header files
   if (NOT Boost_FOUND)
     set(BOOST_ROOT $ENV{BOOST_DIR})
-    set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0)
+    set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0)
     find_package(Boost REQUIRED)
   endif()
 
