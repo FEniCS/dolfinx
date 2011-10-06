@@ -25,8 +25,6 @@
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
-#include <Trilinos_version.h>
-
 #include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
