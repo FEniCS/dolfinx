@@ -75,10 +75,10 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
       const std::string name = it->name();
       assert(name == "dof");
 
-      const uint global_index = it->attribute("global_index").as_uint();
+      const uint global_index = it->attribute("index").as_uint();
       const double value = it->attribute("value").as_double();
       const uint cell_index = it->attribute("cell_index").as_uint();
-      const uint local_dof_index = it->attribute("local_dof_index").as_uint();
+      const uint local_dof_index = it->attribute("cell_dof_index").as_uint();
 
       global_to_cell_dof[global_index].first = cell_index;
       global_to_cell_dof[global_index].second = local_dof_index;
@@ -143,10 +143,10 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
       assert(i < global_dof_to_cell_dof.size());
 
       pugi::xml_node dof_node = function_node.append_child("dof");
-      dof_node.append_attribute("global_index") = i;
+      dof_node.append_attribute("index") = i;
       dof_node.append_attribute("value") = boost::lexical_cast<std::string>(x[i]).c_str();
       dof_node.append_attribute("cell_index") = global_dof_to_cell_dof[i][0].first;
-      dof_node.append_attribute("local_dof_index") = global_dof_to_cell_dof[i][0].second;
+      dof_node.append_attribute("cell_dof_index") = global_dof_to_cell_dof[i][0].second;
     }
   }
 }

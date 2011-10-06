@@ -249,7 +249,7 @@
 // Typecheck
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE, 0);
+  int res = SWIG_ConvertPtr($input, 0, $descriptor(TYPE*), 0);
   $1 = SWIG_CheckState(res);
 }
 
