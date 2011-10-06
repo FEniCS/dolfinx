@@ -97,6 +97,9 @@ namespace dolfin
       //#endif
       #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
+        #ifndef HAS_PETSC
+        default_backend = "Epetra";
+        #endif
       #endif
       #ifdef HAS_MTL4
       allowed_backends.insert("MTL4");

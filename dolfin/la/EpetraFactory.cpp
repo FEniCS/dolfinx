@@ -24,12 +24,16 @@
 #include <Epetra_SerialComm.h>
 
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/SubSystemsManager.h"
 #include "EpetraSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "EpetraFactory.h"
+
+#include "EpetraKrylovSolver.h"
+
 
 using namespace dolfin;
 
@@ -39,16 +43,20 @@ EpetraFactory EpetraFactory::factory;
 //-----------------------------------------------------------------------------
 EpetraFactory::EpetraFactory()
 {
-  serial_comm = new Epetra_SerialComm();
+  // Initialise MPI
+  SubSystemsManager::init_mpi();
+
+  serial_comm.reset(new Epetra_SerialComm());
 
   // Why does this not work with dolfin::MPICommunicator?
-  mpi_comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  //MPICommunicator _mpi_comm;
+  //mpi_comm.reset(new Epetra_MpiComm(*_mpi_comm));
+  mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
 }
 //-----------------------------------------------------------------------------
 EpetraFactory::~EpetraFactory()
 {
-  delete serial_comm;
-  delete mpi_comm;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraFactory::create_matrix() const
@@ -84,11 +92,13 @@ EpetraKrylovSolver* EpetraFactory::create_krylov_solver(std::string method,
 //-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const
 {
+  assert(serial_comm);
   return *serial_comm;
 }
 //-----------------------------------------------------------------------------
 Epetra_MpiComm& EpetraFactory::get_mpi_comm() const
 {
+  assert(mpi_comm);
   return *mpi_comm;
 }
 //-----------------------------------------------------------------------------

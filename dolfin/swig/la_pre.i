@@ -209,14 +209,11 @@ LA_PRE_FACTORY(PETScCuspFactory)
 LA_PRE_FACTORY(EpetraFactory)
 %rename(_mat) dolfin::EpetraMatrix::mat;
 %rename(_vec) dolfin::EpetraVector::vec;
+%ignore dolfin::EpetraMatrix::mat;
+%ignore dolfin::EpetraVector::vec;
 %newobject dolfin::EpetraMatrix::copy;
 %newobject dolfin::EpetraVector::copy;
 
-//-----------------------------------------------------------------------------
-// Create in and out typemaps for boost::shared_ptr<Foo>
-//-----------------------------------------------------------------------------
-FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FECrsMatrix)
-FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 #endif
 
 //-----------------------------------------------------------------------------

@@ -333,9 +333,8 @@ std::pair<unsigned int, unsigned int>
                                                 uint process_number)
 {
   // Communicate number of local entities
-  std::vector<uint> num_entities_to_number(num_processes, 0);
-  num_entities_to_number[process_number] = num_local_entities;
-  MPI::gather(num_entities_to_number);
+  std::vector<uint> num_entities_to_number;
+  MPI::all_gather(num_local_entities, num_entities_to_number);
 
   // Compute offset
   const uint offset = std::accumulate(num_entities_to_number.begin(),
@@ -809,15 +808,14 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::sort(global_vertex_send.begin(), global_vertex_send.end());
 
   // Distribute boundaries' sizes
-  std::vector<uint> boundary_sizes(num_processes);
-  boundary_sizes[process_number] = boundary_size;
-  MPI::gather(boundary_sizes);
+  std::vector<uint> boundary_sizes;
+  MPI::all_gather(boundary_size, boundary_sizes);
 
   // Find largest boundary size (for recv buffer)
-  const uint max_boundary_size = *std::max_element(boundary_sizes.begin(), boundary_sizes.end());
+  //const uint max_boundary_size = *std::max_element(boundary_sizes.begin(), boundary_sizes.end());
 
   // Recieve buffer
-  std::vector<uint> global_vertex_recv(max_boundary_size);
+  std::vector<uint> global_vertex_recv;
 
   // Create shared_vertices data structure: mapping from shared vertices to list of neighboring processes
   std::map<uint, std::vector<uint> >& shared_vertices = mesh.parallel_data().shared_vertices();
@@ -833,14 +831,21 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     const int q = (process_number + i) % num_processes;
 
     // Send and receive
-    MPI::send_recv(&global_vertex_send[0], boundary_size, p, &global_vertex_recv[0], boundary_sizes[q], q);
+    //MPI::send_recv(&global_vertex_send[0], boundary_size, p, &global_vertex_recv[0], boundary_sizes[q], q);
+    MPI::send_recv(global_vertex_send, p, global_vertex_recv, q);
 
     // Compute intersection of global indices
-    std::vector<uint> intersection(std::min(boundary_size, boundary_sizes[q]));
+    //std::vector<uint> intersection(std::min(boundary_size, boundary_sizes[q]));
+    std::vector<uint> intersection(std::min(global_vertex_send.size(), global_vertex_recv.size()));
     std::vector<uint>::iterator intersection_end = std::set_intersection(
          global_vertex_send.begin(), global_vertex_send.end(),
-         &global_vertex_recv[0], &global_vertex_recv[0] + boundary_sizes[q],
+         global_vertex_recv.begin(), global_vertex_recv.end(),
          intersection.begin());
+
+    //std::vector<uint>::iterator intersection_end = std::set_intersection(
+    //     global_vertex_send.begin(), global_vertex_send.end(),
+    //     &global_vertex_recv[0], &global_vertex_recv[0] + boundary_sizes[q],
+    //     intersection.begin());
 
     // Fill shared vertices information
     std::vector<uint>::const_iterator index;

@@ -278,7 +278,7 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_set<dolfin::uint>
     ///         The set of dof indices.
-    boost::unordered_set<dolfin::uint> dofs() const;
+    boost::unordered_set<uint> dofs() const;
 
     /// Return the underlying dof map data. Intended for internal library
     /// use only.
@@ -286,7 +286,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::vector<dolfin::uint> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<dolfin::uint> >& data() const
+    const std::vector<std::vector<uint> >& data() const
     { return _dofmap; }
 
     /// Renumber dofs
@@ -324,13 +324,13 @@ namespace dolfin
                                 const Mesh& dolfin_mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<dolfin::uint> > _dofmap;
+    std::vector<std::vector<uint> > _dofmap;
 
     // UFC dof map
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
-    boost::unordered_map<dolfin::uint, uint> ufc_map_to_dofmap;
+    boost::unordered_map<uint, uint> ufc_map_to_dofmap;
 
     // UFC dof map offset
     unsigned int ufc_offset;

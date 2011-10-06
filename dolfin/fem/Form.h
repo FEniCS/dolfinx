@@ -92,7 +92,7 @@ namespace dolfin
     ///         The rank.
     ///     num_coefficients (uint)
     ///         The number of coefficients.
-    Form(dolfin::uint rank, dolfin::uint num_coefficients);
+    Form(uint rank, uint num_coefficients);
 
     /// Create form (shared data)
     ///
@@ -242,7 +242,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The number of the coefficient with the given name.
-    virtual dolfin::uint coefficient_number(const std::string & name) const;
+    virtual uint coefficient_number(const std::string & name) const;
 
     /// Return the name of the coefficient with this number
     ///
@@ -253,7 +253,7 @@ namespace dolfin
     /// *Returns*
     ///     std::string
     ///         The name of the coefficient with the given number.
-    virtual std::string coefficient_name(dolfin::uint i) const;
+    virtual std::string coefficient_name(uint i) const;
 
     /// Return cell domains (zero pointer if no domains have been
     /// specified)

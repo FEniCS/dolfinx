@@ -25,7 +25,11 @@
 
 #include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/fem/GenericDofMap.h"
+#include "dolfin/function/FunctionSpace.h"
 #include "dolfin/la/GenericVector.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/ParallelData.h"
 #include "XMLArray.h"
 #include "XMLVector.h"
 
@@ -34,7 +38,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
-  // Read data in to Arraya
+  // Read data in to Array
   Array<double> data;
   Array<uint> indices;
   read(data, indices, xml_dolfin);
@@ -111,3 +115,4 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   }
 }
 //-----------------------------------------------------------------------------
+

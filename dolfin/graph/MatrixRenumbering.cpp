@@ -21,9 +21,11 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/scoped_array.hpp>
+#include <zoltan_cpp.h>
 
 #include "dolfin/log/log.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/la/SparsityPattern.h"
 #include "MatrixRenumbering.h"
 
 using namespace dolfin;

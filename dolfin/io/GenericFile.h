@@ -79,6 +79,7 @@ namespace dolfin
     virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<double> >& array_map);
+    virtual void operator>> (Function& u);
 
     // Output
     virtual void operator<< (const GenericVector& x);

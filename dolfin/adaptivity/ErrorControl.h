@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-09-06
+// Last changed: 2011-10-04
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -176,9 +176,9 @@ namespace dolfin
     void compute_extrapolation(const Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
-    friend const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                                     boost::shared_ptr<const Mesh> refined_mesh,
-                                                     bool adapt_coefficients);
+    friend const ErrorControl& dolfin::adapt(const ErrorControl& ec,
+                                     boost::shared_ptr<const Mesh> adapted_mesh,
+                                     bool adapt_coefficients);
 
   private:
 

@@ -31,6 +31,7 @@ namespace pugi
 namespace dolfin
 {
 
+  class FunctionSpace;
   class GenericVector;
 
   class XMLVector
@@ -40,7 +41,7 @@ namespace dolfin
     // Read XML vector. Vector must have correct size.
     static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
-    // Read XML vector in Array. Vector must have correct size.
+    // Read XML vector in Array
     static void read(Array<double>& x, Array<uint>& indices,
                      const pugi::xml_node xml_dolfin);
 
@@ -50,6 +51,7 @@ namespace dolfin
     /// Write the XML file
     static void write(const GenericVector& vector, pugi::xml_node xml_node,
                       bool write_to_stream);
+
 
   };
 

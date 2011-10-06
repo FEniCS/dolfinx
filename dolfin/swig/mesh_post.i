@@ -75,16 +75,14 @@ def next(self):
 }
 
 //-----------------------------------------------------------------------------
-// MeshFunction macro
+// Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
-%define DECLARE_MESHFUNCTION(MESHFUNCTION, TYPE, TYPENAME)
-%template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
+%define DECLARE_MESHFUNCTION(TYPE, TYPENAME)
+%feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
 
-%shared_ptr(MESHFUNCTION ## TYPENAME)
-
-%feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
-%extend dolfin::MESHFUNCTION<TYPE>
+// Extend MeshFunction interface for get and set items
+%extend dolfin::MeshFunction<TYPE>
 {
   TYPE __getitem__(unsigned int i) { return (*self)[i]; }
   void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
@@ -92,27 +90,24 @@ def next(self):
   TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
 }
+
+// Declare templates
+%template(MeshFunction ## TYPENAME) dolfin::MeshFunction<TYPE>;
+%template(CellFunction ## TYPENAME) dolfin::CellFunction<TYPE>;
+%template(EdgeFunction ## TYPENAME) dolfin::EdgeFunction<TYPE>;
+%template(FaceFunction ## TYPENAME) dolfin::FaceFunction<TYPE>;
+%template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>; 
+%template(VertexFunction ## TYPENAME) dolfin::VertexFunction<TYPE>;
 %enddef
 
-//-----------------------------------------------------------------------------
-// Macro for declaring MeshFunctions
-//-----------------------------------------------------------------------------
-%define DECLARE_MESHFUNCTIONS(MESHFUNCTION)
-DECLARE_MESHFUNCTION(MESHFUNCTION, unsigned int, UInt)
-DECLARE_MESHFUNCTION(MESHFUNCTION, int, Int)
-DECLARE_MESHFUNCTION(MESHFUNCTION, double, Double)
-DECLARE_MESHFUNCTION(MESHFUNCTION, bool, Bool)
-%enddef
 
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
-DECLARE_MESHFUNCTIONS(MeshFunction)
-DECLARE_MESHFUNCTIONS(CellFunction)
-DECLARE_MESHFUNCTIONS(EdgeFunction)
-DECLARE_MESHFUNCTIONS(FaceFunction)
-DECLARE_MESHFUNCTIONS(FacetFunction)
-DECLARE_MESHFUNCTIONS(VertexFunction)
+DECLARE_MESHFUNCTION(unsigned int, UInt)
+DECLARE_MESHFUNCTION(int, Int)
+DECLARE_MESHFUNCTION(double, Double)
+DECLARE_MESHFUNCTION(bool, Bool)
 
 // Create docstrings to the MeshFunctions
 %pythoncode

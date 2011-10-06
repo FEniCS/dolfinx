@@ -547,15 +547,10 @@ double PETScVector::sum(const Array<uint>& rows) const
     const uint source = (process_number - i + num_processes) % num_processes;
     const uint dest   = (process_number + i) % num_processes;
 
-    // Size of send and receive data
-    uint send_buffer_size = send_nonlocal_rows.size();
-    uint recv_buffer_size = 0;
-    MPI::send_recv(&send_buffer_size, 1, dest, &recv_buffer_size, 1, source);
-
     // Send and receive data
-    std::vector<uint> received_nonlocal_rows(recv_buffer_size);
-    MPI::send_recv(&(send_nonlocal_rows.set())[0], send_buffer_size, dest,
-                   &received_nonlocal_rows[0], recv_buffer_size, source);
+    std::vector<uint> received_nonlocal_rows;
+    MPI::send_recv(send_nonlocal_rows.set(), dest,
+                   received_nonlocal_rows, source);
 
     // Add rows which reside on this process
     for (uint j = 0; j < received_nonlocal_rows.size(); ++j)

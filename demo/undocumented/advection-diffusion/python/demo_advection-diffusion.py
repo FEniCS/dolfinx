@@ -48,9 +48,9 @@ h = CellSize(mesh)
 Q = FunctionSpace(mesh, "CG", 1)
 V = VectorFunctionSpace(mesh, "CG", 2)
 
-# Create velocity Function
-#velocity = Function(V, "../velocity.xml.gz");
-velocity = Constant( (-1.0, 0.0) )
+# Create velocity Function from file
+velocity = Function(V);
+File("../velocity.xml.gz") >> velocity
 
 # Initialise source function and previous solution function
 f  = Constant(0.0)

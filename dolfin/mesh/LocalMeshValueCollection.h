@@ -76,20 +76,20 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   LocalMeshValueCollection<T>::LocalMeshValueCollection(const MeshValueCollection<T>& values,
-                                                        dolfin::uint dim)
+                                                        uint dim)
       : _dim(dim)
   {
     // Prepare data
-    std::vector<std::vector<uint> > indices;
-    std::vector<std::vector<T> > v;
+    std::vector<std::vector<uint> > send_indices;
+    std::vector<std::vector<T> > send_v;
 
     // Extract data on main process and split among processes
     if (MPI::is_broadcaster())
     {
       // Get number of processes
       const uint num_processes = MPI::num_processes();
-      indices.resize(num_processes);
-      v.resize(num_processes);
+      send_indices.resize(num_processes);
+      send_v.resize(num_processes);
 
       const std::map<std::pair<uint, uint>, T>& vals = values.values();
       for (uint p = 0; p < num_processes; p++)
@@ -99,25 +99,27 @@ namespace dolfin
         std::advance(it, local_range.first);
         for (uint i = local_range.first; i < local_range.second; ++i)
         {
-          indices[p].push_back(it->first.first);
-          indices[p].push_back(it->first.second);
-          v[p].push_back(it->second);
+          send_indices[p].push_back(it->first.first);
+          send_indices[p].push_back(it->first.second);
+          send_v[p].push_back(it->second);
           std::advance(it, 1);
         }
       }
     }
 
     // Scatter data
-    MPI::scatter(indices);
-    MPI::scatter(v);
-    assert(2*v[0].size() == indices[0].size());
+    std::vector<uint> indices;
+    std::vector<T> v;
+    MPI::scatter(send_indices, indices);
+    MPI::scatter(send_v, v);
+    assert(2*v.size() == indices.size());
 
     // Unpack
-    for (uint i = 0; i < v[0].size(); ++i)
+    for (uint i = 0; i < v.size(); ++i)
     {
-      const uint cell_index = indices[0][2*i];
-      const uint local_entity_index = indices[0][2*i + 1];
-      const T value = v[0][i];
+      const uint cell_index = indices[2*i];
+      const uint local_entity_index = indices[2*i + 1];
+      const T value = v[i];
 
       _values.push_back( std::make_pair( std::make_pair(cell_index, local_entity_index) , value) );
     }

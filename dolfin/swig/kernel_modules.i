@@ -111,6 +111,7 @@
 %include "dolfin/mesh/MeshGeometry.h"
 %include "dolfin/mesh/MeshDomains.h"
 %include "dolfin/mesh/MeshData.h"
+%include "dolfin/mesh/ParallelData.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
@@ -163,7 +164,6 @@
 %include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
-%include "dolfin/graph/MatrixRenumbering.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"

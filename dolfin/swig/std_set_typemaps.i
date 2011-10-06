@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2011-08-10
+// Last changed: 2011-10-05
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -55,9 +55,6 @@ namespace std
 //-----------------------------------------------------------------------------
 %typemap(argout) std::set<TYPE> & ARG_NAME
 {
-  PyObject* o0 = 0;
-  PyObject* o1 = 0;
-  PyObject* o2 = 0;
   npy_intp size = $1->size();
   PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
@@ -68,29 +65,9 @@ namespace std
     data[i] = *it;
     ++i;
   }
-  o0 = PyArray_Return(ret);
-  // If the $result is not already set
-  if ((!$result) || ($result == Py_None))
-  {
-    $result = o0;
-  }
-  // If the result is set by another out typemap build a tuple of arguments
-  else
-  {
-    // If the the argument is set but is not a tuple make one and put the result in it
-    if (!PyTuple_Check($result))
-    {
-      o1 = $result;
-      $result = PyTuple_New(1);
-      PyTuple_SetItem($result, 0, o1);
-    }
-    o2 = PyTuple_New(1);
-    PyTuple_SetItem(o2, 0, o0);
-    o1 = $result;
-    $result = PySequence_Concat(o1, o2);
-    Py_DECREF(o1);
-    Py_DECREF(o2);
-  }
+
+  // Append the output to $result
+  %append_output(PyArray_Return(ret));
 }
 
 %enddef

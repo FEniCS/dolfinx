@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-09-20
+// Last changed: 2011-10-04
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -302,8 +302,18 @@ namespace dolfin
                                          const T& value,
                                          const Mesh& mesh)
   {
-    // Get mesh connectivity d --> D
+    // Special case when d = D
     const uint D = mesh.topology().dim();
+    if (_dim == D)
+    {
+      // Set local entity index to zero when we mark a cell
+      const std::pair<uint, uint> pos(std::make_pair(entity_index, 0));
+      std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+      it = _values.insert(std::make_pair(pos, value));
+      return it.second;
+    }
+
+    // Get mesh connectivity d --> D
     mesh.init(_dim, D);
     const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
 

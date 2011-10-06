@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-02
-// Last changed: 2011-09-01
+// Last changed: 2011-10-05
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
@@ -59,22 +59,22 @@ def copy(self, deepcopy=False):
 }
 
 //-----------------------------------------------------------------------------
-// Extend Function so f.fine()/coarse() returns a dolfin.Function. Not
-// doing this on purpose for child()/parent().
+// Extend Function so f.leaf_node()/root_node() returns a dolfin.Function.
+// Not doing this on purpose for child()/parent().
 // -----------------------------------------------------------------------------
 %extend dolfin::Function {
 %pythoncode %{
-def fine(self):
+def leaf_node(self):
     "Return the finest Function in hierarchy"
-    f = HierarchicalFunction.fine(self)
+    f = HierarchicalFunction.leaf_node(self)
     return f.copy()
 %}
 }
 %extend dolfin::Function {
 %pythoncode %{
-def coarse(self):
+def root_node(self):
     "Return the coarsest Function in hierarchy"
-    f = HierarchicalFunction.coarse(self)
+    f = HierarchicalFunction.root_node(self)
     return f.copy()
 %}
 }

@@ -181,18 +181,25 @@ endif()
 
 # Check for Boost
 set(BOOST_ROOT $ENV{BOOST_DIR})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1)
+set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0)
 
-# Test for Boost.MPI is commented out since it is not well supported in older Boost versions
-#if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
-#  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi REQUIRED)
-#else()
-#  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
-#endif()
-find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
+if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi serialization REQUIRED)
+else()
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
+endif()
 
 # Check for required packages
-find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
+find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
+if (NOT UFC_FOUND)
+  message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
+    "compatible with requested version 2.0.2.\n"
+    "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
+else()
+  message(STATUS "UFC version: ${UFC_VERSION_STRING}")
+endif()
+
 find_package(Armadillo REQUIRED)
 find_package(LibXml2 REQUIRED)
 

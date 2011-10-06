@@ -25,6 +25,7 @@
 #include <vector>
 #include <boost/cstdint.hpp>
 #include <dolfin/common/types.h>
+#include "Encoder.h"
 
 namespace dolfin
 {
@@ -84,6 +85,68 @@ namespace dolfin
     static std::string encode_inline_compressed_base64(const std::vector<T>& data);
 
   };
+
+  //--------------------------------------------------------------------------
+  template<typename T>
+  std::string VTKWriter::encode_stream(const std::vector<T>& data,
+                                             bool compress)
+  {
+    std::stringstream stream;
+
+    if (compress)
+    {
+      #ifdef HAS_ZLIB
+      return encode_inline_compressed_base64(data);
+      #else
+      warning("zlib must be configured to enable compressed VTK output. Using uncompressed base64 encoding instead.");
+      return encode_inline_base64(data);
+      #endif
+    }
+    else
+      return encode_inline_base64(data);
+  }
+  //--------------------------------------------------------------------------
+  template<typename T>
+  std::string VTKWriter::encode_inline_base64(const std::vector<T>& data)
+  {
+    std::stringstream stream;
+
+    const boost::uint32_t size = data.size()*sizeof(T);
+    Encoder::encode_base64(&size, 1, stream);
+    Encoder::encode_base64(data, stream);
+
+    return stream.str();
+  }
+  //--------------------------------------------------------------------------
+  #ifdef HAS_ZLIB
+  template<typename T>
+  std::string VTKWriter::encode_inline_compressed_base64(const std::vector<T>& data)
+  {
+    std::stringstream stream;
+
+    boost::uint32_t header[4];
+    header[0] = 1;
+    header[1] = data.size()*sizeof(T);
+    header[2] = 0;
+
+    // Compress data
+    std::pair<boost::shared_array<unsigned char>, dolfin::uint>
+      compressed_data = Encoder::compress_data(data);
+
+    // Length of compressed data
+    header[3] = compressed_data.second;
+
+    // Encode header
+    Encoder::encode_base64(&header[0], 4, stream);
+
+    // Encode data
+    Encoder::encode_base64(compressed_data.first.get(),
+                           compressed_data.second, stream);
+
+    return stream.str();
+  }
+  #endif
+  //--------------------------------------------------------------------------
 
 }
 

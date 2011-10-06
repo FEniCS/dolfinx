@@ -19,8 +19,9 @@
 // Last changed:
 
 #include <boost/foreach.hpp>
-#include "dolfin/log/log.h"
 #include "dolfin/common/Timer.h"
+#include "dolfin/log/log.h"
+#include "Graph.h"
 #include "ZoltanInterface.h"
 
 using namespace dolfin;

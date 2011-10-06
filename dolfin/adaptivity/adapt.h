@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg, Marie Rognes and Garth N. Wells
+// Copyright (C) 2010-2011 Anders Logg, Marie Rognes and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-09-06
+// Last changed: 2011-10-04
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -59,7 +59,7 @@ namespace dolfin
 
   /// Refine function space based on refined mesh
   const FunctionSpace& adapt(const FunctionSpace& space,
-                             boost::shared_ptr<const Mesh> refined_mesh);
+                             boost::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of functions ---
 
@@ -68,7 +68,7 @@ namespace dolfin
   /// *Arguments*
   ///     function  (_Function_)
   ///         The function that should be adapted
-  ///     refined_mesh  (_Mesh_)
+  ///     adapted_mesh  (_Mesh_)
   ///         The new mesh
   ///     interpolate (bool)
   ///         Optional argument, default is true. If false, the
@@ -79,27 +79,27 @@ namespace dolfin
   ///     _Function__
   ///         The adapted function
   const Function& adapt(const Function& function,
-                        boost::shared_ptr<const Mesh> refined_mesh,
+                        boost::shared_ptr<const Mesh> adapted_mesh,
                         bool interpolate=true);
 
   /// Refine GenericFunction based on refined mesh
   const GenericFunction& adapt(const GenericFunction& function,
-                               boost::shared_ptr<const Mesh> refined_mesh);
+                               boost::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine mesh function<uint> based on mesh
-  const MeshFunction<dolfin::uint>& adapt(const MeshFunction<uint>& mesh_function,
-                                          boost::shared_ptr<const Mesh> refined_mesh);
+  const MeshFunction<uint>& adapt(const MeshFunction<uint>& mesh_function,
+                                          boost::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---
 
   /// Refine Dirichlet bc based on refined mesh
   const DirichletBC& adapt(const DirichletBC& bc,
-                           boost::shared_ptr<const Mesh> refined_mesh,
+                           boost::shared_ptr<const Mesh> adapted_mesh,
                            const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
   void adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
-                     const Mesh& refined_mesh,
+                     const Mesh& adapted_mesh,
                      const std::vector<std::pair<uint, uint> >& markers,
                      const Mesh& mesh);
 
@@ -110,7 +110,7 @@ namespace dolfin
   /// *Arguments*
   ///     form  (_Form_)
   ///         The form that should be adapted
-  ///     refined_mesh  (_Mesh_)
+  ///     adapted_mesh  (_Mesh_)
   ///         The new mesh
   ///     adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, the form
@@ -121,25 +121,25 @@ namespace dolfin
   ///     _Form__
   ///         The adapted form
   const Form& adapt(const Form& form,
-                    boost::shared_ptr<const Mesh> refined_mesh,
+                    boost::shared_ptr<const Mesh> adapted_mesh,
                     bool adapt_coefficients=true);
 
   //--- Refinement of variational problems ---
 
   /// Refine linear variational problem based on mesh
   const LinearVariationalProblem& adapt(const LinearVariationalProblem& problem,
-                                        boost::shared_ptr<const Mesh> refined_mesh);
+                                        boost::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine nonlinear variational problem based on mesh
   const NonlinearVariationalProblem& adapt(const NonlinearVariationalProblem& problem,
-                                           boost::shared_ptr<const Mesh> refined_mesh);
+                                           boost::shared_ptr<const Mesh> adapted_mesh);
 
   /// Adapt error control object based on adapted mesh
   ///
   /// *Arguments*
   ///     ec  (_ErrorControl_)
   ///         The error control object to be adapted
-  ///     refined_mesh  (_Mesh_)
+  ///     adapted_mesh  (_Mesh_)
   ///         The new mesh
   ///     adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, any form
@@ -150,7 +150,7 @@ namespace dolfin
   ///     _ErrorControl__
   ///         The adapted error control object
   const ErrorControl& adapt(const ErrorControl& ec,
-                            boost::shared_ptr<const Mesh> refined_mesh,
+                            boost::shared_ptr<const Mesh> adapted_mesh,
                             bool adapt_coefficients=true);
 
 

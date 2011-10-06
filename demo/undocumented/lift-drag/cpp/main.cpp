@@ -63,8 +63,8 @@ int main()
 
   // Assemble functionals over sub domain
   Fish fish;
-  double lift = assemble(L, fish);
-  double drag = assemble(D, fish);
+  const double lift = assemble(L, fish);
+  const double drag = assemble(D, fish);
 
   info("Lift: %f", lift);
   info("Drag: %f", drag);

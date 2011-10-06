@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include "DefaultFactory.h"
 #include "GenericTensor.h"
-#include "uBLASFactory.h"
 
 namespace dolfin
 {
@@ -145,7 +145,11 @@ namespace dolfin
 
     /// Return a factory for the default linear algebra backend
     LinearAlgebraFactory& factory() const
-    { return dolfin::uBLASFactory<>::instance(); }
+    {
+      DefaultFactory f;
+      return f.factory();
+    }
+    //{ return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
     double getval() const

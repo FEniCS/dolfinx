@@ -31,7 +31,7 @@ v   = TestFunction(scalar)
 
 u = Coefficient(vector)
 f = Coefficient(scalar)
-h = Constant(triangle)
+h = 2.0*triangle.circumradius
 h_avg = (h('+') + h('-'))/2
 n = scalar.cell().n
 
@@ -55,4 +55,3 @@ a = a_int + a_fac + a_vel
 
 # Linear form
 L = v*f*dx
-

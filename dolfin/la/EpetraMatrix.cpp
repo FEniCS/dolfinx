@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008-2010.
+// Modified by Anders Logg 2008-2011
+// Modified by Garth N. Wells 2008-2010
 //
 // First added:  2008-04-21
-// Last changed: 2010-11-26
+// Last changed: 2011-10-03
 
 #ifdef HAS_TRILINOS
 
@@ -50,6 +50,7 @@
 #include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 #include "EpetraMatrix.h"
+
 
 using namespace dolfin;
 
@@ -130,14 +131,16 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     const uint global_row = row_set - d_pattern.begin() + n0;
     const std::vector<dolfin::uint>& nz_entries = *row_set;
     std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
-    matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
+    matrix_map.InsertGlobalIndices(global_row, row_set->size(),
+                                   reinterpret_cast<int*>(&_nz_entries[0]));
   }
 
   for (uint local_row = 0; local_row < d_pattern.size(); local_row++)
   {
     const uint global_row = local_row + n0;
     std::vector<uint> &entries = const_cast<std::vector<uint>&>(d_pattern[local_row]);
-    matrix_map.InsertGlobalIndices(global_row, entries.size(), reinterpret_cast<int*>(&entries[0]));
+    matrix_map.InsertGlobalIndices(global_row, entries.size(),
+                                   reinterpret_cast<int*>(&entries[0]));
   }
 
   // Add off-diagonal block indices (parallel only)
@@ -145,7 +148,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   {
     const uint global_row = local_row + n0;
     std::vector<uint> &entries = const_cast<std::vector<uint>&>(o_pattern[local_row]);
-    matrix_map.InsertGlobalIndices(global_row, entries.size(), reinterpret_cast<int*>(&entries[0]));
+    matrix_map.InsertGlobalIndices(global_row, entries.size(),
+                                   reinterpret_cast<int*>(&entries[0]));
   }
 
   try
@@ -161,7 +165,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
 
   // Create matrix
-  A.reset( new Epetra_FECrsMatrix(Copy, matrix_map) );
+  A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
@@ -227,7 +231,8 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
     // Extract the values and indices from row: rows[i]
     if (A->IndicesAreLocal())
     {
-      const int err = A->ExtractMyRowView(rows[i], num_entities, values, indices);
+      const int err = A->ExtractMyRowView(rows[i], num_entities, values,
+                                          indices);
       if (err != 0)
         error("EpetraMatrix::get: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
     }
@@ -262,8 +267,22 @@ void EpetraMatrix::set(const double* block,
                        uint n, const uint* cols)
 {
   assert(A);
+
+  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  /*
+  for (uint i = 0; i < m; ++i)
+  {
+    const uint row = rows[i];
+    const double* values = block + i*n;
+    const int err = A->ReplaceGlobalValues(row, n, values,
+                                           reinterpret_cast<const int*>(cols));
+    assert(!err);
+  }
+  */
+
   const int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   n, reinterpret_cast<const int*>(cols), block);
+                                   n, reinterpret_cast<const int*>(cols), block,
+                                   Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
     error("EpetraMatrix::set: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
 }
@@ -273,10 +292,22 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   assert(A);
-  const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   n, reinterpret_cast<const int*>(cols), block,
-                                   Epetra_FECrsMatrix::ROW_MAJOR);
 
+  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  /*
+  for (uint i = 0; i < m; ++i)
+  {
+    const uint row = rows[i];
+    const double* values = block + i*n;
+    const int err = A->SumIntoGlobalValues(row, n, values,
+                                           reinterpret_cast<const int*>(cols));
+    assert(!err);
+  }
+  */
+
+  const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
+                                         n, reinterpret_cast<const int*>(cols), block,
+                                         Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
     error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
 }
@@ -324,7 +355,11 @@ void EpetraMatrix::apply(std::string mode)
   else if (mode == "insert")
     err = A->GlobalAssemble(Insert);
   else
-    error("Unknown apply mode in EpetraMatrix::apply.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "apply changes to matrix",
+                 "Unknown apply mode \"%s\"", mode.c_str());
+  }
 
   if (err != 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
@@ -534,7 +569,7 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
     print_msg_once = false;
   }
 
-  for (uint i=0; i<columns.size(); i++)
+  for (uint i=0; i < columns.size(); i++)
     set(&values[i], 1, &row, 1, &columns[i]);
 }
 //-----------------------------------------------------------------------------

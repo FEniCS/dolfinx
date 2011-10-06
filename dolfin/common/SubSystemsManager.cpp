@@ -69,16 +69,16 @@ SubSystemsManager::~SubSystemsManager()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
 {
-#ifdef HAS_MPI
+  #ifdef HAS_MPI
   if( MPI::Is_initialized() )
     return;
 
   // Initialise MPI and take responsibility
   MPI::Init();
   singleton().control_mpi = true;
-#else
+  #else
   // Do nothing
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()

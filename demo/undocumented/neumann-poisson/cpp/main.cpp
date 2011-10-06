@@ -85,7 +85,6 @@ int main()
 
   // Compute solution
   LinearVariationalSolver solver(problem);
-  solver.parameters["linear_solver"] = "iterative";
   solver.solve();
 
   // Extract subfunction

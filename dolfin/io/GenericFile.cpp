@@ -169,6 +169,11 @@ void GenericFile::operator>> (std::map<uint, std::vector<double> >& array_map)
   read_not_impl("std::map<uint, std::vector<double> >");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (Function& u)
+{
+  read_not_impl("Function");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const Mesh & mesh)
 {
   write_not_impl("Mesh");

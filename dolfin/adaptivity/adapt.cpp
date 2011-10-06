@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-09-06
+// Last changed: 2011-10-04
 
 #include <map>
 
@@ -60,7 +60,7 @@ void set_parent_child(const T& parent, boost::shared_ptr<T> child)
   child->set_parent(reference_to_no_delete_pointer(_parent));
 }
 //-----------------------------------------------------------------------------
-const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
+const Mesh& dolfin::adapt(const Mesh& mesh)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
@@ -70,18 +70,18 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh)
   }
 
   // Refine uniformly
-  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
-  UniformMeshRefinement::refine(*refined_mesh, mesh);
+  boost::shared_ptr<Mesh> adapted_mesh(new Mesh());
+  UniformMeshRefinement::refine(*adapted_mesh, mesh);
 
-  // Initialize the entities initialized in mesh in refined_mesh
+  // Initialize the entities initialized in mesh in adapted_mesh
   for (uint d = 0; d <= mesh.topology().dim(); ++d)
     if (mesh.num_entities(d) != 0)
-      refined_mesh->init(d);
+      adapted_mesh->init(d);
 
   // Set parent / child
-  set_parent_child(mesh, refined_mesh);
+  set_parent_child(mesh, adapted_mesh);
 
-  return *refined_mesh;
+  return *adapted_mesh;
 }
 //-----------------------------------------------------------------------------
 const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
@@ -95,18 +95,18 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
   }
 
   // Call refinement algorithm
-  boost::shared_ptr<Mesh> refined_mesh(new Mesh());
-  LocalMeshRefinement::refine(*refined_mesh, mesh, cell_markers);
+  boost::shared_ptr<Mesh> adapted_mesh(new Mesh());
+  LocalMeshRefinement::refine(*adapted_mesh, mesh, cell_markers);
 
-  // Initialize the entities initialized in mesh in refined_mesh
+  // Initialize the entities initialized in mesh in adapted_mesh
   for (uint d = 0; d <= mesh.topology().dim(); ++d)
     if (mesh.num_entities(d) != 0)
-      refined_mesh->init(d);
+      adapted_mesh->init(d);
 
   // Set parent / child
-  set_parent_child(mesh, refined_mesh);
+  set_parent_child(mesh, adapted_mesh);
 
-  return *refined_mesh;
+  return *adapted_mesh;
 }
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
@@ -137,7 +137,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
-                                           boost::shared_ptr<const Mesh> refined_mesh)
+                                           boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (space.has_child())
@@ -150,11 +150,11 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   boost::shared_ptr<const FiniteElement>
     refined_element(space.element().create());
   boost::shared_ptr<const GenericDofMap>
-    refined_dofmap(space.dofmap().copy(*refined_mesh));
+    refined_dofmap(space.dofmap().copy(*adapted_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>
-    refined_space(new FunctionSpace(refined_mesh, refined_element, refined_dofmap));
+    refined_space(new FunctionSpace(adapted_mesh, refined_element, refined_dofmap));
 
   // Set parent / child
   set_parent_child(space, refined_space);
@@ -163,7 +163,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 }
 //-----------------------------------------------------------------------------
 const dolfin::Function& dolfin::adapt(const Function& function,
-                                      boost::shared_ptr<const Mesh> refined_mesh,
+                                      boost::shared_ptr<const Mesh> adapted_mesh,
                                       bool interpolate)
 {
   // Skip refinement if already refined
@@ -175,7 +175,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 
   // Refine function space
   boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
-  adapt(*space, refined_mesh);
+  adapt(*space, adapted_mesh);
   boost::shared_ptr<const FunctionSpace>
     refined_space = space->child_shared_ptr();
 
@@ -191,18 +191,18 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 }
 //-----------------------------------------------------------------------------
 const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
-                                             boost::shared_ptr<const Mesh> refined_mesh)
+                                             boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Try casting to a function
   const Function* f = dynamic_cast<const Function*>(&function);
   if (f)
-    return adapt(*f, refined_mesh);
+    return adapt(*f, adapted_mesh);
   else
     return function;
 }
 //-----------------------------------------------------------------------------
 const dolfin::Form& dolfin::adapt(const Form& form,
-                                  boost::shared_ptr<const Mesh> refined_mesh,
+                                  boost::shared_ptr<const Mesh> adapted_mesh,
                                   bool adapt_coefficients)
 {
   // Skip refinement if already refined
@@ -224,7 +224,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   for (uint i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
-    adapt(space, refined_mesh);
+    adapt(space, adapted_mesh);
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
@@ -238,7 +238,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 
     if (function)
     {
-      adapt(*function, refined_mesh, adapt_coefficients);
+      adapt(*function, adapted_mesh, adapt_coefficients);
       refined_coefficients.push_back(function->child_shared_ptr());
     } else
       refined_coefficients.push_back(coefficients[i]);
@@ -250,25 +250,25 @@ const dolfin::Form& dolfin::adapt(const Form& form,
                                                 refined_coefficients));
 
   /// Attach mesh
-  refined_form->set_mesh(refined_mesh);
+  refined_form->set_mesh(adapted_mesh);
 
   // Attached refined sub domains
   const MeshFunction<uint>* cell_domains = form.cell_domains_shared_ptr().get();
   if (cell_domains)
   {
-    adapt(*cell_domains, refined_mesh);
+    adapt(*cell_domains, adapted_mesh);
     refined_form->dx = cell_domains->child_shared_ptr();
   }
   const MeshFunction<uint>* exterior_domains = form.exterior_facet_domains_shared_ptr().get();
   if (exterior_domains)
   {
-    adapt(*exterior_domains, refined_mesh);
+    adapt(*exterior_domains, adapted_mesh);
     refined_form->ds = exterior_domains->child_shared_ptr();
   }
   const MeshFunction<uint>* interior_domains = form.interior_facet_domains_shared_ptr().get();
   if (interior_domains)
   {
-    adapt(*interior_domains, refined_mesh);
+    adapt(*interior_domains, adapted_mesh);
     refined_form->dS = interior_domains->child_shared_ptr();
   }
 
@@ -280,7 +280,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 //-----------------------------------------------------------------------------
 const dolfin::LinearVariationalProblem&
 dolfin::adapt(const LinearVariationalProblem& problem,
-              boost::shared_ptr<const Mesh> refined_mesh)
+              boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
@@ -298,14 +298,14 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   // Refine forms
   assert(a);
   assert(L);
-  adapt(*a, refined_mesh);
-  adapt(*L, refined_mesh);
+  adapt(*a, adapted_mesh);
+  adapt(*L, adapted_mesh);
 
   // FIXME: Note const-cast here, don't know how to get around it
 
   // Refine solution variable
   assert(u);
-  adapt(*u, refined_mesh);
+  adapt(*u, adapted_mesh);
   boost::shared_ptr<Function> refined_u =
     reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
 
@@ -318,7 +318,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
     if (bc != 0)
     {
       assert(V);
-      adapt(*bc, refined_mesh, *V);
+      adapt(*bc, adapted_mesh, *V);
       refined_bcs.push_back(bc->child_shared_ptr());
     }
     else
@@ -343,7 +343,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
 //-----------------------------------------------------------------------------
 const dolfin::NonlinearVariationalProblem&
 dolfin::adapt(const NonlinearVariationalProblem& problem,
-              boost::shared_ptr<const Mesh> refined_mesh)
+              boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
@@ -360,15 +360,15 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 
   // Refine forms
   assert(F);
-  adapt(*F, refined_mesh);
+  adapt(*F, adapted_mesh);
   if (J)
-    adapt(*J, refined_mesh);
+    adapt(*J, adapted_mesh);
 
   // FIXME: Note const-cast here, don't know how to get around it
 
   // Refine solution variable
   assert(u);
-  adapt(*u, refined_mesh);
+  adapt(*u, adapted_mesh);
   boost::shared_ptr<Function> refined_u =
     reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
 
@@ -381,7 +381,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
     if (bc != 0)
     {
       assert(V);
-      adapt(*bc, refined_mesh, *V);
+      adapt(*bc, adapted_mesh, *V);
       refined_bcs.push_back(bc->child_shared_ptr());
     }
     else
@@ -409,10 +409,10 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 }
 //-----------------------------------------------------------------------------
 const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                    boost::shared_ptr<const Mesh> refined_mesh,
+                                    boost::shared_ptr<const Mesh> adapted_mesh,
                                     const FunctionSpace& S)
 {
-  assert(refined_mesh);
+  assert(adapted_mesh);
 
   // Skip refinement if already refined
   if (bc.has_child())
@@ -430,17 +430,17 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   const std::vector<uint> component = W->component();
   if (component.size() == 0)
   {
-    adapt(*W, refined_mesh);
+    adapt(*W, adapted_mesh);
     V = W->child_shared_ptr();
   }
   else
   {
-    adapt(S, refined_mesh);
+    adapt(S, adapted_mesh);
     V.reset(new SubSpace(S.child(), component));
   }
 
   // Get refined value
-  const GenericFunction& g = adapt(*(bc.value()), refined_mesh);
+  const GenericFunction& g = adapt(*(bc.value()), adapted_mesh);
   boost::shared_ptr<const GenericFunction> g_ptr(reference_to_no_delete_pointer(g));
 
   // Extract user_sub_domain
@@ -461,7 +461,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     // Create refined markers
     assert(W->mesh());
     std::vector<std::pair<uint, uint> > refined_markers;
-    adapt_markers(refined_markers, *refined_mesh, markers, *W->mesh());
+    adapt_markers(refined_markers, *adapted_mesh, markers, *W->mesh());
 
     refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
   }
@@ -473,10 +473,10 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 }
 //-----------------------------------------------------------------------------
 const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
-                                    boost::shared_ptr<const Mesh> refined_mesh,
+                                    boost::shared_ptr<const Mesh> adapted_mesh,
                                     bool adapt_coefficients)
 {
-  assert(refined_mesh);
+  assert(adapted_mesh);
 
   // Skip refinement if already refined
   if (ec.has_child())
@@ -486,14 +486,14 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
   }
 
   // Refine data
-  adapt(*ec._residual, refined_mesh, adapt_coefficients);
-  adapt(*ec._L_star, refined_mesh, adapt_coefficients);
-  adapt(*ec._a_star, refined_mesh, adapt_coefficients);
-  adapt(*ec._a_R_T, refined_mesh, adapt_coefficients);
-  adapt(*ec._L_R_T, refined_mesh, adapt_coefficients);
-  adapt(*ec._a_R_dT, refined_mesh, adapt_coefficients);
-  adapt(*ec._L_R_dT, refined_mesh, adapt_coefficients);
-  adapt(*ec._eta_T, refined_mesh, adapt_coefficients);
+  adapt(*ec._residual, adapted_mesh, adapt_coefficients);
+  adapt(*ec._L_star, adapted_mesh, adapt_coefficients);
+  adapt(*ec._a_star, adapted_mesh, adapt_coefficients);
+  adapt(*ec._a_R_T, adapted_mesh, adapt_coefficients);
+  adapt(*ec._L_R_T, adapted_mesh, adapt_coefficients);
+  adapt(*ec._a_R_dT, adapted_mesh, adapt_coefficients);
+  adapt(*ec._L_R_dT, adapted_mesh, adapt_coefficients);
+  adapt(*ec._eta_T, adapted_mesh, adapt_coefficients);
 
   // Create refined error control
   boost::shared_ptr<ErrorControl>
@@ -515,7 +515,7 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>&
 dolfin::adapt(const MeshFunction<uint>& mesh_function,
-              boost::shared_ptr<const Mesh> refined_mesh)
+              boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (mesh_function.has_child())
@@ -530,9 +530,9 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   // Extract parent map from data of refined mesh
   boost::shared_ptr<MeshFunction<unsigned int> > parent;
   if (mesh_function.dim() == dim)
-    parent = refined_mesh->data().mesh_function("parent_cell");
+    parent = adapted_mesh->data().mesh_function("parent_cell");
   else if (mesh_function.dim() == (dim - 1))
-    parent = refined_mesh->data().mesh_function("parent_facet");
+    parent = adapted_mesh->data().mesh_function("parent_facet");
   else
     dolfin_not_implemented();
 
@@ -553,35 +553,35 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
 
   // Map values of mesh function into refined mesh function
   boost::shared_ptr<MeshFunction<uint> >
-    refined_mesh_function(new MeshFunction<uint>(*refined_mesh,
+    adapted_mesh_function(new MeshFunction<uint>(*adapted_mesh,
                                                  mesh_function.dim()));
-  for (uint i = 0; i < refined_mesh_function->size(); i++)
+  for (uint i = 0; i < adapted_mesh_function->size(); i++)
   {
     const uint parent_index = (*parent)[i];
     if (parent_index < mesh_function.size())
-      (*refined_mesh_function)[i] = mesh_function[parent_index];
+      (*adapted_mesh_function)[i] = mesh_function[parent_index];
     else
-      (*refined_mesh_function)[i] = undefined;
+      (*adapted_mesh_function)[i] = undefined;
   }
 
   // Set parent / child relations
-  set_parent_child(mesh_function, refined_mesh_function);
+  set_parent_child(mesh_function, adapted_mesh_function);
 
   // Return refined mesh function
-  return *refined_mesh_function;
+  return *adapted_mesh_function;
 }
 //-----------------------------------------------------------------------------
 void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
-                           const Mesh& refined_mesh,
+                           const Mesh& adapted_mesh,
                            const std::vector<std::pair<uint, uint> >& markers,
                            const Mesh& mesh)
 {
 
   // Extract parent map from data of refined mesh
   boost::shared_ptr<MeshFunction<unsigned int> > parent_cells = \
-    refined_mesh.data().mesh_function("parent_cell");
+    adapted_mesh.data().mesh_function("parent_cell");
   boost::shared_ptr<MeshFunction<unsigned int> > parent_facets = \
-    refined_mesh.data().mesh_function("parent_facet");
+    adapted_mesh.data().mesh_function("parent_facet");
 
   // Check that parent maps exist
   if (!parent_cells.get() || !parent_facets.get())
@@ -595,14 +595,14 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     std::vector< std::pair<uint, uint> > > children;
 
   const uint D = mesh.topology().dim();
-  for (FacetIterator facet(refined_mesh); !facet.end(); ++facet)
+  for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets
     if (facet->num_entities(D) == 2)
       continue;
 
     // Extract cell and local facet number
-    Cell cell(refined_mesh, facet->entities(D)[0]);
+    Cell cell(adapted_mesh, facet->entities(D)[0]);
     const uint local_facet = cell.index(*facet);
 
     child.first = cell.index();

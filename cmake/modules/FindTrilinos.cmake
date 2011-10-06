@@ -5,12 +5,13 @@
 #  TRILINOS_INCLUDE_DIRS - include directories for Trilinos
 #  TRILINOS_LIBRARIES    - libraries for Trilinos
 #  TRILINOS_DEFINITIONS  - compiler flags for Trilinos
+#  TRILINOS_VERSION      - Trilinos version
 
 message(STATUS "Checking for package 'Trilinos'")
 
 # Find Trilinos CMake config
 find_package(Trilinos
-  HINTS ${Trilinos_DIR}/include ${TRILINOS_DIR}/include $ENV{TRILINOS_DIR}/include 
+  HINTS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} ${Trilinos_DIR}/include ${TRILINOS_DIR}/include $ENV{TRILINOS_DIR}/include
   PATHS /usr/include/trilinos
   QUIET)
 
@@ -25,6 +26,13 @@ if (Trilinos_FOUND)
   # Trilinos definitons
   set(TRILINOS_DEFINITIONS)
 
+  # Trilinos version
+  set(TRILINOS_VERSION ${Trilinos_VERSION})
+
+  if(NOT ${TRILINOS_VERSION} VERSION_LESS 10.8)
+    set(TRILINOS_DEFINITIONS ${TRILINOS_DEFINITIONS} -DTRILINOS_USE_RCP)
+  endif()
+
   # Loop over Trilinos libs and get full path
   foreach (lib ${Trilinos_LIBRARIES})
     find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${Trilinos_LIBRARY_DIRS})
@@ -32,5 +40,7 @@ if (Trilinos_FOUND)
       set(TRILINOS_LIBRARIES ${TRILINOS_LIBRARIES} ${TRILINOS_LIB_${lib}})
     endif()
   endforeach()
+
+  message(STATUS "Found Trilinos (found version ${TRILINOS_VERSION})")
 
 endif()

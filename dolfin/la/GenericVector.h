@@ -37,7 +37,6 @@
 namespace dolfin
 {
   template<typename T> class Array;
-  class XMLVector;
 
   /// This class defines a common interface for vectors.
 

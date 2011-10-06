@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2011 Johan Hoffman and Anders Logg
+// Copyright (C) 2002-2011 Johan Hoffman, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2005-2009.
 // Modified by Magnus Vikstrom 2007
 // Modified by Nuno Lopes 2008
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2011-09-22
+// Last changed: 2011-09-27
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -113,9 +112,9 @@ namespace dolfin
     }
 
     /// Write Function to file
-    void operator<<(const Function& u);
+    //void operator<<(const Function& u);
 
-    /// Write Function to file (with, for instance, time)
+    /// Write Function to file with time
     ///
     /// *Example*
     ///     .. code-block:: c++

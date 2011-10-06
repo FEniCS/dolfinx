@@ -58,12 +58,6 @@
 // Declare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
 
-// Macro to declare Hierarchical base class
-%define DECLARE_HIERACHIAL_SHARED_PTR(NAME)
-%shared_ptr(dolfin::Hierarchical<NAME>)
-%shared_ptr(NAME)
-%enddef
-
 // adaptivity
 %shared_ptr(dolfin::AdaptiveLinearVariationalSolver)
 %shared_ptr(dolfin::AdaptiveNonlinearVariationalSolver)
@@ -134,51 +128,22 @@
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
-%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<bool> >)
-%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<double> >)
-%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<int> >)
+// NOTE: Most of the MeshFunctions are declared sharepointers in 
+// NOTE: mesh_pre.i, mesh_post.i
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
-%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<unsigned int> >)
-
-%shared_ptr(dolfin::MeshFunction<bool>)
-%shared_ptr(dolfin::MeshFunction<double>)
-%shared_ptr(dolfin::MeshFunction<int>)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
-%shared_ptr(dolfin::MeshFunction<unsigned int>)
+
+// FIXME: Do we need to declare dolfin::uint?
+%shared_ptr(dolfin::CellFunction<dolfin::uint>)
+%shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
+%shared_ptr(dolfin::FaceFunction<dolfin::uint>)
+%shared_ptr(dolfin::FacetFunction<dolfin::uint>)
+%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
+
 
 // parameters
 %shared_ptr(dolfin::Parameters)
 %shared_ptr(dolfin::GlobalParameters)
-
-%shared_ptr(dolfin::CellFunction<bool>)
-%shared_ptr(dolfin::CellFunction<double>)
-%shared_ptr(dolfin::CellFunction<int>)
-%shared_ptr(dolfin::CellFunction<dolfin::uint>)
-%shared_ptr(dolfin::CellFunction<unsigned int>)
-
-%shared_ptr(dolfin::EdgeFunction<bool>)
-%shared_ptr(dolfin::EdgeFunction<double>)
-%shared_ptr(dolfin::EdgeFunction<int>)
-%shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
-%shared_ptr(dolfin::EdgeFunction<unsigned int>)
-
-%shared_ptr(dolfin::FaceFunction<bool>)
-%shared_ptr(dolfin::FaceFunction<double>)
-%shared_ptr(dolfin::FaceFunction<int>)
-%shared_ptr(dolfin::FaceFunction<dolfin::uint>)
-%shared_ptr(dolfin::FaceFunction<unsigned int>)
-
-%shared_ptr(dolfin::FacetFunction<bool>)
-%shared_ptr(dolfin::FacetFunction<double>)
-%shared_ptr(dolfin::FacetFunction<int>)
-%shared_ptr(dolfin::FacetFunction<dolfin::uint>)
-%shared_ptr(dolfin::FacetFunction<unsigned int>)
-
-%shared_ptr(dolfin::VertexFunction<bool>)
-%shared_ptr(dolfin::VertexFunction<double>)
-%shared_ptr(dolfin::VertexFunction<int>)
-%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
-%shared_ptr(dolfin::VertexFunction<unsigned int>)
 
 // la
 %shared_ptr(dolfin::GenericTensor)
@@ -284,7 +249,7 @@
 // Typecheck
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE, 0);
+  int res = SWIG_ConvertPtr($input, 0, $descriptor(TYPE*), 0);
   $1 = SWIG_CheckState(res);
 }
 
