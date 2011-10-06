@@ -158,7 +158,7 @@ class Assembly(unittest.TestCase):
              Constant(2.0)*ds(0) + Constant(3.0)*ds(1) + Constant(4.0)*ds(2)
         m0 = assemble(M0, mesh=mesh)
 
-        # Assemble a form on unmarked subdomains
+        # Assemble a form on unmarked subdomains (should be zero)
         M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(3)
         m1 = assemble(M1, mesh=mesh)
 

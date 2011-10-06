@@ -218,7 +218,22 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
   else
   {
+    // Facet-wise assembly is not working in parallel
     not_working_in_parallel("System assembly over interior facets");
+
+    // Facet-wise assembly does not support subdomains
+    if (A_ufc.form.num_cell_domains() > 1 ||
+        b_ufc.form.num_cell_domains() > 1 ||
+        A_ufc.form.num_exterior_facet_domains() > 1 ||
+        b_ufc.form.num_exterior_facet_domains() > 1 ||
+        A_ufc.form.num_interior_facet_domains() > 1 ||
+        b_ufc.form.num_interior_facet_domains() > 1)
+    {
+      dolfin_error("SystemAssembler.cpp",
+                   "assemble system",
+                   "System assembler does not support subdomains forms containing "
+                   "interior facet integrals");
+    }
 
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(A, b, a, L,

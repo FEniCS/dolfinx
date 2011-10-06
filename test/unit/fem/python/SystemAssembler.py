@@ -133,7 +133,7 @@ class TestSystemAssembler(unittest.TestCase):
         a0 = 1*u*v*dx(0) + 2*u*v*ds(0) + 3*u*v*ds(1) + 4*u*v*ds(2)
         L0 = 1*v*dx(0) + 2*v*ds(0) + 3*v*ds(1) + 4*v*ds(2)
 
-        # Defined forms on unmarked subdomains (marked automatically)
+        # Defined forms on unmarked subdomains (should be zero)
         a1 = 1*u*v*dx(1) + 2*u*v*ds(3)
         L1 = 1*v*dx(1) + 2*v*ds(3)
 
@@ -146,14 +146,14 @@ class TestSystemAssembler(unittest.TestCase):
         #b1 = assemble(L1)
 
         # Assemble system
-        #A0, b0 = assemble_system(a0, L0)
+        A0, b0 = assemble_system(a0, L0)
         A1, b1 = assemble_system(a1, L1)
 
         # Assemble and check values
-        #self.assertAlmostEqual(A0.norm("frobenius"), 0.693043954566, 10)
-        #self.assertAlmostEqual(b0.norm("l2"),        1.28061997552,  10)
-        #self.assertAlmostEqual(A1.norm("frobenius"), 0.45406526606,  10)
-        #self.assertAlmostEqual(b1.norm("l2"),        0.84277689513,  10)
+        self.assertAlmostEqual(A0.norm("frobenius"), 0.693043954566, 10)
+        self.assertAlmostEqual(b0.norm("l2"),        1.28061997552,  10)
+        self.assertAlmostEqual(A1.norm("frobenius"), 0.0,  10)
+        self.assertAlmostEqual(b1.norm("l2"),        0.0,  10)
 
 if __name__ == "__main__":
     print ""
