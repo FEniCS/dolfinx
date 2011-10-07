@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-25
-// Last changed: 2011-08-18
+// Last changed: 2011-10-07
 
 #ifdef HAS_TRILINOS
 
@@ -41,18 +41,33 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-// Available preconditioners
-const std::map<std::string, int> TrilinosPreconditioner::methods
+// Mapping from preconditioner string to Trilinos
+const std::map<std::string, int> TrilinosPreconditioner::preconditioners
   = boost::assign::map_list_of("default",   AZ_ilu)
-                              ("ilu",       AZ_ilu)
-                              ("jacobi",    AZ_Jacobi)
                               ("none",      AZ_none)
-                              ("sor",       AZ_sym_GS)
+                              ("ilu",       AZ_ilu)
                               ("icc",       AZ_icc)
+                              ("jacobi",    AZ_Jacobi)
+                              ("sor",       AZ_sym_GS)
                               ("amg",       -1)
                               ("hypre_amg", -1)
                               ("ml_amg",    -1);
+
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+TrilinosPreconditioner::list_preconditioners()
+{
+  return boost::assign::pair_list_of
+    ("default",   "default preconditioner")
+    ("none",      "No preconditioner")
+    ("ilu",       "Incomplete LU factorization")
+    ("icc",       "Incomplete Cholesky factorization")
+    ("jacobi",    "Jacobi iteration")
+    ("sor",       "Successive over-relaxation")
+    ("amg",       "Algebraic multigrid")
+    ("hypre_amg", "Hypre algebraic multigrid (BoomerAMG)")
+    ("ml_amg",    "ML algebraic multigrid");
+}
 //-----------------------------------------------------------------------------
 Parameters TrilinosPreconditioner::default_parameters()
 {
@@ -76,14 +91,15 @@ Parameters TrilinosPreconditioner::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-TrilinosPreconditioner::TrilinosPreconditioner(std::string type) : type(type)
+TrilinosPreconditioner::TrilinosPreconditioner(std::string preconditioner)
+  : preconditioner(preconditioner)
 {
   // Set parameter values
   parameters = default_parameters();
 
   // Check that the requested method is known
-  if (methods.count(type) == 0)
-    error("Requested Trilinos proconditioner '%s' is unknown,", type.c_str());
+  if (preconditioners.count(preconditioner) == 0)
+    error("Requested Trilinos proconditioner '%s' is unknown,", preconditioner.c_str());
 }
 //-----------------------------------------------------------------------------
 TrilinosPreconditioner::~TrilinosPreconditioner()
@@ -103,7 +119,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
   AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
-  if (type == "default" || type == "ilu" || type == "icc")
+  if (preconditioner == "default" || preconditioner == "ilu" || preconditioner == "icc")
   {
     // Get/set some parameters
     const int ilu_fill_level       = parameters("ilu")["fill_level"];
@@ -116,13 +132,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     list.set("schwarz: reordering type", reordering);
 
     // Create preconditioner
-    std::string type;
-    if (type == "icc")
-      type = "IC";
+    if (preconditioner == "icc")
+      preconditioner = "IC";
     else
-      type = "ILU";
+      preconditioner = "ILU";
     Ifpack ifpack_factory;
-    ifpack_preconditioner.reset(ifpack_factory.Create(type, _P, overlap));
+    ifpack_preconditioner.reset(ifpack_factory.Create(preconditioner, _P, overlap));
     assert(ifpack_preconditioner != 0);
 
     // Set up preconditioner
@@ -131,23 +146,23 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
   }
-  else if (type == "hypre_amg")
+  else if (preconditioner == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver, *_P);
   }
-  else if (type == "ml_amg" || type == "amg")
+  else if (preconditioner == "ml_amg" || preconditioner == "amg")
     set_ml(_solver, *_P);
   else
   {
-    _solver.SetAztecOption(AZ_precond, methods.find(type)->second);
+    _solver.SetAztecOption(AZ_precond, preconditioners.find(preconditioner)->second);
     _solver.SetPrecMatrix(_P);
   }
 }
 //-----------------------------------------------------------------------------
 std::string TrilinosPreconditioner::name() const
 {
-  return type;
+  return preconditioner;
 }
 //-----------------------------------------------------------------------------
 std::string TrilinosPreconditioner::str(bool verbose) const
@@ -162,7 +177,7 @@ std::string TrilinosPreconditioner::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
 {
-  
+
   Teuchos::ParameterList mlist;
 
   //ML_Epetra::SetDefaults("SA", mlist);

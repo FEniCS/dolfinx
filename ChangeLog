@@ -1,3 +1,4 @@
+ - Support subdomains in SystemAssembler (not for interior facet integrals)
  - Add option functionality apply("flush") to PETScMatrix
  - Add option finalize_tensor=true to assemble functions
  - Solver parameters can now be passed to solve

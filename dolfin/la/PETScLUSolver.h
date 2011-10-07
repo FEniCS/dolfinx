@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2009-2010.
 //
 // First added:  2005
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
 #ifndef __DOLFIN_PETSC_LU_SOLVER_H
 #define __DOLFIN_PETSC_LU_SOLVER_H
@@ -50,11 +50,11 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScLUSolver(std::string lu_package="default");
+    PETScLUSolver(std::string method="default");
 
     /// Constructor
     PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
-                  std::string lu_package="default");
+                  std::string method="default");
 
     /// Destructor
     ~PETScLUSolver();
@@ -83,19 +83,22 @@ namespace dolfin
     /// Return PETSc KSP pointer
     boost::shared_ptr<KSP> ksp() const;
 
+    /// List available methods
+    static std::vector<std::pair<std::string, std::string> > list_methods();
+
     /// Default parameter values
     static Parameters default_parameters();
 
   private:
 
     // Available LU solvers
-    static const std::map<std::string, const MatSolverPackage> lu_packages;
+    static const std::map<std::string, const MatSolverPackage> methods;
 
     // Select LU solver type
-    const MatSolverPackage select_solver(std::string& lu_package) const;
+    const MatSolverPackage select_solver(std::string& method) const;
 
     // Initialise solver
-    void init_solver(std::string& lu_package);
+    void init_solver(std::string& method);
 
     // Set PETSc operators
     void set_petsc_operators();

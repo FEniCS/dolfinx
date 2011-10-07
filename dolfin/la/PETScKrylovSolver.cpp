@@ -40,7 +40,7 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
+// Utility function
 namespace dolfin
 {
   class PETScKSPDeleter
@@ -58,8 +58,8 @@ namespace dolfin
     }
   };
 }
-//-----------------------------------------------------------------------------
-// Available solvers
+
+// Mapping from method string to PETSc
 const std::map<std::string, const KSPType> PETScKrylovSolver::methods
   = boost::assign::map_list_of("default",  "")
                               ("cg",         KSPCG)
@@ -68,6 +68,26 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::methods
                               ("tfqmr",      KSPTFQMR)
                               ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
+
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScKrylovSolver::list_methods()
+{
+  return boost::assign::pair_list_of
+    ("default",    "default Krylov method")
+    ("cg",         "Conjugate gradient method")
+    ("gmres",      "Generalized minimal residual method")
+    ("minres",     "Minimal residual method")
+    ("tfqmr",      "Transpose-free quasi-minimal residual method")
+    ("richardson", "Richardson method")
+    ("bicgstab",   "Biconjugate gradient stabilized method");
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScKrylovSolver::list_preconditioners()
+{
+  return PETScPreconditioner::list_preconditioners();
+}
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
 {
@@ -79,8 +99,9 @@ Parameters PETScKrylovSolver::default_parameters()
  return p;
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
-  : pc_dolfin(0), preconditioner(new PETScPreconditioner(pc_type)),
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
+                                     std::string preconditioner)
+  : pc_dolfin(0), preconditioner(new PETScPreconditioner(preconditioner)),
     preconditioner_set(false)
 {
   // Check that the requested method is known
@@ -94,7 +115,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-				                             PETScPreconditioner& preconditioner)
+                                     PETScPreconditioner& preconditioner)
   : preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
 
@@ -106,7 +127,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-				                             PETScUserPreconditioner& preconditioner)
+                                     PETScUserPreconditioner& preconditioner)
   : pc_dolfin(&preconditioner), preconditioner_set(false)
 {
   // Set parameter values
@@ -428,4 +449,5 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   // FIXME: dimensions for distributed matrices and vectors here.
 }
 //-----------------------------------------------------------------------------
+
 #endif

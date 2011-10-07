@@ -26,6 +26,8 @@
 #define __MTL4_FACTORY_H
 
 #include <string>
+#include <boost/assign/list_of.hpp>
+
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
@@ -60,13 +62,28 @@ namespace dolfin
     { return 0; }
 
     /// Create LU solver
-    UmfpackLUSolver* create_lu_solver() const
+    UmfpackLUSolver* create_lu_solver(std::string method) const
     { return new UmfpackLUSolver(); }
 
     /// Create Krylov solver
     ITLKrylovSolver* create_krylov_solver(std::string method,
-                                          std::string pc) const
-    { return new ITLKrylovSolver(method, pc); }
+                                          std::string preconditioner) const
+    { return new ITLKrylovSolver(method, preconditioner); }
+
+    /// List available LU methods
+    std::vector<std::pair<std::string, std::string> > list_lu_methods() const
+    {
+      return boost::assign::pair_list_of
+        ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
+    }
+
+    /// List available Krylov methods
+    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const
+    { return ITLKrylovSolver::list_methods(); }
+
+    /// List available preconditioners
+    std::vector<std::pair<std::string, std::string> > list_preconditioners() const
+    { return ITLKrylovSolver::list_preconditioners(); }
 
     // Return singleton instance
     static MTL4Factory& instance()

@@ -54,15 +54,34 @@ SparsityPattern* PETScFactory::create_pattern() const
   return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver* PETScFactory::create_lu_solver() const
+PETScLUSolver* PETScFactory::create_lu_solver(std::string method) const
 {
-  return new PETScLUSolver();
+  return new PETScLUSolver(method);
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver* PETScFactory::create_krylov_solver(std::string method,
-                                                      std::string pc) const
+PETScKrylovSolver*
+PETScFactory::create_krylov_solver(std::string method,
+                                   std::string preconditioner) const
 {
-  return new PETScKrylovSolver(method, pc);
+  return new PETScKrylovSolver(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::list_lu_methods() const
+{
+  return PETScLUSolver::list_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::list_krylov_methods() const
+{
+  return PETScKrylovSolver::list_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::list_preconditioners() const
+{
+  return PETScKrylovSolver::list_preconditioners();
 }
 //-----------------------------------------------------------------------------
 

@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2007-11-30
-// Last changed: 2011-01-14
+// Last changed: 2011-10-06
 
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
 
+#include <vector>
 #include <string>
 
 namespace dolfin
@@ -54,11 +57,35 @@ namespace dolfin
     virtual GenericSparsityPattern* create_pattern() const = 0;
 
     /// Create LU solver
-    virtual GenericLinearSolver* create_lu_solver() const = 0;
+    virtual GenericLinearSolver* create_lu_solver(std::string method) const = 0;
 
     /// Create Krylov solver
     virtual GenericLinearSolver* create_krylov_solver(std::string method,
-                                                      std::string pc) const = 0;
+                                                      std::string preconditioner) const = 0;
+
+    /// List available LU methods (overload by subclass if non-empty)
+    virtual std::vector<std::pair<std::string, std::string> >
+    list_lu_methods() const
+    {
+      std::vector<std::pair<std::string, std::string> > lu_methods;
+      return lu_methods;
+    }
+
+    /// List available Krylov methods (overload by subclass if non-empty)
+    virtual std::vector<std::pair<std::string, std::string> >
+    list_krylov_methods() const
+    {
+      std::vector<std::pair<std::string, std::string> > krylov_methods;
+      return krylov_methods;
+    }
+
+    /// List available preconditioners (overload by subclass if non-empty)
+    virtual std::vector<std::pair<std::string, std::string> >
+    list_preconditioners() const
+    {
+      std::vector<std::pair<std::string, std::string> > preconditioners;
+      return preconditioners;
+    }
 
   };
 

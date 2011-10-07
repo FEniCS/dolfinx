@@ -15,15 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells 2008
+// Modified by Anders Logg 2011
 //
 // First added:  2007-12-06
-// Last changed: 2008-05-18
+// Last changed: 2011-10-06
 
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
 #include <string>
+#include <boost/assign/list_of.hpp>
+
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
@@ -61,14 +64,34 @@ namespace dolfin
     { return new SparsityPattern(); }
 
     /// Create LU solver
-    UmfpackLUSolver* create_lu_solver() const
+    UmfpackLUSolver* create_lu_solver(std::string method) const
     { return new UmfpackLUSolver(); }
 
     /// Create Krylov solver
-    GenericLinearSolver* create_krylov_solver(std::string method, std::string pc) const
-    //{ return 0; }
-    { return new uBLASKrylovSolver(method, pc); }
+    GenericLinearSolver* create_krylov_solver(std::string method,
+                                              std::string preconditioner) const
+    { return new uBLASKrylovSolver(method, preconditioner); }
 
+    /// List available LU methods
+    std::vector<std::pair<std::string, std::string> > list_lu_methods() const
+    {
+      return boost::assign::pair_list_of
+        ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
+    }
+
+    /// List available Krylov methods
+    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const
+    {
+      return uBLASKrylovSolver::list_methods();
+    }
+
+    /// List available preconditioners
+    std::vector<std::pair<std::string, std::string> > list_preconditioners() const
+    {
+      return uBLASKrylovSolver::list_preconditioners();
+    }
+
+    /// Return singleton instance
     static uBLASFactory<Mat>& instance()
     { return factory; }
 
@@ -79,6 +102,7 @@ namespace dolfin
 
     // Singleton instance
     static uBLASFactory<Mat> factory;
+
   };
 }
 

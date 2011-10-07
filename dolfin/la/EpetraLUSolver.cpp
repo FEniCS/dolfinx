@@ -17,7 +17,7 @@
 //
 // Modified by Anders Logg, 2011.
 //
-// Last changed: 2011-03-24
+// Last changed: 2011-10-07
 
 #ifdef HAS_TRILINOS
 
@@ -42,6 +42,49 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraLUSolver::list_methods()
+{
+  static std::vector<std::pair<std::string, std::string> > m;
+
+  m.push_back(std::make_pair("default",      "default LU solver"));
+  m.push_back(std::make_pair("umfpack",      "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+  m.push_back(std::make_pair("mumps",        "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"));
+  m.push_back(std::make_pair("klu",          "Trilinos KLU"));
+
+  return m;
+}
+//-----------------------------------------------------------------------------
+std::string EpetraLUSolver::choose_method(std::string method) const
+{
+  Amesos factory;
+  if (method == "default")
+  {
+    if (factory.Query("Amesos_Mumps"))
+      method = "Amesos_Mumps";
+    else if (factory.Query("Amesos_Umfpack"))
+      method = "Amesos_Umfpack";
+    else if (factory.Query("Amesos_Klu"))
+      method = "Amesos_Klu";
+  }
+  else if (method == "umfpack")
+    method = "Amesos_Umfpack";
+  else if (method == "mumps")
+    method = "Amesos_mumps";
+  else if (method == "klu")
+    method = "Amesos_klu";
+  else
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "solve linear system",
+                 "Unknown LU solver method \"%s\". "
+                 "Use list_lu_methods() to list available methods",
+                 method.c_str());
+  }
+
+  return method;
+}
+//-----------------------------------------------------------------------------
 Parameters EpetraLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
@@ -49,46 +92,41 @@ Parameters EpetraLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver() : symbolic_factorized(false),
-                                   numeric_factorized(false),
-                                   linear_problem(new Epetra_LinearProblem)
+EpetraLUSolver::EpetraLUSolver(std::string method)
+  : symbolic_factorized(false),
+    numeric_factorized(false),
+    linear_problem(new Epetra_LinearProblem)
 {
+  // Set default parameters
   parameters = default_parameters();
 
-  // Create linear solver
+  // Choose method
+  method = choose_method(method);
+
+  // Initialize solver
   Amesos factory;
-  if (factory.Query("Amesos_Mumps"))
-    solver_type = "Amesos_Mumps";
-  else if (factory.Query("Amesos_Umfpack"))
-    solver_type = "Amesos_Umfpack";
-  else if (factory.Query("Amesos_Klu"))
-    solver_type = "Amesos_Klu";
-  else
-    error("Requested LU solver not available");
-  solver.reset(factory.Create(solver_type, *linear_problem));
+  solver.reset(factory.Create(method, *linear_problem));
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A)
-                             : symbolic_factorized(false),
-                               numeric_factorized(false),
-                               linear_problem(new Epetra_LinearProblem)
+EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
+                               std::string method)
+  : symbolic_factorized(false),
+    numeric_factorized(false),
+    linear_problem(new Epetra_LinearProblem)
 {
+  // Set default parameters
   parameters = default_parameters();
 
+  // Set operator
   this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
   assert(this->A);
 
-  // Create linear solver
+  // Choose method
+  method = choose_method(method);
+
+  // Initialize solver
   Amesos factory;
-  if (factory.Query("Amesos_Mumps"))
-    solver_type = "Amesos_Mumps";
-  else if (factory.Query("Amesos_Umfpack"))
-    solver_type = "Amesos_Umfpack";
-  else if (factory.Query("Amesos_Klu"))
-    solver_type = "Amesos_Klu";
-  else
-    error("Requested LU solver not available");
-  solver.reset(factory.Create(solver_type, *linear_problem));
+  solver.reset(factory.Create(method, *linear_problem));
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::~EpetraLUSolver()
@@ -178,7 +216,7 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   log(PROGRESS, "Solving linear system of size %d x %d (Trilinos LU solver (%s)).",
-      A->NumGlobalRows(), A->NumGlobalCols(), solver_type.c_str());
+      A->NumGlobalRows(), A->NumGlobalCols(), method.c_str());
 
   // Solve
   AMESOS_CHK_ERR(solver->Solve());
@@ -207,4 +245,5 @@ std::string EpetraLUSolver::str(bool verbose) const
   return std::string();
 }
 //-----------------------------------------------------------------------------
+
 #endif

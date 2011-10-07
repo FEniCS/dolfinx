@@ -15,17 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Ola Skavhaug 2008
+// Modified by Anders Logg 2008-2011.
 //
 // First added:  2007-07-03
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "DefaultFactory.h"
+#include "LinearSolver.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -74,13 +75,42 @@ Parameters KrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
+KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 {
+  // Get default linear algebra factory
+  DefaultFactory factory;
+
+  // Get list of available methods and preconditioners
+  std::vector<std::pair<std::string, std::string> >
+    methods = factory.list_krylov_methods();
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = factory.list_preconditioners();
+
+  // Check that method is available
+  if (!LinearSolver::in_list(method, methods))
+  {
+    dolfin_error("KrylovSolver.cpp",
+                 "solve linear system using Krylov iteration",
+                 "Unknown Krylov method \"%s\". "
+                 "Use list_krylov_methods() to list available Krylov methods",
+                 method.c_str());
+  }
+
+  // Check that preconditioner is available
+  if (!LinearSolver::in_list(preconditioner, preconditioners))
+  {
+    dolfin_error("KrylovSolver.cpp",
+                 "solve linear system using Krylov iteration",
+                 "Unknown preconditioner \"%s\". "
+                 "Use list_preconditioners() to list available preconditioners()",
+                 method.c_str());
+  }
+
   // Set default parameters
   parameters = default_parameters();
 
-  DefaultFactory factory;
-  solver.reset(factory.create_krylov_solver(solver_type, pc_type));
+  // Initialize solver
+  solver.reset(factory.create_krylov_solver(method, preconditioner));
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

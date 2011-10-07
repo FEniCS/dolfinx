@@ -55,12 +55,12 @@ namespace dolfin
     { return 0; }
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver() const
+    GenericLinearSolver* create_lu_solver(std::string method) const
     { error("Cannot create LU solver for STLMatrix"); return 0; }
 
     /// Create Krylov solver
     GenericLinearSolver* create_krylov_solver(std::string method,
-                                              std::string pc) const
+                                              std::string preconditioner) const
     { error("Cannot create Krylov solver for STLMatrix"); return 0; }
 
     /// Return singleton instance

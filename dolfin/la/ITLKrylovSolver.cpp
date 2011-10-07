@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Garth N. Wells
+// Copyright (C) 2008-2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Dag Lindbo, 2008
+// Modified by Dag Lindbo 2008
+// Modified by Anders Logg 2011
 //
 // First added:  2008-05-16
-// Last changed: 2011-03-28
+// Last changed: 2011-10-07
 
 #ifdef HAS_MTL4
 
@@ -28,11 +29,31 @@
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
+#include <boost/assign/list_of.hpp>
 #include <boost/numeric/itl/itl.hpp>
 #include "KrylovSolver.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+ITLKrylovSolver::list_methods()
+{
+  return boost::assign::pair_list_of
+    ("default",  "default Krylov method")
+    ("cg",       "Conjugate gradient method")
+    ("bicgstab", "Biconjugate gradient stabilized method");
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+ITLKrylovSolver::list_preconditioners()
+{
+  return boost::assign::pair_list_of
+    ("default", "default preconditioner")
+    ("none",    "No preconditioner")
+    ("ilu",     "Incomplete LU factorization")
+    ("icc",     "Incomplete Cholesky factorization");
+}
 //-----------------------------------------------------------------------------
 Parameters ITLKrylovSolver::default_parameters()
 {
@@ -41,8 +62,8 @@ Parameters ITLKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-ITLKrylovSolver::ITLKrylovSolver(std::string method, std::string pc_type)
-                               : method(method), pc_type(pc_type)
+ITLKrylovSolver::ITLKrylovSolver(std::string method, std::string preconditioner)
+                               : method(method), preconditioner(preconditioner)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -90,11 +111,15 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
     warning("Requested ITL Krylov method unknown. Using BiCGStab.");
     method = "bicgstab";
   }
+
   // Fall back in default preconditioner if unknown
-  if(pc_type != "ilu" && pc_type != "icc" && pc_type != "none" && pc_type != "default")
+  if(preconditioner != "ilu" &&
+     preconditioner != "icc" &&
+     preconditioner != "none" &&
+     preconditioner != "default")
   {
     warning("Requested ITL preconditioner unknown. Using ILU.");
-    pc_type = "ilu";
+    preconditioner = "ilu";
   }
 
   // Set convergence criteria
@@ -114,47 +139,55 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
   // Developers note: the following code is not very elegant.
   // The problem is that ITL are all templates, but DOLFIN selects
   // solvers at runtime. All solvers and preconditioners are instantiated.
-  if(pc_type == "ilu" || pc_type == "default")
+  if (preconditioner == "ilu" || preconditioner == "default")
   {
     itl::pc::ilu_0<mtl4_sparse_matrix> pc(P->mat());
-    if(method == "cg")
+    if (method == "cg")
       errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
-    else if(method == "bicgstab" || method == "default")
+    else if (method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
-  else if(pc_type == "icc")
+  else if (preconditioner == "icc")
   {
     itl::pc::ic_0<mtl4_sparse_matrix> pc(P->mat());
-    if(method == "cg")
+    if (method == "cg")
       errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
-    else if(method == "bicgstab" || method == "default")
+    else if (method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
-  else if(pc_type == "none")
+  else if (preconditioner == "none")
   {
     itl::pc::identity<mtl4_sparse_matrix> pc(P->mat());
-    if(method == "cg")
+    if (method == "cg")
       errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
-    else if(method == "bicgstab" || method == "default")
+    else if (method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
 
   // Check exit condition
   if (errno_ == 0)
     log(PROGRESS, "ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
-        method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+        method.c_str(), preconditioner.c_str(), iter.iterations(), iter.resid());
   else
   {
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
       error("ITL Krylov solver failed to converge (%s, %s)\n\t%d iterations,"
-            " Resid=%8.2e", method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+            " Resid=%8.2e",
+            method.c_str(),
+            preconditioner.c_str(),
+            iter.iterations(),
+            iter.resid());
     }
     else
     {
       warning("ITL Krylov solver failed to converge (%s, %s)\n\t%d iterations,"
-              " Resid=%8.2e", method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+              " Resid=%8.2e",
+              method.c_str(),
+              preconditioner.c_str(),
+              iter.iterations(),
+              iter.resid());
     }
   }
 

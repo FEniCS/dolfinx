@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009.
-// Modified by Anders Logg, 2011.
+// Modified by Garth N. Wells 2009
+// Modified by Anders Logg 2011
 //
+// First added:  2008
 // Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
@@ -48,7 +49,7 @@
 
 using namespace dolfin;
 
-// Available solvers
+// List of available solvers
 const std::map<std::string, int> EpetraKrylovSolver::methods
   = boost::assign::map_list_of("default",  AZ_gmres)
                               ("cg",       AZ_cg)
@@ -57,6 +58,23 @@ const std::map<std::string, int> EpetraKrylovSolver::methods
                               ("bicgstab", AZ_bicgstab);
 
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraKrylovSolver::list_methods()
+{
+  return boost::assign::pair_list_of
+    ("default",    "default Krylov method")
+    ("cg",         "Conjugate gradient method")
+    ("gmres",      "Generalized minimal residual method")
+    ("tfqmr",      "Transpose-free quasi-minimal residual method")
+    ("bicgstab",   "Biconjugate gradient stabilized method");
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraKrylovSolver::list_preconditioners()
+{
+  return TrilinosPreconditioner::list_preconditioners();
+}
+//-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
@@ -64,10 +82,11 @@ Parameters EpetraKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
-                    : method(method), solver(new AztecOO),
-                      preconditioner(new TrilinosPreconditioner(pc_type)),
-                      preconditioner_set(false)
+EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
+                                       std::string preconditioner)
+  : method(method), solver(new AztecOO),
+    preconditioner(new TrilinosPreconditioner(preconditioner)),
+    preconditioner_set(false)
 {
   parameters = default_parameters();
 
@@ -81,10 +100,10 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
-                  TrilinosPreconditioner& preconditioner)
-                : method(method), solver(new AztecOO),
-                  preconditioner(reference_to_no_delete_pointer(preconditioner)),
-                  preconditioner_set(false)
+                                       TrilinosPreconditioner& preconditioner)
+  : method(method), solver(new AztecOO),
+    preconditioner(reference_to_no_delete_pointer(preconditioner)),
+    preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -229,4 +248,5 @@ boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
   return solver;
 }
 //-----------------------------------------------------------------------------
+
 #endif

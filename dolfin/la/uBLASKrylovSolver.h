@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2006-2010.
+// Modified by Anders Logg 2006-2011
 //
 // First added:  2006-05-31
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -48,15 +48,15 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBLASKrylovSolver(std::string solver_type="default",
-                      std::string pc_type="default");
+    uBLASKrylovSolver(std::string method="default",
+                      std::string preconditioner="default");
 
     /// Create Krylov solver for a particular uBLASPreconditioner
     uBLASKrylovSolver(uBLASPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBLASPreconditioner
-    uBLASKrylovSolver(std::string solver_type,
-                      uBLASPreconditioner& preconditioner);
+    uBLASKrylovSolver(std::string method,
+                      uBLASPreconditioner& pc);
 
     /// Destructor
     ~uBLASKrylovSolver();
@@ -86,6 +86,14 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
 
+    /// List available methods
+    static std::vector<std::pair<std::string, std::string> >
+    list_methods();
+
+    /// List available methods
+    static std::vector<std::pair<std::string, std::string> >
+    list_preconditioners();
+
     /// Default parameter values
     static Parameters default_parameters();
 
@@ -111,19 +119,16 @@ namespace dolfin
                         bool& converged) const;
 
     /// Select and create named preconditioner
-    void select_preconditioner(std::string pc_type);
+    void select_preconditioner(std::string preconditioner);
 
     /// Read solver parameters
     void read_parameters();
 
     /// Krylov method
-    std::string solver_type;
+    std::string method;
 
     /// Preconditioner
     boost::shared_ptr<uBLASPreconditioner> pc;
-
-    // Available solver types
-    static const std::set<std::string> solver_types;
 
     /// Solver parameters
     double rtol, atol, div_tol;
@@ -142,9 +147,6 @@ namespace dolfin
                                                uBLASVector& x,
                                                const uBLASVector& b)
   {
-    if (solver_types.count(solver_type) == 0)
-      error("Requested Krylov solver '%s' not available in uBLASKrylovSolver.", solver_type.c_str());
-
     // Check dimensions
     uint M = A.size(0);
     uint N = A.size(1);
@@ -159,7 +161,7 @@ namespace dolfin
     }
 
     // Read parameters if not done
-    if ( !parameters_read )
+    if (!parameters_read )
       read_parameters();
 
     // Write a message
@@ -172,13 +174,13 @@ namespace dolfin
     // Choose solver and solve
     bool converged = false;
     uint iterations = 0;
-    if (solver_type == "cg")
+    if (method == "cg")
       iterations = solveCG(A, x, b, converged);
-    else if (solver_type == "gmres")
+    else if (method == "gmres")
       iterations = solveGMRES(A, x, b, converged);
-    else if (solver_type == "bicgstab")
+    else if (method == "bicgstab")
       iterations = solveBiCGStab(A, x, b, converged);
-    else if (solver_type == "default")
+    else if (method == "default")
       iterations = solveBiCGStab(A, x, b, converged);
     else
       error("Requested Krylov method unknown.");

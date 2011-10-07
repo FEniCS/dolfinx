@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008-2011.
-// Modified by Garth N. Wells, 2009.
+// Modified by Anders Logg 2008-2011
+// Modified by Garth N. Wells 2009
 //
+// First added:  2008
 // Last changed: 2011-03-24
 
 #ifdef HAS_TRILINOS
@@ -57,7 +58,7 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and preconditioner
     EpetraKrylovSolver(std::string method = "default",
-                       std::string pc_type = "default");
+                       std::string preconditioner = "default");
 
     /// Create Krylov solver for a particular method and TrilinosPreconditioner
     EpetraKrylovSolver(std::string method, TrilinosPreconditioner& preconditioner);
@@ -87,6 +88,14 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
+    /// List available methods
+    static std::vector<std::pair<std::string, std::string> >
+    list_methods();
+
+    /// List available methods
+    static std::vector<std::pair<std::string, std::string> >
+    list_preconditioners();
+
     /// Default parameter values
     static Parameters default_parameters();
 
@@ -103,7 +112,7 @@ namespace dolfin
 
     // Available solvers and preconditioners
     static const std::map<std::string, int> methods;
-    static const std::map<std::string, int> pc_methods;
+    static const std::map<std::string, int> preconditioners;
 
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;

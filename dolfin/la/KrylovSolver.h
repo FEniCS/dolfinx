@@ -42,8 +42,8 @@ namespace dolfin
   public:
 
     /// Create Krylov solver
-    KrylovSolver(std::string solver_type = "default",
-                 std::string pc_type = "default");
+    KrylovSolver(std::string method = "default",
+                 std::string preconditioner = "default");
 
     /// Destructor
     ~KrylovSolver();

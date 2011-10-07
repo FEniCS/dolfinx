@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,29 +19,108 @@
 // Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-09-15
+// Last changed: 2011-10-06
 
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
+#include "DefaultFactory.h"
 #include "LinearSolver.h"
 #include "solve.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-                   std::string solver_type, std::string pc_type)
+dolfin::uint dolfin::solve(const GenericMatrix& A,
+                           GenericVector& x,
+                           const GenericVector& b,
+                           std::string method,
+                           std::string preconditioner)
 {
   Timer timer("Solving linear system");
-  LinearSolver solver(solver_type, pc_type);
+  LinearSolver solver(method, preconditioner);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A, const GenericVector& x,
+std::vector<std::pair<std::string, std::string> > dolfin::list_solver_methods()
+{
+  // Get methods
+  DefaultFactory factory;
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = factory.list_lu_methods();
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = factory.list_krylov_methods();
+  std::vector<std::pair<std::string, std::string> >
+    methods;
+  for (uint i = 0; i < lu_methods.size(); i++)
+    methods.push_back(lu_methods[i]);
+  for (uint i = 0; i < krylov_methods.size(); i++)
+    methods.push_back(krylov_methods[i]);
+
+  // Pretty-print list of methods
+  Table t("Solver methods");
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+
+  return methods;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > dolfin::list_lu_methods()
+{
+  // Get methods
+  DefaultFactory factory;
+  std::vector<std::pair<std::string, std::string> >
+    methods = factory.list_lu_methods();
+
+  // Pretty-print list of methods
+  Table t("LU methods");
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+
+  return methods;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > dolfin::list_krylov_methods()
+{
+  // Get methods
+  DefaultFactory factory;
+  std::vector<std::pair<std::string, std::string> >
+    methods = factory.list_krylov_methods();
+
+  // Pretty-print list of methods
+  Table t("Krylov methods");
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+
+  return methods;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > dolfin::list_preconditioners()
+{
+  // Get preconditioners
+  DefaultFactory factory;
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = factory.list_preconditioners();
+
+  // Pretty-print list of preconditioners
+  Table t("Preconditioners");
+  for (uint i = 0; i < preconditioners.size(); i++)
+    t(preconditioners[i].first, "Description") = preconditioners[i].second;
+  cout << t.str(true) << endl;
+
+  return preconditioners;
+}
+//-----------------------------------------------------------------------------
+double dolfin::residual(const GenericMatrix& A,
+                        const GenericVector& x,
                         const GenericVector& b)
 {
   boost::scoped_ptr<GenericVector> y(A.factory().create_vector());

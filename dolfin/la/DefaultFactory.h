@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2007-05-17
+// Last changed: 2011-10-06
 
 #ifndef __DEFAULT_FACTORY_H
 #define __DEFAULT_FACTORY_H
@@ -53,11 +53,20 @@ namespace dolfin
     virtual dolfin::GenericSparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    virtual dolfin::GenericLinearSolver* create_lu_solver() const;
+    virtual dolfin::GenericLinearSolver* create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     virtual dolfin::GenericLinearSolver*
-        create_krylov_solver(std::string method, std::string pc) const;
+    create_krylov_solver(std::string method, std::string preconditioner) const;
+
+    /// List available LU methods
+    std::vector<std::pair<std::string, std::string> > list_lu_methods() const;
+
+    /// List available Krylov methods
+    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const;
+
+    /// List available preconditioners
+    std::vector<std::pair<std::string, std::string> > list_preconditioners() const;
 
     /// Return instance of default backend
     LinearAlgebraFactory& factory() const;

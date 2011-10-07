@@ -59,6 +59,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    // List available preconditioners
+    static std::vector<std::pair<std::string, std::string> >
+    list_preconditioners();
+
     /// Default parameter values
     static Parameters default_parameters();
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,22 +19,71 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-10
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
+#include "DefaultFactory.h"
 #include "KrylovSolver.h"
 #include "LUSolver.h"
+#include "CholmodCholeskySolver.h"
 #include "LinearSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
+LinearSolver::LinearSolver(std::string method,
+                           std::string preconditioner)
 {
-  // Choose solver and set parameters
-  if (solver_type == "lu" || solver_type == "cholesky")
-    solver.reset(new LUSolver(solver_type));
+  // Get default linear algebra factory
+  DefaultFactory factory;
+
+  // Get list of available methods
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = factory.list_lu_methods();
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = factory.list_krylov_methods();
+
+  // Choose solver
+  if (in_list(method, lu_methods))
+  {
+    // Check that preconditioner has not been set
+    if (preconditioner != "none")
+    {
+      dolfin_error("LinearSolver.cpp",
+                   "solve linear system",
+                   "preconditioner may not be specified for LU solver");
+    }
+
+    // Initialize solver
+    solver.reset(new LUSolver(method));
+  }
+  else if (in_list(method, krylov_methods))
+  {
+    // Method and preconditioner will be checked by KrylovSolver
+
+    // Initialize solver
+    solver.reset(new KrylovSolver(method, preconditioner));
+  }
+  else if (method == "cholesky")
+  {
+    // Check that preconditioner has not been set
+    if (preconditioner != "none")
+    {
+      dolfin_error("LinearSolver.cpp",
+                   "solve linear system",
+                   "preconditioner may not be specified for Cholesky solver");
+    }
+
+    // Initialize solver
+    solver.reset(new CholmodCholeskySolver());
+  }
   else
-    solver.reset(new KrylovSolver(solver_type, pc_type));
+  {
+    dolfin_error("LinearSolver.cpp",
+                 "solve linear system",
+                 "Unknown solver method \"%s\". "
+                 "Use list_solver_methods() to list available methods",
+                 method.c_str());
+  }
 
   // Get parameters
   parameters = solver->parameters;
@@ -80,5 +129,15 @@ dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
 
   solver->parameters.update(parameters);
   return solver->solve(x, b);
+}
+//-----------------------------------------------------------------------------
+bool
+LinearSolver::in_list(const std::string& method,
+                      const std::vector<std::pair<std::string, std::string> > methods)
+{
+  for (uint i = 0; i < methods.size(); i++)
+    if (method == methods[i].first)
+      return true;
+  return false;
 }
 //-----------------------------------------------------------------------------

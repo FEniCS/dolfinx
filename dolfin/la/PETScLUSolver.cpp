@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2005
-// Last changed: 2011-09-07
+// Last changed: 2011-10-06
 
 #ifdef HAS_PETSC
 
@@ -39,7 +39,7 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
+// Utility function
 namespace dolfin
 {
   class PETScKSPDeleter
@@ -69,17 +69,34 @@ namespace dolfin
 #define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
 #endif
 
-//-----------------------------------------------------------------------------
-// Available LU solver
-const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
+// List of available LU solvers
+const std::map<std::string, const MatSolverPackage> PETScLUSolver::methods
   = boost::assign::map_list_of("default", "")
                               ("umfpack",      MAT_SOLVER_UMFPACK)
                               ("mumps",        MAT_SOLVER_MUMPS)
                               ("pastix",       MAT_SOLVER_PASTIX)
-                              ("petsc",        MAT_SOLVER_PETSC)
                               ("spooles",      MAT_SOLVER_SPOOLES)
+                              ("superlu",      MAT_SOLVER_SUPERLU)
                               ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
-                              ("superlu",      MAT_SOLVER_SUPERLU);
+                              ("petsc",        MAT_SOLVER_PETSC);
+
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScLUSolver::list_methods()
+{
+  static std::vector<std::pair<std::string, std::string> > m;
+
+  m.push_back(std::make_pair("default",      "default LU solver"));
+  m.push_back(std::make_pair("umfpack",      "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+  m.push_back(std::make_pair("mumps",        "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"));
+  m.push_back(std::make_pair("pastix",       "PaStiX (Parallel Sparse matriX package)"));
+  m.push_back(std::make_pair("spooles",      "SPOOLES (SParse Object Oriented Linear Equations Solver)"));
+  m.push_back(std::make_pair("superlu",      "SuperLU"));
+  m.push_back(std::make_pair("superlu_dist", "Parallel SuperLU"));
+  m.push_back(std::make_pair("petsc",        "PETSc builtin LU solver"));
+
+  return m;
+}
 //-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
@@ -92,17 +109,17 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string lu_package)
+PETScLUSolver::PETScLUSolver(std::string method)
 {
   // Set parameter values
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(lu_package);
+  init_solver(method);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
-                             std::string lu_package) : A(A)
+                             std::string method) : A(A)
 {
   // Check dimensions
   if (A->size(0) != A->size(1))
@@ -112,7 +129,7 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(lu_package);
+  init_solver(method);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
@@ -217,55 +234,55 @@ boost::shared_ptr<KSP> PETScLUSolver::ksp() const
   return _ksp;
 }
 //-----------------------------------------------------------------------------
-const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) const
+const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
 {
   // Check package string
-  if (lu_packages.count(lu_package) == 0)
-    error("Requested PETSc LU solver '%s' is unknown,", lu_package.c_str());
+  if (methods.count(method) == 0)
+    error("Requested PETSc LU solver '%s' is unknown,", method.c_str());
 
   // Choose appropriate 'default' solver
-  if (lu_package == "default")
+  if (method == "default")
   {
     if (MPI::num_processes() == 1)
     {
       #if PETSC_HAVE_UMFPACK
-      lu_package = "umfpack";
+      method = "umfpack";
       #elif PETSC_HAVE_MUMPS
-      lu_package = "mumps";
+      method = "mumps";
       #elif PETSC_HAVE_PASTIX
-      lu_package = "pastix";
+      method = "pastix";
       #elif PETSC_HAVE_SUPERLU
-      lu_package = "superlu";
+      method = "superlu";
       #elif PETSC_HAVE_SPOOLES
-      lu_package = "spooles";
+      method = "spooles";
       #else
-      lu_package = "petsc";
+      method = "petsc";
       warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
       #endif
     }
     else
     {
       #if PETSC_HAVE_MUMPS
-      lu_package = "mumps";
+      method = "mumps";
       #elif PETSC_HAVE_PASTIX
-      lu_package = "pastix";
+      method = "pastix";
       #elif PETSC_HAVE_SPOOLES
-      lu_package = "spooles";
+      method = "spooles";
       #elif PETSC_HAVE_SUPERLU_DIST
-      lu_package = "superlu_dist";
+      method = "superlu_dist";
       #else
       error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
       #endif
     }
   }
 
-  return lu_packages.find(lu_package)->second;
+  return methods.find(method)->second;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::init_solver(std::string& lu_package)
+void PETScLUSolver::init_solver(std::string& method)
 {
   // Select solver
-  const MatSolverPackage solver_package = select_solver(lu_package);
+  const MatSolverPackage solver_package = select_solver(method);
 
   // Destroy old solver environment if necessary
   if (_ksp)
@@ -335,4 +352,5 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
   }
 }
 //-----------------------------------------------------------------------------
+
 #endif

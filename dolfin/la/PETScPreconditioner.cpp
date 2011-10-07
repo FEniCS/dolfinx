@@ -33,22 +33,41 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-// Available preconditioners
+// Mapping from preconditioner string to PETSc
 const std::map<std::string, const PCType> PETScPreconditioner::methods
   = boost::assign::map_list_of("default",          "")
                               ("none",             PCNONE)
-                              ("additive_schwarz", PCASM)
                               ("ilu",              PCILU)
-                              ("bjacobi",          PCBJACOBI)
-                              ("jacobi",           PCJACOBI)
-                              ("sor",              PCSOR)
                               ("icc",              PCICC)
+                              ("jacobi",           PCJACOBI)
+                              ("bjacobi",          PCBJACOBI)
+                              ("sor",              PCSOR)
+                              ("additive_schwarz", PCASM)
                               ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
                               ("ml_amg",           PCML);
+
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScPreconditioner::list_preconditioners()
+{
+  return boost::assign::pair_list_of
+    ("default",          "default preconditioner")
+    ("none",             "No preconditioner")
+    ("ilu",              "Incomplete LU factorization")
+    ("icc",              "Incomplete Cholesky factorization")
+    ("jacobi",           "Jacobi iteration")
+    ("bjacobi",          "Block Jacobi iteration")
+    ("sor",              "Successive over-relaxation")
+    ("additive_schwarz", "Additive Schwarz")
+    ("amg",              "Algebraic multigrid")
+    ("hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)")
+    ("hypre_euclid",     "Hypre parallel incomplete LU factorization")
+    ("hypre_parasails",  "Hypre parallel sparse approximate inverse")
+    ("ml_amg",           "ML algebraic multigrid");
+}
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()
 {

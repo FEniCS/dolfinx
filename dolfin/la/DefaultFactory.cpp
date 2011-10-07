@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2011-03-17
+// Last changed: 2011-10-06
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -49,15 +49,34 @@ GenericSparsityPattern* DefaultFactory::create_pattern() const
   return factory().create_pattern();
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* DefaultFactory::create_lu_solver() const
+GenericLinearSolver* DefaultFactory::create_lu_solver(std::string method) const
 {
-  return factory().create_lu_solver();
+  return factory().create_lu_solver(method);
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* DefaultFactory::create_krylov_solver(std::string method,
-                                                          std::string pc) const
+GenericLinearSolver*
+DefaultFactory::create_krylov_solver(std::string method,
+                                     std::string preconditioner) const
 {
-  return factory().create_krylov_solver(method, pc);
+  return factory().create_krylov_solver(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::list_lu_methods() const
+{
+  return factory().list_lu_methods();
+}
+ //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::list_krylov_methods() const
+{
+  return factory().list_krylov_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::list_preconditioners() const
+{
+  return factory().list_preconditioners();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& DefaultFactory::factory() const
