@@ -43,15 +43,19 @@ LinearSolver::LinearSolver(std::string method,
     krylov_methods = factory.list_krylov_methods();
 
   // Choose solver
-  if (in_list(method, lu_methods))
+  if (in_list(method, lu_methods) or method == "lu")
   {
     // Check that preconditioner has not been set
     if (preconditioner != "none")
     {
       dolfin_error("LinearSolver.cpp",
                    "solve linear system",
-                   "preconditioner may not be specified for LU solver");
+                   "Preconditioner may not be specified for LU solver");
     }
+
+    // Use default LU method if "lu" is specified
+    if (method == "lu")
+      method = "default";
 
     // Initialize solver
     solver.reset(new LUSolver(method));
@@ -70,7 +74,7 @@ LinearSolver::LinearSolver(std::string method,
     {
       dolfin_error("LinearSolver.cpp",
                    "solve linear system",
-                   "preconditioner may not be specified for Cholesky solver");
+                   "Preconditioner may not be specified for Cholesky solver");
     }
 
     // Initialize solver

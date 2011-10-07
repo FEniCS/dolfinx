@@ -103,7 +103,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
                  "solve linear system using Krylov iteration",
                  "Unknown preconditioner \"%s\". "
                  "Use list_preconditioners() to list available preconditioners()",
-                 method.c_str());
+                 preconditioner.c_str());
   }
 
   // Set default parameters
