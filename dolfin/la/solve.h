@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-10-06
+// Last changed: 2011-10-07
 
 #ifndef __SOLVE_LA_H
 #define __SOLVE_LA_H

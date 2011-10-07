@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-07-19
-// Last changed: 2010-11-11
+// Last changed: 2011-10-07
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -51,7 +51,7 @@ namespace dolfin
   public:
 
     /// Create empty table
-    Table(std::string title="");
+    Table(std::string title="", bool right_justify=true);
 
     /// Destructor
     ~Table();
@@ -107,6 +107,9 @@ namespace dolfin
 
     // Table values as doubles
     std::map<std::pair<std::string, std::string>, double> dvalues;
+
+    // True if we should right-justify the table entries
+    bool right_justify;
 
   };
 

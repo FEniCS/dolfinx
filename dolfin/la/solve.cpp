@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-10-06
+// Last changed: 2011-10-07
 
 #include <boost/scoped_ptr.hpp>
 
@@ -63,7 +63,7 @@ std::vector<std::pair<std::string, std::string> > dolfin::list_solver_methods()
     methods.push_back(krylov_methods[i]);
 
   // Pretty-print list of methods
-  Table t("Solver methods");
+  Table t("Solver method", false);
   for (uint i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
@@ -79,7 +79,7 @@ std::vector<std::pair<std::string, std::string> > dolfin::list_lu_methods()
     methods = factory.list_lu_methods();
 
   // Pretty-print list of methods
-  Table t("LU methods");
+  Table t("LU method", false);
   for (uint i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
@@ -95,7 +95,7 @@ std::vector<std::pair<std::string, std::string> > dolfin::list_krylov_methods()
     methods = factory.list_krylov_methods();
 
   // Pretty-print list of methods
-  Table t("Krylov methods");
+  Table t("Krylov method", false);
   for (uint i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
@@ -111,7 +111,7 @@ std::vector<std::pair<std::string, std::string> > dolfin::list_preconditioners()
     preconditioners = factory.list_preconditioners();
 
   // Pretty-print list of preconditioners
-  Table t("Preconditioners");
+  Table t("Preconditioner", false);
   for (uint i = 0; i < preconditioners.size(); i++)
     t(preconditioners[i].first, "Description") = preconditioners[i].second;
   cout << t.str(true) << endl;
