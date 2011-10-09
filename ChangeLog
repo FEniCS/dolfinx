@@ -1,3 +1,4 @@
+ - Less trict check on kwargs for compiled Expression
  - Add option functionality apply("flush") to PETScMatrix
  - Add option finalize_tensor=true to assemble functions
  - Solver parameters can now be passed to solve
