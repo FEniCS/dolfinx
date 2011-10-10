@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2009 Johan Hake
+// Copyright (C) 2009-2011 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -17,13 +17,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-03
-// Last changed: 2011-06-10
+// Last changed: 2011-10-09
 
-// ===========================================================================
-// SWIG directives for mapping defines to Python
-// ===========================================================================
+#include <string>
 
-%inline %{
+// Return true if DOLFIN is compiled with OpenMP
 bool has_openmp()
 {
 #ifdef HAS_OPENMP
@@ -33,6 +31,7 @@ bool has_openmp()
 #endif
 }
 
+// Return true if DOLFIN is compiled with MPI
 bool has_mpi()
 {
 #ifdef HAS_MPI
@@ -42,6 +41,7 @@ bool has_mpi()
 #endif
 }
 
+// Return true if DOLFIN is compiled with SLEPc
 bool has_slepc()
 {
 #ifdef HAS_SLEPC
@@ -51,6 +51,7 @@ bool has_slepc()
 #endif
 }
 
+// Return true if DOLFIN is compiled with Trilinos
 bool has_trilinos()
 {
 #ifdef HAS_TRILINOS
@@ -60,6 +61,7 @@ bool has_trilinos()
 #endif
 }
 
+// Return true if DOLFIN is compiled with Scotch
 bool has_scotch()
 {
 #ifdef HAS_SCOTCH
@@ -69,6 +71,7 @@ bool has_scotch()
 #endif
 }
 
+// Return true if DOLFIN is compiled with CGAL
 bool has_cgal()
 {
 #ifdef HAS_CGAL
@@ -78,6 +81,7 @@ bool has_cgal()
 #endif
 }
 
+// Return true if DOLFIN is compiled with Umfpack
 bool has_umfpack()
 {
 #ifdef HAS_UMFPACK
@@ -87,6 +91,7 @@ bool has_umfpack()
 #endif
 }
 
+// Return true if DOLFIN is compiled with Cholmod
 bool has_cholmod()
 {
 #ifdef HAS_CHOLMOD
@@ -96,6 +101,7 @@ bool has_cholmod()
 #endif
 }
 
+// Return true if DOLFIN is compiled with parmetis
 bool has_parmetis()
 {
 #ifdef HAS_PARMETIS
@@ -105,6 +111,7 @@ bool has_parmetis()
 #endif
 }
 
+// Return true if DOLFIN is compiled with GMP
 bool has_gmp()
 {
 #ifdef HAS_GMP
@@ -114,6 +121,7 @@ bool has_gmp()
 #endif
 }
 
+// Return true if DOLFIN is compiled with ZLIB
 bool has_zlib()
 {
 #ifdef HAS_ZLIB
@@ -123,10 +131,8 @@ bool has_zlib()
 #endif
 }
 
-// ---------------------------------------------------------------------------
-// Define a function that return true; if a specific la backend is supported
-// ---------------------------------------------------------------------------
-bool has_la_backend(std::string backend)
+// Return true if a specific linear algebra backend is supported
+bool has_linear_algebra_backend(std::string backend)
 {
   if (backend == "uBLAS")
   {
@@ -162,10 +168,4 @@ bool has_la_backend(std::string backend)
   }
   return false;
 }
-
-%}
-
-%feature("docstring") has_linear_algebra_backend "
-Returns True if a linear algebra backend is available.
-";
 

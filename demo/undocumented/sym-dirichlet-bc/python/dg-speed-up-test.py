@@ -65,7 +65,7 @@ L = v*f*dx
 backends = ["uBLAS", "PETSc", "Epetra"]
 
 for backend in backends:
-    if not has_la_backend(backend):
+    if not has_linear_algebra_backend(backend):
         print "DOLFIN not compiled with % linear algebra backend."%backend
         continue
 
