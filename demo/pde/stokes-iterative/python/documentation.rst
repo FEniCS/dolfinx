@@ -40,7 +40,7 @@ this. We therefore start by checking that either "PETSc" or "Epetra"
     from dolfin import *
 
     # Test for PETSc or Epetra
-    if not has_la_backend("PETSc") and not has_la_backend("Epetra"):
+    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
         print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
         exit()
 
