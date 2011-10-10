@@ -39,7 +39,7 @@ using a discontinuous Galerkin formulation (interior penalty method).
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(24, 24)
+mesh = UnitSquare(50, 50)
 V = FunctionSpace(mesh, "DG", 1)
 
 # Define test and trial functions
@@ -54,7 +54,7 @@ f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 # Define parameters
 alpha = 4.0
-gamma = 8.0
+gamma = 20.0
 
 # Define variational problem
 a = dot(grad(v), grad(u))*dx \
@@ -67,16 +67,28 @@ a = dot(grad(v), grad(u))*dx \
 L = v*f*dx
 
 # Compute solution
+A = assemble(a)
+b = assemble(L)
+u = Vector()
+s = KrylovSolver("cg", "jacobi")
+s.parameters["error_on_nonconvergence"] = False
+print "Solving with cg/jacobi"
+s.solve(A, u, b)
+w = Function(V)
+w.vector()[:] = u
+u = w
+print "norm:", u.vector().norm("l2")
 u = Function(V)
+print "Solving with LU"
 solve(a == L, u)
 print "norm:", u.vector().norm("l2")
 
 # Project solution to piecewise linears
-u_proj = project(u)
+#u_proj = project(u)
 
 # Save solution to file
-file = File("poisson.pvd")
-file << u_proj
+#file = File("poisson.pvd")
+#file << u_proj
 
 # Plot solution
-plot(u_proj, interactive=True)
+#plot(u_proj, interactive=True)

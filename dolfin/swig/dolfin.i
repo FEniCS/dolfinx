@@ -71,5 +71,3 @@ import_array();
 
 // Include information about swig version
 %include "dolfin/swig/version.i"
-%include "dolfin/swig/defines.i"
-

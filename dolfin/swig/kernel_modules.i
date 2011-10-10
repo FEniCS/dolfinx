@@ -3,6 +3,7 @@
 // DOLFIN headers included from common
 %include "dolfin/swig/common_pre.i"
 %include "dolfin/common/init.h"
+%include "dolfin/common/defines.h"
 %include "dolfin/common/types.h"
 %include "dolfin/common/constants.h"
 %include "dolfin/common/timing.h"

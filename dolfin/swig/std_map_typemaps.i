@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2011-09-27
+// Last changed: 2011-10-09
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using
@@ -54,34 +54,50 @@ namespace boost
 // TYPENAME   : The name of the type (used to construct a NumPy array)
 //-----------------------------------------------------------------------------
 %define MAP_OUT_TYPEMAPS(KEY_TYPE, VALUE_TYPE, TYPENAME)
-%typemap(out) const boost::unordered_map<KEY_TYPE, VALUE_TYPE>& (boost::unordered_map<KEY_TYPE, VALUE_TYPE>::const_iterator it)
+%typemap(out) const boost::unordered_map<KEY_TYPE, VALUE_TYPE>& 
+ (boost::unordered_map<KEY_TYPE, VALUE_TYPE>::const_iterator it, 
+  PyObject* item0, PyObject* item1)
 {
   // boost::unordered_map<KEY_TYPE, VALUE_TYPE>
   $result = PyDict_New();
-  for (it=$1->begin(); it!=$1->end(); ++it)
-    PyDict_SetItem($result, PyInt_FromLong(static_cast<long>(it->first)), 
-		   PyInt_FromLong(static_cast<long>(it->second)));
+  for (it=$1->begin(); it!=$1->end(); ++it){
+    item0 = PyInt_FromLong(static_cast<long>(it->first));
+    item1 = PyInt_FromLong(static_cast<long>(it->second));
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);    
+    Py_XDECREF(item1);    
+  }
   
 }
 
-%typemap(out) const std::map<KEY_TYPE, VALUE_TYPE>& (std::map<KEY_TYPE, VALUE_TYPE>::const_iterator it)
+%typemap(out) const std::map<KEY_TYPE, VALUE_TYPE>& \
+ (std::map<KEY_TYPE, VALUE_TYPE>::const_iterator it, 
+  PyObject* item0, PyObject* item1)
 {
   // std::map<KEY_TYPE, VALUE_TYPE>
   $result = PyDict_New();
-  for (it=$1->begin(); it!=$1->end(); ++it)
-    PyDict_SetItem($result, PyInt_FromLong(static_cast<long>(it->first)), 
-		   PyInt_FromLong(static_cast<long>(it->second)));
-  
+  for (it=$1->begin(); it!=$1->end(); ++it){
+    item0 = PyInt_FromLong(static_cast<long>(it->first));
+    item1 = PyInt_FromLong(static_cast<long>(it->second));
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);    
+    Py_XDECREF(item1);    
+  }
 }
 
-%typemap(out) const std::map<KEY_TYPE, std::vector<VALUE_TYPE> >& (std::map<KEY_TYPE, std::vector<VALUE_TYPE> >::const_iterator it)
+%typemap(out) const std::map<KEY_TYPE, std::vector<VALUE_TYPE> >& \
+ (std::map<KEY_TYPE, std::vector<VALUE_TYPE> >::const_iterator it, 
+  PyObject* item0, PyObject* item1)
 {
   // std::map<KEY_TYPE, std::vector<VALUE_TYPE> >
   $result = PyDict_New();
-  for (it=$1->begin(); it!=$1->end(); ++it)
-    PyDict_SetItem($result, PyInt_FromLong(static_cast<long>(it->first)), 
-		   %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false));
-  
+  for (it=$1->begin(); it!=$1->end(); ++it){
+    item0 = PyInt_FromLong(static_cast<long>(it->first));
+    item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);    
+    Py_XDECREF(item1);    
+  }
 }
 
 %enddef

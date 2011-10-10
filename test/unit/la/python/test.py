@@ -329,15 +329,15 @@ if MPI.num_processes() == 1:
         backend     = "uBLAS"
         sub_backend = "Dense"
 
-    if has_la_backend("MTL4"):
+    if has_linear_algebra_backend("MTL4"):
         class MTL4Tester(DataTester, unittest.TestCase):
             backend    = "MTL4"
 
-if has_la_backend("PETSc"):
+if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "PETSc"
 
-if has_la_backend("Epetra"):
+if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "Epetra"
 
