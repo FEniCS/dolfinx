@@ -65,7 +65,18 @@ namespace dolfin
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
 
       // Graph partitioner
-      p.add("mesh_partitioner", "ParMETIS");
+      std::set<std::string> allowed_mesh_partitioners;
+      std::string default_mesh_partitioner("ParMETIS");
+      allowed_mesh_partitioners.insert("ParMETIS");
+      #ifdef HAS_SCOTCH
+      allowed_mesh_partitioners.insert("SCOTCH");
+        #ifndef HAS_PARMETIS
+        default_mesh_partitioner = "SCOTCH";
+	#endif
+      #endif
+      p.add("mesh_partitioner",
+	    default_mesh_partitioner,
+	    allowed_mesh_partitioners);
 
       // Graph coloring
       p.add("graph_coloring_library", "Boost");
