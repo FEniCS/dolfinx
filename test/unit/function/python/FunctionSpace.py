@@ -42,9 +42,6 @@ class Interface(unittest.TestCase):
         f0 = Function(V)
         f1 = Function(Vc)
         self.assertEqual(len(f0.vector()), len(f1.vector()))
-        offset = V.dim()*2
-        for new, old in dofmap_new_old.iteritems():
-            self.assertEqual(new+offset, old)
         
 if __name__ == "__main__":
     unittest.main()
