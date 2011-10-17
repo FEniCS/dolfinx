@@ -56,6 +56,8 @@ class IntegrateDerivatives(unittest.TestCase):
                 F_list.append((expr, acc))
 
         # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+        #reg([Constant(0.0, cell=cell)])
+        #reg([Constant(1.0, cell=cell)])
         monomial_list = [x**q for q in range(2, 6)]
         reg(monomial_list)
         reg([2.3*p+4.5*q for p in monomial_list for q in monomial_list])
@@ -148,33 +150,101 @@ class IntegrateDerivatives(unittest.TestCase):
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        # Define 1D geometry
-        n = 21
-        mesh = UnitSquare(n, n)
-
-        # Shift and scale mesh
-        x0, x1 = 1.5, 3.14
-        mesh.coordinates()[:] *= (x1-x0)
-        mesh.coordinates()[:] += x0
+        # Define 2D geometry
+        n = 10
+        mesh = Rectangle(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
 
         cell = mesh.ufl_cell()
-        x = cell.x
-        #xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
+        x, y = cell.x
+        xs = 0.1+0.8*x/2 # scaled to be within [0.1,0.9]
+        ys = 0.1+0.8*y/3 # scaled to be within [0.1,0.9]
         n = cell.n
 
-        # FIXME: Test all operators in 2D as well:
+        # Define list of expressions to test, and configure
+        # accuracies these expressions are known to pass with.
+        # The reason some functions are less accurately integrated is
+        # likely that the default choice of quadrature rule is not perfect
         F_list = []
+        def reg(exprs, acc=10):
+            for expr in exprs:
+                F_list.append((expr, acc))
+
+        # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+        #reg([Constant(0.0, cell=cell)])
+        #reg([Constant(1.0, cell=cell)])
+        monomial_list = [x**q for q in range(2, 6)]
+        reg(monomial_list)
+        reg([2.3*p+4.5*q for p in monomial_list for q in monomial_list])
+        reg([xs**xs])
+        reg([xs**(xs**2)], 8)
+        reg([xs**(xs**3)], 6)
+        reg([xs**(xs**4)], 2)
+        # Special functions:
+        reg([atan(xs)], 8)
+        reg([sin(x), cos(x), exp(x)], 5)
+        reg([ln(xs), pow(x, 2.7), pow(2.7, x)], 3)
+        reg([asin(xs), acos(xs)], 1)
+        reg([tan(xs)], 7)
+
+        # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
+        F_list2 = []
+        def reg2(exprs, acc=10):
+            for expr in exprs:
+                F_list2.append((inner(expr,expr), acc))
+        xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
+        x3v = as_vector([3*x**2, 5*x**3, 7*x**4])
+        cc = as_matrix([[2, 3], [4, 5]])
+        reg2([xx])
+        reg2([x3v])
+        reg2([cross(3*x3v, as_vector([-x3v[1], x3v[0], x3v[2]]))])
+        reg2([xx.T])
+        reg2([tr(xx)])
+        reg2([det(xx)])
+        reg2([dot(xx,0.1*xx)])
+        reg2([outer(xx,xx.T)])
+        reg2([dev(xx)])
+        reg2([sym(xx)])
+        reg2([skew(xx)])
+        reg2([elem_mult(7*xx, cc)])
+        reg2([elem_div(7*xx, xx+cc)])
+        reg2([elem_pow(1e-3*xx, 1e-3*cc)])
+        reg2([elem_pow(1e-3*cc, 1e-3*xx)])
+        reg2([elem_op(lambda z: sin(z)+2, 0.03*xx)], 2) # pretty inaccurate...
+
+        F_list.extend(F_list2[:0]) # FIXME: Enable these tests
+
+        # FIXME: Add tests for all UFL operators:
+        # These cause discontinuities and may be harder to test in the above fashion:
+        #'inv', 'cofac',
+        #'eq', 'ne', 'le', 'ge', 'lt', 'gt', 'And', 'Or', 'Not',
+        #'conditional', 'sign',
+        #'jump', 'avg',
+        #'LiftingFunction', 'LiftingOperator',
+
+        # FIXME: Test other derivatives: (but algorithms for operator derivatives are the same!):
+        #'variable', 'diff',
+        #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
+
+
+        # FIXME: Test all operators in 2D as well:
+        debug = 1
+        if debug:
+            k = 2
+            F_list = F_list[1:]
 
         for F,acc in F_list:
+            if debug: print "F:", str(F)
 
             # Integrate over domain and its boundary
             int_dx = assemble(div(grad(F))*dx, mesh=mesh)
             int_ds = assemble(dot(grad(F), n)*ds, mesh=mesh)
 
+            if debug: print int_dx, int_ds
+
             # Compare results. Using custom relative delta instead
             # of decimal digits here because some numbers are >> 1.
-            delta = min(abs(f_integral), abs(F_diff)) * 10**-acc
-            self.assertAlmostEqualDelta(f_integral, F_diff, delta=delta)
+            delta = min(abs(int_dx), abs(int_ds)) * 10**-acc
+            self.assertAlmostEqualDelta(int_dx, int_ds, delta=delta)
 
 
 if __name__ == "__main__":
