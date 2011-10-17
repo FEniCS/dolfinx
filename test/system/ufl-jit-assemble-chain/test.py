@@ -227,7 +227,7 @@ class IntegrateDerivatives(unittest.TestCase):
 
 
         # FIXME: Test all operators in 2D as well:
-        debug = 1
+        debug = 0
         if debug:
             k = 2
             F_list = F_list[1:]
