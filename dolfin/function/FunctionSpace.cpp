@@ -217,7 +217,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   assert(_mesh);
 
   if (_component.size() == 0)
-    error("Can only collapse function spaces that a sub-spaces.");
+    error("Can only collapse function spaces that is a sub-spaces.");
 
   // Create collapsed DofMap
   boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
