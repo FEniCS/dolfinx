@@ -53,13 +53,6 @@
 //-----------------------------------------------------------------------------
 %define ALL_VALUES(name, TYPE_NAME)
 %extend name {
-PyObject* values()
-{
-  dolfin::warning("MeshFunction.values() is depricated and will be removed." \
-		  " Use MeshFunction.array() instead.");
-  return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);
-}
-
 PyObject* array()
 {
   return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);

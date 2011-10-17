@@ -216,9 +216,6 @@ class Instantiation(unittest.TestCase):
           def noDefaultValues():
                Expression("a")
 
-          def noMemberValues():
-               Expression("1", a=1.0)
-
           def wrongDefaultType():
                Expression("a", a="1")
 
@@ -229,7 +226,6 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(TypeError, wrongArgs)
           self.assertRaises(DeprecationWarning, deprecationWarning)
           self.assertRaises(RuntimeError, noDefaultValues)
-          self.assertRaises(RuntimeError, noMemberValues)
           self.assertRaises(TypeError, wrongDefaultType)
 
      def testElementInstantiation(self):

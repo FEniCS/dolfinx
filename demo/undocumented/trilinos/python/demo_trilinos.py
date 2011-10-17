@@ -34,7 +34,7 @@ except:
 
 from dolfin import *
 
-if not has_la_backend("Epetra"):
+if not has_linear_algebra_backend("Epetra"):
     print "*** Warning: Dolfin is not compiled with Trilinos linear algebra backend"
     print "Exiting."
     exit()

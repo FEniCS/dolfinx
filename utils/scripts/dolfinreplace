@@ -16,7 +16,7 @@ from os import path
 import glob
 
 # File post fixes to look in
-post_fixes = ['.h','.cpp','.i','.tex','.py']
+post_fixes = [".h", ".cpp", ".i", ".tex", ".py", ".rst"]
 
 # Directories to explude
 exclude_dir = [".bzr", "build", "local"]
@@ -77,7 +77,7 @@ def replace(args, dirname, filenames):
 
             f.close()
             
-            if not options.simulate:
+            if not options.simulate and num_changed > 0:
                 f = open(fullpath_filename, "w")
                 f.write(output)
                 f.close()

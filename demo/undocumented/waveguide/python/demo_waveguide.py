@@ -36,7 +36,7 @@ Jianming Jin [7.2.1 - 7.2.2]
 from dolfin import *
 
 # Test for PETSc and SLEPc
-if not has_la_backend("PETSc"):
+if not has_linear_algebra_backend("PETSc"):
     print "DOLFIN has not been configured with PETSc. Exiting."
     exit()
 
