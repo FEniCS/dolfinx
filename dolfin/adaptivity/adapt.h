@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-10-04
+// Last changed: 2011-10-11
 //
 // This file defines free functions for refinement/adaption of meshes,
 // function spaces, functions etc.
@@ -87,8 +87,8 @@ namespace dolfin
                                boost::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine mesh function<uint> based on mesh
-  const MeshFunction<uint>& adapt(const MeshFunction<uint>& mesh_function,
-                                          boost::shared_ptr<const Mesh> adapted_mesh);
+  const MeshFunction<unsigned int>& adapt(const MeshFunction<unsigned int>& mesh_function,
+                                  boost::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---
 
@@ -98,9 +98,9 @@ namespace dolfin
                            const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
-  void adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
+  void adapt_markers(std::vector<std::pair<unsigned int, unsigned int> >& refined_markers,
                      const Mesh& adapted_mesh,
-                     const std::vector<std::pair<uint, uint> >& markers,
+                     const std::vector<std::pair<unsigned int, unsigned int> >& markers,
                      const Mesh& mesh);
 
   //--- Refinement of forms ---

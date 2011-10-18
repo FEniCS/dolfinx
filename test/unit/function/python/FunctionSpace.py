@@ -34,8 +34,9 @@ class Interface(unittest.TestCase):
         self.assertRaises(RuntimeError, Function, Vs)
         self.assertNotEqual(Vs.dofmap().cell_dofs(0)[0], \
                             V.dofmap().cell_dofs(0)[0],)
+
         # Collapse the space it should now be the same as V
-        Vc = Vs.collapse()
+        Vc, dofmap_new_old = Vs.collapse(True)
         self.assertEqual(Vc.dofmap().cell_dofs(0)[0], \
                          V.dofmap().cell_dofs(0)[0],)
         f0 = Function(V)

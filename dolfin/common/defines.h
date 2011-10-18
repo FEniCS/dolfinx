@@ -19,161 +19,45 @@
 // First added:  2009-09-03
 // Last changed: 2011-10-09
 
+#ifndef __DOLFIN_DEFINES_H
+#define __DOLFIN_DEFINES_H
+
 #include <string>
 
 // Return true if DOLFIN is compiled with OpenMP
-bool has_openmp()
-{
-#ifdef HAS_OPENMP
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_openmp();
 
 // Return true if DOLFIN is compiled with MPI
-bool has_mpi()
-{
-#ifdef HAS_MPI
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_mpi();
 
 // Return true if DOLFIN is compiled with SLEPc
-bool has_slepc()
-{
-#ifdef HAS_SLEPC
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_slepc();
 
 // Return true if DOLFIN is compiled with Trilinos
-bool has_trilinos()
-{
-#ifdef HAS_TRILINOS
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_trilinos();
 
 // Return true if DOLFIN is compiled with Scotch
-bool has_scotch()
-{
-#ifdef HAS_SCOTCH
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_scotch();
 
 // Return true if DOLFIN is compiled with CGAL
-bool has_cgal()
-{
-#ifdef HAS_CGAL
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_cgal();
 
 // Return true if DOLFIN is compiled with Umfpack
-bool has_umfpack()
-{
-#ifdef HAS_UMFPACK
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_umfpack();
 
 // Return true if DOLFIN is compiled with Cholmod
-bool has_cholmod()
-{
-#ifdef HAS_CHOLMOD
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_cholmod();
 
 // Return true if DOLFIN is compiled with parmetis
-bool has_parmetis()
-{
-#ifdef HAS_PARMETIS
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_parmetis();
 
 // Return true if DOLFIN is compiled with GMP
-bool has_gmp()
-{
-#ifdef HAS_GMP
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_gmp();
 
 // Return true if DOLFIN is compiled with ZLIB
-bool has_zlib()
-{
-#ifdef HAS_ZLIB
-  return true;
-#else
-  return false;
-#endif
-}
+bool has_zlib();
 
 // Return true if a specific linear algebra backend is supported
-bool has_linear_algebra_backend(std::string backend)
-{
-  if (backend == "uBLAS")
-  {
-    return true;
-  }
-  else if (backend == "PETSc")
-  {
-#ifdef HAS_PETSC
-    return true;
-#else
-    return false;
-#endif
-  }
-//  else if (backend == "PETScCusp")
-//  {
-//#ifdef PETSC_HAVE_CUSP
-//    return true;
-//#else
-//    return false;
-//#endif
-//  }
-  else if (backend == "Epetra")
-  {
-#ifdef HAS_TRILINOS
-    return true;
-#else
-    return false;
-#endif
-  }
-  else if (backend == "MTL4")
-  {
-#ifdef HAS_MTL4
-    return true;
-#else
-    return false;
-#endif
-  }
-  else if (backend == "STL")
-  {
-    return true;
-  }
-  return false;
-}
+bool has_linear_algebra_backend(std::string backend);
 
+#endif

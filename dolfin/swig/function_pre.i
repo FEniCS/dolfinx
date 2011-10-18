@@ -47,6 +47,7 @@ namespace dolfin
 %ignore dolfin::Function::Function(const FunctionSpace&, GenericVector&);
 %ignore dolfin::Function::Function(const FunctionSpace&, std::string);
 
+
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
@@ -61,6 +62,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
+%ignore dolfin::FunctionSpace::collapse() const;
 
 //-----------------------------------------------------------------------------
 // Ingore operator() in GenericFunction, implemented separately in

@@ -96,9 +96,33 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // FIXME: Some things can be simplified since we know it's a matrix and a vector
 
-  // Sub domains not supported
-  if (cell_domains || exterior_facet_domains || interior_facet_domains)
-    error("SystemAssembler does not yet support subdomains.");
+  // Get cell domains
+  if (!cell_domains || cell_domains->size() == 0)
+  {
+    cell_domains = a.cell_domains_shared_ptr().get();
+    if (!cell_domains)
+      cell_domains = a.mesh().domains().cell_domains(a.mesh()).get();
+  }
+
+  // Get exterior facet domains
+  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  {
+    exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+    if (!exterior_facet_domains)
+      exterior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
+  }
+
+  // FIXME: Sub domains for interior facets not supported
+  // Get interior facet domains
+  //if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  //{
+  //  interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+  //  if (!interior_facet_domains)
+  //    interior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
+  //}
+
+  if (interior_facet_domains)
+    error("SystemAssembler does not yet support subdomains for interior facets.");
 
   // Check arguments
   AssemblerTools::check(a);
@@ -220,6 +244,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 
   const Mesh& mesh = a.mesh();
   assert(mesh.ordered());
+  const uint D = mesh.topology().dim();
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -239,22 +264,53 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   std::vector<const std::vector<uint>* > L_dofs(L_rank);
 
   // Cell integrals
-  const ufc::cell_integral* A_integral(0);
-  const ufc::cell_integral* b_integral(0);
+  ufc::cell_integral* A_integral(0);
+  ufc::cell_integral* b_integral(0);
   if (A_ufc.cell_integrals.size() > 0)
     A_integral = A_ufc.cell_integrals[0].get();
   if (b_ufc.cell_integrals.size() > 0)
     b_integral = b_ufc.cell_integrals[0].get();
 
-  // FIXME: Subdomains not supported here!
+  // Facet_integrals
+  ufc::exterior_facet_integral* A_facet_integral(0);
+  ufc::exterior_facet_integral* b_facet_integral(0);
+  if (A_ufc.exterior_facet_integrals.size() > 0)
+    A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+  if (b_ufc.exterior_facet_integrals.size() > 0)
+    b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
+  // Init facet connection if we have facet integrals
+  if (A_ufc.exterior_facet_integrals.size() > 0 ||
+      b_ufc.exterior_facet_integrals.size() > 0)
+  {
+    mesh.init(D - 1);
+    mesh.init(D - 1, D);
+  }
+      
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    
+    // Get integrals for sub domain (if any)
+    if (cell_domains && cell_domains->size() > 0)
+    {
+      const uint cell_domain = (*cell_domains)[*cell];
+      if (cell_domain < A_ufc.form.num_cell_domains())
+	A_integral = A_ufc.cell_integrals[cell_domain].get();
+      else
+	A_integral = 0;
+
+      if (cell_domain < b_ufc.form.num_cell_domains())
+	b_integral = b_ufc.cell_integrals[cell_domain].get();
+      else
+	b_integral = 0;
+    }
+	
     // Add cell tensor for A
     if (A_integral)
     {
-      // Update to current cell
+      //info("Cell domain A: %d", (*cell_domains)[*cell]);
+	// Update to current cell
       A_ufc.update(*cell);
 
       // Tabulate cell tensor
@@ -262,10 +318,18 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       for (uint i = 0; i < data.Ae.size(); ++i)
         data.Ae[i] = A_ufc.A[i];
     }
+    else
+    {
+      // Zero out tensor when no cell integral
+      for (uint i = 0; i < data.Ae.size(); ++i)
+	data.Ae[i] = 0.0;
+    }
+
 
     // Add cell tensor for b
     if (b_integral)
     {
+      //info("Cell domain B: %d", (*cell_domains)[*cell]);
       // Update to current cell
       b_ufc.update(*cell);
 
@@ -274,44 +338,71 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       for (uint i = 0; i < data.be.size(); ++i)
         data.be[i] = b_ufc.A[i];
     }
+    else
+    {
+      // Zero out tensor when no cell integral
+      for (uint i = 0; i < data.be.size(); ++i)
+	data.be[i] = 0.0;
+    }
 
     // FIXME: Is assembly over facets more efficient?
     // Compute exterior facet integral if present
     if (A_ufc.form.num_exterior_facet_domains() > 0 ||
         b_ufc.form.num_exterior_facet_domains() > 0)
     {
+      
+      // Get connectivity
+      const MeshConnectivity& connectivity = mesh.topology()(D, D - 1);
+
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
-        // Assemble if we have an exterior facet
-        if (facet->exterior())
-        {
-          const uint local_facet = cell->index(*facet);
-          if (A_ufc.form.num_exterior_facet_domains() > 0)
-          {
-            A_ufc.update(*cell, local_facet);
+        // Only consider exterior facets
+        if (!facet->exterior())
+	  continue;
+        
+	const uint local_facet = cell->index(*facet);
 
-            const ufc::exterior_facet_integral*
-              A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
-            A_facet_integral->tabulate_tensor(&A_ufc.A[0],
-                                              A_ufc.w(),
-                                              A_ufc.cell,
-                                              local_facet);
-            for (uint i = 0; i < data.Ae.size(); i++)
-              data.Ae[i] += A_ufc.A[i];
-          }
-          if (b_ufc.form.num_exterior_facet_domains() > 0)
-          {
-            b_ufc.update(*cell, local_facet);
+	// Get integrals for sub domain (if any)
+	if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+	{
 
-            const ufc::exterior_facet_integral*
-              b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
-            b_facet_integral->tabulate_tensor(&b_ufc.A[0],
-                                              b_ufc.w(),
-                                              b_ufc.cell,
-                                              local_facet);
-            for (uint i = 0; i < data.be.size(); i++)
-              data.be[i] += b_ufc.A[i];
-          }
+	  // Get global facet index
+	  const uint facet_index = connectivity(cell->index())[local_facet];
+	  const uint facet_domain = (*exterior_facet_domains)[facet_index];
+	  
+	  if (facet_domain < A_ufc.form.num_exterior_facet_domains())
+	    A_facet_integral = A_ufc.exterior_facet_integrals[facet_domain].get();
+	  else
+	    A_facet_integral = 0;
+
+	  if (facet_domain < b_ufc.form.num_exterior_facet_domains())
+	    b_facet_integral = b_ufc.exterior_facet_integrals[facet_domain].get();
+	  else
+	    b_facet_integral = 0;
+	}
+
+	// Tabualte tensor if facet integrals
+	if (A_facet_integral)
+	{
+	  A_ufc.update(*cell, local_facet);
+	  A_facet_integral->tabulate_tensor(&A_ufc.A[0],
+					    A_ufc.w(),
+					    A_ufc.cell,
+					    local_facet);
+	  for (uint i = 0; i < data.Ae.size(); i++)
+	    data.Ae[i] += A_ufc.A[i];
+	}
+	
+	if (b_facet_integral)
+	{
+	  b_ufc.update(*cell, local_facet);
+	  b_facet_integral->tabulate_tensor(&b_ufc.A[0],
+					    b_ufc.w(),
+					    b_ufc.cell,
+					    local_facet);
+	  for (uint i = 0; i < data.be.size(); i++)
+	    data.be[i] += b_ufc.A[i];
+          
         }
       }
     }
