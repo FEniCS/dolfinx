@@ -103,9 +103,9 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       #endif
-      //#ifdef PETSC_HAVE_CUSP // FIXME: Find functioning test
+      #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");
-      //#endif
+      #endif
       #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
         #ifndef HAS_PETSC

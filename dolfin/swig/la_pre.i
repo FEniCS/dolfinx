@@ -198,7 +198,7 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 // Run macros for PETScCUSP backend
 //-----------------------------------------------------------------------------
-#ifdef PETSC_HAVE_CUSP
+#ifdef HAS_PETSC_CUSP
 LA_PRE_FACTORY(PETScCuspFactory)
 #endif
 

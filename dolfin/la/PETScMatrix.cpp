@@ -155,7 +155,6 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     MatSetSizes(*A, M, N, M, N);
 
     // Set matrix type according to chosen architecture
-    // FIXME: Insert PETSC_HAVE_CUSP type test
     if (arch == "cpu")
       MatSetType(*A, MATSEQAIJ);
     else if (arch == "gpu")

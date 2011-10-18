@@ -72,6 +72,7 @@
 %include "dolfin/la/DefaultFactory.h"
 %include "dolfin/la/PETScUserPreconditioner.h"
 %include "dolfin/la/PETScFactory.h"
+%include "dolfin/la/PETScCuspFactory.h"
 %include "dolfin/la/EpetraFactory.h"
 %include "dolfin/la/MTL4Factory.h"
 %include "dolfin/la/STLFactory.h"

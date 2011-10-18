@@ -87,7 +87,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   }
   else if (backend == "PETScCusp")
   {
-#ifdef PETSC_HAVE_CUSP
+#ifdef HAS_PETSC_CUSP
     return PETScCuspFactory::instance();
 #else
     error("PETSc-Cusp linear algebra backend is not available.");

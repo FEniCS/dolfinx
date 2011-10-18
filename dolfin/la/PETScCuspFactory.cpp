@@ -18,7 +18,7 @@
 // First added:  2011-09-13 
 // Last changed: 2011-09-29
 
-//#ifdef PETSC_HAVE_CUSP // FIXME: Find a functioning test
+#ifdef HAS_PETSC_CUSP
 
 #include "SparsityPattern.h"
 #include "PETScLUSolver.h"
@@ -64,4 +64,4 @@ PETScKrylovSolver* PETScCuspFactory::create_krylov_solver(std::string method,
 }
 //-----------------------------------------------------------------------------
 
-//#endif
+#endif

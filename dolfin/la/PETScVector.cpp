@@ -55,7 +55,7 @@ PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vecto
   if (type != "global" && type != "local")
     error("PETSc vector type unknown.");
 
-  // FIXME: Add PETSC_HAVE_CUSP test to check if gpu is illegaly chosen as arch?
+  // FIXME: Add PETSC_HAVE_CUSP test to check if gpu is illegaly chosen as arch
   if (vector_arch != "cpu" && vector_arch != "gpu")
     error("PETSc vector architechture unknown.");
 

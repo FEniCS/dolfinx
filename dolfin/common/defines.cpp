@@ -145,6 +145,14 @@ bool has_linear_algebra_backend(std::string backend)
     return false;
 #endif
   }
+  else if (backend == "PETScCusp")
+  {
+#ifdef HAS_PETSC_CUSP
+    return true;
+#else
+    return false;
+#endif
+  }
   else if (backend == "Epetra")
   {
 #ifdef HAS_TRILINOS

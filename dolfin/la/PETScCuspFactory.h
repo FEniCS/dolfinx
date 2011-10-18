@@ -18,7 +18,7 @@
 // First added:  2011-09-13
 // Last changed:  2011-09-29
 
-//#ifdef PETSC_HAVE_CUSP  // FIXME: Find a functioning test
+#ifdef HAS_PETSC_CUSP
 
 #ifndef __PETSC_CUSP_FACTORY_H
 #define __PETSC_CUSP_FACTORY_H
@@ -76,4 +76,4 @@ namespace dolfin
 
 #endif
 
-//#endif
+#endif
