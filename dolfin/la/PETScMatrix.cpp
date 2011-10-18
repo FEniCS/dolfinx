@@ -56,7 +56,13 @@ PETScMatrix::PETScMatrix(std::string matrix_arch) : arch(matrix_arch)
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch) : 
   PETScBaseMatrix(A), arch(matrix_arch)
 {
-  // Do nothing
+#ifndef HAS_PETSC_CUSP
+  if (arch == "gpu") 
+  {
+    error("PETSc not compiled with Cusp support, cannot create GPU matrix");
+  }
+#endif
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A)
