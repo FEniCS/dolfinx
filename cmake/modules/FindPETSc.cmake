@@ -6,6 +6,7 @@
 #  PETSC_LIBRARIES    - libraries for PETSc
 #  PETSC_DIR          - directory where PETSc is built
 #  PETSC_ARCH         - architecture for which PETSc is built
+#  PETSC_CXX_DEFINES  - 
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -117,6 +118,14 @@ show :
   petsc_get_variable(PETSC_LIB_BASIC PETSC_LIB_BASIC)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
+ 
+  # Check for PETSc Cusp
+  include(${PETSC_DIR}/conf/PETScConfig.cmake)
+  set(PETSC_CXX_DEFINITIONS)
+  if (PETSC_HAVE_CUSP STREQUAL YES)
+    message(STATUS "PETSC_HAVE_CUSP = ${PETSC_HAVE_CUSP}")
+    set(PETSC_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
+  endif()
 
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
