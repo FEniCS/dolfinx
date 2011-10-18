@@ -96,7 +96,7 @@ class TestSystemAssembler(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of mesh"
 
         # Create a mesh of the unit cube
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCube(2, 2, 2)
 
         # Define subdomains for 3 faces of the unit cube
         class F0(SubDomain):
@@ -137,23 +137,28 @@ class TestSystemAssembler(unittest.TestCase):
         a1 = 1*u*v*dx(1) + 2*u*v*ds(3)
         L1 = 1*v*dx(1) + 2*v*ds(3)
 
-        # FIXME: Currently disabled, need to fix bug
-
         # Used for computing reference values
-        #A0 = assemble(a0)
-        #b0 = assemble(L0)
-        #A1 = assemble(a1)
-        #b1 = assemble(L1)
+        A0 = assemble(a0)
+        b0 = assemble(L0)
+        A1 = assemble(a1)
+        b1 = assemble(L1)
+
+        A0_ref = A0.norm("frobenius")
+        A1_ref = A1.norm("frobenius")
+        b0_ref = b0.norm("l2")
+        b1_ref = b1.norm("l2")
 
         # Assemble system
-        #A0, b0 = assemble_system(a0, L0)
-        #A1, b1 = assemble_system(a1, L1)
+        A0, b0 = assemble_system(a0, L0)
+        A1, b1 = assemble_system(a1, L1)
 
-        # Assemble and check values
-        #self.assertAlmostEqual(A0.norm("frobenius"), 0.693043954566, 10)
-        #self.assertAlmostEqual(b0.norm("l2"),        1.28061997552,  10)
-        #self.assertAlmostEqual(A1.norm("frobenius"), 0.45406526606,  10)
-        #self.assertAlmostEqual(b1.norm("l2"),        0.84277689513,  10)
+        # FIXME: Should these test work? (They don't...) The matrix and the
+        # FIXME: vector from AssembleSystem need to be different from that
+        # FIXME: of Assemble
+        self.assertAlmostEqual(A0.norm("frobenius"), A0_ref, 10)
+        self.assertAlmostEqual(A1.norm("frobenius"), A1_ref, 10)
+        self.assertAlmostEqual(b0.norm("l2"), b0_ref, 10)
+        self.assertAlmostEqual(b1.norm("l2"), b1_ref, 10)
 
 if __name__ == "__main__":
     print ""
