@@ -108,6 +108,7 @@ class IntegrateDerivatives(unittest.TestCase):
         #'variable', 'diff',
         #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
 
+        # Run through all operators defined above and compare integrals
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
@@ -176,7 +177,7 @@ class IntegrateDerivatives(unittest.TestCase):
         reg(monomial_list)
         reg([2.3*p+4.5*q for p in monomial_list for q in monomial_list])
         reg([xs**xs])
-        reg([xs**(xs**2)], 8)
+        reg([xs**(xs**2)], 8) # Note: Accuracies here are from 1D case, not checked against 2D results.
         reg([xs**(xs**3)], 6)
         reg([xs**(xs**4)], 2)
         # Special functions:
@@ -187,14 +188,14 @@ class IntegrateDerivatives(unittest.TestCase):
         reg([tan(xs)], 7)
 
         # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
-        F_list2 = []
         def reg2(exprs, acc=10):
             for expr in exprs:
-                F_list2.append((inner(expr,expr), acc))
+                F_list.append((inner(expr,expr), acc))
         xx = as_matrix([[2*x**2, 3*x**3], [11*x**5, 7*x**4]])
+        xxs = as_matrix([[2*xs**2, 3*xs**3], [11*xs**5, 7*xs**4]])
         x3v = as_vector([3*x**2, 5*x**3, 7*x**4])
         cc = as_matrix([[2, 3], [4, 5]])
-        reg2([xx])
+        reg2([xx]) # TODO: Make unit test for UFL from this, results in listtensor with free indices
         reg2([x3v])
         reg2([cross(3*x3v, as_vector([-x3v[1], x3v[0], x3v[2]]))])
         reg2([xx.T])
@@ -207,11 +208,9 @@ class IntegrateDerivatives(unittest.TestCase):
         reg2([skew(xx)])
         reg2([elem_mult(7*xx, cc)])
         reg2([elem_div(7*xx, xx+cc)])
-        reg2([elem_pow(1e-3*xx, 1e-3*cc)])
+        reg2([elem_pow(1e-3*xxs, 1e-3*cc)])
         reg2([elem_pow(1e-3*cc, 1e-3*xx)])
         reg2([elem_op(lambda z: sin(z)+2, 0.03*xx)], 2) # pretty inaccurate...
-
-        F_list.extend(F_list2[:0]) # FIXME: Enable these tests
 
         # FIXME: Add tests for all UFL operators:
         # These cause discontinuities and may be harder to test in the above fashion:
@@ -225,15 +224,14 @@ class IntegrateDerivatives(unittest.TestCase):
         #'variable', 'diff',
         #'Dx', 'grad', 'div', 'curl', 'rot', 'Dn', 'exterior_derivative',
 
-
-        # FIXME: Test all operators in 2D as well:
+        # Run through all operators defined above and compare integrals
         debug = 0
         if debug:
             k = 2
             F_list = F_list[1:]
 
         for F,acc in F_list:
-            if debug: print "F:", str(F)
+            if debug: print '\n', "F:", str(F)
 
             # Integrate over domain and its boundary
             int_dx = assemble(div(grad(F))*dx, mesh=mesh)

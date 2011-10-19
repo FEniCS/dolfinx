@@ -115,11 +115,18 @@ class Assembly(unittest.TestCase):
             cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
 
         f = Constant(1.0)
-        M = f*dx
-        self.assertAlmostEqual(assemble(M, mesh=mesh), 1.0)
+        M0 = f*dx
+        self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
 
-        M = f*ds
-        self.assertAlmostEqual(assemble(M, mesh=mesh), 4.0)
+        M1 = f*ds
+        self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
+
+        # Assemble A and b (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)
+            #self.assertAlmostEqual(assemble(M1, mesh=mesh), 4.0)
+            parameters["num_threads"] = 0
 
     def test_subdomain_assembly_meshdomains(self):
         "Test assembly over subdomains with markers stored as part of mesh"
@@ -166,6 +173,13 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(m0, 9.5)
         self.assertAlmostEqual(m1, 0.0)
 
+        # Assemble form  (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(M0, mesh=mesh), 9.5)
+            self.assertAlmostEqual(assemble(M1, mesh=mesh), 0.0)
+            parameters["num_threads"] = 0
+
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"
 
@@ -202,6 +216,12 @@ class Assembly(unittest.TestCase):
         reference = 7.33040364583
         self.assertAlmostEqual(assemble(M), reference, 10)
 
+        # Assemble form  (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(M), reference, 10)
+            parameters["num_threads"] = 0
+
         # Check that given exterior_facet_domains override
         new_boundaries = FacetFunction("uint", mesh)
         new_boundaries.set_all(0)
@@ -209,8 +229,21 @@ class Assembly(unittest.TestCase):
         value2 = assemble(M, exterior_facet_domains=new_boundaries)
         self.assertAlmostEqual(value2, reference2, 10)
 
+        # Assemble form  (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(M, exterior_facet_domains=new_boundaries),\
+                                   reference2, 10)
+            parameters["num_threads"] = 0
+
         # Check that the form itself assembles as before
         self.assertAlmostEqual(assemble(M), reference, 10)
+
+        # Assemble form  (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(M), reference, 10)
+            parameters["num_threads"] = 0
 
         # Take action of derivative of M on f
         df = TestFunction(V)
@@ -222,6 +255,12 @@ class Assembly(unittest.TestCase):
         # Check that domain data carries across transformations:
         reference = 0.0626219513355
         self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+
+        # Assemble form  (multi-threaded)
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(b).norm("l2"), reference, 8)
+            parameters["num_threads"] = 0
 
     def test_subdomain_assembly_form_2(self):
         "Test assembly over subdomains with markers stored as part of form"

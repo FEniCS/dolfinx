@@ -1,3 +1,6 @@
+ - Fix subdomain assemble for SystemAssembler
+ - Fix OpenMp assemble of scalars
+ - Make OpenMP assemble over sub domains work
  - DirichletBC.get_boundary_values, FunctionSpace.collapse now return a dict in Python
  - Changed name of has_la_backend to has_linear_algebra_backend
  - Added has_foo functions which can be used instead of the HAS_FOO defines
