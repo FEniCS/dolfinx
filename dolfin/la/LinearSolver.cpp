@@ -43,7 +43,7 @@ LinearSolver::LinearSolver(std::string method,
     krylov_methods = factory.krylov_solver_methods();
 
   // Choose solver
-  if (in_list(method, lu_methods) or method == "lu")
+  if (method == "default" || method == "lu" || in_list(method, lu_methods))
   {
     // Check that preconditioner has not been set
     if (preconditioner != "none")

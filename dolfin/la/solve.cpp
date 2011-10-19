@@ -102,17 +102,28 @@ void dolfin::list_krylov_solver_preconditioners()
 std::vector<std::pair<std::string, std::string> >
 dolfin::linear_solver_methods()
 {
-  std::vector<std::pair<std::string, std::string> >
-    lu_methods = DefaultFactory::factory().lu_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
-    krylov_methods = DefaultFactory::factory().krylov_solver_methods();
-
+  // Add default method
   std::vector<std::pair<std::string, std::string> >
     methods;
+  methods.push_back(std::make_pair("default", "default linear solver"));
+
+  // Add LU methods
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = DefaultFactory::factory().lu_solver_methods();
   for (uint i = 0; i < lu_methods.size(); i++)
-    methods.push_back(lu_methods[i]);
+  {
+    if (lu_methods[i].first != "default")
+      methods.push_back(lu_methods[i]);
+  }
+
+  // Add Krylov methods
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = DefaultFactory::factory().krylov_solver_methods();
   for (uint i = 0; i < krylov_methods.size(); i++)
-    methods.push_back(krylov_methods[i]);
+  {
+    if (lu_methods[i].first != "default")
+      methods.push_back(krylov_methods[i]);
+  }
 
   return methods;
 }
