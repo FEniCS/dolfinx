@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2011-09-15
+// Last changed: 2011-10-19
 
 #include <iomanip>
 #include <iostream>
@@ -201,7 +201,7 @@ void Logger::summary(bool reset)
 {
   if (timings.size() == 0)
   {
-    log("Summary: no timings to report.");
+    log("Timings: no timings to report.");
     return;
   }
 

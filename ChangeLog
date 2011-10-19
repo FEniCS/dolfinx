@@ -5,6 +5,7 @@
  - Added has_foo functions which can be used instead of the HAS_FOO defines
  - Less trict check on kwargs for compiled Expression
  - Add option to not right-justify tables
+ - Rename summary --> list_timings
  - Add function list_linear_solver_methods
  - Add function list_lu_solver_methods
  - Add function list_krylov_solver_methods

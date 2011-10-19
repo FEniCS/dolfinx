@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007, 2009.
+// Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-09-20
+// Last changed: 2011-10-19
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -92,7 +92,10 @@ namespace dolfin
   /// Get log level
   int get_log_level();
 
-  /// Print summary of timings and tasks, optionally clearing stored timings
+  /// List a summary of timings and tasks, optionally clearing stored timings
+  void list_timings(bool reset=false);
+
+  /// This function is deprecated, use list_timings
   void summary(bool reset=false);
 
   /// Return timing (average) for given task, optionally clearing timing for task
