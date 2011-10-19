@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -93,21 +93,21 @@ EpetraFactory::create_krylov_solver(std::string method,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraFactory::list_lu_methods() const
+EpetraFactory::lu_solver_methods() const
 {
-  return EpetraLUSolver::list_methods();
+  return EpetraLUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraFactory::list_krylov_methods() const
+EpetraFactory::krylov_solver_methods() const
 {
-  return EpetraKrylovSolver::list_methods();
+  return EpetraKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraFactory::list_preconditioners() const
+EpetraFactory::krylov_solver_preconditioners() const
 {
-  return EpetraKrylovSolver::list_preconditioners();
+  return EpetraKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const

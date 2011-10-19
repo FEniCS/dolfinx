@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-11
+// Last changed: 2011-10-19
 
 #ifdef HAS_MTL4
 
@@ -70,20 +70,23 @@ namespace dolfin
                                           std::string preconditioner) const
     { return new ITLKrylovSolver(method, preconditioner); }
 
-    /// List available LU methods
-    std::vector<std::pair<std::string, std::string> > list_lu_methods() const
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const
     {
       return boost::assign::pair_list_of
         ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
     }
 
-    /// List available Krylov methods
-    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const
-    { return ITLKrylovSolver::list_methods(); }
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const
+    { return ITLKrylovSolver::methods(); }
 
-    /// List available preconditioners
-    std::vector<std::pair<std::string, std::string> > list_preconditioners() const
-    { return ITLKrylovSolver::list_preconditioners(); }
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const
+    { return ITLKrylovSolver::preconditioners(); }
 
     // Return singleton instance
     static MTL4Factory& instance()

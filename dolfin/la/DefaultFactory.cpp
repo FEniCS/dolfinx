@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -62,24 +62,24 @@ DefaultFactory::create_krylov_solver(std::string method,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::list_lu_methods() const
+DefaultFactory::lu_solver_methods() const
 {
-  return factory().list_lu_methods();
+  return factory().lu_solver_methods();
 }
  //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::list_krylov_methods() const
+DefaultFactory::krylov_solver_methods() const
 {
-  return factory().list_krylov_methods();
+  return factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::list_preconditioners() const
+DefaultFactory::krylov_solver_preconditioners() const
 {
-  return factory().list_preconditioners();
+  return factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& DefaultFactory::factory() const
+LinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "uBLAS";

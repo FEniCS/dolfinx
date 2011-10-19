@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2005-12-02
-// Last changed: 2011-09-07
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -60,7 +60,7 @@ namespace dolfin
 }
 
 // Mapping from method string to PETSc
-const std::map<std::string, const KSPType> PETScKrylovSolver::methods
+const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
   = boost::assign::map_list_of("default",  "")
                               ("cg",         KSPCG)
                               ("gmres",      KSPGMRES)
@@ -71,7 +71,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::methods
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScKrylovSolver::list_methods()
+PETScKrylovSolver::methods()
 {
   return boost::assign::pair_list_of
     ("default",    "default Krylov method")
@@ -84,9 +84,9 @@ PETScKrylovSolver::list_methods()
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScKrylovSolver::list_preconditioners()
+PETScKrylovSolver::preconditioners()
 {
-  return PETScPreconditioner::list_preconditioners();
+  return PETScPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
@@ -105,7 +105,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
     preconditioner_set(false)
 {
   // Check that the requested method is known
-  if (methods.count(method) == 0)
+  if (_methods.count(method) == 0)
     error("Requested PETSc Krylov solver '%s' is unknown,", method.c_str());
 
   // Set parameter values
@@ -320,7 +320,7 @@ void PETScKrylovSolver::init(const std::string& method)
 
   // Set solver type
   if (method != "default")
-    KSPSetType(*_ksp, methods.find(method)->second);
+    KSPSetType(*_ksp, _methods.find(method)->second);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_operators()
@@ -411,7 +411,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
 
     if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
     {
-      log(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
+      log(PROGRESS, "PETSc Krylov solver preconditioner (%s) submethods: (%s, %s)",
           pc_type, sub_ksp_type, sub_pc_type);
     }
 

@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-10
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #include "DefaultFactory.h"
 #include "KrylovSolver.h"
@@ -38,9 +38,9 @@ LinearSolver::LinearSolver(std::string method,
 
   // Get list of available methods
   std::vector<std::pair<std::string, std::string> >
-    lu_methods = factory.list_lu_methods();
+    lu_methods = factory.lu_solver_methods();
   std::vector<std::pair<std::string, std::string> >
-    krylov_methods = factory.list_krylov_methods();
+    krylov_methods = factory.krylov_solver_methods();
 
   // Choose solver
   if (in_list(method, lu_methods) or method == "lu")
@@ -85,7 +85,7 @@ LinearSolver::LinearSolver(std::string method,
     dolfin_error("LinearSolver.cpp",
                  "solve linear system",
                  "Unknown solver method \"%s\". "
-                 "Use list_solver_methods() to list available methods",
+                 "Use list_linear_solver_methods() to list available methods",
                  method.c_str());
   }
 

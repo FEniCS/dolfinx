@@ -1,4 +1,3 @@
- - Fix subdomain assemble for SystemAssembler
  - Fix OpenMp assemble of scalars
  - Make OpenMP assemble over sub domains work
  - DirichletBC.get_boundary_values, FunctionSpace.collapse now return a dict in Python
@@ -6,7 +5,10 @@
  - Added has_foo functions which can be used instead of the HAS_FOO defines
  - Less trict check on kwargs for compiled Expression
  - Add option to not right-justify tables
- - Add functions list_{lu, krylov, solver}_methods and list_preconditioners
+ - Add function list_linear_solver_methods
+ - Add function list_lu_solver_methods
+ - Add function list_krylov_solver_methods
+ - Add function list_krylov_solver_preconditioners
  - Support subdomains in SystemAssembler (not for interior facet integrals)
  - Add option functionality apply("flush") to PETScMatrix
  - Add option finalize_tensor=true to assemble functions

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -73,9 +73,8 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_methods();
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
     /// Default parameter values
     static Parameters default_parameters();

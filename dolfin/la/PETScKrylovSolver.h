@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2011-03-28
+// Last changed: 2011-10-19
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -107,13 +107,11 @@ namespace dolfin
     /// Return PETSc KSP pointer
     boost::shared_ptr<KSP> ksp() const;
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_methods();
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -135,9 +133,8 @@ namespace dolfin
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
 
-    // Available solvers and preconditioners
-    static const std::map<std::string, const KSPType> methods;
-    static const std::map<std::string, const PCType> preconditioners;
+    // Available solvers
+    static const std::map<std::string, const KSPType> _methods;
 
     /// DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;

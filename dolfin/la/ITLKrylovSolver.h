@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-07-16
-// Last changed: 2011-10-07
+// Last changed: 2011-10-19
 
 #ifdef HAS_MTL4
 
@@ -76,13 +76,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_methods();
+    /// Return a list of available methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    /// Return a list available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();

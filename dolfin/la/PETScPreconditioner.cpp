@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg 2010-2011
 //
 // First added:  2010-02-25
-// Last changed: 2010-08-25
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 // Mapping from preconditioner string to PETSc
-const std::map<std::string, const PCType> PETScPreconditioner::methods
+const std::map<std::string, const PCType> PETScPreconditioner::_methods
   = boost::assign::map_list_of("default",          "")
                               ("none",             PCNONE)
                               ("ilu",              PCILU)
@@ -51,7 +51,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScPreconditioner::list_preconditioners()
+PETScPreconditioner::preconditioners()
 {
   return boost::assign::pair_list_of
     ("default",          "default preconditioner")
@@ -93,7 +93,7 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : type(type)
   parameters = default_parameters();
 
   // Check that the requested method is known
-  if (methods.count(type) == 0)
+  if (_methods.count(type) == 0)
     error("Requested PETSc proconditioner '%s' is unknown,", type.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   else if (type == "additive_schwarz")
   {
     // Select method and overlap
-    PCSetType(pc, methods.find("additive_schwarz")->second);
+    PCSetType(pc, _methods.find("additive_schwarz")->second);
     PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
 
     // Make sure the data structures have been constructed
@@ -198,7 +198,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   }
   else if (type != "default")
   {
-    PCSetType(pc, methods.find(type)->second);
+    PCSetType(pc, _methods.find(type)->second);
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);

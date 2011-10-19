@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2011.
+// Modified by Anders Logg 2011
 //
-// Last changed: 2011-10-07
+// First added:  2008
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -43,7 +44,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraLUSolver::list_methods()
+EpetraLUSolver::methods()
 {
   static std::vector<std::pair<std::string, std::string> > m;
 
@@ -78,7 +79,7 @@ std::string EpetraLUSolver::choose_method(std::string method) const
     dolfin_error("EpetraLUSolver.cpp",
                  "solve linear system",
                  "Unknown LU solver method \"%s\". "
-                 "Use list_lu_methods() to list available methods",
+                 "Use list_lu_solver_methods() to list available methods",
                  method.c_str());
   }
 

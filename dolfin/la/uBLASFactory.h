@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2007-12-06
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
@@ -72,23 +72,26 @@ namespace dolfin
                                               std::string preconditioner) const
     { return new uBLASKrylovSolver(method, preconditioner); }
 
-    /// List available LU methods
-    std::vector<std::pair<std::string, std::string> > list_lu_methods() const
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const
     {
       return boost::assign::pair_list_of
         ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
     }
 
-    /// List available Krylov methods
-    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const
     {
-      return uBLASKrylovSolver::list_methods();
+      return uBLASKrylovSolver::methods();
     }
 
-    /// List available preconditioners
-    std::vector<std::pair<std::string, std::string> > list_preconditioners() const
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const
     {
-      return uBLASKrylovSolver::list_preconditioners();
+      return uBLASKrylovSolver::preconditioners();
     }
 
     /// Return singleton instance

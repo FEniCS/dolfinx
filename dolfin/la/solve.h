@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-10-07
+// Last changed: 2011-10-19
 
 #ifndef __SOLVE_LA_H
 #define __SOLVE_LA_H
@@ -42,16 +42,28 @@ namespace dolfin
              std::string preconditioner = "none");
 
   /// List available solver methods for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > list_solver_methods();
+  void list_linear_solver_methods();
 
   /// List available LU methods for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > list_lu_methods();
+  void list_lu_solver_methods();
 
   /// List available Krylov methods for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > list_krylov_methods();
+  void list_krylov_solver_methods();
 
   /// List available preconditioners for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > list_preconditioners();
+  void list_krylov_solver_preconditioners();
+
+  /// Return a list of available solver methods for current linear algebra backend
+  std::vector<std::pair<std::string, std::string> > linear_solver_methods();
+
+  /// Return a list of available LU methods for current linear algebra backend
+  std::vector<std::pair<std::string, std::string> > lu_solver_methods();
+
+  /// Return a list of available Krylov methods for current linear algebra backend
+  std::vector<std::pair<std::string, std::string> > krylov_solver_methods();
+
+  /// Return a list of available preconditioners for current linear algebra backend
+  std::vector<std::pair<std::string, std::string> > krylov_solver_preconditioners();
 
   /// Compute residual ||Ax - b||
   double residual(const GenericMatrix& A, const GenericVector& x,

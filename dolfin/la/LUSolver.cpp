@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-07-11
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/NoDeleter.h>
@@ -85,7 +85,7 @@ void LUSolver::init(std::string method)
 
   // Get list of available methods
   std::vector<std::pair<std::string, std::string> >
-    methods = factory.list_lu_methods();
+    methods = factory.lu_solver_methods();
 
   // Check that method is available
   if (!LinearSolver::in_list(method, methods))
@@ -93,7 +93,7 @@ void LUSolver::init(std::string method)
     dolfin_error("LUSolver.cpp",
                  "solve linear system using LU factorization",
                  "Unknown LU method \"%s\". "
-                 "Use list_lu_methods() to list available LU methods",
+                 "Use list_lu_solver_methods() to list available LU methods",
                  method.c_str());
   }
 

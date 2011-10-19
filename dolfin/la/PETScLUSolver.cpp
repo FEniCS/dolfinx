@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2005
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -70,7 +70,7 @@ namespace dolfin
 #endif
 
 // List of available LU solvers
-const std::map<std::string, const MatSolverPackage> PETScLUSolver::methods
+const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
   = boost::assign::map_list_of("default", "")
                               ("umfpack",      MAT_SOLVER_UMFPACK)
                               ("mumps",        MAT_SOLVER_MUMPS)
@@ -82,7 +82,7 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::methods
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScLUSolver::list_methods()
+PETScLUSolver::methods()
 {
   static std::vector<std::pair<std::string, std::string> > m;
 
@@ -237,7 +237,7 @@ boost::shared_ptr<KSP> PETScLUSolver::ksp() const
 const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
 {
   // Check package string
-  if (methods.count(method) == 0)
+  if (_methods.count(method) == 0)
     error("Requested PETSc LU solver '%s' is unknown,", method.c_str());
 
   // Choose appropriate 'default' solver
@@ -276,7 +276,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     }
   }
 
-  return methods.find(method)->second;
+  return _methods.find(method)->second;
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init_solver(std::string& method)

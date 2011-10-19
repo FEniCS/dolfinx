@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2011.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2007-07-03
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
@@ -82,9 +82,9 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 
   // Get list of available methods and preconditioners
   std::vector<std::pair<std::string, std::string> >
-    methods = factory.list_krylov_methods();
+    methods = factory.krylov_solver_methods();
   std::vector<std::pair<std::string, std::string> >
-    preconditioners = factory.list_preconditioners();
+    preconditioners = factory.krylov_solver_preconditioners();
 
   // Check that method is available
   if (!LinearSolver::in_list(method, methods))
@@ -92,7 +92,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
     dolfin_error("KrylovSolver.cpp",
                  "solve linear system using Krylov iteration",
                  "Unknown Krylov method \"%s\". "
-                 "Use list_krylov_methods() to list available Krylov methods",
+                 "Use list_krylov_solver_methods() to list available Krylov methods",
                  method.c_str());
   }
 
@@ -102,7 +102,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
     dolfin_error("KrylovSolver.cpp",
                  "solve linear system using Krylov iteration",
                  "Unknown preconditioner \"%s\". "
-                 "Use list_preconditioners() to list available preconditioners()",
+                 "Use list_krylov_solver_preconditioners() to list available preconditioners()",
                  preconditioner.c_str());
   }
 

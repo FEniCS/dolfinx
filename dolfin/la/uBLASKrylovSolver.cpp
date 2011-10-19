@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2006-2011
 //
 // First added:  2006-05-31
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-uBLASKrylovSolver::list_methods()
+uBLASKrylovSolver::methods()
 {
   return boost::assign::pair_list_of
     ("default",  "default Krylov method")
@@ -41,7 +41,7 @@ uBLASKrylovSolver::list_methods()
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-uBLASKrylovSolver::list_preconditioners()
+uBLASKrylovSolver::preconditioners()
 {
   return boost::assign::pair_list_of
     ("default", "default preconditioner")

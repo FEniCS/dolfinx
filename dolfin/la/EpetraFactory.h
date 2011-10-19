@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -71,14 +71,17 @@ namespace dolfin
     EpetraKrylovSolver* create_krylov_solver(std::string method,
                                              std::string preconditioner) const;
 
-    /// List available LU methods
-    std::vector<std::pair<std::string, std::string> > list_lu_methods() const;
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const;
 
-    /// List available Krylov methods
-    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const;
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const;
 
-    /// List available preconditioners
-    std::vector<std::pair<std::string, std::string> > list_preconditioners() const;
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const;
 
     /// --- EpetraFactory interface
 

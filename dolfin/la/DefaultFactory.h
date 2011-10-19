@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifndef __DEFAULT_FACTORY_H
 #define __DEFAULT_FACTORY_H
@@ -59,17 +59,20 @@ namespace dolfin
     virtual dolfin::GenericLinearSolver*
     create_krylov_solver(std::string method, std::string preconditioner) const;
 
-    /// List available LU methods
-    std::vector<std::pair<std::string, std::string> > list_lu_methods() const;
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const;
 
-    /// List available Krylov methods
-    std::vector<std::pair<std::string, std::string> > list_krylov_methods() const;
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const;
 
-    /// List available preconditioners
-    std::vector<std::pair<std::string, std::string> > list_preconditioners() const;
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const;
 
     /// Return instance of default backend
-    LinearAlgebraFactory& factory() const;
+    static LinearAlgebraFactory& factory();
 
   };
 

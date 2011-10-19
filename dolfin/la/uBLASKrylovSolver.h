@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2006-2011
 //
 // First added:  2006-05-31
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -86,13 +86,11 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_methods();
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();

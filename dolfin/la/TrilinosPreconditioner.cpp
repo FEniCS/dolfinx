@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-02-25
-// Last changed: 2011-10-07
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -42,7 +44,7 @@
 using namespace dolfin;
 
 // Mapping from preconditioner string to Trilinos
-const std::map<std::string, int> TrilinosPreconditioner::preconditioners
+const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
   = boost::assign::map_list_of("default",   AZ_ilu)
                               ("none",      AZ_none)
                               ("ilu",       AZ_ilu)
@@ -55,7 +57,7 @@ const std::map<std::string, int> TrilinosPreconditioner::preconditioners
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-TrilinosPreconditioner::list_preconditioners()
+TrilinosPreconditioner::preconditioners()
 {
   return boost::assign::pair_list_of
     ("default",   "default preconditioner")
@@ -98,7 +100,7 @@ TrilinosPreconditioner::TrilinosPreconditioner(std::string preconditioner)
   parameters = default_parameters();
 
   // Check that the requested method is known
-  if (preconditioners.count(preconditioner) == 0)
+  if (_preconditioners.count(preconditioner) == 0)
     error("Requested Trilinos proconditioner '%s' is unknown,", preconditioner.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -155,7 +157,8 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     set_ml(_solver, *_P);
   else
   {
-    _solver.SetAztecOption(AZ_precond, preconditioners.find(preconditioner)->second);
+    _solver.SetAztecOption(AZ_precond,
+                           _preconditioners.find(preconditioner)->second);
     _solver.SetPrecMatrix(_P);
   }
 }

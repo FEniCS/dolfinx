@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-05-16
-// Last changed: 2011-10-07
+// Last changed: 2011-10-19
 
 #ifdef HAS_MTL4
 
@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-ITLKrylovSolver::list_methods()
+ITLKrylovSolver::methods()
 {
   return boost::assign::pair_list_of
     ("default",  "default Krylov method")
@@ -46,7 +46,7 @@ ITLKrylovSolver::list_methods()
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-ITLKrylovSolver::list_preconditioners()
+ITLKrylovSolver::preconditioners()
 {
   return boost::assign::pair_list_of
     ("default", "default preconditioner")

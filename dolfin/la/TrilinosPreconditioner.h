@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-07
+// Last changed: 2011-10-19
 
 #ifndef __DOFLIN_TRILINOS_PRECONDITIONER_H
 #define __DOFLIN_TRILINOS_PRECONDITIONER_H
@@ -69,9 +69,8 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// List available preconditioners
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -85,7 +84,7 @@ namespace dolfin
     std::string preconditioner;
 
     // Available named preconditioners
-    static const std::map<std::string, int> preconditioners;
+    static const std::map<std::string, int> _preconditioners;
 
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
     boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;

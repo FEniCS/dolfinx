@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2011-10-19
 
-#ifndef __DOFLIN_PETSC_PRECONDITIONER_H
-#define __DOFLIN_PETSC_PRECONDITIONER_H
+#ifndef __DOLFIN_PETSC_PRECONDITIONER_H
+#define __DOLFIN_PETSC_PRECONDITIONER_H
 
 #ifdef HAS_PETSC
 
@@ -59,9 +61,8 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // List available preconditioners
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    // Rerturn a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -72,7 +73,7 @@ namespace dolfin
     std::string type;
 
     // Available names preconditioners
-    static const std::map<std::string, const PCType> methods;
+    static const std::map<std::string, const PCType> _methods;
   };
 
 }

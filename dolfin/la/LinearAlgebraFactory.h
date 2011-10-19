@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2007-11-30
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
@@ -63,25 +63,28 @@ namespace dolfin
     virtual GenericLinearSolver* create_krylov_solver(std::string method,
                                                       std::string preconditioner) const = 0;
 
-    /// List available LU methods (overload by subclass if non-empty)
+    /// Return a list of available LU solver methods.
+    /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    list_lu_methods() const
+    lu_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > lu_methods;
-      return lu_methods;
+      std::vector<std::pair<std::string, std::string> > methods;
+      return methods;
     }
 
-    /// List available Krylov methods (overload by subclass if non-empty)
+    /// Return a list of available Krylov solver methods.
+    /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    list_krylov_methods() const
+    krylov_solver_methods() const
     {
-      std::vector<std::pair<std::string, std::string> > krylov_methods;
-      return krylov_methods;
+      std::vector<std::pair<std::string, std::string> > methods;
+      return methods;
     }
 
-    /// List available preconditioners (overload by subclass if non-empty)
+    /// Return a list of available preconditioners.
+    /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    list_preconditioners() const
+    krylov_solver_preconditioners() const
     {
       std::vector<std::pair<std::string, std::string> > preconditioners;
       return preconditioners;

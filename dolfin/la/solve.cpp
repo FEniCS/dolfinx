@@ -47,14 +47,66 @@ dolfin::uint dolfin::solve(const GenericMatrix& A,
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::list_solver_methods()
+void dolfin::list_linear_solver_methods()
 {
   // Get methods
-  DefaultFactory factory;
   std::vector<std::pair<std::string, std::string> >
-    lu_methods = factory.list_lu_methods();
+    methods = linear_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("Solver method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_lu_solver_methods()
+{
+  // Get methods
   std::vector<std::pair<std::string, std::string> >
-    krylov_methods = factory.list_krylov_methods();
+    methods = lu_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("LU method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_krylov_solver_methods()
+{
+  // Get methods
+  std::vector<std::pair<std::string, std::string> >
+    methods = krylov_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("Krylov method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_krylov_solver_preconditioners()
+{
+  // Get preconditioners
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = krylov_solver_preconditioners();
+
+  // Pretty-print list of preconditioners
+  Table t("Preconditioner", false);
+  for (uint i = 0; i < preconditioners.size(); i++)
+    t(preconditioners[i].first, "Description") = preconditioners[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+dolfin::linear_solver_methods()
+{
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = DefaultFactory::factory().lu_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = DefaultFactory::factory().krylov_solver_methods();
+
   std::vector<std::pair<std::string, std::string> >
     methods;
   for (uint i = 0; i < lu_methods.size(); i++)
@@ -62,61 +114,24 @@ std::vector<std::pair<std::string, std::string> > dolfin::list_solver_methods()
   for (uint i = 0; i < krylov_methods.size(); i++)
     methods.push_back(krylov_methods[i]);
 
-  // Pretty-print list of methods
-  Table t("Solver method", false);
-  for (uint i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
-  cout << t.str(true) << endl;
-
   return methods;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::list_lu_methods()
+std::vector<std::pair<std::string, std::string> > dolfin::lu_solver_methods()
 {
-  // Get methods
-  DefaultFactory factory;
-  std::vector<std::pair<std::string, std::string> >
-    methods = factory.list_lu_methods();
-
-  // Pretty-print list of methods
-  Table t("LU method", false);
-  for (uint i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
-  cout << t.str(true) << endl;
-
-  return methods;
+  return DefaultFactory::factory().lu_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::list_krylov_methods()
+std::vector<std::pair<std::string, std::string> >
+dolfin::krylov_solver_methods()
 {
-  // Get methods
-  DefaultFactory factory;
-  std::vector<std::pair<std::string, std::string> >
-    methods = factory.list_krylov_methods();
-
-  // Pretty-print list of methods
-  Table t("Krylov method", false);
-  for (uint i = 0; i < methods.size(); i++)
-    t(methods[i].first, "Description") = methods[i].second;
-  cout << t.str(true) << endl;
-
-  return methods;
+  return DefaultFactory::factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> > dolfin::list_preconditioners()
+std::vector<std::pair<std::string, std::string> >
+dolfin::krylov_solver_preconditioners()
 {
-  // Get preconditioners
-  DefaultFactory factory;
-  std::vector<std::pair<std::string, std::string> >
-    preconditioners = factory.list_preconditioners();
-
-  // Pretty-print list of preconditioners
-  Table t("Preconditioner", false);
-  for (uint i = 0; i < preconditioners.size(); i++)
-    t(preconditioners[i].first, "Description") = preconditioners[i].second;
-  cout << t.str(true) << endl;
-
-  return preconditioners;
+  return DefaultFactory::factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
 double dolfin::residual(const GenericMatrix& A,

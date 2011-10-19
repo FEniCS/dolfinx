@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2009-2010.
 //
 // First added:  2005
-// Last changed: 2011-10-06
+// Last changed: 2011-10-19
 
 #ifndef __DOLFIN_PETSC_LU_SOLVER_H
 #define __DOLFIN_PETSC_LU_SOLVER_H
@@ -83,8 +83,8 @@ namespace dolfin
     /// Return PETSc KSP pointer
     boost::shared_ptr<KSP> ksp() const;
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> > list_methods();
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -92,7 +92,7 @@ namespace dolfin
   private:
 
     // Available LU solvers
-    static const std::map<std::string, const MatSolverPackage> methods;
+    static const std::map<std::string, const MatSolverPackage> _methods;
 
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;

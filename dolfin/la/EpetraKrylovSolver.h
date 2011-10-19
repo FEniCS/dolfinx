@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2008
-// Last changed: 2011-03-24
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -88,13 +88,11 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_methods();
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
 
-    /// List available methods
-    static std::vector<std::pair<std::string, std::string> >
-    list_preconditioners();
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -110,9 +108,8 @@ namespace dolfin
     // Solver type
     std::string method;
 
-    // Available solvers and preconditioners
-    static const std::map<std::string, int> methods;
-    static const std::map<std::string, int> preconditioners;
+    // Available solvers
+    static const std::map<std::string, int> _methods;
 
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;

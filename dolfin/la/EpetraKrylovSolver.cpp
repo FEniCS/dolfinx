@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-03-24
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -50,7 +50,7 @@
 using namespace dolfin;
 
 // List of available solvers
-const std::map<std::string, int> EpetraKrylovSolver::methods
+const std::map<std::string, int> EpetraKrylovSolver::_methods
   = boost::assign::map_list_of("default",  AZ_gmres)
                               ("cg",       AZ_cg)
                               ("gmres",    AZ_gmres)
@@ -59,7 +59,7 @@ const std::map<std::string, int> EpetraKrylovSolver::methods
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraKrylovSolver::list_methods()
+EpetraKrylovSolver::methods()
 {
   return boost::assign::pair_list_of
     ("default",    "default Krylov method")
@@ -70,9 +70,9 @@ EpetraKrylovSolver::list_methods()
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraKrylovSolver::list_preconditioners()
+EpetraKrylovSolver::preconditioners()
 {
-  return TrilinosPreconditioner::list_preconditioners();
+  return TrilinosPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
@@ -91,11 +91,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
   parameters = default_parameters();
 
   // Check that requsted solver is supported
-  if (methods.count(method) == 0)
+  if (_methods.count(method) == 0)
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Set solver type
-  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
   solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------
@@ -109,11 +109,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
   parameters = default_parameters();
 
   // Check that requsted solver is supported
-  if (methods.count(method) == 0)
+  if (_methods.count(method) == 0)
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Set solver type
-  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
   solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------

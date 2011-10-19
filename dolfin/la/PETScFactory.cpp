@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2009.
+// Modified by Anders Logg 2009-2011
 //
 // First added:  2007-12-06
-// Last changed: 2009-05-18
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -67,21 +67,21 @@ PETScFactory::create_krylov_solver(std::string method,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::list_lu_methods() const
+PETScFactory::lu_solver_methods() const
 {
-  return PETScLUSolver::list_methods();
+  return PETScLUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::list_krylov_methods() const
+PETScFactory::krylov_solver_methods() const
 {
-  return PETScKrylovSolver::list_methods();
+  return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::list_preconditioners() const
+PETScFactory::krylov_solver_preconditioners() const
 {
-  return PETScKrylovSolver::list_preconditioners();
+  return PETScKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
 
