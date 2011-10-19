@@ -20,8 +20,9 @@
 #
 # Compile with ffc -e -l dolfin AdaptiveNavierStokes.ufl
 
-V = VectorElement("CG", "triangle", 2)
-Q = FiniteElement("CG", "triangle", 1)
+cell = triangle
+V = VectorElement("CG", cell, 2)
+Q = FiniteElement("CG", cell, 1)
 W = V * Q
 
 w = Coefficient(W)
@@ -29,11 +30,11 @@ w = Coefficient(W)
 (v, q) = TestFunctions(W)
 
 # Prescribed pressure
-T = FiniteElement("CG", "triangle", 1)
+T = FiniteElement("CG", cell, 1)
 p0 = Coefficient(T)
 
 # Prescribed viscosity
-nu = Constant("triangle")
+nu = Constant(cell)
 
 # Define FacetNormal
 n = V.cell().n
