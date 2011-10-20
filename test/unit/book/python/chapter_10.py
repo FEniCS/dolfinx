@@ -26,13 +26,16 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 import unittest
 from dolfin import *
 
-def create_data():
+def create_data(A=None):
     "This function creates data used in the tests below"
     mesh = UnitSquare(2, 2)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
-    A = assemble(u*v*dx)
+    if A is None:
+        A = assemble(u*v*dx)
+    else:
+        assemble(u*v*dx, tensor=A)
     b = assemble(v*dx)
     x = Vector()
     return A, x, b
@@ -56,42 +59,52 @@ class TestPage5(unittest.TestCase):
 
     def test_box_3(self):
         A, x, b = create_data()
+        solve(A, x, b, "lu");
+        solve(A, x, b, "gmres", "ilu")
+
+    def test_box_4(self):
+        list_lu_solver_methods()
+        list_krylov_solver_methods()
+        list_krylov_solver_preconditioners()
+
+class TestPage6(unittest.TestCase):
+
+    def test_box_1(self):
+        A, x, b = create_data()
         solver = LUSolver(A)
         solver.solve(x, b)
 
-    def test_box_4(self):
+    def test_box_2(self):
         A, x, b = create_data()
         solver = LUSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
-class TestPage6(unittest.TestCase):
-
-    def test_box_1(self):
+    def test_box_3(self):
         solver = LUSolver()
         solver.parameters["same_nonzero_pattern"] = True
 
-    def test_box_2(self):
+    def test_box_4(self):
         A, x, b = create_data()
         solver = KrylovSolver(A)
         solver.solve(x, b)
 
-    def test_box_3(self):
+class TestPage7(unittest.TestCase):
+
+    def test_box_1(self):
         A, x, b = create_data()
         solver = KrylovSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
-    def test_box_4(self):
+    def test_box_2(self):
         A, x, b = create_data()
         P = A
         solver = KrylovSolver()
         solver.set_operators(A, P)
         solver.solve(x, b)
 
-class TestPage7(unittest.TestCase):
-
-    def test_box_1(self):
+    def test_box_3(self):
         solver = KrylovSolver()
         solver.parameters["relative_tolerance"] = 1.0e-6
         solver.parameters["absolute_tolerance"] = 1.0e-15
@@ -100,13 +113,128 @@ class TestPage7(unittest.TestCase):
         solver.parameters["error_on_nonconvergence"] = True
         solver.parameters["nonzero_initial_guess"] = False
 
-    def test_box_2(self):
+    def test_box_4(self):
         solver = KrylovSolver()
         solver.parameters["report"] = True
         solver.parameters["monitor_convergence"] = True
 
-    def test_box_3(self):
+class TestPage8(unittest.TestCase):
+
+    def test_box_1(self):
         solver = KrylovSolver("gmres", "ilu")
+
+    def test_box_2(self):
+        A = PETScMatrix()
+        A, x, b = create_data(A)
+        eigensolver = SLEPcEigenSolver(A)
+        eigensolver.solve()
+        lambda_r, lambda_c, x_real, x_complex = eigensolver.get_eigenpair(0)
+
+class TestPage9(unittest.TestCase):
+
+    def test_box_1(self):
+        A = PETScMatrix()
+        M = PETScMatrix()
+        A, x, b = create_data(A)
+        M, x, b = create_data(M)
+        eigensolver = SLEPcEigenSolver(A, M)
+
+    def test_box_2(self):
+        parameters["linear_algebra_backend"] = "PETSc"
+
+    def test_box_3(self):
+        x = PETScVector()
+        solver = PETScLUSolver()
+
+class TestPage10(unittest.TestCase):
+
+    def test_box_1(self):
+
+        class MyNonlinearProblem(NonlinearProblem):
+            def __init__(self, L, a, bc):
+                NonlinearProblem.__init__(self)
+                self.L = L
+                self.a = a
+                self.bc = bc
+
+            def F(self, b, x):
+                assemble(self.L, tensor=b)
+                self.bc.apply(b, x)
+
+            def J(self, A, x):
+                assemble(self.a, tensor=A)
+                self.bc.apply(A)
+
+class TestPage11(unittest.TestCase):
+
+    def test_box_1(self):
+
+        class MyNonlinearProblem(NonlinearProblem):
+            def __init__(self, L, a, bc):
+                NonlinearProblem.__init__(self)
+                self.L = L
+                self.a = a
+                self.bc = bc
+
+            def F(self, b, x):
+                assemble(self.L, tensor=b)
+                self.bc.apply(b, x)
+
+            def J(self, A, x):
+                assemble(self.a, tensor=A)
+                self.bc.apply(A)
+
+        mesh = UnitSquare(2, 2)
+        V  = FunctionSpace(mesh, "Lagrange", 1)
+        u  = Function(V)
+        du = TrialFunction(V)
+        v  = TestFunction(V)
+        a  = du*v*dx
+        L  = u*v*dx - v*dx
+        bc = DirichletBC(V, 0.0, DomainBoundary())
+
+        problem = MyNonlinearProblem(L, a, bc)
+        newton_solver = NewtonSolver()
+        newton_solver.solve(problem, u.vector())
+
+    def test_box_2(self):
+        newton_solver = NewtonSolver()
+        newton_solver.parameters["maximum_iterations"] = 20
+        newton_solver.parameters["relative_tolerance"] = 1.0e-6
+        newton_solver.parameters["absolute_tolerance"] = 1.0e-10
+        newton_solver.parameters["error_on_nonconvergence"] = False
+
+    def test_box_3(self):
+        unit_square = UnitSquare(16, 16)
+        unit_cube = UnitCube(16, 16, 16)
+
+class TestPage12(unittest.TestCase):
+
+    def test_box_1(self):
+        mesh = Mesh();
+        editor = MeshEditor();
+        editor.open(mesh, 2, 2)
+        editor.init_vertices(4)
+        editor.init_cells(2)
+        editor.add_vertex(0, 0.0, 0.0)
+        editor.add_vertex(1, 1.0, 0.0)
+        editor.add_vertex(2, 1.0, 1.0)
+        editor.add_vertex(3, 0.0, 1.0)
+        editor.add_cell(0, 0, 1, 2)
+        editor.add_cell(1, 0, 2, 3)
+        editor.close()
+
+    def test_box_2(self):
+        mesh = Mesh("mesh.xml")
+
+class TestPage14(unittest.TestCase):
+
+    def test_box_1(self):
+        mesh = UnitSquare(8, 8)
+        entity = MeshEntity(mesh, 0, 33)
+        vertex = Vertex(mesh, 33)
+        cell = Cell(mesh, 25)
+
 
 if __name__ == "__main__":
     print ""
