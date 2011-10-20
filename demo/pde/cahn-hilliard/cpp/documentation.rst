@@ -30,7 +30,7 @@ is created:
 
 .. code-block:: python
 
-    P1 = FiniteElement("Lagrange", "triangle", 1)
+    P1 = FiniteElement("Lagrange", triangle, 1)
     ME = P1*P1
 
 On the mixed space, trial and test functions are defined:
