@@ -652,7 +652,7 @@ class TestPage36(unittest.TestCase):
         # FIXME: Not working
         #parameters_file = File("parameters.xml")
         #parameters_file << parameters
-        #parameters_file >> new_parameters
+        #parameters_file >> parameters
 
 class TestPage37(unittest.TestCase):
 
