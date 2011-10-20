@@ -77,6 +77,7 @@ namespace dolfin
     lu_solver_methods() const
     {
       return boost::assign::pair_list_of
+        ("default", "default LU solver")
         ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
     }
 

@@ -128,7 +128,7 @@ int main()
 
   // Solve system
   GenericVector& x = u.vector();
-  LUSolver solver("cholesky");
+  LUSolver solver;
   solver.solve(A, x, b);
 
   // Plot solution

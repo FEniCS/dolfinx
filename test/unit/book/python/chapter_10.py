@@ -900,12 +900,17 @@ class TestPage51(unittest.TestCase):
         u = TrialFunction(V)
         v = TestFunction(V)
         a = u*v*dx
-        A = assemble(a)
 
         # FIXME: Enable
+        #parameters["linear_algebra_backend"] = "uBLAS"
+        #A = assemble(a)
+
         #from scipy.sparse import csr_matrix
         #rows, columns, values = A.data()
         #csr = csr_matrix(values, rows, columns)
+
+        # Reset linear algebra backend so that other tests work
+        parameters["linear_algebra_backend"] = "PETSc"
 
     def test_box_2(self):
         b = Vector(10)
