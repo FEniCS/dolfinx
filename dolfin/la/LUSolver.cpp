@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-07-11
-// Last changed: 2011-10-19
+// Last changed: 2011-10-20
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/NoDeleter.h>
@@ -43,8 +43,7 @@ LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A,
   init(method);
 
   // Set operator
-  assert(solver);
-  solver->parameters.update(parameters);
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 LUSolver::~LUSolver()

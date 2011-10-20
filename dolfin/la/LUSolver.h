@@ -44,11 +44,11 @@ namespace dolfin
   public:
 
     /// Constructor
-    LUSolver(std::string method = "default");
+    LUSolver(std::string method= "default");
 
     /// Constructor
     LUSolver(boost::shared_ptr<const GenericMatrix> A,
-             std::string method = "default");
+             std::string method="default");
 
     /// Destructor
     ~LUSolver();
