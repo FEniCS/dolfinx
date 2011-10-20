@@ -50,18 +50,32 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(std::string matrix_arch) : arch(matrix_arch)
 {
-  // Do nothing
+#ifndef HAS_PETSC_CUSP
+  if (matrix_arch == "gpu") 
+  {
+    error("PETSc not compiled with Cusp support, cannot create GPU matrix");
+  }
+#endif
+
+  if (matrix_arch != "cpu" && matrix_arch != "gpu")
+    error("PETSc matrix architechture unknown.");
+
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch) : 
   PETScBaseMatrix(A), arch(matrix_arch)
 {
 #ifndef HAS_PETSC_CUSP
-  if (arch == "gpu") 
+  if (matrix_arch == "gpu") 
   {
     error("PETSc not compiled with Cusp support, cannot create GPU matrix");
   }
 #endif
+  
+  if (matrix_arch != "cpu" && matrix_arch != "gpu")
+    error("PETSc matrix architechture unknown.");
+  
   // Do nothing else
 }
 //-----------------------------------------------------------------------------

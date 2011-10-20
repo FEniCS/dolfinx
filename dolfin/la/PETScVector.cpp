@@ -55,7 +55,7 @@ PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vecto
     error("PETSc vector type unknown.");
 
 #ifndef HAS_PETSC_CUSP
-  if (arch == "gpu")
+  if (vector_arch == "gpu")
   {
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
   }
@@ -79,7 +79,7 @@ PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vecto
 PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : arch(vector_arch)
 {
 #ifndef HAS_PETSC_CUSP
-  if (arch == "gpu")
+  if (vector_arch == "gpu")
   {
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
   }
