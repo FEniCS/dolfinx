@@ -23,8 +23,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin P1_projection.ufl
 
-P3 = FiniteElement("Lagrange", "triangle", 3)
-P1 = FiniteElement("Lagrange", "triangle", 1)
+P3 = FiniteElement("Lagrange", triangle, 3)
+P1 = FiniteElement("Lagrange", triangle, 1)
 
 u = TrialFunction(P1)
 v = TestFunction(P1)

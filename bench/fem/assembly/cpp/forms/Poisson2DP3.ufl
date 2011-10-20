@@ -1,4 +1,4 @@
-element = FiniteElement("Lagrange", "triangle", 3)
+element = FiniteElement("Lagrange", triangle, 3)
 
 v = TestFunction(element)
 u = TrialFunction(element)

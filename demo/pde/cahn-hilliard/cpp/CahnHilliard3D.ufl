@@ -23,7 +23,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin -O -f split CahnHilliard3D.ufl
 
-P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P1 = FiniteElement("Lagrange", tetrahedron, 1)
 ME = P1*P1
 
 du   = TrialFunction(ME)

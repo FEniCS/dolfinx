@@ -25,7 +25,7 @@
 # Compile this form with FFC: ffc -l dolfin Poisson.ufl
 
 # Elements
-element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
+element = FiniteElement("Discontinuous Lagrange", triangle, 1)
 
 # Trial and test functions
 u = TrialFunction(element)

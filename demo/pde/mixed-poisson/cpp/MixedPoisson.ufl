@@ -23,14 +23,14 @@
 #
 # Compile this form with FFC: ffc -l dolfin MixedPoisson.ufl.
 
-BDM = FiniteElement("BDM", "triangle", 1)
-DG  = FiniteElement("DG", "triangle", 0)
+BDM = FiniteElement("BDM", triangle, 1)
+DG  = FiniteElement("DG", triangle, 0)
 W = BDM * DG
 
 (sigma, u) = TrialFunctions(W)
 (tau, v)   = TestFunctions(W)
 
-CG = FiniteElement("CG", "triangle", 1)
+CG = FiniteElement("CG", triangle, 1)
 f = Coefficient(CG)
 
 a = (dot(sigma, tau) + div(tau)*u + div(sigma)*v)*dx

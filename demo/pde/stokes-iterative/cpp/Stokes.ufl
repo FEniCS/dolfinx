@@ -24,8 +24,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin Stokes.ufl
 
-P2 = VectorElement("Lagrange", "tetrahedron", 2)
-P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P2 = VectorElement("Lagrange", tetrahedron, 2)
+P1 = FiniteElement("Lagrange", tetrahedron, 1)
 TH = P2 * P1
 
 (u, p) = TrialFunctions(TH)

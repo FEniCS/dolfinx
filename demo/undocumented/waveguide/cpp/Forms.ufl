@@ -19,7 +19,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin Forms.form
 
-element = FiniteElement("Nedelec 1st kind H(curl)", "triangle", 3)
+element = FiniteElement("Nedelec 1st kind H(curl)", triangle, 3)
 
 u = TrialFunction(element)
 v = TestFunction(element)

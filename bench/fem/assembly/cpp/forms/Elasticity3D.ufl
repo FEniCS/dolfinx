@@ -1,4 +1,4 @@
-element = VectorElement("Lagrange", "tetrahedron", 1)
+element = VectorElement("Lagrange", tetrahedron, 1)
 
 v = TestFunction(element)
 u = TrialFunction(element)

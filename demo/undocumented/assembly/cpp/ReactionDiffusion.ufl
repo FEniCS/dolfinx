@@ -23,7 +23,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin ReactionDiffusion.ufl
 
-element = FiniteElement("Lagrange", "tetrahedron", 1)
+element = FiniteElement("Lagrange", tetrahedron, 1)
 
 v = TestFunction(element)
 u = TrialFunction(element)

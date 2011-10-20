@@ -23,8 +23,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin AdvectionDiffusion.ufl
 
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = VectorElement("Lagrange", "triangle", 2)
+scalar = FiniteElement("Lagrange", triangle, 1)
+vector = VectorElement("Lagrange", triangle, 2)
 
 u = TrialFunction(scalar)
 v  = TestFunction(scalar)

@@ -21,9 +21,9 @@
 # The bilinear form a(phi, v) and linear form L(v) for
 # advection-diffusion. Discontinuous formulation with upwinding.
 
-scalar = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-vector = VectorElement("Lagrange", "triangle", 2)
-constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+scalar = FiniteElement("Discontinuous Lagrange", triangle, 1)
+vector = VectorElement("Lagrange", triangle, 2)
+constant = FiniteElement("Discontinuous Lagrange", triangle, 0)
 
 # Trial and test functions
 phi = TrialFunction(scalar)

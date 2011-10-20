@@ -1,7 +1,7 @@
 # The bilinear form for a stabilized formulation of Navier-Stokes
 
-element = VectorElement("Lagrange", "tetrahedron", 1)
-constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+element = VectorElement("Lagrange", tetrahedron, 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", tetrahedron, 0)
 
 v = TestFunction(element)
 u = TrialFunction(element)
