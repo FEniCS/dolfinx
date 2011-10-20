@@ -44,8 +44,8 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(std::string method = "lu",
-                 std::string preconditioner = "ilu");
+    LinearSolver(std::string method = "default",
+                 std::string preconditioner = "none");
 
     /// Destructor
     ~LinearSolver();

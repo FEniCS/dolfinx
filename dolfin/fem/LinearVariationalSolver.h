@@ -18,7 +18,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem)
-// Last changed: 2011-06-22
+// Last changed: 2011-10-20
 
 #ifndef __LINEAR_VARIATIONAL_SOLVER_H
 #define __LINEAR_VARIATIONAL_SOLVER_H
@@ -53,8 +53,8 @@ namespace dolfin
     {
       Parameters p("linear_variational_solver");
 
-      p.add("linear_solver", "lu");
-      p.add("preconditioner", "default");
+      p.add("linear_solver", "default");
+      p.add("preconditioner", "none");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
 
