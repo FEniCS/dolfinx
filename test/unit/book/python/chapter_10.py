@@ -850,9 +850,7 @@ class TestPage49(unittest.TestCase):
 class TestPage50(unittest.TestCase):
 
     def test_box_1(self):
-        pass
-        # FIXME: Not working
-        #parameters["form_compiler"]["name"] = "sfc"
+        parameters["form_compiler"]["name"] = "sfc"
 
     def test_box_2(self):
         mesh = UnitSquare(8, 8)
