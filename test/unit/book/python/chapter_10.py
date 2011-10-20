@@ -82,14 +82,31 @@ class TestPage6(unittest.TestCase):
         solver.set_operator(A)
         solver.solve(x, b)
 
-#    def test_box_4(self):
-#        A, x, b = create_data()
-#        P = A
-#        solver = KrylovSolver()
-#        solver.set_operators(A, P)
-#        solver.solve(x, b)
+    def test_box_4(self):
+        A, x, b = create_data()
+        P = A
+        solver = KrylovSolver()
+        solver.set_operators(A, P)
+        solver.solve(x, b)
 
+class TestPage7(unittest.TestCase):
 
+    def test_box_1(self):
+        solver = KrylovSolver()
+        solver.parameters["relative_tolerance"] = 1.0e-6
+        solver.parameters["absolute_tolerance"] = 1.0e-15
+        solver.parameters["divergence_limit"] = 1.0e4
+        solver.parameters["maximum_iterations"] = 10000
+        solver.parameters["error_on_nonconvergence"] = True
+        solver.parameters["nonzero_initial_guess"] = False
+
+    def test_box_2(self):
+        solver = KrylovSolver()
+        solver.parameters["report"] = True
+        solver.parameters["monitor_convergence"] = True
+
+    def test_box_3(self):
+        solver = KrylovSolver("gmres", "ilu")
 
 if __name__ == "__main__":
     print ""
