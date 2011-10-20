@@ -26,6 +26,17 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 import unittest
 from dolfin import *
 
+def create_data():
+    "This function creates data used in the tests below"
+    mesh = UnitSquare(2, 2)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    A = assemble(u*v*dx)
+    b = assemble(v*dx)
+    x = Vector()
+    return A, x, b
+
 class TestPage4(unittest.TestCase):
 
     def test_box_1(self):
@@ -36,27 +47,49 @@ class TestPage4(unittest.TestCase):
 
 class TestPage5(unittest.TestCase):
 
-    def create_data(self):
-        mesh = UnitSquare(2, 2)
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        u = TrialFunction(V)
-        v = TestFunction(V)
-        A = assemble(u*v*dx)
-        b = assemble(v*dx)
-        x = Vector()
-        return A, x, b
-
     def test_box_1(self):
         x = Vector(100)
 
     def test_box_2(self):
-        A, x, b = self.create_data()
+        A, x, b = create_data()
         solve(A, x, b)
 
-    #def test_box_3(self):
-    #    A, x, b = self.create_data()
-    #    solver = LUSolver(A)
-    #    solver.solve(x, b)
+    def test_box_3(self):
+        A, x, b = create_data()
+        solver = LUSolver(A)
+        solver.solve(x, b)
+
+    def test_box_4(self):
+        A, x, b = create_data()
+        solver = LUSolver()
+        solver.set_operator(A)
+        solver.solve(x, b)
+
+class TestPage6(unittest.TestCase):
+
+    def test_box_1(self):
+        solver = LUSolver()
+        solver.parameters["same_nonzero_pattern"] = True
+
+    def test_box_2(self):
+        A, x, b = create_data()
+        solver = KrylovSolver(A)
+        solver.solve(x, b)
+
+    def test_box_3(self):
+        A, x, b = create_data()
+        solver = KrylovSolver()
+        solver.set_operator(A)
+        solver.solve(x, b)
+
+#    def test_box_4(self):
+#        A, x, b = create_data()
+#        P = A
+#        solver = KrylovSolver()
+#        solver.set_operators(A, P)
+#        solver.solve(x, b)
+
+
 
 if __name__ == "__main__":
     print ""

@@ -43,9 +43,7 @@ LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A,
   init(method);
 
   // Set operator
-  assert(solver);
-  solver->parameters.update(parameters);
-  solver->set_operator(A);
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 LUSolver::~LUSolver()

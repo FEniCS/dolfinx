@@ -77,41 +77,19 @@ Parameters KrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 {
-  // Get default linear algebra factory
-  DefaultFactory factory;
-
-  // Get list of available methods and preconditioners
-  std::vector<std::pair<std::string, std::string> >
-    methods = factory.krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
-    preconditioners = factory.krylov_solver_preconditioners();
-
-  // Check that method is available
-  if (!LinearSolver::in_list(method, methods))
-  {
-    dolfin_error("KrylovSolver.cpp",
-                 "solve linear system using Krylov iteration",
-                 "Unknown Krylov method \"%s\". "
-                 "Use list_krylov_solver_methods() to list available Krylov methods",
-                 method.c_str());
-  }
-
-  // Check that preconditioner is available
-  if (!LinearSolver::in_list(preconditioner, preconditioners))
-  {
-    dolfin_error("KrylovSolver.cpp",
-                 "solve linear system using Krylov iteration",
-                 "Unknown preconditioner \"%s\". "
-                 "Use list_krylov_solver_preconditioners() to list available preconditioners()",
-                 preconditioner.c_str());
-  }
-
-  // Set default parameters
-  parameters = default_parameters();
-
   // Initialize solver
-  solver.reset(factory.create_krylov_solver(method, preconditioner));
-  solver->parameters.update(parameters);
+  init(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericMatrix> A,
+                           std::string method,
+                           std::string preconditioner)
+{
+  // Initialize solver
+  init(method, preconditioner);
+
+  // Set operator
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
@@ -153,5 +131,44 @@ dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::init(std::string method, std::string preconditioner)
+{
+  // Get default linear algebra factory
+  DefaultFactory factory;
+
+  // Get list of available methods and preconditioners
+  std::vector<std::pair<std::string, std::string> >
+    methods = factory.krylov_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = factory.krylov_solver_preconditioners();
+
+  // Check that method is available
+  if (!LinearSolver::in_list(method, methods))
+  {
+    dolfin_error("KrylovSolver.cpp",
+                 "solve linear system using Krylov iteration",
+                 "Unknown Krylov method \"%s\". "
+                 "Use list_krylov_solver_methods() to list available Krylov methods",
+                 method.c_str());
+  }
+
+  // Check that preconditioner is available
+  if (!LinearSolver::in_list(preconditioner, preconditioners))
+  {
+    dolfin_error("KrylovSolver.cpp",
+                 "solve linear system using Krylov iteration",
+                 "Unknown preconditioner \"%s\". "
+                 "Use list_krylov_solver_preconditioners() to list available preconditioners()",
+                 preconditioner.c_str());
+  }
+
+  // Set default parameters
+  parameters = default_parameters();
+
+  // Initialize solver
+  solver.reset(factory.create_krylov_solver(method, preconditioner));
+  solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------
