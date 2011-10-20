@@ -57,8 +57,8 @@ namespace dolfin
     {
       Parameters p("nonlinear_variational_solver");
 
-      p.add("linear_solver",  "default");
-      p.add("preconditioner", "none");
+      p.add("linear_solver", "default");
+      p.add("preconditioner", "default");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
 

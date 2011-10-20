@@ -42,9 +42,21 @@ LinearSolver::LinearSolver(std::string method,
   std::vector<std::pair<std::string, std::string> >
     krylov_methods = factory.krylov_solver_methods();
 
+  // Handle some default and generic solver options
+  if (method == "default")
+    method = "lu";
+  else if (method == "direct")
+    method = "lu";
+  else if (method == "iterative")
+    method = "gmres";
+
   // Choose solver
-  if (method == "default" || method == "lu" || in_list(method, lu_methods))
+  if (method == "lu" || in_list(method, lu_methods))
   {
+    // Adjust preconditioner default --> none
+    if (preconditioner == "default")
+      preconditioner = "none";
+
     // Check that preconditioner has not been set
     if (preconditioner != "none")
     {
@@ -60,15 +72,12 @@ LinearSolver::LinearSolver(std::string method,
     // Initialize solver
     solver.reset(new LUSolver(method));
   }
-  else if (in_list(method, krylov_methods))
-  {
-    // Method and preconditioner will be checked by KrylovSolver
-
-    // Initialize solver
-    solver.reset(new KrylovSolver(method, preconditioner));
-  }
   else if (method == "cholesky")
   {
+    // Adjust preconditioner default --> none
+    if (preconditioner == "default")
+      preconditioner = "none";
+
     // Check that preconditioner has not been set
     if (preconditioner != "none")
     {
@@ -79,6 +88,17 @@ LinearSolver::LinearSolver(std::string method,
 
     // Initialize solver
     solver.reset(new CholmodCholeskySolver());
+  }
+  else if (in_list(method, krylov_methods))
+  {
+    // Adjust preconditioner default --> ilu
+    if (preconditioner == "default")
+      preconditioner = "ilu";
+
+    // Method and preconditioner will be checked by KrylovSolver
+
+    // Initialize solver
+    solver.reset(new KrylovSolver(method, preconditioner));
   }
   else
   {

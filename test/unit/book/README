@@ -1,0 +1,7 @@
+This directory contains unit tests for the FEniCS book:
+
+  Automated Solution of Differential Equations
+  by the Finite Element Method
+
+These tests ensure that the examples presented in the book
+continue to work with future versions of DOLFIN.
