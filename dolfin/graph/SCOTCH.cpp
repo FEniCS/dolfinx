@@ -132,31 +132,30 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Number of processes
   const SCOTCH_Num procglbnbr = MPI::num_processes();
 
-  cout << "Num vertices      : " << vertglbnbr << endl;
-  cout << "Num edges         : " << edgeglbnbr << endl;
-  cout << "Num of processes  : " << procglbnbr << endl;
-  cout << "Vert per processes: " << endl;
-  //for (uint i = 0; i < proccnttab.size(); ++i)
-  //  cout << proccnttab[i] << " ";
-  //cout << endl;
-  //cout << "Offests           : " << endl;
-  //for (uint i = 0; i < procvrttab.size(); ++i)
-  //  cout << procvrttab[i] << "  ";
-  //cout << endl;
+  cout << "Num vertices (vertglbnbr)     : " << vertglbnbr << endl;
+  cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
+  cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
+  cout << "Vert per processes (proccnttab) : " << endl;
+  for (uint i = 0; i < proccnttab.size(); ++i)
+    cout << "  " << proccnttab[i];
+  cout << endl;
+  cout << "Offests (procvrttab): " << endl;
+  for (uint i = 0; i < procvrttab.size(); ++i)
+    cout << "  " << procvrttab[i];
+  cout << endl;
 
   //------ Print local data
-  cout << "(*) Num vertices        : " << vertlocnbr << endl;
-  cout << "(*) Num vert (inc ghost): " << vertgstnbr << endl;
-  cout << "(*) Num edges           : " << edgelocnbr << endl;
-  cout << "(*) Vertloctab          : " << endl;
-
-  //for (uint i = 0; i < vertloctab.size(); ++i)
-  //  cout << vertloctab[i] << " " ;
-  //cout << endl;
-  //cout << "edgeloctab           : " << endl;
-  //for (uint i = 0; i < edgeloctab.size(); ++i)
-  //  cout << edgeloctab[i] << " ";
-  //cout << endl;
+  cout << "(*) Num vertices (vertlocnbr)        : " << vertlocnbr << endl;
+  cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
+  cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
+  cout << "(*) Vertloctab: " << endl;
+  for (uint i = 0; i < vertloctab.size(); ++i)
+    cout << "  " << vertloctab[i];
+  cout << endl;
+  cout << "edgeloctab: " << endl;
+  for (uint i = 0; i < edgeloctab.size(); ++i)
+    cout << "  " << edgeloctab[i];
+  cout << endl;
   // -----
 
   // Construct communicator (copy of MPI_COMM_WORLD)
@@ -182,6 +181,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   if (SCOTCH_dgraphCheck(&dgrafdat))
     error("Consistency error in SCOTCH graph.");
 
+  /*
   // Deal with ghost vertices (write a better description)
   SCOTCH_dgraphGhst(&dgrafdat);
 
@@ -217,6 +217,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
+  */
 }
 //-----------------------------------------------------------------------------
 #else
