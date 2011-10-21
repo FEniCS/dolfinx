@@ -25,7 +25,6 @@
 #define __UBLAS_FACTORY_H
 
 #include <string>
-#include <boost/assign/list_of.hpp>
 
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
@@ -76,9 +75,12 @@ namespace dolfin
     std::vector<std::pair<std::string, std::string> >
     lu_solver_methods() const
     {
-      return boost::assign::pair_list_of
-        ("default", "default LU solver")
-        ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)");
+      std::vector<std::pair<std::string, std::string> > methods;
+      methods.push_back(std::make_pair("default",
+                                       "default LU solver"))
+      methods.push_back(std::make_pair("umfpack",
+                                       "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      return methods;
     }
 
     /// Return a list of available Krylov solver methods
