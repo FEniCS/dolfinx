@@ -587,9 +587,9 @@ class TestPage33(unittest.TestCase):
         J = derivative(F, u)
         u = Function(V)
         problem = NonlinearVariationalProblem(F, u, bcs=bcs, J=J)
+        solver = NonlinearVariationalSolver(problem)
 
-        # FIXME: Not working
-        #info(problem.parameters, True)
+        info(solver.parameters, True)
 
     def test_box_2(self):
         mesh = Mesh("mesh.xml")
