@@ -122,6 +122,21 @@ class InputOutput(unittest.TestCase):
         self.assertEqual(p1["sub0"]["tolerance"], 0.001)
         self.assertEqual(p1["sub0"]["monitor_convergence"], True)
 
+    def test_solver_parameters(self):
+        "Test that global parameters are propagated to solvers"
+
+        # Set global parameters
+        parameters["krylov_solver"]["absolute_tolerance"] = 1.23456
+        parameters["lu_solver"]["reuse_factorization"] = True
+
+        # Create solvers
+        krylov_solver = KrylovSolver()
+        lu_solver = LUSolver()
+
+        # Check that parameters propagate to solvers
+        self.assertEqual(krylov_solver.parameters["absolute_tolerance"], 1.23456)
+        self.assertEqual(lu_solver.parameters["reuse_factorization"], True)
+
 if __name__ == "__main__":
     print ""
     print "Testing parameter library"

@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2007-07-03
-// Last changed: 2011-10-19
+// Last changed: 2011-10-21
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
@@ -165,7 +165,7 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   }
 
   // Set default parameters
-  parameters = default_parameters();
+  parameters = dolfin::parameters("krylov_solver");
 
   // Initialize solver
   solver.reset(factory.create_krylov_solver(method, preconditioner));
