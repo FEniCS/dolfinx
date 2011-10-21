@@ -922,7 +922,7 @@ class TestPage51(unittest.TestCase):
         from numpy import array
         b = Vector(20)
         # FIXME: Not working
-        #b1 = b[(0, 4, 7, 10)]
+        b1 = b[[0, 4, 7, 10]]
         b2 = b[array((0, 4, 7, 10))]
 
 if __name__ == "__main__":
