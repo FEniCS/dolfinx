@@ -921,7 +921,6 @@ class TestPage51(unittest.TestCase):
     def test_box_3(self):
         from numpy import array
         b = Vector(20)
-        # FIXME: Not working
         b1 = b[[0, 4, 7, 10]]
         b2 = b[array((0, 4, 7, 10))]
 
