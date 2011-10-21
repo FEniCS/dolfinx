@@ -77,7 +77,7 @@ namespace dolfin
     {
       std::vector<std::pair<std::string, std::string> > methods;
       methods.push_back(std::make_pair("default",
-                                       "default LU solver"))
+                                       "default LU solver"));
       methods.push_back(std::make_pair("umfpack",
                                        "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
       return methods;
