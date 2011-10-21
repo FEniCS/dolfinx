@@ -47,18 +47,12 @@ const std::map<std::string, NormType> PETScVector::norm_types
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vector_arch)
 {
-  // TODO: Should the interface be changed to allow one to say PETScVector(N, "gpu"), and
-  // omit the type argument? That would be a nice short-hand notation for instantiating
-  // PETSc Cusp vectors without setting linalg-backend.
-  // FIXME: Output the erroneous argument in below errors.
   if (type != "global" && type != "local")
     error("PETSc vector type unknown.");
 
 #ifndef HAS_PETSC_CUSP
   if (vector_arch == "gpu")
-  {
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
-  }
 #endif
 
   if (vector_arch != "cpu" && vector_arch != "gpu")
@@ -80,9 +74,7 @@ PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : ar
 {
 #ifndef HAS_PETSC_CUSP
   if (vector_arch == "gpu")
-  {
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
-  }
 #endif
   
   // Empty ghost indices vector
@@ -615,7 +607,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
-  if (strcmp(petsc_type, VECSEQ) != 0)
+  if (strcmp(petsc_type, VECSEQ) != 0 and strcmp(petsc_type, VECSEQCUSP) != 0)
     error("PETScVector::gather can only gather into local vectors");
 
   // Prepare data for index sets (global indices)
@@ -717,27 +709,23 @@ void PETScVector::init(std::pair<uint, uint> range,
   {
     // FIXME: Make it look better!
     VecCreate(PETSC_COMM_SELF, x.get());
+    // Set type to be either standard or Cusp sequential vector
     if (arch == "cpu")
-    {
-      // Set type to be standard sequential vector
       VecSetType(*x, VECSEQ);
-    }
+#ifdef HAS_PETSC_CUSP
     else if (arch == "gpu")
-    {
-      // Set type to be sequential Cusp vector
       VecSetType(*x, VECSEQCUSP);
-    } 
+#endif
     else 
-    {
       error("PETSc vector architecture unknown");
-    }
+    
     VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
 
   }
   else
   {
-    // FIXME: Implement VECMPICUSP vectors
+    // TODO: Implement VECMPICUSP vectors
     if (arch == "gpu")
       error("Distributed PETSc Cusp vectors not implemented yet.");
     
@@ -777,10 +765,12 @@ LinearAlgebraFactory& PETScVector::factory() const
 {
   if (arch == "cpu")
     return PETScFactory::instance();
+#ifdef HAS_PETSC_CUSP
   else if (arch == "gpu")
     return PETScCuspFactory::instance();
+#endif
   else
-    error("PETSc vector architecture unknown");
+    error("PETSc vector architecture unknown/unsupported");
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();

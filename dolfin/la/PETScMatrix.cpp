@@ -121,6 +121,7 @@ void PETScMatrix::resize(uint M, uint N)
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
 
+  // FIXME: Check for arch and branch code here
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::num_processes() > 1)
   {
@@ -133,7 +134,7 @@ void PETScMatrix::resize(uint M, uint N)
   }
   else
   {
-    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
+    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in this case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
@@ -177,8 +178,10 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // Set matrix type according to chosen architecture
     if (arch == "cpu")
       MatSetType(*A, MATSEQAIJ);
+#ifdef HAS_PETSC_CUSP
     else if (arch == "gpu")
       MatSetType(*A, MATSEQAIJCUSP);
+#endif
     else
       error("PETSc matrix architecture unknown");
 
@@ -213,6 +216,10 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
+    // TODO: Implement distributed GPU vectors
+    if (arch == "gpu")
+      error("Distributed PETSc Cusp matrices not implemented yet.");
+
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
     //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
@@ -543,10 +550,12 @@ LinearAlgebraFactory& PETScMatrix::factory() const
 {
   if (arch == "cpu")
     return PETScFactory::instance();
+#ifdef HAS_PETSC_CUSP
   else if (arch == "gpu")
     return PETScCuspFactory::instance();
+#endif
   else
-    error("PETSc vector architecture unknown");
+    error("PETSc vector architecture unknown/unsupported");
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
