@@ -49,8 +49,6 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   // Create data structures to hold graph
   std::vector<std::set<uint> > local_graph;
   std::set<uint> ghost_vertices;
-  const uint num_global_vertices = mesh_data.num_global_cells;
-  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
 
   // Compute local dual graph
   info("Compute dual graph.");
@@ -59,6 +57,8 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
 
   // Compute partitions
   info("Start to compute partitions using SCOTCH");
+  const uint num_global_vertices = mesh_data.num_global_cells;
+  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
   info("Finished computing partitions using SCOTCH");
@@ -118,7 +118,6 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   for (uint i = 1; i <= MPI::process_number(); ++i)
     assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 
-  /*
   // Print data ---------------
   const uint vertgstnbr = local_graph.size() + ghost_vertices.size();
 
@@ -126,7 +125,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   const SCOTCH_Num vertglbnbr = num_global_vertices;
 
   // Total (global) number of edges (cell-cell connections) in the graph
-  std::vector<uint> num_global_edges = MPI::gather(edgelocnbr);
+  std::vector<int> num_global_edges;
+  dolfin::MPI::all_gather(edgelocnbr, num_global_edges);
   const SCOTCH_Num edgeglbnbr = std::accumulate(num_global_edges.begin(), num_global_edges.end(), 0);
 
   // Number of processes
@@ -136,13 +136,13 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   cout << "Num edges         : " << edgeglbnbr << endl;
   cout << "Num of processes  : " << procglbnbr << endl;
   cout << "Vert per processes: " << endl;
-  for (uint i = 0; i < proccnttab.size(); ++i)
-    cout << proccnttab[i] << " ";
-  cout << endl;
-  cout << "Offests           : " << endl;
-  for (uint i = 0; i < procvrttab.size(); ++i)
-    cout << procvrttab[i] << "  ";
-  cout << endl;
+  //for (uint i = 0; i < proccnttab.size(); ++i)
+  //  cout << proccnttab[i] << " ";
+  //cout << endl;
+  //cout << "Offests           : " << endl;
+  //for (uint i = 0; i < procvrttab.size(); ++i)
+  //  cout << procvrttab[i] << "  ";
+  //cout << endl;
 
   //------ Print local data
   cout << "(*) Num vertices        : " << vertlocnbr << endl;
@@ -150,15 +150,14 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   cout << "(*) Num edges           : " << edgelocnbr << endl;
   cout << "(*) Vertloctab          : " << endl;
 
-  for (uint i = 0; i < vertloctab.size(); ++i)
-    cout << vertloctab[i] << " " ;
-  cout << endl;
-  cout << "edgeloctab           : " << endl;
-  for (uint i = 0; i < edgeloctab.size(); ++i)
-    cout << edgeloctab[i] << " ";
-  cout << endl;
+  //for (uint i = 0; i < vertloctab.size(); ++i)
+  //  cout << vertloctab[i] << " " ;
+  //cout << endl;
+  //cout << "edgeloctab           : " << endl;
+  //for (uint i = 0; i < edgeloctab.size(); ++i)
+  //  cout << edgeloctab[i] << " ";
+  //cout << endl;
   // -----
-  */
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
