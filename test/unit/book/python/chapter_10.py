@@ -882,10 +882,11 @@ class TestPage50(unittest.TestCase):
         v = TestFunction(V)
         a = u*v*dx
 
-        # FIXME: Enable, don't have MTL4
-        #parameters["linear_algebra_backend"] = "MTL4"
-        #A = assemble(a)
-        #rows, columns, values = A.data()
+        # Only test when MTL4 is available
+        if has_linear_algebra_backend("MTL4"):
+            parameters["linear_algebra_backend"] = "MTL4"
+            A = assemble(a)
+            rows, columns, values = A.data()
 
         # Reset linear algebra backend so that other tests work
         parameters["linear_algebra_backend"] = "PETSc"
@@ -898,14 +899,12 @@ class TestPage51(unittest.TestCase):
         u = TrialFunction(V)
         v = TestFunction(V)
         a = u*v*dx
+        parameters["linear_algebra_backend"] = "uBLAS"
+        A = assemble(a)
 
-        # FIXME: Enable
-        #parameters["linear_algebra_backend"] = "uBLAS"
-        #A = assemble(a)
-
-        #from scipy.sparse import csr_matrix
-        #rows, columns, values = A.data()
-        #csr = csr_matrix(values, rows, columns)
+        from scipy.sparse import csr_matrix
+        rows, columns, values = A.data()
+        csr = csr_matrix((values, columns, rows))
 
         # Reset linear algebra backend so that other tests work
         parameters["linear_algebra_backend"] = "PETSc"
