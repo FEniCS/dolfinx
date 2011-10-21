@@ -91,10 +91,6 @@ LinearSolver::LinearSolver(std::string method,
   }
   else if (in_list(method, krylov_methods))
   {
-    // Adjust preconditioner default --> ilu
-    if (preconditioner == "default")
-      preconditioner = "ilu";
-
     // Method and preconditioner will be checked by KrylovSolver
 
     // Initialize solver
