@@ -16,12 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-09-27
+// Last changed: 2011-10-23
 
 #include <fstream>
 #include <istream>
 #include <ios>
 #include <boost/scoped_array.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/operations.hpp>
+#include <iosfwd> 
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
@@ -192,61 +199,84 @@ void BinaryFile::operator<< (const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void BinaryFile::open_read()
 {
-  ifile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // FIXME: Check that file exists
+  if (!boost::filesystem::is_regular_file(filename))
+    error("File \"%s\" does not exist or is not a regular file. Cannot be read by XML parser.", filename.c_str());
+
+  // Load xml file (unzip if necessary) into parser
+  if (extension == ".gz")
+    // Decompress file
+    ifilter.push(boost::iostreams::gzip_decompressor());
+  
+  ifile.open(filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifile.is_open())
     error("Unable to open file for reading: \"%s\".", filename.c_str());
+  ifilter.push(ifile);
+  
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::open_write()
 {
+  // Compress if filename has extension '.gz'
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  if (extension == ".gz")
+    ofilter.push(boost::iostreams::gzip_compressor());
+  
   ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofile.is_open())
     error("Unable to open file for writing: \"%s\".", filename.c_str());
+  ofilter.push(ofile);
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::close_read()
 {
-  ifile.close();
+  ifilter.reset();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::close_write()
 {
-  ofile.close();
+  ofilter.reset();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BinaryFile::read_uint()
 {
   uint value = 0;
-  ifile.read((char*) &value, sizeof(uint));
+  boost::iostreams::read(ifilter, (char*) &value, (std::streamsize) sizeof(uint));
   return value;
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::read_array(uint n, uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    ifile.read((char*) (values + i), sizeof(uint));
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::read_array(uint n, double* values)
 {
   for (uint i = 0; i < n; ++i)
-    ifile.read((char*) (values + i), sizeof(double));
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_uint(uint value)
 {
-  ofile.write((char*) &value, sizeof(uint));
+  boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_array(uint n, const uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    ofile.write((char*) &values[i], sizeof(uint));
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_array(uint n, const double* values)
 {
   for (uint i = 0; i < n; ++i)
-    ofile.write((char*) &values[i], sizeof(double));
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------

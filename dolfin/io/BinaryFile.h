@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-29
+// Last changed: 2011-10-23
 
 #ifndef __BINARY_FILE_H
 #define __BINARY_FILE_H
 
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <dolfin/common/types.h>
 #include "GenericFile.h"
 
@@ -101,9 +102,11 @@ namespace dolfin
     void write_array(uint n, const double* values);
 
     // File for reading
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> ifilter;
     std::ifstream ifile;
 
     // File for writing
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> ofilter;
     std::ofstream ofile;
 
   };

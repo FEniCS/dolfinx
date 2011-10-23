@@ -28,7 +28,10 @@ from dolfin import *
 #@skipIf("Skipping TimeSeries test in parallel", MPI.num_processes() > 1)
 class TimeSeriesTest(unittest.TestCase):
 
-    def test_retrieved_times(self):
+    def test_retrieved_times_compressed(self):
+        self.test_retrieved_times(True)
+
+    def test_retrieved_times(self, compressed=False):
 
         if MPI.num_processes() > 1:
             return
@@ -38,19 +41,18 @@ class TimeSeriesTest(unittest.TestCase):
         V = FunctionSpace(mesh, "CG", 2)
 
         u = Function(V)
-        series = TimeSeries("u")
+        series = TimeSeries("u", compressed)
         for t in times:
             u.vector()[:] = t
             series.store(u.vector(), t)
             series.store(mesh, t)
 
-        series = TimeSeries("u")
+        series = TimeSeries("u", compressed)
         t0 = series.vector_times()[0]
         T = series.mesh_times()[-1]
 
         self.assertAlmostEqual(t0, times[0])
         self.assertAlmostEqual(T, times[-1])
-
 
 if __name__ == "__main__":
     print ""

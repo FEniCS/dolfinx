@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-03-31
+// Last changed: 2011-10-23
 
 #include <iostream>
 
@@ -36,23 +36,26 @@ template <typename T>
 void store_object(const T& object, double t,
                   std::vector<double>& times,
                   std::string series_name,
-                  std::string type_name)
+                  std::string type_name,
+		  bool compressed)
 {
   // Write object
-  File file_data(TimeSeries::filename_data(series_name, type_name, times.size()));
+  File file_data(TimeSeries::filename_data(series_name, type_name, 
+					   times.size(), compressed));
   file_data << object;
 
   // Add time
   times.push_back(t);
 
   // Store times
-  File file_times(TimeSeries::filename_times(series_name, type_name));
+  File file_times(TimeSeries::filename_times(series_name, type_name, 
+					     compressed));
   file_times << times;
 }
 
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name)
-  : _name(name), _cleared(false)
+TimeSeries::TimeSeries(std::string name, bool compressed)
+  : _name(name), _cleared(false), _compressed(compressed)
 {
   not_working_in_parallel("Storing of data to time series");
 
@@ -60,7 +63,7 @@ TimeSeries::TimeSeries(std::string name)
   parameters = default_parameters();
 
   // Read vector times
-  std::string filename = TimeSeries::filename_times(_name, "vector");
+  std::string filename = TimeSeries::filename_times(_name, "vector", _compressed);
   if (File::exists(filename))
   {
     // Read from file
@@ -72,7 +75,7 @@ TimeSeries::TimeSeries(std::string name)
     log(PROGRESS, "No vector samples found in time series.");
 
   // Read mesh times
-  filename = TimeSeries::filename_times(_name, "mesh");
+  filename = TimeSeries::filename_times(_name, "mesh", _compressed);
   if (File::exists(filename))
   {
     // Read from file
@@ -97,7 +100,7 @@ void TimeSeries::store(const GenericVector& vector, double t)
     clear();
 
   // Store object
-  store_object(vector, t, _vector_times, _name, "vector");
+  store_object(vector, t, _vector_times, _name, "vector", _compressed);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::store(const Mesh& mesh, double t)
@@ -108,7 +111,7 @@ void TimeSeries::store(const Mesh& mesh, double t)
     clear();
 
   // Store object
-  store_object(mesh, t, _mesh_times, _name, "mesh");
+  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) const
@@ -124,7 +127,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
     // Special case: same index
     if (i0 == i1)
     {
-      File f(filename_data(_name, "vector", i0));
+      File f(filename_data(_name, "vector", i0, _compressed));
       f >> vector;
       log(PROGRESS, "Reading vector value at t = %g.", _vector_times[0]);
       return;
@@ -136,8 +139,8 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
     // Read vectors
     GenericVector& x0(vector);
     boost::scoped_ptr<GenericVector> x1(x0.factory().create_vector());
-    File f0(filename_data(_name, "vector", i0));
-    File f1(filename_data(_name, "vector", i1));
+    File f0(filename_data(_name, "vector", i0, _compressed));
+    File f1(filename_data(_name, "vector", i1, _compressed));
     f0 >> x0;
     f1 >> *x1;
 
@@ -167,7 +170,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
         _vector_times[index], t);
 
     // Read vector
-    File file(filename_data(_name, "vector", index));
+    File file(filename_data(_name, "vector", index, _compressed));
     file >> vector;
   }
 }
@@ -181,8 +184,9 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index) << std::endl;
-  File file(filename_data(_name, "mesh", index));
+  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index, 
+						   _compressed) << std::endl;
+  File file(filename_data(_name, "mesh", index, _compressed));
   file >> mesh;
 }
 //-----------------------------------------------------------------------------
@@ -211,18 +215,24 @@ void TimeSeries::clear()
 //-----------------------------------------------------------------------------
 std::string TimeSeries::filename_data(std::string series_name,
                                       std::string type_name,
-                                      uint index)
+                                      uint index,
+				      bool compressed)
 {
   std::stringstream s;
   s << series_name << "_" << type_name << "_" << index << ".bin";
+  if (compressed)
+    s << ".gz";
   return s.str();
 }
 //-----------------------------------------------------------------------------
 std::string TimeSeries::filename_times(std::string series_name,
-                                       std::string type_name)
+                                       std::string type_name,
+				       bool compressed)
 {
   std::stringstream s;
   s << series_name << "_" << type_name << "_times" << ".bin";
+  if (compressed)
+    s << ".gz";
   return s.str();
 }
 //-----------------------------------------------------------------------------

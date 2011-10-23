@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-07-19
+// Last changed: 2011-10-23
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -52,7 +52,9 @@ namespace dolfin
     /// *Arguments*
     ///     name (std::string)
     ///         The time series name
-    TimeSeries(std::string name);
+    ///     compressed (bool)
+    ///         Use compressed file format (default false)
+    TimeSeries(std::string name, bool compressed=false);
 
     /// Destructor
     ~TimeSeries();
@@ -122,12 +124,15 @@ namespace dolfin
     ///         The type of data
     ///     index (uint)
     ///         The index
+    ///     compressed (bool)
+    ///         True if compressed file format
     ///
     /// *Returns*
     ///     std::string
     ///         The filename
     static std::string filename_data(std::string series_name,
-                                     std::string type_name, uint index);
+                                     std::string type_name, uint index, 
+				     bool compressed);
 
     /// Return filename for times
     ///
@@ -136,12 +141,15 @@ namespace dolfin
     ///         The time series name
     ///     type_name (std::string)
     ///         The type of data
+    ///     compressed (bool)
+    ///         True if compressed file format
     ///
     /// *Returns*
     ///     std::string
     ///         The filename
     static std::string filename_times(std::string series_name,
-                                      std::string type_name);
+                                      std::string type_name, 
+				      bool compressed);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -180,6 +188,9 @@ namespace dolfin
 
     // True if series has been cleared
     bool _cleared;
+
+    // True if storing using gzipped file
+    bool _compressed;
 
   };
 
