@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2009-03-16
-// Last changed: 2011-06-30
+// Last changed: 2011-10-24
 
 #include "pugixml.hpp"
 #include <dolfin/log/log.h>
@@ -38,7 +40,7 @@ void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
   if (xml_dolfin.first_child().next_sibling())
     error("Two parameter sets (not nested) are defined in XML file.");
 
-  // Get name of root parameters and rename paramter set
+  // Get name of root parameters and rename parameter set
   const std::string name = xml_parameters.attribute("name").value();
   p.rename(name);
 
@@ -86,7 +88,8 @@ void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
     write(parameters(nested_keys[i]), parameters_node);
 }
 //-----------------------------------------------------------------------------
-void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_node)
+void XMLParameters::read_parameter_nest(Parameters& p,
+                                        const pugi::xml_node xml_node)
 {
   // Iterate over parameters
   for (pugi::xml_node_iterator it = xml_node.begin(); it != xml_node.end(); ++it)
@@ -99,8 +102,11 @@ void XMLParameters::read_parameter_nest(Parameters& p, const pugi::xml_node xml_
       const std::string name = it->attribute("name").value();
 
       // Create set, add set and then read parameters
-      Parameters nested_parameters(name);
-      p.add(nested_parameters);
+      if (!p.has_parameter_set(name))
+      {
+        Parameters nested_parameters(name);
+        p.add(nested_parameters);
+      }
       read_parameter_nest(p(name), *it);
     }
     else if (node_name == "parameter")

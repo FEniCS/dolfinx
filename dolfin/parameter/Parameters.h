@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-07-07
+// Last changed: 2011-10-24
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -170,8 +170,14 @@ namespace dolfin
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);
 
-    /// Check if parameter set has given key
+    /// This is an alias for the function has_parameter
     bool has_key(std::string key) const;
+
+    /// Check if parameter set has given parameter
+    bool has_parameter(std::string key) const;
+
+    /// Check if parameter set has given nested parameter set
+    bool has_parameter_set(std::string key) const;
 
     /// Return a vector of parameter keys
     void get_parameter_keys(std::vector<std::string>& keys) const;

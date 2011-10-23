@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-03-29
+// Last changed: 2011-10-24
 
 #include <sstream>
 #include <stdio.h>
@@ -371,7 +371,17 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
 //-----------------------------------------------------------------------------
 bool Parameters::has_key(std::string key) const
 {
+  return has_parameter(key);
+}
+//-----------------------------------------------------------------------------
+bool Parameters::has_parameter(std::string key) const
+{
   return find_parameter(key) != 0;
+}
+//-----------------------------------------------------------------------------
+bool Parameters::has_parameter_set(std::string key) const
+{
+  return find_parameter_set(key) != 0;
 }
 //-----------------------------------------------------------------------------
 void Parameters::get_parameter_keys(std::vector<std::string>& keys) const
