@@ -16,14 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-06-01
+// Last changed: 2011-10-21
 
 #include <fstream>
 #include <cstdlib>
 #include <iostream>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/io/File.h>
-#include <dolfin/la/KrylovSolver.h>
 #include "GlobalParameters.h"
 
 using namespace dolfin;
@@ -39,9 +38,6 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
 
   // FIXME: Consider adding the default parameter sets for all
   // FIXME: classes as nested parameter sets here.
-
-  // Add nested parameter sets
-  this->add(KrylovSolver::default_parameters());
 
   // Search paths to parameter files in order of increasing priority
   std::vector<std::string> parameter_files;

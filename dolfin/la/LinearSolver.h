@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Anders Logg and Garth N. Wells
+// Copyright (C) 2004-2011 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -44,7 +44,8 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(std::string solver_type = "lu", std::string pc_type = "ilu");
+    LinearSolver(std::string method = "default",
+                 std::string preconditioner = "default");
 
     /// Destructor
     ~LinearSolver();
@@ -70,6 +71,15 @@ namespace dolfin
     }
 
   private:
+
+    // Friends
+    friend class LUSolver;
+    friend class KrylovSolver;
+
+    // Check whether string is contained in list
+    static bool
+    in_list(const std::string& method,
+            const std::vector<std::pair<std::string, std::string> > methods);
 
     // Solver
     boost::scoped_ptr<GenericLinearSolver> solver;

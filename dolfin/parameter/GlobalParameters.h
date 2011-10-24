@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,12 +18,14 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2011-09-13
+// Last changed: 2011-10-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
 
 #include "Parameters.h"
+#include <dolfin/la/KrylovSolver.h>
+#include <dolfin/la/LUSolver.h>
 
 namespace dolfin
 {
@@ -121,6 +123,10 @@ namespace dolfin
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);
+
+      // Add nested parameter sets
+      p.add(KrylovSolver::default_parameters());
+      p.add(LUSolver::default_parameters());
 
       return p;
     }

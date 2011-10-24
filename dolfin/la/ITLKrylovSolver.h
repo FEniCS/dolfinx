@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Dag Lindbo, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Dag Lindbo 2008
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-07-16
-// Last changed: 2011-03-28
+// Last changed: 2011-10-19
 
 #ifdef HAS_MTL4
 
@@ -48,7 +48,8 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    ITLKrylovSolver(std::string method = "default", std::string pc_type = "default");
+    ITLKrylovSolver(std::string method = "default",
+                    std::string preconditioner = "default");
 
     /// Destructor
     ~ITLKrylovSolver();
@@ -75,6 +76,12 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    /// Return a list of available methods
+    static std::vector<std::pair<std::string, std::string> > methods();
+
+    /// Return a list available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
+
     /// Default parameter values
     static Parameters default_parameters();
 
@@ -90,7 +97,7 @@ namespace dolfin
     std::string method;
 
     // Preconditioner type
-    std::string pc_type;
+    std::string preconditioner;
 
   };
 

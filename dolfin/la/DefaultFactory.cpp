@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2008-05-17
-// Last changed: 2011-09-29
+// Last changed: 2011-10-19
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -52,18 +52,37 @@ GenericSparsityPattern* DefaultFactory::create_pattern() const
   return factory().create_pattern();
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* DefaultFactory::create_lu_solver() const
+GenericLinearSolver* DefaultFactory::create_lu_solver(std::string method) const
 {
-  return factory().create_lu_solver();
+  return factory().create_lu_solver(method);
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* DefaultFactory::create_krylov_solver(std::string method,
-                                                          std::string pc) const
+GenericLinearSolver*
+DefaultFactory::create_krylov_solver(std::string method,
+                                     std::string preconditioner) const
 {
-  return factory().create_krylov_solver(method, pc);
+  return factory().create_krylov_solver(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& DefaultFactory::factory() const
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::lu_solver_methods() const
+{
+  return factory().lu_solver_methods();
+}
+ //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::krylov_solver_methods() const
+{
+  return factory().krylov_solver_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+DefaultFactory::krylov_solver_preconditioners() const
+{
+  return factory().krylov_solver_preconditioners();
+}
+//-----------------------------------------------------------------------------
+LinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "uBLAS";

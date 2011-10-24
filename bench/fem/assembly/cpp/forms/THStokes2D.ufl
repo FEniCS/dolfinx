@@ -1,5 +1,5 @@
-vector  = VectorElement("Lagrange", "triangle", 2)
-scalar  = FiniteElement("Lagrange", "triangle", 1)
+vector  = VectorElement("Lagrange", triangle, 2)
+scalar  = FiniteElement("Lagrange", triangle, 1)
 element = vector * scalar
 
 (v, q) = TestFunctions(element)

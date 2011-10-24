@@ -26,7 +26,7 @@
 # Compile this form with FFC: ffc -l dolfin -feliminate_zeros -fprecompute_basis_const -fprecompute_ip_const HyperElasticity.ufl
 
 # Function spaces
-element = VectorElement("Lagrange", "tetrahedron", 1)
+element = VectorElement("Lagrange", tetrahedron, 1)
 
 # Trial and test functions
 du = TrialFunction(element)     # Incremental displacement
@@ -47,8 +47,8 @@ Ic = tr(C)
 J  = det(F)
 
 # Elasticity parameters
-mu    = Constant("tetrahedron")
-lmbda = Constant("tetrahedron")
+mu    = Constant(tetrahedron)
+lmbda = Constant(tetrahedron)
 
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2

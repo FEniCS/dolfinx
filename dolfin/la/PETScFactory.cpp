@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2009.
+// Modified by Anders Logg 2009-2011
 //
 // First added:  2007-12-06
-// Last changed: 2009-05-18
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -54,15 +54,34 @@ SparsityPattern* PETScFactory::create_pattern() const
   return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver* PETScFactory::create_lu_solver() const
+PETScLUSolver* PETScFactory::create_lu_solver(std::string method) const
 {
-  return new PETScLUSolver();
+  return new PETScLUSolver(method);
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver* PETScFactory::create_krylov_solver(std::string method,
-                                                      std::string pc) const
+PETScKrylovSolver*
+PETScFactory::create_krylov_solver(std::string method,
+                                   std::string preconditioner) const
 {
-  return new PETScKrylovSolver(method, pc);
+  return new PETScKrylovSolver(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::lu_solver_methods() const
+{
+  return PETScLUSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::krylov_solver_methods() const
+{
+  return PETScKrylovSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScFactory::krylov_solver_preconditioners() const
+{
+  return PETScKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
 

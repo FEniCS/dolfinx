@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2008-04-21
-// Last changed: 2008-09-28
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -63,11 +65,23 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    EpetraLUSolver* create_lu_solver() const;
+    EpetraLUSolver* create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     EpetraKrylovSolver* create_krylov_solver(std::string method,
-                                             std::string pc) const;
+                                             std::string preconditioner) const;
+
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const;
+
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const;
+
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const;
 
     /// --- EpetraFactory interface
 

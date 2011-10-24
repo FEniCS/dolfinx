@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2006-2010.
+// Modified by Anders Logg 2006-2011
 //
 // First added:  2006-05-31
-// Last changed: 2011-03-24
+// Last changed: 2011-10-19
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
@@ -29,12 +29,25 @@
 
 using namespace dolfin;
 
-const std::set<std::string> uBLASKrylovSolver::solver_types
-  = boost::assign::list_of("default")
-                          ("cg")
-                          ("gmres")
-                          ("bicgstab");
-
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+uBLASKrylovSolver::methods()
+{
+  return boost::assign::pair_list_of
+    ("default",  "default Krylov method")
+    ("cg",       "Conjugate gradient method")
+    ("gmres",    "Generalized minimal residual method")
+    ("bicgstab", "Biconjugate gradient stabilized method");
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+uBLASKrylovSolver::preconditioners()
+{
+  return boost::assign::pair_list_of
+    ("default", "default preconditioner")
+    ("none",    "No preconditioner")
+    ("ilu",     "Incomplete LU factorization");
+}
 //-----------------------------------------------------------------------------
 Parameters uBLASKrylovSolver::default_parameters()
 {
@@ -43,28 +56,28 @@ Parameters uBLASKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type,
-                                     std::string pc_type)
-  : solver_type(solver_type), report(false), parameters_read(false)
+uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
+                                     std::string preconditioner)
+  : method(method), report(false), parameters_read(false)
 {
   // Set parameter values
   parameters = default_parameters();
 
   // Select and create default preconditioner
-  select_preconditioner(pc_type);
+  select_preconditioner(method);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : solver_type("default"), pc(reference_to_no_delete_pointer(pc)),
+  : method("default"), pc(reference_to_no_delete_pointer(pc)),
     report(false), parameters_read(false)
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type,
+uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      uBLASPreconditioner& pc)
-  : solver_type(solver_type), pc(reference_to_no_delete_pointer(pc)),
+  : method(method), pc(reference_to_no_delete_pointer(pc)),
     report(false), parameters_read(false)
 {
   // Set parameter values
@@ -101,13 +114,13 @@ dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x
   return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
+void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
 {
-  if(pc_type == "none")
+  if (preconditioner == "none")
     pc.reset(new uBLASDummyPreconditioner());
-  else if (pc_type == "ilu")
+  else if (preconditioner == "ilu")
     pc.reset(new uBLASILUPreconditioner(parameters));
-  else if (pc_type == "default")
+  else if (preconditioner == "default")
     pc.reset(new uBLASILUPreconditioner(parameters));
   else
   {

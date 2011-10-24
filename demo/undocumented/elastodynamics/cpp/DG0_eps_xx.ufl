@@ -22,8 +22,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin DG0_eps-xx.ufl
 
-vector   = VectorElement("Lagrange", "triangle", 1)
-constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+vector   = VectorElement("Lagrange", triangle, 1)
+constant = FiniteElement("Discontinuous Lagrange", triangle, 0)
 
 eps = TrialFunction(constant)
 v   = TestFunction(constant)

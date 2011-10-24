@@ -22,5 +22,5 @@
 #
 # Compile this form with FFC: ffc -l dolfin Pressure.form
 
-element = FiniteElement("Lagrange", "triangle", 1)
+element = FiniteElement("Lagrange", triangle, 1)
 

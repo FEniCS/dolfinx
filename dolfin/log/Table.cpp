@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-07-19
-// Last changed: 2010-11-11
+// Last changed: 2011-10-07
 
 #include <iomanip>
 #include <iostream>
@@ -32,7 +32,8 @@ using namespace dolfin;
 typedef std::vector<std::string>::const_iterator iterator;
 
 //-----------------------------------------------------------------------------
-Table::Table(std::string title) : _title(title)
+Table::Table(std::string title, bool right_justify)
+  : _title(title), right_justify(right_justify)
 {
   // Do nothing
 }
@@ -96,18 +97,26 @@ void Table::set(std::string row, std::string col, std::string value)
 std::string Table::get(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, std::string>::const_iterator it = values.find(key);
+  std::map<std::pair<std::string, std::string>, std::string>::const_iterator
+    it = values.find(key);
+
   if (it == values.end())
-    error("Missing table value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
+    error("Missing table value for entry (\"%s\", \"%s\").",
+          row.c_str(), col.c_str());
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
 double Table::get_value(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, double>::const_iterator it = dvalues.find(key);
+  std::map<std::pair<std::string, std::string>, double>::const_iterator
+    it = dvalues.find(key);
+
   if (it == dvalues.end())
-    error("Missing double value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
+    error("Missing double value for entry (\"%s\", \"%s\").",
+          row.c_str(), col.c_str());
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
@@ -200,9 +209,18 @@ std::string Table::str(bool verbose) const
     s << "  |";
     for (uint j = 0; j < cols.size(); j++)
     {
-      for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
-        s << " ";
-      s << "  " << cols[j];
+      if (right_justify)
+      {
+        for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+          s << " ";
+        s << "  " << cols[j];
+      }
+      else
+      {
+        s << "  " << cols[j];
+        for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+          s << " ";
+      }
     }
     s << "\n";
     for (uint k = 0; k < row_size; k++)
@@ -216,9 +234,18 @@ std::string Table::str(bool verbose) const
       s << "  |";
       for (uint j = 0; j < cols.size(); j++)
       {
-        for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
-          s << " ";
-        s << "  " << tvalues[i][j];
+        if (right_justify)
+        {
+          for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+            s << " ";
+          s << "  " << tvalues[i][j];
+        }
+        else
+        {
+          s << "  " << tvalues[i][j];
+          for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+            s << " ";
+        }
       }
     }
   }

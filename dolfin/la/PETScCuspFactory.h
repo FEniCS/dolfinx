@@ -54,11 +54,23 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    PETScLUSolver* create_lu_solver() const;
+    PETScLUSolver* create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     PETScKrylovSolver* create_krylov_solver(std::string method,
-                                            std::string pc) const;
+                                            std::string preconditioner) const;
+
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const;
+
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const;
+
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const;
 
     /// Return singleton instance
     static PETScCuspFactory& instance()

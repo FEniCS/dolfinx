@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,29 +19,134 @@
 // Modified by Garth N. Wells 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-09-15
+// Last changed: 2011-10-07
 
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
+#include "DefaultFactory.h"
 #include "LinearSolver.h"
 #include "solve.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-                   std::string solver_type, std::string pc_type)
+dolfin::uint dolfin::solve(const GenericMatrix& A,
+                           GenericVector& x,
+                           const GenericVector& b,
+                           std::string method,
+                           std::string preconditioner)
 {
   Timer timer("Solving linear system");
-  LinearSolver solver(solver_type, pc_type);
+  LinearSolver solver(method, preconditioner);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A, const GenericVector& x,
+void dolfin::list_linear_solver_methods()
+{
+  // Get methods
+  std::vector<std::pair<std::string, std::string> >
+    methods = linear_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("Solver method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_lu_solver_methods()
+{
+  // Get methods
+  std::vector<std::pair<std::string, std::string> >
+    methods = lu_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("LU method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_krylov_solver_methods()
+{
+  // Get methods
+  std::vector<std::pair<std::string, std::string> >
+    methods = krylov_solver_methods();
+
+  // Pretty-print list of methods
+  Table t("Krylov method", false);
+  for (uint i = 0; i < methods.size(); i++)
+    t(methods[i].first, "Description") = methods[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_krylov_solver_preconditioners()
+{
+  // Get preconditioners
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = krylov_solver_preconditioners();
+
+  // Pretty-print list of preconditioners
+  Table t("Preconditioner", false);
+  for (uint i = 0; i < preconditioners.size(); i++)
+    t(preconditioners[i].first, "Description") = preconditioners[i].second;
+  cout << t.str(true) << endl;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+dolfin::linear_solver_methods()
+{
+  // Add default method
+  std::vector<std::pair<std::string, std::string> >
+    methods;
+  methods.push_back(std::make_pair("default", "default linear solver"));
+
+  // Add LU methods
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = DefaultFactory::factory().lu_solver_methods();
+  for (uint i = 0; i < lu_methods.size(); i++)
+  {
+    if (lu_methods[i].first != "default")
+      methods.push_back(lu_methods[i]);
+  }
+
+  // Add Krylov methods
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = DefaultFactory::factory().krylov_solver_methods();
+  for (uint i = 0; i < krylov_methods.size(); i++)
+  {
+    if (lu_methods[i].first != "default")
+      methods.push_back(krylov_methods[i]);
+  }
+
+  return methods;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > dolfin::lu_solver_methods()
+{
+  return DefaultFactory::factory().lu_solver_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+dolfin::krylov_solver_methods()
+{
+  return DefaultFactory::factory().krylov_solver_methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+dolfin::krylov_solver_preconditioners()
+{
+  return DefaultFactory::factory().krylov_solver_preconditioners();
+}
+//-----------------------------------------------------------------------------
+double dolfin::residual(const GenericMatrix& A,
+                        const GenericVector& x,
                         const GenericVector& b)
 {
   boost::scoped_ptr<GenericVector> y(A.factory().create_vector());

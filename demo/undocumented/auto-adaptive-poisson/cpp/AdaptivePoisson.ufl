@@ -18,7 +18,7 @@
 # First added:  2010-08-19
 # Last changed: 2011-01-04
 
-element = FiniteElement("CG", "triangle", 1)
+element = FiniteElement("CG", triangle, 1)
 u = TrialFunction(element)
 v = TestFunction(element)
 

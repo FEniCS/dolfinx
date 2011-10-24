@@ -20,7 +20,7 @@
 #
 # Poisson's equation in 3D for q = 1
 
-element = FiniteElement("Lagrange", "tetrahedron", 1)
+element = FiniteElement("Lagrange", tetrahedron, 1)
 
 v = TestFunction(element)
 U = TrialFunction(element)

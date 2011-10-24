@@ -24,14 +24,15 @@
 # The bilinear form for classical linear elasticity (Navier).
 # Compile this form with FFC: ffc -l dolfin Elasticity.ufl
 
-element = VectorElement("Lagrange", "tetrahedron", 1)
+cell = tetrahedron
+element = VectorElement("Lagrange", cell, 1)
 
 u = TrialFunction(element)
 v = TestFunction(element)
 f = Coefficient(element)
 
-mu    = Constant("tetrahedron")
-lmbda = Constant("tetrahedron")
+mu    = Constant(cell)
+lmbda = Constant(cell)
 
 def epsilon(v):
     return 0.5*(grad(v) + grad(v).T)

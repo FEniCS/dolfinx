@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-05-15
-// Last changed: 2011-03-17
+// Last changed: 2011-10-06
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
@@ -31,9 +31,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SingularSolver::SingularSolver(std::string solver_type,
-                               std::string pc_type)
-  : linear_solver(solver_type, pc_type)
+SingularSolver::SingularSolver(std::string method,
+                               std::string preconditioner)
+  : linear_solver(method, preconditioner)
 {
   // Do nothing
 }

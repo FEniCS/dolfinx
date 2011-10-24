@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-15
-// Last changed: 2011-03-17
+// Last changed: 2011-10-06
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
@@ -58,8 +58,8 @@ CholmodCholeskySolver::~CholmodCholeskySolver()
 //=============================================================================
 #ifdef HAS_CHOLMOD
 dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
-					                                GenericVector& x,
-					                                const GenericVector& b)
+                                          GenericVector& x,
+                                          const GenericVector& b)
 {
   // Factorize matrix
   factorize(A);
@@ -76,8 +76,10 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 {
   // Check dimensions and get number of non-zeroes
-  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
-  const uint M   = A.size(0);
+  std::tr1::tuple<const std::size_t*,
+                  const std::size_t*,
+                  const double*, int> data = A.data();
+  const uint M = A.size(0);
   const uint nnz = std::tr1::get<3>(data);
   assert(A.size(0) == A.size(1));
 
@@ -86,10 +88,12 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   // Initialise cholmod data
   // NOTE: Casting away const here
   cholmod.init((UF_long*) std::tr1::get<0>(data),(UF_long*) std::tr1::get<1>(data),
-	             (double*) std::tr1::get<2>(data), M, nnz);
+               (double*) std::tr1::get<2>(data), M, nnz);
 
   // Factorize
-  log(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
+  log(PROGRESS,
+      "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",
+      M, M);
   cholmod.factorize();
 
   return 1;
@@ -119,8 +123,8 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
 #else
 // ============================================================================
 dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
-					                                GenericVector& x,
-					                                const GenericVector& b)
+                                          GenericVector& x,
+                                          const GenericVector& b)
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 

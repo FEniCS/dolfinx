@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-11
+// Last changed: 2011-10-19
 
 #ifdef HAS_MTL4
 
@@ -26,6 +26,7 @@
 #define __MTL4_FACTORY_H
 
 #include <string>
+
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
@@ -60,13 +61,35 @@ namespace dolfin
     { return 0; }
 
     /// Create LU solver
-    UmfpackLUSolver* create_lu_solver() const
+    UmfpackLUSolver* create_lu_solver(std::string method) const
     { return new UmfpackLUSolver(); }
 
     /// Create Krylov solver
     ITLKrylovSolver* create_krylov_solver(std::string method,
-                                          std::string pc) const
-    { return new ITLKrylovSolver(method, pc); }
+                                          std::string preconditioner) const
+    { return new ITLKrylovSolver(method, preconditioner); }
+
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const
+    {
+      std::vector<std::pair<std::string, std::string> > methods;
+      methods.push_back(std::make_pair("default",
+                                       "default LU solver"));
+      methods.push_back(std::make_pair("umfpack",
+                                       "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
+      return methods;
+    }
+
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const
+    { return ITLKrylovSolver::methods(); }
+
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const
+    { return ITLKrylovSolver::preconditioners(); }
 
     // Return singleton instance
     static MTL4Factory& instance()

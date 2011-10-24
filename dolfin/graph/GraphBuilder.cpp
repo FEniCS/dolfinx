@@ -116,9 +116,10 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
     entity_list0.insert(vertex_entity->index());
 
     // Build list of entities, moving between levels
+    boost::unordered_set<uint>::const_iterator entity_index;
     for (uint level = 1; level < coloring_type.size(); ++level)
     {
-      for (boost::unordered_set<uint>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
+      for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
         const MeshEntity entity(mesh, coloring_type[level -1], *entity_index);
         for (MeshEntityIterator neighbor(entity, coloring_type[level]); !neighbor.end(); ++neighbor)
@@ -130,7 +131,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 
     // Add edges to graph
     const uint vertex_entity_index = vertex_entity->index();
-    for (boost::unordered_set<uint>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
+    for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       boost::add_edge(vertex_entity_index, *entity_index, graph);
   }
 
@@ -296,6 +297,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                num_facet_vertices,
                                local_graph, ghost_cell_global_indices);
   }
+  ghost_vertices = ghost_cell_global_indices;
   info("Finish compute graph ghost edges.");;
 }
 //-----------------------------------------------------------------------------

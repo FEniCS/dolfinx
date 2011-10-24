@@ -191,6 +191,8 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_domains() == 0)
     return;
+
+  // Set timer
   Timer timer("Assemble cells");
 
   // Extract mesh

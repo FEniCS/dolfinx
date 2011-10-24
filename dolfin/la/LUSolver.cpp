@@ -15,39 +15,35 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-07-11
-// Last changed:
+// Last changed: 2011-10-20
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include "DefaultFactory.h"
+#include "LinearSolver.h"
 #include "LUSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LUSolver::LUSolver(std::string type)
+LUSolver::LUSolver(std::string method)
 {
-  // Set default parameters
-  parameters = default_parameters();
-
-  DefaultFactory factory;
-  solver.reset(factory.create_lu_solver());
-
-  solver->parameters.update(parameters);
+  // Initialize solver
+  init(method);
 }
 //-----------------------------------------------------------------------------
-LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A, std::string type)
+LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A,
+                   std::string method)
 {
-  // Set default parameters
-  parameters = default_parameters();
+  // Initialize solver
+  init(method);
 
-  DefaultFactory factory;
-  solver.reset(factory.create_lu_solver());
-  solver->set_operator(A);
-
-  solver->parameters.update(parameters);
+  // Set operator
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 LUSolver::~LUSolver()
@@ -79,5 +75,32 @@ dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
   Timer timer("LU solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
+}
+//-----------------------------------------------------------------------------
+void LUSolver::init(std::string method)
+{
+  // Get default linear algebra factory
+  DefaultFactory factory;
+
+  // Get list of available methods
+  std::vector<std::pair<std::string, std::string> >
+    methods = factory.lu_solver_methods();
+
+  // Check that method is available
+  if (!LinearSolver::in_list(method, methods))
+  {
+    dolfin_error("LUSolver.cpp",
+                 "solve linear system using LU factorization",
+                 "Unknown LU method \"%s\". "
+                 "Use list_lu_solver_methods() to list available LU methods",
+                 method.c_str());
+  }
+
+  // Set default parameters
+  parameters = dolfin::parameters("lu_solver");
+
+  // Initialize solver
+  solver.reset(factory.create_lu_solver(method));
+  solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

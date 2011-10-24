@@ -185,7 +185,7 @@ int dolfin::get_log_level()
   return LogManager::logger.get_log_level();
 }
 //-----------------------------------------------------------------------------
-void dolfin::summary(bool reset)
+void dolfin::list_timings(bool reset)
 {
   // Optimization
   if (!LogManager::logger.is_active())
@@ -196,6 +196,12 @@ void dolfin::summary(bool reset)
     return;
 
   LogManager::logger.summary(reset);
+}
+//-----------------------------------------------------------------------------
+void dolfin::summary(bool reset)
+{
+  warning("The summary() function is deprecated, use list_timings().");
+  list_timings(reset);
 }
 //-----------------------------------------------------------------------------
 double dolfin::timing(std::string task, bool reset)

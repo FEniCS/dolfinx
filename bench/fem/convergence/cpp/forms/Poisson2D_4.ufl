@@ -20,7 +20,7 @@
 #
 # Poisson's equation in 2D for q = 4
 
-element = FiniteElement("Lagrange", "triangle", 4)
+element = FiniteElement("Lagrange", triangle, 4)
 
 v = TestFunction(element)
 U = TrialFunction(element)

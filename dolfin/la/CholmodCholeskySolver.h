@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-15
-// Last changed: 2008-08-15
+// Last changed: 2011-10-06
 
 #ifndef __CHOLMOD_CHOLESKY_SOLVER_H
 #define __CHOLMOD_CHOLESKY_SOLVER_H
@@ -33,14 +33,15 @@ extern "C"
 
 namespace dolfin
 {
+
   /// Forward declarations
   class GenericVector;
   class GenericMatrix;
 
-  /// This class implements the direct solution (Cholesky factorization) of
-  /// linear systems of the form Ax = b. Sparse matrices
-  /// are solved using CHOLMOD http://www.cise.ufl.edu/research/sparse/cholmod/
-  /// if installed.
+  /// This class implements the direct solution (Cholesky
+  /// factorization) of linear systems of the form Ax = b. Sparse
+  /// matrices are solved using CHOLMOD
+  /// http://www.cise.ufl.edu/research/sparse/cholmod/ if installed.
 
   class CholmodCholeskySolver : public GenericLinearSolver
   {

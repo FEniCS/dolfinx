@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-09-19
-// Last changed: 2009-07-01
+// Last changed: 2011-10-06
 
 #ifndef __SINGULAR_SOLVER_H
 #define __SINGULAR_SOLVER_H
@@ -28,6 +28,7 @@
 
 namespace dolfin
 {
+
   /// This class provides a linear solver for singular linear systems
   /// Ax = b where A has a one-dimensional null-space (kernel). This
   /// may happen for example when solving Poisson's equation with
@@ -51,7 +52,8 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    SingularSolver(std::string solver_type = "lu", std::string pc_type = "ilu");
+    SingularSolver(std::string method = "lu",
+                   std::string preconditioner = "ilu");
 
     /// Destructor
     ~SingularSolver();

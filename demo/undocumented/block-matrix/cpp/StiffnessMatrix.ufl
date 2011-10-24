@@ -20,7 +20,7 @@
 #
 # The bilinear form for a stiffness matrix (Poisson).
 
-element = FiniteElement("Lagrange", "triangle", 1)
+element = FiniteElement("Lagrange", triangle, 1)
 
 x = triangle.x[0]
 

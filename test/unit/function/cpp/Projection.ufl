@@ -23,7 +23,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin Projection.form.
 
-element = FiniteElement("Lagrange", "tetrahedron", 2)
+element = FiniteElement("Lagrange", tetrahedron, 2)
 
 v = TestFunction(element)
 u = TrialFunction(element)

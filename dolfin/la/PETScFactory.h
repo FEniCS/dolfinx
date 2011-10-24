@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2007-11-30
-// Last changed: 2007-12-06
+// Last changed: 2011-10-19
 
 #ifdef HAS_PETSC
 
@@ -53,11 +55,23 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    PETScLUSolver* create_lu_solver() const;
+    PETScLUSolver* create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
     PETScKrylovSolver* create_krylov_solver(std::string method,
-                                            std::string pc) const;
+                                            std::string preconditioner) const;
+
+    /// Return a list of available LU solver methods
+    std::vector<std::pair<std::string, std::string> >
+    lu_solver_methods() const;
+
+    /// Return a list of available Krylov solver methods
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_methods() const;
+
+    /// Return a list of available preconditioners
+    std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners() const;
 
     /// Return singleton instance
     static PETScFactory& instance()

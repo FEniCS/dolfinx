@@ -19,7 +19,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2011-03-24
+// Last changed: 2011-10-19
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -41,9 +41,14 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver
-    KrylovSolver(std::string solver_type = "default",
-                 std::string pc_type = "default");
+    /// Constructor
+    KrylovSolver(std::string method="default",
+                 std::string preconditioner="default");
+
+    /// Constructor
+    KrylovSolver(boost::shared_ptr<const GenericMatrix> A,
+                 std::string method="default",
+                 std::string preconditioner="default");
 
     /// Destructor
     ~KrylovSolver();
@@ -65,6 +70,9 @@ namespace dolfin
     static Parameters default_parameters();
 
   private:
+
+    // Initialize solver
+    void init(std::string method, std::string preconditioner);
 
     // Solver
     boost::scoped_ptr<GenericLinearSolver> solver;

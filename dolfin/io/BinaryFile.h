@@ -16,11 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-29
+// Last changed: 2011-10-23
 
 #ifndef __BINARY_FILE_H
 #define __BINARY_FILE_H
 
+#include <fstream>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <dolfin/common/types.h>
 #include "GenericFile.h"
 
@@ -41,7 +43,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    BinaryFile(const std::string filename);
+    BinaryFile(const std::string filename, bool store_connectivity=false);
 
     /// Destructor
     virtual ~BinaryFile();
@@ -100,10 +102,15 @@ namespace dolfin
     // Write array (double)
     void write_array(uint n, const double* values);
 
+    // Store all connectivity in a mesh
+    bool _store_connectivity;
+
     // File for reading
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> ifilter;
     std::ifstream ifile;
 
     // File for writing
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> ofilter;
     std::ofstream ofile;
 
   };

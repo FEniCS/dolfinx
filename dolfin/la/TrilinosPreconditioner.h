@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2011-10-19
 
 #ifndef __DOFLIN_TRILINOS_PRECONDITIONER_H
 #define __DOFLIN_TRILINOS_PRECONDITIONER_H
@@ -53,7 +55,7 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    explicit TrilinosPreconditioner(std::string type = "default");
+    explicit TrilinosPreconditioner(std::string method="default");
 
     /// Destructor
     virtual ~TrilinosPreconditioner();
@@ -67,6 +69,9 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
+
     /// Default parameter values
     static Parameters default_parameters();
 
@@ -76,10 +81,10 @@ namespace dolfin
     void set_ml(AztecOO& solver, const Epetra_RowMatrix& P);
 
     /// Named preconditioner
-    std::string type;
+    std::string preconditioner;
 
     // Available named preconditioners
-    static const std::map<std::string, int> methods;
+    static const std::map<std::string, int> _preconditioners;
 
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
     boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;

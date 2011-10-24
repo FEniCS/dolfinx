@@ -25,6 +25,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/LinearSolver.h>
 #include "assemble.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
@@ -82,8 +83,8 @@ void LinearVariationalSolver::solve()
     if (!L->ufc_form())
     {
       dolfin_error("LinearVariationalSolver.cpp",
-                    "symmetric assembly in linear variational solver",
-                    "Empty linear forms cannot be used with symmetric assmebly");
+                   "symmetric assembly in linear variational solver",
+                   "Empty linear forms cannot be used with symmetric assmebly");
     }
 
     // Need to cast to DirichletBC to use assemble_system
@@ -150,20 +151,9 @@ void LinearVariationalSolver::solve()
   }
 
   // Solve linear system
-  if (solver_type == "lu" || solver_type == "direct")
-  {
-    LUSolver solver;
-    solver.parameters.update(parameters("lu_solver"));
-    assert(u);
-    solver.solve(*A, u->vector(), *b);
-  }
-  else
-  {
-    KrylovSolver solver(solver_type, pc_type);
-    solver.parameters.update(parameters("krylov_solver"));
-    assert(u);
-    solver.solve(*A, u->vector(), *b);
-  }
+  LinearSolver solver(solver_type, pc_type);
+  assert(u);
+  solver.solve(*A, u->vector(), *b);
 
   end();
 }

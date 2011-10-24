@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2008-04-21
-// Last changed: 2008-09-28
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -33,7 +35,6 @@
 #include "EpetraFactory.h"
 
 #include "EpetraKrylovSolver.h"
-
 
 using namespace dolfin;
 
@@ -79,15 +80,34 @@ SparsityPattern* EpetraFactory::create_pattern() const
   return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver* EpetraFactory::create_lu_solver() const
+EpetraLUSolver* EpetraFactory::create_lu_solver(std::string method) const
 {
-  return new EpetraLUSolver();
+  return new EpetraLUSolver(method);
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver* EpetraFactory::create_krylov_solver(std::string method,
-                                                          std::string pc) const
+EpetraKrylovSolver*
+EpetraFactory::create_krylov_solver(std::string method,
+                                    std::string preconditioner) const
 {
-  return new EpetraKrylovSolver(method, pc);
+  return new EpetraKrylovSolver(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraFactory::lu_solver_methods() const
+{
+  return EpetraLUSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraFactory::krylov_solver_methods() const
+{
+  return EpetraKrylovSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraFactory::krylov_solver_preconditioners() const
+{
+  return EpetraKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const
@@ -102,4 +122,5 @@ Epetra_MpiComm& EpetraFactory::get_mpi_comm() const
   return *mpi_comm;
 }
 //-----------------------------------------------------------------------------
+
 #endif

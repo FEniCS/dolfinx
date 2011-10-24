@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2008.
-// Modified by Dag Lindbo, 2008.
-// Modified by Anders Logg, 2008-2009.
-// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug 2008
+// Modified by Dag Lindbo 2008
+// Modified by Anders Logg 2008-2011
+// Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-07-03
-// Last changed: 2011-03-24
+// Last changed: 2011-10-06
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -37,21 +37,18 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
 
+  /// LU solver for the built-in LA backends.
+
   class LUSolver : public GenericLUSolver
   {
-
-  /// LU solver for the built-in LA backends. The type can be "lu" or
-  /// "cholesky". Cholesky is suitable only for symmetric positive-definite
-  /// matrices. Cholesky is not yet suppprted for all backends (which will
-  /// default to LU.
-
   public:
 
     /// Constructor
-    LUSolver(std::string type = "lu");
+    LUSolver(std::string method= "default");
 
     /// Constructor
-    LUSolver(boost::shared_ptr<const GenericMatrix> A, std::string type = "lu");
+    LUSolver(boost::shared_ptr<const GenericMatrix> A,
+             std::string method="default");
 
     /// Destructor
     ~LUSolver();
@@ -76,6 +73,9 @@ namespace dolfin
     }
 
   private:
+
+    // Initialize solver
+    void init(std::string method);
 
     // Solver
     boost::scoped_ptr<GenericLinearSolver> solver;

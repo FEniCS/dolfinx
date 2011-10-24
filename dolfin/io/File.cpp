@@ -62,6 +62,8 @@ File::File(const std::string filename, std::string encoding)
       boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
       file.reset(new XMLFile(filename));
+    else if (ext == ".bin")
+      file.reset(new BinaryFile(filename));
     else
       error("Unknown file type for \"%s\".", filename.c_str());
   }

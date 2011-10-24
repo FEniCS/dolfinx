@@ -23,8 +23,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin Stokes.ufl
 
-vector   = VectorElement("Lagrange", "triangle", 1)
-scalar   = FiniteElement("Lagrange", "triangle", 1)
+vector   = VectorElement("Lagrange", triangle, 1)
+scalar   = FiniteElement("Lagrange", triangle, 1)
 system = vector * scalar
 
 (v, q) = TestFunctions(system)

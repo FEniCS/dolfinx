@@ -20,7 +20,7 @@
 #
 # The bilinear form for a stiffness matrix (Poisson).
 
-element = FiniteElement("Lagrange", "tetrahedron", 1)
+element = FiniteElement("Lagrange", tetrahedron, 1)
 
 v = TestFunction(element)
 u = TrialFunction(element)

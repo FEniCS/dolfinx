@@ -30,8 +30,8 @@ before combining these into a mixed finite element space:
 
 .. code-block:: python
 
-    BDM = FiniteElement("BDM", "triangle", 1)
-    DG  = FiniteElement("DG", "triangle", 0)
+    BDM = FiniteElement("BDM", triangle, 1)
+    DG  = FiniteElement("DG", triangle, 0)
     W = BDM * DG
 
 The first argument to :py:class:`FiniteElement` specifies the type of
@@ -61,7 +61,7 @@ a separate finite element space for this coefficient.
 
 .. code-block:: python
 
-    CG = FiniteElement("CG", "triangle", 1)
+    CG = FiniteElement("CG", triangle, 1)
     f = Coefficient(CG)
 
 Finally, we define the bilinear and linear forms according to the equations:

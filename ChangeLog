@@ -1,10 +1,19 @@
- - Fix subdomain assemble for SystemAssembler
+ - Added option to store all connectivities in a mesh for TimeSeries (false by default)
+ - Added option for gzip compressed binary files for TimeSeries
+ - Propagate global parameters to Krylov and LU solvers
  - Fix OpenMp assemble of scalars
  - Make OpenMP assemble over sub domains work
  - DirichletBC.get_boundary_values, FunctionSpace.collapse now return a dict in Python
  - Changed name of has_la_backend to has_linear_algebra_backend
  - Added has_foo functions which can be used instead of the HAS_FOO defines
  - Less trict check on kwargs for compiled Expression
+ - Add option to not right-justify tables
+ - Rename summary --> list_timings
+ - Add function list_linear_solver_methods
+ - Add function list_lu_solver_methods
+ - Add function list_krylov_solver_methods
+ - Add function list_krylov_solver_preconditioners
+ - Support subdomains in SystemAssembler (not for interior facet integrals)
  - Add option functionality apply("flush") to PETScMatrix
  - Add option finalize_tensor=true to assemble functions
  - Solver parameters can now be passed to solve

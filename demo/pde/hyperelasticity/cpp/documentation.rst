@@ -31,7 +31,7 @@ trial and test functions on this space
 .. code-block:: python
 
     # Function spaces
-    element = VectorElement("Lagrange", "tetrahedron", 1)
+    element = VectorElement("Lagrange", tetrahedron, 1)
 
     # Trial and test functions
     du = TrialFunction(element)     # Incremental displacement
@@ -72,8 +72,8 @@ parameters
 .. code-block:: python
 
     # Elasticity parameters
-    mu    = Constant("tetrahedron")
-    lmbda = Constant("tetrahedron")
+    mu    = Constant(tetrahedron)
+    lmbda = Constant(tetrahedron)
 
 Both the first variation of the potential energy, and the Jacobian of
 the variation, can be automatically computed by a call to

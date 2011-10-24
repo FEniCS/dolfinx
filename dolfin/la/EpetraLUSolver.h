@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2011.
+// Modified by Anders Logg 2011
 //
-// Last changed: 2011-03-24
+// First added:  2008
+// Last changed: 2011-10-19
 
 #ifdef HAS_TRILINOS
 
@@ -48,10 +49,11 @@ namespace dolfin
   public:
 
     /// Constructor
-    EpetraLUSolver();
+    EpetraLUSolver(std::string method="default");
 
     /// Constructor
-    EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A);
+    EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
+                   std::string method="default");
 
     /// Destructor
     ~EpetraLUSolver();
@@ -71,6 +73,9 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
+    /// Return a list of available solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
+
     /// Default parameter values
     static Parameters default_parameters();
 
@@ -78,6 +83,9 @@ namespace dolfin
     std::string str(bool verbose) const;
 
   private:
+
+    // Choose method / solver package
+    std::string choose_method(std::string method) const;
 
     bool symbolic_factorized, numeric_factorized;
 
@@ -90,16 +98,13 @@ namespace dolfin
     // Linear solver
     boost::scoped_ptr<Amesos_BaseSolver> solver;
 
-    std::string solver_type;
+    // Solver method
+    std::string method;
 
   };
 
 }
 
 #endif
-
-
-
-
 
 #endif

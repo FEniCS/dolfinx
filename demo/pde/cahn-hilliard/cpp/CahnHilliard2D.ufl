@@ -25,7 +25,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin -O -f split CahnHilliard2D.ufl
 
-P1 = FiniteElement("Lagrange", "triangle", 1)
+P1 = FiniteElement("Lagrange", triangle, 1)
 ME = P1*P1
 
 du   = TrialFunction(ME)

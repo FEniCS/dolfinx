@@ -18,7 +18,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-06-22
+// Last changed: 2011-10-20
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H
@@ -57,7 +57,7 @@ namespace dolfin
     {
       Parameters p("nonlinear_variational_solver");
 
-      p.add("linear_solver",  "lu");
+      p.add("linear_solver", "default");
       p.add("preconditioner", "default");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
