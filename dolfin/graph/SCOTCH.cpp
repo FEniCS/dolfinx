@@ -73,6 +73,12 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // C-style array indexing
   const int baseval = 0;
 
+  // Number of processes
+  const uint num_processes = MPI::num_processes();
+
+  // This process number
+  const uint proc_num = MPI::process_number();
+
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
@@ -109,54 +115,68 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
-  std::vector<uint> procvrttab(MPI::num_processes() + 1);
-  for (uint i = 0; i < MPI::num_processes(); ++i)
+  std::vector<uint> procvrttab(num_processes + 1);
+  for (uint i = 0; i < num_processes; ++i)
     procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
-  procvrttab[MPI::num_processes()] = procvrttab[MPI::num_processes() - 1] + proccnttab[MPI::num_processes() - 1];
+  procvrttab[num_processes] = procvrttab[num_processes - 1] + proccnttab[num_processes - 1];
 
   // Sanity check
-  for (uint i = 1; i <= MPI::process_number(); ++i)
+  for (uint i = 1; i <= proc_num; ++i)
     assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 
-  // Print data ---------------
-  const uint vertgstnbr = local_graph.size() + ghost_vertices.size();
+  // Print graph data -------------------------------------
+  const bool dislay_graph_data = false;
+  if (dislay_graph_data)
+  {
+    const uint vertgstnbr = local_graph.size() + ghost_vertices.size();
 
-  // Total  (global) number of vertices (cells) in the graph
-  const SCOTCH_Num vertglbnbr = num_global_vertices;
+    // Total  (global) number of vertices (cells) in the graph
+    const SCOTCH_Num vertglbnbr = num_global_vertices;
 
-  // Total (global) number of edges (cell-cell connections) in the graph
-  std::vector<int> num_global_edges;
-  dolfin::MPI::all_gather(edgelocnbr, num_global_edges);
-  const SCOTCH_Num edgeglbnbr = std::accumulate(num_global_edges.begin(), num_global_edges.end(), 0);
+    // Total (global) number of edges (cell-cell connections) in the graph
+    const SCOTCH_Num edgeglbnbr = MPI::sum(edgelocnbr);
 
-  // Number of processes
-  const SCOTCH_Num procglbnbr = MPI::num_processes();
 
-  cout << "Num vertices (vertglbnbr)     : " << vertglbnbr << endl;
-  cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
-  cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
-  cout << "Vert per processes (proccnttab) : " << endl;
-  for (uint i = 0; i < proccnttab.size(); ++i)
-    cout << "  " << proccnttab[i];
-  cout << endl;
-  cout << "Offests (procvrttab): " << endl;
-  for (uint i = 0; i < procvrttab.size(); ++i)
-    cout << "  " << procvrttab[i];
-  cout << endl;
+    for (uint proc = 0; proc < num_processes; ++proc)
+    {
+      // Print data for one process at a time
+      if (proc == proc_num)
+      {
+        // Number of processes
+        const SCOTCH_Num procglbnbr = num_processes;
 
-  //------ Print local data
-  cout << "(*) Num vertices (vertlocnbr)        : " << vertlocnbr << endl;
-  cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
-  cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
-  cout << "(*) Vertloctab: " << endl;
-  for (uint i = 0; i < vertloctab.size(); ++i)
-    cout << "  " << vertloctab[i];
-  cout << endl;
-  cout << "edgeloctab: " << endl;
-  for (uint i = 0; i < edgeloctab.size(); ++i)
-    cout << "  " << edgeloctab[i];
-  cout << endl;
-  // -----
+        cout << "--------------------------------------------------" << endl;
+        cout << "Num vertices (vertglbnbr)     : " << vertglbnbr << endl;
+        cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
+        cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
+        cout << "Vert per processes (proccnttab) : " << endl;
+        for (uint i = 0; i < proccnttab.size(); ++i)
+          cout << "  " << proccnttab[i];
+        cout << endl;
+        cout << "Offests (procvrttab): " << endl;
+        for (uint i = 0; i < procvrttab.size(); ++i)
+          cout << "  " << procvrttab[i];
+        cout << endl;
+
+        //------ Print local data
+        cout << "(*) Num vertices (vertlocnbr)        : " << vertlocnbr << endl;
+        cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
+        cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
+        cout << "(*) Vertloctab: " << endl;
+        for (uint i = 0; i < vertloctab.size(); ++i)
+          cout << "  " << vertloctab[i];
+        cout << endl;
+        cout << "edgeloctab: " << endl;
+        for (uint i = 0; i < edgeloctab.size(); ++i)
+          cout << "  " << edgeloctab[i];
+        cout << endl;
+        cout << "--------------------------------------------------" << endl;
+      }
+      MPI::barrier();
+    }
+    MPI::barrier();
+  }
+  // ------------------------------------------------------
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
@@ -177,16 +197,12 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   }
   info("End SCOTCH graph building.");
 
-  // Check graph
+  // Check graph data for consistency
   if (SCOTCH_dgraphCheck(&dgrafdat))
     error("Consistency error in SCOTCH graph.");
 
-  /*
-  // Deal with ghost vertices (write a better description)
-  SCOTCH_dgraphGhst(&dgrafdat);
-
   // Number of partitions (set equal to number of processes)
-  const int npart = MPI::num_processes();
+  const int npart = num_processes;
 
   // Partitioning strategy
   SCOTCH_Strat strat;
@@ -217,7 +233,6 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
-  */
 }
 //-----------------------------------------------------------------------------
 #else

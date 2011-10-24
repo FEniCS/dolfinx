@@ -16,12 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-09-27
+// Last changed: 2011-10-23
 
 #include <fstream>
 #include <istream>
 #include <ios>
 #include <boost/scoped_array.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/operations.hpp>
+#include <iosfwd> 
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
@@ -33,8 +37,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BinaryFile::BinaryFile(const std::string filename)
-  : GenericFile(filename, "Binary")
+BinaryFile::BinaryFile(const std::string filename, bool store_connectivity)
+  : GenericFile(filename, "Binary"), _store_connectivity(store_connectivity)
 {
   // Do nothing
 }
@@ -158,22 +162,37 @@ void BinaryFile::operator<< (const Mesh& mesh)
   const MeshTopology& t = mesh._topology;
   const uint D = t._dim;
   write_uint(D);
-  write_array(D + 1, t.num_entities);
+  if (_store_connectivity)
+    write_array(D + 1, t.num_entities);
+  else
+    for (uint i = 0; i <= D; i++)
+      if (i==0 || i == D)
+	write_uint(t.size(i));
+      else
+	write_uint(0);
+    
   for (uint i = 0; i <= D; i++)
   {
     for (uint j = 0; j <= D; j++)
     {
       const MeshConnectivity& c = *t.connectivity[i][j];
-      write_uint(c._size);
-      if (c._size > 0)
+      
+      // If store all connectivity or if storing cell connectivity
+      if (_store_connectivity || (i == D && j == 0))
       {
-        write_uint(c.num_entities);
-        write_array(c._size, c.connections);
-        write_array(c.num_entities + 1, c.offsets);
+	write_uint(c._size);
+     	if (c._size > 0)
+	{
+	  write_uint(c.num_entities);
+	  write_array(c._size, c.connections);
+	  write_array(c.num_entities + 1, c.offsets);
+	}
       }
+      else
+	write_uint(0);
     }
   }
-
+  
   // Write mesh geometry (ignoring higher order stuff)
   const MeshGeometry& g = mesh._geometry;
   write_uint(g._dim);
@@ -192,61 +211,88 @@ void BinaryFile::operator<< (const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void BinaryFile::open_read()
 {
-  ifile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  // Get file path and extension
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  // FIXME: Check that file exists
+  if (!boost::filesystem::is_regular_file(filename))
+    error("File \"%s\" does not exist or is not a regular file. Cannot be read by XML parser.", filename.c_str());
+
+  // Load xml file (unzip if necessary) into parser
+  if (extension == ".gz")
+    // Decompress file
+    ifilter.push(boost::iostreams::gzip_decompressor());
+  
+  ifile.open(filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifile.is_open())
     error("Unable to open file for reading: \"%s\".", filename.c_str());
+  ifilter.push(ifile);
+  
 }
 //-----------------------------------------------------------------------------
+// Pragma to avoid Boost.iostreams error with strict compiler flags
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Woverflow"
+#endif
 void BinaryFile::open_write()
 {
+  // Compress if filename has extension '.gz'
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+
+  if (extension == ".gz")
+    ofilter.push(boost::iostreams::gzip_compressor());
+  
   ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofile.is_open())
     error("Unable to open file for writing: \"%s\".", filename.c_str());
+  ofilter.push(ofile);
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::close_read()
 {
-  ifile.close();
+  ifilter.reset();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::close_write()
 {
-  ofile.close();
+  ofilter.reset();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BinaryFile::read_uint()
 {
   uint value = 0;
-  ifile.read((char*) &value, sizeof(uint));
+  boost::iostreams::read(ifilter, (char*) &value, (std::streamsize) sizeof(uint));
   return value;
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::read_array(uint n, uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    ifile.read((char*) (values + i), sizeof(uint));
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::read_array(uint n, double* values)
 {
   for (uint i = 0; i < n; ++i)
-    ifile.read((char*) (values + i), sizeof(double));
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_uint(uint value)
 {
-  ofile.write((char*) &value, sizeof(uint));
+  boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_array(uint n, const uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    ofile.write((char*) &values[i], sizeof(uint));
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(uint));
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::write_array(uint n, const double* values)
 {
   for (uint i = 0; i < n; ++i)
-    ofile.write((char*) &values[i], sizeof(double));
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------

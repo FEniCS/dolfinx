@@ -43,7 +43,7 @@ tests = {
     "parameter":      ["test"],
     "python-extras":  ["test"],
     "quadrature":     ["test"],
-    "adaptivity":     ["errorcontrol", "timeseries"],
+    "adaptivity":     ["errorcontrol", "TimeSeries"],
     "jit":            ["test"],
     "bc-indicators" : ["test"]
     }
