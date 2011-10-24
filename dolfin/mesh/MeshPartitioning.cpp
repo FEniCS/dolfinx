@@ -208,8 +208,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     entity_indices[it->second] = offset++;
 
   // Communicate indices for shared entities and get indices for ignored
-  std::vector<uint> values;
-  std::vector<uint> partition;
+  std::vector<uint> send_values, destinations;
   for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
     // Get entity index
@@ -227,25 +226,26 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     for (uint j = 0; j < entity_processes.size(); ++j)
     {
       // Store interleaved: entity index, number of vertices, global vertex indices
-      values.push_back(entity_index);
-      values.push_back(entity.size());
-      values.insert(values.end(), entity.begin(), entity.end());
-      partition.insert(partition.end(), entity.size() + 2, entity_processes[j]);
+      send_values.push_back(entity_index);
+      send_values.push_back(entity.size());
+      send_values.insert(send_values.end(), entity.begin(), entity.end());
+      destinations.insert(destinations.end(), entity.size() + 2, entity_processes[j]);
     }
   }
 
   // Send data
-  MPI::distribute(values, partition);
+  std::vector<uint> received_values, sources;
+  MPI::distribute(send_values, destinations, received_values, sources);
 
   // Fill in global entity indices recieved from lower ranked processes
-  for (uint i = 0; i < values.size();)
+  for (uint i = 0; i < received_values.size();)
   {
-    const uint p = partition[i];
-    const uint global_index = values[i++];
-    const uint entity_size = values[i++];
+    const uint p = sources[i];
+    const uint global_index = received_values[i++];
+    const uint entity_size = received_values[i++];
     std::vector<uint> entity;
     for (uint j = 0; j < entity_size; ++j)
-      entity.push_back(values[i++]);
+      entity.push_back(received_values[i++]);
 
     // Sanity check, should not receive an entity we don't need
     if (ignored_entity_indices.find(entity) == ignored_entity_indices.end())
@@ -426,8 +426,7 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
   std::map<std::vector<uint>, std::vector<uint> >::const_iterator it;
 
   // Communicate common entities, starting with the entities we think should be ignored
-  std::vector<uint> common_entity_values;
-  std::vector<uint> common_entity_partition;
+  std::vector<uint> send_common_entity_values, destinations_common_entity;
   for (it = ignored_entity_processes.begin(); it != ignored_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
@@ -440,9 +439,9 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
     for (uint j = 0; j < entity_processes.size(); ++j)
     {
       const uint p = entity_processes[j];
-      common_entity_values.push_back(entity.size());
-      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
-      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
+      send_common_entity_values.push_back(entity.size());
+      send_common_entity_values.insert(send_common_entity_values.end(), entity.begin(), entity.end());
+      destinations_common_entity.insert(destinations_common_entity.end(), entity.size() + 1, p);
     }
   }
 
@@ -460,26 +459,27 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
     {
       const uint p = entity_processes[j];
       assert(process_number < p);
-      common_entity_values.push_back(entity.size());
-      common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
-      common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
+      send_common_entity_values.push_back(entity.size());
+      send_common_entity_values.insert(send_common_entity_values.end(), entity.begin(), entity.end());
+      destinations_common_entity.insert(destinations_common_entity.end(), entity.size() + 1, p);
     }
   }
 
   // Communicate common entities
-  MPI::distribute(common_entity_values, common_entity_partition);
+  std::vector<uint> received_common_entity_values, sources_common_entity;
+  MPI::distribute(send_common_entity_values, destinations_common_entity,
+                  received_common_entity_values, sources_common_entity);
 
   // Check if entities received are really entities
-  std::vector<uint> is_entity_values;
-  std::vector<uint> is_entity_partition;
-  for (uint i = 0; i < common_entity_values.size();)
+  std::vector<uint> send_is_entity_values, destinations_is_entity;
+  for (uint i = 0; i < received_common_entity_values.size();)
   {
     // Get entity
-    const uint p = common_entity_partition[i];
-    const uint entity_size = common_entity_values[i++];
+    const uint p =  sources_common_entity[i];
+    const uint entity_size = received_common_entity_values[i++];
     std::vector<uint> entity;
     for (uint j = 0; j < entity_size; ++j)
-      entity.push_back(common_entity_values[i++]);
+      entity.push_back(received_common_entity_values[i++]);
 
     // Check if it is an entity (in which case it will be in ignored or
     // shared entities)
@@ -492,30 +492,32 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
 
     // Add information about entity (whether it's actually an entity) to send
     // to other processes
-    is_entity_values.push_back(entity_size);
-    is_entity_partition.push_back(p);
+    send_is_entity_values.push_back(entity_size);
+    destinations_is_entity.push_back(p);
     for (uint j = 0; j < entity_size; ++j)
     {
-      is_entity_values.push_back(entity[j]);
-      is_entity_partition.push_back(p);
+      send_is_entity_values.push_back(entity[j]);
+      destinations_is_entity.push_back(p);
     }
-    is_entity_values.push_back(is_entity);
-    is_entity_partition.push_back(p);
+    send_is_entity_values.push_back(is_entity);
+    destinations_is_entity.push_back(p);
   }
 
   // Send data back (list of requested entities that are really entities)
-  MPI::distribute(is_entity_values, is_entity_partition);
+  std::vector<uint> received_is_entity_values, sources_is_entity;
+  MPI::distribute(send_is_entity_values, destinations_is_entity,
+                  received_is_entity_values, sources_is_entity);
 
   // Create map from entities to processes where it is an entity
   std::map<std::vector<uint>, std::vector<uint> > entity_processes;
-  for (uint i = 0; i < is_entity_values.size();)
+  for (uint i = 0; i < received_is_entity_values.size();)
   {
-    const uint p = is_entity_partition[i];
-    const uint entity_size = is_entity_values[i++];
+    const uint p = sources_is_entity[i];
+    const uint entity_size = received_is_entity_values[i++];
     std::vector<uint> entity;
     for (uint j = 0; j < entity_size; ++j)
-      entity.push_back(is_entity_values[i++]);
-    const uint is_entity = is_entity_values[i++];
+      entity.push_back(received_is_entity_values[i++]);
+    const uint is_entity = received_is_entity_values[i++];
     if (is_entity == 1)
     {
       // Add entity since it is actually an entity for process p
@@ -612,42 +614,44 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Build array of cell-vertex connectivity and partition vector
   // Distribute the global cell number as well
-  std::vector<uint> cell_vertices;
-  std::vector<uint> cell_vertices_partition;
-  cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
-  cell_vertices_partition.reserve(num_local_cells*(num_cell_vertices + 1));
+  std::vector<uint> send_cell_vertices, destinations_cell_vertices;
+  send_cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
+  destinations_cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
   for (uint i = 0; i < num_local_cells; i++)
   {
-    cell_vertices.push_back(global_cell_indices[i]);
-    cell_vertices_partition.push_back(cell_partition[i]);
+    send_cell_vertices.push_back(global_cell_indices[i]);
+    destinations_cell_vertices.push_back(cell_partition[i]);
     for (uint j = 0; j < num_cell_vertices; j++)
     {
-      cell_vertices.push_back(mesh_data.cell_vertices[i][j]);
-      cell_vertices_partition.push_back(cell_partition[i]);
+      send_cell_vertices.push_back(mesh_data.cell_vertices[i][j]);
+      destinations_cell_vertices.push_back(cell_partition[i]);
     }
   }
 
   // Distribute cell-vertex connectivity
-  MPI::distribute(cell_vertices, cell_vertices_partition);
-  assert(cell_vertices.size() % (num_cell_vertices + 1) == 0);
-  cell_vertices_partition.clear();
+  std::vector<uint> received_cell_vertices, sources_cell_vertices;
+  MPI::distribute(send_cell_vertices, destinations_cell_vertices,
+                  received_cell_vertices, sources_cell_vertices);
+  assert(received_cell_vertices.size() % (num_cell_vertices + 1) == 0);
+  destinations_cell_vertices.clear();
+  sources_cell_vertices.clear();
 
   // Clear mesh data
   mesh_data.cell_vertices.clear();
   mesh_data.global_cell_indices.clear();
 
   // Put mesh_data back into mesh_data.cell_vertices
-  const uint num_new_local_cells = cell_vertices.size()/(num_cell_vertices + 1);
+  const uint num_new_local_cells = received_cell_vertices.size()/(num_cell_vertices + 1);
   mesh_data.cell_vertices.reserve(num_new_local_cells);
   mesh_data.global_cell_indices.reserve(num_new_local_cells);
 
   // Loop over new cells
   for (uint i = 0; i < num_new_local_cells; ++i)
   {
-    mesh_data.global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
+    mesh_data.global_cell_indices.push_back(received_cell_vertices[i*(num_cell_vertices + 1)]);
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
-      cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];
+      cell[j] = received_cell_vertices[i*(num_cell_vertices + 1) + j + 1];
     mesh_data.cell_vertices.push_back(cell);
   }
 }
@@ -672,43 +676,46 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     needed_vertex_indices.insert(vertices->begin(), vertices->end());
 
   // Compute where (process number) the vertices we need are located
-  std::vector<uint> vertex_partition;
+  std::vector<uint> send_vertex_indices, destinations_vertex;
   std::vector<std::vector<uint> > vertex_location(num_processes);
-  std::vector<uint> vertex_indices;
-
   std::set<uint>::const_iterator required_vertex;
   for (required_vertex = needed_vertex_indices.begin(); required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
     // Get process that has required vertex
     const uint location = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
-    vertex_partition.push_back(location);
-    vertex_indices.push_back(*required_vertex);
+    destinations_vertex.push_back(location);
+    send_vertex_indices.push_back(*required_vertex);
     vertex_location[location].push_back(*required_vertex);
   }
 
   // Send required vertices to other proceses, and receive back vertices
   // required by othe processes.
-  MPI::distribute(vertex_indices, vertex_partition);
-  assert(vertex_indices.size() == vertex_partition.size());
+  std::vector<uint> received_vertex_indices, sources_vertex;
+  MPI::distribute(send_vertex_indices, destinations_vertex,
+                  received_vertex_indices, sources_vertex);
+  assert(received_vertex_indices.size() == sources_vertex.size());
 
   // Distribute vertex coordinates
-  std::vector<double> vertex_coordinates;
-  std::vector<uint> vertex_coordinates_partition;
+  std::vector<double> send_vertex_coordinates;
+  std::vector<uint> destinations_vertex_coordinates;
   const uint vertex_size =  mesh_data.gdim;
   const std::pair<uint, uint> local_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
-  for (uint i = 0; i < vertex_partition.size(); ++i)
+  for (uint i = 0; i < sources_vertex.size(); ++i)
   {
-    assert(vertex_indices[i] >= local_vertex_range.first && vertex_indices[i] < local_vertex_range.second);
-    const uint location = vertex_indices[i] - local_vertex_range.first;
+    assert(received_vertex_indices[i] >= local_vertex_range.first && received_vertex_indices[i] < local_vertex_range.second);
+    const uint location = received_vertex_indices[i] - local_vertex_range.first;
     const std::vector<double>& x = mesh_data.vertex_coordinates[location];
     assert(x.size() == vertex_size);
     for (uint j = 0; j < vertex_size; ++j)
     {
-      vertex_coordinates.push_back(x[j]);
-      vertex_coordinates_partition.push_back(vertex_partition[i]);
+      send_vertex_coordinates.push_back(x[j]);
+      destinations_vertex_coordinates.push_back(sources_vertex[i]);
     }
   }
-  MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
+  std::vector<double> received_vertex_coordinates;
+  std::vector<uint> sources_vertex_coordinates;
+  MPI::distribute(send_vertex_coordinates, destinations_vertex_coordinates,
+                  received_vertex_coordinates, sources_vertex_coordinates);
 
   // Set index counters to first position in recieve buffers
   std::vector<uint> index_counters(num_processes, 0);
@@ -719,15 +726,15 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   glob2loc.clear();
 
   // Store coordinates and construct global to local mapping
-  const uint num_local_vertices = vertex_coordinates.size()/vertex_size;
+  const uint num_local_vertices = received_vertex_coordinates.size()/vertex_size;
   for (uint i = 0; i < num_local_vertices; ++i)
   {
     std::vector<double> vertex(vertex_size);
     for (uint j = 0; j < vertex_size; ++j)
-      vertex[j] = vertex_coordinates[i*vertex_size+j];
+      vertex[j] = received_vertex_coordinates[i*vertex_size+j];
     mesh_data.vertex_coordinates.push_back(vertex);
 
-    const uint sender_process = vertex_coordinates_partition[i*vertex_size];
+    const uint sender_process = sources_vertex_coordinates[i*vertex_size];
     const uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
     glob2loc[global_vertex_index] = i;
   }

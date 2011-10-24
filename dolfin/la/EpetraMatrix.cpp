@@ -408,25 +408,27 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   if (MPI::num_processes() > 1)
   {
     // Send list of nonlocal rows to all processes
-    std::vector<uint> partition;
-    std::vector<uint> transmit_data;
+    std::vector<uint> destinations;
+    std::vector<uint> send_data;
     for (uint i = 0; i < MPI::num_processes(); ++i)
     {
       if (i != MPI::process_number())
       {
-        transmit_data.insert(transmit_data.end(), non_local_rows.begin(),
+        send_data.insert(send_data.end(), non_local_rows.begin(),
                              non_local_rows.end());
-        partition.insert(partition.end(), non_local_rows.size(), i);
+        destinations.insert(destinations.end(), non_local_rows.size(), i);
       }
     }
-    MPI::distribute(transmit_data, partition);
+
+    std::vector<uint> received_data, sources;
+    MPI::distribute(send_data, destinations, received_data, sources);
 
     // Unpack data
-    assert(transmit_data.size() == partition.size());
-    for (uint i = 0; i < transmit_data.size(); ++i)
+    assert(received_data.size() == sources.size());
+    for (uint i = 0; i < received_data.size(); ++i)
     {
       // Insert row into set if it's local
-      const uint new_index = transmit_data[i];
+      const uint new_index = received_data[i];
       if (A->MyGlobalRow(new_index))
         local_rows.insert(new_index);
     }
