@@ -101,12 +101,14 @@ void XMLParameters::read_parameter_nest(Parameters& p,
       // Get name of parameters set
       const std::string name = it->attribute("name").value();
 
-      // Create set, add set and then read parameters
+      // Create parameter set if necessary
       if (!p.has_parameter_set(name))
       {
         Parameters nested_parameters(name);
         p.add(nested_parameters);
       }
+
+      // Set parameter value
       read_parameter_nest(p(name), *it);
     }
     else if (node_name == "parameter")
@@ -134,7 +136,7 @@ template<typename T>
 void XMLParameters::add_parameter(Parameters& p, const std::string& key,
                                   T value)
 {
-  if (p.has_key(key))
+  if (p.has_parameter(key))
     p[key] = value;
   else
     p.add(key, value);
