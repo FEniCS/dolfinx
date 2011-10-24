@@ -270,11 +270,8 @@ namespace dolfin
     // Send/receive data
     std::vector<uint> received_data0;
     std::vector<T> received_data1;
-    std::vector<uint> sources0, sources1;
-    MPI::distribute(send_data0, destinations0, received_data0, sources0);
-    MPI::distribute(send_data1, destinations1, received_data1, sources1);
-    assert(received_data0.size() == sources0.size());
-    assert(received_data1.size() == sources1.size());
+    MPI::distribute(send_data0, destinations0, received_data0);
+    MPI::distribute(send_data1, destinations1, received_data1);
     assert(2*received_data1.size() == received_data0.size());
 
     // Add received data to mesh domain

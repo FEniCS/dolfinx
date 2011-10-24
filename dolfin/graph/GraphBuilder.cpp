@@ -244,10 +244,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // neighbors have been found.
 
   // Distribute data to all processes
-  cout << "Send off-process data" << endl;
   std::vector<uint> received_data, sources;
   MPI::distribute(send_data, destinations, received_data, sources);
-  cout << "Finished sending off-process data" << endl;
 
   // Data structures for unpacking data
   std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(MPI::num_processes());

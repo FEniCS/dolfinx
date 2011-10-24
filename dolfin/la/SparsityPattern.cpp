@@ -243,8 +243,8 @@ void SparsityPattern::apply()
     }
 
     // Communicate non-local entries to other processes
-    std::vector<uint> non_local_received, sources;
-    MPI::distribute(non_local, destinations, non_local_received, sources);
+    std::vector<uint> non_local_received;
+    MPI::distribute(non_local, destinations, non_local_received);
 
     // Insert non-local entries received from other processes
     assert(non_local_received.size() % 2 == 0);

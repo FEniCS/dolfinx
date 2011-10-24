@@ -629,12 +629,11 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   }
 
   // Distribute cell-vertex connectivity
-  std::vector<uint> received_cell_vertices, sources_cell_vertices;
+  std::vector<uint> received_cell_vertices;
   MPI::distribute(send_cell_vertices, destinations_cell_vertices,
-                  received_cell_vertices, sources_cell_vertices);
+                  received_cell_vertices);
   assert(received_cell_vertices.size() % (num_cell_vertices + 1) == 0);
   destinations_cell_vertices.clear();
-  sources_cell_vertices.clear();
 
   // Clear mesh data
   mesh_data.cell_vertices.clear();

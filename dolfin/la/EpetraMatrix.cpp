@@ -420,11 +420,10 @@ void EpetraMatrix::ident(uint m, const uint* rows)
       }
     }
 
-    std::vector<uint> received_data, sources;
-    MPI::distribute(send_data, destinations, received_data, sources);
+    std::vector<uint> received_data;
+    MPI::distribute(send_data, destinations, received_data);
 
     // Unpack data
-    assert(received_data.size() == sources.size());
     for (uint i = 0; i < received_data.size(); ++i)
     {
       // Insert row into set if it's local
