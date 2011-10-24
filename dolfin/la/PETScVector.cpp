@@ -132,10 +132,10 @@ bool PETScVector::distributed() const
   bool _distributed = false;
   if (strcmp(petsc_type, VECMPI) == 0)
     _distributed = true;
-  else if ((strcmp(petsc_type, VECSEQ) == 0)
+  else if (strcmp(petsc_type, VECSEQ) == 0)
     _distributed =  false;
 #ifdef HAS_PETSC_CUSP
-  else if strcmp(petsc_type, VECSEQCUSP) == 0)
+  else if (strcmp(petsc_type, VECSEQCUSP) == 0)
     _distributed = false;
 #endif
   else
@@ -611,10 +611,10 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
-  if (strcmp(petsc_type, VECSEQ) != 0
+  if (strcmp(petsc_type, VECSEQ) != 0)
     error("PETScVector::gather can only gather into local vectors");
 #ifdef HAS_PETSC_CUSP
-  else if strcmp(petsc_type, VECSEQCUSP) != 0)
+  else if (strcmp(petsc_type, VECSEQCUSP) != 0)
     error("PETScVector::gather can only gather into local vectors");
 #endif
 
