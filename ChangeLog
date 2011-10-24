@@ -1,3 +1,5 @@
+ - Added option to store all connectivities in a mesh for TimeSeries (false by default)
+ - Added option for gzip compressed binary files for TimeSeries
  - Propagate global parameters to Krylov and LU solvers
  - Fix OpenMp assemble of scalars
  - Make OpenMP assemble over sub domains work
