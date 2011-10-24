@@ -71,6 +71,11 @@ class IntegrateDerivatives(unittest.TestCase):
         reg([ln(xs), pow(x, 2.7), pow(2.7, x)], 3)
         reg([asin(xs), acos(xs)], 1)
         reg([tan(xs)], 7)
+        reg([erf(xs)])
+        for nu in (0,1,2):
+            # Many of these are possibly more accurately integrated,
+            # but 4 covers all and is sufficient for this test
+            reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
 
         # To handle tensor algebra, make an x dependent input tensor xx and square all expressions
         def reg2(exprs, acc=10):
