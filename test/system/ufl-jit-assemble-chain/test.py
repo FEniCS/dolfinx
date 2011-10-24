@@ -22,6 +22,7 @@
 
 import unittest
 import numpy
+import math
 from dolfin import *
 
 class IntegrateDerivatives(unittest.TestCase):
