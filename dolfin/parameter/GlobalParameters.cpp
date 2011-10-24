@@ -42,12 +42,12 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
   parameter_files.push_back("dolfin_parameters.xml.gz");
 #ifdef _WIN32
   std::string home_directory(std::getenv("USERPROFILE"));
-  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml");
-  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml.gz");
+  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml.gz");
 #else
   std::string home_directory(std::getenv("HOME"));
-  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml");
-  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml.gz");
+  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml.gz");
 #endif
 
   // Try reading parameters from files
