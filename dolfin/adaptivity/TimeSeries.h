@@ -54,7 +54,10 @@ namespace dolfin
     ///         The time series name
     ///     compressed (bool)
     ///         Use compressed file format (default false)
-    TimeSeries(std::string name, bool compressed=false);
+    ///     store_connectivity (bool)
+    ///         Store all computed connectivity (default false)
+    TimeSeries(std::string name, bool compressed=false, 
+	       bool store_connectivity=false);
 
     /// Destructor
     ~TimeSeries();
@@ -191,6 +194,9 @@ namespace dolfin
 
     // True if storing using gzipped file
     bool _compressed;
+
+    // True if all connectivity in a mesh should be stored 
+    bool _store_connectivity;
 
   };
 

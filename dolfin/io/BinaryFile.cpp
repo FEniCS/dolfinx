@@ -37,8 +37,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BinaryFile::BinaryFile(const std::string filename)
-  : GenericFile(filename, "Binary")
+BinaryFile::BinaryFile(const std::string filename, bool store_connectivity)
+  : GenericFile(filename, "Binary"), _store_connectivity(store_connectivity)
 {
   // Do nothing
 }
@@ -162,22 +162,37 @@ void BinaryFile::operator<< (const Mesh& mesh)
   const MeshTopology& t = mesh._topology;
   const uint D = t._dim;
   write_uint(D);
-  write_array(D + 1, t.num_entities);
+  if (_store_connectivity)
+    write_array(D + 1, t.num_entities);
+  else
+    for (uint i = 0; i <= D; i++)
+      if (i==0 || i == D)
+	write_uint(t.size(i));
+      else
+	write_uint(0);
+    
   for (uint i = 0; i <= D; i++)
   {
     for (uint j = 0; j <= D; j++)
     {
       const MeshConnectivity& c = *t.connectivity[i][j];
-      write_uint(c._size);
-      if (c._size > 0)
+      
+      // If store all connectivity or if storing cell connectivity
+      if (_store_connectivity || (i == D && j == 0))
       {
-        write_uint(c.num_entities);
-        write_array(c._size, c.connections);
-        write_array(c.num_entities + 1, c.offsets);
+	write_uint(c._size);
+     	if (c._size > 0)
+	{
+	  write_uint(c.num_entities);
+	  write_array(c._size, c.connections);
+	  write_array(c.num_entities + 1, c.offsets);
+	}
       }
+      else
+	write_uint(0);
     }
   }
-
+  
   // Write mesh geometry (ignoring higher order stuff)
   const MeshGeometry& g = mesh._geometry;
   write_uint(g._dim);

@@ -25,6 +25,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/io/File.h>
+#include <dolfin/io/BinaryFile.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include "TimeSeries.h"
@@ -37,25 +38,29 @@ void store_object(const T& object, double t,
                   std::vector<double>& times,
                   std::string series_name,
                   std::string type_name,
-		  bool compressed)
+		  bool compressed, 
+		  bool store_connectivity)
 {
   // Write object
-  File file_data(TimeSeries::filename_data(series_name, type_name, 
-					   times.size(), compressed));
+  BinaryFile file_data(TimeSeries::filename_data(series_name, type_name, 
+						 times.size(), compressed),
+		       store_connectivity);
   file_data << object;
 
   // Add time
   times.push_back(t);
 
   // Store times
-  File file_times(TimeSeries::filename_times(series_name, type_name, 
-					     compressed));
+  BinaryFile file_times(TimeSeries::filename_times(series_name, type_name, 
+						   compressed));
   file_times << times;
 }
 
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name, bool compressed)
-  : _name(name), _cleared(false), _compressed(compressed)
+TimeSeries::TimeSeries(std::string name, bool compressed, 
+		       bool store_connectivity)
+  : _name(name), _cleared(false), _compressed(compressed), 
+    _store_connectivity(store_connectivity)
 {
   not_working_in_parallel("Storing of data to time series");
 
@@ -100,7 +105,7 @@ void TimeSeries::store(const GenericVector& vector, double t)
     clear();
 
   // Store object
-  store_object(vector, t, _vector_times, _name, "vector", _compressed);
+  store_object(vector, t, _vector_times, _name, "vector", _compressed, false);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::store(const Mesh& mesh, double t)
@@ -111,7 +116,8 @@ void TimeSeries::store(const Mesh& mesh, double t)
     clear();
 
   // Store object
-  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed);
+  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed, 
+	       _store_connectivity);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) const

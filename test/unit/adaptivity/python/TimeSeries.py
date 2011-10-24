@@ -28,20 +28,29 @@ from dolfin import *
 #@skipIf("Skipping TimeSeries test in parallel", MPI.num_processes() > 1)
 class TimeSeriesTest(unittest.TestCase):
 
-    def test_retrieved_times_compressed(self):
-        self.test_retrieved_times(True)
+    def test_retrieve_compressed(self):
+        self.test_retrieve(True, False)
 
-    def test_retrieved_times(self, compressed=False):
+    def test_retrieve_compressed_all_connectivities(self):
+        self.test_retrieve(True, True)
+
+    def test_retrieve_all_connectivities(self):
+        self.test_retrieve(False, True)
+
+    def test_retrieve(self, compressed=False, all_connectivities=False):
 
         if MPI.num_processes() > 1:
             return
 
         times = [t/10.0 for t in range(1, 11)]
-        mesh = UnitCube(1, 1, 1)
+
+        mesh_size = (2, 2, 2)
+        mesh = UnitCube(*mesh_size)
+        mesh.init()
         V = FunctionSpace(mesh, "CG", 2)
 
         u = Function(V)
-        series = TimeSeries("u", compressed)
+        series = TimeSeries("u", compressed, all_connectivities)
         for t in times:
             u.vector()[:] = t
             series.store(u.vector(), t)
@@ -53,6 +62,21 @@ class TimeSeriesTest(unittest.TestCase):
 
         self.assertAlmostEqual(t0, times[0])
         self.assertAlmostEqual(T, times[-1])
+
+        # Test retreiving of mesh
+        mesh_retreived = Mesh()
+        series.retrieve(mesh_retreived, 0.1)
+        
+        mesh_test = mesh if all_connectivities else UnitCube(*mesh_size)
+
+        for entity in range(4):
+            self.assertEqual(mesh_retreived.topology().size(entity),
+                             mesh_test.topology().size(entity))
+
+        for i in range(4):
+            for j in range(4):
+                self.assertEqual(mesh_retreived.topology()(i, j).size(),
+                                 mesh_test.topology()(i, j).size())
 
 if __name__ == "__main__":
     print ""
