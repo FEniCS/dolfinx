@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-10-21
+// Last changed: 2011-10-24
 
 #include <fstream>
 #include <cstdlib>
@@ -64,13 +64,12 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
     f.close();
 
     // Note: Cannot use DOLFIN log system here since it's not initialized
-    std::cout << "Reading DOLFIN parameters from file \"" << parameter_files[i] << "\"." << std::endl;
+    std::cout << "Reading DOLFIN parameters from file \""
+              << parameter_files[i] << "\"." << std::endl;
 
-    // Read parameters from file and update global parameters
+    // Read global parameters from file
     File file(parameter_files[i]);
-    Parameters p;
-    file >> p;
-    this->update(p);
+    file >> *this;
   }
 }
 //-----------------------------------------------------------------------------

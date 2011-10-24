@@ -170,7 +170,7 @@ namespace dolfin
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);
 
-    /// This is an alias for the function has_parameter
+    /// Check if parameter set has key (parameter or nested parameter set)
     bool has_key(std::string key) const;
 
     /// Check if parameter set has given parameter

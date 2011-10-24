@@ -371,7 +371,7 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
 //-----------------------------------------------------------------------------
 bool Parameters::has_key(std::string key) const
 {
-  return has_parameter(key);
+  return has_parameter(key) || has_parameter_set(key);
 }
 //-----------------------------------------------------------------------------
 bool Parameters::has_parameter(std::string key) const
