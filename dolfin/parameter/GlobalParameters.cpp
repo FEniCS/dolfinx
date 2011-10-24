@@ -36,19 +36,19 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
   // Set default parameter values
   *static_cast<Parameters*>(this) = default_parameters();
 
-  // Search paths to parameter files in order of increasing priority
+  // Search paths to parameter files in order of decreasing priority
   std::vector<std::string> parameter_files;
+  parameter_files.push_back("dolfin_parameters.xml");
+  parameter_files.push_back("dolfin_parameters.xml.gz");
 #ifdef _WIN32
   std::string home_directory(std::getenv("USERPROFILE"));
-  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml.gz");
   parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml.gz");
 #else
   std::string home_directory(std::getenv("HOME"));
-  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml.gz");
   parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml.gz");
 #endif
-  parameter_files.push_back("dolfin_parameters.xml.gz");
-  parameter_files.push_back("dolfin_parameters.xml");
 
   // Try reading parameters from files
   for (uint i = 0; i < parameter_files.size(); ++i)
@@ -67,6 +67,9 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
     // Read global parameters from file
     File file(parameter_files[i]);
     file >> *this;
+
+    // Don't read further files if found
+    break;
   }
 }
 //-----------------------------------------------------------------------------
