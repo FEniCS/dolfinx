@@ -36,22 +36,19 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
   // Set default parameter values
   *static_cast<Parameters*>(this) = default_parameters();
 
-  // FIXME: Consider adding the default parameter sets for all
-  // FIXME: classes as nested parameter sets here.
-
   // Search paths to parameter files in order of increasing priority
   std::vector<std::string> parameter_files;
-  #ifdef _WIN32
+#ifdef _WIN32
   std::string home_directory(std::getenv("USERPROFILE"));
-  parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml.gz");
-  parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml");
-  #else
+  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml.gz");
+  parameter_files.push_back(home_directory + "\\.fenics\\dolfin_parameters.xml");
+#else
   std::string home_directory(std::getenv("HOME"));
-  parameter_files.push_back(home_directory + "/.dolfin/parameters.xml.gz");
-  parameter_files.push_back(home_directory + "/.dolfin/parameters.xml");
-  #endif
-  parameter_files.push_back("parameters.xml.gz");
-  parameter_files.push_back("parameters.xml");
+  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml.gz");
+  parameter_files.push_back(home_directory + "/.fenics/dolfin_parameters.xml");
+#endif
+  parameter_files.push_back("dolfin_parameters.xml.gz");
+  parameter_files.push_back("dolfin_parameters.xml");
 
   // Try reading parameters from files
   for (uint i = 0; i < parameter_files.size(); ++i)

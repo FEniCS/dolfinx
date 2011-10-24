@@ -1,3 +1,4 @@
+ - Change search path of parameter file to ~/.fenics/dolfin_parameters.xml
  - Add functions Parameters::has_parameter, Parameters::has_parameter_set
  - Propagate global parameters to Krylov and LU solvers
  - Fix OpenMp assemble of scalars
