@@ -1,3 +1,5 @@
+ - Change search path of parameter file to ~/.fenics/dolfin_parameters.xml
+ - Add functions Parameters::has_parameter, Parameters::has_parameter_set 
  - Added option to store all connectivities in a mesh for TimeSeries (false by default)
  - Added option for gzip compressed binary files for TimeSeries
  - Propagate global parameters to Krylov and LU solvers

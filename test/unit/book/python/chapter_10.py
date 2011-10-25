@@ -649,10 +649,9 @@ class TestPage36(unittest.TestCase):
         mesh_file = File("mesh.xml")
         mesh_file << mesh
         mesh_file >> mesh
-        # FIXME: Not working
-        #parameters_file = File("parameters.xml")
-        #parameters_file << parameters
-        #parameters_file >> parameters
+        parameters_file = File("parameters.xml")
+        parameters_file << parameters
+        parameters_file >> parameters
 
 class TestPage37(unittest.TestCase):
 
@@ -790,11 +789,9 @@ class TestPage42(unittest.TestCase):
 class TestPage43(unittest.TestCase):
 
     def test_box_1(self):
-        pass
-        # FIXME: Not working
-        #file = File("parameters.xml")
-        #file << parameters
-        #file >> parameters
+        file = File("parameters.xml")
+        file << parameters
+        file >> parameters
 
 class TestPage45(unittest.TestCase):
 

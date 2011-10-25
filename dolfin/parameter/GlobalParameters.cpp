@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-10-21
+// Last changed: 2011-10-24
 
 #include <fstream>
 #include <cstdlib>
@@ -36,22 +36,19 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
   // Set default parameter values
   *static_cast<Parameters*>(this) = default_parameters();
 
-  // FIXME: Consider adding the default parameter sets for all
-  // FIXME: classes as nested parameter sets here.
-
-  // Search paths to parameter files in order of increasing priority
+  // Search paths to parameter files in order of decreasing priority
   std::vector<std::string> parameter_files;
-  #ifdef _WIN32
+  parameter_files.push_back("dolfin_parameters.xml");
+  parameter_files.push_back("dolfin_parameters.xml.gz");
+#ifdef _WIN32
   std::string home_directory(std::getenv("USERPROFILE"));
-  parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml.gz");
-  parameter_files.push_back(home_directory + "\\.dolfin\\parameters.xml");
-  #else
+  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml.gz");
+#else
   std::string home_directory(std::getenv("HOME"));
-  parameter_files.push_back(home_directory + "/.dolfin/parameters.xml.gz");
-  parameter_files.push_back(home_directory + "/.dolfin/parameters.xml");
-  #endif
-  parameter_files.push_back("parameters.xml.gz");
-  parameter_files.push_back("parameters.xml");
+  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml");
+  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml.gz");
+#endif
 
   // Try reading parameters from files
   for (uint i = 0; i < parameter_files.size(); ++i)
@@ -64,13 +61,15 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
     f.close();
 
     // Note: Cannot use DOLFIN log system here since it's not initialized
-    std::cout << "Reading DOLFIN parameters from file \"" << parameter_files[i] << "\"." << std::endl;
+    std::cout << "Reading DOLFIN parameters from file \""
+              << parameter_files[i] << "\"." << std::endl;
 
-    // Read parameters from file and update global parameters
+    // Read global parameters from file
     File file(parameter_files[i]);
-    Parameters p;
-    file >> p;
-    this->update(p);
+    file >> *this;
+
+    // Don't read further files if found
+    break;
   }
 }
 //-----------------------------------------------------------------------------
