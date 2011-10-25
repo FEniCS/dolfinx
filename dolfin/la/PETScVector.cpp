@@ -99,18 +99,18 @@ PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : ar
     error("PETScVector type not known.");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
+PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern): arch("cpu")
 {
   std::vector<uint> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
+PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x), arch("cpu")
 {
-  // Do nothing
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v)
+PETScVector::PETScVector(const PETScVector& v): arch("cpu")
 {
   *this = v;
 }

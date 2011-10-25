@@ -79,7 +79,7 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch) :
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A)
+PETScMatrix::PETScMatrix(const PETScMatrix& A): arch("cpu")
 {
   *this = A;
 }
