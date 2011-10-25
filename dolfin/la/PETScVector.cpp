@@ -614,7 +614,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   if (strcmp(petsc_type, VECSEQ) != 0)
     error("PETScVector::gather can only gather into local vectors");
 #ifdef HAS_PETSC_CUSP
-  else if (strcmp(petsc_type, VECSEQCUSP) != 0)
+  else if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
     error("PETScVector::gather can only gather into local vectors");
 #endif
 
