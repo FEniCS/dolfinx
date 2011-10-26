@@ -52,7 +52,7 @@ class DirichletBCTest(unittest.TestCase):
         dofs = numpy.zeros(3, dtype="I")
 
         def upper(x, on_boundary):
-            return x[1] > 0.5
+            return x[1] > 0.5 + DOLFIN_EPS
 
         V = FunctionSpace(mesh, "CG", 1)
         bc = DirichletBC(V, 0.0, upper)
