@@ -21,8 +21,8 @@ def compute(nx, ny, degree):
 
     # Exact solution
     omega = 1.0
-    u_exact = Expression('sin(omega*pi*x[0])*sin(omega*pi*x[1])',
-                         omega=omega)
+    u_e = Expression('sin(omega*pi*x[0])*sin(omega*pi*x[1])',
+                     omega=omega)
 
     # Define variational problem
     u = TrialFunction(V)
@@ -30,7 +30,7 @@ def compute(nx, ny, degree):
     #f = Function(V,
     #    '2*pow(pi,2)*pow(omega,2)*sin(omega*pi*x[0])*sin(omega*pi*x[1])',
     #    {'omega': omega})
-    f = 2*pi**2*omega**2*u_exact
+    f = 2*pi**2*omega**2*u_e
     a = inner(nabla_grad(u), nabla_grad(v))*dx
     L = f*v*dx
 
@@ -47,44 +47,43 @@ def compute(nx, ny, degree):
     # Compute error norm
 
     # Function - Expression
-    error = (u - u_exact)**2*dx
+    error = (u - u_e)**2*dx
     E1 = sqrt(assemble(error))
 
-    # Explicit interpolation of u_exact onto the same space as u:
-    u_e = interpolate(u_exact, V)
-    error = (u - u_e)**2*dx
+    # Explicit interpolation of u_e onto the same space as u:
+    u_e_V = interpolate(u_e, V)
+    error = (u - u_e_V)**2*dx
     E2 = sqrt(assemble(error))
 
-    # Explicit interpolation of u_exact to higher-order elements,
+    # Explicit interpolation of u_e to higher-order elements,
     # u will also be interpolated to the space Ve before integration
     Ve = FunctionSpace(mesh, 'Lagrange', degree=5)
-    u_e = interpolate(u_exact, Ve)
-    error = (u - u_e)**2*dx
+    u_e_Ve = interpolate(u_e, Ve)
+    error = (u - u_e_Ve)**2*dx
     E3 = sqrt(assemble(error))
 
-    # errornorm interpolates u and u_exact to a space with
+    # errornorm interpolates u and u_e to a space with
     # given degree, and creates the error field by subtracting
     # the degrees of freedom, then the error field is integrated
-    # TEMPORARY BUG - doesn't accept Expression for u_exact
-    #E4 = errornorm(u_exact, u, normtype='l2', degree=3)
+    # TEMPORARY BUG - doesn't accept Expression for u_e
+    #E4 = errornorm(u_e, u, normtype='l2', degree=3)
     # Manual implementation
-    def errornorm(u_exact, u, Ve):
+    def errornorm(u_e, u, Ve):
         u_Ve = interpolate(u, Ve)
-        u_e_Ve = interpolate(u_exact, Ve)
+        u_e_Ve = interpolate(u_e, Ve)
         e_Ve = Function(Ve)
         # Subtract degrees of freedom for the error field
-        e_Ve.vector()[:] = u_e_Ve.vector().array() - \
-                           u_Ve.vector().array()
+        e_Ve.vector()[:] = u_e_Ve.vector().array() - u_Ve.vector().array()
         # More efficient computation (avoids the rhs array result above)
         #e_Ve.assign(u_e_Ve)                      # e_Ve = u_e_Ve
         #e_Ve.vector().axpy(-1.0, u_Ve.vector())  # e_Ve += -1.0*u_Ve
         error = e_Ve**2*dx
         return sqrt(assemble(error, mesh=Ve.mesh())), e_Ve
-    E4, e_Ve = errornorm(u_exact, u, Ve)
+    E4, e_Ve = errornorm(u_e, u, Ve)
 
     # Infinity norm based on nodal values
-    u_e = interpolate(u_exact, V)
-    E5 = abs(u_e.vector().array() - u.vector().array()).max()
+    u_e_V = interpolate(u_e, V)
+    E5 = abs(u_e_V.vector().array() - u.vector().array()).max()
     print 'E2:', E2
     print 'E3:', E3
     print 'E4:', E4
@@ -95,13 +94,13 @@ def compute(nx, ny, degree):
     E6 = sqrt(assemble(error))
 
     # Collect error measures in a dictionary with self-explanatory keys
-    errors = {'u - u_exact': E1,
-              'u - interpolate(u_exact,V)': E2,
-              'interpolate(u,Ve) - interpolate(u_exact,Ve)': E3,
+    errors = {'u - u_e': E1,
+              'u - interpolate(u_e,V)': E2,
+              'interpolate(u,Ve) - interpolate(u_e,Ve)': E3,
               'error field': E4,
               'infinity norm (of dofs)': E5,
               'grad(error field)': E6}
-    
+
     return errors
 
 # Perform experiments
@@ -123,5 +122,5 @@ for error_type in sorted(error_types):
         r = ln(Ei/Eim1)/ln(h[i]/h[i-1])
         print 'h=%8.2E E=%8.2E r=%.2f' % (h[i], Ei, r)
 
-    
+
 
