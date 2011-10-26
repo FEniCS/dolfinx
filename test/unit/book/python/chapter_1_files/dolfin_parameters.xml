@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<dolfin xmlns:dolfin="http://www.fenicsproject.org">
+<dolfin xmlns:dolfin="http://fenicsproject.org">
   <parameters name="dolfin">
     <parameter key="allow_extrapolation" type="bool" value="false" />
     <parameter key="exact_interpolation" type="bool" value="true" />

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<dolfin xmlns:dolfin="http://www.fenicsproject.org">
+<dolfin xmlns:dolfin="http://fenicsproject.org">
   <mesh_value_collection type="uint" dim="2" size="6">
     <value cell_index="1" local_entity="1" value="1" />
     <value cell_index="2" local_entity="1" value="3" />

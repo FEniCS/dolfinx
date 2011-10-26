@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<dolfin xmlns:dolfin="http://www.fenicsproject.org">
+<dolfin xmlns:dolfin="http://fenicsproject.org">
   <parameters name="parameters">
     <parameter key="floating_point_precision" type="int" value="64"/>
     <parameter key="linear_algebra_backend" type="string" value="uBLAS"/>
