@@ -28,10 +28,30 @@ from dolfin import *
 
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
+
+    # Prepare command-line arguments
     sys.argv = ["foo"] + [str(arg) for arg in args]
+
+    # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
     file_path = os.path.join(*(["chapter_1_files"] + path + [script_name]))
+
+    # Remember default DOLFIN parameters
+    dolfin_parameters = {}
+    dolfin_parameters.update(parameters)
+
+    # Run script with default parameters
     runpy.run_path(file_path)
+
+    # Set parameters from file (as they were at the time of book release)
+    file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
+    file >> parameters
+
+    # Run script again with book parameters
+    runpy.run_path(file_path)
+
+    # Reset parameters
+    parameters.update(dolfin_parameters)
 
 class TestPoisson(unittest.TestCase):
 
