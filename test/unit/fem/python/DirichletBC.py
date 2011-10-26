@@ -50,10 +50,10 @@ class DirichletBCTest(unittest.TestCase):
     def test_get_values(self):
         mesh = UnitSquare(8, 8)
         dofs = numpy.zeros(3, dtype="I")
-        
+
         def upper(x, on_boundary):
             return x[1] > 0.5
-        
+
         V = FunctionSpace(mesh, "CG", 1)
         bc = DirichletBC(V, 0.0, upper)
         bc_values = bc.get_boundary_values()
@@ -64,10 +64,10 @@ class DirichletBCTest(unittest.TestCase):
             for i, dof in enumerate(dofs):
                 if upper(coords[i, :], None):
                     self.assertTrue(dofs[i] in bc_values)
-                    self.assertEqual(bc_values[dofs[i]], 0.0)
+                    self.assertAlmostEqual(bc_values[dofs[i]], 0.0)
                 else:
                     self.assertTrue(dofs[i] not in bc_values)
-        
+
     def test_meshdomain_bcs(self):
         """Test application of Dirichlet boundary conditions stored as
         part of the mesh. This test is also a compatibility test for
