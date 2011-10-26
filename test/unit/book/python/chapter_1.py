@@ -23,11 +23,12 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # Last changed: 2011-10-20
 
 import unittest
-import inspect, runpy, os
+import inspect, runpy, os, sys
 from dolfin import *
 
-def run_test(path):
+def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
+    sys.argv = ["foo"] + [str(arg) for arg in args]
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
     file_path = os.path.join(*(["chapter_1_files"] + path + [script_name]))
     runpy.run_path(file_path)
@@ -50,13 +51,13 @@ class TestPoisson(unittest.TestCase):
         run_test(["stationary", "poisson"])
 
     def test_paD(self):
-        run_test(["stationary", "poisson"])
+        run_test(["stationary", "poisson"], [8, 8])
 
     def test_d3_p2D(self):
-        run_test(["stationary", "poisson"])
+        run_test(["stationary", "poisson"], [1])
 
     def test_d6_p2D(self):
-        run_test(["stationary", "poisson"])
+        run_test(["stationary", "poisson"], [1])
 
     def test_dn2_p2D(self):
         run_test(["stationary", "poisson"])
@@ -73,7 +74,8 @@ class TestPoisson(unittest.TestCase):
     def test_dn4_p2D(self):
         run_test(["stationary", "poisson"])
 
-    def test_vcp2D(self):
+    def disabled_test_vcp2D(self):
+        # FIXME: Disabled since it depends on SciTools and it's broken in Ubuntu
         run_test(["stationary", "poisson"])
 
     def test_d4_p2D(self):
@@ -91,33 +93,33 @@ class TestPoisson(unittest.TestCase):
 class TestNonlinearPoisson(unittest.TestCase):
 
     def test_pde_newton_np(self):
-        run_test(["stationary", "nonlinear_poisson"])
+        run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
     def test_picard_np(self):
-        run_test(["stationary", "nonlinear_poisson"])
-
-    def test_vp2_np(self):
-        run_test(["stationary", "nonlinear_poisson"])
-
-    def test_alg_newton_np(self):
-        run_test(["stationary", "nonlinear_poisson"])
+        run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
     def test_vp1_np(self):
-        run_test(["stationary", "nonlinear_poisson"])
+        # FIXME: Does not converge with GMRES
+        run_test(["stationary", "nonlinear_poisson"], ["a", "l", 1, 8, 8])
+
+    def test_vp2_np(self):
+        # FIXME: Does not converge with GMRES
+        run_test(["stationary", "nonlinear_poisson"], ["a", "l", 1, 8, 8])
+
+    def test_alg_newton_np(self):
+        run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
 class TestDiffusion(unittest.TestCase):
 
     def test_d1_d2D(self):
         run_test(["transient", "diffusion"])
 
-    def test_demo_sin_daD(self):
-        run_test(["transient", "diffusion"])
-
     def test_d2_d2D(self):
         run_test(["transient", "diffusion"])
 
-    def test_sin_daD(self):
-        run_test(["transient", "diffusion"])
+    def disabled_test_sin_daD(self):
+        # FIXME: Disabled since it depends on SciTools and it's broken in Ubuntu
+        run_test(["transient", "diffusion"], [1, 1.5, 4, 40])
 
 if __name__ == "__main__":
     print ""

@@ -47,7 +47,7 @@ print 'Maximum real deflection is', max_D
 
 # Cannot do plot(w) first and then grab viz object!
 import time
-viz1 = plot(w,
+viz_w = plot(w,
             wireframe=False,
             title='Scaled membrane deflection',
             rescale=False,
@@ -61,9 +61,9 @@ viz_w.write_png('membrane_deflection.png')
 viz_w.write_ps('membrane_deflection', format='eps')
 
 f = interpolate(f, V)
-viz_f = plot(p_func, title='Scaled pressure')
+viz_f = plot(f, title='Scaled pressure')
 viz_f.elevate(-65)
-viz_f.update(p_func)
+viz_f.update(f)
 viz_f.write_png('pressure.png')
 viz_f.write_ps('pressure', format='eps')
 

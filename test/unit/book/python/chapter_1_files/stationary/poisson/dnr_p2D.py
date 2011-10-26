@@ -79,7 +79,7 @@ L = f*v*dx - g*v*ds(1) + p*q*v*ds(0)
 # Compute solution
 A = assemble(a, exterior_facet_domains=boundary_parts)
 b = assemble(L, exterior_facet_domains=boundary_parts)
-for condition in bc: condition.apply(A, b)
+for condition in bcs: condition.apply(A, b)
 
 # Alternative is not yet supported
 #A, b = assemble_system(a, L, bc, exterior_facet_domains=boundary_parts)
@@ -93,6 +93,6 @@ print mesh
 u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
 u_e = interpolate(u_exact, V)
 print 'Max error:', abs(u_e.vector().array() - u.vector().array()).max()
-    
+
 #interactive()
 
