@@ -116,12 +116,20 @@ namespace dolfin
     ~MeshFunction()
     { delete [] _values; }
 
+    /// Assign mesh function to other mesh function
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     f (_MeshFunction_ <T>)
+    ///         A _MeshFunction_ object to asssign to another MeshFunction.
+    MeshFunction<T>& operator= (const MeshFunction<T>& f);
+
     /// Assignment operator
     ///
     /// *Arguments*
     ///     mesh (_MeshValueCollection_)
     ///         A _MeshValueCollection_ object used to construct a MeshFunction.
-    const MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
+    MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
 
     /// Return mesh associated with mesh function
     ///
@@ -201,9 +209,6 @@ namespace dolfin
     ///     T
     ///         The value at the given index.
     const T& operator[] (uint index) const;
-
-    /// Assign mesh function to other mesh function
-    const MeshFunction<T>& operator= (const MeshFunction<T>& f);
 
     /// Set all values to given value
     const MeshFunction<T>& operator= (const T& value);
@@ -371,7 +376,22 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  const MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
+  MeshFunction<T>& MeshFunction<T>::operator= (const MeshFunction<T>& f)
+  {
+    _mesh = f._mesh;
+    _dim  = f._dim;
+    _size = f._size;
+    delete [] _values;
+    _values = new T[_size];
+    std::copy(f._values, f._values + _size, _values);
+
+    Hierarchical<MeshFunction<T> >::operator=(f);
+
+    return *this;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshFunction<T>& MeshFunction<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
   {
     _dim = mesh_value_collection.dim();
     init(_dim);
@@ -381,7 +401,7 @@ namespace dolfin
     const uint d = _dim;
     const uint D = _mesh->topology().dim();
     assert(d <= D);
-    
+
     // Generate connectivity if it does not excist
     _mesh->init(D, d);
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
@@ -492,22 +512,6 @@ namespace dolfin
     assert(_values);
     assert(index < _size);
     return _values[index];
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  const MeshFunction<T>& MeshFunction<T>::operator= (const MeshFunction<T>& f)
-  {
-    _mesh = f._mesh;
-    _dim = f._dim;
-    _size = f._size;
-    delete [] _values;
-    _values = new T[_size];
-    for (uint i = 0; i < _size; i++)
-      _values[i] = f._values[i];
-
-    Hierarchical<MeshFunction<T> >::operator=(f);
-
-    return *this;
   }
   //---------------------------------------------------------------------------
   template <typename T>
