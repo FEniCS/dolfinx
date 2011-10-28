@@ -119,12 +119,10 @@ class TestNonlinearPoisson(unittest.TestCase):
         run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
 
     def test_vp1_np(self):
-        # FIXME: Does not converge with GMRES
-        run_test(["stationary", "nonlinear_poisson"], ["a", "l", 1, 8, 8])
+        run_test(["stationary", "nonlinear_poisson"], ["a", "g", 1, 8, 8])
 
     def test_vp2_np(self):
-        # FIXME: Does not converge with GMRES
-        run_test(["stationary", "nonlinear_poisson"], ["a", "l", 1, 8, 8])
+        run_test(["stationary", "nonlinear_poisson"], ["a", "g", 1, 8, 8])
 
     def test_alg_newton_np(self):
         run_test(["stationary", "nonlinear_poisson"], [1, 8, 8])
