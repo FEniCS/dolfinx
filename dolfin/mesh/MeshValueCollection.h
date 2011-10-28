@@ -93,6 +93,13 @@ namespace dolfin
     ///         A _MeshFunction_ object used to construct a MeshValueCollection.
     const MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh_value_collection (_MeshValueCollection_)
+    ///         A _MeshValueCollection_ object used to construct a MeshValueCollection.
+    const MeshValueCollection<T>& operator=(const MeshValueCollection<T>& mesh_value_collection);
+
     /// Set the topological dimension
     ///
     /// *Arguments*
@@ -318,6 +325,13 @@ namespace dolfin
         }
       }
     }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  const MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
+  {
+    _dim = mesh_value_collection.dim();
+    _values = mesh_value_collection.values();
   }
   //---------------------------------------------------------------------------
   template <typename T>
