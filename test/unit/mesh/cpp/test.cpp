@@ -242,7 +242,7 @@ public:
       bool this_new;
       const int value = ncells - cell->index();
       this_new = f.set_value(cell->index(), value, mesh);
-      all_new = all_new || this_new;
+      all_new = all_new && this_new;
     }
     MeshValueCollection<int> g(2);
     g = f;
@@ -271,7 +271,7 @@ public:
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
-        all_new = all_new || this_new;
+        all_new = all_new && this_new;
       }
     }
     MeshValueCollection<int> g(1);
@@ -304,7 +304,7 @@ public:
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
-        all_new = all_new || this_new;
+        all_new = all_new && this_new;
       }
     }
     MeshValueCollection<int> g(0);
