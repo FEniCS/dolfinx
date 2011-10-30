@@ -18,16 +18,18 @@
 // First added:  2011-10-16
 // Last changed:
 
-#ifdef PETSC_HAVE_MUMPS
 
 #include <vector>
 
 #include "dolfin/common/Array.h"
+#include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/log/log.h"
 #include "CoordinateMatrix.h"
 #include "GenericVector.h"
 #include "MUMPSLUSolver.h"
+
+#ifdef PETSC_HAVE_MUMPS
 
 using namespace dolfin;
 
