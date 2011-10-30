@@ -23,10 +23,11 @@
 
 #include <utility>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <petscconf.h>
 #include <dolfin/common/types.h>
 
-#ifdef PETSC_HAVE_PASTIX
+#ifdef HAS_PASTIX
 
 namespace dolfin
 {
@@ -42,24 +43,22 @@ namespace dolfin
   public:
 
     /// Constructor
-    PaStiXLUSolver(const SparsityPattern& pattern, const STLMatrix& A, GenericVector& x, const GenericVector& b);
+    PaStiXLUSolver(const STLMatrix& A);
+
+    /// Constructor
+    PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A);
 
     /// Destructor
     virtual ~PaStiXLUSolver();
 
-    /// Solve linear system Ax = b
+    /// Constructor
     unsigned int solve(GenericVector& x, const GenericVector& b);
-
-    unsigned int size(unsigned int dim) const
-    { return _size[dim]; }
 
   private:
 
-    // Gobal size
-    unsigned int _size[2];
+    boost::shared_ptr<const STLMatrix> A;
 
     const uint id;
-    std::pair<unsigned int, unsigned int> row_range;
 
   };
 

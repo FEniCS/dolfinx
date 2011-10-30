@@ -24,6 +24,7 @@
 
 #include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
 #include "dolfin/log/dolfin_log.h"
 #include "GenericVector.h"
@@ -32,7 +33,7 @@
 #include "STLMatrix.h"
 #include "PaStiXLUSolver.h"
 
-#ifdef PETSC_HAVE_PASTIX
+#ifdef HAS_PASTIX
 
 extern "C"
 {
@@ -43,10 +44,22 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(const SparsityPattern& pattern,
-                         const STLMatrix& A, GenericVector& x, const GenericVector& b)
-  : id(0), row_range(pattern.local_range(0))
+PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
+  : A(reference_to_no_delete_pointer(A)), id(0)
 {
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A)
+  : A(A), id(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  assert(A);
+
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
 
   int    iparm[IPARM_SIZE];
@@ -62,7 +75,7 @@ PaStiXLUSolver::PaStiXLUSolver(const SparsityPattern& pattern,
 
   std::vector<double> vals;
   std::vector<uint> cols, row_ptr, local_to_global_rows;
-  A.csr(vals, cols, row_ptr, local_to_global_rows);
+  A->csr(vals, cols, row_ptr, local_to_global_rows);
 
   /*
   if (MPI::process_number() == 0)
@@ -164,18 +177,13 @@ PaStiXLUSolver::PaStiXLUSolver(const SparsityPattern& pattern,
 //d_dpastix(&pastix_data, comm, n, colptr, row, val,
 //                col_num.GetData(), perm.GetData(), invp.GetData(),
 //                 b, nrhs, iparm, dparm);
+
+  return 1;
 }
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::~PaStiXLUSolver()
 {
-  //MURGE_Clean(id);
-  //MURGE_Finalize();
-}
-//-----------------------------------------------------------------------------
-unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
-{
-
-  return 1;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 #endif
