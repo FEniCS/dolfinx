@@ -73,12 +73,12 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   pastix_initParam(iparm, dparm);
 
   // PaStiX object
-  pastix_data_t  *pastix_data = NULL;
+  pastix_data_t* pastix_data = NULL;
 
   // Matrix data
   std::vector<double> vals;
   std::vector<uint> cols, row_ptr, local_to_global_rows;
-  A->csr(vals, cols, row_ptr, local_to_global_rows);
+  A->csr(vals, cols, row_ptr, local_to_global_rows, false);
 
   int* _row_ptr = reinterpret_cast<int*>(&row_ptr[0]);
   int* _cols = reinterpret_cast<int*>(&cols[0]);
@@ -150,9 +150,11 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
-           _local_to_global_rows,
+            _local_to_global_rows,
             perm.data().get(), invp.data().get(),
             b_ptr, nrhs, iparm, dparm);
+
+  // FIXME: Use pastix getLocalUnknownNbr?
 
   // Distribute solution
   assert(b.size() == x.size());
