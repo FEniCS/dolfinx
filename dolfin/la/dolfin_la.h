@@ -35,6 +35,7 @@
 #include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/ITLKrylovSolver.h>
 #include <dolfin/la/MUMPSLUSolver.h>
+#include <dolfin/la/PaStiXLUSolver.h>
 
 #include <dolfin/la/MTL4Matrix.h>
 #include <dolfin/la/STLMatrix.h>
