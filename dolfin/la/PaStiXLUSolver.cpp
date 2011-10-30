@@ -69,28 +69,16 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   for (int i = 0; i < DPARM_SIZE; i++)
     dparm[i] = 0;
 
-  pastix_data_t  *pastix_data = NULL;
-
+  // Set default parameters
   pastix_initParam(iparm, dparm);
 
+  // PaStiX object
+  pastix_data_t  *pastix_data = NULL;
+
+  // Matrix data
   std::vector<double> vals;
   std::vector<uint> cols, row_ptr, local_to_global_rows;
   A->csr(vals, cols, row_ptr, local_to_global_rows);
-
-  /*
-  if (MPI::process_number() == 0)
-    MPI::barrier();
-
-  for (uint i = 0; i < cols.size(); ++i)
-    cout << "Cols, vals: " << i << ", "  << cols[i] << ", " << vals[i] << endl;
-  for (uint i = 0; i < row_ptr.size(); ++i)
-    cout << "Row ptr: " << i << ", " << row_ptr[i] << endl;
-  for (uint i = 0; i < local_to_global_rows.size(); ++i)
-    cout << "loc2glob: " << i << ", " << local_to_global_rows[i] << endl;
-
-  if (MPI::process_number() == 1)
-    MPI::barrier();
-  */
 
   int* _row_ptr = reinterpret_cast<int*>(&row_ptr[0]);
   int* _cols = reinterpret_cast<int*>(&cols[0]);
@@ -98,39 +86,52 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   double* _vals = &vals[0];
 
   const uint n = row_ptr.size() - 1;
-  cout << "XXX n: " << n << endl;
 
+  // Check matrix
   d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES,
 		                   API_SYM_YES,  API_YES,
 		                   n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
 
-  iparm[IPARM_MODIFY_PARAMETER] = API_NO;
-  d_dpastix(&pastix_data, mpi_comm,
- 	          n,  _row_ptr, _cols, _vals, _local_to_global_rows,
-	          NULL, NULL, NULL, 1, iparm, dparm);
-
+  // Number of threads per MPI process
   iparm[IPARM_THREAD_NBR] = 1;
 
+  // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
+
+  // Level of verbosity
   iparm[IPARM_VERBOSE] = API_VERBOSE_YES;
-  iparm[IPARM_SYM] = API_SYM_NO;
-  iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+
+  // LU or Cholesky
+  iparm[IPARM_SYM] = API_SYM_YES;
+  iparm[IPARM_FACTORIZATION] = API_FACT_LLT;
+  //iparm[IPARM_SYM] = API_SYM_NO;
+  //iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+
+  // Graph (matrix) is distributed
   iparm[IPARM_GRAPHDIST] = API_YES;
 
+  Array<int> perm(local_to_global_rows.size());
+  Array<int> invp(local_to_global_rows.size());
 
-  Array<int> perm(local_to_global_rows.size()), invp(local_to_global_rows.size());
+  const int nrhs = 1;
 
+  // Re-order
   iparm[IPARM_START_TASK] = API_TASK_ORDERING;
-  iparm[IPARM_END_TASK] = API_TASK_NUMFACT;
-
-  int nrhs = 1;
-  cout << "XXXXXXXXX Factorise" << endl;
+  iparm[IPARM_END_TASK]   = API_TASK_BLEND;
   d_dpastix(&pastix_data, mpi_comm, n, _row_ptr, _cols, _vals,
             _local_to_global_rows,
             perm.data().get(), invp.data().get(),
             NULL, nrhs, iparm, dparm);
-  cout << "XXXXXXXXX End factorise" << endl;
 
+  // Factorise
+  iparm[IPARM_START_TASK] = API_TASK_NUMFACT;
+  iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
+  d_dpastix(&pastix_data, mpi_comm, n, _row_ptr, _cols, _vals,
+            _local_to_global_rows,
+            perm.data().get(), invp.data().get(),
+            NULL, nrhs, iparm, dparm);
+
+  // Get local (to process) dofs
   const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
   Array<uint> solver_local_to_global(ncol2);
   int* _loc2glob = reinterpret_cast<int*>(solver_local_to_global.data().get());
@@ -140,43 +141,30 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   for (uint i = 0; i < ncol2; ++i)
     _loc2glob[i]--;
 
+  // Get RHS data for this process
   Array<double> _b(ncol2);
-  //b.gather_on_zero(_b);
   b.gather(_b, solver_local_to_global);
-  //for (uint i = 0; i < _b.size(); ++i)
-  //  cout << "b (0): " << i << ", " << _b[i] << endl;
-  //cout << "---------------------------" << endl;
-
-  //b.get_local(_b);
-  //for (uint i = 0; i < _b.size(); ++i)
-  //  cout << "b (1): " << i << ", " << _b[i] << endl;
-
-  cout << "XXXXXXXXXXx Post gather size: " << _b.size() << ", " << ncol2 << endl;
   double* b_ptr = _b.data().get();
-  cout << "Local size: " << _b.size() << ", " << ncol2 << endl;
-  MPI::barrier();
 
+  // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
+  iparm[IPARM_END_TASK] = API_TASK_SOLVE;
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
            _local_to_global_rows,
             perm.data().get(), invp.data().get(),
             b_ptr, nrhs, iparm, dparm);
 
-  //for (uint i = 0; i < _b.size(); ++i)
-  //  cout << "Soln (0): " << i << ", " << _b[i] << endl;
-
-
+  // Distribute solution
   assert(b.size() == x.size());
-  cout << "Local size (2): " << _b.size() << ", " << ncol2 << endl;
   x.set(_b.data().get(), ncol2, solver_local_to_global.data().get());
   x.apply("insert");
-  cout << "Soln norm: " << x.norm("l2") << endl;
 
-//CallPastix(comm_facto, NULL, NULL, NULL, rhs_, nrhs);
-
-//d_dpastix(&pastix_data, comm, n, colptr, row, val,
-//                col_num.GetData(), perm.GetData(), invp.GetData(),
-//                 b, nrhs, iparm, dparm);
+  // Clean up
+  iparm[IPARM_START_TASK] = API_TASK_CLEAN;
+  iparm[IPARM_END_TASK] = API_TASK_CLEAN;
+  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL, NULL,
+            perm.data().get(), invp.data().get(),
+            NULL, nrhs, iparm, dparm);
 
   return 1;
 }
