@@ -84,8 +84,20 @@ namespace dolfin
 
     /// Distribute local arrays on all processors according to given partition
     template<typename T>
-    static void distribute(std::vector<T>& values,
-                           std::vector<uint>& partition);
+    static void distribute(const std::vector<T>& in_values,
+                           const std::vector<uint>& destinations,
+                           std::vector<T>& out_values,
+                           std::vector<uint>& sources);
+
+    /// Distribute local arrays on all processors according to given partition
+    template<typename T>
+    static void distribute(const std::vector<T>& in_values,
+                           const std::vector<uint>& destinations,
+                           std::vector<T>& out_values)
+    {
+      std::vector<uint> sources;
+      distribute(in_values, destinations, out_values, sources);
+    }
 
     // Broadcast value from broadcaster process to all processes
     template<typename T>
@@ -97,8 +109,6 @@ namespace dolfin
       boost::mpi::broadcast(comm, value, broadcaster);
       #endif
     }
-
-    // FIXME: Use common template function for uint and double scatter below
 
     /// Scatter in_values[i] to process i
     template<typename T>
@@ -256,10 +266,12 @@ namespace dolfin
   //---------------------------------------------------------------------------
   #ifdef HAS_MPI
   template<typename T>
-  void MPI::distribute(std::vector<T>& values,
-                         std::vector<uint>& partition)
+  void MPI::distribute(const std::vector<T>& in_values,
+                       const std::vector<uint>& destinations,
+                       std::vector<T>& out_values,
+                       std::vector<uint>& sources)
   {
-    assert(values.size() == partition.size());
+    assert(in_values.size() == destinations.size());
 
     // Get number of processes and process number
     const uint num_processes  = MPI::num_processes();
@@ -267,25 +279,25 @@ namespace dolfin
 
     // Sort out data that should be sent to other processes
     std::vector<std::vector<T> > send_data(num_processes);
-    for (uint i = 0; i < values.size(); i++)
+    for (uint i = 0; i < in_values.size(); i++)
     {
       // Get process number data should be sent to
-      const uint p = partition[i];
+      const uint p = destinations[i];
       assert(p < send_data.size());
 
       // Append data to array for process p
-      send_data[p].push_back(values[i]);
+      send_data[p].push_back(in_values[i]);
     }
 
     // Store local data (don't send) and clear partition vector and reuse for
     // storing sender of data
-    values.clear();
-    partition.clear();
+    out_values.clear();
+    sources.clear();
     const std::vector<T>& local_values = send_data[process_number];
     for (uint i = 0; i < local_values.size(); i++)
     {
-      values.push_back(local_values[i]);
-      partition.push_back(process_number);
+      out_values.push_back(local_values[i]);
+      sources.push_back(process_number);
     }
 
     // Exchange data
@@ -302,14 +314,16 @@ namespace dolfin
       MPI::send_recv(send_data[dest], dest, recv_buffer, source);
 
       // Copy data from receive buffer
-      values.insert(values.end(), recv_buffer.begin(), recv_buffer.end());
-      partition.insert(partition.end(), recv_buffer.size(), source);
+      out_values.insert(out_values.end(), recv_buffer.begin(), recv_buffer.end());
+      sources.insert(sources.end(), recv_buffer.size(), source);
     }
   }
   #else
   template<typename T>
-  void MPI::distribute(std::vector<T>& values,
-                         std::vector<uint>& partition)
+  void MPI::distribute(const std::vector<T>& in_values,
+                       const std::vector<uint>& destinations,
+                       std::vector<T>& out_values,
+                       std::vector<uint>& sources)
   {
     error("Distribution of partitioned values requires MPI.");
   }

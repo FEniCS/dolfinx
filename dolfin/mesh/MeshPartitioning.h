@@ -268,18 +268,18 @@ namespace dolfin
     }
 
     // Send/receive data
-    MPI::distribute(send_data0, destinations0);
-    MPI::distribute(send_data1, destinations1);
-    assert(send_data0.size() == destinations0.size());
-    assert(send_data1.size() == destinations1.size());
-    assert(2*send_data1.size() == send_data0.size());
+    std::vector<uint> received_data0;
+    std::vector<T> received_data1;
+    MPI::distribute(send_data0, destinations0, received_data0);
+    MPI::distribute(send_data1, destinations1, received_data1);
+    assert(2*received_data1.size() == received_data0.size());
 
     // Add received data to mesh domain
-    for (uint i = 0; i < send_data1.size(); ++i)
+    for (uint i = 0; i < received_data1.size(); ++i)
     {
-      const uint local_cell_entity = send_data0[2*i];
-      const uint local_entity_index = send_data0[2*i + 1];
-      const T value = send_data1[i];
+      const uint local_cell_entity = received_data0[2*i];
+      const uint local_entity_index = received_data0[2*i + 1];
+      const T value = received_data1[i];
       assert(local_cell_entity < mesh.num_cells());
       markers.set_value(local_cell_entity, local_entity_index, value);
     }

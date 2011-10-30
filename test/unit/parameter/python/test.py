@@ -122,6 +122,22 @@ class InputOutput(unittest.TestCase):
         self.assertEqual(p1["sub0"]["tolerance"], 0.001)
         self.assertEqual(p1["sub0"]["monitor_convergence"], True)
 
+    def test_nested_read_existing(self):
+        """Test that we can read in a nested parameter database into
+        an existing (and matching) parameter database"""
+
+        # Not working in parallel, even if only process 0 writes and
+        # others wait for a barrier. Skipping this in parallel for now.
+        if MPI.num_processes() > 1:
+            return
+
+        file = File("test_parameters.xml")
+        file << parameters
+
+        p = Parameters("test")
+        file >> p
+        file >> p
+
     def test_solver_parameters(self):
         "Test that global parameters are propagated to solvers"
 

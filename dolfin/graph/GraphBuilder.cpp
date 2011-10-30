@@ -224,15 +224,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   }
 
   // Prepare package to send (do not send data belonging to this process)
-  std::vector<uint> partition;
-  std::vector<uint> transmit_data;
+  std::vector<uint> destinations;
+  std::vector<uint> send_data;
   for (uint i = 0; i < MPI::num_processes(); ++i)
   {
     if (i != MPI::process_number())
     {
-      transmit_data.insert(transmit_data.end(), connected_cell_data.begin(),
+      send_data.insert(send_data.end(), connected_cell_data.begin(),
                            connected_cell_data.end());
-      partition.insert(partition.end(), connected_cell_data.size(), i);
+      destinations.insert(destinations.end(), connected_cell_data.size(), i);
     }
   }
 
@@ -244,23 +244,21 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // neighbors have been found.
 
   // Distribute data to all processes
-  cout << "Send off-process data" << endl;
-  MPI::distribute(transmit_data, partition);
-  cout << "Finished sending off-process data" << endl;
+  std::vector<uint> received_data, sources;
+  MPI::distribute(send_data, destinations, received_data, sources);
 
   // Data structures for unpacking data
   std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(MPI::num_processes());
   std::vector<std::vector<uint> > candidate_ghost_cell_global_indices(MPI::num_processes());
 
-  // Unpack data (if any)
   uint _offset = 0;
   for (uint i = 0; i < MPI::num_processes() - 1; ++i)
   {
     // Check if there is data to unpack
-    if (_offset >= partition.size())
+    if (_offset >= sources.size())
       break;
 
-    const uint p = partition[_offset];
+    const uint p = sources[_offset];
     assert(p < boundary_cells_per_process.size());
     const uint data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
@@ -270,15 +268,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Loop over data for each cell
     for (uint j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
     {
-      assert(partition[j] == p);
+      assert(sources[j] == p);
 
       // Get cell global index
-      _global_cell_indices.push_back(transmit_data[j]);
+      _global_cell_indices.push_back(received_data[j]);
 
       // Get cell vertices
       std::vector<uint> vertices;
       for (uint k = 0; k < num_cell_vertices; ++k)
-        vertices.push_back(transmit_data[(j + 1) +k]);
+        vertices.push_back(received_data[(j + 1) +k]);
       _cell_vertices.push_back(vertices);
     }
 

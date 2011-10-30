@@ -294,7 +294,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     boundary_values (boost::unordered_map<uint, double>)
-    ///         The boundary values.
+    ///         Map from dof to boundary value.
     ///     method (std::string)
     ///         Optional argument: A string specifying which
     ///         method to use.

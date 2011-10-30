@@ -211,6 +211,9 @@ void SparsityPattern::apply()
   if (shape.size() != 2)
     return;
 
+  const uint num_processes = MPI::num_processes();
+  const uint proc_number = MPI::process_number();
+
   // Print some useful information
   if (get_log_level() <= DBG)
     info_statistics();
@@ -220,34 +223,36 @@ void SparsityPattern::apply()
   {
     // Figure out correct process for each non-local entry
     assert(non_local.size() % 2 == 0);
-    std::vector<uint> partition(non_local.size());
+    std::vector<uint> destinations(non_local.size());
     for (uint i = 0; i < non_local.size(); i += 2)
     {
       // Get row for non-local entry
       const uint I = non_local[i];
 
       // Figure out which process owns the row
-      boost::unordered_map<uint, uint>::const_iterator non_local_index = off_process_owner[0].find(I);
+      boost::unordered_map<uint, uint>::const_iterator non_local_index
+          = off_process_owner[0].find(I);
       assert(non_local_index != off_process_owner[0].end());
       const uint p = non_local_index->second;
 
-      assert(p < MPI::num_processes());
-      assert(p != MPI::process_number());
+      assert(p < num_processes);
+      assert(p != proc_number);
 
-      partition[i] = p;
-      partition[i + 1] = p;
+      destinations[i] = p;
+      destinations[i + 1] = p;
     }
 
     // Communicate non-local entries to other processes
-    MPI::distribute(non_local, partition);
+    std::vector<uint> non_local_received;
+    MPI::distribute(non_local, destinations, non_local_received);
 
     // Insert non-local entries received from other processes
-    assert(non_local.size() % 2 == 0);
-    for (uint i = 0; i < non_local.size(); i+= 2)
+    assert(non_local_received.size() % 2 == 0);
+    for (uint i = 0; i < non_local_received.size(); i+= 2)
     {
       // Get row and column
-      uint I = non_local[i];
-      const uint J = non_local[i + 1];
+      uint I = non_local_received[i];
+      const uint J = non_local_received[i + 1];
 
       // Sanity check
       if (I < row_range_min || I >= row_range_max)
@@ -271,10 +276,10 @@ void SparsityPattern::apply()
         off_diagonal[I].insert(J);
       }
     }
-
-    // Clear non-local entries
-    non_local.clear();
   }
+
+  // Clear non-local entries
+  non_local.clear();
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const

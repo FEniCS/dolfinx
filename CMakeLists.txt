@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
 set(DOLFIN_VERSION_MINOR "0")
-set(DOLFIN_VERSION_MICRO "beta+")
+set(DOLFIN_VERSION_MICRO "beta2")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
@@ -185,9 +185,9 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0)
 
 if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams mpi serialization REQUIRED)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization REQUIRED)
 else()
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams REQUIRED)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
 endif()
 
 # Check for required packages
