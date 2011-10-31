@@ -283,7 +283,7 @@ public:
       for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
       {
         const int value = ncells - cell->index() + i;
-	CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
+        CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
       }
     }
   }
@@ -315,7 +315,7 @@ public:
       for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
       {
         const int value = ncells - cell->index() + i;
-	CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
+        CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
       }
     }
   }
@@ -352,7 +352,7 @@ public:
     {
       for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
       {
-	CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
+        CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
     }
   }
@@ -369,7 +369,7 @@ public:
     {
       for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
       {
-	CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
+        CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
     }
   }
