@@ -5,16 +5,12 @@
 #  PASTIX_INCLUDE_DIRS - include directories for PaStiX
 #  PASTIX_LIBRARIES    - libraries for PaStiX
 
-message(STATUS "Checking for package 'PaStiX'")
-
 # Check for header file
 find_path(PASTIX_INCLUDE_DIRS pastix.h
   HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include
   PATH_SUFFIXES install
   DOC "Directory where the PaStiX header is located"
  )
-
-message(STATUS "Include dirs ${PASTIX_INCLUDE_DIRS}")
 
 # Check for PaStiX library
 find_library(PASTIX_LIBRARY pastix
@@ -23,10 +19,13 @@ find_library(PASTIX_LIBRARY pastix
   DOC "The PaStiX library"
   )
 
-message(STATUS "Lib ${PASTIX_LIBRARY}")
+# Check for rt library
+find_library(RT_LIBRARY rt
+  DOC "The RT library"
+  )
 
 # Collect libraries
-set(PASTIX_LIBRARIES ${PASTIX_LIBRARY})
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY})
 
 mark_as_advanced(
   PASTIX_INCLUDE_DIRS
@@ -43,9 +42,12 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   # Build and run test program
   include(CheckCXXSourceRuns)
   check_cxx_source_runs("
+/* Test program pastix */
+
+//#include <pastix.h>
+
 int main()
 {
-  // Add test here
 
   return 0;
 }
