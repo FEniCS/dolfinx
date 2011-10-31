@@ -14,11 +14,16 @@ find_path(PASTIX_INCLUDE_DIRS pastix.h
   DOC "Directory where the PaStiX header is located"
  )
 
+message(STATUS "Include dirs ${PASTIX_INCLUDE_DIRS}")
+
 # Check for PaStiX library
 find_library(PASTIX_LIBRARY pastix
   HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib
+  PATH_SUFFIXES install
   DOC "The PaStiX library"
   )
+
+message(STATUS "Lib ${PASTIX_LIBRARY}")
 
 # Collect libraries
 set(PASTIX_LIBRARIES ${PASTIX_LIBRARY})
