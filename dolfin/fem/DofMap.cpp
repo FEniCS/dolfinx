@@ -45,6 +45,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   assert(_ufc_dofmap);
 
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+
   // Check that mesh has been ordered
   if (!dolfin_mesh.ordered())
      error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
@@ -83,6 +86,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   assert(_ufc_dofmap);
 
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+
   // Check that mesh has been ordered
   if (!dolfin_mesh.ordered())
      error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
@@ -119,6 +125,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
                                            component, ufc_mesh, mesh));
   assert(_ufc_dofmap);
+
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Set UFC offset
   this->ufc_offset = offset;
@@ -186,6 +195,9 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
                _is_view(false), _distributed(distributed)
 {
   assert(_ufc_dofmap);
+
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Check that mesh has been ordered
   if (!mesh.ordered())
@@ -474,5 +486,17 @@ std::string DofMap::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
+                                            const Mesh& mesh)
+{
+  // Check geometric dimension
+  if (dofmap.geometric_dimension() != mesh.geometry().dim())
+    error("Geometric dimension of the UFC dofmap and the Mesh do not match.");
+
+  // Check topological dimension
+  if (dofmap.topological_dimension() != mesh.topology().dim())
+    error("Topological dimension of the UFC dofmap and the Mesh do not match.");
 }
 //-----------------------------------------------------------------------------
