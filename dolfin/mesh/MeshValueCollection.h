@@ -339,6 +339,8 @@ namespace dolfin
         }
       }
     }
+
+    return *this;
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -346,6 +348,8 @@ namespace dolfin
   {
     _dim = mesh_value_collection.dim();
     _values = mesh_value_collection.values();
+
+    return *this;
   }
   //---------------------------------------------------------------------------
   template <typename T>
