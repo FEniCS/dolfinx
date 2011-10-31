@@ -465,6 +465,7 @@ public:
 int main()
 {
   CPPUNIT_TEST_SUITE_REGISTRATION(MeshIterators);
+  CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollections);
 
   // FIXME: The following test breaks in parallel
   if (dolfin::MPI::num_processes() == 1)
