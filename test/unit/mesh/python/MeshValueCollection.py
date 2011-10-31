@@ -53,7 +53,7 @@ class MeshValueCollections(unittest.TestCase):
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, facet in enumerate(facets(cell)):
-              all_new = all_new and f.set_value(facet.index(), i, value+i)
+              all_new = all_new and f.set_value(cell.index(), i, value+i)
 
       g = MeshValueCollection("int", 1)
       g.assign(f)
@@ -64,7 +64,7 @@ class MeshValueCollections(unittest.TestCase):
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, facet in enumerate(facets(cell)):
-              self.assertEqual(value, g.get_value(facet.index(), i))
+              self.assertEqual(value+i, g.get_value(cell.index(), i))
           
   def testAssign2DVertices(self):
       mesh = UnitSquare (3, 3)
@@ -75,7 +75,7 @@ class MeshValueCollections(unittest.TestCase):
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, vert in enumerate(vertices(cell)):
-              all_new = all_new and f.set_value(vert.index(), i, value+i)
+              all_new = all_new and f.set_value(cell.index(), i, value+i)
 
       g = MeshValueCollection("int", 0)
       g.assign(f)
@@ -86,7 +86,7 @@ class MeshValueCollections(unittest.TestCase):
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, vert in enumerate(vertices(cell)):
-              self.assertEqual(value, g.get_value(vert.index(), i))
+              self.assertEqual(value+i, g.get_value(cell.index(), i))
           
   def testMeshFunctionAssign2DCells(self):
       mesh = UnitSquare (3, 3)
@@ -114,7 +114,7 @@ class MeshValueCollections(unittest.TestCase):
       
       for cell in cells(mesh):
           for i, facet in enumerate(facets(cell)):
-              self.assertEqual(25, g.get_value(facet.index(), i))
+              self.assertEqual(25, g.get_value(cell.index(), i))
           
   def testMeshFunctionAssign2DVertices(self):
       mesh = UnitSquare (3, 3)
@@ -126,7 +126,7 @@ class MeshValueCollections(unittest.TestCase):
       
       for cell in cells(mesh):
           for i, vert in enumerate(vertices(cell)):
-              self.assertEqual(25, g.get_value(vert.index(), i))
+              self.assertEqual(25, g.get_value(cell.index(), i))
           
 if __name__ == "__main__":
     unittest.main()
