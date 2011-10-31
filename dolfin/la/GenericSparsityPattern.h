@@ -68,7 +68,7 @@ namespace dolfin
     /// Return local range for dimension dim
     virtual std::pair<uint, uint> local_range(uint dim) const = 0;
 
-    /// Return total number of nonzeros in local_range for dimension 0
+    /// Return total number of nonzeros in local_range
     virtual uint num_nonzeros() const = 0;
 
     /// Fill vector with number of nonzeros for diagonal block in local_range for dimension 0

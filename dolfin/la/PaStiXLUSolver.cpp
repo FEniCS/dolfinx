@@ -102,10 +102,10 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_VERBOSE] = API_VERBOSE_YES;
 
   // LU or Cholesky
-  iparm[IPARM_SYM] = API_SYM_YES;
-  iparm[IPARM_FACTORIZATION] = API_FACT_LLT;
-  //iparm[IPARM_SYM] = API_SYM_NO;
-  //iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+  //iparm[IPARM_SYM] = API_SYM_YES;
+  //iparm[IPARM_FACTORIZATION] = API_FACT_LLT;
+  iparm[IPARM_SYM] = API_SYM_NO;
+  iparm[IPARM_FACTORIZATION] = API_FACT_LU;
 
   // Graph (matrix) is distributed
   iparm[IPARM_GRAPHDIST] = API_YES;

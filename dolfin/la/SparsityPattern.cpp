@@ -74,7 +74,6 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   // Set ownership range
   this->ownership_range = ownership_range;
 
-
   // Get local range
   row_range_min = this->ownership_range[0].first;
   row_range_max = this->ownership_range[0].second;
@@ -172,6 +171,8 @@ dolfin::uint SparsityPattern::num_nonzeros() const
   typedef std::vector<set_type>::const_iterator row_it;
   for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
     nz += row->size();
+  for (row_it row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
+    nz += row->size();
   return nz;
 }
 //-----------------------------------------------------------------------------
@@ -197,7 +198,7 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros)
     error("Non-zero entries per row can be computed for matrices only.");
 
   // Resize vector
-  num_nonzeros.resize(diagonal.size());
+  num_nonzeros.resize(off_diagonal.size());
 
   // Compute number of nonzeros per row
   typedef std::vector<set_type>::const_iterator row_it;
