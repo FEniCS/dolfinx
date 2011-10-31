@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-10-04
+// Last changed: 2011-10-30
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -153,6 +153,20 @@ namespace dolfin
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
     bool set_value(uint entity_index, const T& value, const Mesh& mesh);
+
+    /// Get marker value for given entity defined by a cell index and
+    /// a local entity index
+    ///
+    /// *Arguments*
+    ///     cell_index (uint)
+    ///         The index of the cell.
+    ///     local_entity (uint)
+    ///         The local index of the entity relative to the cell.
+    ///
+    /// *Returns*
+    ///     marker_value (T)
+    ///         The value of the marker.
+    T get_value(uint cell_index, uint local_entity);
 
     /// Get all values
     ///
@@ -397,6 +411,19 @@ namespace dolfin
     std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
     return it.second;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  T MeshValueCollection<T>::get_value(uint cell_index,
+				      uint local_entity)
+  {
+    const std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
+    const typename std::map<std::pair<uint, uint>, T>::const_iterator it = 
+      _values.find(pos);
+    if (it == _values.end())
+      error("No value stored for cell index: %d and local index: %d", 
+	    cell_index, local_entity);
+    return it->second;
   }
   //---------------------------------------------------------------------------
   template <typename T>

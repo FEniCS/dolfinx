@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-14
-// Last changed: 2011-03-31
+// Last changed: 2011-10-30
 //
 // Unit tests for the mesh library
 
@@ -252,8 +252,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), 0);
-      CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+      CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
     }
   }
 
@@ -284,8 +283,7 @@ public:
       for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
       {
         const int value = ncells - cell->index() + i;
-        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
-        CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+	CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
       }
     }
   }
@@ -317,8 +315,7 @@ public:
       for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
       {
         const int value = ncells - cell->index() + i;
-        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
-        CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+	CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
       }
     }
   }
@@ -339,8 +336,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), 0);
-      CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+      CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
     }
   }
 
@@ -356,8 +352,7 @@ public:
     {
       for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
       {
-        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
-        CPPUNIT_ASSERT_EQUAL(25, g.values()[key]);
+	CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
     }
   }
@@ -374,8 +369,7 @@ public:
     {
       for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
       {
-        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
-        CPPUNIT_ASSERT_EQUAL(25, g.values()[key]);
+	CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
     }
   }
