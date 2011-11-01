@@ -70,11 +70,9 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::init_mpi()
 {
   #ifdef HAS_MPI
-  std::cout << "Here I am in MPI" << std::endl;
   if( MPI::Is_initialized() )
     return;
 
-  std::cout << "Here I am in MPI (1)" << std::endl;
   // Initialise MPI and take responsibility
   MPI::Init();
   singleton().control_mpi = true;
@@ -86,11 +84,8 @@ void SubSystemsManager::init_mpi()
 void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
 {
   #ifdef HAS_MPI
-  std::cout << "Here I am in MPI threaded" << std::endl;
   if( MPI::Is_initialized() )
     return;
-
-  std::cout << "Here I am again MPI threaded (1)" << std::endl;
 
   // Initialise MPI and take responsibility
   int required = MPI_THREAD_MULTIPLE;
@@ -123,8 +118,6 @@ void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
 void SubSystemsManager::init_petsc()
 {
 #ifdef HAS_PETSC
-  std::cout << "Here I am in PETSc init" << std::endl;
-
   if ( singleton().petsc_initialized )
     return;
 
