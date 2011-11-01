@@ -30,6 +30,7 @@
 #include "GenericVector.h"
 #include "SparsityPattern.h"
 #include "GenericMatrix.h"
+#include "LUSolver.h"
 #include "STLMatrix.h"
 #include "PaStiXLUSolver.h"
 
@@ -43,6 +44,17 @@ extern "C"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Parameters PaStiXLUSolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.rename("pastix_lu_solver");
+
+  // Number of threads per MPI process
+  p.add<uint>("num_threads");
+
+  return p;
+}
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
   : A(reference_to_no_delete_pointer(A)), id(0)
@@ -87,13 +99,19 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   const uint n = row_ptr.size() - 1;
 
+  iparm[IPARM_THREAD_NBR] = 4;
+
   // Check matrix
   d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES,
 		                   API_SYM_YES,  API_YES,
 		                   n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
 
   // Number of threads per MPI process
-  iparm[IPARM_THREAD_NBR] = 1;
+  //if (parameters["num_threads"].is_set())
+  //  iparm[IPARM_THREAD_NBR] = parameters["num_threads"];
+  //else
+  //  iparm[IPARM_THREAD_NBR] = dolfin::parameters["num_threads"];
+  iparm[IPARM_THREAD_NBR] = 4;
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;

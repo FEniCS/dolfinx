@@ -70,9 +70,11 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::init_mpi()
 {
   #ifdef HAS_MPI
+  std::cout << "Here I am in MPI" << std::endl;
   if( MPI::Is_initialized() )
     return;
 
+  std::cout << "Here I am in MPI (1)" << std::endl;
   // Initialise MPI and take responsibility
   MPI::Init();
   singleton().control_mpi = true;
@@ -81,9 +83,48 @@ void SubSystemsManager::init_mpi()
   #endif
 }
 //-----------------------------------------------------------------------------
+void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
+{
+  #ifdef HAS_MPI
+  std::cout << "Here I am in MPI threaded" << std::endl;
+  if( MPI::Is_initialized() )
+    return;
+
+  std::cout << "Here I am again MPI threaded (1)" << std::endl;
+
+  // Initialise MPI and take responsibility
+  int required = MPI_THREAD_MULTIPLE;
+  int provided = -1;
+  MPI_Init_thread(&argc, &argv, required, &provided);
+  singleton().control_mpi = true;
+
+  switch (provided)
+    {
+    case MPI_THREAD_SINGLE:
+      printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
+      break;
+    case MPI_THREAD_FUNNELED:
+      printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
+      break;
+    case MPI_THREAD_SERIALIZED:
+      printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
+      break;
+    case MPI_THREAD_MULTIPLE:
+      printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
+      break;
+    default:
+      printf("MPI_Init_thread level = ???\n");
+    }
+  #else
+  // Do nothing
+  #endif
+}
+//-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
 #ifdef HAS_PETSC
+  std::cout << "Here I am in PETSc init" << std::endl;
+
   if ( singleton().petsc_initialized )
     return;
 
