@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <petscconf.h>
 #include <dolfin/common/types.h>
 
 #ifdef HAS_PASTIX

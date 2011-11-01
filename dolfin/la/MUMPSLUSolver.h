@@ -24,7 +24,10 @@
 #define __DOLFIN_MUMPS_LU_SOLVER_H
 
 #include <boost/shared_ptr.hpp>
+
+#ifdef HAS_PETSC
 #include <petscconf.h>
+#endif
 
 #ifdef PETSC_HAVE_MUMPS
 
