@@ -39,15 +39,44 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   set(CMAKE_REQUIRED_INCLUDES  ${PASTIX_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${PASTIX_LIBRARIES})
 
+  # Add MPI variables if MPI has been found
+  if (MPI_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  endif()
+
+  # Add SCOTCH variables if SCOTCH has been found
+  if (SCOTCH_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${SCOTCH_INCLUDE_DIRS})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARIES})
+  endif()
+
+  # Add BLAS libs if BLAS has been found
+  if (BLAS_FOUND)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${BLAS_LIBRARIES})
+  endif()
+
   # Build and run test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+  include(CheckCSourceRuns)
+  check_c_source_runs("
 /* Test program pastix */
 
-//#include <pastix.h>
+#include <mpi.h>
+#include <pastix.h>
 
 int main()
 {
+  pastix_int_t iparm[IPARM_SIZE];
+  double       dparm[DPARM_SIZE];
+  int i = 0;
+  for (i = 0; i < IPARM_SIZE; ++i)
+    iparm[i] = 0;
+  for (i = 0; i < DPARM_SIZE; ++i)
+    dparm[i] = 0.0;
+
+  // Set default parameters
+  pastix_initParam(iparm, dparm);
 
   return 0;
 }
