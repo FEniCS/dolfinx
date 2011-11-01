@@ -21,7 +21,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-02-24
+// Last changed: 2011-10-31
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>

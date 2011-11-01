@@ -18,6 +18,7 @@
 // First added:  2011-10-19
 // Last changed:
 
+#include <algorithm>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -27,9 +28,11 @@
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
 #include "dolfin/log/dolfin_log.h"
+#include "dolfin/parameter/GlobalParameters.h"
 #include "GenericVector.h"
 #include "SparsityPattern.h"
 #include "GenericMatrix.h"
+#include "LUSolver.h"
 #include "STLMatrix.h"
 #include "PaStiXLUSolver.h"
 
@@ -40,20 +43,32 @@ extern "C"
 #include <pastix.h>
 }
 
-
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Parameters PaStiXLUSolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.rename("pastix_lu_solver");
+
+  // Number of threads per MPI process
+  p.add<uint>("num_threads");
+
+  return p;
+}
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
   : A(reference_to_no_delete_pointer(A)), id(0)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A)
   : A(A), id(0)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
@@ -93,7 +108,10 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 		                   n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
 
   // Number of threads per MPI process
-  iparm[IPARM_THREAD_NBR] = 1;
+  if (parameters["num_threads"].is_set())
+    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) parameters["num_threads"]);
+  else
+    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) dolfin::parameters["num_threads"]);
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
@@ -102,10 +120,16 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_VERBOSE] = API_VERBOSE_YES;
 
   // LU or Cholesky
-  //iparm[IPARM_SYM] = API_SYM_YES;
-  //iparm[IPARM_FACTORIZATION] = API_FACT_LLT;
-  iparm[IPARM_SYM] = API_SYM_NO;
-  iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+  if (parameters["symmetric_operator"])
+  {
+    iparm[IPARM_SYM] = API_SYM_YES;
+    iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
+  }
+  else
+  {
+    iparm[IPARM_SYM] = API_SYM_NO;
+    iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+  }
 
   // Graph (matrix) is distributed
   iparm[IPARM_GRAPHDIST] = API_YES;
@@ -113,6 +137,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   Array<int> perm(local_to_global_rows.size());
   Array<int> invp(local_to_global_rows.size());
 
+  // Number of RHS vectors
   const int nrhs = 1;
 
   // Re-order
