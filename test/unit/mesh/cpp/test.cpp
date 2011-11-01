@@ -218,6 +218,170 @@ public:
 
 };
 
+class MeshValueCollections : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(MeshValueCollections);
+  CPPUNIT_TEST(testAssign2DCells);
+  CPPUNIT_TEST(testAssign2DFacets);
+  CPPUNIT_TEST(testAssign2DVertices);
+  CPPUNIT_TEST(testMeshFunctionAssign2DCells);
+  CPPUNIT_TEST(testMeshFunctionAssign2DFacets);
+  CPPUNIT_TEST(testMeshFunctionAssign2DVertices);
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void testAssign2DCells()
+  {
+    UnitSquare mesh(3, 3);
+    const dolfin::uint ncells = mesh.num_cells();
+    MeshValueCollection<int> f(2);
+    bool all_new = true;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      bool this_new;
+      const int value = ncells - cell->index();
+      this_new = f.set_value(cell->index(), value, mesh);
+      all_new = all_new && this_new;
+    }
+    MeshValueCollection<int> g(2);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 18, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 18, g.size());
+    CPPUNIT_ASSERT(all_new);
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const int value = ncells - cell->index();
+      const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), 0);
+      CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+    }
+  }
+
+  void testAssign2DFacets()
+  {
+    UnitSquare mesh(3, 3);
+    mesh.init(2,1);
+    const dolfin::uint ncells = mesh.num_cells();
+    MeshValueCollection<int> f(1);
+    bool all_new = true;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const int value = ncells - cell->index();
+      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      {
+        bool this_new;
+        this_new = f.set_value(cell->index(), i, value+i);
+        all_new = all_new && this_new;
+      }
+    }
+    MeshValueCollection<int> g(1);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, g.size());
+    CPPUNIT_ASSERT(all_new);
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      {
+        const int value = ncells - cell->index() + i;
+        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
+        CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+      }
+    }
+  }
+
+  void testAssign2DVertices()
+  {
+    UnitSquare mesh(3, 3);
+    mesh.init(2,0);
+    const dolfin::uint ncells = mesh.num_cells();
+    MeshValueCollection<int> f(0);
+    bool all_new = true;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const int value = ncells - cell->index();
+      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      {
+        bool this_new;
+        this_new = f.set_value(cell->index(), i, value+i);
+        all_new = all_new && this_new;
+      }
+    }
+    MeshValueCollection<int> g(0);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, g.size());
+    CPPUNIT_ASSERT(all_new);
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      {
+        const int value = ncells - cell->index() + i;
+        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
+        CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+      }
+    }
+  }
+
+  void testMeshFunctionAssign2DCells()
+  {
+    UnitSquare mesh(3, 3);
+    const dolfin::uint ncells = mesh.num_cells();
+    MeshFunction<int> f(mesh, 2, 0);
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      f[cell->index()] = ncells - cell->index();
+    }
+    MeshValueCollection<int> g(2);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 18, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 18, g.size());
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const int value = ncells - cell->index();
+      const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), 0);
+      CPPUNIT_ASSERT_EQUAL(value, g.values()[key]);
+    }
+  }
+
+  void testMeshFunctionAssign2DFacets()
+  {
+    UnitSquare mesh(3, 3);
+    MeshFunction<int> f(mesh, 1, 25);
+    MeshValueCollection<int> g(1);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 33, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, g.size());
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      {
+        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
+        CPPUNIT_ASSERT_EQUAL(25, g.values()[key]);
+      }
+    }
+  }
+
+  void testMeshFunctionAssign2DVertices()
+  {
+    UnitSquare mesh(3, 3);
+    MeshFunction<int> f(mesh, 0, 25);
+    MeshValueCollection<int> g(0);
+    g = f;
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 16, f.size());
+    CPPUNIT_ASSERT_EQUAL((dolfin::uint) 54, g.size());
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      {
+        const std::pair<dolfin::uint, dolfin::uint> key(cell->index(), i);
+        CPPUNIT_ASSERT_EQUAL(25, g.values()[key]);
+      }
+    }
+  }
+
+};
+
 class InputOutput : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(InputOutput);
@@ -313,6 +477,7 @@ int main()
     CPPUNIT_TEST_SUITE_REGISTRATION(MeshRefinement);
     CPPUNIT_TEST_SUITE_REGISTRATION(BoundaryExtraction);
     CPPUNIT_TEST_SUITE_REGISTRATION(MeshFunctions);
+    CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollections);
     CPPUNIT_TEST_SUITE_REGISTRATION(InputOutput);
     CPPUNIT_TEST_SUITE_REGISTRATION(PyCCInterface);
   }

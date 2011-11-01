@@ -86,6 +86,20 @@ namespace dolfin
     ~MeshValueCollection()
     {}
 
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh_function (_MeshFunction_)
+    ///         A _MeshFunction_ object used to construct a MeshValueCollection.
+    MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
+
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh_value_collection (_MeshValueCollection_)
+    ///         A _MeshValueCollection_ object used to construct a MeshValueCollection.
+    MeshValueCollection<T>& operator=(const MeshValueCollection<T>& mesh_value_collection);
+
     /// Set the topological dimension
     ///
     /// *Arguments*
@@ -266,6 +280,58 @@ namespace dolfin
       MeshPartitioning::build_distributed_value_collection(*this, local_data,
                                                            mesh);
     }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
+  {
+    _dim = mesh_function.dim();
+
+    const Mesh& mesh = mesh_function.mesh();
+    const uint D = mesh.topology().dim();
+
+    // FIXME: Use iterators
+
+    // Handle cells as a special case
+    if (D == _dim)
+    {
+      for (uint cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
+      {
+        const std::pair<uint, uint> key(cell_index, 0);
+        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+      }
+    }
+    else
+    {
+      mesh.init(_dim, D);
+      const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
+      assert(connectivity.size() > 0);
+      for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
+      {
+        // Find the cell
+        assert(connectivity.size(entity_index) > 0);
+        const MeshEntity entity(mesh, _dim, entity_index);
+        for (uint i = 0; i < entity.num_entities(D) ; ++i)
+        {
+          // Create cell
+          const Cell cell(mesh, connectivity(entity_index)[i]);
+
+          // Find the local entity index
+          const uint local_entity = cell.index(entity);
+
+          // Insert into map
+          const std::pair<uint, uint> key(cell.index(), local_entity);
+          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+        }
+      }
+    }
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
+  {
+    _dim = mesh_value_collection.dim();
+    _values = mesh_value_collection.values();
   }
   //---------------------------------------------------------------------------
   template <typename T>
