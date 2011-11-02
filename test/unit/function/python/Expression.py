@@ -39,9 +39,6 @@ class Eval(unittest.TestCase):
           f0 = F0()
           f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
                           degree=2, a=1.)
-          f2, f3 = Expressions("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
-                    dict(a=1.), "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
-
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
           u10 = zeros(1); u20 = zeros(1)
@@ -57,13 +54,13 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(u10[0], u11)
 
           # Test *args for coordinate argument
-          f2(0.31, 0.32, 0.33, values = u20)
-          u21 = f2(0.31, 0.32, 0.33)
+          f1(0.31, 0.32, 0.33, values = u20)
+          u21 = f0(0.31, 0.32, 0.33)
           self.assertAlmostEqual(u20[0], u21)
 
           # Test Point evaluation
           p0 = Point(0.31, 0.32, 0.33)
-          u21 = f2(p0)
+          u21 = f1(p0)
           self.assertAlmostEqual(u20[0], u21)
 
           same_result = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -78,8 +75,8 @@ class Eval(unittest.TestCase):
           # FIXME: eval does not work in parallel yet
           if MPI.num_processes() == 1:
               V2 = FunctionSpace(mesh, 'CG', 2)
-              g = project(f3, V=V2)
-              u3 = f3(x)
+              g = project(f1, V=V2)
+              u3 = f1(x)
               u4 = g(x)
               self.assertAlmostEqual(u3, u4, places=5)
               self.assertRaises(TypeError, g, [0,0,0,0])
@@ -155,10 +152,8 @@ class Eval(unittest.TestCase):
 
           f0 = F0()
           f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
-          f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                               "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
 
-          for f in [f0,f1,f2,f3]:
+          for f in [f0, f1]:
                self.assertRaises(TypeError, f, "s")
                self.assertRaises(TypeError, f, [])
                self.assertRaises(TypeError, f, 0.5, 0.5, 0.5, values = zeros(3,'i'))
