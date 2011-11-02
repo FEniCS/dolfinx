@@ -86,10 +86,10 @@ namespace dolfin
     /// --- EpetraFactory interface
 
     // Return Epetra Communicator
-    Epetra_SerialComm& get_serial_comm() const;
+    Epetra_SerialComm& get_serial_comm();
 
     // Return Epetra Communicator
-    Epetra_MpiComm& get_mpi_comm() const;
+    Epetra_MpiComm& get_mpi_comm();
 
     // Return singleton instance
     static EpetraFactory& instance()

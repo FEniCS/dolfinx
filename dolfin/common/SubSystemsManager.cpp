@@ -81,20 +81,16 @@ void SubSystemsManager::init_mpi()
   #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
+int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
+                                         int required_level)
 {
   #ifdef HAS_MPI
-  std::cout << "Inside thread init" << std::endl;
-  if( MPI::Is_initialized() )
-    return;
-
-  std::cout << "Init thread (1)" << std::endl;
-
+  if (MPI::Is_initialized())
+    return -100;
 
   // Initialise MPI and take responsibility
-  int required = MPI_THREAD_MULTIPLE;
   int provided = -1;
-  MPI_Init_thread(&argc, &argv, required, &provided);
+  MPI_Init_thread(&argc, &argv, required_level, &provided);
   singleton().control_mpi = true;
 
   switch (provided)
@@ -114,8 +110,10 @@ void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
     default:
       printf("MPI_Init_thread level = ???\n");
     }
+
+  return provided;
   #else
-  // Do nothing
+  return -1;
   #endif
 }
 //-----------------------------------------------------------------------------

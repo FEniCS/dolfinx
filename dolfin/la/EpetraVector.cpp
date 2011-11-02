@@ -128,7 +128,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   boost::scoped_ptr<Epetra_BlockMap> epetra_map;
 
   // Epetra factory and serial communicator
-  const EpetraFactory& f = EpetraFactory::instance();
+  EpetraFactory& f = EpetraFactory::instance();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Compute local size
@@ -213,7 +213,7 @@ void EpetraVector::apply(std::string mode)
   if (MPI::sum(static_cast<uint>(off_process_set_values.size())) > 0)
   {
     // Create communicator
-    const EpetraFactory& f = EpetraFactory::instance();
+    EpetraFactory& f = EpetraFactory::instance();
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
     Epetra_SerialComm serial_comm = f.get_serial_comm();
 
@@ -396,7 +396,7 @@ void EpetraVector::gather(GenericVector& y,
   EpetraVector& _y = y.down_cast<EpetraVector>();
 
   // Create serial communicator
-  const EpetraFactory& f = EpetraFactory::instance();
+  EpetraFactory& f = EpetraFactory::instance();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
