@@ -93,18 +93,17 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     data.ICNTL(4) = 1;
 
-  // Matrix symmetry (0=non-symmetric/1=symmetric)
+  // Matrix symmetry (0=non-symmetric/2=symmetric)
   // LU or Cholesky
-  //if (parameters["symmetric_operator"])
-  //  data.sym = 1;
-  //else
-    data.sym = 0;
+  data.sym = 0;
+  if (parameters["symmetric_operator"])
+    data.sym = 2;
 
   // Initialise MUMPS
   dmumps_c(&data);
 
   // Related to use of ScaLAPACK (+/-. Negative is faster?)
-  //data.ICNTL(13) = 1;
+  //data.ICNTL(13) = -1;
 
   // Solve transpose (1: A x = b, otherwise A^T x = b)
   data.ICNTL(9) = 1;
@@ -123,6 +122,10 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
   data.ICNTL(28) = 0;
+  //if (MPI::num_processes() > 1)
+  //  data.ICNTL(28) = 2;
+  //else
+  //  data.ICNTL(28) = 0;
 
   // Parallel graph partitioning library (0=auto, 1=pt-scotch, 2=parmetis)
   data.ICNTL(29) = 0;

@@ -54,6 +54,9 @@ Parameters PaStiXLUSolver::default_parameters()
   // Number of threads per MPI process
   p.add<uint>("num_threads");
 
+  // Check matrix for consistency
+  p.add("check_matrix", false);
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -103,9 +106,11 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   const uint n = row_ptr.size() - 1;
 
   // Check matrix
-  d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES,
-		                   API_SYM_YES,  API_YES,
-		                   n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
+  if (parameters["check_matrix"])
+  {
+    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_YES, API_YES,
+		                     n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
+  }
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
