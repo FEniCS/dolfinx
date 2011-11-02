@@ -84,8 +84,12 @@ void SubSystemsManager::init_mpi()
 void SubSystemsManager::init_mpi_threaded(int argc, char* argv[])
 {
   #ifdef HAS_MPI
+  std::cout << "Inside thread init" << std::endl;
   if( MPI::Is_initialized() )
     return;
+
+  std::cout << "Init thread (1)" << std::endl;
+
 
   // Initialise MPI and take responsibility
   int required = MPI_THREAD_MULTIPLE;

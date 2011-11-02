@@ -117,7 +117,11 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
 
   // Level of verbosity
-  iparm[IPARM_VERBOSE] = API_VERBOSE_YES;
+  if (parameters["verbose"])
+    iparm[IPARM_VERBOSE] = API_VERBOSE_YES;
+  else
+    iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
+
 
   // LU or Cholesky
   if (parameters["symmetric_operator"])
