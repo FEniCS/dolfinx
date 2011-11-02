@@ -93,8 +93,7 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     data.ICNTL(4) = 1;
 
-  // Matrix symmetry (0=non-symmetric/2=symmetric)
-  // LU or Cholesky
+  // Matrix symmetry (0=non-symmetric/2=symmetric postitve defn/2=symmetric)
   data.sym = 0;
   if (parameters["symmetric_operator"])
     data.sym = 2;
@@ -121,11 +120,10 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  data.ICNTL(28) = 0;
-  //if (MPI::num_processes() > 1)
-  //  data.ICNTL(28) = 2;
-  //else
-  //  data.ICNTL(28) = 0;
+  if (MPI::num_processes() > 1)
+    data.ICNTL(28) = 2;
+  else
+    data.ICNTL(28) = 0;
 
   // Parallel graph partitioning library (0=auto, 1=pt-scotch, 2=parmetis)
   data.ICNTL(29) = 0;
