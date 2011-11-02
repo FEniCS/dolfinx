@@ -33,6 +33,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <dolfin/common/MPIObject.h>
 #include "GenericVector.h"
 
 class Epetra_FEVector;
@@ -54,7 +55,7 @@ namespace dolfin
   /// access the Epetra_FEVector object using the function vec() or vec_ptr()
   /// and use the standard Epetra interface.
 
-  class EpetraVector: public GenericVector
+  class EpetraVector: public GenericVector, public MPIObject
   {
   public:
 

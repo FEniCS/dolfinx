@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-10-19
+// Last changed: 2011-11-02
 
 #ifdef HAS_TRILINOS
 
@@ -44,15 +44,7 @@ EpetraFactory EpetraFactory::factory;
 //-----------------------------------------------------------------------------
 EpetraFactory::EpetraFactory()
 {
-  // Initialise MPI
-  SubSystemsManager::init_mpi();
-
-  serial_comm.reset(new Epetra_SerialComm());
-
-  // Why does this not work with dolfin::MPICommunicator?
-  //MPICommunicator _mpi_comm;
-  //mpi_comm.reset(new Epetra_MpiComm(*_mpi_comm));
-  mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraFactory::~EpetraFactory()
@@ -85,9 +77,8 @@ EpetraLUSolver* EpetraFactory::create_lu_solver(std::string method) const
   return new EpetraLUSolver(method);
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver*
-EpetraFactory::create_krylov_solver(std::string method,
-                                    std::string preconditioner) const
+EpetraKrylovSolver* EpetraFactory::create_krylov_solver(std::string method,
+                                              std::string preconditioner) const
 {
   return new EpetraKrylovSolver(method, preconditioner);
 }
@@ -110,17 +101,24 @@ EpetraFactory::krylov_solver_preconditioners() const
   return EpetraKrylovSolver::preconditioners();
 }
 //-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::get_serial_comm() const
+Epetra_SerialComm& EpetraFactory::get_serial_comm()
 {
-  assert(serial_comm);
+  if (!serial_comm)
+  {
+    serial_comm.reset(new Epetra_SerialComm());
+    assert(serial_comm);
+  }
   return *serial_comm;
 }
 //-----------------------------------------------------------------------------
-Epetra_MpiComm& EpetraFactory::get_mpi_comm() const
+Epetra_MpiComm& EpetraFactory::get_mpi_comm()
 {
-  assert(mpi_comm);
+  if (!mpi_comm)
+  {
+    mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
+    assert(mpi_comm);
+  }
   return *mpi_comm;
 }
 //-----------------------------------------------------------------------------
-
 #endif
