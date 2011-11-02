@@ -74,13 +74,14 @@ class Eval(unittest.TestCase):
 
           # FIXME: eval does not work in parallel yet
           if MPI.num_processes() == 1:
-              V2 = FunctionSpace(mesh, 'CG', 2)
-              g = project(f1, V=V2)
-              u3 = f1(x)
-              u4 = g(x)
-              self.assertAlmostEqual(u3, u4, places=5)
-              self.assertRaises(TypeError, g, [0,0,0,0])
-              self.assertRaises(TypeError, g, Point(0,0))
+               f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
+               V2 = FunctionSpace(mesh, 'CG', 2)
+               g = project(f2, V=V2)
+               u3 = f2(x)
+               u4 = g(x)
+               self.assertAlmostEqual(u3, u4, places=5)
+               self.assertRaises(TypeError, g, [0,0,0,0])
+               self.assertRaises(TypeError, g, Point(0,0))
 
      def testUflEval(self):
           class F0(Expression):
