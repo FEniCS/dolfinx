@@ -27,7 +27,6 @@
 #ifdef HAS_TRILINOS
 
 #include <vector>
-#include <dolfin/common/MPIObject.h>
 #include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 
@@ -44,7 +43,7 @@ namespace dolfin
   /// Epetra_FECrsGraph and a dynamic_cast is used to retrieve the
   /// underlying representation when creating Epetra matrices.
 
-  class EpetraSparsityPattern : public GenericSparsityPattern, public MPIObject
+  class EpetraSparsityPattern : public GenericSparsityPattern
   {
   public:
 

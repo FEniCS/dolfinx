@@ -115,6 +115,7 @@ Epetra_MpiComm& EpetraFactory::get_mpi_comm()
 {
   if (!mpi_comm)
   {
+    SubSystemsManager::init_mpi();
     mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
     assert(mpi_comm);
   }

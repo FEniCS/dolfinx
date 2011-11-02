@@ -27,7 +27,6 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/MPIObject.h>
 #include "GenericMatrix.h"
 
 class Epetra_FECrsMatrix;
@@ -48,7 +47,7 @@ namespace dolfin
   /// access the Epetra_FECrsMatrix object using the function mat() and
   /// use the standard Epetra interface.
 
-  class EpetraMatrix : public GenericMatrix, public MPIObject
+  class EpetraMatrix : public GenericMatrix
   {
   public:
 

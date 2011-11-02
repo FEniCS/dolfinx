@@ -29,7 +29,6 @@
 #include <map>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/MPIObject.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -53,7 +52,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of Epetra.
 
-  class EpetraKrylovSolver : public GenericLinearSolver, public MPIObject
+  class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
 

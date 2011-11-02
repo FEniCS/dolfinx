@@ -27,7 +27,6 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/MPIObject.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
@@ -51,7 +50,7 @@ namespace dolfin
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
   /// preconditioner type and parameters.
 
-  class TrilinosPreconditioner : public Variable, public MPIObject
+  class TrilinosPreconditioner : public Variable
   {
   public:
 

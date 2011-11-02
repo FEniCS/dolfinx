@@ -26,7 +26,6 @@
 #define __EPETRA_LU_SOLVER_H
 
 #include <boost/scoped_ptr.hpp>
-#include <dolfin/common/MPIObject.h>
 #include "GenericLUSolver.h"
 
 /// Forward declaration
@@ -45,7 +44,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of Epetra.
 
-  class EpetraLUSolver : public GenericLUSolver, public MPIObject
+  class EpetraLUSolver : public GenericLUSolver
   {
   public:
 

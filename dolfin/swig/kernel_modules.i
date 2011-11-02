@@ -14,7 +14,6 @@
 %include "dolfin/common/Variable.h"
 %include "dolfin/common/Hierarchical.h"
 %include "dolfin/common/MPI.h"
-%include "dolfin/common/MPIObject.h"
 %include "dolfin/common/SubSystemsManager.h"
 %include "dolfin/swig/common_post.i"
 

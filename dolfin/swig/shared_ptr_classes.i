@@ -69,7 +69,6 @@
 %shared_ptr(dolfin::TimeSeries)
 
 // common
-%shared_ptr(dolfin::MPIObject)
 %shared_ptr(dolfin::Variable)
 
 // fem

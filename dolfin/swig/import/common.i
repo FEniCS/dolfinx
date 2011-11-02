@@ -12,5 +12,4 @@
 %import(module="dolfin.cpp") "dolfin/common/Variable.h"
 %import(module="dolfin.cpp") "dolfin/common/Hierarchical.h"
 %import(module="dolfin.cpp") "dolfin/common/MPI.h"
-%import(module="dolfin.cpp") "dolfin/common/MPIObject.h"
 %import(module="dolfin.cpp") "dolfin/common/SubSystemsManager.h"
