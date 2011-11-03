@@ -73,6 +73,9 @@ namespace dolfin
     // Gobal size
     unsigned int _size[2];
 
+    // Symmetric storage
+    const bool _symmetric;
+
     // Array base (C/Fortran)
     const bool _base_one;
   };

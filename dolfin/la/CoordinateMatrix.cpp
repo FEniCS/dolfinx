@@ -27,14 +27,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
-                                   bool base_one) : _base_one(base_one)
+                                   bool base_one) : _symmetric(symmetric),
+                                   _base_one(base_one)
 {
   _size[0] = A.size(0);
   _size[1] = A.size(1);
 
   // Iterate over local rows
   const std::pair<uint, uint> local_row_range = A.local_range(0);
-  if (!symmetric)
+  if (!_symmetric)
   {
     for (uint i = local_row_range.first; i < local_row_range.second; ++i)
     {
@@ -90,8 +91,21 @@ double CoordinateMatrix::norm(std::string norm_type) const
     error("Do not know to comput %s norm for CoordinateMatrix", norm_type.c_str());
 
   double _norm = 0.0;
-  for (uint i = 0; i < _vals.size(); ++i)
-    _norm += _vals[i]*_vals[i];
+  if (!_symmetric)
+  {
+    for (uint i = 0; i < _vals.size(); ++i)
+      _norm += _vals[i]*_vals[i];
+  }
+  else
+  {
+    for (uint i = 0; i < _vals.size(); ++i)
+    {
+      if (_rows[i] == _cols[i])
+        _norm += _vals[i]*_vals[i];
+      else
+        _norm += 2.0*_vals[i]*_vals[i];
+    }
+  }
   return std::sqrt(dolfin::MPI::sum(_norm));
 }
 //-----------------------------------------------------------------------------
