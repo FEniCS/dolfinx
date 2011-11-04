@@ -45,7 +45,8 @@ tests = {
     "quadrature":     ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "jit":            ["test"],
-    "bc-indicators" : ["test"]
+    "bc-indicators" : ["test"],
+    "book":           ["chapter_1", "chapter_10"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
