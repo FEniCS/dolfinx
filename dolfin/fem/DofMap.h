@@ -20,10 +20,10 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2011-04-13
+// Last changed: 2011-10-31
 
-#ifndef __DOF_MAP_H
-#define __DOF_MAP_H
+#ifndef __DOLFIN_DOF_MAP_H
+#define __DOLFIN_DOF_MAP_H
 
 #include <map>
 #include <memory>
@@ -322,6 +322,10 @@ namespace dolfin
     // Initialize the UFC dofmap
     static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
+
+    // Check dimensional consistency between UFC dofmap and the mesh
+    static void check_dimensional_consistency(const ufc::dofmap& dofmap,
+                                              const Mesh& mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<uint> > _dofmap;

@@ -119,9 +119,6 @@ namespace dolfin
     // List of timings for tasks, map from string to (num_timings, total_time)
     std::map<std::string, std::pair<uint, double> > timings;
 
-    // Process number (-1 if we are not running in parallel)
-    int process_number;
-
   };
 
 }

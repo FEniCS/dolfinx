@@ -42,11 +42,9 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
-    process_number(-1)
+  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout)
 {
-  if (MPI::num_processes() > 1)
-    process_number = MPI::process_number();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
@@ -258,6 +256,8 @@ void Logger::write(int log_level, std::string msg) const
   // Check log level
   if (!active || log_level < this->log_level)
     return;
+
+  const uint process_number = MPI::process_number();
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];

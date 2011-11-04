@@ -128,7 +128,7 @@
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
-// NOTE: Most of the MeshFunctions are declared sharepointers in 
+// NOTE: Most of the MeshFunctions are declared sharepointers in
 // NOTE: mesh_pre.i, mesh_post.i
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
