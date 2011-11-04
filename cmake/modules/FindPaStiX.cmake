@@ -5,7 +5,7 @@
 #  PASTIX_INCLUDE_DIRS - include directories for PaStiX
 #  PASTIX_LIBRARIES    - libraries for PaStiX
 
-# Check for header file
+# Check for PaStiX header file
 find_path(PASTIX_INCLUDE_DIRS pastix.h
   HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include
   PATH_SUFFIXES install
@@ -24,8 +24,23 @@ find_library(RT_LIBRARY rt
   DOC "The RT library"
   )
 
+# Check for hwloc header
+find_library(RT_LIBRARY rt
+  DOC "The RT library"
+  )
+
+# Check for hwloc header
+find_path(HWLOC_INCLUDE_DIRS pastix.h
+  DOC "Directory where the hwloc header is located"
+ )
+
+# Check for hwloc library
+find_library(HWLOC_LIBRARY hwloc
+  DOC "The hwloc library"
+  )
+
 # Collect libraries
-set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY})
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY} ${HWLOC_LIBRARY})
 
 mark_as_advanced(
   PASTIX_INCLUDE_DIRS
