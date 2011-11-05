@@ -34,7 +34,7 @@ tests = {
     "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
     "function":       ["Function", "FunctionSpace", "Expression", "Constant"],
     "math":           ["basic"],
-    "mesh":           ["test", "MeshFunction", "Edge", "Face"],
+    "mesh":           ["test", "MeshFunction", "Edge", "Face", "MeshValueCollection"],
     "meshconvert":    ["test"],
     "refinement":     ["refine"],
     "la":             ["test", "Scalar", "Vector", "Matrix"],

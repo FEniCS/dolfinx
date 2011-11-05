@@ -167,14 +167,14 @@ def _new_closure(MeshType):
 
 # Create the named MeshFunction types
 VertexFunction = type("VertexFunction", (), \
-		                {"__new__":_new_closure("VertexFunction"),\
-                       "__doc__":"Create MeshFunction of topological" \
+		      {"__new__":_new_closure("VertexFunction"),\
+                       "__doc__":"Create MeshFunction of topological"\
                        " dimension 0 on given mesh."})
 EdgeFunction = type("EdgeFunction", (), \
                     {"__new__":_new_closure("EdgeFunction"),\
                      "__doc__":"Create MeshFunction of topological"\
                      " dimension 1 on given mesh."})
-FaceFunction = type("FaceFunction", (), \
+FaceFunction = type("FaceFunction", (),\
                     {"__new__":_new_closure("FaceFunction"),\
                      "__doc__":"Create MeshFunction of topological"\
                      " dimension 2 on given mesh."})
@@ -191,26 +191,36 @@ CellFunction = type("CellFunction", (),\
 //-----------------------------------------------------------------------------
 // MeshValueCollection macro
 //-----------------------------------------------------------------------------
-%define DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, TYPE, TYPENAME)
-%shared_ptr(dolfin::MESHVALUECOLLECTION<TYPE>)
-%template(MESHVALUECOLLECTION ## TYPENAME) dolfin::MESHVALUECOLLECTION<TYPE>;
+%define DECLARE_MESHVALUECOLLECTION(TYPE, TYPENAME)
+%shared_ptr(dolfin::MeshValueCollection<TYPE>)
+%template(MeshValueCollection ## TYPENAME) dolfin::MeshValueCollection<TYPE>;
+
+%feature("docstring") dolfin::MeshValueCollection::assign "Missing docstring";
+
+// Extend MeshFunction interface for assign methods
+%extend dolfin::MeshValueCollection<TYPE>
+{
+  
+  void assign(const dolfin::MeshFunction<TYPE>& mesh_function) 
+  { 
+    (*self) = mesh_function; 
+  }
+  
+  void assign(const dolfin::MeshValueCollection<TYPE>& mesh_value_collection)
+  { 
+    (*self) = mesh_value_collection; 
+  }
+}
 
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for declaring MeshValueCollection
+// Run macros for declaring MeshValueCollection
 //-----------------------------------------------------------------------------
-%define DECLARE_MESHVALUECOLLECTIONS(MESHVALUECOLLECTION)
-DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, unsigned int, UInt)
-DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, int, Int)
-DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, double, Double)
-DECLARE_MESHVALUECOLLECTION(MESHVALUECOLLECTION, bool, Bool)
-%enddef
-
-//-----------------------------------------------------------------------------
-// Run Macros to declare the different MeshValueCollections
-//-----------------------------------------------------------------------------
-DECLARE_MESHVALUECOLLECTIONS(MeshValueCollection)
+DECLARE_MESHVALUECOLLECTION(unsigned int, UInt)
+DECLARE_MESHVALUECOLLECTION(int, Int)
+DECLARE_MESHVALUECOLLECTION(double, Double)
+DECLARE_MESHVALUECOLLECTION(bool, Bool)
 
 // Create docstrings to the MeshValueCollection
 %pythoncode
@@ -218,13 +228,25 @@ DECLARE_MESHVALUECOLLECTIONS(MeshValueCollection)
 _meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__
 _meshvaluecollection_doc_string += """
   *Arguments*
-    tp (str)
-      String defining the type of the MeshValueCollection
-      Allowed: 'int', 'uint', 'double', and 'bool'
-    mesh (_Mesh_)
-      A DOLFIN mesh.
-    dim (uint)
-      The topological dimension of the MeshValueCollection.
+      tp (str)
+         String defining the type of the MeshValueCollection
+          Allowed: 'int', 'uint', 'double', and 'bool'
+      dim (uint)
+          The topological dimension of the MeshValueCollection.
+          Optional.
+      mesh_function (_MeshFunction_)
+          The MeshValueCollection will get the values from the mesh_function
+          Optional.
+       mesh (Mesh)
+          A mesh associated with the collection. The mesh is used to
+          map collection values to the appropriate process.
+          Optional, used when read from file.
+      filename (std::string)
+          The XML file name.
+          Optional, used when read from file.
+      dim (uint)
+          The mesh entity dimension for the mesh value collection.
+          Optional, used when read from file
 """
 class MeshValueCollection(object):
     __doc__ = _meshvaluecollection_doc_string

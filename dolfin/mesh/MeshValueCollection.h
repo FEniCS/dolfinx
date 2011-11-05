@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-10-04
+// Last changed: 2011-10-30
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -86,6 +86,20 @@ namespace dolfin
     ~MeshValueCollection()
     {}
 
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh_function (_MeshFunction_)
+    ///         A _MeshFunction_ object used to construct a MeshValueCollection.
+    MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
+
+    /// Assignment operator
+    ///
+    /// *Arguments*
+    ///     mesh_value_collection (_MeshValueCollection_)
+    ///         A _MeshValueCollection_ object used to construct a MeshValueCollection.
+    MeshValueCollection<T>& operator=(const MeshValueCollection<T>& mesh_value_collection);
+
     /// Set the topological dimension
     ///
     /// *Arguments*
@@ -139,6 +153,20 @@ namespace dolfin
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
     bool set_value(uint entity_index, const T& value, const Mesh& mesh);
+
+    /// Get marker value for given entity defined by a cell index and
+    /// a local entity index
+    ///
+    /// *Arguments*
+    ///     cell_index (uint)
+    ///         The index of the cell.
+    ///     local_entity (uint)
+    ///         The local index of the entity relative to the cell.
+    ///
+    /// *Returns*
+    ///     marker_value (T)
+    ///         The value of the marker.
+    T get_value(uint cell_index, uint local_entity);
 
     /// Get all values
     ///
@@ -269,6 +297,62 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
+  MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
+  {
+    _dim = mesh_function.dim();
+
+    const Mesh& mesh = mesh_function.mesh();
+    const uint D = mesh.topology().dim();
+
+    // FIXME: Use iterators
+
+    // Handle cells as a special case
+    if (D == _dim)
+    {
+      for (uint cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
+      {
+        const std::pair<uint, uint> key(cell_index, 0);
+        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+      }
+    }
+    else
+    {
+      mesh.init(_dim, D);
+      const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
+      assert(connectivity.size() > 0);
+      for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
+      {
+        // Find the cell
+        assert(connectivity.size(entity_index) > 0);
+        const MeshEntity entity(mesh, _dim, entity_index);
+        for (uint i = 0; i < entity.num_entities(D) ; ++i)
+        {
+          // Create cell
+          const Cell cell(mesh, connectivity(entity_index)[i]);
+
+          // Find the local entity index
+          const uint local_entity = cell.index(entity);
+
+          // Insert into map
+          const std::pair<uint, uint> key(cell.index(), local_entity);
+          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+        }
+      }
+    }
+
+    return *this;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshValueCollection<T>& mesh_value_collection)
+  {
+    _dim = mesh_value_collection.dim();
+    _values = mesh_value_collection.values();
+
+    return *this;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
   void MeshValueCollection<T>::set_dim(uint dim)
   {
     _dim = dim;
@@ -331,6 +415,19 @@ namespace dolfin
     std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
     return it.second;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  T MeshValueCollection<T>::get_value(uint cell_index,
+				      uint local_entity)
+  {
+    const std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
+    const typename std::map<std::pair<uint, uint>, T>::const_iterator it = 
+      _values.find(pos);
+    if (it == _values.end())
+      error("No value stored for cell index: %d and local index: %d", 
+	    cell_index, local_entity);
+    return it->second;
   }
   //---------------------------------------------------------------------------
   template <typename T>
