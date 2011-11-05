@@ -30,8 +30,6 @@
 #include <sstream>
 #include <utility>
 
-#include <boost/unordered_set.hpp>
-
 #include <Epetra_BlockMap.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
@@ -99,12 +97,11 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   const uint n0 = range.first;
 
   const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
-  const std::vector<std::vector<dolfin::uint> >& d_pattern = _pattern.diagonal_pattern(SparsityPattern::sorted);
-  const std::vector<std::vector<dolfin::uint> >& o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::sorted);
+  const std::vector<std::vector<dolfin::uint> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
+  const std::vector<std::vector<dolfin::uint> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
 
   // Get number of non-zeroes per row (on and off diagonal)
-  std::vector<uint> dnum_nonzeros(num_local_rows);
-  std::vector<uint> onum_nonzeros(num_local_rows);
+  std::vector<uint> dnum_nonzeros, onum_nonzeros;
   sparsity_pattern.num_nonzeros_diagonal(dnum_nonzeros);
   sparsity_pattern.num_nonzeros_off_diagonal(onum_nonzeros);
 
@@ -117,7 +114,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // larger than those in row_map are marked as nonlocal (and assembly fails).
   // The domain_map fixes that problem, at least in the serial case.
   // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
-  const std::pair<uint,uint> colrange = sparsity_pattern.local_range(1);
+  const std::pair<uint, uint> colrange = sparsity_pattern.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
   Epetra_Map domain_map(sparsity_pattern.size(1), num_local_cols, 0, comm);
 

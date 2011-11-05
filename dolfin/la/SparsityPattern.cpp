@@ -307,13 +307,14 @@ std::vector<std::vector<dolfin::uint> > SparsityPattern::diagonal_pattern(Type t
 {
   std::vector<std::vector<uint> > v(diagonal.size());
   for (uint i = 0; i < diagonal.size(); ++i)
-    v[i] = std::vector<uint>(diagonal[i].begin(), diagonal[i].end());
+    v[i].insert(v[i].begin(), diagonal[i].begin(), diagonal[i].end());
 
   if (type == sorted)
   {
     for (uint i = 0; i < v.size(); ++i)
       std::sort(v[i].begin(), v[i].end());
   }
+
   return v;
 }
 //-----------------------------------------------------------------------------
@@ -321,13 +322,14 @@ std::vector<std::vector<dolfin::uint> > SparsityPattern::off_diagonal_pattern(Ty
 {
   std::vector<std::vector<uint> > v(off_diagonal.size());
   for (uint i = 0; i < off_diagonal.size(); ++i)
-    v[i] = std::vector<uint>(off_diagonal[i].begin(), off_diagonal[i].end());
+    v[i].insert(v[i].begin(), off_diagonal[i].begin(), off_diagonal[i].end());
 
   if (type == sorted)
   {
     for (uint i = 0; i < v.size(); ++i)
       std::sort(v[i].begin(), v[i].end());
   }
+
   return v;
 }
 //-----------------------------------------------------------------------------
