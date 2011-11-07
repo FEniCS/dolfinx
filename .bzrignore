@@ -33,7 +33,6 @@ RE:local.*
 dolfin/dolfin-config.cmake
 
 # Demos and tests
-RE:build_demo.*
 RE:demo/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin|bin.gz)
 RE:demo/adaptivity/.*/indicators.py
@@ -45,7 +44,7 @@ RE:test/unit/io/(cpp|python)/.*.(xml|xml.gz|vtu|pvtu|pvd)
 RE:test/unit/adaptivity/(cpp|python)/.*.(bin|bin.gz)
 RE:test/.*/cpp/.*-test
 RE:bench/.*/cpp/.*-bench
-RE:test/unit/.*/cpp/test_.*
+RE:build_demo.*
 test/regression/demo.log
 demo/pde/navier-stokes/python/results
 demo/undocumented/advection-diffusion/python/results
