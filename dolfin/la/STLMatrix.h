@@ -20,17 +20,18 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-08
+// Last changed: 2011-10-29
 
-#ifndef __STL_MATRIX_H
-#define __STL_MATRIX_H
+#ifndef __DOLFIN_STL_MATRIX_H
+#define __DOLFIN_STL_MATRIX_H
 
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
 #include <boost/unordered_map.hpp>
 
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
@@ -53,12 +54,11 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix()
-    { dims[0] = dims[1] = 0; }
+    STLMatrix() : _local_range(0, 0), ncols(0) {}
 
     /// Create M x N matrix
-    STLMatrix(uint M, uint N)
-    { resize(M, N); }
+    //STLMatrix(uint M, uint N)
+    //{ resize(M, N); }
 
     /// Copy constructor
     STLMatrix(const STLMatrix& A)
@@ -74,8 +74,7 @@ namespace dolfin
     { return false; }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { resize(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
+    virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
     virtual STLMatrix* copy() const
@@ -83,16 +82,28 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { assert(dim < 2); return dims[dim]; }
+    {
+      assert(dim < 2);
+      if (dim == 0)
+        return dolfin::MPI::sum(_local_range.second - _local_range.first);
+      else
+        return ncols;
+    }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
-    { return std::make_pair(0, size(dim)); }
+    {
+      assert(dim < 2);
+      if (dim == 0)
+        return _local_range;
+      else
+        return std::make_pair(0, ncols);
+    }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     {
-      for (std::vector<std::vector<double> >::iterator row = vals.begin(); row != vals.end(); ++row)
+      for (std::vector<std::vector<double> >::iterator row = _vals.begin(); row != _vals.end(); ++row)
         std::fill(row->begin(), row->end(), 0);
     }
 
@@ -104,52 +115,41 @@ namespace dolfin
 
     //--- Implementation of the GenericMatrix interface ---
 
-    /// Initialize M x N matrix
-    virtual void resize(uint M, uint N)
-    {
-      cols.clear();
-      vals.clear();
-      cols.resize(M);
-      vals.resize(M);
-      dims[0] = M;
-      dims[1] = N;
-    }
-
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
     virtual void resize(GenericVector& y, uint dim) const
-    { y.resize(dim); }
+    { dolfin_not_implemented(); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
+    virtual void get(double* block, uint m, const uint* rows, uint n,
+                     const uint* cols) const
     { dolfin_not_implemented(); }
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void set(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols)
     { dolfin_not_implemented(); }
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern)
     { dolfin_not_implemented(); }
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type) const
-    { dolfin_not_implemented(); return 0.0; }
+    virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
-    {
-      assert(row < dims[0]);
-      columns = this->cols[row];
-      values = this->vals[row];
-    }
+    virtual void getrow(uint row, std::vector<uint>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
+    virtual void setrow(uint row, const std::vector<uint>& columns,
+                        const std::vector<double>& values)
     { dolfin_not_implemented(); }
 
     /// Set given rows to zero
@@ -185,34 +185,36 @@ namespace dolfin
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 
-    /// Resize tensor of given rank and dimensions
-    virtual void resize(uint rank, const uint* dims, bool reset)
-    {
-      // Check that the rank is 2
-      if (rank != 2)
-        error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
+    ///--- STLMatrix interface ---
 
-      // Initialize matrix
-      resize(dims[0], dims[1]);
+    /// Return matrix in CSR format
+    void csr(std::vector<double>& vals, std::vector<uint>& cols,
+             std::vector<uint>& row_ptr,
+             std::vector<uint>& local_to_global_row,
+             bool base_one = false) const;
 
-      // Save dimensions
-      this->dims[0] = dims[0];
-      this->dims[1] = dims[1];
-    }
+    /// Return number of global non-zero entries
+    uint nnz() const;
+
+    /// Return number of local non-zero entries
+    uint local_nnz() const;
 
   private:
 
+    // Local row range
+    std::pair<uint, uint> _local_range;
+
+    // Number of columns
+    uint ncols;
+
     // Storages of columns
-    std::vector<std::vector<uint> > cols;
+    std::vector<std::vector<uint> > _cols;
 
     // Storage of values
-    std::vector<std::vector<double> > vals;
+    std::vector<std::vector<double> > _vals;
 
-    //std::vector<std::map<uint, double> > matrix;
-    //std::vector<boost::unordered_map<uint, double> > matrix;
-
-    // The size of the matrix
-    uint dims[2];
+    // Off-process data
+    boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
 
   };
 
