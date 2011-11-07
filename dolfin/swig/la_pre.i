@@ -214,6 +214,51 @@ LA_PRE_FACTORY(EpetraFactory)
 %newobject dolfin::EpetraMatrix::copy;
 %newobject dolfin::EpetraVector::copy;
 
+//-----------------------------------------------------------------------------
+// Typemaps for Teuchos::RCP (Trilinos backend)
+//-----------------------------------------------------------------------------
+
+#ifdef TRILINOS_USE_RCP
+%define %RCP_to_const_ref_typemap(Type)
+%typemap(in) const Type& {
+  int res = SWIG_ConvertPtr($input, (void**)&$1, $1_descriptor, 0);
+  if (!SWIG_IsOK(res)) {
+    Teuchos::RCP<Type> *rcp_ptr;
+    int newmem = 0;
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    if (!SWIG_IsOK(res))
+      SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
+    if (rcp_ptr) {
+      $1 = rcp_ptr->get();
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+        delete rcp_ptr;
+    }
+    else
+      $1 = NULL;
+  }
+  if (!$1)
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference in method '$symname', argument $argnum of type '$type'");
+}
+
+
+%typecheck(SWIG_TYPECHECK_POINTER) const Type& {
+  void *dummy;
+  int res;
+  res = SWIG_ConvertPtr($input, &dummy, $1_descriptor, 0);
+  if (!SWIG_IsOK(res)) {
+    Teuchos::RCP<Type> *rcp_ptr;
+    int newmem = 0;
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    if (rcp_ptr && (newmem & SWIG_CAST_NEW_MEMORY))
+      delete rcp_ptr;
+  }
+  $1 = SWIG_CheckState(res);
+}
+%enddef
+
+%RCP_to_const_ref_typemap(Epetra_CrsGraph);
+%RCP_to_const_ref_typemap(Epetra_BlockMap);
+#endif
 #endif
 
 //-----------------------------------------------------------------------------

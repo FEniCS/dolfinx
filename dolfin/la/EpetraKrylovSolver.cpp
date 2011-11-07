@@ -204,12 +204,12 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
-      error("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
+      error("Epetra (Aztec00) Krylov solver failed to converge (error code %.f).",
             status[AZ_why]);
     }
     else
     {
-      warning("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
+      warning("Epetra (Aztec00) Krylov solver failed to converge (error code %.f).",
               status[AZ_why]);
     }
   }

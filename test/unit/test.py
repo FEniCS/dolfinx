@@ -34,7 +34,7 @@ tests = {
     "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
     "function":       ["Function", "FunctionSpace", "Expression", "Constant"],
     "math":           ["basic"],
-    "mesh":           ["test", "MeshFunction", "Edge", "Face"],
+    "mesh":           ["test", "MeshFunction", "Edge", "Face", "MeshValueCollection"],
     "meshconvert":    ["test"],
     "refinement":     ["refine"],
     "la":             ["test", "Scalar", "Vector", "Matrix"],
@@ -100,13 +100,6 @@ for prefix in prefixes:
                     num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
                     print "OK (%d tests)" % num_tests
                 else:
-                    # Add contents from Instant's compile.log to output
-                    instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
-                    if os.path.isfile(instant_compile_log):
-                        instant_error = file(instant_compile_log).read()
-                        output += "\n\nInstant compile.log for %s:\n\n" % test
-                        output += instant_error
-
                     print "*** Failed"
                     failed += [(test, subtest, "Python", output)]
             else:

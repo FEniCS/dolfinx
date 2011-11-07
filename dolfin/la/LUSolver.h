@@ -67,6 +67,8 @@ namespace dolfin
     {
       Parameters p("lu_solver");
       p.add("report", true);
+      p.add("verbose", false);
+      p.add("symmetric_operator", false);
       p.add("same_nonzero_pattern", false);
       p.add("reuse_factorization", false);
       return p;

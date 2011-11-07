@@ -1,6 +1,9 @@
+ - Remove batch compilation of Expression (Expressions) from Python interface
+ - Added get_value to MeshValueCollection
+ - Added assignment operator to MeshValueCollection
 1.0-beta2 [2011-10-26]
  - Change search path of parameter file to ~/.fenics/dolfin_parameters.xml
- - Add functions Parameters::has_parameter, Parameters::has_parameter_set 
+ - Add functions Parameters::has_parameter, Parameters::has_parameter_set
  - Added option to store all connectivities in a mesh for TimeSeries (false by default)
  - Added option for gzip compressed binary files for TimeSeries
  - Propagate global parameters to Krylov and LU solvers

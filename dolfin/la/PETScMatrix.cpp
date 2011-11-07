@@ -227,8 +227,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     //     row_range.first, row_range.second, col_range.first, col_range.second);
 
     // Get number of nonzeros for each row from sparsity pattern
-    std::vector<uint> num_nonzeros_diagonal(m);
-    std::vector<uint> num_nonzeros_off_diagonal(n);
+    std::vector<uint> num_nonzeros_diagonal;
+    std::vector<uint> num_nonzeros_off_diagonal;
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 

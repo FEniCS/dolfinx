@@ -87,6 +87,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshData::operator=;
 %ignore dolfin::MeshFunction::operator=;
 %ignore dolfin::MeshFunction::operator[];
+%ignore dolfin::MeshValueCollection::operator=;
 %ignore dolfin::MeshGeometry::operator=;
 %ignore dolfin::MeshTopology::operator=;
 %ignore dolfin::MeshConnectivity::operator=;

@@ -81,6 +81,42 @@ void SubSystemsManager::init_mpi()
   #endif
 }
 //-----------------------------------------------------------------------------
+int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
+                                         int required_level)
+{
+  #ifdef HAS_MPI
+  if (MPI::Is_initialized())
+    return -100;
+
+  // Initialise MPI and take responsibility
+  int provided = -1;
+  MPI_Init_thread(&argc, &argv, required_level, &provided);
+  singleton().control_mpi = true;
+
+  switch (provided)
+    {
+    case MPI_THREAD_SINGLE:
+      printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
+      break;
+    case MPI_THREAD_FUNNELED:
+      printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
+      break;
+    case MPI_THREAD_SERIALIZED:
+      printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
+      break;
+    case MPI_THREAD_MULTIPLE:
+      printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
+      break;
+    default:
+      printf("MPI_Init_thread level = ???\n");
+    }
+
+  return provided;
+  #else
+  return -1;
+  #endif
+}
+//-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
 #ifdef HAS_PETSC

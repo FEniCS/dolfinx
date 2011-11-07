@@ -27,6 +27,7 @@
 #include "dolfin/log/log.h"
 #include "CoordinateMatrix.h"
 #include "GenericVector.h"
+#include "LUSolver.h"
 #include "MUMPSLUSolver.h"
 
 #ifdef PETSC_HAVE_MUMPS
@@ -42,15 +43,25 @@ using namespace dolfin;
 #define RINFO(I) rinfo[(I)-1]
 
 //-----------------------------------------------------------------------------
+Parameters MUMPSLUSolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.rename("mumps_lu_solver");
+
+  return p;
+}
+//-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
   : A(reference_to_no_delete_pointer(A))
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A) : A(A)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::~MUMPSLUSolver()
@@ -72,14 +83,26 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Host participates in solve
   data.par = 1;
 
-  // Matrix symmetry (0=non-symmetric/1=symmetric)
+  // Output related paramters
+  //data.ICNTL(1) = 6; // error messages
+  //data.ICNTL(2) = 0;
+  //data.ICNTL(3) = 6; // Global information
+  //data.ICNTL(3) = 6; // Global information
+  if (parameters["verbose"])
+    data.ICNTL(4) = 2;
+  else
+    data.ICNTL(4) = 1;
+
+  // Matrix symmetry (0=non-symmetric/2=symmetric postitve defn/2=symmetric)
   data.sym = 0;
+  if (parameters["symmetric_operator"])
+    data.sym = 2;
 
   // Initialise MUMPS
   dmumps_c(&data);
 
   // Related to use of ScaLAPACK (+/-. Negative is faster?)
-  //data.ICNTL(13) = 1;
+  //data.ICNTL(13) = -1;
 
   // Solve transpose (1: A x = b, otherwise A^T x = b)
   data.ICNTL(9) = 1;
@@ -97,7 +120,10 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(18) = 3;
 
   // Parallel/serial analysis (0=auto, 1=serial, 2=parallel)
-  data.ICNTL(28) = 0;
+  if (MPI::num_processes() > 1)
+    data.ICNTL(28) = 2;
+  else
+    data.ICNTL(28) = 0;
 
   // Parallel graph partitioning library (0=auto, 1=pt-scotch, 2=parmetis)
   data.ICNTL(29) = 0;

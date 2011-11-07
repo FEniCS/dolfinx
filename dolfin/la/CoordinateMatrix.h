@@ -21,6 +21,7 @@
 #ifndef __DOLFIN_COORDINATE_MATRIX_H
 #define __DOLFIN_COORDINATE_MATRIX_H
 
+#include <string>
 #include <vector>
 #include <dolfin/common/types.h>
 
@@ -37,7 +38,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    CoordinateMatrix(const GenericMatrix& A, bool base_one=false);
+    CoordinateMatrix(const GenericMatrix& A, bool symmetric, bool base_one);
 
     /// Destructor
     virtual ~CoordinateMatrix() {}
@@ -54,6 +55,9 @@ namespace dolfin
     const std::vector<double>& values() const
     { return _vals; }
 
+    /// Return norm of matrix
+    double norm(std::string norm_type) const;
+
     bool base_one() const
     { return _base_one; }
 
@@ -68,6 +72,9 @@ namespace dolfin
 
     // Gobal size
     unsigned int _size[2];
+
+    // Symmetric storage
+    const bool _symmetric;
 
     // Array base (C/Fortran)
     const bool _base_one;

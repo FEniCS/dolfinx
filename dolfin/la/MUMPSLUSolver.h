@@ -24,7 +24,11 @@
 #define __DOLFIN_MUMPS_LU_SOLVER_H
 
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/Variable.h>
+
+#ifdef HAS_PETSC
 #include <petscconf.h>
+#endif
 
 #ifdef PETSC_HAVE_MUMPS
 
@@ -43,7 +47,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the MUMPS
   /// LU solver.
 
-  class MUMPSLUSolver
+  class MUMPSLUSolver : public Variable
   {
   public:
 
@@ -59,7 +63,11 @@ namespace dolfin
     /// Solve linear system Ax = b
     unsigned int solve(GenericVector& x, const GenericVector& b);
 
+    /// Default parameter values
+    static Parameters default_parameters();
+
   private:
+
 
     // Operator (the matrix)
     boost::shared_ptr<const CoordinateMatrix> A;

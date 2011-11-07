@@ -24,8 +24,8 @@
 #include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <petscconf.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 #ifdef HAS_PASTIX
 
@@ -38,7 +38,7 @@ namespace dolfin
   class SparsityPattern;
   class STLMatrix;
 
-  class PaStiXLUSolver
+  class PaStiXLUSolver : public Variable
   {
   public:
 
@@ -53,6 +53,9 @@ namespace dolfin
 
     /// Constructor
     unsigned int solve(GenericVector& x, const GenericVector& b);
+
+    /// Default parameter values
+    static Parameters default_parameters();
 
   private:
 

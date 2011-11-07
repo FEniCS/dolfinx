@@ -69,7 +69,7 @@ namespace dolfin
     /// Return local range for dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
 
-    /// Return total number of nonzeros in local_range for dimension 0
+    /// Return number of local nonzeros
     uint num_nonzeros() const;
 
     /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
@@ -118,7 +118,7 @@ namespace dolfin
     // Ownership range for each dimension
     std::vector<std::pair<uint, uint> > ownership_range;
 
-    // Map from non-local vertex owning process index
+    // Map from non-local vertex to owning process index
     std::vector<boost::unordered_map<uint, uint> > off_process_owner;
 
   };
