@@ -100,7 +100,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   {
     if (a.cell_domains_shared_ptr().get() ||
         L.cell_domains_shared_ptr().get())
+    {
       warning("Ignoring cell domains defined as part of form in system assembler.");
+    }
     cell_domains = mesh.domains().cell_domains(mesh).get();
   }
 
@@ -109,7 +111,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   {
     if (a.exterior_facet_domains_shared_ptr().get() ||
         L.exterior_facet_domains_shared_ptr().get())
+    {
       warning("Ignoring exterior facet domains defined as part of form in system assembler.");
+    }
     exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
@@ -118,7 +122,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   {
     if (a.interior_facet_domains_shared_ptr().get() ||
         L.interior_facet_domains_shared_ptr().get())
+    {
       warning("Ignoring interior facet domains defined as part of form in system assembler.");
+    }
     interior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
@@ -146,8 +152,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     coefficients[i]->gather();
 
   // Create data structures for local assembly data
-  UFC A_ufc(a);
-  UFC b_ufc(L);
+  UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
@@ -305,10 +310,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Reset cell tensor and vector
-    for (uint i = 0; i < data.Ae.size(); ++i)
-      data.Ae[i] = 0.0;
-    for (uint i = 0; i < data.be.size(); ++i)
-      data.be[i] = 0.0;
+    std::fill(data.Ae.begin(), data.Ae.end(), 0.0);
+    std::fill(data.be.begin(), data.be.end(), 0.0);
 
     // Get cell integrals for sub domain (if any)
     if (cell_domains && cell_domains->size() > 0)
@@ -422,8 +425,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
 
     // Add entries to global tensor
-    A.add(&(data.Ae)[0], a_dofs);
-    b.add(&(data.be)[0], L_dofs);
+    A.add(&data.Ae[0], a_dofs);
+    b.add(&data.be[0], L_dofs);
 
     p++;
   }
@@ -461,8 +464,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofmaps.push_back(&L.function_space(i)->dofmap());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<uint>* > a_dofs(a_rank);
-  std::vector<const std::vector<uint>* > L_dofs(L_rank);
+  std::vector<const std::vector<uint>* > a_dofs(a_rank), L_dofs(L_rank);
 
   // Iterate over facets
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
@@ -483,17 +485,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(cell0, local_facet0, cell1, local_facet1);
 
       // Reset some temp data
-      const uint a_macro_dim = (a_dofmaps[0]->cell_dofs(cell0.index()).size()
-                               + a_dofmaps[0]->cell_dofs(cell1.index()).size())
-                              *(a_dofmaps[1]->cell_dofs(cell0.index()).size()
-                               + a_dofmaps[1]->cell_dofs(cell1.index()).size());
-      for (uint i = 0; i < a_macro_dim; ++i)
-        A_ufc.macro_A[i] = 0.0;
-
-      const uint L_macro_dim = L_dofmaps[0]->cell_dofs(cell0.index()).size()
-                             + L_dofmaps[0]->cell_dofs(cell1.index()).size();
-      for (uint i = 0; i < L_macro_dim; ++i)
-        b_ufc.macro_A[i] = 0.0;
+      std::fill(A_ufc.macro_A.begin(), A_ufc.macro_A.end(), 0.0);
+      std::fill(b_ufc.macro_A.begin(), b_ufc.macro_A.end(), 0.0);
 
       // Assemble interior facet and neighbouring cells if needed
       assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet,
@@ -511,14 +504,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(cell, local_facet);
 
       // Reset some temp data
-      const uint a_local_dim = (a_dofmaps[0]->cell_dofs(cell.index()).size())
-                              *(a_dofmaps[1]->cell_dofs(cell.index()).size());
-      for (uint i = 0; i < a_local_dim; i++)
-        A_ufc.A[i] = 0.0;
-
-      const uint L_local_dim = L_dofmaps[0]->cell_dofs(cell.index()).size();
-      for (uint i = 0; i < L_local_dim; ++i)
-        b_ufc.A[i] = 0.0;
+      std::fill(A_ufc.A.begin(), A_ufc.A.end(), 0.0);
+      std::fill(b_ufc.A.begin(), b_ufc.A.end(), 0.0);
 
       // Initialize macro element matrix/vector to zero
       data.zero_cell();
@@ -565,8 +552,8 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
                      const std::vector<const std::vector<uint>* >& global_dofs)
 {
   // Get local dimensions
-  const uint m = (global_dofs[0])->size();
-  const uint n = (global_dofs[1])->size();
+  const uint m = global_dofs[0]->size();
+  const uint n = global_dofs[1]->size();
 
   for (uint i = 0; i < n; ++i)
   {
@@ -599,14 +586,17 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   if (cell0.mesh().data().mesh_function("facet_orientation"))
     error("Facet orientation not supported by system assembler.");
 
-  // Tabulate dofs
-  const std::vector<uint>& a0_dofs0 = a.function_space(0)->dofmap().cell_dofs(cell0.index());
-  const std::vector<uint>& a1_dofs0 = a.function_space(1)->dofmap().cell_dofs(cell0.index());
-  const std::vector<uint>& L_dofs0  = L.function_space(0)->dofmap().cell_dofs(cell0.index());
+  const uint cell0_index = cell0.index();
+  const uint cell1_index = cell1.index();
 
-  const std::vector<uint>& a0_dofs1 = a.function_space(0)->dofmap().cell_dofs(cell1.index());
-  const std::vector<uint>& a1_dofs1 = a.function_space(1)->dofmap().cell_dofs(cell1.index());
-  const std::vector<uint>& L_dofs1  = L.function_space(0)->dofmap().cell_dofs(cell1.index());
+  // Tabulate dofs
+  const std::vector<uint>& a0_dofs0 = a.function_space(0)->dofmap().cell_dofs(cell0_index);
+  const std::vector<uint>& a1_dofs0 = a.function_space(1)->dofmap().cell_dofs(cell0_index);
+  const std::vector<uint>& L_dofs0  = L.function_space(0)->dofmap().cell_dofs(cell0_index);
+
+  const std::vector<uint>& a0_dofs1 = a.function_space(0)->dofmap().cell_dofs(cell1_index);
+  const std::vector<uint>& a1_dofs1 = a.function_space(1)->dofmap().cell_dofs(cell1_index);
+  const std::vector<uint>& L_dofs1  = L.function_space(0)->dofmap().cell_dofs(cell1_index);
 
   // Cell integrals
   const ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
@@ -657,8 +647,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
       const uint nn = a0_dofs1.size();
       const uint mm = a1_dofs1.size();
-      for (uint i=0; i < mm; i++)
-        for (uint j=0; j < nn; j++)
+      for (uint i = 0; i < mm; i++)
+        for (uint j = 0; j < nn; j++)
           A_ufc.macro_A[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
     }
 
@@ -667,7 +657,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
       b_ufc.update(cell1);
 
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
-      for (uint i=0; i < L_dofs0.size(); i++)
+      for (uint i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
     }
   }
@@ -759,18 +749,19 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   }
 
   // Tabulate dofs
+  const uint cell_index = cell.index();
   std::vector<const std::vector<uint>* > a_dofs(2);
   std::vector<const std::vector<uint>* > L_dofs(1);
-  a_dofs[0] = &(a.function_space(0)->dofmap().cell_dofs(cell.index()));
-  a_dofs[1] = &(a.function_space(1)->dofmap().cell_dofs(cell.index()));
-  L_dofs[0] = &(L.function_space(0)->dofmap().cell_dofs(cell.index()));
+  a_dofs[0] = &(a.function_space(0)->dofmap().cell_dofs(cell_index));
+  a_dofs[1] = &(a.function_space(1)->dofmap().cell_dofs(cell_index));
+  L_dofs[0] = &(L.function_space(0)->dofmap().cell_dofs(cell_index));
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
+  apply_bc(&data.Ae[0], &data.be[0], boundary_values, a_dofs);
 
   // Add entries to global tensor
-  A.add(&(data.Ae)[0], a_dofs);
-  b.add(&(data.be)[0], L_dofs);
+  A.add(&data.Ae[0], a_dofs);
+  b.add(&data.be[0], L_dofs);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
