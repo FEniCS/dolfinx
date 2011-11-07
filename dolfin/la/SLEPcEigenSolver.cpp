@@ -106,11 +106,13 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
   if (eps)
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
+  {
+    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR <= 1
     EPSDestroy(eps);
-#else
+    #else
     EPSDestroy(&eps);
-#endif
+    #endif
+  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -181,8 +183,16 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
+
+
   if (ii < num_computed_eigenvalues)
+  {
+    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     EPSGetEigenvalue(eps, ii, &lr, &lc);
+    #else
+    EPSGetValue(eps, ii, &lr, &lc);
+    #endif
+  }
   else
     error("Requested eigenvalue has not been computed");
 }
@@ -220,7 +230,7 @@ int SLEPcEigenSolver::get_number_converged() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR > 1
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
   #else
   error("Setting a deflation space requires SLEPc 3.1 or newer version");
@@ -266,7 +276,12 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   EPSGetST(eps, &st);
   if (transform == "shift-and-invert")
   {
+    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     STSetType(st, STSINVERT);
+    #else
+    STSetType(st, STSINV);
+    #endif
+
     STSetShift(st, shift);
   }
   else
