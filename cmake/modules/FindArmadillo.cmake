@@ -16,7 +16,6 @@ message(STATUS "Checking for package 'Armadillo'")
 
 # FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
 set(CMAKE_LIBRARY_PATH $BLAS_DIR/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
-enable_language(Fortran)
 find_package(BLAS)
 find_package(LAPACK)
 
@@ -32,7 +31,9 @@ find_library(ARMADILLO_LIBRARIES
   HINTS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
-mark_as_advanced(ARMADILLO_LIBRARIES)
+mark_as_advanced(ARMA
+
+DILLO_LIBRARIES)
 
 set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES}")
 
