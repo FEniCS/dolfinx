@@ -11,10 +11,14 @@
 #
 #  ARMADILLO_DIR - directory in which Armadillo resides
 
+
 message(STATUS "Checking for package 'Armadillo'")
 
 # FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
-#find_package(LAPACK REQUIRED)
+set(CMAKE_LIBRARY_PATH $BLAS_DIR/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
+enable_language(Fortran)
+find_package(LAPACK)
+find_package(BLAS)
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
@@ -161,7 +165,7 @@ int main()
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
-          list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
+          list(APPEND CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${GFORTRAN_LIBRARY} ${BLAS_LIBRARIES})
           check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_GFORTRAN_TEST_RUNS)
 
           if (ARMADILLO_GFORTRAN_TEST_RUNS)

@@ -49,7 +49,6 @@
 #include "EpetraFactory.h"
 #include "EpetraMatrix.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------

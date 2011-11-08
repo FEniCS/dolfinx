@@ -8,6 +8,7 @@
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Find packages that UMFPACK depends on
+set(CMAKE_LIBRARY_PATH $BLAS_DIR/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(AMD)
 find_package(BLAS)
 find_package(CHOLMOD)
@@ -36,6 +37,16 @@ if (BLAS_FOUND)
 endif()
 if (CHOLMOD_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${CHOLMOD_LIBRARIES})
+endif()
+
+find_program(GFORTRAN_EXECUTABLE gfortran)
+if (GFORTRAN_EXECUTABLE)
+  execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
+  OUTPUT_VARIABLE GFORTRAN_LIBRARY
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (EXISTS "${GFORTRAN_LIBRARY}")
+    set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${GFORTRAN_LIBRARY})
+  endif()
 endif()
 
 # Try compiling and running test program
