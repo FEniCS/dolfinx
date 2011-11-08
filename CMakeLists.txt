@@ -160,6 +160,16 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 #------------------------------------------------------------------------------
+# Enable Fortran if available. Used for some configuration tests (e.g. BLAS)
+
+# This workaround address a CMake bug (http://cmake.org/Bug/view.php?id=9220)
+include(language_support_v2)
+workaround_9220(Fortran Fortran_language_works)
+if (Fortran_language_works)
+ enable_language(Fortran)
+endif()
+
+#------------------------------------------------------------------------------
 # Check for MPI and OpenMP
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
