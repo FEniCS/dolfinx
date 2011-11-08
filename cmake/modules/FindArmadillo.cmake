@@ -174,6 +174,7 @@ int main()
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
+          list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
           check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_GFORTRAN_TEST_RUNS)
 
           if (ARMADILLO_GFORTRAN_TEST_RUNS)
