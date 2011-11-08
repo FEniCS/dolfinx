@@ -40,7 +40,7 @@ find_library(HWLOC_LIBRARY hwloc
   )
 
 # Add BLAS libs if BLAS has been found
-set(CMAKE_LIBRARY_PATH $BLAS_DIR $ENV{BLAS_DIR} ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(BLAS)
 
 # Collect libraries
