@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2010-06-08
+// Last changed: 2011-08-23
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -32,6 +32,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/SubsetIterator.h>
 
 #ifdef HAS_CGAL
 
@@ -83,10 +84,17 @@ namespace dolfin
   public:
 
     /// Constructor
-    IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh)
-      : _mesh(_mesh), point_search_tree_constructed(false)
+    IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> mesh)
+      : point_search_tree_constructed(false)
     {
-      build_tree();
+      build_tree(*mesh);
+    }
+
+    IntersectionOperatorImplementation_d(const MeshFunction<uint> labels, uint label)
+    : point_search_tree_constructed(false)
+    {
+      // Build CGAL AABB tree
+      build_tree(labels, label);
     }
 
     virtual void all_intersected_entities(const Point& point, std::set<uint>& ids_result) const;
@@ -108,9 +116,16 @@ namespace dolfin
 
   private:
 
-    void build_tree();
-    boost::shared_ptr<const Mesh> _mesh;
+    /// Build AABB_tree search tree
+    void build_tree(const Mesh& mesh);
+
+    /// Build AABB_tree search tree using selected entities
+    void build_tree(const MeshFunction<uint>& labels, uint label);
+
+    /// The AABB search tree
     boost::scoped_ptr<Tree> tree;
+
+    /// Boolean flag to indicate whether Kd tree has already been built 
     bool point_search_tree_constructed;
 
   };
@@ -118,7 +133,6 @@ namespace dolfin
   template <class P, class K>
   void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const Point& point, std::set<uint>& ids_result) const
   {
-    //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
     std::insert_iterator< std::set<uint> > output_it(ids_result, ids_result.end());
     tree->all_intersected_primitives(PrimitiveTraits<PointPrimitive,K>::datum(point), output_it);
   }
@@ -126,7 +140,6 @@ namespace dolfin
   template <class P, class K>
   void IntersectionOperatorImplementation_d<P, K>::all_intersected_entities(const std::vector<Point>& points, std::set<uint>& ids_result) const
   {
-    //@remark For a set the start iterator required by the insert_iterator constructor does not really matter.
     std::insert_iterator< std::set<uint> > output_it(ids_result, ids_result.end());
     for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
     {
@@ -314,16 +327,20 @@ namespace dolfin
   }
 
   template <class P, class K>
-  void IntersectionOperatorImplementation_d<P, K>::build_tree()
+  void IntersectionOperatorImplementation_d<P, K>::build_tree(const Mesh & mesh)
   {
-    if (_mesh)
-    {
-      MeshEntityIterator cell_iter(*_mesh,dim);
-      tree.reset(new Tree(cell_iter,cell_iter.end_iterator()));
-    }
+    MeshEntityIterator entity_iter(mesh, mesh.topology().dim());
+    tree.reset(new Tree(entity_iter,entity_iter.end_iterator()));
     point_search_tree_constructed = false;
   }
 
+  template <class P, class K>
+  void IntersectionOperatorImplementation_d<P, K>::build_tree(const MeshFunction<uint> & labels, uint label)
+  {
+    SubsetIterator entity_iter(labels, label);
+    tree.reset(new Tree(entity_iter,entity_iter.end_iterator()));
+    point_search_tree_constructed = false;
+  }
 }
 
 #else
