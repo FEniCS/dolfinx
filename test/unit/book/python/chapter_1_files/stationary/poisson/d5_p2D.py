@@ -46,14 +46,14 @@ grad_u = Function(V_g)
 solve(a == L, grad_u)
 grad_u.rename('grad(u)', 'continuous gradient field')
 
-plot(u, title=u.name())
-plot(grad_u, title=grad_u.name())
+#plot(u, title=u.name())
+#plot(grad_u, title=grad_u.name())
 
 grad_u_x, grad_u_y = grad_u.split(deepcopy=True)  # extract components
 grad_u_x.rename('grad(u)_x', 'x-component of grad(u)')
 grad_u_y.rename('grad(u)_y', 'y-component of grad(u)')
-plot(grad_u_x, title=grad_u_x.label())
-plot(grad_u_y, title=grad_u_y.label())
+#plot(grad_u_x, title=grad_u_x.label())
+#plot(grad_u_y, title=grad_u_y.label())
 
 # Quick summary print of key variables
 print mesh

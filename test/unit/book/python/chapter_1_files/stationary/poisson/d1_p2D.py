@@ -34,8 +34,8 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # Plot solution and mesh
-plot(u)
-plot(mesh)
+#plot(u)
+#plot(mesh)
 
 # Dump solution to file in VTK format
 file = File('poisson.pvd')

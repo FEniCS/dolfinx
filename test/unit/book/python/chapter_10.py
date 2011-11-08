@@ -602,17 +602,17 @@ class TestPage34(unittest.TestCase):
         u = Function(V)
         mesh_function = MeshFunction("uint", mesh, 0)
 
-        plot(u)
-        plot(mesh)
-        plot(mesh_function)
+        #plot(u)
+        #plot(mesh)
+        #plot(mesh_function)
 
     def test_box_2(self):
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
 
-        plot(grad(u))
-        plot(u*u)
+        #plot(grad(u))
+        #plot(u*u)
         element = FiniteElement("BDM", tetrahedron, 3)
 
         # Disabled since it claims the terminal

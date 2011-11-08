@@ -45,10 +45,10 @@ solver.parameters['preconditioner'] = 'ilu'
 solver.solve()
 
 # Plot scaled solution, mesh and pressure
-plot(mesh, title='Mesh over scaled domain')
-plot(w, title='Scaled deflection')
+#plot(mesh, title='Mesh over scaled domain')
+#plot(w, title='Scaled deflection')
 f = interpolate(f, V)
-plot(f, title='Scaled pressure')
+#plot(f, title='Scaled pressure')
 
 # Find maximum real deflection
 max_w = w.vector().array().max()

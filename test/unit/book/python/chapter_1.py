@@ -23,14 +23,30 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # Last changed: 2011-10-20
 
 import unittest
-import inspect, runpy, os, sys
+import inspect, os, sys
 from dolfin import *
+
+# Try importing runpy, added in Python 2.7
+try:
+    import runpy
+    has_run_path = True
+except:
+    has_run_path = False
+
+def run_path(path, args):
+    "Replacement for runpy.run_path when it doesn't exist"
+
+    if has_run_path:
+        sys.argv = ["foo"] + [str(arg) for arg in args]
+        runpy.run_path(path)
+    else:
+        status = os.system("python " + path + " " + \
+                           " ".join(str(arg) for arg in args))
+        if not status == 0:
+            raise RuntimeError, "Python script failed"
 
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
-
-    # Prepare command-line arguments
-    sys.argv = ["foo"] + [str(arg) for arg in args]
 
     # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
@@ -41,14 +57,14 @@ def run_test(path, args=[]):
     dolfin_parameters.update(parameters)
 
     # Run script with default parameters
-    runpy.run_path(file_path)
+    run_path(file_path, args)
 
     # Set parameters from file (as they were at the time of book release)
     file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
     file >> parameters
 
     # Run script again with book parameters
-    runpy.run_path(file_path)
+    run_path(file_path, args)
 
     # Reset parameters
     parameters.update(dolfin_parameters)
@@ -95,7 +111,7 @@ class TestPoisson(unittest.TestCase):
         run_test(["stationary", "poisson"])
 
     def disabled_test_vcp2D(self):
-        # FIXME: Disabled since it depends on SciTools and it's broken in Ubuntu
+        # Disabled since it depends on scitools
         run_test(["stationary", "poisson"])
 
     def test_d4_p2D(self):
@@ -136,7 +152,7 @@ class TestDiffusion(unittest.TestCase):
         run_test(["transient", "diffusion"])
 
     def disabled_test_sin_daD(self):
-        # FIXME: Disabled since it depends on SciTools and it's broken in Ubuntu
+        # Disabled since it depends on scitools
         run_test(["transient", "diffusion"], [1, 1.5, 4, 40])
 
 if __name__ == "__main__":

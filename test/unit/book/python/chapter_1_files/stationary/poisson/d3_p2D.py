@@ -50,8 +50,8 @@ solver.solve()
 
 
 # Plot solution and mesh
-plot(u)
-plot(mesh)
+#plot(u)
+#plot(mesh)
 
 # Dump solution to file in VTK format
 file = File('poisson.pvd')
