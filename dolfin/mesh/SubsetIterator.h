@@ -16,12 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-17
-// Last changed: 2011-08-24
+// Last changed: 2011-08-23
 
 #ifndef __SUBSET_ITERATOR_H
 #define __SUBSET_ITERATOR_H
 
 #include <vector>
+
+#include<boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
@@ -43,7 +45,9 @@ namespace dolfin
     /// Create iterator for given mesh function. The iterator visits
     /// all entities that match the given label.
     SubsetIterator(const MeshFunction<unsigned int>& labels, uint label)
-      : entity(labels.mesh(), labels.dim(), 0)
+      : entity(labels.mesh(), labels.dim(), 0),
+	_subset(new std::vector<uint>()),
+	subset(*_subset)
     {
       // Extract subset
       subset.clear();
@@ -52,10 +56,17 @@ namespace dolfin
         if (labels[*entity] == label)
           subset.push_back(entity->index());
       }
+      info("Iterating over subset, found %d entities out of %d.",
+           subset.size(), labels.size());
 
       // Set iterator
       it = subset.begin();
     }
+    
+    /// Copy Constructor
+    SubsetIterator(const SubsetIterator & subset_iter)
+    : entity(subset_iter.entity),_subset(subset_iter._subset),subset(*_subset)
+    {}
 
     /// Destructor
     virtual ~SubsetIterator() {}
@@ -66,6 +77,17 @@ namespace dolfin
       ++it;
       return *this;
     }
+    
+    bool operator==(const SubsetIterator & sub_iter) const
+    {
+      return ((const_cast<SubsetIterator *>(this))->operator*()
+            == (const_cast<SubsetIterator *>(&sub_iter))->operator*()
+            && it == sub_iter.it && &subset == &sub_iter.subset);
+    }
+    
+    /// Comparison operator
+    bool operator!=(const SubsetIterator & sub_iter) const
+    { return !operator==(sub_iter); }
 
     /// Dereference operator
     MeshEntity& operator*()
@@ -79,13 +101,28 @@ namespace dolfin
     bool end() const
     { return it == subset.end(); }
 
+    SubsetIterator end_iterator()
+    {
+      SubsetIterator sg(*this);
+      sg.set_end();
+      return sg;
+    }
+
+
   private:
+
+    /// Set pos to end position. To create a kind of mesh.end() iterator.
+    void set_end()
+    { it = subset.end(); }
 
     // Mesh entity
     MeshEntity entity;
 
-    // Subset
-    std::vector<uint> subset;
+    // Subset in shared data form
+    boost::shared_ptr< std::vector<uint> > _subset;
+    
+    //Subset reference for convenience / speed
+    std::vector<uint> & subset;
 
     // Iterator
     std::vector<uint>::iterator it;
