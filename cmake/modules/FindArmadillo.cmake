@@ -1,4 +1,4 @@
-# - Try to find PETSc
+# - Try to find Armadillo
 # Once done this will define
 
 #  ARMADILLO_FOUND        - system has Armadillo
@@ -17,8 +17,8 @@ message(STATUS "Checking for package 'Armadillo'")
 # FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
 set(CMAKE_LIBRARY_PATH $BLAS_DIR/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 enable_language(Fortran)
-find_package(LAPACK)
 find_package(BLAS)
+find_package(LAPACK)
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
@@ -155,6 +155,14 @@ int main()
     endif()
   endforeach()
 
+  # Add Lapack and BLAS
+  if (LAPACK_FOUND)
+    list(APPEND ARMADILLO_LIBRARIES ${LAPACK_LIBRARIES})
+  endif()
+  if (BLAS_FOUND)
+    list(APPEND ARMADILLO_LIBRARIES ${BLAS_LIBRARIES})
+  endif()
+
   # If program still does not run, try adding GFortran library
   if(NOT ARMADILLO_TEST_RUNS)
     find_program(GFORTRAN_EXECUTABLE gfortran)
@@ -165,7 +173,6 @@ int main()
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
-          list(APPEND CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${GFORTRAN_LIBRARY} ${BLAS_LIBRARIES})
           check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_GFORTRAN_TEST_RUNS)
 
           if (ARMADILLO_GFORTRAN_TEST_RUNS)

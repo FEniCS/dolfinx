@@ -283,7 +283,7 @@ string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
-  string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll).*" "-L\\1 -l\\2"
+  string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
     _linkflags
     "${_lib}"
     )
