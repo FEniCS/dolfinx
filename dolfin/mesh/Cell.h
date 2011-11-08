@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2006-06-01
-// Last changed: 2010-12-06
+// Last changed: 2011-10-26
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -178,6 +178,7 @@ namespace dolfin
 
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
+    inline Cell& operator[](uint index) { return static_cast<Cell&>(MeshEntityIterator::operator[](index)); }
 
   };
 
