@@ -20,7 +20,7 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-10-20
-# Last changed: 2011-10-20
+# Last changed: 2011-11-08
 
 import unittest
 import inspect, os, sys
@@ -28,7 +28,7 @@ from dolfin import *
 
 # Try importing runpy, added in Python 2.7
 try:
-    import runpy
+    from runpy import run_path as runpy_run_path
     has_run_path = True
 except:
     has_run_path = False
@@ -38,7 +38,7 @@ def run_path(path, args):
 
     if has_run_path:
         sys.argv = ["foo"] + [str(arg) for arg in args]
-        runpy.run_path(path)
+        runpy_run_path(path)
     else:
         status = os.system("python " + path + " " + \
                            " ".join(str(arg) for arg in args))
