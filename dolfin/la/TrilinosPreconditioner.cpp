@@ -52,7 +52,6 @@ const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
                               ("jacobi",    AZ_Jacobi)
                               ("sor",       AZ_sym_GS)
                               ("amg",       -1)
-                              ("hypre_amg", -1)
                               ("ml_amg",    -1);
 
 //-----------------------------------------------------------------------------
@@ -67,7 +66,6 @@ TrilinosPreconditioner::preconditioners()
     ("jacobi",    "Jacobi iteration")
     ("sor",       "Successive over-relaxation")
     ("amg",       "Algebraic multigrid")
-    ("hypre_amg", "Hypre algebraic multigrid (BoomerAMG)")
     ("ml_amg",    "ML algebraic multigrid");
 }
 //-----------------------------------------------------------------------------
