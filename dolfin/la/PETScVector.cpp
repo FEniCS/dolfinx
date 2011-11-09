@@ -45,18 +45,15 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vector_arch)
+PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
 {
   if (type != "global" && type != "local")
     error("PETSc vector type unknown.");
 
 #ifndef HAS_PETSC_CUSP
-  if (vector_arch == "gpu")
+  if (_use_gpu)
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
 #endif
-
-  if (vector_arch != "cpu" && vector_arch != "gpu")
-    error("PETSc vector architechture unknown.");
 
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
@@ -70,10 +67,10 @@ PETScVector::PETScVector(std::string type, std::string vector_arch) : arch(vecto
     init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : arch(vector_arch)
+PETScVector::PETScVector(uint N, std::string type, bool use_gpu) : _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
-  if (vector_arch == "gpu")
+  if (_use_gpu)
     error("PETSc not compiled with Cusp support, cannot create GPU vector");
 #endif
   
@@ -99,18 +96,18 @@ PETScVector::PETScVector(uint N, std::string type, std::string vector_arch) : ar
     error("PETScVector type not known.");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern): arch("cpu")
+PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern): _use_gpu(false)
 {
   std::vector<uint> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x), arch("cpu")
+PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x), _use_gpu(false)
 {
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v): arch("cpu")
+PETScVector::PETScVector(const PETScVector& v): _use_gpu(false)
 {
   *this = v;
 }
@@ -719,14 +716,15 @@ void PETScVector::init(std::pair<uint, uint> range,
     // FIXME: Make it look better!
     VecCreate(PETSC_COMM_SELF, x.get());
     // Set type to be either standard or Cusp sequential vector
-    if (arch == "cpu")
+    if (!_use_gpu)
       VecSetType(*x, VECSEQ);
 #ifdef HAS_PETSC_CUSP
-    else if (arch == "gpu")
+    else {
+      warning("Setting vector to cusp type ...");
       VecSetType(*x, VECSEQCUSP);
+      warning("Vector set to cusp type.");
+    }
 #endif
-    else 
-      error("PETSc vector architecture unknown");
     
     VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
@@ -735,8 +733,8 @@ void PETScVector::init(std::pair<uint, uint> range,
   else
   {
     // TODO: Implement VECMPICUSP vectors
-    if (arch == "gpu")
-      error("Distributed PETSc Cusp vectors not implemented yet.");
+    if (_use_gpu)
+      not_working_in_parallel("Distributed PETSc Cusp vectors");
     
     // Clear ghost indices map
     ghost_global_to_local.clear();
@@ -772,14 +770,12 @@ void PETScVector::reset()
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const
 {
-  if (arch == "cpu")
+  if (!_use_gpu)
     return PETScFactory::instance();
 #ifdef HAS_PETSC_CUSP
-  else if (arch == "gpu")
+  else
     return PETScCuspFactory::instance();
 #endif
-  else
-    error("PETSc vector architecture unknown/unsupported");
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();

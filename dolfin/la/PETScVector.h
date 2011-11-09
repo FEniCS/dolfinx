@@ -75,10 +75,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string type="global", std::string vector_arch="cpu");
+    explicit PETScVector(std::string type="global", bool use_gpu=false);
 
     /// Create vector of size N
-    PETScVector(uint N, std::string type="global", std::string vector_arch="cpu");
+    PETScVector(uint N, std::string type="global", bool use_gpu=false);
 
     /// Create vector
     PETScVector(const GenericSparsityPattern& sparsity_pattern);
@@ -245,7 +245,7 @@ namespace dolfin
     static const std::map<std::string, NormType> norm_types;
 
     // PETSc vector architechture
-    const std::string arch;
+    const bool _use_gpu;
 
   };
 

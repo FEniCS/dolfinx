@@ -23,7 +23,6 @@
 #ifndef __PETSC_CUSP_FACTORY_H
 #define __PETSC_CUSP_FACTORY_H
 
-// TODO: FREDRIK: Should the solver includes be changed?
 #include "PETScKrylovSolver.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"

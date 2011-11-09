@@ -54,10 +54,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    PETScMatrix(std::string matrix_arch="cpu");
+    PETScMatrix(bool use_gpu=false);
 
     /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch="cpu");
+    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
@@ -169,7 +169,7 @@ namespace dolfin
     static const std::map<std::string, NormType> norm_types;
 
     // PETSc matrix architecture
-    const std::string arch;
+    const bool _use_gpu;
 
   };
 

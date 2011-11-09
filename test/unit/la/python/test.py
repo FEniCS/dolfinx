@@ -337,6 +337,10 @@ if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "PETSc"
 
+if has_linear_algebra_backend("PETScCusp"):
+    class PETScCuspTester(DataNotWorkingTester, unittest.TestCase):
+        backend    = "PETScCusp"
+
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, unittest.TestCase):
         backend    = "Epetra"

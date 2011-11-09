@@ -34,17 +34,17 @@ PETScCuspFactory PETScCuspFactory::factory;
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScCuspFactory::create_matrix() const
 {
-  return new PETScMatrix("gpu");
+  return new PETScMatrix(true);
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScCuspFactory:: create_vector() const
 {
-  return new PETScVector("global", "gpu");
+  return new PETScVector("global", true);
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScCuspFactory:: create_local_vector() const
 {
-  return new PETScVector("local", "gpu");
+  return new PETScVector("local", true);
 }
 //-----------------------------------------------------------------------------
 SparsityPattern* PETScCuspFactory::create_pattern() const

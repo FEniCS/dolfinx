@@ -48,38 +48,32 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(std::string matrix_arch) : arch(matrix_arch)
+PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
-  if (matrix_arch == "gpu") 
+  if (use_gpu) 
   {
     error("PETSc not compiled with Cusp support, cannot create GPU matrix");
   }
 #endif
 
-  if (matrix_arch != "cpu" && matrix_arch != "gpu")
-    error("PETSc matrix architechture unknown.");
-
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, std::string matrix_arch) : 
-  PETScBaseMatrix(A), arch(matrix_arch)
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) : 
+  PETScBaseMatrix(A), _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
-  if (matrix_arch == "gpu") 
+  if (use_gpu) 
   {
     error("PETSc not compiled with Cusp support, cannot create GPU matrix");
   }
 #endif
   
-  if (matrix_arch != "cpu" && matrix_arch != "gpu")
-    error("PETSc matrix architechture unknown.");
-  
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A): arch("cpu")
+PETScMatrix::PETScMatrix(const PETScMatrix& A): _use_gpu(false)
 {
   *this = A;
 }
@@ -176,14 +170,15 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     MatSetSizes(*A, M, N, M, N);
 
     // Set matrix type according to chosen architecture
-    if (arch == "cpu")
+    if (!_use_gpu)
       MatSetType(*A, MATSEQAIJ);
 #ifdef HAS_PETSC_CUSP
-    else if (arch == "gpu")
+    else {
+      warning("Setting matrix to cusp type ...");
       MatSetType(*A, MATSEQAIJCUSP);
+      warning("Matrix set to cusp type");
+    }
 #endif
-    else
-      error("PETSc matrix architecture unknown");
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
@@ -217,8 +212,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   else
   {
     // TODO: Implement distributed GPU vectors
-    if (arch == "gpu")
-      error("Distributed PETSc Cusp matrices not implemented yet.");
+    if (_use_gpu)
+      not_working_in_parallel("Distributed PETSc Cusp matrices");
 
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
@@ -548,14 +543,12 @@ std::string PETScMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
 {
-  if (arch == "cpu")
+  if (!_use_gpu)
     return PETScFactory::instance();
 #ifdef HAS_PETSC_CUSP
-  else if (arch == "gpu")
+  else
     return PETScCuspFactory::instance();
 #endif
-  else
-    error("PETSc vector architecture unknown/unsupported");
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
