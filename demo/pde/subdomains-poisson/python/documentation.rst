@@ -112,6 +112,7 @@ value):
     domains.set_all(0)
     obstacle.mark(domains, 1)
 
+
 We can do the same for the boundaries using a :py:class:`FacetFunction
 <dolfin.cpp.FacetFunction>`. We first tag all the edges by ``0``, then
 the edges on the left by ``1``, on the top by ``2``, on the right by
@@ -195,10 +196,10 @@ and then extract the left and right-hand sides using the UFL functions
 
     # Define variational form
     F = (inner(a0*grad(u), grad(v))*dx(0) + inner(a1*grad(u), grad(v))*dx(1)
-         - g1*v*ds(1) - g3*v*ds(3)
+         - g_L*v*ds(1) - g_R*v*ds(3)
          - f*v*dx(0) - f*v*dx(1))
 
-    # Separate left and right hand sides of equation
+    # Separete left and right hand sides of equation
     a, L = lhs(F), rhs(F)
 
     # Solve problem

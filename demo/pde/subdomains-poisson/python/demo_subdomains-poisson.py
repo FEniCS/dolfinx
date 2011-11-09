@@ -54,11 +54,12 @@ obstacle = Obstacle()
 # Define mesh
 mesh = UnitSquare(64, 64)
 
-# Initialize mesh functions for interior domains and boundary domains
+# Initialize mesh function for interior domains
 domains = CellFunction("uint", mesh)
 domains.set_all(0)
 obstacle.mark(domains, 1)
 
+# Initialize mesh function for boundary domains
 boundaries = FacetFunction("uint", mesh)
 boundaries.set_all(0)
 left.mark(boundaries, 1)
@@ -69,8 +70,8 @@ bottom.mark(boundaries, 4)
 # Define input data
 a0 = Constant(1.0)
 a1 = Constant(0.01)
-g1 = Expression("- 10*exp(- pow(x[1] - 0.5, 2))")
-g3 = Constant("1.0")
+g_L = Expression("- 10*exp(- pow(x[1] - 0.5, 2))")
+g_R = Constant("1.0")
 f = Constant(1.0)
 
 # Define function space and basis functions
@@ -83,13 +84,13 @@ bcs = [DirichletBC(V, 5.0, boundaries, 2),
        DirichletBC(V, 0.0, boundaries, 4)]
 
 # Define new measures associated with the interior domains and
-# boundaries
+# exterior boundaries
 dx = Measure("dx")[domains]
 ds = Measure("ds")[boundaries]
 
 # Define variational form
 F = (inner(a0*grad(u), grad(v))*dx(0) + inner(a1*grad(u), grad(v))*dx(1)
-     - g1*v*ds(1) - g3*v*ds(3)
+     - g_L*v*ds(1) - g_R*v*ds(3)
      - f*v*dx(0) - f*v*dx(1))
 
 # Separete left and right hand sides of equation
