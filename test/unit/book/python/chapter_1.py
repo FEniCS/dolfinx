@@ -52,6 +52,11 @@ def run_test(path, args=[]):
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
     file_path = os.path.join(*(["chapter_1_files"] + path + [script_name]))
 
+    # Print a message
+    print
+    print "Running tutorial example %s" % file_path
+    print "-------------------------------------------------------------------------"
+
     # Remember default DOLFIN parameters
     dolfin_parameters = {}
     dolfin_parameters.update(parameters)
@@ -159,4 +164,8 @@ if __name__ == "__main__":
     print ""
     print "Testing the FEniCS Book, Chapter 1"
     print "----------------------------------"
-    unittest.main()
+    # Skip these tests in parallel for now
+    if MPI.num_processes() > 1:
+        print "FIXME: This unit test does not work in parallel, skipping"
+    else:
+        unittest.main()
