@@ -27,15 +27,16 @@ have different material properties. This information must be made
 available to the solver.  One way of doing this, is to tag the
 different sub-regions with different (integer) labels, and later
 integrate over the specified regions. DOLFIN provides a class
-:py:class:`MeshFunction` which is useful for these types of
-operations: instances of this class represents a function over mesh
-entities (such as over cells or over facets). Mesh functions can be
-read from file or, if explicit formulae for the domains are known,
-they can be constructed by way of instances of the
-:py:class:`SubDomain` class. The latter is the case here, so we begin
-by defining the left, right, top and bottom boundaries, and the
-interior obstacle domain using the :py:class:`SubDomain` class and
-creating instances of these classes:
+:py:class:`MeshFunction <dolfin.cpp.MeshFunction>` which is useful for
+these types of operations: instances of this class represents a
+function over mesh entities (such as over cells or over facets). Mesh
+functions can be read from file or, if explicit formulae for the
+domains are known, they can be constructed by way of instances of the
+:py:class:`SubDomain <dolfin.cpp.SubDomain>` class. The latter is the
+case here, so we begin by defining the left, right, top and bottom
+boundaries, and the interior obstacle domain using the
+:py:class:`SubDomain <dolfin.cpp.SubDomain>` class and creating
+instances of these classes:
 
 .. code-block:: python
 
@@ -70,10 +71,10 @@ creating instances of these classes:
     bottom = Bottom()
     obstacle = Obstacle()
 
-Note that the DOLFIN functions :py:func:`near` and :py:func:`between`
-provide robust ways of testing whether a coordinate is (to within
-machine precision) close to a given numerical value and in a range of
-values, respectively.
+Note that the DOLFIN functions :py:func:`near <dolfin.cpp.near>` and
+:py:func:`between <dolfin.cpp.between>` provide robust ways of testing
+whether a coordinate is (to within machine precision) close to a given
+numerical value and in a range of values, respectively.
 
 We next define a mesh of the domain:
 
@@ -84,20 +85,25 @@ We next define a mesh of the domain:
 The above sub-domains are defined with the sole purpose of populating
 mesh functions. (For more complicated geometries, the mesh functions
 would typically be provided by other means.) The classes
-:py:class:`CellFunction` and :py:class:`FacetFunction` are specialized
-versions of the more general
-:py:class:`MeshFunction`. :py:class:`CellFunction` represents a
-function with a value for each cell of a mesh, while
-:py:class:`FacetFunction` represents a function with a value for each
-facet. We define a :py:class:`CellFunction` to indicate which cells
-that correspond to the different interior sub-regions :math:`\Omega_0`
-and :math:`\Omega_1`. Those in the interior rectangle will be tagged
-by `1`, while the remainder is tagged by `0`. We can set all the
-values of a :py:class:`MeshFunction` to a given value using the
-:py:func:`set_all` method.  So, in order to accomplish what we want,
-we can set all values to `0` first, and then we can use the
-``obstacle`` instance to mark the cells identified as inside the
-domain by `1` (thus overwriting the previous value):
+:py:class:`CellFunction <dolfin.cpp.CellFunction>` and
+:py:class:`FacetFunction <dolfin.cpp.FacetFunction>` are specialized
+versions of the more general :py:class:`MeshFunction
+<dolfin.cpp.MeshFunction>`. :py:class:`CellFunction
+<dolfin.cpp.CellFunction>` represents a function with a value for each
+cell of a mesh, while :py:class:`FacetFunction
+<dolfin.cpp.FacetFunction>` represents a function with a value for
+each facet. We define a :py:class:`CellFunction
+<dolfin.cpp.CellFunction>` to indicate which cells that correspond to
+the different interior sub-regions :math:`\Omega_0` and
+:math:`\Omega_1`. Those in the interior rectangle will be tagged by
+`1`, while the remainder is tagged by `0`. We can set all the values
+of a :py:class:`MeshFunction <dolfin.cpp.MeshFunction>` to a given
+value using the :py:func:`set_all
+<dolfin.cpp.MeshFunctionInt.set_all>` method.  So, in order to
+accomplish what we want, we can set all values to `0` first, and then
+we can use the ``obstacle`` instance to mark the cells identified as
+inside the obstacle region by `1` (thus overwriting the previous
+value):
 
 .. code-block:: python
 
@@ -106,8 +112,8 @@ domain by `1` (thus overwriting the previous value):
     domains.set_all(0)
     obstacle.mark(domains, 1)
 
-We can do the same for the boundaries using a
-:py:class:`FacetFunction`. We first tag all the edges by ``0``, then
+We can do the same for the boundaries using a :py:class:`FacetFunction
+<dolfin.cpp.FacetFunction>`. We first tag all the edges by ``0``, then
 the edges on the left by ``1``, on the top by ``2``, on the right by
 ``3`` and on the bottom by ``4``:
 
@@ -183,7 +189,7 @@ variational problem above using these measures and the tags for the
 different sub-regions. For simplicity, we define the full form first,
 and then extract the left and right-hand sides using the UFL functions
 :py:func:`lhs` and :py:func:`rhs` afterwards. We can then
-:py:func:`solve` as usual:
+:py:func:`solve <dolfin.fem.solving.solve>` as usual:
 
 .. code-block:: python
 
@@ -208,12 +214,12 @@ examples:
     # Evaluate integral of normal gradient over top boundary
     n = FacetNormal(mesh)
     m1 = dot(grad(u), n)*ds(2)
-    v1 = assemble(m)
+    v1 = assemble(m1)
     print "\int grad(u) * n ds(2) = ", v1
 
     # Evaluate integral of u over the obstacle
     m2 = u*dx(1)
-    v2 = assemble(m)
+    v2 = assemble(m2)
     print "\int u dx(1) = ", v2
 
 We also plot the solution and its gradient:
