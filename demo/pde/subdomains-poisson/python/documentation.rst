@@ -2,196 +2,232 @@
 
 .. _demo_pde_subdomains_poisson_documentation:
 
-Stokes equations
-================
+Poisson equation with multiple subdomains
+=========================================
 
 This demo is implemented in a single Python file,
 :download:`demo_subdomains-poisson.py`, which contains both the
-variational forms and the solver.
+variational forms and the solver. We suggest that you familiarize with
+the :ref:`Poisson demo <demo_pde_poisson_python_documentation>` before
+studying this example, as some of the more standard steps will be
+described in less detail.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-.. This description goes through the implementation (in
-.. :download:`demo_stokes-iterative.py`) of a solver for the above
-.. described Stokes equations. Some of the standard steps will be
-.. described in less detail, so before reading this, we suggest that you
-.. are familiarize with the :ref:`Poisson demo
-.. <demo_pde_poisson_python_documentation>` (for the very basics) and the
-.. :ref:`Mixed Poisson demo
-.. <demo_pde_mixed-poisson_python_documentation>` (for how to deal with
-.. mixed function spaces). Also, the :ref:`Navier--Stokes demo
-.. <demo_pde_navier_stokes_python_documentation>` illustrates how to use
-.. iterative solvers in a more implicit manner (typically only suitable
-.. for positive-definite systems of equations).
+This description goes through the implementation (in
+:download:`demo_subdomains-poisson.py`) of a solver for the above
+described equations.
 
-.. The Stokes equations as formulated above result in a system of linear
-.. equations that is not positive-definite. Standard iterative linear
-.. solvers typically fail to converge for such systems. Some care must
-.. therefore be taken in preconditioning the systems of
-.. equations. Moreover, not all of the linear algebra backends support
-.. this. We therefore start by checking that either "PETSc" or "Epetra"
-.. (from Trilinos) is available:
+In this example, different boundary conditions are prescribed on
+different parts of the boundaries, and different parts of the interior
+have different material properties. This information must be made
+available to the solver.  One way of doing this, is to tag the
+different sub-regions with different (integer) labels, and later
+integrate over the specified regions. DOLFIN provides a class
+:py:class:`MeshFunction` which is useful for these types of
+operations: instances of this class represents a function over mesh
+entities (such as over cells or over facets). Mesh functions can be
+read from file or, if explicit formulae for the domains are known,
+they can be constructed by way of instances of the
+:py:class:`SubDomain` class. The latter is the case here, so we begin
+by defining the left, right, top and bottom boundaries, and the
+interior obstacle domain using the :py:class:`SubDomain` class and
+creating instances of these classes:
 
-.. .. code-block:: python
+.. code-block:: python
 
-..     from dolfin import *
+    from dolfin import *
 
-..     # Test for PETSc or Epetra
-..     if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
-..         print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
-..         exit()
+    # Create classes for defining parts of the boundaries and the interior
+    # of the domain
+    class Left(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], 0.0)
 
-..     print "This demo is unlikely to converge if PETSc is not configured with Hypre or ML."
+    class Right(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], 1.0)
 
-.. Next, we define the mesh (a :py:class:`UnitCube
-.. <dolfin.cpp.UnitCube>`) and a :py:class:`MixedFunctionSpace
-.. <dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
-.. :py:class:`VectorFunctionSpace
-.. <dolfin.functions.functionspace.VectorFunctionSpace>` of continuous
-.. piecewise quadratics and a :py:class:`FunctionSpace
-.. <dolfin.functions.functionspace.FunctionSpace>` of continuous
-.. piecewise linears. (This mixed finite element space is known as the
-.. Taylor--Hood elements and is a stable, standard element pair for the
-.. Stokes equations.)
+    class Bottom(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], 0.0)
 
-.. .. code-block:: python
+    class Top(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], 1.0)
 
-..     # Load mesh
-..     mesh = UnitCube(16, 16, 16)
+    class Obstacle(SubDomain):
+        def inside(self, x, on_boundary):
+            return (between(x[1], (0.5, 0.7)) and between(x[0], (0.2, 1.0)))
 
-..     # Define function spaces
-..     V = VectorFunctionSpace(mesh, "CG", 2)
-..     Q = FunctionSpace(mesh, "CG", 1)
-..     W = V * Q
+    # Initialize sub-domain instances
+    left = Left()
+    top = Top()
+    right = Right()
+    bottom = Bottom()
+    obstacle = Obstacle()
 
-.. Next, we define the boundary conditions.
+Note that the DOLFIN functions :py:func:`near` and :py:func:`between`
+provide robust ways of testing whether a coordinate is (to within
+machine precision) close to a given numerical value and in a range of
+values, respectively.
 
-.. .. code-block:: python
+We next define a mesh of the domain:
 
-..     # Boundaries
-..     def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)
-..     def left(x, on_boundary): return x[0] < DOLFIN_EPS
-..     def top_bottom(x, on_boundary):
-..         return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
+.. code-block:: python
 
-..     # No-slip boundary condition for velocity
-..     noslip = Constant((0.0, 0.0, 0.0))
-..     bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
+    mesh = UnitSquare(64, 64)
 
-..     # Inflow boundary condition for velocity
-..     inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
-..     bc1 = DirichletBC(W.sub(0), inflow, right)
+The above sub-domains are defined with the sole purpose of populating
+mesh functions. (For more complicated geometries, the mesh functions
+would typically be provided by other means.) The classes
+:py:class:`CellFunction` and :py:class:`FacetFunction` are specialized
+versions of the more general
+:py:class:`MeshFunction`. :py:class:`CellFunction` represents a
+function with a value for each cell of a mesh, while
+:py:class:`FacetFunction` represents a function with a value for each
+facet. We define a :py:class:`CellFunction` to indicate which cells
+that correspond to the different interior sub-regions :math:`\Omega_0`
+and :math:`\Omega_1`. Those in the interior rectangle will be tagged
+by `1`, while the remainder is tagged by `0`. We can set all the
+values of a :py:class:`MeshFunction` to a given value using the
+:py:func:`set_all` method.  So, in order to accomplish what we want,
+we can set all values to `0` first, and then we can use the
+``obstacle`` instance to mark the cells identified as inside the
+domain by `1` (thus overwriting the previous value):
 
-..     # Boundary condition for pressure at outflow
-..     zero = Constant(0)
-..     bc2 = DirichletBC(W.sub(1), zero, left)
+.. code-block:: python
 
-..     # Collect boundary conditions
-..     bcs = [bc0, bc1, bc2]
+    # Initialize mesh function for interior domains
+    domains = CellFunction("uint", mesh)
+    domains.set_all(0)
+    obstacle.mark(domains, 1)
 
-.. The bilinear and linear forms corresponding to the weak mixed
-.. formulation of the Stokes equations are defined as follows:
+We can do the same for the boundaries using a
+:py:class:`FacetFunction`. We first tag all the edges by ``0``, then
+the edges on the left by ``1``, on the top by ``2``, on the right by
+``3`` and on the bottom by ``4``:
 
-.. .. code-block:: python
+.. code-block:: python
 
-..     # Define variational problem
-..     (u, p) = TrialFunctions(W)
-..     (v, q) = TestFunctions(W)
-..     f = Constant((0.0, 0.0, 0.0))
-..     a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
-..     L = inner(f, v)*dx
+    # Initialize mesh function for boundary domains
+    boundaries = FacetFunction("uint", mesh)
+    boundaries.set_all(0)
+    left.mark(boundaries, 1)
+    top.mark(boundaries, 2)
+    right.mark(boundaries, 3)
+    bottom.mark(boundaries, 4)
+
+Now that the geometry is defined and labeled, we can move on to
+defining the input source functions:
+
+.. code-block:: python
+
+    # Define input data
+    a0 = Constant(1.0)
+    a1 = Constant(0.01)
+    g_L = Expression("- 10*exp(- pow(x[1] - 0.5, 2))")
+    g_R = Constant("1.0")
+    f = Constant(1.0)
+
+Here, ``a0`` and ``a1`` represent the values of the coefficient
+:math:`a` in the two regions of the domain, ``g_L`` and ``g_R``
+represent the values of the Neumann boundary condition on the left and
+right boundaries respectively, and ``f`` represents the body source.
+
+We may now move on to define the variational equation. As usual, we
+start by defining a finite element function space and basis functions
+on this space:
+
+.. code-block:: python
+
+    # Define function space and basis functions
+    V = FunctionSpace(mesh, "CG", 2)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+With this function space, we can define the essential (Dirichlet)
+boundary conditions on the top and bottom boundaries. These boundaries
+correspond to the facets tagged by ``2`` and ``4``, respectively, in
+the ``boundaries`` facet function:
+
+.. code-block:: python
+
+    # Define Dirichlet boundary conditions at top and bottom boundaries
+    bcs = [DirichletBC(V, 5.0, boundaries, 2),
+           DirichletBC(V, 0.0, boundaries, 4)]
+
+DOLFIN predefines the "measures" ``dx``, ``ds`` and ``dS``
+representing integration over cells, exterior facets (that is, facets
+on the boundary) and interior facets, respectively. These measures can
+take an additional integer argument.  In fact, ``dx`` defaults to
+``dx(0)``, ``ds`` defaults to ``ds(0)``, and ``dS`` defaults to
+``dS(0)``. Integration over sub-regions can be specified by measures
+with different integer labels as arguments. However, we also need to
+map the geometry information stored in the mesh functions to these
+measures. The easiest way of accomplishing this is to define new
+measures with the mesh functions as additional input:
+
+.. code-block:: python
+
+    # Define new measures associated with the interior domains and
+    # exterior boundaries
+    dx = Measure("dx")[domains]
+    ds = Measure("ds")[boundaries]
+
+We can now define the variational forms corresponding to the
+variational problem above using these measures and the tags for the
+different sub-regions. For simplicity, we define the full form first,
+and then extract the left and right-hand sides using the UFL functions
+:py:func:`lhs` and :py:func:`rhs` afterwards. We can then
+:py:func:`solve` as usual:
+
+.. code-block:: python
+
+    # Define variational form
+    F = (inner(a0*grad(u), grad(v))*dx(0) + inner(a1*grad(u), grad(v))*dx(1)
+         - g1*v*ds(1) - g3*v*ds(3)
+         - f*v*dx(0) - f*v*dx(1))
+
+    # Separate left and right hand sides of equation
+    a, L = lhs(F), rhs(F)
+
+    # Solve problem
+    u = Function(V)
+    solve(a == L, u, bcs)
+
+Now, we can also evaluate various integrals of the solution or derived
+quantities of the solution over different regions, here are some
+examples:
+
+.. code-block:: python
+
+    # Evaluate integral of normal gradient over top boundary
+    n = FacetNormal(mesh)
+    m1 = dot(grad(u), n)*ds(2)
+    v1 = assemble(m)
+    print "\int grad(u) * n ds(2) = ", v1
+
+    # Evaluate integral of u over the obstacle
+    m2 = u*dx(1)
+    v2 = assemble(m)
+    print "\int u dx(1) = ", v2
+
+We also plot the solution and its gradient:
+
+.. code-block:: python
+
+    # Plot solution and gradient
+    plot(u, title="u")
+    plot(grad(u), title="Projected grad(u)")
+    interactive()
 
 
-.. We can now use the same :py:class:`TrialFunctions
-.. <dolfin.functions.function.TrialFunction>` and
-.. :py:class:`TestFunctions <dolfin.functions.function.TestFunction>` to
-.. define the preconditioner matrix. We first define the form
-.. corresponding to the expression for the preconditioner (given in the
-.. initial description above):
+Complete code
+-------------
 
-.. .. code-block:: python
-
-..     # Form for use in constructing preconditioner matrix
-..     b = inner(grad(u), grad(v))*dx + p*q*dx
-
-.. Next, we want to assemble the matrix corresponding to the bilinear
-.. form and the vector corresponding to the linear form of the Stokes
-.. equations. Moreover, we want to apply the specified boundary
-.. conditions to the linear system. However, :py:func:`assembling
-.. <dolfin.fem.assembling.assemble>` the matrix and vector and applying a
-.. :py:func:`DirichletBC <dolfin.fem.bcs.DirichletBC>` separately
-.. will possibly result in a non-symmetric system of equations. Instead,
-.. we can use the :py:func:`assemble_system
-.. <dolfin.fem.assembling.assemble_system>` function to assemble both the
-.. matrix ``A``, the vector ``bb``, and apply the boundary conditions
-.. ``bcs`` in a symmetric fashion:
-
-.. .. code-block:: python
-
-..     # Assemble system
-..     A, bb = assemble_system(a, L, bcs)
-
-.. We do the same for the preconditioner matrix ``P`` using the linear
-.. form ``L`` as a dummy form:
-
-.. .. code-block:: python
-
-..     # Assemble preconditioner system
-..     P, btmp = assemble_system(b, L, bcs)
-
-.. Next, we specify the iterative solver we want to use, in this case a
-.. :py:class:`KrylovSolver <dolfin.cpp.KrylovSolver>`. We associate the
-.. left-hand side matrix ``A`` and the preconditioner matrix ``P`` with
-.. the solver by calling :py:func:`solver.set_operators
-.. <dolfin.cpp.GenericLinearSolver.set_operators>`.
-
-.. .. code-block:: python
-
-..     # Create Krylov solver and AMG preconditioner
-..     solver = KrylovSolver("tfqmr", "amg")
-
-..     # Associate operator (A) and preconditioner matrix (P)
-..     solver.set_operators(A, P)
-
-.. We are now almost ready to solve the linear system of equations. It
-.. remains to specify a :py:class:`Vector <dolfin.cpp.Vector>` for
-.. storing the result. For easy manipulation later, we can define a
-.. :py:class:`Function <dolfin.functions.function.Function>` and use the
-.. vector associated with this Function. The call to
-.. :py:func:`solver.solve <dolfin.cpp.KrylovSolver.solve>` then looks as
-.. follows
-
-.. .. code-block:: python
-
-..     # Solve
-..     U = Function(W)
-..     solver.solve(U.vector(), bb)
-
-.. Finally, we can play with the result in different ways:
-
-.. .. code-block:: python
-
-..     # Get sub-functions
-..     u, p = U.split()
-
-..     # Save solution in VTK format
-..     ufile_pvd = File("velocity.pvd")
-..     ufile_pvd << u
-..     pfile_pvd = File("pressure.pvd")
-..     pfile_pvd << p
-
-..     # Plot solution
-..     plot(u)
-..     plot(p)
-..     interactive()
-
-
-
-.. Complete code
-.. -------------
-
-.. .. literalinclude:: demo_subdomains-poisson.py
-..    :start-after: # Begin demo
+.. literalinclude:: demo_subdomains-poisson.py
+   :start-after: # Begin demo
