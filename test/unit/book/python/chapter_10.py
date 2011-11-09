@@ -40,29 +40,42 @@ def create_data(A=None):
     x = Vector()
     return A, x, b
 
+def skip_in_parallel():
+    "Skip test in parallel"
+    if MPI.num_processes() > 1:
+        print "FIXME: This unit test does not work in parallel, skipping"
+        return True
+    return False
+
 class TestPage4(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         x = Vector()
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         A = Matrix()
 
 class TestPage5(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         x = Vector(100)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solve(A, x, b)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solve(A, x, b, "lu");
         solve(A, x, b, "gmres", "ilu")
 
     def test_box_4(self):
+        if skip_in_parallel(): return
         list_lu_solver_methods()
         list_krylov_solver_methods()
         list_krylov_solver_preconditioners()
@@ -70,21 +83,25 @@ class TestPage5(unittest.TestCase):
 class TestPage6(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = LUSolver(A)
         solver.solve(x, b)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = LUSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         solver = LUSolver()
         solver.parameters["same_nonzero_pattern"] = True
 
     def test_box_4(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = KrylovSolver(A)
         solver.solve(x, b)
@@ -92,12 +109,14 @@ class TestPage6(unittest.TestCase):
 class TestPage7(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         solver = KrylovSolver()
         solver.set_operator(A)
         solver.solve(x, b)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         A, x, b = create_data()
         P = A
         solver = KrylovSolver()
@@ -105,6 +124,7 @@ class TestPage7(unittest.TestCase):
         solver.solve(x, b)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["relative_tolerance"] = 1.0e-6
         solver.parameters["absolute_tolerance"] = 1.0e-15
@@ -114,6 +134,7 @@ class TestPage7(unittest.TestCase):
         solver.parameters["nonzero_initial_guess"] = False
 
     def test_box_4(self):
+        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["report"] = True
         solver.parameters["monitor_convergence"] = True
@@ -121,9 +142,11 @@ class TestPage7(unittest.TestCase):
 class TestPage8(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         solver = KrylovSolver("gmres", "ilu")
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         A = PETScMatrix()
         A, x, b = create_data(A)
         eigensolver = SLEPcEigenSolver(A)
@@ -133,6 +156,7 @@ class TestPage8(unittest.TestCase):
 class TestPage9(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         A = PETScMatrix()
         M = PETScMatrix()
         A, x, b = create_data(A)
@@ -140,15 +164,18 @@ class TestPage9(unittest.TestCase):
         eigensolver = SLEPcEigenSolver(A, M)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         parameters["linear_algebra_backend"] = "PETSc"
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         x = PETScVector()
         solver = PETScLUSolver()
 
 class TestPage10(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
 
         class MyNonlinearProblem(NonlinearProblem):
             def __init__(self, L, a, bc):
@@ -168,6 +195,7 @@ class TestPage10(unittest.TestCase):
 class TestPage11(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
 
         class MyNonlinearProblem(NonlinearProblem):
             def __init__(self, L, a, bc):
@@ -198,6 +226,7 @@ class TestPage11(unittest.TestCase):
         newton_solver.solve(problem, u.vector())
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         newton_solver = NewtonSolver()
         newton_solver.parameters["maximum_iterations"] = 20
         newton_solver.parameters["relative_tolerance"] = 1.0e-6
@@ -205,12 +234,14 @@ class TestPage11(unittest.TestCase):
         newton_solver.parameters["error_on_nonconvergence"] = False
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         unit_square = UnitSquare(16, 16)
         unit_cube = UnitCube(16, 16, 16)
 
 class TestPage12(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = Mesh();
         editor = MeshEditor();
         editor.open(mesh, 2, 2)
@@ -225,17 +256,20 @@ class TestPage12(unittest.TestCase):
         editor.close()
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = Mesh("mesh.xml")
 
 class TestPage14(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         entity = MeshEntity(mesh, 0, 33)
         vertex = Vertex(mesh, 33)
         cell = Cell(mesh, 25)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         gdim = mesh.topology().dim()
         tdim = mesh.geometry().dim()
@@ -243,12 +277,14 @@ class TestPage14(unittest.TestCase):
 class TestPage15(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         mesh.init(2)
         mesh.init(0, 0)
         mesh.init(1, 1)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         for c in cells(mesh):
             for v0 in vertices(c):
@@ -258,6 +294,7 @@ class TestPage15(unittest.TestCase):
 class TestPage16(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         D = mesh.topology().dim()
         for c in entities(mesh, D):
@@ -266,6 +303,7 @@ class TestPage16(unittest.TestCase):
                     print v1
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
 
         sub_domains = CellFunction("uint", mesh)
@@ -285,11 +323,13 @@ class TestPage16(unittest.TestCase):
 class TestPage17(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         sub_domains = mesh.data().create_mesh_function("sub_domains")
         sub_domains = mesh.data().mesh_function("sub_domains")
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
 
         mesh = refine(mesh)
@@ -306,6 +346,7 @@ class TestPage17(unittest.TestCase):
 class TestPage19(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         element = FiniteElement("Lagrange", tetrahedron, 5)
         element = FiniteElement("CG", tetrahedron, 5)
         element = FiniteElement("Brezzi-Douglas-Marini", triangle, 3)
@@ -316,13 +357,16 @@ class TestPage19(unittest.TestCase):
 class TestPage20(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         element = FiniteElement("Lagrange", triangle, 1)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         V = VectorElement("Lagrange", triangle, 2)
         Q = FiniteElement("Lagrange", triangle, 1)
         W = V*Q
@@ -330,12 +374,14 @@ class TestPage20(unittest.TestCase):
 class TestPage21(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
         Q = FunctionSpace(mesh, "Lagrange", 1)
         W = V*Q
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = Function(V)
@@ -343,6 +389,7 @@ class TestPage21(unittest.TestCase):
 class TestPage22(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -353,6 +400,7 @@ class TestPage22(unittest.TestCase):
         solve(A, u.vector(), b)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitCube(2, 2, 2)
 
         V = FunctionSpace(mesh, "Lagrange", 1)
@@ -366,6 +414,7 @@ class TestPage22(unittest.TestCase):
 class TestPage23(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
         Q = FunctionSpace(mesh, "Lagrange", 1)
@@ -379,6 +428,7 @@ class TestPage23(unittest.TestCase):
 class TestPage24(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         class MyExpression(Expression):
             def eval(self, values, x):
                 values[0] = sin(x[0])*cos(x[1])
@@ -386,6 +436,7 @@ class TestPage24(unittest.TestCase):
         print f((0.5, 0.5))
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         class MyExpression(Expression):
             def eval(self, values, x):
                 values[0] = sin(x[0])
@@ -396,12 +447,14 @@ class TestPage24(unittest.TestCase):
         print g((0.5, 0.5))
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         f = Expression("sin(x[0])*cos(x[1])")
         g = Expression(("sin(x[0])", "cos(x[1])"))
 
 class TestPage25(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         t = 0.0
         T = 1.0
         dt = 0.5
@@ -414,6 +467,7 @@ class TestPage25(unittest.TestCase):
 class TestPage26(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = VectorFunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -435,6 +489,7 @@ class TestPage26(unittest.TestCase):
 class TestPage27(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = TrialFunction(V)
@@ -451,6 +506,7 @@ class TestPage27(unittest.TestCase):
 class TestPage29(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         class NeumannBoundary(SubDomain):
             def inside(self, x, on_boundary):
@@ -463,6 +519,7 @@ class TestPage29(unittest.TestCase):
 class TestPage30(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
@@ -477,6 +534,7 @@ class TestPage30(unittest.TestCase):
         a = g*v*dss(0) + h*v*dss(1)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         class DirichletValue(Expression):
@@ -491,87 +549,93 @@ class TestPage30(unittest.TestCase):
 
 class TestPage31(unittest.TestCase):
 
-     def test_box_1(self):
-         mesh = UnitSquare(2, 2)
-         V = FunctionSpace(mesh, "CG", 1)
-         u_0 = Expression("sin(x[0])")
-         bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+    def test_box_1(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        u_0 = Expression("sin(x[0])")
+        bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
 
-     def test_box_2(self):
-         mesh = UnitSquare(2, 2)
-         V = FunctionSpace(mesh, "CG", 1)
-         A, x, b = create_data()
-         u_0 = Expression("sin(x[0])")
-         bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         u = Function(V)
+    def test_box_2(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        A, x, b = create_data()
+        u_0 = Expression("sin(x[0])")
+        bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        u = Function(V)
 
-         bc.apply(A, b)
-         bc.apply(u.vector())
+        bc.apply(A, b)
+        bc.apply(u.vector())
 
 class TestPage32(unittest.TestCase):
 
-     def test_box_1(self):
-         mesh = UnitSquare(2, 2)
-         V = FunctionSpace(mesh, "CG", 1)
-         u_0 = Expression("sin(x[0])")
-         bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         u = TrialFunction(V)
-         v = TestFunction(V)
-         a = u*v*dx
-         L = v*dx
+    def test_box_1(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        u_0 = Expression("sin(x[0])")
+        bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        u = TrialFunction(V)
+        v = TestFunction(V)
+        a = u*v*dx
+        L = v*dx
 
-         bcs = [bc0, bc1, bc2]
-         u = Function(V)
-         solve(a == L, u, bcs=bcs)
+        bcs = [bc0, bc1, bc2]
+        u = Function(V)
+        solve(a == L, u, bcs=bcs)
 
-     def test_box_2(self):
-         mesh = UnitSquare(2, 2)
-         V = FunctionSpace(mesh, "CG", 1)
-         f = Expression("0.0")
-         u_0 = Expression("sin(x[0])")
-         bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bcs = [bc0, bc1, bc2]
-         du = TrialFunction(V)
+    def test_box_2(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        f = Expression("0.0")
+        u_0 = Expression("sin(x[0])")
+        bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bcs = [bc0, bc1, bc2]
+        du = TrialFunction(V)
 
-         u = Function(V)
-         v = TestFunction(V)
-         F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
-         solve(F == 0, u, bcs=bcs)
+        solve(F == 0, u, bcs=bcs)
 
-         J = derivative(F, u)
-         solve(F == 0, u, bcs=bcs, J=J)
+        J = derivative(F, u)
+        solve(F == 0, u, bcs=bcs, J=J)
 
-     def test_box_3(self):
-         mesh = UnitSquare(2, 2)
-         V = FunctionSpace(mesh, "CG", 1)
-         f = Expression("0.0")
-         u_0 = Expression("sin(x[0])")
-         bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
-         bcs = [bc0, bc1, bc2]
-         du = TrialFunction(V)
+    def test_box_3(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        f = Expression("0.0")
+        u_0 = Expression("sin(x[0])")
+        bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
+        bcs = [bc0, bc1, bc2]
+        du = TrialFunction(V)
 
-         u = Function(V)
-         v = TestFunction(V)
-         F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
-         J = derivative(F, u)
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
+        J = derivative(F, u)
 
-         u = Function(V)
-         problem = NonlinearVariationalProblem(F, u, bcs=bcs, J=J)
-         solver = NonlinearVariationalSolver(problem)
-         solver.parameters["linear_solver"] = "gmres"
-         solver.parameters["preconditioner"] = "ilu"
-         solver.solve()
+        u = Function(V)
+        problem = NonlinearVariationalProblem(F, u, bcs=bcs, J=J)
+        solver = NonlinearVariationalSolver(problem)
+        solver.parameters["linear_solver"] = "gmres"
+        solver.parameters["preconditioner"] = "ilu"
+        solver.solve()
 
 class TestPage33(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         f = Expression("0.0")
@@ -592,11 +656,13 @@ class TestPage33(unittest.TestCase):
         info(solver.parameters, True)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = Mesh("mesh.xml")
 
 class TestPage34(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -607,6 +673,7 @@ class TestPage34(unittest.TestCase):
         #plot(mesh_function)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -621,6 +688,7 @@ class TestPage34(unittest.TestCase):
 class TestPage35(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -629,6 +697,7 @@ class TestPage35(unittest.TestCase):
         file << u
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -640,6 +709,7 @@ class TestPage35(unittest.TestCase):
 class TestPage36(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         matrix, vector, b = create_data()
 
@@ -656,6 +726,7 @@ class TestPage36(unittest.TestCase):
 class TestPage37(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
@@ -670,6 +741,7 @@ class TestPage37(unittest.TestCase):
             t += dt
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         time_series = TimeSeries("simulation_data")
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "CG", 1)
@@ -680,6 +752,7 @@ class TestPage37(unittest.TestCase):
         time_series.retrieve(mesh, t)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         M = 100
         N = 100
         info("Assembling system of size %d x %d." % (M, N))
@@ -687,6 +760,7 @@ class TestPage37(unittest.TestCase):
 class TestPage38(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         info("Test message")
         log(DEBUG, "Test message")
         log(15, "Test message")
@@ -701,30 +775,33 @@ class TestPage38(unittest.TestCase):
 
 class TestPage39(unittest.TestCase):
 
-     def test_box_1(self):
-         matrix, vector, b = create_data()
-         solver = KrylovSolver()
-         mesh = UnitSquare(2, 2)
-         mesh_function = MeshFunction("uint", mesh, 0)
-         function_space = FunctionSpace(mesh, "CG", 1)
-         function = Function(function_space)
+    def test_box_1(self):
+        if skip_in_parallel(): return
+        matrix, vector, b = create_data()
+        solver = KrylovSolver()
+        mesh = UnitSquare(2, 2)
+        mesh_function = MeshFunction("uint", mesh, 0)
+        function_space = FunctionSpace(mesh, "CG", 1)
+        function = Function(function_space)
 
-         info(vector)
-         info(matrix)
-         info(solver)
-         info(mesh)
-         info(mesh_function)
-         info(function)
-         info(function_space)
-         info(parameters)
+        info(vector)
+        info(matrix)
+        info(solver)
+        info(mesh)
+        info(mesh_function)
+        info(function)
+        info(function_space)
+        info(parameters)
 
-     def test_box_2(self):
-         mesh = UnitSquare(2, 2)
-         info(mesh, True)
+    def test_box_2(self):
+        if skip_in_parallel(): return
+        mesh = UnitSquare(2, 2)
+        info(mesh, True)
 
 class TestPage40(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         t = 0.0
         T = 1.0
@@ -746,6 +823,7 @@ class TestPage40(unittest.TestCase):
             q.update(t / T)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         def solve(A, b):
             timer = Timer("Linear solve")
             x = 1
@@ -755,6 +833,7 @@ class TestPage40(unittest.TestCase):
 class TestPage41(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         info(parameters, True)
         num_threads = parameters["num_threads"]
         allow_extrapolation = parameters["allow_extrapolation"]
@@ -762,6 +841,7 @@ class TestPage41(unittest.TestCase):
         parameters["allow_extrapolation"] = True
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         solver = KrylovSolver()
         solver.parameters["absolute_tolerance"] = 1e-6
         solver.parameters["report"] = True
@@ -771,24 +851,29 @@ class TestPage41(unittest.TestCase):
 class TestPage42(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         my_parameters = Parameters("my_parameters")
         my_parameters.add("foo", 3)
         my_parameters.add("bar", 0.1)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
         parameters.update(d)
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
                                    nested=Parameters("nested", baz=True))
 
     def test_box_4(self):
+        if skip_in_parallel(): return
         parameters.parse()
 
 class TestPage43(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         file = File("parameters.xml")
         file << parameters
         file >> parameters
@@ -796,28 +881,33 @@ class TestPage43(unittest.TestCase):
 class TestPage45(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         parameters["mesh_partitioner"] = "ParMETIS"
 
     def test_box_2(self):
-         from dolfin import cpp
-         Function = cpp.Function
-         assemble = cpp.assemble
+        if skip_in_parallel(): return
+        from dolfin import cpp
+        Function = cpp.Function
+        assemble = cpp.assemble
 
 class TestPage46(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
 
 class TestPage47(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
         v = TestFunction(V)
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
         V = FunctionSpace(mesh, "Lagrange", 1)
         class Source(Expression):
@@ -830,12 +920,14 @@ class TestPage47(unittest.TestCase):
 
 class TestPage48(unittest.TestCase):
 
-     def test_box_1(self):
-         e = Expression("sin(x[0])")
+    def test_box_1(self):
+        if skip_in_parallel(): return
+        e = Expression("sin(x[0])")
 
 class TestPage49(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -847,9 +939,11 @@ class TestPage49(unittest.TestCase):
 class TestPage50(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         parameters["form_compiler"]["name"] = "sfc"
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -860,6 +954,7 @@ class TestPage50(unittest.TestCase):
         AA = A.array()
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         v = TestFunction(V)
@@ -873,6 +968,7 @@ class TestPage50(unittest.TestCase):
         parameters["linear_algebra_backend"] = "PETSc"
 
     def test_box_4(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -891,6 +987,7 @@ class TestPage50(unittest.TestCase):
 class TestPage51(unittest.TestCase):
 
     def test_box_1(self):
+        if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
@@ -907,6 +1004,7 @@ class TestPage51(unittest.TestCase):
         parameters["linear_algebra_backend"] = "PETSc"
 
     def test_box_2(self):
+        if skip_in_parallel(): return
         b = Vector(10)
         c = Vector(10)
         b_copy = b[:]
@@ -915,6 +1013,7 @@ class TestPage51(unittest.TestCase):
         b2 = b[::2]
 
     def test_box_3(self):
+        if skip_in_parallel(): return
         from numpy import array
         b = Vector(20)
         b1 = b[[0, 4, 7, 10]]
@@ -924,8 +1023,4 @@ if __name__ == "__main__":
     print ""
     print "Testing the FEniCS Book, Chapter 10"
     print "-----------------------------------"
-    # Skip these tests in parallel for now
-    if MPI.num_processes() > 1:
-        print "FIXME: This unit test does not work in parallel, skipping"
-    else:
-        unittest.main()
+    unittest.main()

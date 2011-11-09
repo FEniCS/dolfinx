@@ -45,8 +45,18 @@ def run_path(path, args):
         if not status == 0:
             raise RuntimeError, "Python script failed"
 
+def skip_in_parallel():
+    "Skip test in parallel"
+    if MPI.num_processes() > 1:
+        print "FIXME: This unit test does not work in parallel, skipping"
+        return True
+    return False
+
 def run_test(path, args=[]):
     "Run test script implied by name of calling function, neat trick..."
+
+    # Skip tests in parallel for now
+    if skip_in_parallel(): return
 
     # Figure out name of script to be run
     script_name = inspect.stack()[1][3].split("test_")[1] + ".py"
@@ -164,8 +174,4 @@ if __name__ == "__main__":
     print ""
     print "Testing the FEniCS Book, Chapter 1"
     print "----------------------------------"
-    # Skip these tests in parallel for now
-    if MPI.num_processes() > 1:
-        print "FIXME: This unit test does not work in parallel, skipping"
-    else:
-        unittest.main()
+    unittest.main()
