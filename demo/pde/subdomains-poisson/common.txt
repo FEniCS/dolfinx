@@ -1,0 +1,21 @@
+
+The main purpose of this demo is to illustrate how to integrate over
+specified parts of a domain and/or its boundaries. We recommend that
+you read the standard Poisson demo first.
+
+Equation and problem definition
+-------------------------------
+
+Let :math:`\Omega = [0,1] \times [0,1]` (a unit square), and consider
+a weighted Poisson equation over this domain with mixed boundary
+conditions:
+
+.. math::
+   - a \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+                  u &= 5.0 \quad {\rm on} \ \Gamma_{T}, \\
+                  u &= 0.0 \quad {\rm on} \ \Gamma_{B}, \\
+                  \nabla u \cdot n &= - 10*exp(-(y - 0.5)^2), \quad {\rm on} \ \Gamma_{L}. \\
+                  \nabla u \cdot n &= 1.0 \quad {\rm on} \ \Gamma_{R}. \\
+
+where :math:`\Gamma_{T, B, L, R}` denotes the top, bottom, left and
+right sides of the unit square respectively.
