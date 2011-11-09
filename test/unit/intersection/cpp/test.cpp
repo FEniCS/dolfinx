@@ -18,7 +18,7 @@
 // Modified by André Massing, 2011
 //
 // First added:  2011-10-04
-// Last changed: 2011-10-25
+// Last changed: 2011-11-09
 //
 // Unit test for the IntersectionOperator
 
@@ -26,6 +26,7 @@
 #include <dolfin/common/unittest.h>
 
 #include <vector>
+#include <algorithm>
 
 using namespace dolfin;
 using dolfin::uint;
@@ -35,9 +36,9 @@ class Intersection3D : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(Intersection3D);
   CPPUNIT_TEST(testCellCellIntersection);
-//  CPPUNIT_TEST(testCellFacetIntersection);
-//  CPPUNIT_TEST(testCellEdgeIntersection);
-  CPPUNIT_TEST(testCellVertexIntersection);
+  CPPUNIT_TEST(testCellFacetIntersection);
+  CPPUNIT_TEST(testCellEdgeIntersection);
+//  CPPUNIT_TEST(testCellVertexIntersection);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -66,7 +67,7 @@ public:
   void testEntityEntityIntersection()
   {
     cout <<"Run test with dim pair " << dim0 << " " << dim1 << endl;
-    uint N = 5;
+    uint N = 3;
     UnitCube mesh(N,N,N);
     IntersectionOperator io(mesh,"ExactPredicates");
     
@@ -84,20 +85,35 @@ public:
       io.all_intersected_entities(*entity,ids_result);
       cout << "--------------------------------------------------------------------------------" << endl;
       cout <<"Found " << ids_result.size() << " intersections" << endl;
+      std::sort(ids_result.begin(),ids_result.end());
+//      for (uint i = 0; i < ids_result.size(); ++i)
+//        cout << ids_result[i] << " ";
 
-      // Get mesh incidences
-      uint num_ent = entity->num_entities(dim0);
-      const uint * entities = entity->entities(dim0);
-      cout <<"Found " << num_ent << " incidences" << endl;
+      // Compute intersections via vertices and connectivity
+      // information. Two entities of the same only intersect
+      // if they share at least one vertex
+      std::vector<uint> ids_result_2;
+      for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+      {
+	uint num_ent = vertex->num_entities(dim0);
+	const uint * entities = vertex->entities(dim0);
+	for (uint i = 0; i < num_ent; ++i)
+	  ids_result_2.push_back(entities[i]);
+      }
+
+      //Sorting and removing duplicates
+      std::sort(ids_result_2.begin(),ids_result_2.end());
+      std::vector<uint>::iterator it = std::unique(ids_result_2.begin(),ids_result_2.end());
+      ids_result_2.resize(it - ids_result_2.begin());
+      cout <<"Found " << ids_result_2.size() << " intersections via connectivity" << endl;
+      cout <<endl;
       cout << "--------------------------------------------------------------------------------" << endl;
 
       // Check against mesh incidences
-      for (uint i = 0; i < num_ent; ++i)
-      {
-	std::vector<uint>::iterator it = ids_result.begin();
-	it = find(ids_result.begin(),ids_result.end(), entities[i]);
-	CPPUNIT_ASSERT(it != ids_result.end()); 
-      }
+      CPPUNIT_ASSERT(ids_result.size() == ids_result_2.size()); 
+      uint last = ids_result.size() - 1;
+      CPPUNIT_ASSERT(ids_result[0] == ids_result_2[0]); 
+      CPPUNIT_ASSERT(ids_result[last] == ids_result_2[last]); 
     }
   }
 
