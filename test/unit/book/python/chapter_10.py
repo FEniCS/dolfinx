@@ -26,6 +26,8 @@ Page numbering starts at 1 and is relative to the chapter (not the book).
 import unittest
 from dolfin import *
 
+default_parameters = parameters.copy()
+
 def create_data(A=None):
     "This function creates data used in the tests below"
     mesh = UnitSquare(2, 2)
@@ -166,6 +168,9 @@ class TestPage9(unittest.TestCase):
     def test_box_2(self):
         if skip_in_parallel(): return
         parameters["linear_algebra_backend"] = "PETSc"
+
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
 
     def test_box_3(self):
         if skip_in_parallel(): return
@@ -723,6 +728,9 @@ class TestPage36(unittest.TestCase):
         parameters_file << parameters
         parameters_file >> parameters
 
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
+
 class TestPage37(unittest.TestCase):
 
     def test_box_1(self):
@@ -840,6 +848,9 @@ class TestPage41(unittest.TestCase):
         parameters["num_threads"] = 8
         parameters["allow_extrapolation"] = True
 
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
+
     def test_box_2(self):
         if skip_in_parallel(): return
         solver = KrylovSolver()
@@ -861,6 +872,9 @@ class TestPage42(unittest.TestCase):
         d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
         parameters.update(d)
 
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
+
     def test_box_3(self):
         if skip_in_parallel(): return
         my_parameters = Parameters("my_parameters", foo=3, bar=0.1,
@@ -870,6 +884,9 @@ class TestPage42(unittest.TestCase):
         if skip_in_parallel(): return
         parameters.parse()
 
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
+
 class TestPage43(unittest.TestCase):
 
     def test_box_1(self):
@@ -878,11 +895,17 @@ class TestPage43(unittest.TestCase):
         file << parameters
         file >> parameters
 
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
+
 class TestPage45(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
         parameters["mesh_partitioner"] = "ParMETIS"
+
+        # Reset parameter again so we don't mess with other tests
+        parameters.update(default_parameters)
 
     def test_box_2(self):
         if skip_in_parallel(): return
@@ -943,7 +966,7 @@ class TestPage50(unittest.TestCase):
         parameters["form_compiler"]["name"] = "sfc"
 
         # Reset parameter again so we don't mess with other tests
-        parameters["form_compiler"]["name"] = "ffc"
+        parameters.update(default_parameters)
 
     def test_box_2(self):
         if skip_in_parallel(): return
