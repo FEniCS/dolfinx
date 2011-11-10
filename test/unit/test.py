@@ -31,7 +31,7 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap"],
+    "fem":            ["Assembly", "DirichletBC", "FiniteElement", "DofMap", "solving"],
     "function":       ["Function", "FunctionSpace", "Expression", "Constant"],
     "math":           ["basic"],
     "mesh":           ["test", "MeshFunction", "Edge", "Face", "MeshValueCollection"],
