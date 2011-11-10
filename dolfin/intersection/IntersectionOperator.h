@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2011-08-23
+// Last changed: 2011-11-09
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H

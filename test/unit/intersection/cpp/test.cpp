@@ -37,8 +37,8 @@ class Intersection3D : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(Intersection3D);
   CPPUNIT_TEST(testCellCellIntersection);
   CPPUNIT_TEST(testCellFacetIntersection);
-  CPPUNIT_TEST(testCellEdgeIntersection);
-//  CPPUNIT_TEST(testCellVertexIntersection);
+//  CPPUNIT_TEST(testCellEdgeIntersection);
+  CPPUNIT_TEST(testCellVertexIntersection);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -67,38 +67,54 @@ public:
   void testEntityEntityIntersection()
   {
     cout <<"Run test with dim pair " << dim0 << " " << dim1 << endl;
-    uint N = 3;
+    uint N = 1;
     UnitCube mesh(N,N,N);
     IntersectionOperator io(mesh,"ExactPredicates");
     
     //Compute incidences
     mesh.init(dim0,dim1);
+    mesh.init(dim1,dim0);
 
     // Iterator over all entities and compute self-intersection
     // Should be same as looking up mesh incidences
     // as we use an exact kernel
-   
     for (MeshEntityIterator entity(mesh,dim1); !entity.end(); ++entity)
     {
       // Compute intersection
       std::vector<uint> ids_result;
       io.all_intersected_entities(*entity,ids_result);
+      std::sort(ids_result.begin(),ids_result.end());
       cout << "--------------------------------------------------------------------------------" << endl;
       cout <<"Found " << ids_result.size() << " intersections" << endl;
-      std::sort(ids_result.begin(),ids_result.end());
-//      for (uint i = 0; i < ids_result.size(); ++i)
-//        cout << ids_result[i] << " ";
+      for (uint i = 0; i < ids_result.size(); ++i)
+	cout <<ids_result[i] << " ";
+      cout << endl;
 
       // Compute intersections via vertices and connectivity
       // information. Two entities of the same only intersect
       // if they share at least one vertex
       std::vector<uint> ids_result_2;
-      for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+      if (dim1 > 0)
       {
-	uint num_ent = vertex->num_entities(dim0);
-	const uint * entities = vertex->entities(dim0);
+	for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+	{
+	  uint num_ent = vertex->num_entities(dim0);
+	  const uint * entities = vertex->entities(dim0);
+	  for (uint i = 0; i < num_ent; ++i)
+	    ids_result_2.push_back(entities[i]);
+	}
+      }
+      // If we have a vertex simply take the incidences.
+      else if (dim0 > 0)
+      {
+	uint num_ent = entity->num_entities(dim0);
+	const uint * entities = entity->entities(dim0);
 	for (uint i = 0; i < num_ent; ++i)
 	  ids_result_2.push_back(entities[i]);
+      }
+      else
+      {
+	ids_result_2.push_back(entity->index());
       }
 
       //Sorting and removing duplicates
@@ -107,6 +123,9 @@ public:
       ids_result_2.resize(it - ids_result_2.begin());
       cout <<"Found " << ids_result_2.size() << " intersections via connectivity" << endl;
       cout <<endl;
+      for (uint i = 0; i < ids_result_2.size(); ++i)
+	cout <<ids_result_2[i] << " ";
+      cout << endl;
       cout << "--------------------------------------------------------------------------------" << endl;
 
       // Check against mesh incidences

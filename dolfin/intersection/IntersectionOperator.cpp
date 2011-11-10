@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2011-08-23
+// Last changed: 2011-11-09
 
 #include <algorithm>
 #include <map>
@@ -46,7 +46,8 @@ using namespace dolfin;
 IntersectionOperator::IntersectionOperator(const Mesh& mesh,
                                            const std::string& kernel_type)
     : _mesh(reference_to_no_delete_pointer(mesh)),
-    _label(0), _use_labels(false),
+    _label(0), 
+    _use_labels(false),
     _kernel_type(kernel_type)
 {
   // Do nothing
@@ -54,15 +55,22 @@ IntersectionOperator::IntersectionOperator(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh,
                                            const std::string& kernel_type)
-    : _mesh(mesh), _labels(new MeshFunction<uint>()), _label(0), _use_labels(false),
+    : _mesh(mesh), 
+    _labels(new MeshFunction<uint>()),
+    _label(0),
+    _use_labels(false),
     _kernel_type(kernel_type)
 {
   // Do nothing
 }
-IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& labels, uint label, 
+IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& labels,
+					   uint label, 
 					   const std::string& kernel_type)
-  : _mesh(new Mesh()), _labels(reference_to_no_delete_pointer(labels)), 
-    _label(label), _use_labels(true), _kernel_type(kernel_type)
+  : _mesh(new Mesh()),
+  _labels(reference_to_no_delete_pointer(labels)), 
+  _label(label),
+  _use_labels(true),
+  _kernel_type(kernel_type)
 {
   // Do nothing
 }
@@ -70,8 +78,11 @@ IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& lab
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const MeshFunction<unsigned int> > labels,
 					   uint label, 
 					   const std::string& kernel_type)
-  : _mesh(new Mesh()), _labels(labels), _label(label), _use_labels(true), 
-    _kernel_type(kernel_type)
+  : _mesh(new Mesh()), 
+  _labels(labels),
+  _label(label),
+  _use_labels(true),
+  _kernel_type(kernel_type)
 {
   // Do nothing
 }

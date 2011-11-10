@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-16
-// Last changed: 2011-08-09
+// Last changed: 2011-11-09
 
 #ifndef  primitives_traits_INC
 #define  primitives_traits_INC
@@ -59,7 +59,9 @@ namespace dolfin
     typedef typename K::Point_3 Datum;
     static const int dim = 0;
     static Datum datum(const MeshEntity & cell)
-    { VertexIterator v(cell); return Datum(v->point()); }
+    { 
+      return Datum(cell.midpoint());
+    }
   };
 
   template <typename Kernel> struct PrimitiveTraits<IntervalCell,Kernel>
