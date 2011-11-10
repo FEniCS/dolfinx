@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2011-08-09
+// Last changed: 2011-11-10
 
 #ifndef  CGAL_POINT_3_POINT_3_INTERSECTION_H
 #define	 CGAL_POINT_3_POINT_3_INTERSECTION_H
 
 #include <CGAL/Point_3.h>
 #include <CGAL/Object.h>
+
+#include <iostream>
 
 /// @file This file contains some small extension to the CGAL library,
 /// for instance unifying their do_intersect functions to also deal
@@ -42,7 +44,7 @@ namespace internal {
 		    const typename K::Point_3 & pt2,
 		    const K & k)
   {
-    return  pt1 == pt1;
+    return  pt1 == pt2;
   }
 
   template <class K>

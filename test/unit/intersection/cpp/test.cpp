@@ -24,6 +24,7 @@
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
+#include <dolfin/intersection/cgal_includes.h>
 
 #include <vector>
 #include <algorithm>
@@ -36,18 +37,18 @@ class Intersection3D : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(Intersection3D);
 
-//  CPPUNIT_TEST(testCellCellIntersection);
-//  CPPUNIT_TEST(testCellFacetIntersection);
+  CPPUNIT_TEST(testCellCellIntersection);
+  CPPUNIT_TEST(testCellFacetIntersection);
   //Intersection betweenn tets and segments does not work yet
   //CPPUNIT_TEST(testCellEdgeIntersection);
-//  CPPUNIT_TEST(testCellVertexIntersection);
+  CPPUNIT_TEST(testCellVertexIntersection);
 
-//  CPPUNIT_TEST(testFacetFacetIntersection);
+  CPPUNIT_TEST(testFacetFacetIntersection);
 //  CPPUNIT_TEST(testFacetEdgeIntersection);
-//  CPPUNIT_TEST(testFacetVertexIntersection);
+  CPPUNIT_TEST(testFacetVertexIntersection);
 
-//  CPPUNIT_TEST(testEdgeEdgeIntersection);
-//  CPPUNIT_TEST(testEdgeVertexIntersection);
+  CPPUNIT_TEST(testEdgeEdgeIntersection);
+  CPPUNIT_TEST(testEdgeVertexIntersection);
   CPPUNIT_TEST(testVertexVertexIntersectionNew);
   CPPUNIT_TEST(testVertexVertexIntersection);
 
@@ -60,12 +61,43 @@ public:
     UnitCube mesh(1,1,1);
     for (VertexIterator v1(mesh); !v1.end(); ++v1)
       for (VertexIterator v2(mesh); !v2.end(); ++v2)
+      {
 	if (v1->intersects(*v2))
 	{
 	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
 	  info(v1->midpoint().str(true));
 	  info(v2->midpoint().str(true));
+	  assert(v1->index() == v2->index());
 	}
+      }
+
+    info("Testing via Point Entity Intersections...");
+    for (VertexIterator v1(mesh); !v1.end(); ++v1)
+      for (VertexIterator v2(mesh); !v2.end(); ++v2)
+	if (PrimitiveIntersector::do_intersect(*v1, v2->midpoint()))
+	{
+	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
+	  info(v1->midpoint().str(true));
+	  info(v2->midpoint().str(true));
+	  assert(v1->index() == v2->index());
+	}
+
+    info("Testing via direct CGAL kernel use...");
+    typedef EPICK::Point_3 Point_3;
+
+    for (VertexIterator v1(mesh); !v1.end(); ++v1)
+      for (VertexIterator v2(mesh); !v2.end(); ++v2)
+      {
+	Point_3 p1(v1->midpoint());
+	Point_3 p2(v2->midpoint());
+	if (p1 == p2)
+	{
+	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
+	  info(v1->midpoint().str(true));
+	  info(v2->midpoint().str(true));
+	  assert(v1->index() == v2->index());
+	}
+      }
   }
 
   void testCellCellIntersection()
