@@ -18,7 +18,7 @@
 // Modified by André Massing, 2011
 //
 // First added:  2011-10-04
-// Last changed: 2011-11-09
+// Last changed: 2011-11-10
 //
 // Unit test for the IntersectionOperator
 
@@ -35,13 +35,38 @@ using dolfin::uint;
 class Intersection3D : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(Intersection3D);
-  CPPUNIT_TEST(testCellCellIntersection);
-  CPPUNIT_TEST(testCellFacetIntersection);
-//  CPPUNIT_TEST(testCellEdgeIntersection);
-  CPPUNIT_TEST(testCellVertexIntersection);
+
+//  CPPUNIT_TEST(testCellCellIntersection);
+//  CPPUNIT_TEST(testCellFacetIntersection);
+  //Intersection betweenn tets and segments does not work yet
+  //CPPUNIT_TEST(testCellEdgeIntersection);
+//  CPPUNIT_TEST(testCellVertexIntersection);
+
+//  CPPUNIT_TEST(testFacetFacetIntersection);
+//  CPPUNIT_TEST(testFacetEdgeIntersection);
+//  CPPUNIT_TEST(testFacetVertexIntersection);
+
+//  CPPUNIT_TEST(testEdgeEdgeIntersection);
+//  CPPUNIT_TEST(testEdgeVertexIntersection);
+  CPPUNIT_TEST(testVertexVertexIntersectionNew);
+  CPPUNIT_TEST(testVertexVertexIntersection);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
+
+  void testVertexVertexIntersectionNew()
+  {
+    UnitCube mesh(1,1,1);
+    for (VertexIterator v1(mesh); !v1.end(); ++v1)
+      for (VertexIterator v2(mesh); !v2.end(); ++v2)
+	if (v1->intersects(*v2))
+	{
+	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
+	  info(v1->midpoint().str(true));
+	  info(v2->midpoint().str(true));
+	}
+  }
 
   void testCellCellIntersection()
   {
@@ -63,17 +88,51 @@ public:
     testEntityEntityIntersection<3,0>();
   }
 
+  void testFacetFacetIntersection()
+  {
+    testEntityEntityIntersection<2,2>();
+  }
+
+  void testFacetEdgeIntersection()
+  {
+    testEntityEntityIntersection<2,1>();
+  }
+
+  void testFacetVertexIntersection()
+  {
+    testEntityEntityIntersection<2,0>();
+  }
+
+  void testEdgeEdgeIntersection()
+  {
+    testEntityEntityIntersection<1,1>();
+  }
+
+  void testEdgeVertexIntersection()
+  {
+    testEntityEntityIntersection<1,0>();
+  }
+
+  void testVertexVertexIntersection()
+  {
+    testEntityEntityIntersection<0,0>();
+  }
+
   template <uint dim0, uint dim1> 
   void testEntityEntityIntersection()
   {
     cout <<"Run test with dim pair " << dim0 << " " << dim1 << endl;
     uint N = 1;
     UnitCube mesh(N,N,N);
-    IntersectionOperator io(mesh,"ExactPredicates");
-    
+
     //Compute incidences
     mesh.init(dim0,dim1);
     mesh.init(dim1,dim0);
+
+    MeshFunction<uint> labels(mesh,dim0,0);
+    labels = 0;
+//    IntersectionOperator io(mesh,"ExactPredicates");
+    IntersectionOperator io(labels, 0, "ExactPredicates");
 
     // Iterator over all entities and compute self-intersection
     // Should be same as looking up mesh incidences

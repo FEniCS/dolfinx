@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Andre Massing 2011.
+//
 // First added:  2010-11-17
-// Last changed: 2011-08-23
+// Last changed: 2011-11-10
 
 #ifndef __SUBSET_ITERATOR_H
 #define __SUBSET_ITERATOR_H
@@ -65,7 +67,8 @@ namespace dolfin
     
     /// Copy Constructor
     SubsetIterator(const SubsetIterator & subset_iter)
-    : entity(subset_iter.entity),_subset(subset_iter._subset),subset(*_subset)
+    : entity(subset_iter.entity),_subset(subset_iter._subset),
+    subset(*_subset), it(subset_iter.it)
     {}
 
     /// Destructor
@@ -78,6 +81,7 @@ namespace dolfin
       return *this;
     }
     
+    /// Comparison operator
     bool operator==(const SubsetIterator & sub_iter) const
     {
       return ((const_cast<SubsetIterator *>(this))->operator*()
@@ -107,7 +111,6 @@ namespace dolfin
       sg.set_end();
       return sg;
     }
-
 
   private:
 

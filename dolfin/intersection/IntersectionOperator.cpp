@@ -203,7 +203,7 @@ IntersectionOperatorImplementation*
   {
     if (kernel_type == "ExactPredicates")
     {
-      switch( _mesh->type().cell_type())
+      switch(_labels->dim())
       {
 	case CellType::point      : return new IntersectionOperatorImplementation_d<PointCell, EPICK>(*_labels, _label);
 	case CellType::interval   : return new IntersectionOperatorImplementation_d<IntervalCell, EPICK>(*_labels, _label);
@@ -215,7 +215,7 @@ IntersectionOperatorImplementation*
     }
     else  // Default is SimpleCartesion
     {
-      switch( _mesh->type().cell_type())
+      switch(_labels->dim())
       {
 	case CellType::point      : return new IntersectionOperatorImplementation_d< PointCell, SCK  >(*_labels, _label);
 	case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(*_labels, _label);
