@@ -107,7 +107,9 @@ def compute(nx, ny, degree):
 degree = int(sys.argv[1])
 h = []  # element sizes
 E = []  # errors
-for nx in [4, 8, 16, 32, 64, 128, 264]:
+# Changed this line so unit tests run faster
+for nx in [4, 8, 16]:
+#for nx in [4, 8, 16, 32, 64, 128, 264]:
     h.append(1.0/nx)
     E.append(compute(nx, nx, degree))  # list of dicts
 
@@ -121,6 +123,3 @@ for error_type in sorted(error_types):
         Eim1 = E[i-1][error_type]
         r = ln(Ei/Eim1)/ln(h[i]/h[i-1])
         print 'h=%8.2E E=%8.2E r=%.2f' % (h[i], Ei, r)
-
-
-

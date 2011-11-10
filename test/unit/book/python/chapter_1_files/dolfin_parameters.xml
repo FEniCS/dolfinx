@@ -14,8 +14,6 @@
     <parameter key="plot_filename_prefix" type="string" value="dolfin_plot_data" />
     <parameter key="refinement_algorithm" type="string" value="recursive_bisection" />
     <parameter key="std_out_all_processes" type="bool" value="true" />
-    <parameter key="swig_binary" type="string" value="swig2.0" />
-    <parameter key="swig_path" type="string" value="" />
     <parameter key="timer_prefix" type="string" value="" />
     <parameters name="form_compiler">
       <parameter key="cache_dir" type="string" value="" />
