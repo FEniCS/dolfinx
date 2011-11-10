@@ -942,6 +942,9 @@ class TestPage50(unittest.TestCase):
         if skip_in_parallel(): return
         parameters["form_compiler"]["name"] = "sfc"
 
+        # Reset parameter again so we don't mess with other tests
+        parameters["form_compiler"]["name"] = "ffc"
+
     def test_box_2(self):
         if skip_in_parallel(): return
         mesh = UnitSquare(8, 8)
