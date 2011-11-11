@@ -373,7 +373,7 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) c
 pugi::xml_node XMLFile::write_dolfin(pugi::xml_document& xml_doc)
 {
   pugi::xml_node node = xml_doc.append_child("dolfin");
-  node.append_attribute("xmlns:dolfin") = "http://www.fenicsproject.org";
+  node.append_attribute("xmlns:dolfin") = "http://fenicsproject.org";
   return node;
 }
 //-----------------------------------------------------------------------------
