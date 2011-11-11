@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2011-11-09
+// Last changed: 2011-11-11
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
@@ -155,6 +155,9 @@ namespace dolfin
     /// Computes the point inside the mesh and the corresponding cell index
     /// that are closest to the point query.
     std::pair<Point,uint> closest_point_and_cell(const Point & point) const;
+
+    /// Computes the distance between the given point and the nearest entity
+    double distance(const Point & point) const;
 
     /// Rebuilds the underlying search structure from scratch and uses
     /// the kernel kernel_type underlying CGAL Geometry kernel.

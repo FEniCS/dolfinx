@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2011-08-23
+// Last changed: 2011-11-11
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -66,6 +66,7 @@ namespace dolfin
     virtual Point closest_point(const Point & point) const = 0;
     virtual dolfin::uint closest_cell(const Point & point) const = 0;
     virtual std::pair<Point,uint> closest_point_and_cell(const Point & point) const = 0;
+    virtual double distance(const Point & point) const = 0;
 
   };
 
@@ -110,6 +111,7 @@ namespace dolfin
     virtual Point closest_point(const Point& point) const;
     virtual dolfin::uint closest_cell(const Point& point) const;
     virtual std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
+    virtual double distance(const Point & point) const;
 
     ///Topological dimension of the mesh.
     static const uint dim = PT::dim;
@@ -126,7 +128,7 @@ namespace dolfin
     boost::scoped_ptr<Tree> tree;
 
     /// Boolean flag to indicate whether Kd tree has already been built 
-    bool point_search_tree_constructed;
+    mutable bool point_search_tree_constructed;
 
   };
 
@@ -307,7 +309,7 @@ namespace dolfin
   Point IntersectionOperatorImplementation_d<P, K>::closest_point(const Point& point) const
   {
     if (!point_search_tree_constructed)
-      tree->accelerate_distance_queries();
+      point_search_tree_constructed = tree->accelerate_distance_queries();
     return  Point(ClosestPoint<P,K,Tree>::compute(*tree,PrimitiveTraits<PointPrimitive,K>::datum(point)));
   }
 
@@ -316,13 +318,60 @@ namespace dolfin
   {
     return closest_point_and_cell(point).second;
   }
+   
+  ///Temporary ugly helper class to specialize for non existing implementation for Tetrahedron meshes.
+  template<class P, class K, class Tree>
+  struct Distance
+  {
+    typedef typename K::Point_3 Point_3;
 
+    static double compute(const Tree& tree, const Point_3& point)
+    {
+      return std::sqrt(tree.squared_distance(point));
+    }
+  };
+
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
+  // Have to supply myself :)
+  template<class K, class Tree>
+  struct Distance<TetrahedronCell, K, Tree>
+  {
+    typedef typename K::Point_3 Point_3;
+
+    static double compute(const Tree& tree, const Point_3& point)
+    {
+      dolfin_not_implemented();
+      return 0;
+    }
+  };
+
+  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles *points*.
+  // Have to supply myself :) THAT should not be difficult...
+  template<class K, class Tree>
+  struct Distance<PointCell, K, Tree>
+  {
+    typedef typename K::Point_3 Point_3;
+
+    static double compute(const Tree& tree, const Point_3& point)
+    {
+      dolfin_not_implemented();
+      return 0;
+    }
+  };
+
+  template <class P, class K>
+  double IntersectionOperatorImplementation_d<P, K>::distance(const Point & point) const
+  {
+    if (!point_search_tree_constructed)
+      point_search_tree_constructed = tree->accelerate_distance_queries();
+    return  Distance<P,K,Tree>::compute(*tree,PrimitiveTraits<PointPrimitive,K>::datum(point));
+  }
+    
   template <class P, class K>
   std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell(const Point& point) const
   {
     if (!point_search_tree_constructed)
-      tree->accelerate_distance_queries();
-
+      point_search_tree_constructed = tree->accelerate_distance_queries();
     return ClosestPointAndPrimitive<P,K,Tree>::compute(*tree,PrimitiveTraits<PointPrimitive,K>::datum(point));
   }
 
@@ -367,10 +416,11 @@ namespace dolfin
     virtual void all_intersected_entities(const MeshEntity& entity, std::vector<uint>& ids_result) const {};
     virtual void all_intersected_entities(const std::vector<MeshEntity>& entities, std::set<uint>& ids_result) const {};
     virtual void all_intersected_entities(const Mesh& another_mesh, std::set<uint>& ids_result) const {}
-    virtual int any_intersected_entity(const Point& point) const {return -1; }
-    virtual Point closest_point(const Point& point) const {return Point(); }
-    virtual dolfin::uint closest_cell(const Point& point) const {return 0; }
-    virtual std::pair<Point,uint> closest_point_and_cell(const Point& point) const {return std::pair<Point, uint>(); }
+    virtual int any_intersected_entity(const Point& point) const { return -1; }
+    virtual Point closest_point(const Point& point) const { return Point(); }
+    virtual dolfin::uint closest_cell(const Point& point) const { return 0; }
+    virtual std::pair<Point,uint> closest_point_and_cell(const Point& point) const { return std::pair<Point, uint>(); }
+    virtual double distance(const Point & point) { return 0; }
 
   };
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2011-11-09
+// Last changed: 2011-11-11
 
 #include <algorithm>
 #include <map>
@@ -141,6 +141,11 @@ std::pair<Point,dolfin::uint>
 IntersectionOperator::closest_point_and_cell(const Point& point) const
 {
   return rImpl().closest_point_and_cell(point);
+}
+//-----------------------------------------------------------------------------
+double IntersectionOperator::distance(const Point & point) const
+{
+  return rImpl().distance(point);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::reset_kernel(const std::string& kernel_type)
