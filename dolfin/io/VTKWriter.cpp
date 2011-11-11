@@ -118,7 +118,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Get  values
   std::vector<double> values(dof_set.size());
-  u.vector().get_local(&values[0], dof_set.size(), &dof_set[0]);
+  assert(u.vector());
+  u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
 
   // Get cell data
   if (!binary)

@@ -89,13 +89,13 @@ void update_a(Function& a, const Function& u, const Function& a0,
               double beta, double dt)
 {
   // a = 1/(2*beta)*((u - u0 - v0*dt)/(0.5*dt*dt) - (1-2*beta)*a0)
-  a.vector()  = u.vector();
-  a.vector() -= u0.vector();
-  a.vector() *= 1.0/dt;
-  a.vector() -= v0.vector();
-  a.vector() *= 1.0/((0.5-beta)*dt);
-  a.vector() -= a0.vector();
-  a.vector() *= (0.5-beta)/beta;
+  *a.vector()  = *u.vector();
+  *a.vector() -= *u0.vector();
+  *a.vector() *= 1.0/dt;
+  *a.vector() -= *v0.vector();
+  *a.vector() *= 1.0/((0.5-beta)*dt);
+  *a.vector() -= *a0.vector();
+  *a.vector() *= (0.5-beta)/beta;
 }
 
 // Velocity update
@@ -103,11 +103,11 @@ void update_v(Function& v, const Function& a, const Function& a0,
               const Function& v0, double gamma, double dt)
 {
   // v = dt * ((1-gamma)*a0 + gamma*a) + v0
-  v.vector()  = a0.vector();
-  v.vector() *= (1.0-gamma)/gamma;
-  v.vector() += a.vector();
-  v.vector() *= dt*gamma;
-  v.vector() += v0.vector();
+  *v.vector()  = *a0.vector();
+  *v.vector() *= (1.0-gamma)/gamma;
+  *v.vector() += *a.vector();
+  *v.vector() *= dt*gamma;
+  *v.vector() += *v0.vector();
 }
 
 int main(int argc, char* argv[])
@@ -159,9 +159,9 @@ int main(int argc, char* argv[])
   Function a(V), a0(V);  // acceleration
 
   // Set initial conditions and initialise acceleration function
-  u0.vector().zero();
-  v0.vector().zero();
-  a0.vector().zero();
+  u0.vector()->zero();
+  v0.vector()->zero();
+  a0.vector()->zero();
 
   // Create forms
   ElastoDynamics::BilinearForm a_form(V, V);

@@ -259,6 +259,7 @@ void Extrapolation::average_coefficients(Function& w,
   }
 
   // Update dofs for w
-  w.vector().set_local(dof_values);
+  assert(w.vector());
+  w.vector()->set_local(dof_values);
 }
 //-----------------------------------------------------------------------------

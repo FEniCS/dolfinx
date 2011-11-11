@@ -73,8 +73,9 @@ void LinearVariationalSolver::solve()
   assert(u);
 
   // Create matrix and vector
-  boost::scoped_ptr<GenericMatrix> A(u->vector().factory().create_matrix());
-  boost::scoped_ptr<GenericVector> b(u->vector().factory().create_vector());
+  assert(u->vector());
+  boost::scoped_ptr<GenericMatrix> A(u->vector()->factory().create_matrix());
+  boost::scoped_ptr<GenericVector> b(u->vector()->factory().create_vector());
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
@@ -152,8 +153,8 @@ void LinearVariationalSolver::solve()
 
   // Solve linear system
   LinearSolver solver(solver_type, pc_type);
-  assert(u);
-  solver.solve(*A, u->vector(), *b);
+  assert(u->vector());
+  solver.solve(*A, *u->vector(), *b);
 
   end();
 }

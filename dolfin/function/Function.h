@@ -189,14 +189,14 @@ namespace dolfin
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients.
-    GenericVector& vector();
+    boost::shared_ptr<GenericVector> vector();
 
     /// Return vector of expansion coefficients (const version)
     ///
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
-    const GenericVector& vector() const;
+    boost::shared_ptr<const GenericVector> vector() const;
 
     /// Check if function is a member of the given function space
     ///
