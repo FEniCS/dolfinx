@@ -66,7 +66,7 @@ namespace dolfin
     {
       dolfin_error("uBLASKrylovSolver.h",
                    "set operator for linear solver",
-                   "not supported by the uBLAS backend");
+                   "Not supported by the uBLAS backend");
     }
 
     /// Return the operator (matrix)
@@ -74,7 +74,7 @@ namespace dolfin
     {
       dolfin_error("uBLASKrylovSolver.h",
                    "get operator from linear solver",
-                   "not supported by the uBLAS backend");
+                   "Not supported by the uBLAS backend");
       return *(static_cast<GenericMatrix*>(0)); // code will not be reached
     }
 
@@ -158,7 +158,7 @@ namespace dolfin
     {
       dolfin_error("uBLASKrylovSolver.h",
                    "solve linear system using uBLAS Krylov solver",
-                   "non-matching dimensions for linear system.");
+                   "Non-matching dimensions for linear system");
     }
 
     // Reinitialise x if necessary
@@ -194,7 +194,7 @@ namespace dolfin
     {
       dolfin_error("uBLASKrylovSolver.h",
                    "solve linear system using uBLAS Krylov solver",
-                   "requested Krylov method (\"%s\") is unknown", method.c_str());
+                   "Requested Krylov method (\"%s\") is unknown", method.c_str());
     }
 
     // Check for convergence
@@ -205,7 +205,7 @@ namespace dolfin
       {
         dolfin_error("uBLASKrylovSolver.h",
                      "solve linear system using uBLAS Krylov solver",
-                     "solution failed to converge");
+                     "Solution failed to converge");
       }
       else
         warning("uBLAS Krylov solver failed to converge.");
@@ -448,7 +448,7 @@ namespace dolfin
       {
         dolfin_error("uBLASKrylovSolver.h",
                      "solve linear system using uBLAS BiCGStab solver",
-                     "solution failed to converge, rho = %g", rho);
+                     "Solution failed to converge, rho = %g", rho);
       }
 
       beta = (rho/rho_old)*(alpha/omega);

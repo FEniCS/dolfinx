@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2010.
+// Modified by Garth N. Wells 2008-2010
+// Modified by Anders Logg 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-05-11
+// Last changed: 2011-11-11
 
 #ifdef HAS_TRILINOS
 
@@ -106,7 +107,11 @@ void EpetraVector::resize(uint N)
     resize(range, ghost_indices);
   }
   else
-    error("Epetra vector type unknown.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "resize Epetra vector",
+                 "Unknown vector type (\"%s\")", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(std::pair<uint, uint> range)
@@ -119,7 +124,11 @@ void EpetraVector::resize(std::pair<uint, uint> range,
                           const std::vector<uint>& ghost_indices)
 {
   if (x && !x.unique())
-    error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "resize Epetra vector",
+                 "More than one object points to the underlying Epetra object");
+  }
 
   // Create ghost data structures
   ghost_global_to_local.clear();
@@ -139,7 +148,11 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   if (type == "local")
   {
     if (ghost_indices.size() != 0)
-      error("Serial EpetraVectors do not suppprt ghost points.");
+    {
+      dolfin_error("EpetraVector.cpp",
+                   "resize Epetra vector",
+                   "Serial EpetraVectors do not support ghost points");
+    }
 
     // Create map
     epetra_map.reset(new Epetra_BlockMap(-1, local_size, 1, 0, serial_comm));
@@ -201,7 +214,11 @@ void EpetraVector::zero()
   const int err = x->PutScalar(0.0);
   //apply("add");
   if (err != 0)
-    error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "zero Epetra vector",
+                 "Did not manage to perform Epetra_Vector::PutScalar");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::apply(std::string mode)
@@ -253,10 +270,18 @@ void EpetraVector::apply(std::string mode)
     else if (mode == "insert")
       err = x->GlobalAssemble(Insert);
     else
-      error("Unknown apply mode in EpetraVector::apply");
+    {
+      dolfin_error("EpetraVector.cpp",
+                   "apply changes to Epetra vector",
+                   "Unknown apply mode (\"%s\")", mode.c_str());
+    }
 
     if (err != 0)
-      error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
+    {
+      dolfin_error("EpetraVector.cpp",
+                   "apply changes to Epetra vector",
+                   "Did not manage to perform Epetra_Vector::GlobalAssemble");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -283,7 +308,11 @@ void EpetraVector::get_local(Array<double>& values) const
 
   const int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
-    error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "access local values from Epetra vector",
+                 "Did not manage to perform Epetra_Vector::ExtractCopy");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::set_local(const Array<double>& values)
@@ -291,8 +320,12 @@ void EpetraVector::set_local(const Array<double>& values)
   assert(x);
   const uint local_size = x->MyLength();
 
- if (values.size() != local_size)
-    error("EpetraVector::set_local: length of values array is not equal to local vector size.");
+  if (values.size() != local_size)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "set local values of Epetra vector",
+                 "Size of values array is not equal to local vector size");
+  }
 
   for (uint i = 0; i < local_size; ++i)
     (*x)[0][i] = values[i];
@@ -303,7 +336,11 @@ void EpetraVector::add_local(const Array<double>& values)
   assert(x);
   const uint local_size = x->MyLength();
   if (values.size() != local_size)
-    error("EpetraVector::add_local: length of values array is not equal to local vector size.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "add local values to Epetra vector",
+                 "Size of values array is not equal to local vector size");
+  }
 
   for (uint i = 0; i < local_size; ++i)
     (*x)[0][i] += values[i];
@@ -316,7 +353,11 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
                                          block, 0);
 
   if (err != 0)
-    error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "set block of values for Epetra vector",
+                 "Did not manage to perform Epetra_Vector::ReplaceGlobalValues");
+  }
 
   assert(x);
   const Epetra_BlockMap& map = x->Map();
@@ -337,14 +378,22 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
 void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
   if (off_process_set_values.size() > 0)
-    error("EpetraVector:: must be called between calling EpetraVector::set and EpetraVector::add.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "add block of values to Epetra vector",
+                 "must be called between calling EpetraVector::set and EpetraVector::add");
+  }
 
   assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    block, 0);
 
   if (err != 0)
-    error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "add block of values to Epetra vector",
+                 "Did not manage to perform Epetra_Vector::SumIntoGlobalValues");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
@@ -468,12 +517,20 @@ double EpetraVector::inner(const GenericVector& y) const
 
   const EpetraVector& v = y.down_cast<EpetraVector>();
   if (!v.x)
-    error("Given vector is not initialized.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute inner product with Epetra vector",
+                 "Given vector is not initialized");
+  }
 
   double a;
   const int err = x->Dot(*(v.x), &a);
   if (err!= 0)
-    error("EpetraVector::inner: Did not manage to perform Epetra_Vector::Dot.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute inner product with Epetra vector",
+                 "Did not manage to perform Epetra_Vector::Dot");
+  }
 
   return a;
 }
@@ -484,14 +541,26 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 
   const EpetraVector& _y = y.down_cast<EpetraVector>();
   if (!_y.x)
-    error("Given vector is not initialized.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform axpy operation with Epetra vector",
+                 "Given vector is not initialized");
+  }
 
   if (size() != _y.size())
-    error("The vectors must be of the same size.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform axpy operation with Epetra vector",
+                 "Vectors are not of the same size");
+  }
 
   const int err = x->Update(a, *(_y.vec()), 1.0);
   if (err != 0)
-    error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform axpy operation with Epetra vector",
+                 "Did not manage to perform Epetra_Vector::Update");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::abs()
@@ -569,7 +638,11 @@ const EpetraVector& EpetraVector::operator*= (double a)
   assert(x);
   const int err = x->Scale(a);
   if (err!= 0)
-    error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Scale.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "multiply Epetra vector by scalar",
+                 "Did not manage to perform Epetra_Vector::Scale");
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -579,14 +652,27 @@ const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
   const EpetraVector& v = y.down_cast<EpetraVector>();
 
   if (!v.x)
-    error("Given vector is not initialized.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform point-wise multiplication with Epetra vector",
+                 "Given vector is not initialized");
+  }
 
   if (size() != v.size())
-    error("The vectors must be of the same size.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform point-wise multiplication with Epetra vector",
+                 "Vectors are not of the same size");
+  }
 
   const int err = x->Multiply(1.0, *x, *v.x, 0.0);
   if (err!= 0)
-    error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "perform point-wise multiplication with Epetra vector",
+                 "Did not manage to perform Epetra_Vector::Multiply");
+  }
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -610,7 +696,12 @@ double EpetraVector::norm(std::string norm_type) const
     err = x->NormInf(&value);
 
   if (err != 0)
-    error("EpetraVector::norm: Did not manage to compute the norm.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute norm of Epetra vector",
+                 "Did not manage to perform Epetra_vector::Norm");
+  }
+
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -620,7 +711,12 @@ double EpetraVector::min() const
   double value = 0.0;
   const int err = x->MinValue(&value);
   if (err!= 0)
-    error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute minimum value of Epetra vector",
+                 "Did not manage to perform Epetra_Vector::MinValue");
+  }
+
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -630,7 +726,12 @@ double EpetraVector::max() const
   double value = 0.0;
   const int err = x->MaxValue(&value);
   if (err != 0)
-    error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue.");
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "compute maximum value of Epetra vector",
+                 "Did not manage to perform Epetra_Vector::MinValue");
+  }
+
   return value;
 }
 //-----------------------------------------------------------------------------

@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2010.
+// Modified by Garth N. Wells 2008-2010
+// Modified by Anders Logg 2011
 //
 // First added:  2008-07-06
-// Last changed: 2010-01-02
+// Last changed: 2011-11-11
 
 #ifdef HAS_MTL4
 
@@ -80,7 +81,9 @@ dolfin::uint MTL4Matrix::size(uint dim) const
   else if (dim == 1)
     return mtl::matrix::num_cols(A);
 
-  error("dim not < 2 in MTL4Matrix::size.");
+  dolfin_error("MTL4Matrix.cpp",
+               "get size of MTL4 matrix",
+               "dimension must be 1 or 2 (not %d)", dim);
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -130,8 +133,12 @@ void MTL4Matrix::axpy(double a, const GenericMatrix& A,
                       bool same_nonzero_pattern)
 {
   // Check for same size
-  if ( size(0) != A.size(0) or size(1) != A.size(1) )
-    error("Matrices must be of same size.");
+  if (size(0) != A.size(0) or size(1) != A.size(1))
+  {
+    dolfin_error("MTL4Matrix.cpp",
+                 "perform axpy operation with MTL4 matrix",
+                 "Non-matching matrix dimensions for axpy operation");
+  }
 
   // Do we need to check for same sparsity pattern?
   this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
@@ -147,7 +154,9 @@ double MTL4Matrix::norm(std::string norm_type) const
     return frobenius_norm(A);
   else
   {
-    error("Unknown norm type in MTL4Matrix.");
+    dolfin_error("MTL4Matrix.cpp",
+                 "compute norm of MTL4 matrix",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
     return 0.0;
   }
 }
@@ -344,7 +353,12 @@ void MTL4Matrix::init_inserter(uint nnz)
 inline void MTL4Matrix::assert_no_inserter() const
 {
   if (ins)
-    error("MTL4: Disallowed matrix operation attempted while inserter active. Did you forget to apply()?");
+  {
+    dolfin_error("MTL4Matrix.cpp",
+                 "perform operation on MTL4 matrix",
+                 "Operation not allowed while inserter active. Did you forget to call apply()?");
+  }
 }
 //-----------------------------------------------------------------------------
+
 #endif

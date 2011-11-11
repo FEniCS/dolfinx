@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008-2009.
-// Modified by Marie Rognes, 2009.
-// Modified by Fredrik Valdmanis, 2011.
+// Modified by Ola Skavhaug 2008
+// Modified by Anders Logg 2008-2011
+// Modified by Marie Rognes 2009
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-08-31
-// Last changed: 2011-09-07
+// Last changed: 2011-11-11
 
 #ifdef HAS_SLEPC
 
@@ -194,7 +194,11 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
     #endif
   }
   else
-    error("Requested eigenvalue has not been computed");
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "extract eigenvalue from SLEPc eigenvalue solver",
+                 "Requested eigenvalue (%d) has not been computed", i);
+  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
@@ -218,7 +222,11 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   }
   else
-    error("Requested eigenvalue/vector has not been computed");
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "extract eigenpair from SLEPc eigenvalue solver",
+                 "Requested eigenpair (%d) has not been computed", i);
+  }
 }
 //-----------------------------------------------------------------------------
 int SLEPcEigenSolver::get_number_converged() const
@@ -233,7 +241,9 @@ void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
   #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
   #else
-  error("Setting a deflation space requires SLEPc 3.1 or newer version");
+  dolfin_error("SLEPcEigenSolver.cpp",
+               "set deflation space for SLEPc eigensolver",
+               "Setting a deflation space requires SLEPc version 3.1 or higher");
   #endif
 }
 //-----------------------------------------------------------------------------
@@ -263,7 +273,11 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
   else if (type == "gen_non_hermitian")
     EPSSetProblemType(eps, EPS_GNHEP);
   else
-    error("Unknown problem type: \"%s\".", type.c_str());
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "set problem type for SLEPc eigensolver",
+                 "Unknown problem type (\"%s\")", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectral_transform(std::string transform,
@@ -285,7 +299,11 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
     STSetShift(st, shift);
   }
   else
-    error("Unknown transform: \"%s\".", transform.c_str());
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "set spectral transform for SLEPc eigensolver",
+                 "Unknown transform (\"%s\")", transform.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)
@@ -327,7 +345,11 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   #endif
 
   else
-    error("Unknown spectrum: \"%s\".", spectrum.c_str());
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "set spectrum for SLEPc eigensolver",
+                 "Unknown spectrum type (\"%s\")", spectrum.c_str());
+  }
 
   // FIXME: Need to add some test here as most algorithms only compute
   // FIXME: largest eigenvalues. Asking for smallest leads to a PETSc error.
@@ -356,7 +378,11 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   else if (solver == "lapack")
     EPSSetType(eps, EPSLAPACK);
   else
-    error("Unknown method: \"%s\".", solver.c_str());
+  {
+    dolfin_error("SLEPcEigenSolver.cpp",
+                 "set solver for SLEPc eigensolver",
+                 "Unknown solver type (\"%s\")", solver.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
@@ -372,4 +398,5 @@ int SLEPcEigenSolver::get_iteration_number() const
   return num_iter;
 }
 //-----------------------------------------------------------------------------
+
 #endif

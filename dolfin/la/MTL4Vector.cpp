@@ -62,16 +62,24 @@ void MTL4Vector::resize(uint N)
 void MTL4Vector::resize(std::pair<uint, uint> range)
 {
   if (range.first != 0)
-    error("MTL4Vector does not support distributed vectors.");
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "resize MTL4 vector",
+                 "distributed vectors not supported by the MTL4 backend");
+  }
 
   resize(range.second - range.first);
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::resize(std::pair<uint, uint> range,
-                    const std::vector<uint>& ghost_indices)
+                        const std::vector<uint>& ghost_indices)
 {
   if (ghost_indices.size() != 0)
-    error("MTL4SVector does not support ghost entries.");
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "resize MTL4 vector",
+                 "distributed vectors not supported by the MTL4 backend");
+  }
 
   resize(range);
 }
@@ -263,7 +271,11 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
 const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 {
   if (size() != y.size())
-    error("Vectors must be of same size.");
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "compute point-wise multiplication with MTL4 vector",
+                 "Vectors are not of the same size");
+  }
 
   const mtl4_vector& _y = y.down_cast<MTL4Vector>().vec();
   for (uint i = 0; i < size(); ++i)
@@ -299,7 +311,11 @@ double MTL4Vector::norm(std::string norm_type) const
   else if (norm_type == "linf")
     return mtl::infinity_norm(x);
   else
-    error("Requested vector norm type for MTL4Vector unknown");
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "compute norm of MTL4 vector",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
+  }
 
   return 0.0;
 }

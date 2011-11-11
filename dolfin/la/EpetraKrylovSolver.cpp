@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifdef HAS_TRILINOS
 
@@ -92,7 +92,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 
   // Check that requsted solver is supported
   if (_methods.count(method) == 0)
-    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+  {
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "create Epetra Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
 
   // Set solver type
   solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
@@ -110,7 +114,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 
   // Check that requsted solver is supported
   if (_methods.count(method) == 0)
-    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+  {
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "create Epetra Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
 
   // Set solver type
   solver->SetAztecOption(AZ_solver, _methods.find(method)->second);
@@ -139,7 +147,11 @@ void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatr
 const GenericMatrix& EpetraKrylovSolver::get_operator() const
 {
   if (!A)
-    error("Operator for linear solver has not been set.");
+  {
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "access operator for Epetra Krylov solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -159,7 +171,11 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   const uint M = A->size(0);
   const uint N = A->size(1);
   if (N != b.size())
-    error("Non-matching dimensions for linear system.");
+  {
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "solve linear system using Epetra Krylov solver",
+                 "Non-matching dimensions for linear system");
+  }
 
   // Write a message
   if (parameters["report"])
@@ -204,8 +220,10 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
-      error("Epetra (Aztec00) Krylov solver failed to converge (error code %.f).",
-            status[AZ_why]);
+      dolfin_error("EpetraKrylovSolver.cpp",
+                   "solve linear system using Epetra Krylov solver",
+                   "solution failed to converge (error code %.f)",
+                   status[AZ_why]);
     }
     else
     {
