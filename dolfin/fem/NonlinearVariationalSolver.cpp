@@ -73,8 +73,9 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   newton_solver.parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
-  assert(u);
-  const std::pair<uint, bool> ret = newton_solver.solve(nonlinear_problem, u->vector());
+  assert(u->vector());
+  const std::pair<uint, bool> ret
+    = newton_solver.solve(nonlinear_problem, *u->vector());
 
   end();
 

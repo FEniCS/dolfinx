@@ -214,7 +214,8 @@ const Function& Function::operator= (const Function& v)
 
     // Gather values into an Array
     Array<double> gathered_values;
-    v.vector().gather(gathered_values, old_rows);
+    assert(v.vector());
+    v.vector()->gather(gathered_values, old_rows);
 
     // Initial new vector (global)
     init_vector();
@@ -267,8 +268,10 @@ boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-GenericVector& Function::vector()
+boost::shared_ptr<GenericVector> Function::vector()
 {
+  assert(_vector);
+
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap().global_dimension())
   {
@@ -276,13 +279,13 @@ GenericVector& Function::vector()
     cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
     error("You are attempting to access a non-const vector from a sub-Function.");
   }
-  return *_vector;
+  return _vector;
 }
 //-----------------------------------------------------------------------------
-const GenericVector& Function::vector() const
+boost::shared_ptr<const GenericVector> Function::vector() const
 {
   assert(_vector);
-  return *_vector;
+  return _vector;
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const

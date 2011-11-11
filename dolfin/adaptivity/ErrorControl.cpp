@@ -80,7 +80,8 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
   _B = bubble.function_space_ptr();
   _cell_bubble.reset(new Function(_B));
-  _cell_bubble->vector() = 1.0;
+  assert(_cell_bubble->vector());
+  *(_cell_bubble->vector()) = 1.0;
 
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space_ptr();
@@ -281,7 +282,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    R_T.vector().set(x.memptr(), N, &dofs[0]);
+    assert(R_T.vector());
+    R_T.vector()->set(x.memptr(), N, &dofs[0]);
   }
   end();
 }
@@ -346,11 +348,13 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     // Construct "cone function" for this local facet number by
     // setting the "right" degree of freedom equal to one on each
     // cell. (Requires dof-ordering knowledge.)
-    _cell_cone->vector() = 0.0;
+    assert(_cell_cone->vector());
+    *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
     for (uint k = 0; k < num_cells; k++)
       facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
-    _cell_cone->vector().set(&ones[0], num_cells, &facet_dofs[0]);
+    assert(_cell_cone->vector());
+    _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
 
     // Attach cell cone  to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);
@@ -386,7 +390,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      R_dT[local_facet].vector().set(x.memptr(), N, &dofs[0]);
+      assert(R_dT[local_facet].vector());
+      R_dT[local_facet].vector()->set(x.memptr(), N, &dofs[0]);
     }
   }
   end();
@@ -432,7 +437,7 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     e_bc->homogenize();
 
     // Apply boundary condition
-    e_bc->apply(_Ez_h->vector());
+    e_bc->apply(*_Ez_h->vector());
 
     delete e_bc;
   }

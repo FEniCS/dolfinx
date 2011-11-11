@@ -366,10 +366,10 @@ is saved to a file, along with the time ``t``.
     {
       // Update for next time step
       t += dt;
-      u0.vector() = u.vector();
+      *u0.vector() = *u.vector();
 
       // Solve
-      newton_solver.solve(cahn_hilliard, u.vector());
+      newton_solver.solve(cahn_hilliard, *u.vector());
 
       // Save function to file
       file << std::make_pair(&(u[0]), t);
