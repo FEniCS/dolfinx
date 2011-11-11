@@ -92,10 +92,17 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 dolfin::uint uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
-  boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _A 
+  boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _A
         = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(A);
+  assert(_A);
 
-  return solve_krylov(*_A, x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
+  assert(P);
+  boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _P
+        = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(P);
+  assert(_P);
+
+  return solve_krylov(*_A, x.down_cast<uBLASVector>(),
+                      b.down_cast<uBLASVector>(), *_P);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -110,7 +117,7 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x,
                                       const uBLASVector& b)
 {
-  return solve_krylov(A, x, b);
+  return solve_krylov(A, x, b, A);
 }
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)

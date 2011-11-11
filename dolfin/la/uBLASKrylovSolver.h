@@ -63,7 +63,13 @@ namespace dolfin
 
     /// Solve the operator (matrix)
     void set_operator(const boost::shared_ptr<const GenericMatrix> A)
-    { this->A = A; }
+    { set_operators(A, A); }
+
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                       const boost::shared_ptr<const GenericMatrix> P)
+    { this->A = A; this->P = P; }
+
 
     /// Return the operator (matrix)
     const GenericMatrix& get_operator() const
@@ -95,7 +101,8 @@ namespace dolfin
 
     /// Select solver and solve linear system Ax = b and return number of iterations
     template<typename Mat>
-    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
+    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b,
+                      const Mat& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
@@ -132,6 +139,9 @@ namespace dolfin
     /// Operator (the matrix)
     boost::shared_ptr<const GenericMatrix> A;
 
+    /// Matrix used to construct the preconditoner
+    boost::shared_ptr<const GenericMatrix> P;
+
   };
   //---------------------------------------------------------------------------
   // Implementation of template functions
@@ -139,7 +149,8 @@ namespace dolfin
   template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
                                                uBLASVector& x,
-                                               const uBLASVector& b)
+                                               const uBLASVector& b,
+                                               const Mat& P)
   {
     // Check dimensions
     uint M = A.size(0);
@@ -162,7 +173,7 @@ namespace dolfin
       info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
-    pc->init(A);
+    pc->init(P);
 
     // Choose solver and solve
     bool converged = false;
@@ -205,7 +216,8 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
-                                             const uBLASVector& b, bool& converged) const
+                                             const uBLASVector& b,
+                                             bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();
