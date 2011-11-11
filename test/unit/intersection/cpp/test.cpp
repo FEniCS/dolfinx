@@ -31,140 +31,19 @@
 
 using namespace dolfin;
 using dolfin::uint;
-
-
-class Intersection3D : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(Intersection3D);
-
-  CPPUNIT_TEST(testCellCellIntersection);
-  CPPUNIT_TEST(testCellFacetIntersection);
-  //Intersection betweenn tets and segments does not work yet
-  //CPPUNIT_TEST(testCellEdgeIntersection);
-  CPPUNIT_TEST(testCellVertexIntersection);
-
-  CPPUNIT_TEST(testFacetFacetIntersection);
-//  CPPUNIT_TEST(testFacetEdgeIntersection);
-  CPPUNIT_TEST(testFacetVertexIntersection);
-
-  CPPUNIT_TEST(testEdgeEdgeIntersection);
-  CPPUNIT_TEST(testEdgeVertexIntersection);
-  CPPUNIT_TEST(testVertexVertexIntersectionNew);
-  CPPUNIT_TEST(testVertexVertexIntersection);
-
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void testVertexVertexIntersectionNew()
-  {
-    UnitCube mesh(1,1,1);
-    for (VertexIterator v1(mesh); !v1.end(); ++v1)
-      for (VertexIterator v2(mesh); !v2.end(); ++v2)
-      {
-	if (v1->intersects(*v2))
-	{
-	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
-	  info(v1->midpoint().str(true));
-	  info(v2->midpoint().str(true));
-	  assert(v1->index() == v2->index());
-	}
-      }
-
-    info("Testing via Point Entity Intersections...");
-    for (VertexIterator v1(mesh); !v1.end(); ++v1)
-      for (VertexIterator v2(mesh); !v2.end(); ++v2)
-	if (PrimitiveIntersector::do_intersect(*v1, v2->midpoint()))
-	{
-	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
-	  info(v1->midpoint().str(true));
-	  info(v2->midpoint().str(true));
-	  assert(v1->index() == v2->index());
-	}
-
-    info("Testing via direct CGAL kernel use...");
-    typedef EPICK::Point_3 Point_3;
-
-    for (VertexIterator v1(mesh); !v1.end(); ++v1)
-      for (VertexIterator v2(mesh); !v2.end(); ++v2)
-      {
-	Point_3 p1(v1->midpoint());
-	Point_3 p2(v2->midpoint());
-	if (p1 == p2)
-	{
-	  cout << "Vertex v1 = " << v1->index() << " intersects vertex v2 = " << v2->index() << endl;
-	  info(v1->midpoint().str(true));
-	  info(v2->midpoint().str(true));
-	  assert(v1->index() == v2->index());
-	}
-      }
-  }
-
-  void testCellCellIntersection()
-  {
-    testEntityEntityIntersection<3,3>();
-  }
-
-  void testCellFacetIntersection()
-  {
-    testEntityEntityIntersection<3,2>();
-  }
-
-  void testCellEdgeIntersection()
-  {
-    testEntityEntityIntersection<3,1>();
-  }
-
-  void testCellVertexIntersection()
-  {
-    testEntityEntityIntersection<3,0>();
-  }
-
-  void testFacetFacetIntersection()
-  {
-    testEntityEntityIntersection<2,2>();
-  }
-
-  void testFacetEdgeIntersection()
-  {
-    testEntityEntityIntersection<2,1>();
-  }
-
-  void testFacetVertexIntersection()
-  {
-    testEntityEntityIntersection<2,0>();
-  }
-
-  void testEdgeEdgeIntersection()
-  {
-    testEntityEntityIntersection<1,1>();
-  }
-
-  void testEdgeVertexIntersection()
-  {
-    testEntityEntityIntersection<1,0>();
-  }
-
-  void testVertexVertexIntersection()
-  {
-    testEntityEntityIntersection<0,0>();
-  }
-
+  
   template <uint dim0, uint dim1> 
-  void testEntityEntityIntersection()
+  void testEntityEntityIntersection(const Mesh & mesh)
   {
-    cout <<"Run test with dim pair " << dim0 << " " << dim1 << endl;
-    uint N = 1;
-    UnitCube mesh(N,N,N);
-
     //Compute incidences
     mesh.init(dim0,dim1);
     mesh.init(dim1,dim0);
+    mesh.init(0,dim0);
 
-    MeshFunction<uint> labels(mesh,dim0,0);
-    labels = 0;
-//    IntersectionOperator io(mesh,"ExactPredicates");
-    IntersectionOperator io(labels, 0, "ExactPredicates");
+    uint label = 1;
+    //Default is to mark all entities
+    MeshFunction<uint> labels(mesh,dim0,label);
+    IntersectionOperator io(labels, label, "ExactPredicates");
 
     // Iterator over all entities and compute self-intersection
     // Should be same as looking up mesh incidences
@@ -174,16 +53,12 @@ public:
       // Compute intersection
       std::vector<uint> ids_result;
       io.all_intersected_entities(*entity,ids_result);
+      //sort them but they are already unique.
       std::sort(ids_result.begin(),ids_result.end());
-      cout << "--------------------------------------------------------------------------------" << endl;
-      cout <<"Found " << ids_result.size() << " intersections" << endl;
-      for (uint i = 0; i < ids_result.size(); ++i)
-	cout <<ids_result[i] << " ";
-      cout << endl;
 
       // Compute intersections via vertices and connectivity
       // information. Two entities of the same only intersect
-      // if they share at least one vertex
+      // if they share at least one verte
       std::vector<uint> ids_result_2;
       if (dim1 > 0)
       {
@@ -207,34 +82,218 @@ public:
       {
 	ids_result_2.push_back(entity->index());
       }
-
       //Sorting and removing duplicates
       std::sort(ids_result_2.begin(),ids_result_2.end());
       std::vector<uint>::iterator it = std::unique(ids_result_2.begin(),ids_result_2.end());
       ids_result_2.resize(it - ids_result_2.begin());
-      cout <<"Found " << ids_result_2.size() << " intersections via connectivity" << endl;
-      cout <<endl;
-      for (uint i = 0; i < ids_result_2.size(); ++i)
-	cout <<ids_result_2[i] << " ";
-      cout << endl;
-      cout << "--------------------------------------------------------------------------------" << endl;
 
       // Check against mesh incidences
-      CPPUNIT_ASSERT(ids_result.size() == ids_result_2.size()); 
       uint last = ids_result.size() - 1;
+      CPPUNIT_ASSERT(ids_result.size() == ids_result_2.size()); 
       CPPUNIT_ASSERT(ids_result[0] == ids_result_2[0]); 
       CPPUNIT_ASSERT(ids_result[last] == ids_result_2[last]); 
     }
+  }
+
+class IntersectionOperator3D : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(IntersectionOperator3D);
+
+  CPPUNIT_TEST(testCellCellIntersection);
+  CPPUNIT_TEST(testCellFacetIntersection);
+  //Intersection betweenn tets and segments does not work yet
+  //CPPUNIT_TEST(testCellEdgeIntersection);
+  CPPUNIT_TEST(testCellVertexIntersection);
+
+  CPPUNIT_TEST(testFacetFacetIntersection);
+  CPPUNIT_TEST(testFacetEdgeIntersection);
+  CPPUNIT_TEST(testFacetVertexIntersection);
+
+  CPPUNIT_TEST(testEdgeEdgeIntersection);
+  CPPUNIT_TEST(testEdgeVertexIntersection);
+  CPPUNIT_TEST(testVertexVertexIntersection);
+
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void testCellCellIntersection() 
+  { 
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<3,3>(mesh);
+  }
+
+  void testCellFacetIntersection() 
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<3,2>(mesh);
+  }
+
+  void testCellEdgeIntersection() 
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<3,1>(mesh);
+  }
+
+  void testCellVertexIntersection() 
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<3,0>(mesh);
+  }
+
+  void testFacetFacetIntersection()
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<2,2>(mesh);
+  }
+
+  void testFacetEdgeIntersection() 
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<2,1>(mesh);
+  }
+
+  void testFacetVertexIntersection()
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<2,0>(mesh);
+  }
+
+  void testEdgeEdgeIntersection() 
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<1,1>(mesh);
+  }
+
+  void testEdgeVertexIntersection()
+  {
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<1,0>(mesh);
+  }
+
+  void testVertexVertexIntersection() 
+  { 
+    uint N = 3;
+    UnitCube mesh(N,N,N);
+    testEntityEntityIntersection<0,0>(mesh);
+  }
+
+};
+
+class IntersectionOperator2D : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(IntersectionOperator2D);
+
+  CPPUNIT_TEST(testCellCellIntersection);
+  CPPUNIT_TEST(testCellEdgeIntersection);
+  CPPUNIT_TEST(testCellVertexIntersection);
+
+  CPPUNIT_TEST(testEdgeEdgeIntersection);
+  CPPUNIT_TEST(testEdgeVertexIntersection);
+
+  CPPUNIT_TEST(testVertexVertexIntersection);
+
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void testCellCellIntersection() 
+  { 
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<2,2>(mesh);
+  }
+
+  void testCellEdgeIntersection() 
+  {
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<2,1>(mesh);
+  }
+
+  void testCellVertexIntersection() 
+  {
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<2,0>(mesh);
+  }
+
+  void testEdgeEdgeIntersection() 
+  {
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<1,1>(mesh);
+  }
+
+  void testEdgeVertexIntersection()
+  {
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<1,0>(mesh);
+  }
+
+  void testVertexVertexIntersection() 
+  { 
+    uint N = 6;
+    UnitSquare mesh(N,N);
+    testEntityEntityIntersection<0,0>(mesh);
+  }
+
+};
+
+class IntersectionOperator1D : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(IntersectionOperator1D);
+
+  CPPUNIT_TEST(testCellCellIntersection);
+  CPPUNIT_TEST(testCellVertexIntersection);
+
+  CPPUNIT_TEST(testVertexVertexIntersection);
+
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  void testCellCellIntersection() 
+  { 
+    uint N = 10;
+    UnitInterval mesh(N);
+    testEntityEntityIntersection<1,1>(mesh);
+  }
+
+  void testCellVertexIntersection() 
+  {
+    uint N = 10;
+    UnitInterval mesh(N);
+    testEntityEntityIntersection<1,0>(mesh);
+  }
+
+  void testVertexVertexIntersection() 
+  { 
+    uint N = 10;
+    UnitInterval mesh(N);
+    testEntityEntityIntersection<0,0>(mesh);
   }
 
 };
 
 int main()
 {
-  // FIXME: The following test breaks in parallel
+  // FIXME: The following tests break probably in parallel
   if (dolfin::MPI::num_processes() == 1)
   {
-    CPPUNIT_TEST_SUITE_REGISTRATION(Intersection3D);
+    CPPUNIT_TEST_SUITE_REGISTRATION(IntersectionOperator3D);
+    CPPUNIT_TEST_SUITE_REGISTRATION(IntersectionOperator2D);
+    CPPUNIT_TEST_SUITE_REGISTRATION(IntersectionOperator1D);
   }
 
   DOLFIN_TEST;
