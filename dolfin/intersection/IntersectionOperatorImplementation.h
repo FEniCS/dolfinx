@@ -420,7 +420,7 @@ namespace dolfin
     virtual Point closest_point(const Point& point) const { return Point(); }
     virtual dolfin::uint closest_cell(const Point& point) const { return 0; }
     virtual std::pair<Point,uint> closest_point_and_cell(const Point& point) const { return std::pair<Point, uint>(); }
-    virtual double distance(const Point & point) { return 0; }
+    virtual double distance(const Point & point) const { return 0; }
 
   };
 }
