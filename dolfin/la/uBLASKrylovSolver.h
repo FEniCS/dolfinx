@@ -63,25 +63,27 @@ namespace dolfin
 
     /// Solve the operator (matrix)
     void set_operator(const boost::shared_ptr<const GenericMatrix> A)
-    { error("set_operator(A) is not implemented."); }
+    { set_operators(A, A); }
+
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                       const boost::shared_ptr<const GenericMatrix> P)
+    { this->A = A; this->P = P; }
+
 
     /// Return the operator (matrix)
     const GenericMatrix& get_operator() const
     {
-      error("get_operator() is not implemented.");
-      return *(static_cast<GenericMatrix*>(0)); // code will not be reached
+      if (!A)
+        error("Operator for uBLAS Krylov linear solver has not been set.");
+      return *A;
     }
 
     /// Solve linear system Ax = b and return number of iterations
+    uint solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations (dense matrix)
-    uint solve(const uBLASMatrix<ublas_dense_matrix>& A, uBLASVector& x,
-               const uBLASVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations (sparse matrix)
-    uint solve(const uBLASMatrix<ublas_sparse_matrix>& A, uBLASVector& x,
-               const uBLASVector& b);
 
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
@@ -99,7 +101,8 @@ namespace dolfin
 
     /// Select solver and solve linear system Ax = b and return number of iterations
     template<typename Mat>
-    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
+    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b,
+                      const Mat& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
@@ -133,8 +136,11 @@ namespace dolfin
     uint max_it, restart;
     bool report;
 
-    /// True if we have read parameters
-    bool parameters_read;
+    /// Operator (the matrix)
+    boost::shared_ptr<const GenericMatrix> A;
+
+    /// Matrix used to construct the preconditoner
+    boost::shared_ptr<const GenericMatrix> P;
 
   };
   //---------------------------------------------------------------------------
@@ -143,7 +149,8 @@ namespace dolfin
   template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
                                                uBLASVector& x,
-                                               const uBLASVector& b)
+                                               const uBLASVector& b,
+                                               const Mat& P)
   {
     // Check dimensions
     uint M = A.size(0);
@@ -159,15 +166,14 @@ namespace dolfin
     }
 
     // Read parameters if not done
-    if (!parameters_read )
-      read_parameters();
+    read_parameters();
 
     // Write a message
     if ( report )
       info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
-    pc->init(A);
+    pc->init(P);
 
     // Choose solver and solve
     bool converged = false;
@@ -210,7 +216,8 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename Mat>
   dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
-                                             const uBLASVector& b, bool& converged) const
+                                             const uBLASVector& b,
+                                             bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();

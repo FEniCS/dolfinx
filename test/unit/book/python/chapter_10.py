@@ -1022,9 +1022,13 @@ class TestPage51(unittest.TestCase):
         parameters["linear_algebra_backend"] = "uBLAS"
         A = assemble(a)
 
-        from scipy.sparse import csr_matrix
-        rows, columns, values = A.data()
-        csr = csr_matrix((values, columns, rows))
+        try:
+            from scipy.sparse import csr_matrix
+        except ImportError:
+            pass
+        else:
+            rows, columns, values = A.data()
+            csr = csr_matrix((values, columns, rows))
 
         # Reset linear algebra backend so that other tests work
         parameters["linear_algebra_backend"] = "PETSc"
