@@ -24,7 +24,6 @@
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
-#include <dolfin/intersection/cgal_includes.h>
 
 #include <vector>
 #include <algorithm>
