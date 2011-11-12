@@ -135,9 +135,8 @@ int main()
   solver.set_operators(A, P);
 
   // Solve system
-  solver.solve(w.vector(), b);
-
-  cout << "Soln norm: " << w.vector().norm("l2") << endl;
+  solver.solve(*w.vector(), b);
+  cout << "Soln norm: " << w.vector()->norm("l2") << endl;
 
   // Split solution
   Function u = w[0];

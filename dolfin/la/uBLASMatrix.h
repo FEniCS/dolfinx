@@ -34,8 +34,8 @@
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
-#include "uBLASVector.h"
 #include "uBLASFactory.h"
+#include "uBLASVector.h"
 
 namespace dolfin
 {

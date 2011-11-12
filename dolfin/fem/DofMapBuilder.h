@@ -85,7 +85,7 @@ namespace dolfin
     /// Lagrnage multipliers) based on UFC numbering. Global dofs
     /// are not associated with any mesh entity
     static set compute_global_dofs(const DofMap& dofmap,
-                                         const Mesh& dolfin_mesh);
+                                   const Mesh& dolfin_mesh);
 
 
     // Iterate recursively over all sub-dof maps to find global

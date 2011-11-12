@@ -87,20 +87,20 @@ void RAWFile::ResultsWrite(const Function& u) const
   std::string data_type = "point";
 
   // For brevity
-  const FunctionSpace& V = u.function_space();
+  const FunctionSpace& V = *u.function_space();
   assert(V.mesh());
   const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap(V.dofmap());
 
   // Get rank of Function
-  const uint rank = u.function_space().element().value_rank();
+  const uint rank = u.function_space()->element().value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in Raw format.");
 
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
-    dim *= u.function_space().element().value_dimension(i);
+    dim *= u.function_space()->element().value_dimension(i);
 
   // Test for cell-based element type
   uint cell_based_dim = 1;
@@ -120,7 +120,8 @@ void RAWFile::ResultsWrite(const Function& u) const
     Array<double> values(size);
 
     // Get function values on cells
-    u.vector().get_local(values);
+    assert(u.vector());
+    u.vector()->get_local(values);
 
     // Write function data at cells
     uint num_cells = mesh.num_cells();

@@ -58,7 +58,7 @@ Parameters uBLASKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : method(method), report(false), parameters_read(false)
+  : method(method), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -69,7 +69,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
   : method("default"), pc(reference_to_no_delete_pointer(pc)),
-    report(false), parameters_read(false)
+    report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -78,7 +78,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      uBLASPreconditioner& pc)
   : method(method), pc(reference_to_no_delete_pointer(pc)),
-    report(false), parameters_read(false)
+    report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -89,29 +89,35 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+dolfin::uint uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  assert(A);
+  boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _A
+        = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(A);
+  assert(_A);
+
+  assert(P);
+  boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _P
+        = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(P);
+  assert(_P);
+
+  return solve_krylov(*_A, x.down_cast<uBLASVector>(),
+                      b.down_cast<uBLASVector>(), *_P);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                       const GenericVector& b)
 {
-  return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
-               x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
-}
-//-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A,
-                                      uBLASVector& x, const uBLASVector& b)
-{
-  return solve_krylov(A, x, b);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A,
-                                      uBLASVector& x, const uBLASVector& b)
-{
-  return solve_krylov(A, x, b);
+  // Set operator
+  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  set_operator(_A);
+  return solve(x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x,
                                       const uBLASVector& b)
 {
-  return solve_krylov(A, x, b);
+  return solve_krylov(A, x, b, A);
 }
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
@@ -138,8 +144,5 @@ void uBLASKrylovSolver::read_parameters()
   max_it  = parameters["maximum_iterations"];
   restart = parameters("gmres")["restart"];
   report  = parameters["report"];
-
-  // Remember that we have read parameters
-  parameters_read = true;
 }
 //-----------------------------------------------------------------------------

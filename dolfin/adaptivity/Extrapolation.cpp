@@ -53,12 +53,12 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   //     w.function_space().element().signature().c_str());
 
   // Check that the meshes are the same
-  if (w.function_space().mesh() != v.function_space().mesh())
+  if (w.function_space()->mesh() != v.function_space()->mesh())
     error("Extrapolation must be computed on the same mesh.");
 
   // Extract mesh and function spaces
-  const FunctionSpace& V = v.function_space();
-  const FunctionSpace& W = w.function_space();
+  const FunctionSpace& V = *v.function_space();
+  const FunctionSpace& W = *w.function_space();
   assert(V.mesh());
   const Mesh& mesh = *V.mesh();
 
@@ -246,7 +246,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
 void Extrapolation::average_coefficients(Function& w,
                                std::vector<std::vector<double> >& coefficients)
 {
-  const FunctionSpace& W = w.function_space();
+  const FunctionSpace& W = *w.function_space();
   Array<double> dof_values(W.dim());
 
   for (uint i = 0; i < W.dim(); i++)
@@ -259,6 +259,7 @@ void Extrapolation::average_coefficients(Function& w,
   }
 
   // Update dofs for w
-  w.vector().set_local(dof_values);
+  assert(w.vector());
+  w.vector()->set_local(dof_values);
 }
 //-----------------------------------------------------------------------------

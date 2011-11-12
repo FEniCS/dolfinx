@@ -19,7 +19,6 @@
 // Last changed: 2011-10-04
 
 #include <map>
-
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
@@ -174,7 +173,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   }
 
   // Refine function space
-  boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
+  boost::shared_ptr<const FunctionSpace> space = function.function_space();
   adapt(*space, adapted_mesh);
   boost::shared_ptr<const FunctionSpace>
     refined_space = space->child_shared_ptr();

@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   bc.apply(A, b);
 
   // Solve system
-  solve(A, phi_h.vector(), b);
+  solve(A, *phi_h.vector(), b);
 
   // Define variational problem
   Projection::FunctionSpace Vp(mesh);

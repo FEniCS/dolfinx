@@ -53,9 +53,9 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                                 bool binary, bool compress)
 {
   // For brevity
-  assert(u.function_space().mesh());
-  const Mesh& mesh = *u.function_space().mesh();
-  const GenericDofMap& dofmap = u.function_space().dofmap();
+  assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
+  const GenericDofMap& dofmap = u.function_space()->dofmap();
   const uint num_cells = mesh.num_cells();
 
   std::string encode_string;
@@ -118,7 +118,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Get  values
   std::vector<double> values(dof_set.size());
-  u.vector().get_local(&values[0], dof_set.size(), &dof_set[0]);
+  assert(u.vector());
+  u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
 
   // Get cell data
   if (!binary)

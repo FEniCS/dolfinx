@@ -119,10 +119,8 @@ LinearVariationalProblem::bcs() const
 boost::shared_ptr<const FunctionSpace>
 LinearVariationalProblem::trial_space() const
 {
-  // FIXME: Cleanup names of functions: foo(), foo_shared_ptr(), foo_ptr()
-
   assert(_u);
-  return _u->function_space_ptr();
+  return _u->function_space();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace>

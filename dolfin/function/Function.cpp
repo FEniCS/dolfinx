@@ -214,7 +214,8 @@ const Function& Function::operator= (const Function& v)
 
     // Gather values into an Array
     Array<double> gathered_values;
-    v.vector().gather(gathered_values, old_rows);
+    assert(v.vector());
+    v.vector()->gather(gathered_values, old_rows);
 
     // Initial new vector (global)
     init_vector();
@@ -255,20 +256,16 @@ Function& Function::operator[] (uint i) const
   }
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& Function::function_space() const
-{
-  assert(_function_space);
-  return *_function_space;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
+boost::shared_ptr<const FunctionSpace> Function::function_space() const
 {
   assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-GenericVector& Function::vector()
+boost::shared_ptr<GenericVector> Function::vector()
 {
+  assert(_vector);
+
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap().global_dimension())
   {
@@ -276,13 +273,13 @@ GenericVector& Function::vector()
     cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
     error("You are attempting to access a non-const vector from a sub-Function.");
   }
-  return *_vector;
+  return _vector;
 }
 //-----------------------------------------------------------------------------
-const GenericVector& Function::vector() const
+boost::shared_ptr<const GenericVector> Function::vector() const
 {
   assert(_vector);
-  return *_vector;
+  return _vector;
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
@@ -383,7 +380,8 @@ void Function::interpolate(const GenericFunction& v)
   init_vector();
 
   // Interpolate
-  function_space().interpolate(*_vector, v);
+  assert(_function_space);
+  _function_space->interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
 void Function::extrapolate(const Function& v)
@@ -566,7 +564,8 @@ void Function::gather() const
 void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
-  if (function_space().dofmap().is_view())
+  assert(_function_space);
+  if (_function_space->dofmap().is_view())
     error("Cannot create a Function from a subspace. The subspace needs to be collapsed.");
 
   // Get global size

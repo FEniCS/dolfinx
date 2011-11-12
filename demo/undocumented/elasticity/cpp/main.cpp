@@ -143,10 +143,10 @@ int main()
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
-  std::cout << "Norm (u): " << u.vector().norm("l2") << std::endl;
-  std::cout << "Norm (ux, uy, uz): " << ux.vector().norm("l2") << "  "
-            << uy.vector().norm("l2") << "  "
-            << uz.vector().norm("l2") << std::endl;
+  std::cout << "Norm (u): " << u.vector()->norm("l2") << std::endl;
+  std::cout << "Norm (ux, uy, uz): " << ux.vector()->norm("l2") << "  "
+            << uy.vector()->norm("l2") << "  "
+            << uz.vector()->norm("l2") << std::endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");

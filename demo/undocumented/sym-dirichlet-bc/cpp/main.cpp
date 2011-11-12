@@ -127,9 +127,8 @@ int main()
   info(table);
 
   // Solve system
-  GenericVector& x = u.vector();
   LUSolver solver;
-  solver.solve(A, x, b);
+  solver.solve(A, *u.vector(), b);
 
   // Plot solution
   plot(u);
