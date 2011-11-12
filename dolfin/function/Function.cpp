@@ -256,13 +256,7 @@ Function& Function::operator[] (uint i) const
   }
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& Function::function_space() const
-{
-  assert(_function_space);
-  return *_function_space;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
+boost::shared_ptr<const FunctionSpace> Function::function_space() const
 {
   assert(_function_space);
   return _function_space;
@@ -386,7 +380,8 @@ void Function::interpolate(const GenericFunction& v)
   init_vector();
 
   // Interpolate
-  function_space().interpolate(*_vector, v);
+  assert(_function_space);
+  _function_space->interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
 void Function::extrapolate(const Function& v)
@@ -569,7 +564,8 @@ void Function::gather() const
 void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
-  if (function_space().dofmap().is_view())
+  assert(_function_space);
+  if (_function_space->dofmap().is_view())
     error("Cannot create a Function from a subspace. The subspace needs to be collapsed.");
 
   // Get global size
