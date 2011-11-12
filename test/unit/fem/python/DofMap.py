@@ -94,6 +94,7 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([Q, Q, Q, R])
         W = MixedFunctionSpace([Q, Q, R, Q])
         W = MixedFunctionSpace([V, R])
+        W = MixedFunctionSpace([R, V])
 
 if __name__ == "__main__":
     print ""
