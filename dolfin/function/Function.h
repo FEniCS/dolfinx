@@ -170,19 +170,12 @@ namespace dolfin
     ///         Index of subfunction.
     Function& operator[] (uint i) const;
 
-    /// Return function space
-    ///
-    /// *Returns*
-    ///     _FunctionSpace_
-    ///         Return the function space.
-    const FunctionSpace& function_space() const;
-
     /// Return shared pointer to function space
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
+    boost::shared_ptr<const FunctionSpace> function_space() const;
 
     /// Return vector of expansion coefficients (non-const version)
     ///

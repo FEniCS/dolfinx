@@ -89,7 +89,7 @@ std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
 {
   warning("Form::coloring does not properly consider form type.");
 
-  // Get mesh 
+  // Get mesh
   const Mesh& mesh = this->mesh();
   const uint cell_dim = mesh.topology().dim();
 
@@ -148,8 +148,8 @@ const Mesh& Form::mesh() const
     for (uint i = 0; i < _coefficients.size(); i++)
     {
       const Function* function = dynamic_cast<const Function*>(&*_coefficients[i]);
-      if (function && function->function_space().mesh())
-        meshes.push_back(function->function_space().mesh());
+      if (function && function->function_space()->mesh())
+        meshes.push_back(function->function_space()->mesh());
     }
   }
 

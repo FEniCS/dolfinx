@@ -47,7 +47,8 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 {
   assert(u.vector());
   GenericVector& vector = *u.vector();
-  const FunctionSpace& V = u.function_space();
+  assert(u.function_space());
+  const FunctionSpace& V = *u.function_space();
 
   std::vector<std::pair<uint, uint> > global_to_cell_dof;
   Array<double> x;
@@ -127,7 +128,8 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
     u.vector()->get_local(x);
 
   // Get function space
-  const FunctionSpace& V = u.function_space();
+  assert(u.function_space());
+  const FunctionSpace& V = *u.function_space();
 
   // Build map
   std::vector<std::vector<std::pair<uint, uint> > > global_dof_to_cell_dof;

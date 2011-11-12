@@ -75,16 +75,16 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   // Extract and store additional function spaces
   const uint improved_dual = _residual->num_coefficients() - 1;
   const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
-  _E = e_tmp.function_space_ptr();
+  _E = e_tmp.function_space();
 
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
-  _B = bubble.function_space_ptr();
+  _B = bubble.function_space();
   _cell_bubble.reset(new Function(_B));
   assert(_cell_bubble->vector());
   *(_cell_bubble->vector()) = 1.0;
 
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
-  _C = cone.function_space_ptr();
+  _C = cone.function_space();
   _cell_cone.reset(new Function(_C));
 }
 //-----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   UFC ufc_rhs(*_L_R_T);
 
   // Extract common space, mesh and dofmap
-  const FunctionSpace& V(R_T.function_space());
+  const FunctionSpace& V = *R_T.function_space();
   assert(V.mesh());
   const Mesh& mesh(*V.mesh());
   const GenericDofMap& dofmap = V.dofmap();
@@ -295,7 +295,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
-  const FunctionSpace& V = R_dT[0].function_space();
+  const FunctionSpace& V = *R_dT[0].function_space();
   const uint N = V.element().space_dimension();
 
   // Extract mesh
