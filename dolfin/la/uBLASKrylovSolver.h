@@ -75,7 +75,11 @@ namespace dolfin
     const GenericMatrix& get_operator() const
     {
       if (!A)
-        error("Operator for uBLAS Krylov linear solver has not been set.");
+      {
+        dolfin_error("uBLASKrylovSolver.cpp",
+                     "access operator for uBLAS Krylov solver",
+                     "Operator has not been set");
+      }
       return *A;
     }
 
