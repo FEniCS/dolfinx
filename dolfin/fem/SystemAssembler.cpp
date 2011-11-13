@@ -187,7 +187,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (MPI::num_processes() > 1)
       warning("Parallel symmetric assembly over interior facets for nonlinear problems is untested");
 
-    assert(x0->size() == a.function_space(1)->dofmap().global_dimension());
+    assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
 
     const uint num_bc_dofs = boundary_values.size();
     std::vector<uint> bc_indices;
@@ -277,11 +277,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> a_dofmaps;
   for (uint i = 0; i < a_rank; ++i)
-    a_dofmaps.push_back(&a.function_space(i)->dofmap());
+    a_dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   std::vector<const GenericDofMap*> L_dofmaps;
   for (uint i = 0; i < L_rank; ++i)
-    L_dofmaps.push_back(&L.function_space(i)->dofmap());
+    L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > a_dofs(a_rank);
@@ -457,11 +457,11 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> a_dofmaps;
   for (uint i = 0; i < a_rank; ++i)
-    a_dofmaps.push_back(&a.function_space(i)->dofmap());
+    a_dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   std::vector<const GenericDofMap*> L_dofmaps;
   for (uint i = 0; i < L_rank; ++i)
-    L_dofmaps.push_back(&L.function_space(i)->dofmap());
+    L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > a_dofs(a_rank), L_dofs(L_rank);
@@ -590,13 +590,13 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   const uint cell1_index = cell1.index();
 
   // Tabulate dofs
-  const std::vector<uint>& a0_dofs0 = a.function_space(0)->dofmap().cell_dofs(cell0_index);
-  const std::vector<uint>& a1_dofs0 = a.function_space(1)->dofmap().cell_dofs(cell0_index);
-  const std::vector<uint>& L_dofs0  = L.function_space(0)->dofmap().cell_dofs(cell0_index);
+  const std::vector<uint>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<uint>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<uint>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
 
-  const std::vector<uint>& a0_dofs1 = a.function_space(0)->dofmap().cell_dofs(cell1_index);
-  const std::vector<uint>& a1_dofs1 = a.function_space(1)->dofmap().cell_dofs(cell1_index);
-  const std::vector<uint>& L_dofs1  = L.function_space(0)->dofmap().cell_dofs(cell1_index);
+  const std::vector<uint>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<uint>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<uint>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
 
   // Cell integrals
   const ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
@@ -752,9 +752,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   const uint cell_index = cell.index();
   std::vector<const std::vector<uint>* > a_dofs(2);
   std::vector<const std::vector<uint>* > L_dofs(1);
-  a_dofs[0] = &(a.function_space(0)->dofmap().cell_dofs(cell_index));
-  a_dofs[1] = &(a.function_space(1)->dofmap().cell_dofs(cell_index));
-  L_dofs[0] = &(L.function_space(0)->dofmap().cell_dofs(cell_index));
+  a_dofs[0] = &(a.function_space(0)->dofmap()->cell_dofs(cell_index));
+  a_dofs[1] = &(a.function_space(1)->dofmap()->cell_dofs(cell_index));
+  L_dofs[0] = &(L.function_space(0)->dofmap()->cell_dofs(cell_index));
 
   // Modify local matrix/element for Dirichlet boundary conditions
   apply_bc(&data.Ae[0], &data.be[0], boundary_values, a_dofs);
@@ -766,11 +766,11 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
-  uint A_num_entries  = a.function_space(0)->dofmap().max_cell_dimension();
-  A_num_entries      *= a.function_space(1)->dofmap().max_cell_dimension();
+  uint A_num_entries  = a.function_space(0)->dofmap()->max_cell_dimension();
+  A_num_entries      *= a.function_space(1)->dofmap()->max_cell_dimension();
   Ae.resize(A_num_entries);
 
-  be.resize(L.function_space(0)->dofmap().max_cell_dimension());
+  be.resize(L.function_space(0)->dofmap()->max_cell_dimension());
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::~Scratch()

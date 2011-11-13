@@ -250,10 +250,12 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   const FunctionSpace& V = *R_T.function_space();
   assert(V.mesh());
   const Mesh& mesh(*V.mesh());
-  const GenericDofMap& dofmap = V.dofmap();
+  assert(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for cell-residual problems
-  const uint N = V.element().space_dimension();
+  assert(V.element());
+  const uint N = V.element()->space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
   arma::vec x(N);
@@ -295,8 +297,10 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
+  assert(R_dT[0].function_space());
   const FunctionSpace& V = *R_dT[0].function_space();
-  const uint N = V.element().space_dimension();
+  assert(V.element());
+  const uint N = V.element()->space_dimension();
 
   // Extract mesh
   assert(V.mesh());
@@ -304,7 +308,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  const int local_cone_dim = _C->element().space_dimension();
+  assert(_C->element());
+  const int local_cone_dim = _C->element()->space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
@@ -322,7 +327,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, _R_T);
 
   // Extract (common) dof map
-  const GenericDofMap& dofmap = V.dofmap();
+  assert(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
   arma::mat A(N, N);

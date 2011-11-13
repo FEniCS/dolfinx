@@ -85,8 +85,9 @@ void UFC::init(const Form& form)
   std::vector<uint> max_macro_local_dimension;
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    max_local_dimension.push_back(V[i]->dofmap().max_cell_dimension());
-    max_macro_local_dimension.push_back(2*V[i]->dofmap().max_cell_dimension());
+    assert(V[i]->dofmap());
+    max_local_dimension.push_back(V[i]->dofmap()->max_cell_dimension());
+    max_macro_local_dimension.push_back(2*V[i]->dofmap()->max_cell_dimension());
   }
 
   // Initialize local tensor

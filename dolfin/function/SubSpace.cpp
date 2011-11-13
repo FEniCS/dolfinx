@@ -27,9 +27,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, uint component)
-  : FunctionSpace(V.mesh(),
-                  reference_to_no_delete_pointer(V.element()),
-                  reference_to_no_delete_pointer(V.dofmap()))
+  : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
   std::vector<uint> c;
@@ -41,9 +39,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component)
 }
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
-  : FunctionSpace(V.mesh(),
-                  reference_to_no_delete_pointer(V.element()),
-                  reference_to_no_delete_pointer(V.dofmap()))
+  : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
   std::vector<uint> c;
@@ -56,9 +52,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
 }
 //-----------------------------------------------------------------------------
 SubSpace::SubSpace(const FunctionSpace& V, const std::vector<uint>& component)
-  : FunctionSpace(V.mesh(),
-                  reference_to_no_delete_pointer(V.element()),
-                  reference_to_no_delete_pointer(V.dofmap()))
+  : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Extract subspace and assign
   boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(component));

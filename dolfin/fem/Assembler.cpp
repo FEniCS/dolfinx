@@ -204,7 +204,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -272,7 +272,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -361,7 +361,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells
   std::vector<std::vector<uint> > macro_dofs(form_rank);

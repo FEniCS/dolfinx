@@ -301,11 +301,12 @@ void Form::check() const
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
     boost::scoped_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
-    assert(element.get());
-    if (element->signature() != _function_spaces[i]->element().signature())
+    assert(element);
+    assert(_function_spaces[i]->element());
+    if (element->signature() != _function_spaces[i]->element()->signature())
     {
       log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      log(ERROR, "Input element:    %s", _function_spaces[i]->element()->signature().c_str());
       error("Wrong type of function space for argument %d.", i);
     }
   }

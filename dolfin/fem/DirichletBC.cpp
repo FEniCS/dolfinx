@@ -505,18 +505,21 @@ void DirichletBC::apply(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
+  assert(g);
+  assert(_function_space->element());
+
   // Check for common errors, message below might be cryptic
-  if (g->value_rank() == 0 && _function_space->element().value_rank() == 1)
+  if (g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
     error("Unable to create boundary condition. Reason: Expecting a vector-valued boundary value but given function is scalar.");
-  if (g->value_rank() == 1 && _function_space->element().value_rank() == 0)
+  if (g->value_rank() == 1 && _function_space->element()->value_rank() == 0)
     error("Unable to create boundary condition. Reason: Expecting a scalar boundary value but given function is vector-valued.");
 
   // Check that value shape of boundary value
-  check_equal(g->value_rank(), _function_space->element().value_rank(),
+  check_equal(g->value_rank(), _function_space->element()->value_rank(),
               "create boundary condition", "value rank");
   for (uint i = 0; i < g->value_rank(); i++)
   {
-    check_equal(g->value_dimension(i), _function_space->element().value_dimension(i),
+    check_equal(g->value_dimension(i), _function_space->element()->value_dimension(i),
                 "create boundary condition", "value dimension");
   }
 
@@ -650,13 +653,15 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Get mesh and dofmap
   assert(_function_space->mesh());
+  assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
-  const GenericDofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
   // Iterate over facets
+  assert(_function_space->element());
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
   for (uint f = 0; f < facets.size(); ++f)
   {
@@ -669,7 +674,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     ufc_cell.update(cell, facet_number);
 
     // Restrict coefficient to cell
-    g->restrict(&data.w[0], _function_space->element(), cell, ufc_cell);
+    g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
@@ -693,6 +698,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
+  assert(_function_space->element());
   assert(g);
 
   // Special case
@@ -705,8 +711,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   // Get mesh and dofmap
   assert(_function_space->mesh());
+  assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
-  const GenericDofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Initialize facets, needed for geometric search
   log(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
@@ -744,7 +751,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
         {
           // Check if the coordinates are on current facet and thus on boundary
-          //if (!on_facet(data.coordinates[i], facet))
           if (!on_facet(&(data.coordinates[i][0]), facet))
             continue;
 
@@ -754,7 +760,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
             dofmap.tabulate_dofs(&data.cell_dofs[0], *c);
 
             // Restrict coefficient to cell
-            g->restrict(&data.w[0], _function_space->element(), cell, ufc_cell);
+            g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
           }
 
           // Set boundary value
@@ -771,13 +777,15 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
+  assert(_function_space->element());
   assert(g);
   assert(_user_sub_domain);
 
   // Get mesh and dofmap
   assert(_function_space->mesh());
+  assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
-  const GenericDofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Geometric dim
   const uint gdim = mesh.geometry().dim();
@@ -816,7 +824,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         dofmap.tabulate_dofs(&data.cell_dofs[0], *cell);
 
         // Restrict coefficient to cell
-        g->restrict(&data.w[0], _function_space->element(), *cell, ufc_cell);
+        g->restrict(&data.w[0], *_function_space->element(), *cell, ufc_cell);
       }
 
       // Set boundary value
