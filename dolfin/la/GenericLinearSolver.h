@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2009-2011.
+// Modified by Anders Logg 2009-2011
 //
 // First added:  2008-08-26
-// Last changed: 2011-03-25
+// Last changed: 2011-11-11
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -46,15 +46,29 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     virtual void set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                const boost::shared_ptr<const GenericMatrix> P)
-    { error("Linear algebra backend solver does not support 'set_operators'."); }
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "set operator and preconditioner for linear solver",
+                   "not supported by current linear algebra backend");
+    }
 
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-    { error("solve(A, x, b) is not implemented. Consider trying solve(x, b)."); return 0; }
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear systtem",
+                   "not supported by current linear algebra backend, consider using solve(x, b)");
+      return 0;
+    }
 
     /// Solve linear system Ax = b
     virtual uint solve(GenericVector& x, const GenericVector& b)
-    { error("solve(x, b) is not yet implemented for this backend."); return 0; }
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear systtem",
+                   "not supported by current linear algebra backend, consider using solve(x, b)");
+      return 0;
+    }
 
   };
 

@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006.
-// Modified by Dag Lindbo 2008.
+// Modified by Anders Logg 2006-2011
+// Modified by Dag Lindbo 2008
 //
 // First added:  2006-06-01
-// Last changed: 2011-03-24
+// Last changed: 2011-11-11
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -132,7 +132,11 @@ void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> 
 const GenericMatrix& UmfpackLUSolver::get_operator() const
 {
   if (!A)
-    error("Operator for linear solver has not been set.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "access operator for PETSc Krylov solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -171,7 +175,11 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 void UmfpackLUSolver::symbolic_factorize()
 {
   if (!A)
-    error("A matrix must be assocoated with UmfpackLUSolver to peform a symbolic factorisation.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "factorize matrix with UMFPACK LU solver (symbolic)",
+                 "Operator has not been set");
+  }
 
   // Clear any old factorizations
   symbolic.reset();
@@ -199,7 +207,11 @@ void UmfpackLUSolver::symbolic_factorize()
 void UmfpackLUSolver::numeric_factorize()
 {
   if (!A)
-    error("A matrix must be assocoated with UmfpackLUSolver to peform a factorisation.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "factorize matrix with UMFPACK LU solver (numeric)",
+                 "Operator has not been set");
+  }
 
   // Get matrix data
   std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
@@ -227,7 +239,11 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
                                                const GenericVector& b) const
 {
   if (!A)
-    error("No matrix associated with UmfpackLUSolver. Cannot perform factorized_solve.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "Operator has not been set");
+  }
 
   assert(A->size(0) == A->size(0));
   assert(A->size(0) == b.size());
@@ -237,10 +253,18 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
     x.resize(A->size(1));
 
   if (!symbolic)
-    error("No symbolic factorisation. Please call UmfpackLUSolver::factorize_symbolic().");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "Missing symbolic factorization, please call UmfpackLUSolver::factorize_symbolic()");
+  }
 
   if (!numeric)
-    error("No LU factorisation. Please call UmfpackLUSolver::factorize_numeric().");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "Missing numeric factorization, please call UmfpackLUSolver::factorize_numeric()");
+  }
 
   // Get matrix data
   std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
@@ -289,7 +313,11 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint
     return boost::shared_ptr<void>(symbolic, UmfpackLongIntSymbolicDeleter());
   }
   else
-    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "factorize matrix with UMFPACK LU solver (symbolic)",
+                 "Could not determine correct types for casting integers to pass to UMFPACK");
+  }
 
   return boost::shared_ptr<void>();
 }
@@ -326,7 +354,11 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::si
     return boost::shared_ptr<void>(numeric, UmfpackLongIntNumericDeleter());
   }
   else
-    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "factorize matrix with UMFPACK LU solver (numeric)",
+                 "Could not determine correct types for casting integers to pass to UMFPACK");
+  }
 
   return boost::shared_ptr<void>();
 }
@@ -361,7 +393,11 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
     status = umfpack_dl_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric, dnull.get(), dnull.get());
   }
   else
-    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "Could not determine correct types for casting integers to pass to UMFPACK");
+  }
 
   umfpack_check_status(status, "solve");
 }
@@ -375,16 +411,32 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
   // Printing which UMFPACK function is returning an warning/error
   cout << "UMFPACK problem related to call to " << function << endl;
 
-  if(status == UMFPACK_WARNING_singular_matrix)
+  if (status == UMFPACK_WARNING_singular_matrix)
     warning("UMFPACK reports that the matrix being solved is singular.");
-  else if(status == UMFPACK_ERROR_out_of_memory)
-    error("UMFPACK has run out of memory solving a system.");
+  else if (status == UMFPACK_ERROR_out_of_memory)
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "UMFPACK has run out of memory");
+  }
   else if(status == UMFPACK_ERROR_invalid_system)
-    error("UMFPACK reports an invalid system. Is the matrix square?.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "UMFPACK reports an invalid system. Matrix may be non-square");
+  }
   else if(status == UMFPACK_ERROR_invalid_Numeric_object)
-    error("UMFPACK reports an invalid Numeric object.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "UMFPACK reports an invalid Numeric object");
+  }
   else if(status == UMFPACK_ERROR_invalid_Symbolic_object)
-    error("UMFPACK reports an invalid Symbolic object.");
+  {
+    dolfin_error("UmfpackLUSolver.cpp",
+                 "solve linear system with UMFPACK LU solver",
+                 "UMFPACK reports an invalid Symbolic object");
+  }
   else if(status != UMFPACK_OK)
     warning("UMFPACK is reporting an unknown error.");
 }
@@ -396,7 +448,9 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint
                                                   const std::size_t* Ai,
                                                   const double* Ax)
 {
-  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  dolfin_error("UmfpackLUSolver.cpp",
+               "factorize matrix with UMFPACK LU solver (symbolic)",
+               "UMFPACK has not been installed");
   return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
@@ -405,7 +459,9 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::si
                                                  const double* Ax,
                                                  void* symbolic)
 {
-  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  dolfin_error("UmfpackLUSolver.cpp",
+               "factorize matrix with UMFPACK LU solver (numeric)",
+               "UMFPACK has not been installed");
   return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
@@ -414,14 +470,18 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
                                     const double* Ax, double* x,
                                     const double* b, void* numeric)
 {
-  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  dolfin_error("UmfpackLUSolver.cpp",
+               "solve linear system with UMFPACK",
+               "UMFPACK has not been installed");
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::umfpack_check_status(long int status,
                                             std::string function)
 {
-  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  dolfin_error("UmfpackLUSolver.cpp",
+               "solve linear system with UMFPACK",
+               "UMFPACK has not been installed");
 }
 //-----------------------------------------------------------------------------
+
 #endif
-//-----------------------------------------------------------------------------

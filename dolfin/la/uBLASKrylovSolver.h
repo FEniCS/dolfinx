@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2006-2011
 //
 // First added:  2006-05-31
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -75,7 +75,11 @@ namespace dolfin
     const GenericMatrix& get_operator() const
     {
       if (!A)
-        error("Operator for uBLAS Krylov linear solver has not been set.");
+      {
+        dolfin_error("uBLASKrylovSolver.cpp",
+                     "access operator for uBLAS Krylov solver",
+                     "Operator has not been set");
+      }
       return *A;
     }
 
@@ -156,7 +160,11 @@ namespace dolfin
     uint M = A.size(0);
     uint N = A.size(1);
     if ( N != b.size() )
-      error("Non-matching dimensions for linear system.");
+    {
+      dolfin_error("uBLASKrylovSolver.h",
+                   "solve linear system using uBLAS Krylov solver",
+                   "Non-matching dimensions for linear system");
+    }
 
     // Reinitialise x if necessary
     if (x.size() != b.size())
@@ -169,7 +177,7 @@ namespace dolfin
     read_parameters();
 
     // Write a message
-    if ( report )
+    if (report)
       info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
@@ -187,14 +195,22 @@ namespace dolfin
     else if (method == "default")
       iterations = solveBiCGStab(A, x, b, converged);
     else
-      error("Requested Krylov method unknown.");
+    {
+      dolfin_error("uBLASKrylovSolver.h",
+                   "solve linear system using uBLAS Krylov solver",
+                   "Requested Krylov method (\"%s\") is unknown", method.c_str());
+    }
 
     // Check for convergence
     if (!converged)
     {
       bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
       if (error_on_nonconvergence)
-        error("uBLAS Krylov solver failed to converge.");
+      {
+        dolfin_error("uBLASKrylovSolver.h",
+                     "solve linear system using uBLAS Krylov solver",
+                     "Solution failed to converge");
+      }
       else
         warning("uBLAS Krylov solver failed to converge.");
     }
@@ -434,7 +450,11 @@ namespace dolfin
       // Compute new rho
       rho = ublas::inner_prod(_r, _rstar);
       if( fabs(rho) < 1e-25 )
-        error("BiCGStab breakdown. rho = %g", rho);
+      {
+        dolfin_error("uBLASKrylovSolver.h",
+                     "solve linear system using uBLAS BiCGStab solver",
+                     "Solution failed to converge, rho = %g", rho);
+      }
 
       beta = (rho/rho_old)*(alpha/omega);
 

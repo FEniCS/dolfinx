@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Jansson, 2006.
-// Modified by Anders Logg, 2006-2008.
-// Modified by Ola Skavhaug, 2007-2008.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Martin Alnæs, 2008.
+// Modified by Johan Jansson 2006.
+// Modified by Anders Logg 2006-2011
+// Modified by Ola Skavhaug 2007-2008
+// Modified by Kent-Andre Mardal 2008
+// Modified by Martin Alnæs 2008
 //
 // First added:  2006-04-24
 // Last changed: 2011-02-05
@@ -168,9 +168,11 @@ namespace dolfin
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual std::tr1::tuple<const std::size_t*, const std::size_t*,
-                                            const double*, int> data() const
+                            const double*, int> data() const
     {
-      error("Unable to return pointers to underlying matrix data.");
+      dolfin_error("GenericMatrix.h",
+                   "return pointers to underlying matrix data",
+                   "not implemented by current linear algebra backend");
       return std::tr1::tuple<const std::size_t*, const std::size_t*,
                                                const double*, int>(0, 0, 0, 0);
     }

@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2008-2010
 //
 // First added:  2008-04-21
-// Last changed: 2011-10-03
+// Last changed: 2011-11-11
 
 #ifdef HAS_TRILINOS
 
@@ -88,7 +88,11 @@ bool EpetraMatrix::distributed() const
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   if (A && !A.unique())
-    error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "initialize Epetra matrix",
+                 "More than one object points to the underlying Epetra object");
+  }
 
   // Get local range
   const std::pair<uint, uint> range = sparsity_pattern.local_range(0);
@@ -157,7 +161,9 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   catch (int err)
   {
-    error("Epetra threw error %d in assemble", err);
+    dolfin_error("EpetraMatrix.cpp",
+                 "initialize Epetra matrix",
+                 "Epetra threw error %d in assembly of domain map", err);
   }
 
   // Create matrix
@@ -186,7 +192,11 @@ std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
 {
   assert(dim < 2);
   if (dim == 1)
-    error("Cannot compute columns range for Epetra matrices.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "access local column range for Epetra matrix",
+                 "Only local row range is available for Epetra matrices");
+  }
 
   const Epetra_BlockMap& row_map = A->RowMap();
   assert(row_map.LinearMap());
@@ -205,7 +215,11 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   else if (dim == 1)
     map = &(A->DomainMap());
   else
-    error("dim must be <= 1 to resize vector.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "resize Epetra vector to match Epetra matrix",
+                 "dimension must be 0 or 1, not %d", dim);
+  }
 
   // Reset vector with new map
   EpetraVector& _y = y.down_cast<EpetraVector>();
@@ -213,7 +227,7 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
-		                   uint n, const uint* cols) const
+                       uint n, const uint* cols) const
 {
   assert(A);
 
@@ -230,13 +244,21 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
       const int err = A->ExtractMyRowView(rows[i], num_entities, values,
                                           indices);
       if (err != 0)
-        error("EpetraMatrix::get: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
+      {
+        dolfin_error("EpetraMatrix",
+                     "get block of values from Epetra matrix",
+                     "Did not manage to perform Epetra_FECrsMatrix::ExtractMyRowView");
+      }
     }
     else
     {
       const int err = A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
       if (err != 0)
-        error("EpetraMatrix::get: Did not manage to perform Epetra_CRSMatrix::ExtractGlobalRowView.");
+      {
+        dolfin_error("EpetraMatrix",
+                     "get block of values from Epetra matrix",
+                     "Did not manage to perform Epetra_FECrsMatrix::ExtractMyRowView");
+      }
     }
 
     // Step the indices to the start of cols
@@ -280,7 +302,11 @@ void EpetraMatrix::set(const double* block,
                                    n, reinterpret_cast<const int*>(cols), block,
                                    Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
-    error("EpetraMatrix::set: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "set block of values for Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::ReplaceGlobalValues");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
@@ -305,18 +331,30 @@ void EpetraMatrix::add(const double* block,
                                          n, reinterpret_cast<const int*>(cols), block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
-    error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "add block of values to Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::SumIntoGlobalValues");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
   if (!AA->mat()->Filled())
-    error("Epetramatrix is not in the correct state for addition.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "perform axpy operation with Epetra matrix",
+                 "Epetra matrix is not in the correct state");
+  }
 
   const int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
   if (err != 0)
-    error("EpetraMatrDid::axpy: Did not manage to perform EpetraExt::MatrixMatrix::Add. If the matrix has been assembled, the nonzero patterns must match.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "perform axpy operation with Epetra matrix",
+                 "Did not manage to perform EpetraExt::MatrixMatrix::Add. If the matrix has been assembled, the nonzero patterns must match");
+  }
 }
 //-----------------------------------------------------------------------------
 double EpetraMatrix::norm(std::string norm_type) const
@@ -329,7 +367,9 @@ double EpetraMatrix::norm(std::string norm_type) const
     return A->NormFrobenius();
   else
   {
-    error("Unknown norm type in EpetraMatrix.");
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute norm of Epetra matrix",
+                 "Unknown norm type: \"%s\"", norm_type.c_str());
     return 0.0;
   }
 }
@@ -339,7 +379,11 @@ void EpetraMatrix::zero()
   assert(A);
   const int err = A->PutScalar(0.0);
   if (err != 0)
-    error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::PutScalar.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "zero Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::PutScalar");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply(std::string mode)
@@ -353,12 +397,16 @@ void EpetraMatrix::apply(std::string mode)
   else
   {
     dolfin_error("EpetraMatrix.cpp",
-                 "apply changes to matrix",
+                 "apply changes to Epetra matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
 
   if (err != 0)
-    error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "apply changes to Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::GlobalAssemble");
+  }
 }
 //-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
@@ -445,13 +493,21 @@ void EpetraMatrix::ident(uint m, const uint* rows)
       int* column_indices;
       int err = graph.ExtractMyRowView(local_row, num_nz, column_indices);
       if (err != 0)
-        error("EpetraMatrix::ident: Did not manage to extract row map.");
+      {
+        dolfin_error("EpetraMatrix.cpp",
+                     "set rows of Epetra matrix to identity matrix",
+                     "Did not manage to extract row map");
+      }
 
       // Zero row
       std::vector<double> block(num_nz, 0.0);
       err = A->ReplaceMyValues(local_row, num_nz, &block[0], column_indices);
       if (err != 0)
-        error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+      {
+        dolfin_error("EpetraMatrix.cpp",
+                     "set rows of Epetra matrix to identity matrix",
+                     "Did not manage to perform Epetra_FECrsMatrix::ReplaceGlobalValues");
+      }
 
       // Place one on the diagonal
       const double one = 1.0;
@@ -479,7 +535,11 @@ void EpetraMatrix::zero(uint m, const uint* rows)
     std::vector<double> block(num_nz);
     const int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
     if (err != 0)
-      error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+    {
+      dolfin_error("EpetraMatrix.cpp",
+                   "zero Epetra matrix",
+                   "Did not manage to perform Epetra_FECrsMatrix::ReplaceGlobalValues");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -490,7 +550,11 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
   if (x.size() != size(1))
-    error("EpetraMatrix::mult: Matrix and vector dimensions don't match for matrix-vector product.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute matrix-vector product with Epetra matrix",
+                 "Non-matching dimensions for matrix-vector product");
+  }
 
   // Resize RHS
   this->resize(Ax, 0);
@@ -499,7 +563,11 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   assert(Ax.vec());
   const int err = A->Multiply(false, *(x.vec()), *(Ax.vec()));
   if (err != 0)
-    error("EpetraMatrix::mult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute matrix-vector product with Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::Multiply.");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
@@ -509,14 +577,22 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
   if (x.size() != size(0))
-    error("EpetraMatrix::transpmult: Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute transpose matrix-vector product with Epetra matrix",
+                 "Non-matching dimensions for transpose matrix-vector product");
+  }
 
   // Resize RHS
   this->resize(Ax, 1);
 
   const int err = A->Multiply(true, *(x.vec()), *(Ax.vec()));
   if (err != 0)
-    error("EpetraMatrix::transpmult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute transpose matrix-vector product with Epetra matrix",
+                 "Did not manage to perform Epetra_FECrsMatrix::Multiply");
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
@@ -538,7 +614,11 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
     // Extract data from Epetra matrix
     const int err = A->ExtractMyRowView(local_row_index, num_entries, vals, indices);
     if (err != 0)
-      error("EpetraMatrix::getrow: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
+    {
+      dolfin_error("EpetraMatrix.cpp",
+                   "extract row of Epetra matrix",
+                   "Did not manage to perform Epetra_FECrsMatrix::ExtractMyRowView");
+    }
 
     // Put data in columns and values
     columns.resize(num_entries);
@@ -578,7 +658,11 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
 void EpetraMatrix::init(const EpetraSparsityPattern& sparsity_pattern)
 {
   if (A && !A.unique())
-    error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "initialize Epetra matrix",
+                 "More than one object points to the underlying Epetra object");
+  }
   A.reset(new Epetra_FECrsMatrix(Copy, sparsity_pattern.pattern()));
 }
 //-----------------------------------------------------------------------------
@@ -592,7 +676,11 @@ const EpetraMatrix& EpetraMatrix::operator*= (double a)
   assert(A);
   const int err = A->Scale(a);
   if (err !=0)
-    error("EpetraMatrix::operator*=: Did not manage to perform Epetra_CrsMatrix::Scale.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "multiply Epetra matrix by scalar",
+                 "Did not manage to perform Epetra_FECrsMatrix::Scale");
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -601,7 +689,11 @@ const EpetraMatrix& EpetraMatrix::operator/= (double a)
   assert(A);
   int err = A->Scale(1.0/a);
   if (err !=0)
-    error("EpetraMatrix::operator/=: Did not manage to perform Epetra_CrsMatrix::Scale.");
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "divide Epetra matrix by scalar",
+                 "Did not manage to perform Epetra_FECrsMatrix::Scale");
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
