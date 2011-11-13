@@ -78,7 +78,6 @@ void RAWFile::operator<<(const Function& u)
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in RAW format." << endl;
-
 }
 //----------------------------------------------------------------------------
 void RAWFile::ResultsWrite(const Function& u) const
@@ -87,20 +86,23 @@ void RAWFile::ResultsWrite(const Function& u) const
   std::string data_type = "point";
 
   // For brevity
+  assert(u.function_space());
   const FunctionSpace& V = *u.function_space();
   assert(V.mesh());
+  assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Get rank of Function
-  const uint rank = u.function_space()->element().value_rank();
+  assert(V.element());
+  const uint rank = V.element()->value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in Raw format.");
 
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
-    dim *= u.function_space()->element().value_dimension(i);
+    dim *= V.element()->value_dimension(i);
 
   // Test for cell-based element type
   uint cell_based_dim = 1;
@@ -205,7 +207,7 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
 
-  fp<<mesh.num_cells( ) <<std::endl;
+  fp << mesh.num_cells( ) << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << std::endl;
 

@@ -222,7 +222,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
-  const GenericDofMap& dofmap= u.function_space()->dofmap();
+  assert(u.function_space()->dofmap());
+  const GenericDofMap& dofmap= *u.function_space()->dofmap();
   if (dofmap.max_cell_dimension() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
@@ -481,7 +482,8 @@ void VTKFile::pvtu_write_mesh(const std::string filename) const
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_write(const Function& u, const std::string filename) const
 {
-  const uint rank = u.function_space()->element().value_rank();
+  assert(u.function_space()->element());
+  const uint rank = u.function_space()->element()->value_rank();
   if(rank > 2)
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
@@ -492,9 +494,10 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   std::string data_type = "point";
   uint cell_based_dim = 1;
   assert(u.function_space()->mesh());
+  assert(u.function_space()->dofmap());
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
-  if (u.function_space()->dofmap().max_cell_dimension() == cell_based_dim)
+  if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
   pvtu_write_function(dim, rank, data_type, u.name(), filename);

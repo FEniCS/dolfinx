@@ -102,7 +102,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
   if (a.ufc_form()->num_exterior_facet_domains() != 0)
-    assemble_cells_and_exterior_facets(A, a, ufc, cell_domains, 
+    assemble_cells_and_exterior_facets(A, a, ufc, cell_domains,
 				       exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
@@ -144,7 +144,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -165,7 +165,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
-  
+
   // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
@@ -221,7 +221,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     }
     p++;
   }
-  
+
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
@@ -255,7 +255,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   mesh.init(D - 1, D);
   assert(mesh.ordered());
 
-  // Get connectivity 
+  // Get connectivity
   const MeshConnectivity& connectivity = mesh.topology()(D, D - 1);
   assert(connectivity.size() > 0);
 
@@ -274,7 +274,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof maps for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
@@ -296,7 +296,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
-  
+
   // Assemble over cells (loop over colors, then cells of same color)
   const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
@@ -372,17 +372,17 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 	  // Get global facet index
 	  const uint facet_index = connectivity(cell_index)[local_facet];
 	  const uint facet_domain = (*exterior_facet_domains)[facet_index];
-	  
+
 	  if (facet_domain < ufc.form.num_exterior_facet_domains())
 	    facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
 	  else
 	    continue;
 	}
-	
+
 	// Skip integral if zero
 	if (!facet_integral)
 	  continue;
-	
+
 	// FIXME: Do we really need an update version with the local facet index?
         // Update UFC object
         ufc.update(cell, local_facet);
@@ -403,10 +403,10 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       else
         A.add(&ufc.A[0], dofs);
     }
-    
+
     p++;
   }
-  
+
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
@@ -455,7 +455,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < form_rank; ++i)
-    dofmaps.push_back(&a.function_space(i)->dofmap());
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells
   std::vector<std::vector<uint> > macro_dofs(form_rank);

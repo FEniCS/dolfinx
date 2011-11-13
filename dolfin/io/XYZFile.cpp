@@ -70,14 +70,15 @@ void XYZFile::results_write(const Function& u) const
   if (!fp)
     error("Unable to open file %s", filename.c_str());
 
-  const uint rank = u.function_space()->element().value_rank();
+  assert(u.function_space()->element());
+  const uint rank = u.function_space()->element()->value_rank();
   if(rank > 1)
     error("Only scalar functions can be saved in xyz format.");
 
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
-    dim *= u.function_space()->element().value_dimension(i);
+    dim *= u.function_space()->element()->value_dimension(i);
 
   assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();

@@ -89,7 +89,8 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V.dofmap().global_dimension() <= x.size());
+  assert(V.dofmap());
+  assert(V.dofmap()->global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -101,7 +102,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap().global_dimension() <= x->size());
+  assert(V->dofmap());
+  assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -219,7 +221,8 @@ const Function& Function::operator= (const Function& v)
 
     // Initial new vector (global)
     init_vector();
-    assert(_vector->size() == _function_space->dofmap().global_dimension());
+    assert(_function_space->dofmap());
+    assert(_vector->size() == _function_space->dofmap()->global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
@@ -265,12 +268,13 @@ boost::shared_ptr<const FunctionSpace> Function::function_space() const
 boost::shared_ptr<GenericVector> Function::vector()
 {
   assert(_vector);
+  assert(_function_space->dofmap());
 
   // Check that this is not a sub function.
-  if (_vector->size() != _function_space->dofmap().global_dimension())
+  if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
     cout << "Size of vector: " << _vector->size() << endl;
-    cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
+    cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
     error("You are attempting to access a non-const vector from a sub-Function.");
   }
   return _vector;
@@ -337,7 +341,8 @@ void Function::eval(Array<double>& values,
   // Developer note: work arrays/vectors are re-created each time this function
   //                 is called for thread-safety
 
-  const FiniteElement& element = _function_space->element();
+  assert(_function_space->element());
+  const FiniteElement& element = *_function_space->element();
 
   // FIXME: Rather than computing num_tensor_entries, we could just use
   //        values.size()
@@ -392,13 +397,15 @@ void Function::extrapolate(const Function& v)
 dolfin::uint Function::value_rank() const
 {
   assert(_function_space);
-  return _function_space->element().value_rank();
+  assert(_function_space->element());
+  return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_dimension(uint i) const
 {
   assert(_function_space);
-  return _function_space->element().value_dimension(i);
+  assert(_function_space->element());
+  return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x,
@@ -478,13 +485,14 @@ void Function::restrict(double* w,
 {
   assert(w);
   assert(_function_space);
+  assert(_function_space->dofmap());
 
   // Check if we are restricting to an element of this function space
   if (_function_space->has_element(element)
       && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap for cell
-    const GenericDofMap& dofmap = _function_space->dofmap();
+    const GenericDofMap& dofmap = *_function_space->dofmap();
     const std::vector<uint>& dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
@@ -508,7 +516,8 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   gather();
 
   // Get finite element
-  const FiniteElement& element = _function_space->element();
+  assert(_function_space->element());
+  const FiniteElement& element = *_function_space->element();
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
@@ -564,15 +573,15 @@ void Function::gather() const
 void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
-  assert(_function_space);
-  if (_function_space->dofmap().is_view())
+  assert(_function_space->dofmap());
+  if (_function_space->dofmap()->is_view())
     error("Cannot create a Function from a subspace. The subspace needs to be collapsed.");
 
   // Get global size
-  const uint N = _function_space->dofmap().global_dimension();
+  const uint N = _function_space->dofmap()->global_dimension();
 
   // Get local range
-  const std::pair<uint, uint> range = _function_space->dofmap().ownership_range();
+  const std::pair<uint, uint> range = _function_space->dofmap()->ownership_range();
   const uint local_size = range.second - range.first;
 
   // Determine ghost vertices if dof map is distributed
@@ -605,10 +614,12 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
   const Mesh& mesh = *_function_space->mesh();
 
   // Get dof map
-  const GenericDofMap& dofmap = _function_space->dofmap();
+  assert(_function_space->dofmap());
+  const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Dofs per cell
-  const uint num_dofs_per_cell = _function_space->element().space_dimension();
+  assert(_function_space->element());
+  const uint num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range
   const uint n0 = range.first;

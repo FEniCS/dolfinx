@@ -146,10 +146,12 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   }
 
   // Create DOLFIN finite element and dofmap
+  assert(space.dofmap());
+  assert(space.element());
   boost::shared_ptr<const FiniteElement>
-    refined_element(space.element().create());
+    refined_element(space.element()->create());
   boost::shared_ptr<const GenericDofMap>
-    refined_dofmap(space.dofmap().copy(*adapted_mesh));
+    refined_dofmap(space.dofmap()->copy(*adapted_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>

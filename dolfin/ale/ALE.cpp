@@ -95,7 +95,8 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 void ALE::move(Mesh& mesh, const Function& displacement)
 {
   // Check dimensions
-  const FiniteElement& element = displacement.function_space()->element();
+  assert(displacement.function_space()->element());
+  const FiniteElement& element = *displacement.function_space()->element();
   const uint gdim = mesh.geometry().dim();
   if (!((element.value_rank() == 0 && gdim == 0) ||
         (element.value_rank() == 1 && gdim == element.value_dimension(0))))

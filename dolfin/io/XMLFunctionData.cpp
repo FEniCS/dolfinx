@@ -161,8 +161,9 @@ void XMLFunctionData::build_global_to_cell_dof(
 {
   // Get mesh and dofmap
   assert(V.mesh());
+  assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = V.dofmap();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
   std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
@@ -222,8 +223,9 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
 {
   // Get mesh and dofmap
   assert(V.mesh());
+  assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = V.dofmap();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   const uint num_cells = MPI::sum(mesh.num_cells());
 
