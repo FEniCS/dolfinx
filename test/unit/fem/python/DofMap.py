@@ -83,6 +83,19 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
 
+    def test_global_dof_builder(self):
+
+        mesh = UnitSquare(3, 3)
+
+        V = VectorFunctionSpace(mesh, "CG", 1)
+        Q = FunctionSpace(mesh, "CG", 1)
+        R = FunctionSpace(mesh, "R", 0)
+
+        W = MixedFunctionSpace([Q, Q, Q, R])
+        W = MixedFunctionSpace([Q, Q, R, Q])
+        W = MixedFunctionSpace([V, R])
+        W = MixedFunctionSpace([R, V])
+
 if __name__ == "__main__":
     print ""
     print "Testing PyDOLFIN DofMap operations"

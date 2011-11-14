@@ -109,10 +109,10 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(V.dofmap().max_cell_dimension()),
+  : n(V.dofmap()->max_cell_dimension()),
     w(n, 0.0),
     cell_dofs(n, 0),
-    facet_dofs(V.dofmap().num_facet_dofs(), 0),
+    facet_dofs(V.dofmap()->num_facet_dofs(), 0),
     coordinates(boost::extents[n][V.mesh()->geometry().dim()])
 {
   // Do nothing

@@ -19,7 +19,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2011-08-23
+// Last changed: 2011-11-11
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -77,12 +77,19 @@ namespace dolfin
 
     /// Return size of given dimension
     uint size(uint dim) const
-    { error("The size() function is not available for scalars."); return 0; }
+    {
+      dolfin_error("Scalar.h",
+                   "get size of scalar",
+                   "the size() function is not available for scalars");
+      return 0;
+    }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
     {
-      error("The size() function is not available for scalars.");
+      dolfin_error("Scalar.h",
+                   "get local range of scalar",
+                   "the local_range() function is not available for scalars");
       return std::make_pair(0, 0);
     }
 

@@ -100,11 +100,9 @@ int main()
   Function u = w[0];
   Function p = w[1];
 
-  cout << w.vector().norm("l2") << endl;
-
   // Plot solution
-  //plot(u);
-  //plot(p);
+  plot(u);
+  plot(p);
 
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");

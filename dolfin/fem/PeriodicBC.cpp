@@ -238,8 +238,10 @@ void PeriodicBC::apply(GenericMatrix* A,
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
                                    std::vector<std::pair<uint, uint> >& dof_pairs)
 {
+  assert(function_space.element());
+
   // Call recursively for subspaces, should work for arbitrary nesting
-  const uint num_sub_spaces = function_space.element().num_sub_elements();
+  const uint num_sub_spaces = function_space.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
     for (uint i = 0; i < num_sub_spaces; ++i)
@@ -251,12 +253,13 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   }
 
   // Assuming we have a non-mixed element
-  assert(function_space.element().num_sub_elements() == 0);
+  assert(function_space.element()->num_sub_elements() == 0);
 
   // Get mesh and dofmap
   assert(function_space.mesh());
+  assert(function_space.dofmap());
   const Mesh& mesh = *function_space.mesh();
-  const GenericDofMap& dofmap = function_space.dofmap();
+  const GenericDofMap& dofmap = *function_space.dofmap();
 
   // Get dimensions
   const uint tdim = mesh.topology().dim();

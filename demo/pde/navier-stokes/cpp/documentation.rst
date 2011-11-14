@@ -374,7 +374,7 @@ pressure equation:
     assemble(b1, L1);
     for (dolfin::uint i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
-    solve(A1, u1.vector(), b1, "gmres", "default");
+    solve(A1, *u1.vector(), b1, "gmres", "default");
     end();
 
     // Pressure correction
@@ -382,7 +382,7 @@ pressure equation:
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, p1.vector(), b2, "gmres", "ml_amg");
+    solve(A2, *p1.vector(), b2, "gmres", "ml_amg");
     end();
 
     // Velocity correction
@@ -390,7 +390,7 @@ pressure equation:
     assemble(b3, L3);
     for (dolfin::uint i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
-    solve(A3, u1.vector(), b3, "gmres", "default");
+    solve(A3, *u1.vector(), b3, "gmres", "default");
     end();
 
 Note the use of ``begin`` and ``end``; these improve the readability
@@ -449,4 +449,3 @@ Complete main file
 .. literalinclude:: main.cpp
    :start-after: // Begin demo
    :language: c++
-

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007.
-// Modified by Garth N. Wells, 2007, 2009.
-// Modified by Ilmar Wilbers, 2008.
+// Modified by Ola Skavhaug 2007
+// Modified by Garth N. Wells 2007-2009
+// Modified by Ilmar Wilbers 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-08
+// Last changed: 2011-11-11
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -190,7 +190,11 @@ namespace dolfin
     {
       // Check that the rank is 2
       if (rank != 2)
-        error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
+      {
+        dolfin_error("STLMatrix.h",
+                     "resize matrix",
+                     "illegal rank (%d) for matrix, must be 2.", rank);
+      }
 
       // Initialize matrix
       resize(dims[0], dims[1]);

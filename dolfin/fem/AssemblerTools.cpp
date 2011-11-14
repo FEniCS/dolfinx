@@ -127,7 +127,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (uint i = 0; i < a.rank(); ++i)
-    dofmaps.push_back(&(a.function_space(i)->dofmap()));
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   if (reset_sparsity)
   {

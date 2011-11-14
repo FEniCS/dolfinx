@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-05-21
-// Last changed: 2008-08-07
+// Last changed: 2011-11-11
 
 #ifndef __STL_FACTORY_H
 #define __STL_FACTORY_H
@@ -56,12 +56,22 @@ namespace dolfin
 
     /// Create LU solver
     GenericLinearSolver* create_lu_solver(std::string method) const
-    { error("Cannot create LU solver for STLMatrix"); return 0; }
+    {
+      dolfin_error("STLFactory",
+                   "create LU solver",
+                   "LU solver not available for the STL backend");
+      return 0;
+    }
 
     /// Create Krylov solver
     GenericLinearSolver* create_krylov_solver(std::string method,
                                               std::string preconditioner) const
-    { error("Cannot create Krylov solver for STLMatrix"); return 0; }
+    {
+      dolfin_error("STLFactory",
+                   "create Krylov solver",
+                   "Krylov solver not available for the STL backend");
+      return 0;
+    }
 
     /// Return singleton instance
     static STLFactory& instance()

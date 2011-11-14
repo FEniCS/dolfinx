@@ -51,7 +51,7 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
-    def testInterpolation(self):
+    def test_interpolation_old(self):
         class F0(Expression):
             def eval(self, values, x):
                 values[0] = 1.0

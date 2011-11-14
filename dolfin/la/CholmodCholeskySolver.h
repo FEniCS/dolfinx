@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2008-08-15
-// Last changed: 2011-10-06
+// Last changed: 2011-11-11
 
 #ifndef __CHOLMOD_CHOLESKY_SOLVER_H
 #define __CHOLMOD_CHOLESKY_SOLVER_H
@@ -59,7 +61,11 @@ namespace dolfin
 
     /// Solve the operator (matrix)
     void set_operator(const boost::shared_ptr<const GenericMatrix> A)
-    { error("set_operator(A) is not implemented."); }
+    {
+      dolfin_error("CholmodCholeskySolver.h",
+                   "set operator for CHOLMOD Cholesky solver",
+                   "not implemented");
+    }
 
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);

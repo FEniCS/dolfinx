@@ -93,7 +93,11 @@ void PETScMatrix::resize(uint M, uint N)
 
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
-    error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "resize PETSc matrix",
+                 "More than one object points to the underlying PETSc object");
+  }
   A.reset(new Mat, PETScMatrixDeleter());
 
   // FIXME: maybe 50 should be a parameter?
@@ -136,7 +140,11 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
-    error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "initialize PETSc matrix",
+                 "More than one object points to the underlying PETSc object");
+  }
   A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
@@ -305,7 +313,11 @@ void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
 
   // Check size of arrays
   if (columns.size() != values.size())
-    error("Number of columns and values don't match for setrow() operation.");
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "set row of values for PETSc matrix",
+                 "Number of columns and values don't match");
+  }
 
   // Handle case n = 0
   const uint n = columns.size();
@@ -372,7 +384,11 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
   PETScVector& yy = y.down_cast<PETScVector>();
 
   if (size(1) != xx.size())
-    error("Matrix and vector dimensions don't match for matrix-vector product.");
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute matrix-vector product with PETSc matrix",
+                 "Non-matching dimensions for matrix-vector product");
+  }
 
   resize(yy, 0);
   MatMult(*A, *xx.vec(), *yy.vec());
@@ -386,7 +402,11 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   PETScVector& yy = y.down_cast<PETScVector>();
 
   if (size(0) != xx.size())
-    error("Matrix and vector dimensions don't match for matrix-vector product.");
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute transpose matrix-vector product with PETSc matrix",
+                 "Non-matching dimensions for transpose matrix-vector product");
+  }
 
   resize(yy, 1);
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
@@ -397,8 +417,12 @@ double PETScMatrix::norm(std::string norm_type) const
   assert(A);
 
   // Check that norm is known
-  if( norm_types.count(norm_type) == 0)
-    error("Unknown PETSc matrix norm type.");
+  if (norm_types.count(norm_type) == 0)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute norm of PETSc matrix",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
+  }
 
   double value = 0.0;
   MatNorm(*A, norm_types.find(norm_type)->second, &value);
@@ -426,7 +450,7 @@ void PETScMatrix::apply(std::string mode)
   else
   {
     dolfin_error("PETScMatrix.cpp",
-                 "apply changes to matrix",
+                 "apply changes to PETSc matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
 }
@@ -466,7 +490,11 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   else if (this != &A) // Check for self-assignment
   {
     if (this->A && !this->A.unique())
-      error("Cannot assign PETScMatrix because more than one object points to the underlying PETSc object.");
+    {
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "More than one object points to the underlying PETSc object");
+    }
     this->A.reset(new Mat, PETScMatrixDeleter());
 
     // Duplicate with the same pattern as A.A

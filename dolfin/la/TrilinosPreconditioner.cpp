@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifdef HAS_TRILINOS
 
@@ -52,7 +52,6 @@ const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
                               ("jacobi",    AZ_Jacobi)
                               ("sor",       AZ_sym_GS)
                               ("amg",       -1)
-                              ("hypre_amg", -1)
                               ("ml_amg",    -1);
 
 //-----------------------------------------------------------------------------
@@ -67,7 +66,6 @@ TrilinosPreconditioner::preconditioners()
     ("jacobi",    "Jacobi iteration")
     ("sor",       "Successive over-relaxation")
     ("amg",       "Algebraic multigrid")
-    ("hypre_amg", "Hypre algebraic multigrid (BoomerAMG)")
     ("ml_amg",    "ML algebraic multigrid");
 }
 //-----------------------------------------------------------------------------
@@ -101,7 +99,11 @@ TrilinosPreconditioner::TrilinosPreconditioner(std::string preconditioner)
 
   // Check that the requested method is known
   if (_preconditioners.count(preconditioner) == 0)
-    error("Requested Trilinos proconditioner '%s' is unknown,", preconditioner.c_str());
+  {
+    dolfin_error("TrilinosPreconditioner.cpp",
+                 "create Trilinos preconditioner",
+                 "Unknown preconditioner (\"%s\")", preconditioner.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 TrilinosPreconditioner::~TrilinosPreconditioner()

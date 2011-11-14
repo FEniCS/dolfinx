@@ -284,34 +284,5 @@ class Instantiation(unittest.TestCase):
           e2 = Expression("1e+10")
           self.assertEqual(e2(0,0,0), 1e+10)
 
-
-class Interpolate(unittest.TestCase):
-
-    def testInterpolation(self):
-        class F0(Expression):
-            def eval(self, values, x):
-                values[0] = 1.0
-        class F1(Expression):
-            def eval(self, values, x):
-                values[0] = 1.0
-                values[1] = 1.0
-            def value_shape(self):
-                return (2,)
-
-        # Interpolation not working in parallel yet
-        if MPI.num_processes() == 1:
-            # Scalar interpolation
-            f0 = F0()
-            f = Function(V)
-            f.interpolate(f0)
-            self.assertAlmostEqual(f.vector().norm("l1"), mesh.num_vertices())
-
-            # Vector interpolation
-            f1 = F1()
-            W = V * V
-            f = Function(W)
-            f.interpolate(f1)
-            self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
-
 if __name__ == "__main__":
     unittest.main()

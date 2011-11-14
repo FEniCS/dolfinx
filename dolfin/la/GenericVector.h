@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2006-2010.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Martin Sandve Alnes, 2009.
-// Modified by Johan Hake, 2009-2010.
+// Modified by Anders Logg 2006-2011
+// Modified by Kent-Andre Mardal 2008
+// Modified by Ola Skavhaug 2008
+// Modified by Martin Sandve Alnes 2009
+// Modified by Johan Hake 2009-2010
 //
 // First added:  2006-04-25
-// Last changed: 2011-01-14
+// Last changed: 2011-11-11
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -210,20 +210,28 @@ namespace dolfin
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
     {
-      error("Unable to return pointer to underlying vector data.");
+      dolfin_error("GenericVector.h",
+                   "return pointer to underlying vector data",
+                   "not implemented by current linear algebra backend");
       return 0;
     }
 
     /// Return pointer to underlying data
     virtual double* data()
     {
-      error("Unable to return pointer to underlying vector data.");
+      dolfin_error("GenericVector.h",
+                   "return pointer to underlying vector data",
+                   "not implemented by current linear algebra backend");
       return 0;
     }
 
     /// Update ghost values
     virtual void update_ghost_values()
-    { error("GenericVector::update_ghost_values not implemented for this backend."); }
+    {
+      dolfin_error("GenericVector.h",
+                   "update ghost values",
+                   "not implemented by current linear algebra backend");
+    }
 
     //--- Convenience functions ---
 
