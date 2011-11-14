@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andre Massing
+// Copyright (C) 2009-2011 Andre Massing
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-11
-// Last changed: 2011-08-09
+// Last changed: 2011-08-23
 
 #ifndef  meshprimitive_INC
 #define  meshprimitive_INC
@@ -25,15 +25,19 @@
 
 #include <CGAL/Bbox_3.h>
 
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/Vertex.h>
 
 #include "PrimitiveTraits.h"
 
 namespace dolfin
 {
+
+/// A template class which satisfies the Primitive concept required by CGALs
+/// AABBTree template class
 
 template <typename PrimitiveTrait>
 class MeshPrimitive
@@ -46,12 +50,12 @@ public:
   typedef typename PrimitiveTrait::Primitive Primitive;
   typedef typename K::Point_3 Point_3;
 
-  // Topological dimension of the Cell
+  /// Topological dimension of the MeshEntity
   static const uint dim = PrimitiveTrait::dim;
 
-  // Static, so only reference to a mesh and cell index have to be saved
-  static Cell getEntity(const MeshPrimitive & p)
-  { return Cell(p.mesh(),p.index); }
+  /// Static, so only reference to a mesh and entity index have to be saved
+  static MeshEntity getEntity(const MeshPrimitive & p)
+  { return MeshEntity(p.mesh(), dim, p.index); }
 
   const Mesh& mesh() const { return *_mesh; }
 
@@ -64,10 +68,13 @@ public:
 
   MeshPrimitive(): index(0), _mesh(0)   {} // default constructor needed
 
-  // The following constructor is the one that receives the iterators from the
-  // iterator range given as input to the AABB_tree
-  MeshPrimitive(MeshEntityIterator cell)
-    : index(cell->index()), _mesh(&(cell->mesh())) {}
+  /// Create a MeshPrimitive from a given MeshEntityIterator
+  MeshPrimitive(MeshEntityIterator entity)
+    : index(entity->index()), _mesh(&(entity->mesh())) {}
+  
+  /// Create a MeshPrimitive from a given SubsetIterator
+  MeshPrimitive(SubsetIterator entity)
+    : index(entity->index()), _mesh(&(entity->mesh())) {}
 
   Id id() const { return index;}
 
@@ -76,7 +83,7 @@ public:
   // which the local BBox functor class has been redefined to use the
   // bbox function of dolfin mesh entities.  Otherwise the bbox
   // function of the Datum object (see below) would have been used,
-  // which means that we would have had to convert dolfin cells into
+  // which means that we would have had to convert dolfin entities into
   // CGAL primitives only to initialize the tree, which is probably
   // very costly for 1 million of triangles.
 
@@ -91,9 +98,7 @@ public:
     return VertexIterator(MeshPrimitive<PrimitiveTrait>::getEntity(*this))->point();
   }
 
-  // First line compiles but not the second..?
   Datum datum() const { return PrimitiveTraits<Primitive,K>::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
-  //Datum datum() const { return PrimitiveTrait::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
 
 };
 
