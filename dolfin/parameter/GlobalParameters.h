@@ -59,9 +59,6 @@ namespace dolfin
 
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
-      p.add("optimize_use_dofmap_cache", false);             // Store dof maps in cache for reuse
-      p.add("optimize_use_tensor_cache", false);             // Store tensors in cache for reuse
-      p.add("optimize", false);                              // All of the above
 
       // Multi-core
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
@@ -74,7 +71,7 @@ namespace dolfin
       allowed_mesh_partitioners.insert("SCOTCH");
         #ifndef HAS_PARMETIS
         default_mesh_partitioner = "SCOTCH";
-	#endif
+        #endif
       #endif
       p.add("mesh_partitioner",
 	    default_mesh_partitioner,
