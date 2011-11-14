@@ -226,7 +226,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& FunctionSpace::component() const
+std::vector<dolfin::uint> FunctionSpace::component() const
 {
   return _component;
 }

@@ -426,7 +426,6 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   assert(W);
   boost::shared_ptr<const FunctionSpace> V;
 
-
   // Refine function space
   const std::vector<uint> component = W->component();
   if (component.size() == 0)
