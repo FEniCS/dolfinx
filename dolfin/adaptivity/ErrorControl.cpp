@@ -21,6 +21,7 @@
 // Last changed: 2011-03-23
 
 #include <armadillo>
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -415,7 +416,8 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     assert(bc);
 
     // Extract SubSpace component
-    const std::vector<uint> component = bc->function_space().component();
+    assert(bc->function_space());
+    const std::vector<uint> component = bc->function_space()->component();
 
     // Extract sub-domain
     boost::shared_ptr<const SubDomain> sub_domain = bc->user_sub_domain();
@@ -424,28 +426,26 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     // (Sub-spaces need special handling, and boundary conditions can
     // be defined and handled in many different ways -- hence the
     // level of logic.)
-    DirichletBC* e_bc;
+    boost::scoped_ptr<DirichletBC> e_bc;
     if (component.size() == 0)
     {
       if (sub_domain)
-        e_bc = new DirichletBC(_E, bc->value(), sub_domain, bc->method());
+        e_bc.reset(new DirichletBC(_E, bc->value(), sub_domain, bc->method()));
       else
-        e_bc = new DirichletBC(_E, bc->value(), bc->markers(), bc->method());
+        e_bc.reset(new DirichletBC(_E, bc->value(), bc->markers(), bc->method()));
     }
     else
     {
       boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
       if (sub_domain)
-        e_bc = new DirichletBC(S, bc->value(), sub_domain, bc->method());
+        e_bc.reset(new DirichletBC(S, bc->value(), sub_domain, bc->method()));
       else
-        e_bc = new DirichletBC(S, bc->value(), bc->markers(), bc->method());
+        e_bc.reset(new DirichletBC(S, bc->value(), bc->markers(), bc->method()));
     }
     e_bc->homogenize();
 
     // Apply boundary condition
     e_bc->apply(*_Ez_h->vector());
-
-    delete e_bc;
   }
 }
 //-----------------------------------------------------------------------------

@@ -69,11 +69,8 @@ namespace dolfin
     /// Apply boundary condition to a linear system for a nonlinear problem
     virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const = 0;
 
-    /// Return function space
-    const FunctionSpace& function_space() const;
-
     /// Return shared pointer to function space
-    boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
+    boost::shared_ptr<const FunctionSpace> function_space() const;
 
   protected:
 
