@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
   // Source term and initial condition
   Constant f(0.0);
   Function u(V);
-  u.vector().zero();
 
   // Set up forms
   AdvectionDiffusion::BilinearForm a(V, V);
@@ -97,7 +96,7 @@ int main(int argc, char *argv[])
     bc.apply(b);
 
     // Solve the linear system (re-use the already factorized matrix A)
-    lu.solve(u.vector(), b);
+    lu.solve(*u.vector(), b);
 
     // Save solution in VTK format
     file << std::make_pair(&u, t);

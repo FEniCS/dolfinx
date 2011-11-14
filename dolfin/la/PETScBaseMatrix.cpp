@@ -48,7 +48,12 @@ std::pair<dolfin::uint, dolfin::uint> PETScBaseMatrix::local_range(uint dim) con
 {
   assert(dim <= 1);
   if (dim == 1)
-    error("Cannot compute columns range for PETSc matrices.");
+  {
+    dolfin_error("PETScBaseMatrix.cpp",
+                 "access local column range for PETSc matrix",
+                 "Only local row range is available for PETSc matrices");
+  }
+
   if (A)
   {
     int m(0), n(0);
@@ -76,10 +81,15 @@ void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
   else if (dim == 1)
     MatGetVecs(*A, x.get(), PETSC_NULL);
   else
-    error("dim must be <= 1 when resizing vector.");
+  {
+    dolfin_error("PETScBaseMatrix.cpp",
+                 "resize PETSc vector to match PETSc matrix",
+                 "dimension must be 0 or 1, not %d", dim);
+  }
 
   // Associate new PETSc vector with _y
   _y.x = x;
 }
 //-----------------------------------------------------------------------------
+
 #endif

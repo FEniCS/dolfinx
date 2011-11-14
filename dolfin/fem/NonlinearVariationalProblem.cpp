@@ -177,7 +177,7 @@ boost::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
   assert(_u);
-  return _u->function_space_ptr();
+  return _u->function_space();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace>

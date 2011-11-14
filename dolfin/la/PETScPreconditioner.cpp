@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2010-2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifdef HAS_PETSC
 
@@ -94,7 +94,11 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : type(type)
 
   // Check that the requested method is known
   if (_methods.count(type) == 0)
-    error("Requested PETSc proconditioner '%s' is unknown,", type.c_str());
+  {
+    dolfin_error("PETScPreconditioner.cpp",
+                 "create PETSc preconditioner",
+                 "Unknown norm type (\"%s\")", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 PETScPreconditioner::~PETScPreconditioner()
@@ -139,7 +143,11 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       PCHYPRESetType(pc, "euclid");
     }
     else
-      error("Requested Hypre preconditioner unknown (Note: pilut is not supported).");
+    {
+      dolfin_error("PETScPreconditioner.cpp",
+                   "set PETSc preconditioner",
+                   "Requested Hypre preconditioner unknown (note that pilut is not supported)");
+    }
 
     #else
     warning("PETSc has not been compiled with the HYPRE library for "

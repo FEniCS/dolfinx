@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2011.
+// Modified by Anders Logg 2008
+// Modified by Garth N. Wells 2011
 //
 // First added:  2008-08-25
-// Last changed: 2011-01-22
+// Last changed: 2011-11-11
 
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
@@ -114,7 +114,11 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
                        bool transposed) const
 {
   if (transposed)
-    error("BlockMatrix::mult: transposed not implemented.");
+  {
+    dolfin_error("BlockMatrix.cpp",
+                 "compute transpose matrix-vector product",
+                 "not implemented for block matrices");
+  }
 
   // Create tempory vector
   assert(matrices[0][0]);
@@ -151,7 +155,11 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
 {
   // Currently returns [diag(C * diag(A)^-1 * B) - D]
   if (!symmetry)
-    error("only implemented for symmetry != 0");
+  {
+    dolfin_error("BlockMatric.cpp",
+                 "compute Schur complement approximation",
+                 "not implemented for unsymmetric matrix");
+  }
 
   assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);
 

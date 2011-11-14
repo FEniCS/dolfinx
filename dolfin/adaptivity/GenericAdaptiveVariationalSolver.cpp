@@ -99,8 +99,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     datum->add("time_solve_primal", timer.stop());
 
     // Extract views to primal trial space and mesh
-    assert(u);
-    const FunctionSpace& V = u->function_space();
+    assert(u->function_space());
+    const FunctionSpace& V = *u->function_space();
     assert(V.mesh());
     const Mesh& mesh = *V.mesh();
 

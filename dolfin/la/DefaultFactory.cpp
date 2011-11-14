@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2008-05-17
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -101,7 +101,9 @@ LinearAlgebraFactory& DefaultFactory::factory()
 #ifdef HAS_PETSC
     return PETScFactory::instance();
 #else
-    error("PETSc linear algebra backend is not available.");
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "PETSc linear algebra backend is not available");
 #endif
   }
   else if (backend == "PETScCusp")
@@ -117,7 +119,9 @@ LinearAlgebraFactory& DefaultFactory::factory()
 #ifdef HAS_TRILINOS
     return EpetraFactory::instance();
 #else
-    error("Trilinos linear algebra backend is not available.");
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "Trilinos linear algebra backend is not available");
 #endif
   }
   else if (backend == "MTL4")
@@ -125,7 +129,9 @@ LinearAlgebraFactory& DefaultFactory::factory()
 #ifdef HAS_MTL4
     return MTL4Factory::instance();
 #else
-    error("MTL4 linear algebra backend is not available.");
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "MTL4 linear algebra backend is not available");
 #endif
   }
   else if (backend == "STL")

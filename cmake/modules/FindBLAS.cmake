@@ -153,7 +153,7 @@ if (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
   BLAS
   sgemm
   ""
-  "goto2"
+  "goto2;pthread"
   ""
   )
  endif(NOT BLAS_LIBRARIES)

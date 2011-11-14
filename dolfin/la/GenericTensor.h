@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-29
+// Last changed: 2011-11-11
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -110,7 +110,9 @@ namespace dolfin
       }
       catch (std::exception& e)
       {
-        error("GenericTensor cannot be cast to the requested type: %s", e.what());
+        dolfin_error("GenericTensor.h",
+                     "down-cast tensor to requested type",
+                     "%s", e.what());
       }
 
       // Return something to keep the compiler happy. Code will never be reached.
@@ -126,7 +128,9 @@ namespace dolfin
       }
       catch (std::exception& e)
       {
-        error("GenericTensor cannot be cast to the requested type: %s", e.what());
+        dolfin_error("GenericTensor.h",
+                     "down-cast tensor to requested type",
+                     "%s", e.what());
       }
 
       // Return something to keep the compiler happy. Code will never be reached.
@@ -175,7 +179,12 @@ namespace dolfin
 
     /// Assignment (must be overloaded by subclass)
     virtual const GenericTensor& operator= (const GenericTensor& x)
-    { error("Assignment operator not implemented by subclass"); return *this; }
+    {
+      dolfin_error("GenericTensor.h",
+                   "assign tensor",
+                   "assignment operator not implemented by subclass");
+      return *this;
+    }
 
   };
 

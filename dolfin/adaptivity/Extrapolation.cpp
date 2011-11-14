@@ -53,12 +53,12 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   //     w.function_space().element().signature().c_str());
 
   // Check that the meshes are the same
-  if (w.function_space().mesh() != v.function_space().mesh())
+  if (w.function_space()->mesh() != v.function_space()->mesh())
     error("Extrapolation must be computed on the same mesh.");
 
   // Extract mesh and function spaces
-  const FunctionSpace& V = v.function_space();
-  const FunctionSpace& W = w.function_space();
+  const FunctionSpace& V = *v.function_space();
+  const FunctionSpace& W = *w.function_space();
   assert(V.mesh());
   const Mesh& mesh = *V.mesh();
 
@@ -74,7 +74,8 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   coefficients.resize(W.dim());
 
   // Local array for dof indices
-  std::vector<uint> dofs(W.dofmap().max_cell_dimension());
+  assert(W.dofmap());
+  std::vector<uint> dofs(W.dofmap()->max_cell_dimension());
 
   // Iterate over cells in mesh
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
@@ -83,7 +84,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    W.dofmap().tabulate_dofs(&dofs[0], *cell0);
+    W.dofmap()->tabulate_dofs(&dofs[0], *cell0);
 
     // Compute coefficients on this cell
     uint offset = 0;
@@ -104,7 +105,8 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          uint& offset)
 {
   // Call recursively for mixed elements
-  const uint num_sub_spaces = V.element().num_sub_elements();
+  assert(V.element());
+  const uint num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
     for (uint k = 0; k < num_sub_spaces; k++)
@@ -121,7 +123,8 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   build_unique_dofs(unique_dofs, cell2dof2row, cell0, c0, V);
 
   // Create linear system
-  const uint N = W.element().space_dimension();
+  assert(W.element());
+  const uint N = W.element()->space_dimension();
   const uint M = unique_dofs.size();
   arma::mat A(M, N);
   arma::vec b(M);
@@ -143,11 +146,12 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   arma::Col<double> x = arma::solve(A, b);
 
   // Insert resulting coefficients into global coefficient vector
-  for (uint i = 0; i < W.dofmap().cell_dimension(cell0.index()); ++i)
+  assert(W.dofmap());
+  for (uint i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
-  offset += W.dofmap().cell_dimension(cell0.index());
+  offset += W.dofmap()->cell_dimension(cell0.index());
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
@@ -184,24 +188,26 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
                                        std::map<uint, uint>& dof2row)
 {
   // Extract coefficents for v on patch cell
-  std::vector<double> dof_values(V.element().space_dimension());
-  v.restrict(&dof_values[0], V.element(), cell1, c1);
+  assert(V.element());
+  std::vector<double> dof_values(V.element()->space_dimension());
+  v.restrict(&dof_values[0], *V.element(), cell1, c1);
 
   // Iterate over given local dofs for V on patch cell
+  assert(W.element());
   for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++)
   {
     const uint i = it->first;
     const uint row = it->second;
 
     // Iterate over basis functions for W on center cell
-    for (uint j = 0; j < W.element().space_dimension(); ++j)
+    for (uint j = 0; j < W.element()->space_dimension(); ++j)
     {
 
       // Create basis function
-      const BasisFunction phi(j, W.element(), c0);
+      const BasisFunction phi(j, *W.element(), c0);
 
       // Evaluate dof on basis function
-      const double dof_value = V.element().evaluate_dof(i, phi, c1);
+      const double dof_value = V.element()->evaluate_dof(i, phi, c1);
 
       // Insert dof_value into matrix
       A(row, j) = dof_value;
@@ -218,13 +224,15 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    uint& row,
                                    std::set<uint>& unique_dofs)
 {
-  std::vector<uint> dofs(V.dofmap().cell_dimension(cell.index()));
-  V.dofmap().tabulate_dofs(&dofs[0], cell);
+  assert(V.dofmap());
+
+  std::vector<uint> dofs(V.dofmap()->cell_dimension(cell.index()));
+  V.dofmap()->tabulate_dofs(&dofs[0], cell);
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;
 
-  for (uint i = 0; i < V.dofmap().cell_dimension(cell.index()); ++i)
+  for (uint i = 0; i < V.dofmap()->cell_dimension(cell.index()); ++i)
   {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())
@@ -246,7 +254,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
 void Extrapolation::average_coefficients(Function& w,
                                std::vector<std::vector<double> >& coefficients)
 {
-  const FunctionSpace& W = w.function_space();
+  const FunctionSpace& W = *w.function_space();
   Array<double> dof_values(W.dim());
 
   for (uint i = 0; i < W.dim(); i++)
@@ -259,6 +267,7 @@ void Extrapolation::average_coefficients(Function& w,
   }
 
   // Update dofs for w
-  w.vector().set_local(dof_values);
+  assert(w.vector());
+  w.vector()->set_local(dof_values);
 }
 //-----------------------------------------------------------------------------

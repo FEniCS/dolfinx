@@ -51,8 +51,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
-%ignore dolfin::Function::function_space;
-%rename(_function_space) dolfin::Function::function_space_ptr;
+%rename(_function_space) dolfin::Function::function_space;
 %rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;

@@ -88,7 +88,11 @@ void uBLASVector::resize(uint N)
 void uBLASVector::resize(std::pair<uint, uint> range)
 {
   if (range.first != 0)
-    error("uBLASVector does not support distributed vectors.");
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "resize uBLAS vector",
+                 "distributed vectors not supported by uBLAS backend");
+  }
 
   resize(range.second - range.first);
 }
@@ -97,10 +101,18 @@ void uBLASVector::resize(std::pair<uint, uint> range,
                     const std::vector<uint>& ghost_indices)
 {
   if (range.first != 0)
-    error("uBLASVector does not support distributed vectors.");
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "resize uBLAS vector",
+                 "distributed vectors not supported by uBLAS backend");
+  }
 
   if (ghost_indices.size() != 0)
-    error("uBLASVector does not support ghost entries.");
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "resize uBLAS vector",
+                 "distributed vectors not supported by uBLAS backend");
+  }
 
   resize(range.second - range.first);
 }
@@ -212,7 +224,11 @@ double uBLASVector::norm(std::string norm_type) const
   else if (norm_type == "linf")
     return norm_inf(*x);
   else
-    error("Requested vector norm type for uBLASVector unknown");
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "compute norm of uBLAS vector",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
+  }
 
   return 0.0;
 }
@@ -254,7 +270,11 @@ double uBLASVector::sum(const Array<uint>& rows) const
 void uBLASVector::axpy(double a, const GenericVector& y)
 {
   if (size() != y.size())
-    error("Vectors must be of same size.");
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "perform axpy operation with uBLAS vector",
+                 "Vectors are not of the same size");
+  }
 
   (*x) += a * y.down_cast<uBLASVector>().vec();
 }

@@ -216,7 +216,7 @@ class Assembly(unittest.TestCase):
         reference = 7.33040364583
         self.assertAlmostEqual(assemble(M), reference, 10)
 
-        # Assemble form  (multi-threaded)
+        # Assemble form (multi-threaded)
         if MPI.num_processes() == 1:
             parameters["num_threads"] = 4
             self.assertAlmostEqual(assemble(M), reference, 10)
@@ -274,6 +274,13 @@ class Assembly(unittest.TestCase):
                 return x[0] < 0.5 + DOLFIN_EPS and x[1] < 0.5 + DOLFIN_EPS
         my_domain = MyDomain()
 
+        # Define boundary for lower left corner
+        class MyBoundary(SubDomain):
+            def inside(self, x, on_boundary):
+                return (x[0] < 0.5 + DOLFIN_EPS and x[1] < DOLFIN_EPS) or \
+                       (x[1] < 0.5 + DOLFIN_EPS and x[0] < DOLFIN_EPS)
+        my_boundary = MyBoundary()
+
         # Mark mesh functions
         D = mesh.topology().dim()
         cell_domains = MeshFunction("uint", mesh, D)
@@ -281,7 +288,7 @@ class Assembly(unittest.TestCase):
         cell_domains.set_all(1)
         exterior_facet_domains.set_all(1)
         my_domain.mark(cell_domains, 0)
-        my_domain.mark(exterior_facet_domains, 0)
+        my_boundary.mark(exterior_facet_domains, 0)
 
         # Define forms
         c = Constant(1.0)

@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009-2010.
-// Modified by Niclas Jansson, 2009.
-// Modified by Fredrik Valdmanis, 2011
+// Modified by Garth N. Wells 2009-2010
+// Modified by Niclas Jansson 2009
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifdef HAS_PETSC
 
@@ -123,7 +123,11 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
 {
   // Check dimensions
   if (A->size(0) != A->size(1))
-    error("Cannot LU factorize non-square PETSc matrix.");
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "create PETSc LU solver",
+                 "Cannot LU factorize non-square PETSc matrix");
+  }
 
   // Set parameter values
   parameters = default_parameters();
@@ -152,7 +156,11 @@ void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
 const GenericMatrix& PETScLUSolver::get_operator() const
 {
   if (!A)
-    error("Operator for linear solver has not been set.");
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "access operator of PETSc LU solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -167,7 +175,11 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Check dimensions
   if (A->size(0) != b.size())
-    error("Cannot LU factorize non-square PETSc matrix.");
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "solve linear system using PETSc LU solver",
+                 "Cannot factorize non-square PETSc matrix");
+  }
 
   // Initialize solution vector if required (make compatible with A in parallel)
   if (A->size(1) != x.size())
@@ -239,7 +251,11 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
 {
   // Check package string
   if (_methods.count(method) == 0)
-    error("Requested PETSc LU solver '%s' is unknown,", method.c_str());
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "solve linear system using PETSc LU solver",
+                 "Unknown LU method \"%s\"", method.c_str());
+  }
 
   // Choose appropriate 'default' solver
   if (method == "default")
@@ -272,7 +288,9 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       #elif PETSC_HAVE_SUPERLU_DIST
       method = "superlu_dist";
       #else
-      error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
+      dolfin_error("PETScLUSolver.cpp",
+                   "solve linear system using PETSc LU solver",
+                   "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SPOOLES");
       #endif
     }
   }
@@ -289,7 +307,11 @@ void PETScLUSolver::init_solver(std::string& method)
   if (_ksp)
   {
     if (!_ksp.unique())
-      error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+    {
+      dolfin_error("PETScLUSolver.cpp",
+                   "initialize PETSc LU solver",
+                   "More than one object points to the underlying PETSc object");
+    }
   }
   _ksp.reset(new KSP, PETScKSPDeleter());
 
