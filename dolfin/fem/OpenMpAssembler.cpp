@@ -21,7 +21,7 @@
 // Modified by Anders Logg 2010-2011
 //
 // First added:  2010-11-10
-// Last changed: 2011-09-29
+// Last changed: 2011-11-14
 
 #ifdef HAS_OPENMP
 
@@ -72,7 +72,11 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool finalize_tensor)
 {
   if (MPI::num_processes() > 1)
-    error("OpenMpAssembler has not been tested in combination with MPI.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "The OpenMp assembler has not been tested in combination with MPI");
+  }
 
    assert(a.ufc_form());
 
@@ -102,7 +106,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
   if (a.ufc_form()->num_exterior_facet_domains() != 0)
-    assemble_cells_and_exterior_facets(A, a, ufc, cell_domains, 
+    assemble_cells_and_exterior_facets(A, a, ufc, cell_domains,
 				       exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
@@ -158,14 +162,18 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
-  
+
   // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
@@ -221,7 +229,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     }
     p++;
   }
-  
+
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
@@ -255,7 +263,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   mesh.init(D - 1, D);
   assert(mesh.ordered());
 
-  // Get connectivity 
+  // Get connectivity
   const MeshConnectivity& connectivity = mesh.topology()(D, D - 1);
   assert(connectivity.size() > 0);
 
@@ -289,14 +297,18 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
-  
+
   // Assemble over cells (loop over colors, then cells of same color)
   const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
@@ -372,17 +384,17 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 	  // Get global facet index
 	  const uint facet_index = connectivity(cell_index)[local_facet];
 	  const uint facet_domain = (*exterior_facet_domains)[facet_index];
-	  
+
 	  if (facet_domain < ufc.form.num_exterior_facet_domains())
 	    facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
 	  else
 	    continue;
 	}
-	
+
 	// Skip integral if zero
 	if (!facet_integral)
 	  continue;
-	
+
 	// FIXME: Do we really need an update version with the local facet index?
         // Update UFC object
         ufc.update(cell, local_facet);
@@ -403,10 +415,10 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       else
         A.add(&ufc.A[0], dofs);
     }
-    
+
     p++;
   }
-  
+
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
@@ -437,7 +449,11 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
   // Get integral for sub domain (if any)
   if (domains && domains->size() > 0)
-    error("Sub-domains not yet handled by OpenMpAssembler.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "Subdomains are not yet handled by the OpenMp assembler");
+  }
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -472,8 +488,10 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
-    error("Expecting facet orientation to be defined on facets (not dimension %d).",
-          facet_orientation->dim());
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "Expecting facet orientation to be defined on facets (not dimension %d)",
+                 facet_orientation->dim());
   }
 
   // Get coloring data
@@ -483,7 +501,11 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;

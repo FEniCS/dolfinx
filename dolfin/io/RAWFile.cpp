@@ -20,7 +20,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-05-29
-// Last changed: 2011-09-14
+// Last changed: 2011-11-14
 
 #include <fstream>
 #include <sstream>
@@ -94,8 +94,12 @@ void RAWFile::ResultsWrite(const Function& u) const
 
   // Get rank of Function
   const uint rank = u.function_space()->element().value_rank();
-  if(rank > 1)
-    error("Only scalar and vectors functions can be saved in Raw format.");
+  if (rank > 1)
+  {
+    dolfin_error("RAWFile.cpp",
+                 "write data to RAW file",
+                 "Only scalar and vectors functions can be saved in RAW format");
+  }
 
   // Get number of components
   uint dim = 1;
@@ -164,8 +168,12 @@ void RAWFile::ResultsWrite(const Function& u) const
       fp << ss.str();
     }
   }
- else
-   error("Unknown RAW data type.");
+  else
+  {
+   dolfin_error("RAWFile.cpp",
+                "write data to RAW file",
+                "Unknown data type");
+  }
 }
 //----------------------------------------------------------------------------
 void RAWFile::rawNameUpdate(const int counter)
@@ -186,8 +194,12 @@ void RAWFile::rawNameUpdate(const int counter)
 
   // Make sure file is empty
   std::ofstream file(raw_filename.c_str(), std::ios::trunc);
-  if ( !file.is_open() )
-    error("Unable to open file %s", raw_filename.c_str());
+  if (!file.is_open())
+  {
+    dolfin_error("RAWFile.cpp",
+                 "write data to RAW file",
+                 "Unable to open file \"%s\"", raw_filename.c_str());
+  }
   file.close();
 }
 //----------------------------------------------------------------------------
@@ -199,13 +211,17 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
 
   const Mesh& mesh = meshfunction.mesh();
 
-  if( meshfunction.dim() != mesh.topology().dim() )
-    error("RAW output of mesh functions is implemenetd for cell-based functions only.");
+  if (meshfunction.dim() != mesh.topology().dim())
+  {
+    dolfin_error("RAWFile.cpp",
+                 "Write mesh function to RAW file",
+                 "RAW output of mesh functions is implemenetd for cell-based functions only");
+  }
 
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
 
-  fp<<mesh.num_cells( ) <<std::endl;
+  fp << mesh.num_cells() <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << std::endl;
 

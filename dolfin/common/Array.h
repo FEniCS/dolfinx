@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
+// Modified by Anders Logg 2010-2011
 //
 // First added:  2009-12-06
-// Last changed: 2011-05-17
+// Last changed: 2011-11-13
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -130,9 +130,11 @@ namespace dolfin
           x.reset(new T[N]);
         }
         else
+        {
           dolfin_error("Array.h",
                        "resize Array",
                        "Data is shared");
+        }
       }
     }
 
@@ -197,7 +199,9 @@ namespace dolfin
   template <typename T>
   inline void Array<T>::zero_eps(double eps)
   {
-    error("Array<T>::zero_eps can only be used for T=double.");
+    dolfin_error("Array.h",
+                 "zero small entries in array",
+                 "Only available when data type is <double>");
   }
 
   template <>

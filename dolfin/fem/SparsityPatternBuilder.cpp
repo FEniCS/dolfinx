@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007.
-// Modified by Anders Logg, 2008-2009.
+// Modified by Ola Skavhaug 2007
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2007-05-24
-// Last changed: 2011-02-21
+// Last changed: 2011-11-14
 
 #include <dolfin/common/timing.h>
-
 
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/common/MPI.h>
@@ -101,7 +100,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(mesh.topology().dim() - 1);
     mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
     if (!mesh.ordered())
-      error("Mesh has not been ordered. Cannot compute sparsity pattern. Consider calling Mesh::order().");
+    {
+      dolfin_error("SparsityPatternBuilder.cpp",
+                   "compute sparsity pattern",
+                   "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+    }
 
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)

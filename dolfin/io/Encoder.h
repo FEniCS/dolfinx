@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2009-08-11
-// Last changed: 2009-08-12
+// Last changed: 2011-11-14
 
 #ifndef __ENCODER_H
 #define __ENCODER_H
@@ -39,7 +41,7 @@ extern "C"
 namespace dolfin
 {
 
-  /// Thes functions class provide tools for encoding and compressing streams
+  /// This class provides tools for encoding and compressing streams
   /// for use in output files
 
   /// We cheating in some functions by relying on std::vector data being
@@ -79,7 +81,11 @@ namespace dolfin
 
       // Compress data
       if (compress((Bytef*) compressed_data.get(), &compressed_size, (const Bytef*) &data[0], uncompressed_size) != Z_OK)
-        error("Zlib error while compressing data.");
+      {
+        dolfin_error("Encoder.h",
+                     "compress data when writing file",
+                     "Zlib error while compressing data");
+      }
 
       // Make pair and return
       return std::make_pair(compressed_data, compressed_size);

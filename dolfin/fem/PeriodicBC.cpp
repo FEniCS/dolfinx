@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2011-03-17
+// Last changed: 2011-11-14
 
 #include <map>
 #include <vector>
@@ -368,7 +368,9 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       for (uint j = 0; j < gdim; ++j)
         cout << " " << it->first[j];
       cout << endl;
-      error("Unable to find a pair of matching dofs for periodic boundary condition.");
+      dolfin_error("PeriodicBC.cpp",
+                   "apply periodic boundary condition",
+                   "Could not find a pair of matching degrees of freedom");
     }
 
     // Store dofs

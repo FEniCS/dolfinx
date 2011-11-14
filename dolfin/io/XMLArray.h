@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2006-07-02
-// Last changed:
+// Last changed: 2011-11-14
 
 #ifndef __XMLARRAY_H
 #define __XMLARRAY_H
@@ -58,13 +60,21 @@ namespace dolfin
     // Check that we have a XML Array
     const pugi::xml_node array = xml_node.child("array");
     if (!array)
-      error("XMLVector::read: not a DOLFIN array inside Vector XML file.");
+    {
+      dolfin_error("XMLArray.h",
+                   "read array from XML file",
+                   "unable to find <array> tag in XML file");
+    }
 
     // Get size and type
     const unsigned int size = array.attribute("size").as_uint();
     const std::string type  = array.attribute("type").value();
     if (type != "double")
-      error("XMLArray::read only supports type double.");
+    {
+      dolfin_error("XMLArray.h",
+                   "read array from XML file",
+                   "XML I/O of Array objects only supported when the value type is 'double'");
+    }
 
     // Iterate over array entries
     x.resize(size);

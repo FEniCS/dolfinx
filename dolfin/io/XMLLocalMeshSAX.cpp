@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-11-28
-// Last changed: 2011-09-19
+// Modified by Anders Logg 2008-2011
 //
-// Modified by Anders Logg, 2008.
+// First added:  2008-11-28
+// Last changed: 2011-11-14
 
 #include <map>
 #include <utility>
@@ -67,7 +67,12 @@ void XMLLocalMeshSAX::read()
   // Parse file
   int err = xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
   if (err != 0)
-    error("Error encountered by libxml2 when parsing XML file %d.", filename.c_str());
+  {
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Error encountered by libxml2 when parsing XML file \"%s\"",
+                 filename.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
@@ -96,7 +101,9 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
-      //error("Reading of MeshData in parallel is not yet supported.");
+      //dolfin_error("XMLLocalMeshSAX.cpp",
+      //             "read mesh data in parallel",
+      //             "not implemented");
       //read_mesh_data(name, attrs, num_attributes);
       state = INSIDE_DATA;
     }
@@ -170,10 +177,14 @@ void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
     }
     break;
   case DONE:
-    error("Inconsistent state in XML reader: %d. End of file reached", state);
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Inconsistent state in XML reader (%d). End of file reached", state);
 
   default:
-    error("Inconsistent state in XML reader: %d.", state);
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Inconsistent state in XML reader (%d)", state);
   }
 }
 //-----------------------------------------------------------------------------
@@ -281,7 +292,10 @@ void XMLLocalMeshSAX::sax_error(void *ctx, const char *msg, ...)
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
-  error("Illegal XML data: " + std::string(buffer));
+  dolfin_error("XMLLocalMeshSAX.cpp",
+               "read local mesh data",
+               "Illegal XML data (\"%s\")",
+               std::string(buffer).c_str());
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -291,7 +305,10 @@ void XMLLocalMeshSAX::sax_fatal_error(void *ctx, const char *msg, ...)
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
-  error("Illegal XML data: " + std::string(buffer));
+  dolfin_error("XMLLocalMeshSAX.cpp",
+               "read local mesh data",
+               "Illegal XML data: (\"%s\")",
+               std::string(buffer).c_str());
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -362,7 +379,9 @@ void XMLLocalMeshSAX::read_vertex(const xmlChar* name,
     }
     break;
   default:
-    error("Geometric dimension of mesh must be 1, 2 or 3.");
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Geometric dimension of mesh must be 1, 2 or 3");
   }
 
   // Store vertex coordinates
@@ -395,7 +414,11 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
 {
   // Check dimension
   if (tdim != 1)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
+  {
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Mesh entity (interval) does not match dimension of mesh (%d)", tdim);
+  }
 
   // Read cell index
   const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
@@ -420,12 +443,16 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
-                                                const xmlChar **attrs,
-                                                uint num_attributes)
+                                    const xmlChar **attrs,
+                                    uint num_attributes)
 {
   // Check dimension
   if (tdim != 2)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
+  {
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Mesh entity (interval) does not match dimension of mesh (%d)", tdim);
+  }
 
   // Read cell index
   const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
@@ -451,12 +478,16 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
-                                                   const xmlChar **attrs,
-                                                   uint num_attributes)
+                                       const xmlChar **attrs,
+                                       uint num_attributes)
 {
   // Check dimension
   if (tdim != 3)
-    error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
+  {
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "Mesh entity (interval) does not match dimension of mesh (%d)", tdim);
+  }
 
   // Read cell index
   const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
@@ -496,7 +527,11 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
   domain_dim = dim;
 
   if (type != "uint")
-    error("XMLLocalMeshSAX can only read unisgned integer domain values.");
+  {
+    dolfin_error("XMLLocalMeshSAX.cpp",
+                 "read local mesh data",
+                 "XMLLocalMeshSAX can only read unsigned integer domain values");
+  }
 
   mesh_data.domain_data.insert(std::make_pair(dim, 0));
 

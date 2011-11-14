@@ -184,7 +184,9 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   else
   {
     _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
-    error("Not implemented for tensor-valued functions");
+    dolfin_error("ErrorControl.cpp",
+                 "compute error indicators",
+                 "Not implemented for tensor-valued functions");
   }
 
   // Compute residual representation
