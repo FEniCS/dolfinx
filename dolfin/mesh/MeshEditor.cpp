@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-09-15
+// Last changed: 2011-11-14
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -61,7 +61,9 @@ void MeshEditor::open(Mesh& mesh, uint tdim, uint gdim)
     open(mesh, CellType::tetrahedron, tdim, gdim);
     break;
   default:
-    error("Unhandled cell type of topological dimension %d.", tdim);
+    dolfin_error("MeshEditor.cpp",
+                 "open mesh for editing",
+                 "Uknown cell type of topological dimension %d", tdim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -108,14 +110,22 @@ void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
   else if (type == "tetrahedron")
     open(mesh, CellType::tetrahedron, tdim, gdim);
   else
-    error("Unknown cell type \"%s\".", type.c_str());
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "open mesh for editing",
+                 "Uknown cell type (\"%s\")", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::init_vertices(uint num_vertices)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "initialize vertices in mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Initialize mesh data
   this->num_vertices = num_vertices;
@@ -127,7 +137,11 @@ void MeshEditor::init_higher_order_vertices(uint num_higher_order_vertices)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "initialize higher order vertices in mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Initialize mesh data
   this->num_higher_order_vertices = num_higher_order_vertices;
@@ -138,7 +152,11 @@ void MeshEditor::init_cells(uint num_cells)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "initialize cells in mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Initialize mesh data
   this->num_cells = num_cells;
@@ -151,7 +169,11 @@ void MeshEditor::init_higher_order_cells(uint num_higher_order_cells,
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "initialize higher order cells in mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Initialize higher order mesh data
   this->num_higher_order_cells = num_higher_order_cells;
@@ -359,22 +381,38 @@ void MeshEditor::add_vertex_common(uint v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add vertex to mesh using mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Check that the dimension matches
   if (gdim != this->gdim)
-    error("Illegal dimension for vertex coordinate: %d (should be %d).",
-          gdim, this->gdim);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add vertex to mesh using mesh editor",
+                 "Illegal dimension for vertex coordinate (%d), expecting %d",
+                 gdim, this->gdim);
+  }
 
   // Check value of vertex index
   if (v >= num_vertices)
-    error("Vertex index (%d) out of range [0, %d].",
-          v, num_vertices - 1);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add vertex to mesh using mesh editor",
+                 "Vertex index (%d) out of range [0, %d)",
+                 v, num_vertices);
+  }
 
   // Check if there is room for more vertices
   if (next_vertex >= num_vertices)
-    error("Vertex list is full, %d vertices already specified.",
-          num_vertices);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add vertex to mesh using mesh editor",
+                 "Vertex list is full, %d vertices already specified",
+                 num_vertices);
+  }
 
   // Step to next vertex
   next_vertex++;
@@ -384,22 +422,38 @@ void MeshEditor::add_higher_order_vertex_common(uint v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order vertex to mesh using mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Check that the dimension matches
   if (gdim != this->gdim)
-    error("Illegal dimension for higher order vertex coordinate: %d (should be %d).",
-          gdim, this->gdim);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order vertex to mesh using mesh editor",
+                 "Illegal dimension for vertex coordinate (%d), expecting %d",
+                 gdim, this->gdim);
+  }
 
   // Check value of vertex index
   if (v >= num_higher_order_vertices)
-    error("Higher Order vertex index (%d) out of range [0, %d].",
-          v, num_higher_order_vertices - 1);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order vertex to mesh using mesh editor",
+                 "Vertex index (%d) out of range [0, %d)",
+                 v, num_higher_order_vertices);
+  }
 
   // Check if there is room for more vertices
   if (next_higher_order_vertex >= num_higher_order_vertices)
-    error("Higher Order vertex list is full, %d vertices already specified.",
-          num_higher_order_vertices);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order vertex to mesh using mesh editor",
+                 "Vertex list is full, %d vertices already specified",
+                 num_higher_order_vertices);
+  }
 
   // Step to next vertex
   next_higher_order_vertex++;
@@ -409,19 +463,37 @@ void MeshEditor::add_cell_common(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add cell to mesh using mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Check that the dimension matches
   if (tdim != this->tdim)
-    error("Illegal dimension for cell: %d (should be %d).", tdim, this->tdim);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add cell to mesh using mesh editor",
+                 "Illegal dimension for cell (%d), expecting %d", tdim, this->tdim);
+  }
 
   // Check value of cell index
   if (c >= num_cells)
-    error("Cell index (%d) out of range [0, %d].", c, num_cells - 1);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add cell to mesh using mesh editor",
+                 "Cell index (%d) out of range [0, %d).",
+                 c, num_cells);
+  }
 
   // Check if there is room for more cells
   if (next_cell >= num_cells)
-    error("Cell list is full, %d cells already specified.", num_cells);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add cell to mesh using mesh editor",
+                 "Cell list is full, %d cells already specified",
+                 num_cells);
+  }
 
   // Step to next cell
   next_cell++;
@@ -431,21 +503,38 @@ void MeshEditor::add_higher_order_cell_common(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
-    error("No mesh opened, unable to edit.");
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order cell to mesh using mesh editor",
+                 "No mesh opened, unable to edit");
+  }
 
   // Check that the dimension matches
   if (tdim != 6)
-    error("Illegal dimension for higher order cell: %d (should be %d).",
-          tdim, 6);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order cell to mesh using mesh editor",
+                 "Illegal dimension for higher order cell (%d), expecting %d",
+                 tdim, 6);
+  }
 
   // Check value of cell index
   if (c >= num_higher_order_cells)
-    error("Higher order cell index (%d) out of range [0, %d].",
-          c, num_higher_order_cells - 1);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order cell to mesh using mesh editor",
+                 "Higher order cell index (%d) out of range [0, %d)",
+                 c, num_higher_order_cells);
+  }
 
   // Check if there is room for more cells
   if (next_higher_order_cell >= num_higher_order_cells)
-    error("Higher order cell list is full, %d cells already specified.", num_cells);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add higher order cell to mesh using mesh editor",
+                 "Higher order cell list is full, %d cells already specified",
+                 num_higher_order_cells);
+  }
 
   // Step to next cell
   next_higher_order_cell++;
@@ -471,6 +560,10 @@ void MeshEditor::clear()
 void MeshEditor::check_vertex(uint v)
 {
   if (num_vertices > 0 && v >= num_vertices)
-    error("Vertex index (%d) out of range [0, %d].", v, num_vertices - 1);
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "add cell using mesh editor",
+                 "Vertex index (%d) out of range [0, %d).", v, num_vertices);
+  }
 }
 //-----------------------------------------------------------------------------

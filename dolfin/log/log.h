@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-10-19
+// Last changed: 2011-11-14
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -60,7 +60,9 @@ namespace dolfin
   /// Print warning
   void warning(std::string msg, ...);
 
-  /// Print error message and throw an exception
+  /// Print error message and throw an exception.
+  /// Note to developers: this function should not be used internally
+  /// in DOLFIN. Use the more informative dolfin_error instead.
   void error(std::string msg, ...);
 
   /// Print error message, prefer this to the above generic error message
@@ -103,9 +105,6 @@ namespace dolfin
 
   /// Report that functionality has not (yet) been implemented to work in parallel
   void not_working_in_parallel(std::string what);
-
-  /// Check value and print an informative error message if invalid
-  void check_equal(uint value, uint valid_value, std::string task, std::string value_name);
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

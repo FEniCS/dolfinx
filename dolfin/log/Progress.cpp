@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2010 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2003-03-14
-// Last changed: 2011-04-07
+// Last changed: 2011-11-14
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
@@ -38,7 +38,11 @@ Progress::Progress(std::string title, unsigned int n)
     always(false), finished(false), displayed(false), counter(0)
 {
   if (n <= 0)
-    error("Number of steps for progress session must be positive.");
+  {
+    dolfin_error("Progress.cpp",
+                 "create progress bar",
+                 "Number of steps for progress bar must be positive");
+  }
 
   // LogManager::logger.progress(title, 0.0);
   t = time();
@@ -71,7 +75,11 @@ Progress::~Progress()
 void Progress::operator=(double p)
 {
   if (n != 0)
-    error("Cannot specify value for progress session with given number of steps.");
+  {
+    dolfin_error("Progress.cpp",
+                 "update progress bar",
+                 "Cannot specify value for progress bar with given number of steps");
+  }
 
   update(p);
 }
@@ -79,7 +87,11 @@ void Progress::operator=(double p)
 void Progress::operator++(int)
 {
   if (n == 0)
-    error("Cannot step progress for session with unknown number of steps.");
+  {
+    dolfin_error("Progress.cpp",
+                 "increment progress bar",
+                 "Cannot step progress bar for session with unknown number of steps");
+  }
 
   if (i < n)
     i++;

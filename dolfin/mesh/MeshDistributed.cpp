@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2011-09-17
-// Last changed: 2011-09-19
+// Last changed: 2011-11-14
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/log/log.h"
@@ -41,15 +43,27 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
 
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
-    error("This version of MeshDistributed::host_processes is only for vertices or cells.");
+  {
+    dolfin_error("MeshDistributed.cpp",
+                 "compute off-process indices",
+                 "This version of MeshDistributed::host_processes is only for vertices or cells");
+  }
 
   // Check that global numbers have been computed.
   if (!mesh.parallel_data().have_global_entity_indices(dim))
-    error("Global mesh entity numbers have not been computed.");
+  {
+    dolfin_error("MeshDistributed.cpp",
+                 "compute off-process indices",
+                 "Global mesh entity numbers have not been computed");
+  }
 
   // Check that global numbers have been computed.
   if (!mesh.parallel_data().have_global_entity_indices(D))
-    error("Global mesh entity numbers have not been computed.");
+  {
+    dolfin_error("MeshDistributed.cpp",
+                 "compute off-process indices",
+                 "Global mesh entity numbers have not been computed");
+  }
 
   // Get global cell entity indices on this process
   const std::vector<uint> global_entity_indices
@@ -166,7 +180,11 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   const std::set<uint> test_set(my_entities.begin(), my_entities.end());
   const uint number_expected = test_set.size();
   if (number_expected != processes.size())
-    error("Size problem in MeshDistributed::off_process_indices.");
+  {
+    dolfin_error("MeshDistributed.cpp",
+                 "compute off-process indices",
+                 "sanity check failed");
+  }
 
   return processes;
 }

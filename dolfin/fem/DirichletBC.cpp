@@ -514,7 +514,6 @@ void DirichletBC::check() const
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
-                 "Unable to create boundary condition",
                  "Expecting a vector-valued boundary value but given function is scalar");
   }
   if (g->value_rank() == 1 && _function_space->element().value_rank() == 0)
@@ -525,12 +524,16 @@ void DirichletBC::check() const
   }
 
   // Check that value shape of boundary value
-  check_equal(g->value_rank(), _function_space->element().value_rank(),
-              "create boundary condition", "value rank");
+  dolfin_error("DirichletBC.cpp",
+               "create Dirichlet boundary condition",
+               "Illegal value rank (%d), expecting (%d)",
+               g->value_rank(), _function_space->element().value_rank());
   for (uint i = 0; i < g->value_rank(); i++)
   {
-    check_equal(g->value_dimension(i), _function_space->element().value_dimension(i),
-                "create boundary condition", "value dimension");
+    dolfin_error("DirichletBC.cpp",
+                 "Illcreate Dirichlet boundary condition",
+                 "Illegal value dimension (%d), expecting (%d)",
+                 g->value_dimension(i), _function_space->element().value_dimension(i));
   }
 
   // Check that boundary condition method is known
@@ -547,7 +550,7 @@ void DirichletBC::check() const
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
-                 "Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
+                  "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
   }
 }
 //-----------------------------------------------------------------------------

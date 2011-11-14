@@ -92,7 +92,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
     if(!(data_dim == 2 || data_dim == 3))
     {
       dolfin_error("VTKWriter.cpp",
-                   "Don't know what to do with vector function with dim other than 2 or 3.");
+                   "write data to VTK file",
+                   "Don't know how to handle vector function with dimension other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
@@ -376,7 +377,8 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, uint cell_dim)
   else
   {
     dolfin_error("VTKWriter.cpp",
-                 "Unknown cell type");
+                 "write data to VTK file",
+                 "Unknown cell type (%d)", cell_type);
   }
 
   return vtk_cell_type;

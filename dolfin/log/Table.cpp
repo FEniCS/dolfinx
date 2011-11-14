@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-07-19
-// Last changed: 2011-10-07
+// Last changed: 2011-11-14
 
 #include <iomanip>
 #include <iostream>
@@ -101,8 +101,12 @@ std::string Table::get(std::string row, std::string col) const
     it = values.find(key);
 
   if (it == values.end())
-    error("Missing table value for entry (\"%s\", \"%s\").",
-          row.c_str(), col.c_str());
+  {
+    dolfin_error("Table.cpp",
+                 "access table value",
+                 "Missing table value for entry (\"%s\", \"%s\")",
+                 row.c_str(), col.c_str());
+  }
 
   return it->second;
 }
@@ -114,8 +118,12 @@ double Table::get_value(std::string row, std::string col) const
     it = dvalues.find(key);
 
   if (it == dvalues.end())
-    error("Missing double value for entry (\"%s\", \"%s\").",
-          row.c_str(), col.c_str());
+  {
+    dolfin_error("Table.cpp",
+                 "access table value",
+                 "Missing double value for entry (\"%s\", \"%s\").",
+                 row.c_str(), col.c_str());
+  }
 
   return it->second;
 }
@@ -130,7 +138,11 @@ Table Table::operator+ (const Table& table) const
 {
   // Check table sizes
   if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
-    error("Dimension mismatch for addition of tables.");
+  {
+    dolfin_error("Table.cpp",
+                 "add tables",
+                 "Dimension mismatch for addition of tables");
+  }
 
   // Add tables
   Table t;
@@ -145,7 +157,11 @@ Table Table::operator- (const Table& table) const
 {
   // Check table sizes
   if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
-    error("Dimension mismatch for addition of tables.");
+  {
+    dolfin_error("Table.cpp",
+                 "subtract tables",
+                 "Dimension mismatch for addition of tables");
+  }
 
   // Add tables
   Table t;
