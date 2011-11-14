@@ -133,7 +133,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
     singleton().control_mpi = false;
 #else
   dolfin_error("SubSystemsManager.cpp",
-               "initialize PETSc subsystem"
+               "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
 #endif
 }

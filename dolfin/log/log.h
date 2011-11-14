@@ -115,6 +115,14 @@ namespace dolfin
   ///              "Unknown encoding (\"%s\"). "
   ///              "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
   ///              encoding.c_str());
+  ///
+  /// dolfin_error("SubSystemsManager.cpp",
+  ///              "initialize PETSc subsystem",
+  ///              "DOLFIN has not been configured with PETSc support");
+  ///
+  /// dolfin_error("PETScKrylovSolver.cpp",
+  ///              "Unable to solve linear system with PETSc Krylov solver",
+  ///              "Matrix does not have a nonzero number of rows and columns");
   void dolfin_error(std::string location,
                     std::string task,
                     std::string reason, ...);
