@@ -22,7 +22,7 @@
 // Modified by Johan Hake 2008-2011
 //
 // First added:  2006-09-20
-// Last changed: 2011-04-04
+// Last changed: 2011-11-13
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -93,6 +93,10 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshConnectivity::operator=;
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
+%ignore dolfin::MeshEntity::operator->;
+%ignore dolfin::MeshEntityIterator::operator[];
+%ignore dolfin::SubsetIterator::operator->;
+%ignore dolfin::SubsetIterator::operator[];
 %ignore dolfin::ParallelData::shared_vertices();
 %ignore dolfin::ParallelData::num_global_entities();
 
