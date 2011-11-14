@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2011-03-15
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <map>
@@ -60,7 +60,11 @@ Function::Function(const FunctionSpace& V)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
+  {
+    dolfin_error("Function.cpp",
+                 "create function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Initialize vector
   init_vector();
@@ -72,7 +76,11 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 {
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
+  {
+    dolfin_error("Function.cpp",
+                 "create function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Initialize vector
   init_vector();
@@ -86,7 +94,11 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
+  {
+    dolfin_error("Function.cpp",
+                 "create function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap());
@@ -113,14 +125,23 @@ Function::Function(const FunctionSpace& V, std::string filename)
 {
   // Check that we don't have a subspace
   if (V.component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
+  {
+    dolfin_error("Function.cpp",
+                 "create function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Initialize vector
   init_vector();
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
-    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+  {
+    dolfin_error("Function.cpp",
+                 "read function from file",
+                 "The number of degrees of freedom (%d) does not match dimension of function space (%d)",
+                 _vector->size(), _function_space->dim());
+  }
 
   // Read function data from file
   File file(filename);
@@ -134,7 +155,11 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Check that we don't have a subspace
   if (V->component().size() > 0)
-    error("Cannot create Functions using subspaces. Consider collapsing the FunctionSpace.");
+  {
+    dolfin_error("Function.cpp",
+                 "create function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Create vector
   DefaultFactory factory;
@@ -145,7 +170,12 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
-    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+  {
+    dolfin_error("Function.cpp",
+                 "read function from file",
+                 "The number of degrees of freedom (%d) does not match dimension of function space (%d)",
+                 _vector->size(), _function_space->dim());
+  }
 
   // Read function data from file
   File file(filename);
@@ -274,8 +304,10 @@ boost::shared_ptr<GenericVector> Function::vector()
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
     cout << "Size of vector: " << _vector->size() << endl;
-    cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
-    error("You are attempting to access a non-const vector from a sub-Function.");
+    cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
+    dolfin_error("Function.cpp",
+                 "access vector of degrees of freedom fro function",
+                 "Cannot access a non-const vector from a subfunction");
   }
   return _vector;
 }
@@ -323,7 +355,9 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     else
     {
       cout << "Evaluating at x = " << point << endl;
-      error("Unable to evaluate function at given point (not inside domain). Set option 'allow_extrapolation' to allow extrapolation'.");
+      dolfin_error("Function.cpp",
+                   "evaluate function at point",
+                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
     }
   }
 
@@ -444,7 +478,11 @@ void Function::non_matching_eval(Array<double>& values,
   int id = mesh.intersected_cell(point);
 
   if (id == -1 && !allow_extrapolation)
-    error("Unable to evaluate function at given point (not inside domain). Set parameter 'allow_extrapolation' to true to allow extrapolation'.");
+  {
+    dolfin_error("Function.cpp",
+                 "evaluate function at point",
+                 "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
+  }
 
   // Alternative 2: Compute closest cell to point (x)
   if (id == -1 && allow_extrapolation && dim == 2)
@@ -470,7 +508,11 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Throw error if all alternatives failed.
   if (id == -1)
-    error("Cannot evaluate function at given point. No matching cell found.");
+  {
+    dolfin_error("Function.cpp",
+                 "evaluate function at point",
+                 "No matching cell found");
+  }
 
   // Create cell that contains point
   const Cell cell(mesh, id);
@@ -575,9 +617,13 @@ void Function::gather() const
 void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
-  assert(_function_space->dofmap());
-  if (_function_space->dofmap()->is_view())
-    error("Cannot create a Function from a subspace. The subspace needs to be collapsed.");
+  assert(_function_space);
+  if (_function_space->dofmap().is_view())
+  {
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot be created from subspace. Consider collapsing the function space");
+  }
 
   // Get global size
   const uint N = _function_space->dofmap()->global_dimension();

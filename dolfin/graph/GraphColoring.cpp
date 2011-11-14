@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johannes Ring, 2011.
+// Modified by Johannes Ring 2011
+// Modified by Anders Logg 2011
 //
 // First added:  2011-02-21
 // Last changed: 2011-05-11
@@ -45,7 +46,9 @@ dolfin::uint GraphColoring::compute_local_vertex_coloring(const Graph& graph,
     return ZoltanInterface::compute_local_vertex_coloring(graph, colors);
   else
   {
-    error("Mesh colorer type unknown. Possible options are \"Boost\" or \"Zoltan\".");
+    dolfin_error("GraphColoring.cpp",
+                 "compute mesh coloring",
+                 "Unknown coloring type. Known types are \"Boost\" and \"Zoltan\"");
     return 0;
   }
 }

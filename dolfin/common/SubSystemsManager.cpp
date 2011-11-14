@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-01-07
-// Last changed: 2011-03-17
+// Last changed: 2011-11-12
 
 #ifdef HAS_MPI
 #include <mpi.h>
@@ -59,7 +59,9 @@ SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
 //-----------------------------------------------------------------------------
 SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 {
-  error("Should not be using copy constructor of SubSystemsManager.");
+  dolfin_error("SubSystemsManager.cpp",
+               "create subsystems manager",
+               "copy constructor should not be used");
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
@@ -97,7 +99,9 @@ void SubSystemsManager::init_petsc()
   // Initialize PETSc
   init_petsc(argc, argv);
 #else
-  error("DOLFIN has not been configured for PETSc.");
+  dolfin_error("SubSystemsManager.cpp",
+               "initialize PETSc subsystem",
+               "DOLFIN has not been configured with PETSc support");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -128,7 +132,9 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (mpi_initialized() and !mpi_init_status)
     singleton().control_mpi = false;
 #else
-  error("DOLFIN has not been configured for PETSc.");
+  dolfin_error("SubSystemsManager.cpp",
+               "initialize PETSc subsystem"
+               "DOLFIN has not been configured with PETSc support");
 #endif
 }
 //-----------------------------------------------------------------------------

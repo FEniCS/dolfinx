@@ -50,7 +50,11 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Check that mesh has been ordered
   if (!dolfin_mesh.ordered())
-     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+  }
 
   // Generate and number all mesh entities
   const uint D = dolfin_mesh.topology().dim();
@@ -76,7 +80,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap)
 {
-  error("DofMaps cannot be copied");
+  dolfin_error("DofMap.cpp",
+               "create mapping of degrees of freedom",
+               "Degree of freedom mappings cannot be copied");
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -91,7 +97,11 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Check that mesh has been ordered
   if (!dolfin_mesh.ordered())
-     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+  }
 
   // Create the UFC mesh
   const UFCMesh ufc_mesh(dolfin_mesh);
@@ -201,7 +211,11 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
 
   // Check that mesh has been ordered
   if (!mesh.ordered())
-     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+  }
 
   // Create the UFC mesh
   const UFCMesh ufc_mesh(mesh);
@@ -278,7 +292,11 @@ unsigned int DofMap::num_facet_dofs() const
 std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 {
   if (is_view())
-    error("Cannot determine ownership range for sub-dofmaps.");
+  {
+    dolfin_error("DofMap.cpp",
+                 "access ownership range of degree of freedom mapping",
+                 "Cannot determine ownership range for submaps");
+  }
 
   return _ownership_range;
 }
@@ -351,17 +369,27 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
 {
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps() == 0)
-    error("Unable to extract sub system (there are no sub systems).");
+  {
+    dolfin_error("DofMap.cpp",
+                 "extract subsystem of degree of freedom mapping",
+                 "There are no subsystems");
+  }
 
   // Check that a sub system has been specified
   if (component.size() == 0)
-    error("Unable to extract sub system (no sub system specified).");
+  {
+    dolfin_error("DofMap.cpp",
+                 "extract subsystem of degree of freedom mapping",
+                 "No system was specified");
+  }
 
   // Check the number of available sub systems
   if (component[0] >= ufc_dofmap.num_sub_dofmaps())
   {
-    error("Unable to extract sub system %d (only %d sub systems defined).",
-                  component[0], ufc_dofmap.num_sub_dofmaps());
+    dolfin_error("DofMap.cpp",
+                 "extract subsystem of degree of freedom mapping",
+                 "Requested subsystem (%d) out of range [0, %d)",
+                 component[0], ufc_dofmap.num_sub_dofmaps());
   }
 
   // Add to offset if necessary
@@ -408,7 +436,9 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
   {
     if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
-      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
+      dolfin_error("DofMap.cpp",
+                   "initialize mapping of degrees of freedom",
+                   "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
   }
 
   // Initialize UFC dof map
@@ -493,10 +523,18 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
 {
   // Check geometric dimension
   if (dofmap.geometric_dimension() != mesh.geometry().dim())
-    error("Geometric dimension of the UFC dofmap and the Mesh do not match.");
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Geometric dimension of the UFC dofmap and the mesh do not match");
+  }
 
   // Check topological dimension
   if (dofmap.topological_dimension() != mesh.topology().dim())
-    error("Topological dimension of the UFC dofmap and the Mesh do not match.");
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Topological dimension of the UFC dofmap and the mesh do not match");
+  }
 }
 //-----------------------------------------------------------------------------

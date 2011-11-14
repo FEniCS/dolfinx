@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-02-10
-// Last changed: 2010-12-31
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <map>
@@ -40,6 +42,7 @@ extern "C"
 using namespace dolfin;
 
 #ifdef HAS_SCOTCH
+
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
                                const LocalMeshData& mesh_data)
@@ -184,7 +187,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Create SCOTCH graph and intialise
   SCOTCH_Dgraph dgrafdat;
   if (SCOTCH_dgraphInit(&dgrafdat, *comm) != 0)
-    error("Error initialising SCOTCH graph.");
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Error initializing SCOTCH graph");
+  }
 
   // Build SCOTCH distributed graph
   info("Start SCOTCH graph building.");
@@ -193,13 +200,19 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                               edgelocnbr, edgelocnbr,
                               &edgeloctab[0], NULL, NULL) )
   {
-    error("Error buidling SCOTCH graph.");
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Error building SCOTCH graph");
   }
   info("End SCOTCH graph building.");
 
   // Check graph data for consistency
   if (SCOTCH_dgraphCheck(&dgrafdat))
-    error("Consistency error in SCOTCH graph.");
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Consistency error in SCOTCH graph");
+  }
 
   // Number of partitions (set equal to number of processes)
   const int npart = num_processes;
@@ -227,7 +240,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Partition graph
   info("Start SCOTCH partitioning.");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition))
-    error("Error during partitioning.");
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Error during partitioning");
+  }
   info("End SCOTCH partitioning.");
 
   // Clean up SCOTCH objects
@@ -240,7 +257,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
-  error("This function requires SCOTCH.");
+  dolfin_error("SCOTCH.cpp",
+               "partition mesh using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
@@ -249,7 +268,10 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                        uint num_global_vertices,
                        std::vector<uint>& cell_partition)
 {
-  error("This function requires SCOTCH.");
+  dolfin_error("SCOTCH.cpp",
+               "partition mesh using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
+
 #endif

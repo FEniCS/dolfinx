@@ -21,7 +21,7 @@
 // Modified by Niclas Jansson 2009
 //
 // First added:  2005-07-05
-// Last changed: 2011-09-14
+// Last changed: 2011-11-14
 
 #include <ostream>
 #include <sstream>
@@ -53,7 +53,11 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
     encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
-    error("Requested VTK file encoding '%s' is unknown. Options are 'ascii', \n 'base64' or 'compressed'.");
+  {
+    dolfin_error("VTKFile.cpp",
+                 "Create VTK file",
+                 "Unknown encoding (\"%s\"). Known encodings are \"ascii\", \"base64\" and \"compressed\"");
+  }
 
   if (encoding == "ascii")
   {
@@ -68,7 +72,11 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
       compress = true;
   }
   else
-    error("Unknown encoding type.");
+  {
+    dolfin_error("VTKFile.cpp",
+                 "Create VTK file",
+                 "Unknown encoding (\"%s\"). Known encodings are \"ascii\", \"base64\" and \"compressed\"");
+  }
 }
 //----------------------------------------------------------------------------
 VTKFile::~VTKFile()
@@ -197,8 +205,12 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 {
   // Get rank of Function
   const uint rank = u.value_rank();
-  if(rank > 2)
-    error("Only scalar, vector and tensor functions can be saved in VTK format.");
+  if (rank > 2)
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Only scalar, vector and tensor functions can be saved in VTK format");
+  }
 
   // Get number of components
   const uint dim = u.value_size();
@@ -206,13 +218,21 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   // Check that function type can be handled
   if (rank == 1)
   {
-    if(!(dim == 2 || dim == 3))
-      error("Don't know what to do with vector function with dim other than 2 or 3.");
+    if (!(dim == 2 || dim == 3))
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle vector function with dimension other than 2 or 3");
+    }
   }
   else if (rank == 2)
   {
-    if(!(dim == 4 || dim == 9))
-      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+    if (!(dim == 4 || dim == 9))
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle tensor function with dimension other than 4 or 9");
+    }
   }
 
   // Test for cell-based element type
@@ -272,7 +292,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     ss << std::scientific;
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
-      if(rank == 1 && dim == 2)
+      if (rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i = 0; i < 2; i++)
@@ -347,7 +367,11 @@ void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
   {
     pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
     if (!result)
-      error("XML parsing error when reading from file.");
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "XML parsing error when reading from existing file");
+    }
   }
 
   // Remove directory path from name for pvd file
@@ -419,18 +443,30 @@ void VTKFile::pvtu_write_function(uint dim, uint rank,
   {
     rank_type = "Vectors";
     if (!(dim == 2 || dim == 3))
-      error("Do not know what to do with vector function with dim other than 2 or 3.");
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle vector function with dimension other than 2 or 3");
+    }
     num_components = 3;
   }
   else if (rank == 2)
   {
     rank_type = "Tensors";
-    if(!(dim == 4 || dim == 9))
-      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+    if (!(dim == 4 || dim == 9))
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle tensor function with dimension other than 4 or 9");
+    }
     num_components = 9;
   }
   else
-    error("Cannot handle XML output of rank %d.", rank);
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Cannot handle XML output of rank %d", rank);
+  }
 
   // Add function data
   pugi::xml_node data_node;
@@ -484,8 +520,12 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
 {
   assert(u.function_space()->element());
   const uint rank = u.function_space()->element()->value_rank();
-  if(rank > 2)
-    error("Only scalar, vector and tensor functions can be saved in VTK format.");
+  if (rank > 2)
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Only scalar, vector and tensor functions can be saved in VTK format");
+  } 
 
   // Get number of components
   const uint dim = u.value_size();
@@ -509,7 +549,11 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
   if (!file.is_open())
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
   // Figure out endianness of machine
   std::string endianness = "";
@@ -520,7 +564,9 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
     #elif defined BOOST_BIG_ENDIAN
     endianness = "byte_order=\"BigEndian\"";;
     #else
-    error("Unable to determine the endianness of the machine for VTK binary output.");
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Unable to determine the endianness of the machine for VTK binary output");
     #endif
   }
 
@@ -543,8 +589,12 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  if ( !file.is_open() )
-    error("Unable to open file %s", filename.c_str());
+  if (!file.is_open())
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write data to VTK file",
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
   // Close headers
   file << "</Piece>" << std::endl << "</UnstructuredGrid>" << std::endl << "</VTKFile>";
@@ -588,10 +638,18 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   // Throw error for MeshFunctions on vertices for interval elements
   if (mesh.topology().dim() == 1 && cell_dim == 0)
-    error("VTK output for MeshFunctions on interval facets is not supported.");
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write mesh function to VTK file",
+                 "VTK output of mesh functions on interval facets is not supported");
+  }
 
   if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
-    error("VTK output of mesh functions is implemented for cell- and facet-based functions only.");
+  {
+    dolfin_error("VTKFile.cpp",
+                 "write mesh function to VTK file",
+                 "VTK output of mesh functions is implemented for cell- and facet-based functions only");
+  }
 
   // Update vtu file name and clear file
   std::string vtu_filename = init(mesh, cell_dim);
@@ -632,8 +690,12 @@ void VTKFile::clear_file(std::string file) const
 {
   // Open file and clear
   std::ofstream _file(file.c_str(), std::ios::trunc);
-  if ( !_file.is_open() )
-    error("Unable to open file %s", file.c_str());
+  if (!_file.is_open())
+  {
+    dolfin_error("VTKFile.cpp",
+                 "clear VTK file",
+                 "Unable to open file \"%s\"", file.c_str());
+  }
   _file.close();
 }
 //----------------------------------------------------------------------------

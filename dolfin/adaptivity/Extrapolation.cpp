@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2009-12-08
-// Last changed: 2010-12-06
+// Last changed: 2011-11-12
 //
 
 #include <vector>
@@ -54,7 +54,11 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 
   // Check that the meshes are the same
   if (w.function_space()->mesh() != v.function_space()->mesh())
-    error("Extrapolation must be computed on the same mesh.");
+  {
+    dolfin_error("Extrapolation.cpp",
+                 "compute extrapolation",
+                 "Extrapolation must be computed on the same mesh.");
+  }
 
   // Extract mesh and function spaces
   const FunctionSpace& V = *v.function_space();

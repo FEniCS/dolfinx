@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-10-11
-// Last changed: 2011-03-17
+// Last changed: 2011-11-12
 
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -33,7 +35,12 @@ void dolfin::mark(dolfin::MeshFunction<bool>& markers,
   if (strategy == "dorfler")
     dolfin::dorfler_mark(markers, indicators, fraction);
   else
-    dolfin::error("Unknown marking strategy.");
+  {
+    dolfin::dolfin_error("marking.cpp",
+                         "set refinement markers",
+                         "Unknown marking strategy (\"%s\")",
+                         strategy.c_str());
+  }
 
   // Count number of marked cells
   uint num_marked = 0;

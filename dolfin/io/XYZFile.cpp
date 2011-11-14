@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Nuno Lopes 2008.
+// Modified by Nuno Lopes 2008
+// Modified by Anders Logg 2011
 //
 // First added:  2008-07-02
+// Last changed: 2011-11-14
 
 #include <fstream>
 #include <sstream>
@@ -68,12 +70,19 @@ void XYZFile::results_write(const Function& u) const
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
   if (!fp)
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write function to XYZ file"
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
-  assert(u.function_space()->element());
-  const uint rank = u.function_space()->element()->value_rank();
-  if(rank > 1)
-    error("Only scalar functions can be saved in xyz format.");
+  const uint rank = u.function_space()->element().value_rank();
+  if (rank > 1)
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write function XYZ file",
+                 "Only scalar functions can be saved in XYZ format");
+  }
 
   // Get number of components
   uint dim = 1;
@@ -91,8 +100,13 @@ void XYZFile::results_write(const Function& u) const
   u.compute_vertex_values(values, mesh);
 
   // Write function data at mesh vertices
-  if ( dim > 1 )
-    error("Cannot handle XYZ file for non-scalar functions. ");
+  if (dim > 1)
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write function XYZ file",
+                 "Only scalar functions can be saved in XYZ format");
+  }
+
   std::ostringstream ss;
   ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
@@ -123,7 +137,11 @@ void XYZFile::xyz_name_update(int counter)
   // Make sure file is empty
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::trunc);
   if (!fp)
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write data to XYZ file",
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -134,13 +152,21 @@ void XYZFile::mesh_function_write(T& meshfunction)
 
   Mesh& mesh = meshfunction.mesh();
 
-  if( meshfunction.dim() != mesh.topology().dim() )
-    error("XYZ output of mesh functions is implemenetd for cell-based functions only.");
+  if (meshfunction.dim() != mesh.topology().dim())
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write mesh function to XYZ file",
+                 "XYZ output of mesh functions is implemented for cell-based functions only");
+  }
 
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
   if (!fp)
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write mesh function to XYZ file",
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
   fp << mesh.num_cells() <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)

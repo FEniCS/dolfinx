@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-06-30
-// Last changed: 2011-09-01
+// Last changed: 2011-11-14
 
 #ifndef __XML_MESH_FUNCTION_H
 #define __XML_MESH_FUNCTION_H
@@ -119,7 +119,11 @@ namespace dolfin
     {
       // Read old-style MeshFunction
       if (MPI::num_processes() > 1)
-        error("Reading old-style XML MeshFunctions is not supported in parallel. Consider using the new format.");
+      {
+        dolfin_error("XMLMeshFunction.h",
+                     "read mesh function from XML file",
+                     "Reading old-style XML MeshFunctions is not supported in parallel. Consider using the new format");
+      }
 
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
@@ -128,7 +132,12 @@ namespace dolfin
 
       // Check that types match
       if (type != file_data_type)
-        error("Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".", file_data_type.c_str(), type.c_str());
+      {
+        dolfin_error("XMLMeshFunction.h",
+                     "read mesh function from XML file",
+                     "Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".",
+                     file_data_type.c_str(), type.c_str());
+      }
 
       // Initialise MeshFunction
       mesh_function.init(dim, size);
@@ -171,7 +180,11 @@ namespace dolfin
         }
       }
       else
-        error("Type unknown in XMLMeshFunction::read.");
+      {
+        dolfin_error("XMLMeshFunction.h",
+                     "read mesh function from XML file",
+                     "Unknown value type (\"%s\")", type.c_str());
+      }
     }
   }
   //---------------------------------------------------------------------------
@@ -204,7 +217,11 @@ namespace dolfin
                                       xml_meshfunction);
     }
     else
-      error("Cannot read old-style MeshFunction XML files as a MeshValueCollection.");
+    {
+      dolfin_error("XMLMeshFunction.h",
+                   "read mesh function from XML file",
+                   "Cannot read old-style MeshFunction XML files as a MeshValueCollection");
+    }
   }
   //---------------------------------------------------------------------------
   template<typename T>

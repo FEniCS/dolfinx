@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2011 Anders Logg and Ola Skavhaug
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2008-08-12
-// Last changed: 2011-03-17
+// Last changed: 2011-11-14
 
 #include <ufc.h>
 #include <boost/random.hpp>
@@ -187,7 +187,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
           // FIXME: Eventually replace this with a more robust condition. It's
           // good for testing that ownership of shared dofs is spread roughly
           // equally
-          error("Cannot decide on dof ownership. Votes are equal.");
+          dolfin_error("DofMapBuilder.cpp",
+                       "compute mapping of degrees of freedom",
+                       "Cannot decide on dof ownership; votes are equal");
         }
       }
     }
@@ -244,7 +246,11 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
   // FIXME: Handle double-renumbered dof map
   if (dofmap.ufc_map_to_dofmap.size() > 0)
-    error("DofMaps cannot yet be renumbered twice.");
+  {
+    dolfin_error("DofMapBuilder.cpp",
+                 "compute parallel renumbering of degrees of freedom",
+                 "The degree of freedom mapping cannot (yet) be renumbered twice");
+  }
 
   const std::vector<std::vector<uint> >& old_dofmap = dofmap._dofmap;
   std::vector<std::vector<uint> > new_dofmap(old_dofmap.size());
@@ -378,7 +384,11 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
     {
       // Check that we have just one dof
       if (dofmap->global_dimension() != 1)
-        error("Global dof has dimension != 1.");
+      {
+        dolfin_error("DofMapBuilder.cpp",
+                     "compute global degrees of freedom",
+                     "Global degree of freedom has dimension != 1");
+      }
 
       boost::scoped_ptr<ufc::mesh> ufc_mesh(new ufc::mesh);
       boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
@@ -388,7 +398,11 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
       // Insert global dof index
       std::pair<DofMapBuilder::set::iterator, bool> ret = global_dofs.insert(dof + offset);
       if (!ret.second)
-        error("Problem inserting global dof into set. Dof index aready exists.");
+      {
+        dolfin_error("DofMapBuilder.cpp",
+                     "compute global degrees of freedom",
+                     "Global degree of freedom already exists");
+      }
     }
   }
   else

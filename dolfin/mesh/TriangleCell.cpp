@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2006.
-// Modified by Kristian Oelgaard, 2006-2007.
-// Modified by Dag Lindbo, 2008
-// Modified by Kristoffer Selim, 2008
+// Modified by Garth N. Wells 2006
+// Modified by Kristian Oelgaard 2006-2007
+// Modified by Dag Lindbo 2008
+// Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2011-02-08
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -50,7 +50,9 @@ dolfin::uint TriangleCell::num_entities(uint dim) const
   case 2:
     return 1; // cells
   default:
-    error("Illegal topological dimension %d for triangle.", dim);
+    dolfin_error("TriangleCell.cpp",
+                 "access number of entities of triangle cell",
+                 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -67,7 +69,9 @@ dolfin::uint TriangleCell::num_vertices(uint dim) const
   case 2:
     return 3; // cells
   default:
-    error("Illegal topological dimension %d for triangle.", dim);
+    dolfin_error("TriangleCell.cpp",
+                 "access number of vertices for subsimplex of triangle cell",
+                 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -89,8 +93,12 @@ dolfin::uint TriangleCell::orientation(const Cell& cell) const
 void TriangleCell::create_entities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges
-  if ( dim != 1 )
-    error("Don't know how to create entities of topological dimension %d.", dim);
+  if (dim != 1)
+  {
+    dolfin_error("TriangleCell.cpp",
+                 "create entities of triangle cell",
+                 "Don't know how to create entities of topological dimension %d", dim);
+  }
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];
@@ -128,8 +136,12 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
 double TriangleCell::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
-  if ( triangle.dim() != 2 )
-    error("Illegal mesh entity for computation of triangle volume (area). Not a triangle.");
+  if (triangle.dim() != 2)
+  {
+    dolfin_error("TriangleCell.cpp",
+                 "compute volume (area) of triangle cell",
+                 "Illegal mesh entity, not a triangle");
+  }
 
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
@@ -140,7 +152,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);
 
-  if ( geometry.dim() == 2 )
+  if (geometry.dim() == 2)
   {
     // Compute area of triangle embedded in R^2
     double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
@@ -148,7 +160,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
     // Formula for volume from http://mathworld.wolfram.com
     return v2 = 0.5 * std::abs(v2);
   }
-  else if ( geometry.dim() == 3 )
+  else if (geometry.dim() == 3)
   {
     // Compute area of triangle embedded in R^3
     const double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
@@ -167,14 +179,18 @@ double TriangleCell::volume(const MeshEntity& triangle) const
 double TriangleCell::diameter(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
-  if ( triangle.dim() != 2 )
-    error("Illegal mesh entity for computation of triangle diameter. Not a triangle.");
+  if (triangle.dim() != 2)
+  {
+    dolfin_error("TriangleCell.cpp",
+                 "compute diameter of triangle cell",
+                 "Illegal mesh entity, not a triangle");
+  }
 
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
-  if ( geometry.dim() != 2 && geometry.dim() != 3 )
+  if (geometry.dim() != 2 && geometry.dim() != 3)
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
   // Get the coordinates of the three vertices

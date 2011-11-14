@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008-2011.
-// Modified by Martin Alnes, 2008.
+// Modified by Anders Logg 2008-2011
+// Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2011-09-12
+// Last changed: 2011-11-14
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -109,7 +109,11 @@ std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
     _coloring.push_back(cell_dim - 1);
   }
   else
-    error("Coloring for other than cell or facet assembly not supported.");
+  {
+    dolfin_error("Form.cpp",
+                 "color form for multicore computing",
+                 "Only cell and facet coloring are currently supported");
+  }
 
   return _coloring;
 }
@@ -156,14 +160,20 @@ const Mesh& Form::mesh() const
   // Check that we have at least one mesh
   if (meshes.size() == 0)
   {
-    error("Unable to extract mesh from form (no mesh found). Are you trying to assemble a functional and forgot to specify the mesh?");
+    dolfin_error("Form.cpp",
+                 "extract mesh from form",
+                 "No mesh was found. Try passing mesh to the assemble function");
   }
 
   // Check that all meshes are the same
   for (uint i = 1; i < meshes.size(); i++)
   {
     if (meshes[i] != meshes[i - 1])
-      error("Unable to extract mesh from form (nonmatching meshes for function spaces).");
+    {
+      dolfin_error("Form.cpp",
+                   "extract mesh from form",
+                   "Non-matching meshes for function spaces");
+    }
   }
 
   // Return first mesh
@@ -286,15 +296,19 @@ void Form::check() const
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
   {
-    error("Form expects %d FunctionSpace(s), %d provided.",
-          _ufc_form->rank(), _function_spaces.size());
+    dolfin_error("Form.cpp",
+                 "assemble form",
+                 "Expecting %d function spaces (not %d)",
+                 _ufc_form->rank(), _function_spaces.size());
   }
 
   // Check that the number of coefficient function spaces is correct
   if (_ufc_form->num_coefficients() != _coefficients.size())
   {
-   error("Form expects %d coefficient function(s), %d provided.",
-          _ufc_form->num_coefficients(), _coefficients.size());
+   dolfin_error("Form.cpp",
+                "assemble form",
+                "Expecting %d coefficient (not %d)",
+                _ufc_form->num_coefficients(), _coefficients.size());
   }
 
   // Check argument function spaces
@@ -306,8 +320,10 @@ void Form::check() const
     if (element->signature() != _function_spaces[i]->element()->signature())
     {
       log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s", _function_spaces[i]->element()->signature().c_str());
-      error("Wrong type of function space for argument %d.", i);
+      log(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      dolfin_error("Form.cpp",
+                   "assemble form",
+                   "Wrong type of function space for argument %d.", i);
     }
   }
 }
