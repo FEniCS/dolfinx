@@ -22,7 +22,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2011-09-19
+// Last changed: 2011-11-11
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -388,6 +388,11 @@ std::pair<Point,dolfin::uint>
 Mesh::closest_point_and_cell(const Point & point) const
 {
   return _intersection_operator.closest_point_and_cell(point);
+}
+//-----------------------------------------------------------------------------
+double Mesh::distance(const Point& point) const
+{
+  return _intersection_operator.distance(point);
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator& Mesh::intersection_operator()

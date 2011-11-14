@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andre Massing
+// Copyright (C) 2009-2011 Andre Massing
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2010-03-03
+// Last changed: 2011-11-11
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
@@ -27,6 +27,7 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -35,6 +36,7 @@ namespace dolfin
   // Forward declarations
   class MeshEntity;
   class Mesh;
+  template <class T> class MeshFunction;
   class Point;
   class IntersectionOperatorImplementation;
 
@@ -42,7 +44,9 @@ namespace dolfin
   {
   public:
 
-    /// Create intersection detector for the mesh \em mesh.
+    /// Create intersection detector for a given mesh 
+    ///
+    ///
     /// @param kernel_type The CGAL geometric kernel is used to compute predicates,
     /// intersections and such. Depending on this choice the kernel
     /// (kernel_type = "ExcactPredicates") can compute predicates excactly
@@ -53,6 +57,48 @@ namespace dolfin
 
     IntersectionOperator(boost::shared_ptr<const Mesh> _mesh,
                          const std::string& kernel_type = "SimpleCartesian");
+
+    /// Create  IntersectionOperator for a given mesh
+    ///
+    /// *Arguments*
+    ///     labels (_MeshFunction<unsigned int>_)
+    ///         A MeshFunction over entities labeling the part of the Mesh 
+    ///         for which the distance will be measured to
+    ///
+    ///     label (uint)
+    ///         The label determining the part of the mesh for which 
+    ///         the distance will be measured to
+    ///
+    ///     kernel_type (std::string)
+    ///         The CGAL geometric kernel which is used to compute predicates,
+    ///         intersections and such. Depending on this choice the kernel
+    ///         (kernel_type = "ExcactPredicates") can compute predicates 
+    ///         excactly (without roundoff error) or only approximately 
+    ///         default value is "SimpleCartesian".
+    IntersectionOperator(const MeshFunction<unsigned int>& labels, 
+			 uint label, 
+                         const std::string& kernel_type = "SimpleCartesian");
+
+    /// Create IntersectionOperator for a given mesh (shared data)
+    ///
+    /// *Arguments*
+    ///     labels (_MeshFunction<unsigned int>_)
+    ///         A MeshFunction over facets labeling the part of the Boundary 
+    ///         for which the distance will be measured to
+    ///
+    ///     label (uint)
+    ///         The label determining the part of the mesh for which 
+    ///         the distance will be measured to
+    ///
+    ///     kernel_type (std::string)
+    ///         The CGAL geometric kernel which is used to compute predicates,
+    ///         intersections and such. Depending on this choice the kernel
+    ///         (kernel_type = "ExcactPredicates") can compute predicates 
+    ///         excactly (without roundoff error) or only approximately 
+    ///         default value is "SimpleCartesian".
+    IntersectionOperator(boost::shared_ptr<const MeshFunction<unsigned int> > labels,
+			 uint label, const std::string&
+			 kernel_type="SimpleCartesian");
 
     /// Destructor. Needed be explicit written, otherwise default inline
     /// here, with prohibits pImpl with scoped_ptr.
@@ -110,6 +156,9 @@ namespace dolfin
     /// that are closest to the point query.
     std::pair<Point,uint> closest_point_and_cell(const Point & point) const;
 
+    /// Computes the distance between the given point and the nearest entity
+    double distance(const Point & point) const;
+
     /// Rebuilds the underlying search structure from scratch and uses
     /// the kernel kernel_type underlying CGAL Geometry kernel.
     void reset_kernel(const std::string& kernel_type  = "SimpleCartesian");
@@ -127,14 +176,22 @@ namespace dolfin
     // Factory function to create the dimension dependent intersection
     // operator implementation.
     IntersectionOperatorImplementation*
-        create_intersection_operator(boost::shared_ptr<const Mesh> mesh,
-                                     const std::string & kernel_type);
+        create_intersection_operator(const std::string & kernel_type);
 
     // Pointer to implementation. Mutable to enable lazy initialization.
     mutable boost::scoped_ptr<IntersectionOperatorImplementation> _pImpl;
 
     // Pointer to mesh.
     boost::shared_ptr<const Mesh> _mesh;
+
+    // Pointer to mesh function
+    boost::shared_ptr<const MeshFunction<uint> > _labels;
+
+    // Label if MeshFunction is used
+    uint _label;
+    
+    // Flag if MeshFunction is used
+    bool _use_labels;
 
     // String description of the used geometry kernel.
     std::string _kernel_type;
