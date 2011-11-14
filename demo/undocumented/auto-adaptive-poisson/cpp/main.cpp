@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-10-04
+// Last changed: 2011-11-14
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -83,12 +83,13 @@ int main()
   // Solve equation a = L with respect to u and the given boundary
   // conditions, such that the estimated error (measured in M) is less
   // than tol
-  solve(a == L, u, bc, tol, M);
+  // solve(a == L, u, bc, tol, M);
 
   // Alternative, more verbose version:
-  // LinearVariationalProblem problem(a, L, u, bc);
-  // AdaptiveLinearVariationalSolver solver(problem);
-  // solver.solve(tol, M);
+  LinearVariationalProblem problem(a, L, u, bc);
+  AdaptiveLinearVariationalSolver solver(problem);
+  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
+  solver.solve(tol, M);
 
   // Plot final solution
   plot(u.root_node(), "Solution on initial mesh");
