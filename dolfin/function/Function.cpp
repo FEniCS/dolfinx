@@ -289,7 +289,9 @@ boost::shared_ptr<const GenericVector> Function::vector() const
 bool Function::in(const FunctionSpace& V) const
 {
   assert(_function_space);
-  return _function_space.get() == &V;
+  return _function_space->element().get() == V.element().get() && 
+    _function_space->mesh().get() == V.mesh().get() && 
+    _function_space->dofmap().get() == V.dofmap().get() ;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::geometric_dimension() const
