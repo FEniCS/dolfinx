@@ -65,7 +65,56 @@ namespace dolfin
   /// in DOLFIN. Use the more informative dolfin_error instead.
   void error(std::string msg, ...);
 
-  /// Print error message, prefer this to the above generic error message
+  /// Print error message. Prefer this to the above generic error message.
+  ///
+  /// *Arguments*
+  ///     location (std::string)
+  ///         Name of the file from which the error message was generated.
+  ///     task (std::string)
+  ///         Name of the task that failed.
+  ///         Note that this string should begin with lowercase.
+  ///         Note that this string should not be punctuated.
+  ///     reason (std::string)
+  ///         A format string explaining the reason for the failure.
+  ///         Note that this string should begin with uppercase.
+  ///         Note that this string should not be punctuated.
+  ///         Note that this string may contain printf style formatting.
+  ///     ... (primitive types like int, uint, double, bool)
+  ///         Optional arguments for the format string.
+  ///
+  /// Some rules of thumb:
+  ///
+  /// * The 'task' string should be sufficiently high level ("assemble form")
+  ///   to make sense to a user.
+  /// * Use the same 'task' string from all errors originating from the same
+  ///   function.
+  /// * The 'task' string should provide details of which particular algorithm
+  ///   or method that was used ("assemble form using OpenMP assembler").
+  /// * The 'reason' string should try to explain why the task failed in the
+  ///   context of the task that failed ("subdomains are not yet handled").
+  /// * Write "inialize mesh function" rather than "initialize MeshFunction".
+  ///
+  /// Some examples:
+  ///
+  /// dolfin_error("DofMap.cpp",
+  ///              "create mapping of degrees of freedom",
+  ///              "Mesh is not ordered according to the UFC numbering convention. "
+  ///              "Consider calling mesh.order()");
+  ///
+  /// dolfin_error("File.cpp",
+  ///              "open file",
+  ///              "Could not create directory \"%s\"",
+  ///              path.parent_path().string().c_str());
+  ///
+  /// dolfin_error("TriangleCell.cpp",
+  ///              "access number of entities of triangle cell",
+  ///              "Illegal topological dimension (%d)", dim);
+  ///
+  /// dolfin_error("VTKFile.cpp",
+  ///              "Create VTK file",
+  ///              "Unknown encoding (\"%s\"). "
+  ///              "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
+  ///              encoding.c_str());
   void dolfin_error(std::string location,
                     std::string task,
                     std::string reason, ...);

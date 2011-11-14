@@ -56,7 +56,9 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
   {
     dolfin_error("VTKFile.cpp",
                  "Create VTK file",
-                 "Unknown encoding (\"%s\"). Known encodings are \"ascii\", \"base64\" and \"compressed\"");
+                 "Unknown encoding (\"%s\"). "
+                 "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
+                 encoding.c_str());
   }
 
   if (encoding == "ascii")
@@ -75,7 +77,9 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
   {
     dolfin_error("VTKFile.cpp",
                  "Create VTK file",
-                 "Unknown encoding (\"%s\"). Known encodings are \"ascii\", \"base64\" and \"compressed\"");
+                 "Unknown encoding (\"%s\"). "
+                 "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
+                 encoding.c_str());
   }
 }
 //----------------------------------------------------------------------------
@@ -525,7 +529,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
     dolfin_error("VTKFile.cpp",
                  "write data to VTK file",
                  "Only scalar, vector and tensor functions can be saved in VTK format");
-  } 
+  }
 
   // Get number of components
   const uint dim = u.value_size();

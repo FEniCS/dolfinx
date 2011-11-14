@@ -74,7 +74,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   if (MPI::num_processes() > 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
+                 "perform multithreaded assembly using OpenMP assembler",
                  "The OpenMp assembler has not been tested in combination with MPI");
   }
 
@@ -164,7 +164,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   if (mesh_coloring == mesh.parallel_data().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
+                 "perform multithreaded assembly using OpenMP assembler",
                  "Requested mesh coloring has not been computed");
   }
 
@@ -299,7 +299,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   if (mesh_coloring == mesh.parallel_data().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
+                 "perform multithreaded assembly using OpenMP assembler",
                  "Requested mesh coloring has not been computed");
   }
 
@@ -451,8 +451,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   if (domains && domains->size() > 0)
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
-                 "Subdomains are not yet handled by the OpenMp assembler");
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Subdomains are not yet handled");
   }
 
   // Extract mesh
@@ -489,7 +489,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
+                 "perform multithreaded assembly using OpenMP assembler",
                  "Expecting facet orientation to be defined on facets (not dimension %d)",
                  facet_orientation->dim());
   }
@@ -503,7 +503,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   if (mesh_coloring == mesh.parallel_data().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
-                 "perform multithreaded assembly",
+                 "perform multithreaded assembly using OpenMP assembler",
                  "Requested mesh coloring has not been computed");
   }
 

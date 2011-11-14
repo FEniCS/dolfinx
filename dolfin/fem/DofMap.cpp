@@ -53,7 +53,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   {
      dolfin_error("DofMap.cpp",
                   "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
   }
 
   // Generate and number all mesh entities
@@ -100,7 +101,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   {
      dolfin_error("DofMap.cpp",
                   "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
   }
 
   // Create the UFC mesh
@@ -214,7 +216,8 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   {
      dolfin_error("DofMap.cpp",
                   "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
   }
 
   // Create the UFC mesh
