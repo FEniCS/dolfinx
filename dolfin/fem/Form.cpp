@@ -320,7 +320,7 @@ void Form::check() const
     if (element->signature() != _function_spaces[i]->element()->signature())
     {
       log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      log(ERROR, "Input element:    %s", _function_spaces[i]->element()->signature().c_str());
       dolfin_error("Form.cpp",
                    "assemble form",
                    "Wrong type of function space for argument %d.", i);

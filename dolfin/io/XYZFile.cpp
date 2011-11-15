@@ -76,7 +76,7 @@ void XYZFile::results_write(const Function& u) const
                  "Unable to open file \"%s\"", filename.c_str());
   }
 
-  const uint rank = u.function_space()->element().value_rank();
+  const uint rank = u.function_space()->element()->value_rank();
   if (rank > 1)
   {
     dolfin_error("XYZFile.cpp",

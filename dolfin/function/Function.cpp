@@ -230,8 +230,8 @@ const Function& Function::operator= (const Function& v)
     _function_space = v._function_space->collapse(collapsed_map);
 
     // FIXME: This assertion doesn't work in parallel
-    //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
-    //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
+    //assert(collapsed_map.size() == _function_space->dofmap()->global_dimension());
+    //assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
 
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;
@@ -304,7 +304,7 @@ boost::shared_ptr<GenericVector> Function::vector()
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
     cout << "Size of vector: " << _vector->size() << endl;
-    cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
+    cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
     dolfin_error("Function.cpp",
                  "access vector of degrees of freedom fro function",
                  "Cannot access a non-const vector from a subfunction");
@@ -321,8 +321,8 @@ boost::shared_ptr<const GenericVector> Function::vector() const
 bool Function::in(const FunctionSpace& V) const
 {
   assert(_function_space);
-  return _function_space->element().get() == V.element().get() && 
-    _function_space->mesh().get() == V.mesh().get() && 
+  return _function_space->element().get() == V.element().get() &&
+    _function_space->mesh().get() == V.mesh().get() &&
     _function_space->dofmap().get() == V.dofmap().get() ;
 }
 //-----------------------------------------------------------------------------
@@ -618,7 +618,7 @@ void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
   assert(_function_space);
-  if (_function_space->dofmap().is_view())
+  if (_function_space->dofmap()->is_view())
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",

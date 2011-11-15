@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2011-11-14
+// Last changed: 2011-11-15
 
 #include <boost/scoped_array.hpp>
 
@@ -102,7 +102,7 @@ void PointSource::apply(GenericVector& b)
 void PointSource::check_is_scalar(const FunctionSpace& V)
 {
   assert(V.element());
-  if (V.element().value_rank() != 0)
+  if (V.element()->value_rank() != 0)
   {
     dolfin_error("PointSource.cpp",
                  "create point source",

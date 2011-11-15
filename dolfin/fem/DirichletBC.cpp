@@ -344,9 +344,9 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
   /*
   // Compute value size
   uint size = 1;
-  const uint rank = g->function_space().element().value_rank();
+  const uint rank = g->function_space().element()->value_rank();
   for (uint i = 0; i < rank ; i++)
-    size *= g->function_space().element().value_dimension(i);
+    size *= g->function_space().element()->value_dimension(i);
   double* g_values = new double[size];
   double* v_values = new double[size];
 
@@ -513,13 +513,13 @@ void DirichletBC::check() const
   assert(_function_space->element());
 
   // Check for common errors, message below might be cryptic
-  if (g->value_rank() == 0 && _function_space->element().value_rank() == 1)
+  if (g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
                  "Expecting a vector-valued boundary value but given function is scalar");
   }
-  if (g->value_rank() == 1 && _function_space->element().value_rank() == 0)
+  if (g->value_rank() == 1 && _function_space->element()->value_rank() == 0)
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
@@ -530,13 +530,13 @@ void DirichletBC::check() const
   dolfin_error("DirichletBC.cpp",
                "create Dirichlet boundary condition",
                "Illegal value rank (%d), expecting (%d)",
-               g->value_rank(), _function_space->element().value_rank());
+               g->value_rank(), _function_space->element()->value_rank());
   for (uint i = 0; i < g->value_rank(); i++)
   {
     dolfin_error("DirichletBC.cpp",
                  "Illcreate Dirichlet boundary condition",
                  "Illegal value dimension (%d), expecting (%d)",
-                 g->value_dimension(i), _function_space->element().value_dimension(i));
+                 g->value_dimension(i), _function_space->element()->value_dimension(i));
   }
 
   // Check that boundary condition method is known
@@ -683,7 +683,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   assert(_function_space->mesh());
   assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
-  const GenericDofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Create UFC cell object
   UFCCell ufc_cell(mesh);

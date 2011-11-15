@@ -125,7 +125,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     dolfin_error("FunctionSpace.cpp",
                  "interpolate function into function space",
                  "rank of function (%d) does not match rank of function space (%d)",
-                 v.value_rank(), element().value_rank());
+                 v.value_rank(), element()->value_rank());
   }
 
   // Check that function dims match
@@ -136,7 +136,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
       dolfin_error("FunctionSpace.cpp",
                    "interpolate function into function space",
                    "dimension %d of function (%d) does not match dimension %d of function space (%d)",
-                   i, v.value_dimension(i), i, element().value_dimension(i));
+                   i, v.value_dimension(i), i, element()->value_dimension(i));
     }
   }
 
