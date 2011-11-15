@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kent-Andre Mardal, 2011
+// Modified by Kent-Andre Mardal 2011
+// Modified by Anders Logg 2011
 //
 // First added:  2008-12-01
-// Last changed: 2011-04-04
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <iterator>
@@ -102,9 +103,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Check for vertices
   if (d == 0)
+  {
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
-                 "Vertex indices do not exist: need vertices to number entities of dimension 0");
+                 "Vertex indices do not exist; need vertices to number entities of dimension 0");
+  }
 
   // Return if global entity indices are already calculated
   if (mesh.parallel_data().have_global_entity_indices(d))
@@ -257,7 +260,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
       print_container(msg, entity.begin(), entity.end());
       msg << " with global index " << global_index;
       msg << " from process " << p;
-      error(msg.str());
+      dolfin_error("MeshPartitioning.cpp",
+                   "number mesh entities",
+                   msg.str());
     }
 
     const uint local_entity_index = ignored_entity_indices.find(entity)->second;

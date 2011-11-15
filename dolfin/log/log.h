@@ -182,8 +182,10 @@ namespace dolfin
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() \
   do { \
-    error("The function '%s' has not been implemented (in %s line %d).", \
-          __FUNCTION__, __FILE__, __LINE__); \
+    dolfin_error("log.h", \
+                 "perform call to DOLFIN function %s", \
+                 "The function %s has not been implemented (in %s line %d)", \
+                 __FUNCTION__, __FUNCTION__, __FILE__, __LINE__); \
   } while (false)
 
 #endif

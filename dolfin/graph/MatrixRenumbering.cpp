@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-11-15
-// Last changed: 2011-11-14
+// Last changed: 2011-11-15
 
 #ifdef HAS_TRILINOS
 
@@ -36,9 +36,6 @@ using namespace dolfin;
 MatrixRenumbering::MatrixRenumbering(const SparsityPattern& sparsity_pattern)
       : sparsity_pattern(sparsity_pattern)
 {
-  //if (sparsity_pattern.rank() != 2)
-  //  error("Can only create Zoltan object for SparsityPattern of rank 2.");
-
   if (sparsity_pattern.rank() != 2)
   {
     dolfin_error("MatrixRenumbering.cpp",

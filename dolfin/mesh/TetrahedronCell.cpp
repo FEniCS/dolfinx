@@ -257,7 +257,10 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
     editor.add_cell(current_cell++, v3, e5, e4, e3);
     break;
   default:
-    error("Illegal rule for irregular refinement of tetrahedron.");
+    dolfin_error("TetrahedronCell.cpp",
+                 "perform regular cut refinement of tetrahedron",
+                 "Illegal rule (%d) for irregular refinement of tetrahedron",
+                 refinement_rule);
   }
   */
 }
