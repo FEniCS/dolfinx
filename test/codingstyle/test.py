@@ -65,7 +65,8 @@ def test_dolfin_error(code, filename):
 
     # Skip exceptions
     exceptions = ["log.h", "log.cpp", "Logger.h", "Logger.cpp",
-                  "pugixml.cpp", "Poisson1D.h", "Poisson2D.h", "Poisson3D.h"]
+                  "pugixml.cpp", "Poisson1D.h", "Poisson2D.h", "Poisson3D.h",
+                  "meshconvert.py"]
     if filename in exceptions:
         return True
 
@@ -78,13 +79,11 @@ def test_dolfin_error(code, filename):
 
     return False
 
-
 # List of C++ tests
 cpp_tests = [test_dolfin_error]
 
 # List of Python tests
-#python_tests = [test_dolfin_error]
-python_tests = []
+python_tests = [test_dolfin_error]
 
 if __name__ == "__main__":
 
