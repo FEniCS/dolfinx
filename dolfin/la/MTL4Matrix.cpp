@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-07-06
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #ifdef HAS_MTL4
 
@@ -76,14 +76,18 @@ MTL4Matrix* MTL4Matrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Matrix::size(uint dim) const
 {
+  if (dim > 1)
+  {
+    dolfin_error("MTL4Matrix.cpp",
+                 "access size of MTL4 matrix",
+                 "Illegal axis (%d), must be 0 or 1", dim);
+  }
+
   if (dim == 0)
     return mtl::matrix::num_rows(A);
   else if (dim == 1)
     return mtl::matrix::num_cols(A);
 
-  dolfin_error("MTL4Matrix.cpp",
-               "get size of MTL4 matrix",
-               "Dimension must be 1 or 2 (not %d)", dim);
   return 0;
 }
 //-----------------------------------------------------------------------------

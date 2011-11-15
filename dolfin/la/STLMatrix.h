@@ -83,7 +83,15 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { assert(dim < 2); return dims[dim]; }
+    {
+      if (dim > 1)
+      {
+        dolfin_error("STLMatrix.cpp",
+                     "access size of STL matrix",
+                     "Illegal axis (%d), must be 0 or 1", dim);
+      }
+      return dims[dim];
+    }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
