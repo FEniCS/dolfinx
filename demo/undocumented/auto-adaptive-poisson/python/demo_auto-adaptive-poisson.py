@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-10-04
+# Last changed: 2011-11-14
 
 # Begin demo
 
@@ -51,11 +51,15 @@ tol = 1.e-5
 # Solve equation a = L with respect to u and the given boundary
 # conditions, such that the estimated error (measured in M) is less
 # than tol
-solve(a == L, u, bc, tol=tol, M=M)
+solver_parameters = {"error_control":
+                     {"dual_variational_solver":
+                      {"linear_solver": "cg"}}}
+solve(a == L, u, bc, tol=tol, M=M, solver_parameters=solver_parameters)
 
-## Alternative, more verbose version:
+## Alternative, more verbose version (+ illustrating how to set parameters)
 # problem = LinearVariationalProblem(a, L, u, bc)
 # solver = AdaptiveLinearVariationalSolver(problem)
+# solver.parameters["error_control"]["dual_variational_solver"]["linear_solver"] = "cg"
 # solver.solve(tol, M)
 
 # Plot solution(s)
