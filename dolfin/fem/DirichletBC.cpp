@@ -527,7 +527,7 @@ void DirichletBC::check() const
   }
 
   // Check that value shape of boundary value
-  if (g->value_rank(), _function_space->element()->value_rank())
+  if (g->value_rank() != _function_space->element()->value_rank())
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
@@ -536,10 +536,14 @@ void DirichletBC::check() const
   }
   for (uint i = 0; i < g->value_rank(); i++)
   {
-    dolfin_error("DirichletBC.cpp",
-                 "create Dirichlet boundary condition",
-                 "Illegal value dimension (%d), expecting (%d)",
-                 g->value_dimension(i), _function_space->element()->value_dimension(i));
+    if (g->value_dimension(i) != _function_space->element()->value_dimension(i))
+    {
+      dolfin_error("DirichletBC.cpp",
+                   "create Dirichlet boundary condition",
+                   "Illegal value dimension (%d), expecting (%d)",
+                   g->value_dimension(i),
+                   _function_space->element()->value_dimension(i));
+    }
   }
 
   // Check that boundary condition method is known
