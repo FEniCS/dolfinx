@@ -50,7 +50,7 @@ namespace dolfin
     {
       dolfin_error("uBLASPreconditioner",
                    "initialize uBLAS preconditioner",
-                   "no init() function for preconditioner uBLASMatrix<ublas_sparse_matrix>");
+                   "No init() function for preconditioner uBLASMatrix<ublas_sparse_matrix>");
     }
 
     /// Initialise preconditioner (dense matrix)
@@ -58,7 +58,7 @@ namespace dolfin
     {
       dolfin_error("uBLASPreconditioner",
                    "initialize uBLAS preconditioner",
-                   "no init() function for preconditioner uBLASMatrix<ublas_dense_matrix>");
+                   "No init() function for preconditioner uBLASMatrix<ublas_dense_matrix>");
     }
 
     /// Initialise preconditioner (virtual matrix)
@@ -66,7 +66,7 @@ namespace dolfin
     {
       dolfin_error("uBLASPreconditioner",
                    "initialize uBLAS preconditioner",
-                   "no init() function for preconditioner uBLASKrylovMatrix");
+                   "No init() function for preconditioner uBLASKrylovMatrix");
     }
 
     /// Solve linear system (M^-1)Ax = y

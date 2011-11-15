@@ -58,8 +58,10 @@ void AssemblerTools::check(const Form& a)
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.num_coefficients())
   {
-    error("Incorrect number of coefficients for form: %d given but %d required.",
-          coefficients.size(), a.num_coefficients());
+    dolfin_error("AssemblerTools.cpp",
+                 "assemble form",
+                 "Incorrect number of coefficients (got %d but expecting %d)",
+                 coefficients.size(), a.num_coefficients());
   }
 
   // Check that all coefficients have valid value dimensions
@@ -81,8 +83,10 @@ void AssemblerTools::check(const Form& a)
     const uint fe_r = fe->value_rank();
     if (fe_r != r)
     {
-      error("Invalid value rank for coefficient %d, got %d but expecting %d. \
-Did you forget to specify the value rank correctly in an Expression sub class?", i, r, fe_r);
+      dolfin_error("AssemblerTools.cpp",
+                   "assemble form",
+                   "Invalid value rank for coefficient %d (got %d but expecting %d). \
+You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
     }
 
     for (uint j = 0; j < r; ++j)
@@ -91,8 +95,10 @@ Did you forget to specify the value rank correctly in an Expression sub class?",
       const uint fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
       {
-        error("Invalid value dimension %d for coefficient %d, got %d but expecting %d. \
-Did you forget to specify the value dimension correctly in an Expression sub class?", j, i, dim, fe_dim);
+        dolfin_error("AssemblerTools.cpp",
+                     "assemble form",
+                     "Invalid value dimension %d for coefficient %d (got %d but expecting %d). \
+You might have forgotten to specify the value dimension correctly in an Expression subclass", j, i, dim, fe_dim);
       }
     }
   }
@@ -103,16 +109,32 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
     boost::scoped_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
     assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
-      error("Mesh cell type (intervals) does not match cell type of form.");
+    {
+      dolfin_error("AssemblerTools.cpp",
+                   "assemble form",
+                   "Mesh cell type (intervals) does not match cell type of form");
+    }
     if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
-      error("Mesh cell type (triangles) does not match cell type of form.");
+    {
+      dolfin_error("AssemblerTools.cpp",
+                   "assemble form",
+                   "Mesh cell type (triangles) does not match cell type of form");
+    }
     if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
-      error("Mesh cell type (tetrahedra) does not match cell type of form.");
+    {
+      dolfin_error("AssemblerTools.cpp",
+                   "assemble form",
+                   "Mesh cell type (tetrahedra) does not match cell type of form");
+    }
   }
 
   // Check that the mesh is ordered
   if (!mesh.ordered())
-    error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
+  {
+    dolfin_error("AssemblerTools.cpp",
+                 "assemble form",
+                 "Mesh is not correctly ordered. Consider calling mesh.order()");
+  }
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
@@ -122,7 +144,11 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
   // Check that we should not add values
   if (reset_sparsity && add_values)
-    error("Can not add values when the sparsity pattern is reset");
+  {
+    dolfin_error("AssemblerTools.cpp",
+                 "assemble form",
+                 "Can not add values when the sparsity pattern is reset");
+  }
 
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -180,7 +206,11 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     for (uint i = 0; i < a.rank(); ++i)
     {
       if (A.size(i) != dofmaps[i]-> global_dimension())
-        error("Reset of tensor in assembly not requested, but dim %d of tesnor does not match form.", i);
+      {
+        dolfin_error("AssemblerTools.cpp",
+                     "assemble form",
+                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
+      }
     }
   }
 

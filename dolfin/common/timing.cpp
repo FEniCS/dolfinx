@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2010 Anders Logg
+// Copyright (C) 2003-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-12-21
-// Last changed: 2010-11-16
+// Last changed: 2011-11-15
 
 // Uncomment this for testing std::clock
 //#define _WIN32
@@ -75,7 +75,11 @@ double dolfin::time()
   struct timeval tv;
   struct timezone tz;
   if (gettimeofday(&tv, &tz) != 0)
-    error("Timing failed, gettimeofday() failed.");
+  {
+    dolfin_error("timing.cpp",
+                 "return current time",
+                 "Call to gettimeofday() failed");
+  }
   return static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_usec)*1e-6;
 #endif
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2010.
+// Modified by Kristoffer Selim 2008
+// Modified by Andre Massing 2010
 //
 // First added:  2006-06-05
-// Last changed: 2010-02-03
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -78,7 +78,9 @@ CellType* CellType::create(Type type)
   case tetrahedron:
     return new TetrahedronCell();
   default:
-    error("Unknown cell type: %d.", type);
+    dolfin_error("CellType.cpp",
+                 "create cell type",
+                 "Unknown cell type (%d)", type);
   }
 
   return 0;
@@ -91,21 +93,25 @@ CellType* CellType::create(std::string type)
 //-----------------------------------------------------------------------------
 CellType::Type CellType::string2type(std::string type)
 {
-  if ( type == "interval" )
+  if (type == "interval")
     return interval;
-  else if ( type == "triangle" )
+  else if (type == "triangle")
     return triangle;
-  else if ( type == "tetrahedron" )
+  else if (type == "tetrahedron")
     return tetrahedron;
   else
-    error("Unknown cell type: \"%s\".", type.c_str());
+  {
+    dolfin_error("CellType.cpp",
+                 "convert string to cell type",
+                 "Unknown cell type (\"%s\")", type.c_str());
+  }
 
   return interval;
 }
 //-----------------------------------------------------------------------------
 std::string CellType::type2string(Type type)
 {
-  switch ( type )
+  switch (type)
   {
   case point:
     return "point";
@@ -116,7 +122,9 @@ std::string CellType::type2string(Type type)
   case tetrahedron:
     return "tetrahedron";
   default:
-    error("Unknown cell type: %d.", type);
+    dolfin_error("CellType.cpp",
+                 "convert cell type to string",
+                 "Unknown cell type (\"%d\")", type);
   }
 
   return "";

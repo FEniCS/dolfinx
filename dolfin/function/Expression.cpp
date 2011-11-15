@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-21
+// Last changed: 2011-11-14
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -75,7 +75,9 @@ void Expression::eval(Array<double>& values,
 //-----------------------------------------------------------------------------
 void Expression::eval(Array<double>& values, const Array<double>& x) const
 {
-  error("Missing eval() function (must be overloaded).");
+  dolfin_error("Expression.cpp",
+               "evaluate expression",
+               "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_rank() const
@@ -87,8 +89,10 @@ dolfin::uint Expression::value_dimension(uint i) const
 {
   if (i >= value_shape.size())
   {
-    error("Illegal axis %d for value dimension for value of rank %d.",
-          i, value_shape.size());
+    dolfin_error("Expression.cpp",
+                 "evaluate expression",
+                 "Illegal axis %d for value dimension for value of rank %d",
+                 i, value_shape.size());
   }
   return value_shape[i];
 }

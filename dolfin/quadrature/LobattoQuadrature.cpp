@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-06-03
-// Last changed: 2009-08-11
+// Last changed: 2011-11-15
 
 #include <iomanip>
 #include <dolfin/common/constants.h>
@@ -30,12 +30,17 @@ using namespace dolfin;
 LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   if (n < 2)
-    error("Lobatto quadrature requires at least 2 points.");
+    dolfin_error("LobattoQuadrature.cpp",
+                 "create Lobatto quadrature",
+                 "Argument (%d) invalid: Lobatto quadrature requires at least 2 points", n);
 
   init();
 
   if (!check(2*n - 3))
-    error("Lobatto quadrature not ok, check failed.");
+    dolfin_error("LobattoQuadrature.cpp",
+                 "create Lobatto quadrature",
+                 "Argument (%d) invalid");
+
 }
 //-----------------------------------------------------------------------------
 std::string LobattoQuadrature::str(bool verbose) const

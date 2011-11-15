@@ -273,8 +273,10 @@ void Parameters::update(const Parameters& parameters)
     else if (other.type_str() == "string")
       *self = static_cast<std::string>(other);
     else
-      error("Unable to use parameter \"%s\", unknown type: \"%s\".",
-            other.key().c_str(), other.type_str().c_str());
+      dolfin_error("Parameters.cpp",
+                   "update parameter set",
+                   "Parameter \"%s\" has unknown type: \"%s\"",
+                   other.key().c_str(), other.type_str().c_str());
   }
 
   // Update nested parameter sets
@@ -353,8 +355,11 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
     else if (p.type_str() == "string")
       q = new StringParameter(dynamic_cast<const StringParameter&>(p));
     else
-      error("Unable to copy parameter from parameter set \"%s\" to parameter set \"%s\", unknown type: \"%s\".",
-            parameters.name().c_str(), name().c_str(), p.type_str().c_str());
+      dolfin_error("Parameters.cpp",
+                   "copy parameter set",
+                   "Parameter from parameter set \"%s\" to parameter set \"%s\" has unknown type: \"%s\"",
+                   parameters.name().c_str(), name().c_str(), p.type_str().c_str());
+
     _parameters[p.key()] = q;
   }
 

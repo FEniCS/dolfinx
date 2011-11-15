@@ -65,7 +65,7 @@ void MTL4Vector::resize(std::pair<uint, uint> range)
   {
     dolfin_error("MTL4Vector.cpp",
                  "resize MTL4 vector",
-                 "distributed vectors not supported by the MTL4 backend");
+                 "Distributed vectors not supported by the MTL4 backend");
   }
 
   resize(range.second - range.first);
@@ -78,7 +78,7 @@ void MTL4Vector::resize(std::pair<uint, uint> range,
   {
     dolfin_error("MTL4Vector.cpp",
                  "resize MTL4 vector",
-                 "distributed vectors not supported by the MTL4 backend");
+                 "Distributed vectors not supported by the MTL4 backend");
   }
 
   resize(range);

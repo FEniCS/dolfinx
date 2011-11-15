@@ -190,7 +190,11 @@ namespace dolfin
     MeshPartitioning::number_entities(mesh, D);
 
     if (dim == 0)
-      error("MeshPartitioning::build_mesh_value_collection needs updating for vertices.");
+    {
+      // MeshPartitioning::build_mesh_value_collection needs updating
+      // for vertices
+      dolfin_not_implemented();
+    }
 
     // Get mesh value collection used for marking
     MeshValueCollection& markers = mesh_values;
@@ -201,7 +205,9 @@ namespace dolfin
 
     // Get local local-to-global map
     if (!mesh.parallel_data().have_global_entity_indices(D))
-      error("Do not have have_global_entity_indices");
+      dolfin_error("MeshPartitioning.h",
+                   "build mesh value collection",
+                   "Do not have have_global_entity_indices");
 
     // Get global indices on local process
     const std::vector<uint> global_entity_indices

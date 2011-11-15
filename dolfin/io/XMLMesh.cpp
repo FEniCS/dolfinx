@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2011-09-13
+// Last changed: 2011-11-14
 
 #include <map>
 #include <iomanip>
@@ -53,7 +53,11 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   // Get mesh node
   const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
   if (!mesh_node)
-    error("Not a DOLFIN XML Mesh file.");
+  {
+    dolfin_error("XMLMesh.cpp",
+                 "read mesh from XML file",
+                 "Not a DOLFIN XML Mesh file");
+  }
 
   // Read mesh
   read_mesh(mesh, mesh_node);
@@ -156,8 +160,10 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     const std::string node_name = it->name();
     if (node_name != "data_entry")
     {
-      error("Expecting XML node <data_entry> but got <%s>.",
-            node_name.c_str());
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh data from XML file",
+                   "Expecting XML node <data_entry> but got <%s>",
+                   node_name.c_str());
     }
 
     // Get name of data set
@@ -165,7 +171,11 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
 
     // Check that there is only one data set
     if (it->first_child().next_sibling())
-      error("XML file contains too many data sets.");
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh data from XML file",
+                   "XML file contains too many data sets");
+    }
 
     // Get type of data set
     pugi::xml_node data_set = it->first_child();
@@ -187,7 +197,11 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
         read_array_uint(*array, data_set);
       }
       else
-        error("Only reading of MeshData uint arrays are supported at present.");
+      {
+        dolfin_error("XMLMesh.cpp",
+                     "read mesh data from XML file",
+                     "Only reading of MeshData uint arrays are supported at present");
+      }
     }
     else if (data_set_type == "mesh_function")
     {
@@ -205,13 +219,15 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     else if (data_set_type == "meshfunction")
     {
       dolfin_error("XMLMesh.cpp",
-                   "read DOLFIN mesh from XML file",
+                   "read mesh data from XML file",
                    "The XML tag <meshfunction> has been changed to <mesh_function>");
     }
     else
     {
-      error("Reading of MeshData \"%s\" is not yet supported.",
-            data_set_type.c_str());
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh data from XML file",
+                   "Reading of MeshData \"%s\" is not yet supported",
+                   data_set_type.c_str());
     }
   }
 }
@@ -232,8 +248,10 @@ void XMLMesh::read_domains(MeshDomains& domains,
     const std::string node_name = it->name();
     if (node_name != "mesh_value_collection")
     {
-      error("Expecting XML node <mesh_value_collection> but got <%s>.",
-            node_name.c_str());
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh domains from XML file",
+                   "Expecting XML node <mesh_value_collection> but got <%s>",
+                   node_name.c_str());
     }
 
     // Get attributes
@@ -244,7 +262,7 @@ void XMLMesh::read_domains(MeshDomains& domains,
     if (type != "uint")
     {
       dolfin_error("XMLMesh.cpp",
-                   "read DOLFIN mesh from XML file",
+                   "read mesh domains from XML file",
                    "Mesh domains must be marked as uint, not %s",
                    type.c_str());
     }
@@ -260,12 +278,20 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   // Check that we have an array
   const std::string name = xml_array.name();
   if (name != "array")
-    error("Expecting an XML array node.");
+  {
+    dolfin_error("XMLMesh.cpp",
+                 "read mesh array data from XML file",
+                 "Expecting an XML array node");
+  }
 
   // Check type is unit
   const std::string type = xml_array.attribute("type").value();
   if (type != "uint")
-    error("Expecting an XML array node.");
+  {
+    dolfin_error("XMLMesh.cpp",
+                 "read mesh array data from XML file",
+                 "Expecting an XML array node");
+  }
 
   // Get size and resize vector
   const unsigned int size = xml_array.attribute("size").as_uint();
@@ -315,7 +341,9 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
         vertex_node.append_attribute("z") = p.z();
         break;
       default:
-        error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+        dolfin_error("XMLMesh.cpp",
+                     "write mesh to XML file",
+                     "The XML mesh file format only supports 1D, 2D and 3D meshes");
     }
   }
 
@@ -350,7 +378,9 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
       cell_node.append_attribute("v3") = vertices[3];
       break;
     default:
-      error("Unknown cell type: %u.", _cell_type);
+      dolfin_error("XMLMesh.cpp",
+                   "write mesh to XML file",
+                   "Unknown cell type (%u)", _cell_type);
     }
   }
 }

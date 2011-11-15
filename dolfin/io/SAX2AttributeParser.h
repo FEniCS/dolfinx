@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2011.
+// Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-03-31
+// Last changed: 2011-11-14
 
 #ifndef __SAXHANDLER_H
 #define __SAXHANDLER_H
@@ -44,8 +44,12 @@ namespace dolfin
     {
       // Check that we got the data
       if (!attrs)
-        error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
-                      attribute, name);
+      {
+        dolfin_error("SAX2AttributeParser.h",
+                     "parse XML file using SAX interface",
+                     "Missing attribute \"%s\" for <%s> in XML file",
+                     attribute, name);
+      }
 
       // Parse data
       for (uint i = 0; i < num_attributes; i++)
@@ -55,8 +59,9 @@ namespace dolfin
         {
           if (!attrs[5*i + 3])
           {
-            error("Value for attribute \"%s\" of <%s> missing in XML file.",
-		          attribute, name);
+            dolfin_error("SAX2AttributeParser.h",
+                         "value for attribute \"%s\" of <%s> missing in XML file",
+                         attribute, name);
           }
           std::string value(attrs[5*i + 3], attrs[5*i + 4]);
           return boost::lexical_cast<T, std::string>(value);
@@ -64,8 +69,9 @@ namespace dolfin
       }
 
       // Didn't get the value
-      error("Missing attribute value for \"%s\" for <%s> in XML file.",
-             attribute, name);
+      dolfin_error("SAX2AttributeParser.h",
+                   "value for attribute \"%s\" of <%s> missing in XML file",
+                   attribute, name);
 
       return boost::lexical_cast<T, std::string>("0");
     }
@@ -73,4 +79,5 @@ namespace dolfin
   };
 
 }
+
 #endif

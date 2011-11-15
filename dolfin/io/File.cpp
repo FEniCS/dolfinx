@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2011-09-27
+// Last changed: 2011-11-14
 
 #include <fstream>
 #include <string>
@@ -51,7 +51,12 @@ File::File(const std::string filename, std::string encoding)
   {
     boost::filesystem::create_directories(path.parent_path());
     if (!boost::filesystem::is_directory(path.parent_path()))
-      error("Could not create directory %s.", path.parent_path().string().c_str());
+    {
+      dolfin_error("File.cpp",
+                   "open file",
+                   "Could not create directory \"%s\"",
+                   path.parent_path().string().c_str());
+    }
   }
 
   // Choose format based on extension
@@ -65,7 +70,12 @@ File::File(const std::string filename, std::string encoding)
     else if (ext == ".bin")
       file.reset(new BinaryFile(filename));
     else
-      error("Unknown file type for \"%s\".", filename.c_str());
+    {
+      dolfin_error("File.cpp",
+                   "open file",
+                   "Unknown file type (\"%s\") for file \"%s\"",
+                   ext.c_str(), filename.c_str());
+    }
   }
   else if (extension == ".xml")
     file.reset(new XMLFile(filename));
@@ -78,7 +88,12 @@ File::File(const std::string filename, std::string encoding)
   else if (extension == ".bin")
     file.reset(new BinaryFile(filename));
   else
-    error("Unknown file type for \"%s\".", filename.c_str());
+  {
+    dolfin_error("File.cpp",
+                 "open file",
+                 "Unknown file type (\"%s\") for file \"%s\"",
+                 extension.c_str(), filename.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type, std::string encoding)
@@ -101,7 +116,10 @@ File::File(const std::string filename, Type type, std::string encoding)
     file.reset(new BinaryFile(filename));
     break;
   default:
-    error("Unknown file type for \"%s\".", filename.c_str());
+    dolfin_error("File.cpp",
+                 "open file",
+                 "Unknown file type (\"%d\") for file \"%s\"",
+                 type, filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------

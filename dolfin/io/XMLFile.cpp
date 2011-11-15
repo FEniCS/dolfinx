@@ -114,7 +114,9 @@ void XMLFile::operator>> (LocalMeshData& input_data)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const LocalMeshData& output_data)
 {
-  error("Output of LocalMeshData not supported");
+  dolfin_error("XMLFile.cpp",
+               "write local mesh data to XML file",
+               "Not implemented");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
@@ -307,7 +309,9 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
 
   // FIXME: Check that file exists
   if (!boost::filesystem::is_regular_file(filename))
-    error("File \"%s\" does not exist or is not a regular file. Cannot be read by XML parser.", filename.c_str());
+    dolfin_error("XMLFile.cpp",
+                 "read data from XML file",
+                 "Unable to open file \"%s\"", filename.c_str());
 
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
@@ -329,7 +333,9 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     result = xml_doc.load_file(filename.c_str());
 
   if (!result)
-    error("XML parsing error.");
+    dolfin_error("XMLFile.cpp",
+                 "read data from XML file",
+                 "Error while parsing XML");
 }
 //-----------------------------------------------------------------------------
 // Pragma to avoid Boost.iostreams error with strict compiler flags
@@ -366,7 +372,9 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) c
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = xml_doc.child("dolfin");
   if (!dolfin_node)
-    error("XMLFile::get_dolfin_xml_node: not a DOLFIN XML file");
+    dolfin_error("XMLFile.cpp",
+                 "read data from XML file",
+                 "Not a DOLFIN XML file");
   return dolfin_node;
 }
 //-----------------------------------------------------------------------------

@@ -80,7 +80,7 @@ namespace dolfin
     {
       dolfin_error("Scalar.h",
                    "get size of scalar",
-                   "the size() function is not available for scalars");
+                   "The size() function is not available for scalars");
       return 0;
     }
 
@@ -89,7 +89,7 @@ namespace dolfin
     {
       dolfin_error("Scalar.h",
                    "get local range of scalar",
-                   "the local_range() function is not available for scalars");
+                   "The local_range() function is not available for scalars");
       return std::make_pair(0, 0);
     }
 

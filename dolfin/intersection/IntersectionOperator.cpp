@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-01
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #include <algorithm>
 #include <map>
@@ -46,7 +46,7 @@ using namespace dolfin;
 IntersectionOperator::IntersectionOperator(const Mesh& mesh,
                                            const std::string& kernel_type)
     : _mesh(reference_to_no_delete_pointer(mesh)),
-    _label(0), 
+    _label(0),
     _use_labels(false),
     _kernel_type(kernel_type)
 {
@@ -55,7 +55,7 @@ IntersectionOperator::IntersectionOperator(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh,
                                            const std::string& kernel_type)
-    : _mesh(mesh), 
+    : _mesh(mesh),
     _labels(new MeshFunction<uint>()),
     _label(0),
     _use_labels(false),
@@ -64,10 +64,10 @@ IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh,
   // Do nothing
 }
 IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& labels,
-					   uint label, 
+					   uint label,
 					   const std::string& kernel_type)
   : _mesh(new Mesh()),
-  _labels(reference_to_no_delete_pointer(labels)), 
+  _labels(reference_to_no_delete_pointer(labels)),
   _label(label),
   _use_labels(true),
   _kernel_type(kernel_type)
@@ -76,9 +76,9 @@ IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& lab
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const MeshFunction<unsigned int> > labels,
-					   uint label, 
+					   uint label,
 					   const std::string& kernel_type)
-  : _mesh(new Mesh()), 
+  : _mesh(new Mesh()),
   _labels(labels),
   _label(label),
   _use_labels(true),
@@ -187,7 +187,9 @@ IntersectionOperatorImplementation*
 	case CellType::interval   : return new IntersectionOperatorImplementation_d<IntervalCell, EPICK>(_mesh);
 	case CellType::triangle   : return new IntersectionOperatorImplementation_d<TriangleCell, EPICK>(_mesh);
 	case CellType::tetrahedron: return new IntersectionOperatorImplementation_d<TetrahedronCell, EPICK>(_mesh);
-	default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      default: dolfin_error("IntersectionOperator.cpp",
+                            "create intersection operator",
+                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
 		 return 0;
       }
     }
@@ -199,7 +201,9 @@ IntersectionOperatorImplementation*
 	case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(_mesh);
 	case CellType::triangle   : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(_mesh);
 	case CellType::tetrahedron: return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(_mesh);
-	default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      default: dolfin_error("IntersectionOperator.cpp",
+                            "create intersection operator",
+                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
 		 return 0;
       }
     }
@@ -214,7 +218,9 @@ IntersectionOperatorImplementation*
 	case CellType::interval   : return new IntersectionOperatorImplementation_d<IntervalCell, EPICK>(*_labels, _label);
 	case CellType::triangle   : return new IntersectionOperatorImplementation_d<TriangleCell, EPICK>(*_labels, _label);
 	case CellType::tetrahedron: return new IntersectionOperatorImplementation_d<TetrahedronCell, EPICK>(*_labels, _label);
-	default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      default: dolfin_error("IntersectionOperator.cpp",
+                            "create intersection operator",
+                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
 		 return 0;
       }
     }
@@ -226,7 +232,9 @@ IntersectionOperatorImplementation*
 	case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(*_labels, _label);
 	case CellType::triangle   : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(*_labels, _label);
 	case CellType::tetrahedron: return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(*_labels, _label);
-	default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known.");
+      default: dolfin_error("IntersectionOperator.cpp",
+                            "create intersection operator",
+                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
 		 return 0;
       }
     }
@@ -239,7 +247,9 @@ IntersectionOperatorImplementation*
     IntersectionOperator::create_intersection_operator(
                                                const std::string & kernel_type = "SimpleCartesian")
 {
-  error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
+  dolfin_error("IntersectionOperator.cpp",
+               "create intersection operator",
+               "IntersectionOperatorImplementation is not available, DOLFIN has been compiled without CGAL");
   return 0;
 }
 #endif

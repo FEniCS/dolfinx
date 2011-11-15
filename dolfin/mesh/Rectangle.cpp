@@ -39,7 +39,9 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
 
   // Check options
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
-    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\".");
+    dolfin_error("Rectangle.cpp",
+                 "create rectangle",
+                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
 
   const double a = x0;
   const double b = x1;
@@ -47,10 +49,14 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   const double d = y1;
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
-    error("Rectangle must have nonzero width and height.");
+    dolfin_error("Rectangle.cpp",
+                 "create rectangle",
+                 "Rectangle seems to have zero width, height or depth. Consider checking your dimensions");
 
   if (nx < 1 || ny < 1)
-    error("Mesh size of rectangle must be at least 1 in each dimension.");
+    dolfin_error("Rectangle.cpp",
+                 "create rectangle",
+                 "Rectangle has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
 
   rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
   // Open mesh for editing
@@ -163,7 +169,10 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     }
   }
   else
-    error("Unknown diagonal string.");
+    // NB: This seems unnecessary, already checked.
+    dolfin_error("Rectangle.cpp",
+                 "create rectangle",
+                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
 
   // Close mesh editor
   editor.close();

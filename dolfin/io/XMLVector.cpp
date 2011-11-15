@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2011-06-30
+// Last changed: 2011-11-14
 
 #include <iomanip>
 #include <iostream>
@@ -53,12 +53,20 @@ void XMLVector::read(Array<double>& x, Array<uint>& indices,
   // Check that we have a XML Vector
   const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
   if (!xml_vector_node)
-    error("XMLVector::read: not a DOLFIN Vector file.");
+  {
+    dolfin_error("XMLVector.cpp",
+                 "read vector from XML file",
+                 "Not a DOLFIN Vector XML file");
+  }
 
   // Get type and size
   const pugi::xml_node array = xml_vector_node.child("array");
   if (!array)
-    error("XMLVector::read: not a DOLFIN array inside Vector XML file.");
+  {
+    dolfin_error("XMLVector.cpp",
+                 "read vector from XML file",
+                 "Expecting an Array inside a DOLFIN Vector XML file");
+  }
 
   const unsigned int size = array.attribute("size").as_uint();
   const std::string type  = array.attribute("type").value();
@@ -81,7 +89,11 @@ dolfin::uint XMLVector::read_size(const pugi::xml_node xml_dolfin)
   // Check that we have a XML Vector
   const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
   if (!xml_vector_node)
-    error("XMLVector::read_size: not a DOLFIN Vector file.");
+  {
+    dolfin_error("XMLVector.cpp",
+                 "read vector from XML file",
+                 "Not a DOLFIN Vector XML file");
+  }
 
   // Get size
   const pugi::xml_node array = xml_vector_node.child("array");

@@ -382,8 +382,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != D - 1)
   {
-    error("Expecting facet orientation to be defined on facets (not dimension %d).",
-          facet_orientation->dim());
+    dolfin_error("Assembler.cpp",
+                 "assemble form over interior facets",
+                 "Expecting facet orientation to be defined on facets (not dimension %d)",
+                 facet_orientation->dim());
   }
 
   // Assemble over interior facets (the facets of the mesh)
