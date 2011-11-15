@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-25
+// Last changed: 2011-11-15
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -81,6 +81,8 @@ dolfin::uint MeshTopology::dim() const
 //-----------------------------------------------------------------------------
 dolfin::uint MeshTopology::size(uint dim) const
 {
+  if (!num_entities)
+    return 0;
   assert(num_entities);
   assert(dim <= _dim);
   return num_entities[dim];
