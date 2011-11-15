@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-11-14
+// Last changed: 2011-11-15
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -113,7 +113,7 @@ void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
   {
     dolfin_error("MeshEditor.cpp",
                  "open mesh for editing",
-                 "Uknown cell type (\"%s\")", type.c_str());
+                 "Unknown cell type (\"%s\")", type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -482,7 +482,7 @@ void MeshEditor::add_cell_common(uint c, uint tdim)
   {
     dolfin_error("MeshEditor.cpp",
                  "add cell to mesh using mesh editor",
-                 "Cell index (%d) out of range [0, %d).",
+                 "Cell index (%d) out of range [0, %d)",
                  c, num_cells);
   }
 
@@ -563,7 +563,7 @@ void MeshEditor::check_vertex(uint v)
   {
     dolfin_error("MeshEditor.cpp",
                  "add cell using mesh editor",
-                 "Vertex index (%d) out of range [0, %d).", v, num_vertices);
+                 "Vertex index (%d) out of range [0, %d)", v, num_vertices);
   }
 }
 //-----------------------------------------------------------------------------

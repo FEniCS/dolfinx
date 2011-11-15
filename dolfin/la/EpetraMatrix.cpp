@@ -222,7 +222,7 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   {
     dolfin_error("EpetraMatrix.cpp",
                  "resize Epetra vector to match Epetra matrix",
-                 "dimension must be 0 or 1, not %d", dim);
+                 "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Reset vector with new map

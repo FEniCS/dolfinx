@@ -155,7 +155,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     if (error_on_nonconvergence)
       dolfin_error("NewtonSolver.cpp",
                    "solve nonlinear system with NewtonSolver",
-                   "Newton solver did not converge. Bummer.");
+                   "Newton solver did not converge. Bummer");
     else
       warning("Newton solver did not converge.");
   }

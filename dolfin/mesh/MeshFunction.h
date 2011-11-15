@@ -444,7 +444,7 @@ namespace dolfin
     if (entities_values_set.size() != _size)
       dolfin_error("MeshFunction.h",
                    "assign mesh value collection to mesh function",
-                   "mesh value collection does not contain all values for all entities");
+                   "Mesh value collection does not contain all values for all entities");
 
     return *this;
   }

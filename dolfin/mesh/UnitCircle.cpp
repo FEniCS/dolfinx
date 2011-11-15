@@ -192,7 +192,7 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
   else
     dolfin_error("UnitCircle.cpp",
                  "transform to unit circle",
-                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".",
+                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
                  transformation.c_str());
 }
 //-----------------------------------------------------------------------------

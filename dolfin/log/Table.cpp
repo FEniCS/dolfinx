@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-07-19
-// Last changed: 2011-11-14
+// Last changed: 2011-11-15
 
 #include <iomanip>
 #include <iostream>
@@ -121,7 +121,7 @@ double Table::get_value(std::string row, std::string col) const
   {
     dolfin_error("Table.cpp",
                  "access table value",
-                 "Missing double value for entry (\"%s\", \"%s\").",
+                 "Missing double value for entry (\"%s\", \"%s\")",
                  row.c_str(), col.c_str());
   }
 

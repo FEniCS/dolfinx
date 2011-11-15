@@ -129,7 +129,7 @@ dolfin::uint SubDomain::geometric_dimension() const
   if (_geometric_dimension == 0)
     dolfin_error("SubDomain.cpp",
                  "get geometric dimension",
-                 "Dimension of subdomain has not been specified.");
+                 "Dimension of subdomain has not been specified");
 
   return _geometric_dimension;
 }

@@ -90,7 +90,7 @@ namespace dolfin
         break;
       default:
         dolfin_error("UFCCell.h",
-                     "Create UFC cell wrapper",
+                     "create UFC cell wrapper",
                      "Unknown cell type (%d)", cell.type());
       }
 

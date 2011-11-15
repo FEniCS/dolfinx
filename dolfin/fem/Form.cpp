@@ -323,7 +323,7 @@ void Form::check() const
       log(ERROR, "Input element:    %s", _function_spaces[i]->element()->signature().c_str());
       dolfin_error("Form.cpp",
                    "assemble form",
-                   "Wrong type of function space for argument %d.", i);
+                   "Wrong type of function space for argument %d", i);
     }
   }
 }

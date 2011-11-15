@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-09-15
+// Last changed: 2011-11-15
 
 #ifndef __XML_MESH_VALUE_COLLECTION_H
 #define __XML_MESH_VALUE_COLLECTION_H
@@ -62,14 +62,14 @@ namespace dolfin
     const std::string type_file = mvc_node->attribute("type").value();
     const uint dim = mvc_node->attribute("dim").as_uint();
 
-    // Set dim 
+    // Set dim
     mesh_value_collection.set_dim(dim);
 
     // Check that types match
     if (type != type_file)
     {
       dolfin_error("XMLMeshValueCollection.h",
-                   "Read mesh value collection from XML file",
+                   "read mesh value collection from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
     }
@@ -78,7 +78,7 @@ namespace dolfin
     if (mesh_value_collection.dim() != dim)
     {
       dolfin_error("XMLMeshValueCollection.h",
-                   "Read mesh value collection from XML file",
+                   "read mesh value collection from XML file",
                    "Dimension mismatch, found %d but expecting %d",
                    dim, mesh_value_collection.dim());
     }
@@ -134,7 +134,7 @@ namespace dolfin
     else
     {
       dolfin_error("XMLValueCollection.h",
-                   "Read mesh value collection from XML file",
+                   "read mesh value collection from XML file",
                    "Unhandled value type \"%s\"", type.c_str());
     }
   }

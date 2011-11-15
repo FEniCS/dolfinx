@@ -33,7 +33,7 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   if ( std::abs(a - b) < DOLFIN_EPS )
     dolfin_error("Interval.cpp",
                  "create interval",
-                 "Length of interval is zero. Consider checking your dimensions.");
+                 "Length of interval is zero. Consider checking your dimensions");
 
   if ( b < a )
     dolfin_error("Interval.cpp",

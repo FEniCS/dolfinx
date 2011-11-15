@@ -63,7 +63,7 @@ namespace dolfin
     {
       dolfin_error("XMLArray.h",
                    "read array from XML file",
-                   "unable to find <array> tag in XML file");
+                   "Unable to find <array> tag in XML file");
     }
 
     // Get size and type

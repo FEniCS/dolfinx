@@ -183,7 +183,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   {
     dolfin_error("MeshDistributed.cpp",
                  "compute off-process indices",
-                 "sanity check failed");
+                 "Sanity check failed");
   }
 
   return processes;

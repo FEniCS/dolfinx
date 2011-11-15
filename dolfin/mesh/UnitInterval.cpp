@@ -34,7 +34,7 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   if ( nx < 1 )
     dolfin_error("UnitInterval.cpp",
                  "create unit interval",
-                 "Size of unit interval must be at least 1.");
+                 "Size of unit interval must be at least 1");
 
   rename("mesh", "Mesh of the unit interval (0,1)");
 

@@ -212,7 +212,7 @@ namespace dolfin
     {
       dolfin_error("GenericVector.h",
                    "return pointer to underlying vector data",
-                   "not implemented by current linear algebra backend");
+                   "Not implemented by current linear algebra backend");
       return 0;
     }
 
@@ -221,7 +221,7 @@ namespace dolfin
     {
       dolfin_error("GenericVector.h",
                    "return pointer to underlying vector data",
-                   "not implemented by current linear algebra backend");
+                   "Not implemented by current linear algebra backend");
       return 0;
     }
 
@@ -230,7 +230,7 @@ namespace dolfin
     {
       dolfin_error("GenericVector.h",
                    "update ghost values",
-                   "not implemented by current linear algebra backend");
+                   "Not implemented by current linear algebra backend");
     }
 
     //--- Convenience functions ---

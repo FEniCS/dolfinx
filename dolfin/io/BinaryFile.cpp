@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-11-14
+// Last changed: 2011-11-15
 
 #include <fstream>
 #include <istream>
@@ -219,7 +219,7 @@ void BinaryFile::open_read()
   if (!boost::filesystem::is_regular_file(filename))
   {
     dolfin_error("BinaryFile.cpp",
-                 "Open binary file",
+                 "open binary file",
                  "File \"%s\" does not exist or is not a regular file",
                  filename.c_str());
   }
@@ -233,7 +233,7 @@ void BinaryFile::open_read()
   if (!ifile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
-                 "Open binary file",
+                 "open binary file",
                  "Cannot open file \"%s\" for reading", filename.c_str());
   }
   ifilter.push(ifile);
@@ -256,7 +256,7 @@ void BinaryFile::open_write()
   if (!ofile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
-                 "Open binary file",
+                 "open binary file",
                  "Cannot open file \"%s\" for writing", filename.c_str());
   }
   ofilter.push(ofile);

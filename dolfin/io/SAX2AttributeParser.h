@@ -60,7 +60,7 @@ namespace dolfin
           if (!attrs[5*i + 3])
           {
             dolfin_error("SAX2AttributeParser.h",
-                         "Value for attribute \"%s\" of <%s> missing in XML file",
+                         "value for attribute \"%s\" of <%s> missing in XML file",
                          attribute, name);
           }
           std::string value(attrs[5*i + 3], attrs[5*i + 4]);
@@ -70,7 +70,7 @@ namespace dolfin
 
       // Didn't get the value
       dolfin_error("SAX2AttributeParser.h",
-                   "Value for attribute \"%s\" of <%s> missing in XML file",
+                   "value for attribute \"%s\" of <%s> missing in XML file",
                    attribute, name);
 
       return boost::lexical_cast<T, std::string>("0");

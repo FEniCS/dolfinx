@@ -172,7 +172,7 @@ namespace dolfin
     {
       dolfin_error("GenericMatrix.h",
                    "return pointers to underlying matrix data",
-                   "not implemented by current linear algebra backend");
+                   "Not implemented by current linear algebra backend");
       return std::tr1::tuple<const std::size_t*, const std::size_t*,
                                                const double*, int>(0, 0, 0, 0);
     }

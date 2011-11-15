@@ -193,7 +193,7 @@ namespace dolfin
       {
         dolfin_error("STLMatrix.h",
                      "resize matrix",
-                     "illegal rank (%d) for matrix, must be 2.", rank);
+                     "Illegal rank (%d) for matrix, must be 2", rank);
       }
 
       // Initialize matrix

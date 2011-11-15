@@ -86,7 +86,7 @@ void AssemblerTools::check(const Form& a)
       dolfin_error("AssemblerTools.cpp",
                    "assemble form",
                    "Invalid value rank for coefficient %d (got %d but expecting %d). \
-Did you forget to specify the value rank correctly in an Expression subclass?", i, r, fe_r);
+You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
     }
 
     for (uint j = 0; j < r; ++j)
@@ -98,7 +98,7 @@ Did you forget to specify the value rank correctly in an Expression subclass?", 
         dolfin_error("AssemblerTools.cpp",
                      "assemble form",
                      "Invalid value dimension %d for coefficient %d (got %d but expecting %d). \
-Did you forget to specify the value dimension correctly in an Expression subclass?", j, i, dim, fe_dim);
+You might have forgotten to specify the value dimension correctly in an Expression subclass", j, i, dim, fe_dim);
       }
     }
   }

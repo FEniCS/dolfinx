@@ -274,7 +274,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "compute norm of uBLAS matrix",
-                   "unknown norm type (\"%s\")",
+                   "Unknown norm type (\"%s\")",
                    norm_type.c_str());
       return 0.0;
     }
@@ -460,7 +460,7 @@ namespace dolfin
   {
     dolfin_error("uBLASMatrix.h",
                  "compute transpose matrix-vector product",
-                 "not supported by the uBLAS linear algebra backend");
+                 "Not supported by the uBLAS linear algebra backend");
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -555,7 +555,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "initialize uBLAS matrix",
-                   "cannot convert GenericSparsityPattern to concrete SparsityPattern type");
+                   "Cannot convert GenericSparsityPattern to concrete SparsityPattern type");
     }
     const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
@@ -595,7 +595,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "perform axpy operation with uBLAS matrix",
-                   "dimensions don't match");
+                   "Dimensions don't match");
     }
 
     this->A += (a)*(A.down_cast<uBLASMatrix>().mat());
@@ -615,7 +615,7 @@ namespace dolfin
   {
     dolfin_error("GenericMatrix.h",
                  "return pointers to underlying matrix data",
-                 "not implemented for this uBLAS matrix type");
+                 "Not implemented for this uBLAS matrix type");
     return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
@@ -634,7 +634,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "solve in-place using uBLAS matrix",
-                   "singularity detected in matrix factorization on row %u.",
+                   "Singularity detected in matrix factorization on row %u",
                    singular - 1);
     }
 

@@ -135,7 +135,7 @@ namespace dolfin
       {
         dolfin_error("XMLMeshFunction.h",
                      "read mesh function from XML file",
-                     "Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\".",
+                     "Type mismatch reading XML MeshFunction. MeshFunction type is \"%s\", but file type is \"%s\"",
                      file_data_type.c_str(), type.c_str());
       }
 

@@ -55,7 +55,7 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
   {
     dolfin_error("VTKFile.cpp",
-                 "Create VTK file",
+                 "create VTK file",
                  "Unknown encoding (\"%s\"). "
                  "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
                  encoding.c_str());
@@ -76,7 +76,7 @@ VTKFile::VTKFile(const std::string filename, std::string encoding)
   else
   {
     dolfin_error("VTKFile.cpp",
-                 "Create VTK file",
+                 "create VTK file",
                  "Unknown encoding (\"%s\"). "
                  "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
                  encoding.c_str());

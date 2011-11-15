@@ -113,7 +113,7 @@ dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
   {
     dolfin_error("MeshColoring.cpp",
                  "compute mesh colors",
-                 "mesh coloring does not support dim i - j coloring");
+                 "Mesh coloring does not support dim i - j coloring");
   }
 
   // Check that mesh function has right dimension

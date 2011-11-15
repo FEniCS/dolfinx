@@ -534,7 +534,7 @@ void DirichletBC::check() const
   for (uint i = 0; i < g->value_rank(); i++)
   {
     dolfin_error("DirichletBC.cpp",
-                 "Illcreate Dirichlet boundary condition",
+                 "create Dirichlet boundary condition",
                  "Illegal value dimension (%d), expecting (%d)",
                  g->value_dimension(i), _function_space->element()->value_dimension(i));
   }
@@ -553,7 +553,7 @@ void DirichletBC::check() const
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
-                  "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
   }
 }
 //-----------------------------------------------------------------------------

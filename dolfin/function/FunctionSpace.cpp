@@ -124,7 +124,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   {
     dolfin_error("FunctionSpace.cpp",
                  "interpolate function into function space",
-                 "rank of function (%d) does not match rank of function space (%d)",
+                 "Rank of function (%d) does not match rank of function space (%d)",
                  v.value_rank(), element()->value_rank());
   }
 
@@ -135,7 +135,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     {
       dolfin_error("FunctionSpace.cpp",
                    "interpolate function into function space",
-                   "dimension %d of function (%d) does not match dimension %d of function space (%d)",
+                   "Dimension %d of function (%d) does not match dimension %d of function space (%d)",
                    i, v.value_dimension(i), i, element()->value_dimension(i));
     }
   }
@@ -146,7 +146,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   {
     dolfin_error("FunctionSpace.cpp",
                  "interpolate function into function space",
-                 "wrong size of vector");
+                 "Wrong size of vector");
   }
   expansion_coefficients.zero();
 
@@ -233,7 +233,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   {
     dolfin_error("FunctionSpace.cpp",
                  "collapse function space",
-                 "function space is not a subspace");
+                 "Function space is not a subspace");
   }
 
   // Create collapsed DofMap

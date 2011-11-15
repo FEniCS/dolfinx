@@ -275,7 +275,7 @@ void Parameters::update(const Parameters& parameters)
     else
       dolfin_error("Parameters.cpp",
                    "update parameter set",
-                   "Parameter \"%s\" has unknown type: \"%s\".",
+                   "Parameter \"%s\" has unknown type: \"%s\"",
                    other.key().c_str(), other.type_str().c_str());
   }
 
@@ -357,7 +357,7 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
     else
       dolfin_error("Parameters.cpp",
                    "copy parameter set",
-                   "Parameter from parameter set \"%s\" to parameter set \"%s\" has unknown type: \"%s\".",
+                   "Parameter from parameter set \"%s\" to parameter set \"%s\" has unknown type: \"%s\"",
                    parameters.name().c_str(), name().c_str(), p.type_str().c_str());
 
     _parameters[p.key()] = q;

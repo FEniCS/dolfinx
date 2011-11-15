@@ -46,7 +46,7 @@ MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
   // Illegal index range
   dolfin_error("MeshEntity.cpp",
                "create mesh entity",
-               "Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
+               "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
                index, _mesh->num_entities(dim), dim);
 }
 //-----------------------------------------------------------------------------

@@ -61,7 +61,7 @@ SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 {
   dolfin_error("SubSystemsManager.cpp",
                "create subsystems manager",
-               "copy constructor should not be used");
+               "Copy constructor should not be used");
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()

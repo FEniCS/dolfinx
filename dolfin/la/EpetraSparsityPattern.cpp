@@ -74,7 +74,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
   {
     dolfin_error("EpetraSparsityPattern.cpp",
                  "initialize Epetra sparsity pattern",
-                 "illegal rank (%d)", _rank);
+                 "Illegal rank (%d)", _rank);
   }
 }
 //-----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint di
 {
   dolfin_error("EpetraSparsityPattern.cpp",
                "access local range for Epetra sparsity pattern",
-               "not implemented");
+               "Not implemented");
   return std::make_pair(0, 0);
   //assert(dim < 2);
   //return MPI::local_range(size(dim));

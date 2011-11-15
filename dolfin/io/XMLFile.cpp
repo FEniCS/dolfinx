@@ -116,7 +116,7 @@ void XMLFile::operator<< (const LocalMeshData& output_data)
 {
   dolfin_error("XMLFile.cpp",
                "write local mesh data to XML file",
-               "not implemented");
+               "Not implemented");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& input)
@@ -335,7 +335,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   if (!result)
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
-                 "error while parsing XML");
+                 "Error while parsing XML");
 }
 //-----------------------------------------------------------------------------
 // Pragma to avoid Boost.iostreams error with strict compiler flags

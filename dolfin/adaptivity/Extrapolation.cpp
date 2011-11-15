@@ -57,7 +57,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   {
     dolfin_error("Extrapolation.cpp",
                  "compute extrapolation",
-                 "Extrapolation must be computed on the same mesh.");
+                 "Extrapolation must be computed on the same mesh");
   }
 
   // Extract mesh and function spaces

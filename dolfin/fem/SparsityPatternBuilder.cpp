@@ -103,7 +103,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       dolfin_error("SparsityPatternBuilder.cpp",
                    "compute sparsity pattern",
-                   "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+                   "Mesh is not ordered according to the UFC numbering convention. "
+                   "Consider calling mesh.order()");
     }
 
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());

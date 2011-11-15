@@ -216,7 +216,7 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   if (meshfunction.dim() != mesh.topology().dim())
   {
     dolfin_error("RAWFile.cpp",
-                 "Write mesh function to RAW file",
+                 "write mesh function to RAW file",
                  "RAW output of mesh functions is implemenetd for cell-based functions only");
   }
 

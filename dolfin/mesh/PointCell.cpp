@@ -45,7 +45,7 @@ dolfin::uint PointCell::num_entities(uint dim) const
   default:
     dolfin_error("PointCell.cpp",
                  "extract number of entities of given dimension in cell",
-                 "Illegal topological dimension %d for point.", dim);
+                 "Illegal topological dimension %d for point", dim);
   }
 
   return 0;
@@ -60,7 +60,7 @@ dolfin::uint PointCell::num_vertices(uint dim) const
   default:
     dolfin_error("PointCell.cpp",
                  "extract number of vertices of given dimension in cell",
-                 "Illegal topological dimension %d for point.", dim);
+                 "Illegal topological dimension %d for point", dim);
   }
 
   return 0;

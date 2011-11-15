@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-12-21
-// Last changed: 2011-11-13
+// Last changed: 2011-11-15
 
 // Uncomment this for testing std::clock
 //#define _WIN32
@@ -78,7 +78,7 @@ double dolfin::time()
   {
     dolfin_error("timing.cpp",
                  "return current time",
-                 "call to gettimeofday() failed");
+                 "Call to gettimeofday() failed");
   }
   return static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_usec)*1e-6;
 #endif
