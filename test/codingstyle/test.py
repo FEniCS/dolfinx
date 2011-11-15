@@ -32,7 +32,8 @@ def test_codingstyle(topdir, language, subdir, suffixes, tests):
     print "----------------------------------------------------"
 
     # Iterate over all files
-    num_failed = 0
+    num_errors = 0
+    num_warnings = 0
     for subdir, dirs, files in os.walk(os.path.join(topdir, subdir)):
         for filename in files:
 
@@ -47,14 +48,16 @@ def test_codingstyle(topdir, language, subdir, suffixes, tests):
 
             # Perform all tests
             for test in tests:
-                ok = test(code, filename)
-                if not ok:
-                    num_failed += 1
+                result = test(code, filename)
+                if result == "error":
+                    num_errors += 1
+                elif result == "warning":
+                    num_warnings += 1
 
     # Print summary
     print
     print "Ran %d test(s)" % len(tests)
-    if num_failed == 0:
+    if num_errors == 0:
         print "OK"
     else:
         print "*** %d tests failed" % num_failed
@@ -79,11 +82,28 @@ def test_dolfin_error(code, filename):
 
     return False
 
+def test_raise_exception(code, filename):
+    "Test for use of dolfin_error vs raising exception"
+
+    # Skip exceptions
+    exceptions = ["meshconvert.py"]
+    if filename in exceptions:
+        return True
+
+    # Check for raising of exception
+    if re.search(r"\braise\b", code) is None:
+        return True
+
+    # Write an error message
+    print "* Warning: exception raised in %s when dolfin_error() should be used" % filename
+
+    return False
+
 # List of C++ tests
 cpp_tests = [test_dolfin_error]
 
 # List of Python tests
-python_tests = [test_dolfin_error]
+python_tests = [test_dolfin_error, test_raise_exception]
 
 if __name__ == "__main__":
 
