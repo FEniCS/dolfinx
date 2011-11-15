@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-10-04
+// Last changed: 2011-11-14
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -25,6 +25,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Hierarchical.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/fem/LinearVariationalSolver.h>
 
 namespace dolfin
 {
@@ -43,7 +45,7 @@ namespace dolfin
   /// goal-oriented error control I: stationary variational problems",
   /// ME Rognes and A Logg, 2010-2011.
 
-  class ErrorControl : public Hierarchical<ErrorControl>
+  class ErrorControl : public Hierarchical<ErrorControl>, public Variable
   {
   public:
 
@@ -80,6 +82,20 @@ namespace dolfin
 
     /// Destructor.
     ~ErrorControl() { /* Do nothing */};
+
+    /// Default parameter values:
+    static Parameters default_parameters()
+    {
+      Parameters p("error_control");
+
+      // Set parameters for dual solver
+      Parameters p_dual(LinearVariationalSolver::default_parameters());
+      p_dual.rename("dual_variational_solver");
+      p.add(p_dual);
+
+      return p;
+    }
+
 
     /// Estimate the error relative to the goal M of the discrete
     /// approximation 'u' relative to the variational formulation by
