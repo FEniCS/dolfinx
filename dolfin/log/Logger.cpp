@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2011-10-19
+// Last changed: 2011-11-15
 
 #include <iomanip>
 #include <iostream>
@@ -42,7 +42,8 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout)
+  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
+    num_processes(0), process_number(0)
 {
   // Do nothing
 }
@@ -259,7 +260,12 @@ void Logger::write(int log_level, std::string msg) const
   if (!active || log_level < this->log_level)
     return;
 
-  const uint process_number = MPI::process_number();
+  // Get data from MPI (only first time)
+  if (num_processes == 0)
+  {
+    num_processes = MPI::num_processes();
+    process_number = MPI::process_number();
+  }
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
@@ -267,7 +273,7 @@ void Logger::write(int log_level, std::string msg) const
     return;
 
   // Prefix with process number if running in parallel
-  if (process_number >= 0)
+  if (num_processes > 1)
   {
     std::stringstream prefix;
     prefix << "Process " << process_number << ": ";
