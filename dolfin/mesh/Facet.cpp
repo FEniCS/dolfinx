@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2011
+// Modified by Garth N. Wells 2011
 //
 // First added:  2006-06-02
-// Last changed: 2011-02-22
+// Last changed: 2011-11-14
 
 #include "Cell.h"
 #include "ParallelData.h"
@@ -85,7 +85,9 @@ Facet::adjacent_cells(const MeshFunction<uint>* facet_orientation) const
   // Sanity check
   if ((*facet_orientation)[*this] != c1)
   {
-    error("Illegal facet orientation specified, cell %d is not a neighbor of facet %d.",
+    dolfin_error("Facet.cpp",
+                 "extract adjacent cells of facet",
+                 "Illegal facet orientation specified, cell %d is not a neighbor of facet %d",
          (*facet_orientation)[*this], index());
   }
 
@@ -93,5 +95,3 @@ Facet::adjacent_cells(const MeshFunction<uint>* facet_orientation) const
   return std::make_pair(Cell(mesh(), c1), Cell(mesh(), c0));
 }
 //-----------------------------------------------------------------------------
-
-

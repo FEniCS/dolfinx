@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-12-20
-// Last changed: 2006-12-20
+// Last changed: 2011-11-15
 
 #include "MeshHierarchy.h"
 #include "Mesh.h"
@@ -136,7 +136,9 @@ void MeshHierarchy::remove()
   }
   else
   {
-    error("Cannot remove mesh from empty mesh hierarcy");
+    dolfin_error("MeshHierarchy.cpp",
+                 "remove mesh from mesh hierarchy",
+                 "Mesh hierarchy is empty");
   }
 
 }

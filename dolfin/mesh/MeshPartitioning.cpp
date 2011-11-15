@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kent-Andre Mardal, 2011
+// Modified by Kent-Andre Mardal 2011
+// Modified by Anders Logg 2011
 //
 // First added:  2008-12-01
-// Last changed: 2011-04-04
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <iterator>
@@ -102,7 +103,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Check for vertices
   if (d == 0)
-    error("Unable to number entities of dimension 0. Vertex indices must already exist.");
+  {
+    dolfin_error("MeshPartitioning.cpp",
+                 "number mesh entities",
+                 "Vertex indices do not exist; need vertices to number entities of dimension 0");
+  }
 
   // Return if global entity indices are already calculated
   if (mesh.parallel_data().have_global_entity_indices(d))
@@ -255,7 +260,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
       print_container(msg, entity.begin(), entity.end());
       msg << " with global index " << global_index;
       msg << " from process " << p;
-      error(msg.str());
+      dolfin_error("MeshPartitioning.cpp",
+                   "number mesh entities",
+                   msg.str());
     }
 
     const uint local_entity_index = ignored_entity_indices.find(entity)->second;
@@ -287,7 +294,9 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   else if (partitioner == "ParMETIS")
     ParMETIS::compute_partition(cell_partition, mesh_data);
   else
-    error("Unknown mesh partition '%s'.", partitioner.c_str());
+    dolfin_error("MeshPartitioning.cpp",
+                 "partition mesh",
+                 "Mesh partitioner '%s' is not known. Known partitioners are 'SCOTCH' or 'ParMETIS'", partitioner.c_str());
 
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
@@ -609,7 +618,10 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   if (mesh_data.cell_vertices.size() > 0)
   {
     if (mesh_data.cell_vertices[0].size() != num_cell_vertices)
-      error("Size mismatch in MeshPartitioning::distribute_cells on process %d.", MPI::process_number());
+      dolfin_error("MeshPartitioning.cpp",
+                   "distribute cells",
+                   "Mismatch in number of cell vertices (%d != %d) on process %d",
+                   mesh_data.cell_vertices[0].size(), num_cell_vertices, MPI::process_number());
   }
 
   // Build array of cell-vertex connectivity and partition vector

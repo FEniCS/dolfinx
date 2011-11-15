@@ -19,7 +19,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2007-01-17
-// Last changed: 2011-01-20
+// Last changed: 2011-11-13
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
@@ -128,7 +128,12 @@ double dolfin::assemble(const Form& a,
                         bool finalize_tensor)
 {
   if (a.rank() != 0)
-    error("Unable to assemble, form is not scalar.");
+  {
+    dolfin_error("assemble.cpp",
+                 "assemble form",
+                 "Expecting a scalar form but rank is %d",
+                 a.rank());
+  }
   Scalar s;
   Assembler::assemble(s, a, reset_sparsity, add_values, finalize_tensor);
   return s;
@@ -141,7 +146,12 @@ double dolfin::assemble(const Form& a,
                         bool finalize_tensor)
 {
   if (a.rank() != 0)
-    error("Unable to assemble, form is not scalar.");
+  {
+    dolfin_error("assemble.cpp",
+                 "assemble form",
+                 "Expecting a scalar form but rank is %d",
+                 a.rank());
+  }
   Scalar s;
   Assembler::assemble(s, a, sub_domain,
                       reset_sparsity, add_values, finalize_tensor);
@@ -157,7 +167,12 @@ double dolfin::assemble(const Form& a,
                         bool finalize_tensor)
 {
   if (a.rank() != 0)
-    error("Unable to assemble, form is not scalar.");
+  {
+    dolfin_error("assemble.cpp",
+                 "assemble form",
+                 "Expecting a scalar form but rank is %d",
+                 a.rank());
+  }
   Scalar s;
   Assembler::assemble(s, a, cell_domains, exterior_facet_domains,
                       interior_facet_domains,

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-15
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
@@ -108,14 +108,14 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
   {
     dolfin_error("CholmodCholeskySolver.cpp",
                  "perform factorized solve using CHOLMOD Cholesky solver",
-                 "factorized solve no preceded by call to factorize()");
+                 "Factorized solve no preceded by call to factorize()");
   }
 
   if (N != cholmod.N)
   {
     dolfin_error("CholmodCholeskySolver.cpp",
                  "perform factorized solve using CHOLMOD Cholesky solver",
-                 "vector does not match size of factored matrix");
+                 "Vector does not match size of factored matrix");
   }
 
   // Initialise solution vector and solve

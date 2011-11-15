@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-11-16
-// Last changed:
+// Last changed: 2011-11-14
 
 #include <boost/foreach.hpp>
 #include "dolfin/common/Timer.h"
@@ -32,7 +34,11 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                                                             Array<uint>& colors)
 {
   if (colors.size() != graph.size())
-    error("ZoltanGraphColoring::compute_local_cell_coloring: colors array is of wrong length.");
+  {
+    dolfin_error("ZoltanInterface.cpp",
+                 "color mesh using Zoltan",
+                 "Array of colors has wrong size");
+  }
 
   // Create Zoltan graph wrapper
   ZoltanGraphInterface zoltan_graph(graph);
@@ -68,7 +74,11 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   int rc = zoltan.Color(num_id, graph.size(), &global_ids[0],
                         reinterpret_cast<int*>(colors.data().get()));
   if (rc != ZOLTAN_OK)
-    error("Zoltan coloring failed");
+  {
+    dolfin_error("ZoltanInterface.cpp",
+                 "color mesh using Zoltan",
+                 "Call to Zoltan failed");
+  }
 
   // Compute number of colors
   boost::unordered_set<uint> colors_set;
@@ -85,7 +95,9 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                                                     Array<uint>& colors)
 {
-  error("Trilinos (with Zoltan) must be enabled to use ZoltanInterface::compute_local_vertex_coloring.");
+  dolfin_error("ZoltanInterface.cpp",
+               "color mesh using Zoltan",
+               "DOLFIN has been configured without support for Zoltan from Trilinos");
   return 0;
 }
 #endif

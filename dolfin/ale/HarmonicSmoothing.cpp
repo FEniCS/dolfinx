@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2011-06-30
+// Last changed: 2011-11-12
 
 #include <boost/shared_ptr.hpp>
 
@@ -64,8 +64,10 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     form.reset(new Poisson3D::BilinearForm(V, V));
     break;
   default:
-    error("Illegal mesh dimension %d for harmonic mesh smoothing.", D);
-  };
+    dolfin_error("HarmonicSmoothing.cpp",
+                 "move mesh using harmonic smoothing",
+                 "Illegal mesh dimension (%d)", D);
+  }
 
   // Assemble matrix
   Matrix A;

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-17
-// Last changed: 2011-01-17
+// Last changed: 2011-11-15
 
 #include "MeshFunction.h"
 #include "ParallelData.h"
@@ -100,7 +100,12 @@ const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity
   std::map<uint, std::map<uint, uint> >::const_iterator it;
   it = _global_to_local_entity_indices.find(d);
   if (it == _global_to_local_entity_indices.end())
-    error("ParallelData::global_to_local_entity_indices: global-to-local map has not been computed.");
+  {
+    dolfin_error("ParallelData.cpp",
+                 "extract global-to-local entity indices",
+                 "Global-to-local map has not been computed");
+  }
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
@@ -184,8 +189,10 @@ ParallelData::entity_colors(uint D, uint d, uint rho) const
     return it->second;
 
   // Not found
-  error("Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d.",
-        D, d, rho);
+  dolfin_error("ParallelData.cpp",
+               "access entity colors",
+               "Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d",
+               D, d, rho);
   return it->second;
 }
 //-----------------------------------------------------------------------------
@@ -220,8 +227,10 @@ ParallelData::colored_entities(uint D, uint d, uint rho) const
     return it->second;
 
   // Not found
-  error("Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d.",
-        D, d, rho);
+  dolfin_error("ParallelData.cpp",
+               "access colored entities",
+               "Missing colors for entities of dimension %d colored by entities of dimension %d and distance %d",
+               D, d, rho);
   return it->second;
 }
 //-----------------------------------------------------------------------------

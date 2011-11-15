@@ -91,7 +91,7 @@ void uBLASVector::resize(std::pair<uint, uint> range)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
-                 "distributed vectors not supported by uBLAS backend");
+                 "Distributed vectors not supported by uBLAS backend");
   }
 
   resize(range.second - range.first);
@@ -104,14 +104,14 @@ void uBLASVector::resize(std::pair<uint, uint> range,
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
-                 "distributed vectors not supported by uBLAS backend");
+                 "Distributed vectors not supported by uBLAS backend");
   }
 
   if (ghost_indices.size() != 0)
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
-                 "distributed vectors not supported by uBLAS backend");
+                 "Distributed vectors not supported by uBLAS backend");
   }
 
   resize(range.second - range.first);

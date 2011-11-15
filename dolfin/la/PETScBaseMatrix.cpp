@@ -84,7 +84,7 @@ void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
   {
     dolfin_error("PETScBaseMatrix.cpp",
                  "resize PETSc vector to match PETSc matrix",
-                 "dimension must be 0 or 1, not %d", dim);
+                 "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Associate new PETSc vector with _y

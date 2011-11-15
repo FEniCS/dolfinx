@@ -105,13 +105,13 @@ void SingularSolver::init(const GenericMatrix& A)
   {
     dolfin_error("SingularSolver.cpp",
                  "initialize singular solver",
-                 "matrix is not square");
+                 "Matrix is not square");
   }
   if (A.size(0) == 0)
   {
     dolfin_error("SingularSolver.cpp",
                  "initialize singular solver",
-                 "matrix is empty");
+                 "Matrix is empty");
   }
 
   // Get dimension

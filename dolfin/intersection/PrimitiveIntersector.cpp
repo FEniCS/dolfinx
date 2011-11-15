@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-09
-// Last changed: 2011-08-09
+// Last changed: 2011-11-15
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -74,7 +74,12 @@ bool PrimitiveIntersector::do_intersect_with_kernel(const T& entity_1,
     return do_intersect_with_kernel<K>(PrimitiveTraits<TriangleCell,K>::datum(entity_2),  entity_1);
   case 3 :
     return do_intersect_with_kernel<K>(PrimitiveTraits<TetrahedronCell,K>::datum(entity_2), entity_1);
-  default:  error("DOLFIN PrimitiveIntersector::do_intersect: \n Dimension of  is not known."); return false;
+  default:
+    dolfin_error("PrimitiveIntersector.cpp",
+                 "intersect with kernel",
+                 "Cannot intersect with mesh entity of dimension %d. Allowed dimensions are 0, 1, 2, 3", entity_2.dim());
+    return false;
+
   }
 }
 //-----------------------------------------------------------------------------

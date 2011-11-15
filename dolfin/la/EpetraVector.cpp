@@ -381,7 +381,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
   {
     dolfin_error("EpetraVector.cpp",
                  "add block of values to Epetra vector",
-                 "must be called between calling EpetraVector::set and EpetraVector::add");
+                 "Must be called between calling EpetraVector::set and EpetraVector::add");
   }
 
   assert(x);

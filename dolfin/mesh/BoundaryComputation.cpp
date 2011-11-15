@@ -243,7 +243,10 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     }
     break;
   default:
-    error("Unknown cell type, down know how to reorder.");
+    dolfin_error("BoundaryComputation.cpp",
+                 "reorder cell for extraction of mesh boundary",
+                 "Unknown cell type (%d)",
+                 mesh.type().cell_type());
   }
 }
 //-----------------------------------------------------------------------------

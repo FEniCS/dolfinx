@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-10-23
+// Last changed: 2011-11-15
 
 #include <fstream>
 #include <istream>
@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/operations.hpp>
-#include <iosfwd> 
+#include <iosfwd>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
@@ -170,13 +170,13 @@ void BinaryFile::operator<< (const Mesh& mesh)
 	write_uint(t.size(i));
       else
 	write_uint(0);
-    
+
   for (uint i = 0; i <= D; i++)
   {
     for (uint j = 0; j <= D; j++)
     {
       const MeshConnectivity& c = *t.connectivity[i][j];
-      
+
       // If store all connectivity or if storing cell connectivity
       if (_store_connectivity || (i == D && j == 0))
       {
@@ -192,7 +192,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
 	write_uint(0);
     }
   }
-  
+
   // Write mesh geometry (ignoring higher order stuff)
   const MeshGeometry& g = mesh._geometry;
   write_uint(g._dim);
@@ -217,18 +217,26 @@ void BinaryFile::open_read()
 
   // FIXME: Check that file exists
   if (!boost::filesystem::is_regular_file(filename))
-    error("File \"%s\" does not exist or is not a regular file. Cannot be read by XML parser.", filename.c_str());
+  {
+    dolfin_error("BinaryFile.cpp",
+                 "open binary file",
+                 "File \"%s\" does not exist or is not a regular file",
+                 filename.c_str());
+  }
 
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
     // Decompress file
     ifilter.push(boost::iostreams::gzip_decompressor());
-  
+
   ifile.open(filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifile.is_open())
-    error("Unable to open file for reading: \"%s\".", filename.c_str());
+  {
+    dolfin_error("BinaryFile.cpp",
+                 "open binary file",
+                 "Cannot open file \"%s\" for reading", filename.c_str());
+  }
   ifilter.push(ifile);
-  
 }
 //-----------------------------------------------------------------------------
 // Pragma to avoid Boost.iostreams error with strict compiler flags
@@ -243,10 +251,14 @@ void BinaryFile::open_write()
 
   if (extension == ".gz")
     ofilter.push(boost::iostreams::gzip_compressor());
-  
+
   ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofile.is_open())
-    error("Unable to open file for writing: \"%s\".", filename.c_str());
+  {
+    dolfin_error("BinaryFile.cpp",
+                 "open binary file",
+                 "Cannot open file \"%s\" for writing", filename.c_str());
+  }
   ofilter.push(ofile);
 }
 //-----------------------------------------------------------------------------

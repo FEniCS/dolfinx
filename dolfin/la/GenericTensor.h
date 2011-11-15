@@ -182,7 +182,7 @@ namespace dolfin
     {
       dolfin_error("GenericTensor.h",
                    "assign tensor",
-                   "assignment operator not implemented by subclass");
+                   "Assignment operator not implemented by subclass");
       return *this;
     }
 
