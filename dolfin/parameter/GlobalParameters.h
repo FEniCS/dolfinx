@@ -57,10 +57,7 @@ namespace dolfin
       // Ouput
       p.add("std_out_all_processes", true);                  // Print stanard output on all processes
 
-      // JIT compiler
-      p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code
-
-      // Multi-core
+      // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
 
       // Graph partitioner
