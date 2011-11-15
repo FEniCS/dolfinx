@@ -44,7 +44,9 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Check that refined_mesh and mesh are not the same
   if (&refined_mesh == &mesh)
-    error("UniformMeshRefinement::refine: refined_mesh and mesh point to the same object");
+    dolfin_error("UniformMeshRefinement.cpp",
+                 "refine mesh",
+                 "refined_mesh and mesh point to the same object");
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -54,7 +56,9 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Mesh needs to be ordered (so we can pick right combination of vertices/edges)
   if (!mesh.ordered())
-    error("Unable to refine mesh. Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+    dolfin_error("UniformMeshRefinement.cpp",
+                 "refine mesh",
+                 "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
 
   // Get cell type
   const CellType& cell_type = mesh.type();

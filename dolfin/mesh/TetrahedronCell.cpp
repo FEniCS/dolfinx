@@ -279,7 +279,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   if (geometry.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
-                 "compute volume of tetrahedron cell",
+                 "compute volume of tetrahedron",
                  "Only know how to compute volume when embedded in R^3");
   }
 
@@ -314,7 +314,9 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
-    error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
+    dolfin_error("TetrahedronCell.cpp",
+                 "compute diameter",
+                 "Tetrahedron is not embedded in R^3, only know how to compute diameter in that case");
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
@@ -612,8 +614,9 @@ dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const
   }
 
   // We should not reach this
-  error("Unable to find edge.");
-
+  dolfin_error("TetrahedronCell.cpp",
+               "find specified edge in cell",
+               "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

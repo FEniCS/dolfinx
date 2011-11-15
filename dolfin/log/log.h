@@ -92,7 +92,7 @@ namespace dolfin
   ///   or method that was used ("assemble form using OpenMP assembler").
   /// * The 'reason' string should try to explain why the task failed in the
   ///   context of the task that failed ("subdomains are not yet handled").
-  /// * Write "inialize mesh function" rather than "initialize MeshFunction".
+  /// * Write "initialize mesh function" rather than "initialize MeshFunction".
   ///
   /// Some examples:
   ///
@@ -121,7 +121,7 @@ namespace dolfin
   ///              "DOLFIN has not been configured with PETSc support");
   ///
   /// dolfin_error("PETScKrylovSolver.cpp",
-  ///              "Unable to solve linear system with PETSc Krylov solver",
+  ///              "solve linear system with PETSc Krylov solver",
   ///              "Matrix does not have a nonzero number of rows and columns");
   void dolfin_error(std::string location,
                     std::string task,

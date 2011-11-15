@@ -37,16 +37,22 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
-    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
+    dolfin_error("UnitCircle.cpp",
+                 "create unit circle",
+                 "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
 
   if (transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
-    error("Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".",
-            transformation.c_str());
+    dolfin_error("UnitCircle.cpp",
+                 "create unit circle",
+                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
+                 transformation.c_str());
+
+  if ( nx < 1 )
+    dolfin_error("UnitCircle.cpp",
+                 "create unit circle",
+                 "Size of unit square must be at least 1");
 
   const uint ny = nx;
-
-  if ( nx < 1 || ny < 1 )
-    error("Size of unit square must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit circle");
 
@@ -142,7 +148,9 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
     }
   }
   else
-    error("Unknown diagonal string.");
+    dolfin_error("UnitCircle.cpp",
+                 "create unit circle",
+                 "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
 
   // Close mesh editor
   editor.close();
@@ -167,7 +175,10 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
   }
   else if (transformation == "sumn")
   {
-    error("sumn mapping for a UnitCircle is broken");
+    // FIXME: This option should either be removed or fixed
+    dolfin_error("UnitCircle.cpp",
+                 "transform to unit circle",
+                 "'sumn' mapping for a UnitCircle is broken");
     trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
     trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
   }
@@ -179,6 +190,9 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
     trans[1] = yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
   }
   else
-    error("Unknown transformation type.");
+    dolfin_error("UnitCircle.cpp",
+                 "transform to unit circle",
+                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".",
+                 transformation.c_str());
 }
 //-----------------------------------------------------------------------------

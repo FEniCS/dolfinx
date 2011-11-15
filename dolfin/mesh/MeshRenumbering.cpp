@@ -53,7 +53,9 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != tdim)
-    error("MeshRenumbering::renumber_by_color supports cell colorings only.");
+    dolfin_error("MeshRenumbering.cpp",
+                 "renumber mesh by color",
+                 "Coloring is not a cell coloring: only cell colorings are supported");
 
   // Compute renumbering
   std::vector<double> new_coordinates;
@@ -100,7 +102,9 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   ConstMeshColoringData mesh_coloring
     = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot renumber");
+    dolfin_error("MeshRenumbering.cpp",
+                 "renumber mesh by color",
+                 "Requested mesh coloring has not been computed");
 
   // Get old coloring data
   const MeshFunction<uint>& colors = mesh_coloring->second.first;
@@ -167,14 +171,18 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != mesh.topology().dim())
-    error("MeshRenumbering::renumber_by_color supports cell colorings only.");
+    dolfin_error("MeshRenumbering.cpp",
+                 "compute renumbering of mesh",
+                 "Coloring is not a cell coloring: only cell colorings are supported");
 
   // Get coloring
   MeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot renumber");
+    dolfin_error("MeshRenumbering.cpp",
+                 "compute renumbering of mesh",
+                 "Requested mesh coloring has not been computed");
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
   const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
@@ -235,7 +243,9 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   for (uint i = 0; i < new_vertex_indices.size(); i++)
   {
     if (new_vertex_indices[i] == -1)
-      error("Failed to renumber mesh, not all vertices renumbered.");
+      dolfin_error("MeshRenumbering.cpp",
+                   "compute renumbering of mesh",
+                   "Some vertices were not renumbered");
   }
 }
 //-----------------------------------------------------------------------------

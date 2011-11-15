@@ -31,13 +31,19 @@ using namespace dolfin;
 Interval::Interval(uint nx, double a, double b) : Mesh()
 {
   if ( std::abs(a - b) < DOLFIN_EPS )
-    error("Length of interval must be greater than zero.");
+    dolfin_error("Interval.cpp",
+                 "create interval",
+                 "Length of interval is zero. Consider checking your dimensions.");
 
   if ( b < a )
-    error("Length of interval is negative. Check the order of your arguments.");
+    dolfin_error("Interval.cpp",
+                 "create interval",
+                 "Length of interval is negative. Consider checking the order of your arguments");
 
   if ( nx < 1 )
-    error("Number of points on interval must be at least 1.");
+    dolfin_error("Interval.cpp",
+                 "create interval",
+                 "Number of points on interval is (%d), it must be at least 1", nx);
 
   rename("mesh", "Mesh of the interval (a, b)");
 

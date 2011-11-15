@@ -171,7 +171,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
     return  0.5*sqrt(v0*v0 + v1*v1 + v2*v2);
   }
   else
-    error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
+    dolfin_error("TriangleCell.cpp",
+                 "compute volume of triangle",
+                 "Only know how to compute volume when embedded in R^2 or R^3");
 
   return 0.0;
 }
@@ -191,7 +193,9 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if (geometry.dim() != 2 && geometry.dim() != 3)
-    error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
+    dolfin_error("TriangleCell.cpp",
+                 "compute diameter of triangle",
+                 "Only know how to compute diameter when embedded in R^2 or R^3");
 
   // Get the coordinates of the three vertices
   const uint* vertices = triangle.entities(0);
@@ -226,7 +230,9 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
 
   // The normal vector is currently only defined for a triangle in R^2
   if (cell.mesh().geometry().dim() != 2)
-    error("The normal vector is only defined when the triangle is in R^2");
+    dolfin_error("TriangleCell.cpp",
+                 "find normal",
+                 "Normal vector is not defined in dimension %d (only defined when the triangle is in R^2", cell.mesh().geometry().dim());
 
   // Get global index of opposite vertex
   const uint v0 = cell.entities(0)[facet];
@@ -369,8 +375,9 @@ dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const
   }
 
   // We should not reach this
-  error("Unable to find edge.");
-
+  dolfin_error("TriangleCell.cpp",
+               "find specified edge in cell",
+               "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

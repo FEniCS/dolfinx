@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-06-03
-// Last changed: 2009-08-11
+// Last changed: 2011-11-15
 
 #include <iomanip>
 #include <cmath>
@@ -33,7 +33,9 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
   init();
 
   if (!check(2*n - 1))
-    error("Gauss quadrature not ok, check failed.");
+    dolfin_error("GaussQuadrature.cpp",
+                 "create Gauss quadrature scheme",
+                 "Argument (%d) is not valid", n);
 }
 //-----------------------------------------------------------------------------
 std::string GaussQuadrature::str(bool verbose) const

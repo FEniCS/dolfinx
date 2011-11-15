@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-10-30
+// Last changed: 2011-11-15
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -422,11 +422,15 @@ namespace dolfin
 				      uint local_entity)
   {
     const std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
-    const typename std::map<std::pair<uint, uint>, T>::const_iterator it = 
+    const typename std::map<std::pair<uint, uint>, T>::const_iterator it =
       _values.find(pos);
+
     if (it == _values.end())
-      error("No value stored for cell index: %d and local index: %d", 
-	    cell_index, local_entity);
+      dolfin_error("MeshValueCollection.h",
+                   "extract value",
+                   "No value stored for cell index: %d and local index: %d",
+                   cell_index, local_entity);
+
     return it->second;
   }
   //---------------------------------------------------------------------------

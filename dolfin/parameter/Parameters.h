@@ -111,7 +111,11 @@ namespace dolfin
     /// parameter of type bool, do parameters.add<bool>("my_setting")
     template<typename T>
     void add(std::string key)
-    { error("Cannot create Parameter of requested type."); }
+    {
+      dolfin_error("Parameters.h",
+                   "create parameter of requested type",
+                   "Type '%s' is not allowed", key.c_str());
+    }
 
     /// Add int-valued parameter
     void add(std::string key, int value);

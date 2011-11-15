@@ -41,14 +41,14 @@ MatrixRenumbering::MatrixRenumbering(const SparsityPattern& sparsity_pattern)
 
   if (sparsity_pattern.rank() != 2)
   {
-    dolfin_error("MaxtrixRenumbering.cpp",
+    dolfin_error("MatrixRenumbering.cpp",
                  "create matrix renumbering",
                  "Zoltan object for sparsity pattern renumbering can only be used for rank 2 tensors");
   }
 
   if (sparsity_pattern.size(0) != sparsity_pattern.size(1))
   {
-    dolfin_error("MaxtrixRenumbering.cpp",
+    dolfin_error("MatrixRenumbering.cpp",
                  "create matrix renumbering",
                  "Zoltan object for sparsity pattern renumbering can only be used for square matrices");
   }
@@ -93,7 +93,7 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
   // Check for errors
   if (rc != ZOLTAN_OK)
   {
-    dolfin_error("MaxtrixRenumbering.cpp",
+    dolfin_error("MatrixRenumbering.cpp",
                  "compute matrix renumbering",
                  "Zoltan partitioning failed");
   }

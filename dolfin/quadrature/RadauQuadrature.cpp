@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-06-03
-// Last changed: 2009-08-11
+// Last changed: 2011-11-15
 
 #include <iomanip>
 #include <dolfin/common/constants.h>
@@ -32,7 +32,9 @@ RadauQuadrature::RadauQuadrature(unsigned int n) : GaussianQuadrature(n)
   init();
 
   if (!check(2*n-2))
-    error("Radau quadrature not ok, check failed.");
+    dolfin_error("RadauQuadrature.cpp",
+                 "create Radau quadrature",
+                 "Argument (%d) invalid");
 }
 //-----------------------------------------------------------------------------
 std::string RadauQuadrature::str(bool verbose) const

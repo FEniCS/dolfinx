@@ -442,7 +442,9 @@ namespace dolfin
 
     // Check that all values have been set
     if (entities_values_set.size() != _size)
-      error("MeshFunction<T>::operator=: MeshValueCollection does not contain all values for all entities. Cannot construct MeshFunction.");
+      dolfin_error("MeshFunction.h",
+                   "assign mesh value collection to mesh function",
+                   "mesh value collection does not contain all values for all entities");
 
     return *this;
   }
@@ -526,7 +528,10 @@ namespace dolfin
   void MeshFunction<T>::init(uint dim)
   {
     if (!_mesh)
-      error("Mesh has not been specified, unable to initialize mesh function.");
+      dolfin_error("MeshFunction.h",
+                   "initialize mesh function",
+                   "Mesh has not been specified for mesh function");
+
     _mesh->init(dim);
     init(*_mesh, dim, _mesh->size(dim));
   }
@@ -535,7 +540,9 @@ namespace dolfin
   void MeshFunction<T>::init(uint dim, uint size)
   {
     if (!_mesh)
-      error("Mesh has not been specified, unable to initialize mesh function.");
+      dolfin_error("MeshFunction.h",
+                   "initialize mesh function",
+                   "Mesh has not been specified for mesh function");
     _mesh->init(dim);
     init(*_mesh, dim, size);
   }
