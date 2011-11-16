@@ -136,11 +136,11 @@ namespace dolfin
 
     // Read MeshFunction
     template<typename T> void read_mesh_function(MeshFunction<T>& t,
-                                              const std::string type) const;
+                                                 const std::string type) const;
 
     // Write MeshFunction
     template<typename T> void write_mesh_function(const MeshFunction<T>& t,
-                                               const std::string type);
+                                                  const std::string type);
 
     // Read MeshValueCollection
     template<typename T>

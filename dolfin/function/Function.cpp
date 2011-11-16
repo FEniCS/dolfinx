@@ -225,7 +225,7 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
-    // Create new collapase FunctionsSpapce
+    // Create new collapsed FunctionSpace
     boost::unordered_map<uint, uint> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
