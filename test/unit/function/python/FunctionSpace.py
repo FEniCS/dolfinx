@@ -29,6 +29,12 @@ W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Interface(unittest.TestCase):
 
+    def test_equality(self):
+        self.assertEqual(V, V)
+        self.assertNotEqual(W, V)
+        self.assertEqual(W.sub(0), W.sub(0))
+        self.assertNotEqual(W.sub(0), W.sub(1))
+
     def test_collapse(self):
         Vs = W.sub(2)
         self.assertRaises(RuntimeError, Function, Vs)
