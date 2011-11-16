@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-22
-// Last changed: 2008-09-22
+// Last changed: 2011-11-14
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -54,16 +54,20 @@ void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gd
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
 {
-  if ( type == "point" )
+  if (type == "point")
     open(mesh, CellType::point, tdim, gdim);
-  else if ( type == "interval" )
+  else if (type == "interval")
     open(mesh, CellType::interval, tdim, gdim);
-  else if ( type == "triangle" )
+  else if (type == "triangle")
     open(mesh, CellType::triangle, tdim, gdim);
-  else if ( type == "tetrahedron" )
+  else if (type == "tetrahedron")
     open(mesh, CellType::tetrahedron, tdim, gdim);
   else
-    error("Unknown cell type \"%s\".", type.c_str());
+  {
+    dolfin_error("DynamicMeshEditor.cpp",
+                 "open dynamic mesh editor",
+                 "Unknown cell type (\"%s\")", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::add_vertex(uint v, const Point& p)
@@ -103,8 +107,10 @@ void DynamicMeshEditor::add_cell(uint c, const std::vector<uint>& v)
   const uint vertices_per_cell = cell_type->num_vertices(tdim);
   if (v.size() != vertices_per_cell)
   {
-    error("Illegal number of vertices (%d) for cell, expected %d.",
-          v.size(), vertices_per_cell);
+    dolfin_error("DynamicMeshEditor.cpp",
+                 "add cell using dynamic mesh editor",
+                 "Illegal number of vertices (%d) for cell, expected %d",
+                 v.size(), vertices_per_cell);
   }
 
   // Resize array if necessary

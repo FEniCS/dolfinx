@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-10-14
-// Last changed: 2011-03-17
+// Last changed: 2011-11-14
 
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
@@ -46,16 +46,28 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
-    error("Unable to extract sub system (there are no sub systems).");
+  {
+    dolfin_error("FiniteElement.cpp",
+                 "extract subsystem of finite element",
+                 "There are no subsystems");
+  }
 
   // Check that a sub system has been specified
   if (component.size() == 0)
-    error("Unable to extract sub system (no sub system specified).");
+  {
+    dolfin_error("FiniteElement.cpp",
+                 "extract subsystem of finite element",
+                 "No system was specified");
+  }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
-    error("Unable to extract sub system %d (only %d sub systems defined).",
-          component[0], finite_element.num_sub_elements());
+  {
+    dolfin_error("FiniteElement.cpp",
+                 "extract subsystem of finite element",
+                 "Requested subsystem (%d) out of range [0, %d)",
+                 component[0], finite_element.num_sub_elements());
+  }
 
   // Create sub system
   boost::shared_ptr<const FiniteElement> sub_element = finite_element.create_sub_element(component[0]);

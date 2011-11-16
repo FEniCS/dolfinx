@@ -115,6 +115,20 @@ namespace dolfin
     ///         Another function space.
     const FunctionSpace& operator= (const FunctionSpace& V);
 
+    /// Equality operator
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         Another function space.
+    bool operator== (const FunctionSpace& V) const;
+
+    /// Unequality operator
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         Another function space.
+    bool operator!= (const FunctionSpace& V) const;
+
     /// Return mesh
     ///
     /// *Returns*
@@ -225,7 +239,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The component (relative to superspace).
-    const std::vector<uint>& component() const;
+    std::vector<uint> component() const;
 
     /// Return informal string representation (pretty-print)
     ///

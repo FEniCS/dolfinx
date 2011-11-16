@@ -91,6 +91,20 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   return *this;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::operator==(const FunctionSpace& V) const
+{
+  // Compare pointers to shared objects
+  return _element.get() == V._element.get() && 
+    _mesh.get() == V._mesh.get() && 
+    _dofmap.get() == V._dofmap.get(); 
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::operator!=(const FunctionSpace& V) const
+{
+  // Compare pointers to shared objects
+  return !(*this == V); 
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<const Mesh> FunctionSpace::mesh() const
 {
   return _mesh;
@@ -121,19 +135,33 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
-    error("Cannot interpolate functions of different ranks.");
+  {
+    dolfin_error("FunctionSpace.cpp",
+                 "interpolate function into function space",
+                 "Rank of function (%d) does not match rank of function space (%d)",
+                 v.value_rank(), element()->value_rank());
+  }
 
   // Check that function dims match
   for (uint i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
-      error("Cannot interpolate functions with different value dimensions.");
+    {
+      dolfin_error("FunctionSpace.cpp",
+                   "interpolate function into function space",
+                   "Dimension %d of function (%d) does not match dimension %d of function space (%d)",
+                   i, v.value_dimension(i), i, element()->value_dimension(i));
+    }
   }
 
   // Initialize vector of expansion coefficients
   //expansion_coefficients.resize(_dofmap->global_dimension());
   if (expansion_coefficients.size() != _dofmap->global_dimension())
-    error("Vector has wrong size in  FunctionSpace::interpolate. Please pass correct size vector.");
+  {
+    dolfin_error("FunctionSpace.cpp",
+                 "interpolate function into function space",
+                 "Wrong size of vector");
+  }
   expansion_coefficients.zero();
 
   // Initialize local arrays
@@ -216,7 +244,11 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   assert(_mesh);
 
   if (_component.size() == 0)
-    error("Can only collapse function spaces that is a sub-spaces.");
+  {
+    dolfin_error("FunctionSpace.cpp",
+                 "collapse function space",
+                 "Function space is not a subspace");
+  }
 
   // Create collapsed DofMap
   boost::shared_ptr<GenericDofMap> collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
@@ -226,7 +258,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& FunctionSpace::component() const
+std::vector<dolfin::uint> FunctionSpace::component() const
 {
   return _component;
 }

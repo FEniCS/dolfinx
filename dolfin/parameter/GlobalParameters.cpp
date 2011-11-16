@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-10-24
+// Last changed: 2011-11-15
 
 #include <fstream>
 #include <cstdlib>
@@ -110,7 +110,9 @@ void GlobalParameters::parse(int argc, char* argv[])
       if (current)
         current->push_back(arg);
       else
-        error("Illegal command-line options.");
+        dolfin_error("GlobalParameters.cpp",
+                     "parse command-line options",
+                     "Illegal command-line options");
     }
   }
 

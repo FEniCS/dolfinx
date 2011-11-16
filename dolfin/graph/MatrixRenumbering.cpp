@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-11-15
-// Last changed:
+// Last changed: 2011-11-15
 
 #ifdef HAS_TRILINOS
 
@@ -34,14 +36,19 @@ using namespace dolfin;
 MatrixRenumbering::MatrixRenumbering(const SparsityPattern& sparsity_pattern)
       : sparsity_pattern(sparsity_pattern)
 {
-  //if (sparsity_pattern.rank() != 2)
-  //  error("Can only create Zoltan object for SparsityPattern of rank 2.");
-
   if (sparsity_pattern.rank() != 2)
-    error("Can only create Zoltan object for SparsityPattern of rank 2.");
+  {
+    dolfin_error("MatrixRenumbering.cpp",
+                 "create matrix renumbering",
+                 "Zoltan object for sparsity pattern renumbering can only be used for rank 2 tensors");
+  }
 
   if (sparsity_pattern.size(0) != sparsity_pattern.size(1))
-    error("Can only create Zoltan object square SparsityPattern (for now).");
+  {
+    dolfin_error("MatrixRenumbering.cpp",
+                 "create matrix renumbering",
+                 "Zoltan object for sparsity pattern renumbering can only be used for square matrices");
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
@@ -82,7 +89,11 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
 
   // Check for errors
   if (rc != ZOLTAN_OK)
-    error("Partitioning failed");
+  {
+    dolfin_error("MatrixRenumbering.cpp",
+                 "compute matrix renumbering",
+                 "Zoltan partitioning failed");
+  }
 
   // Copy renumber into a vector (in case Zoltan uses something other than uint)
   std::vector<uint> map(new_id.begin(), new_id.end());
@@ -177,4 +188,5 @@ void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,
   }
 }
 //-----------------------------------------------------------------------------
+
 #endif

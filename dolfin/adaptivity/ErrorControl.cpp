@@ -21,6 +21,7 @@
 // Last changed: 2011-03-23
 
 #include <armadillo>
+#include <boost/scoped_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -86,6 +87,9 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space();
   _cell_cone.reset(new Function(_C));
+
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
@@ -151,6 +155,7 @@ void ErrorControl::compute_dual(Function& z,
   // Solve dual problem
   LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
   LinearVariationalSolver solver(dual_problem);
+  solver.parameters.update(parameters("dual_variational_solver"));
   solver.solve();
 }
 //-----------------------------------------------------------------------------
@@ -184,7 +189,9 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   else
   {
     _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
-    error("Not implemented for tensor-valued functions");
+    dolfin_error("ErrorControl.cpp",
+                 "compute error indicators",
+                 "Not implemented for tensor-valued functions");
   }
 
   // Compute residual representation
@@ -415,7 +422,8 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     assert(bc);
 
     // Extract SubSpace component
-    const std::vector<uint> component = bc->function_space().component();
+    assert(bc->function_space());
+    const std::vector<uint> component = bc->function_space()->component();
 
     // Extract sub-domain
     boost::shared_ptr<const SubDomain> sub_domain = bc->user_sub_domain();
@@ -424,28 +432,26 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     // (Sub-spaces need special handling, and boundary conditions can
     // be defined and handled in many different ways -- hence the
     // level of logic.)
-    DirichletBC* e_bc;
+    boost::scoped_ptr<DirichletBC> e_bc;
     if (component.size() == 0)
     {
       if (sub_domain)
-        e_bc = new DirichletBC(_E, bc->value(), sub_domain, bc->method());
+        e_bc.reset(new DirichletBC(_E, bc->value(), sub_domain, bc->method()));
       else
-        e_bc = new DirichletBC(_E, bc->value(), bc->markers(), bc->method());
+        e_bc.reset(new DirichletBC(_E, bc->value(), bc->markers(), bc->method()));
     }
     else
     {
       boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
       if (sub_domain)
-        e_bc = new DirichletBC(S, bc->value(), sub_domain, bc->method());
+        e_bc.reset(new DirichletBC(S, bc->value(), sub_domain, bc->method()));
       else
-        e_bc = new DirichletBC(S, bc->value(), bc->markers(), bc->method());
+        e_bc.reset(new DirichletBC(S, bc->value(), bc->markers(), bc->method()));
     }
     e_bc->homogenize();
 
     // Apply boundary condition
     e_bc->apply(*_Ez_h->vector());
-
-    delete e_bc;
   }
 }
 //-----------------------------------------------------------------------------

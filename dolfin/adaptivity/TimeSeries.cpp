@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-10-23
+// Last changed: 2011-11-12
 
 #include <iostream>
 
@@ -38,11 +38,11 @@ void store_object(const T& object, double t,
                   std::vector<double>& times,
                   std::string series_name,
                   std::string type_name,
-		  bool compressed, 
+		  bool compressed,
 		  bool store_connectivity)
 {
   // Write object
-  BinaryFile file_data(TimeSeries::filename_data(series_name, type_name, 
+  BinaryFile file_data(TimeSeries::filename_data(series_name, type_name,
 						 times.size(), compressed),
 		       store_connectivity);
   file_data << object;
@@ -51,15 +51,15 @@ void store_object(const T& object, double t,
   times.push_back(t);
 
   // Store times
-  BinaryFile file_times(TimeSeries::filename_times(series_name, type_name, 
+  BinaryFile file_times(TimeSeries::filename_times(series_name, type_name,
 						   compressed));
   file_times << times;
 }
 
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name, bool compressed, 
+TimeSeries::TimeSeries(std::string name, bool compressed,
 		       bool store_connectivity)
-  : _name(name), _cleared(false), _compressed(compressed), 
+  : _name(name), _cleared(false), _compressed(compressed),
     _store_connectivity(store_connectivity)
 {
   not_working_in_parallel("Storing of data to time series");
@@ -116,7 +116,7 @@ void TimeSeries::store(const Mesh& mesh, double t)
     clear();
 
   // Store object
-  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed, 
+  store_object(mesh, t, _mesh_times, _name, "mesh", _compressed,
 	       _store_connectivity);
 }
 //-----------------------------------------------------------------------------
@@ -152,8 +152,12 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 
     // Check that the vectors have the same size
     if (x0.size() != x1->size())
-      error("Unable to interpolate vector value; vector sizes don't match (%d and %d).",
-            x0.size(), x1->size());
+    {
+      dolfin_error("TimeSeries.cpp",
+                   "interpolate vector value in time series",
+                   "Vector sizes don't match (%d and %d)",
+                   x0.size(), x1->size());
+    }
 
     // Compute weights for linear interpolation
     const double dt = _vector_times[i1] - _vector_times[i0];
@@ -190,7 +194,7 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index, 
+  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index,
 						   _compressed) << std::endl;
   File file(filename_data(_name, "mesh", index, _compressed));
   file >> mesh;
@@ -307,8 +311,12 @@ TimeSeries::find_closest_pair(double t,
 
   // Must have at least one value stored
   if (times.size() == 0)
-    error("Unable to retrieve %s, no %s stored in time series.",
-          type_name.c_str(), type_name.c_str());
+  {
+    dolfin_error("TimeSeries.cpp",
+                 "to retrieve data from time seris",
+                 "No %s stored in time series",
+                 type_name.c_str());
+  }
 
   // Special case: just one value stored
   if (times.size() == 1)

@@ -91,6 +91,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     // Deal with goal and error control on current mesh
     Form& M = goal.leaf_node();
     ErrorControl& ec = control.leaf_node();
+    ec.parameters.update(parameters("error_control"));
 
     //--- Stage 0: Solve primal problem
     begin("Stage %d.0: Solving primal problem...", i);

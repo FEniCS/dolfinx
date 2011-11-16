@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson, 2008.
-// Modified by Ola Skavhaug 2009.
-// Modified by Garth N. Wells 2009.
+// Modified by Niclas Jansson 2008
+// Modified by Ola Skavhaug 2009
+// Modified by Garth N. Wells 2009
 //
 // First added:  2002-11-12
-// Last changed: 2011-09-13
+// Last changed: 2011-11-14
 
 #include <fstream>
 #include <dolfin/common/MPI.h>
@@ -324,7 +324,12 @@ void GenericFile::write()
     // Clear file
     std::ofstream file(filename.c_str(), std::ios::trunc);
     if (!file.good())
-      error("Unable to open file %s", filename.c_str());
+    {
+      dolfin_error("GenericFile.cpp",
+                   "write to file",
+                   "Unable to open file \"%s\" for writing",
+                   filename.c_str());
+    }
     file.close();
   }
   opened_write = true;
@@ -332,13 +337,17 @@ void GenericFile::write()
 //-----------------------------------------------------------------------------
 void GenericFile::read_not_impl(const std::string object) const
 {
-  error("Unable to read objects of type %s from %s files.",
-        object.c_str(), filetype.c_str());
+  dolfin_error("GenericFile.cpp",
+               "read object from file",
+               "Cannot read objects of type %s from %s files",
+               object.c_str(), filetype.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object) const
 {
-  error("Unable to write objects of type %s to file of type %s.",
-        object.c_str(), filetype.c_str());
+  dolfin_error("GenericFile.cpp",
+               "write object to file",
+               "Cannot write objects of type %s to %s files",
+               object.c_str(), filetype.c_str());
 }
 //-----------------------------------------------------------------------------

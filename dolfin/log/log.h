@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-10-19
+// Last changed: 2011-11-14
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -60,10 +60,39 @@ namespace dolfin
   /// Print warning
   void warning(std::string msg, ...);
 
-  /// Print error message and throw an exception
+  /// Print error message and throw an exception.
+  /// Note to developers: this function should not be used internally
+  /// in DOLFIN. Use the more informative dolfin_error instead.
   void error(std::string msg, ...);
 
-  /// Print error message, prefer this to the above generic error message
+  /// Print error message. Prefer this to the above generic error message.
+  ///
+  /// *Arguments*
+  ///     location (std::string)
+  ///         Name of the file from which the error message was generated.
+  ///     task (std::string)
+  ///         Name of the task that failed.
+  ///         Note that this string should begin with lowercase.
+  ///         Note that this string should not be punctuated.
+  ///     reason (std::string)
+  ///         A format string explaining the reason for the failure.
+  ///         Note that this string should begin with uppercase.
+  ///         Note that this string should not be punctuated.
+  ///         Note that this string may contain printf style formatting.
+  ///     ... (primitive types like int, uint, double, bool)
+  ///         Optional arguments for the format string.
+  ///
+  /// Some rules of thumb:
+  ///
+  /// * The 'task' string should be sufficiently high level ("assemble form")
+  ///   to make sense to a user.
+  /// * Use the same 'task' string from all errors originating from the same
+  ///   function.
+  /// * The 'task' string should provide details of which particular algorithm
+  ///   or method that was used ("assemble form using OpenMP assembler").
+  /// * The 'reason' string should try to explain why the task failed in the
+  ///   context of the task that failed ("subdomains are not yet handled").
+  /// * Write "initialize mesh function" rather than "initialize MeshFunction".
   void dolfin_error(std::string location,
                     std::string task,
                     std::string reason, ...);
@@ -104,9 +133,6 @@ namespace dolfin
   /// Report that functionality has not (yet) been implemented to work in parallel
   void not_working_in_parallel(std::string what);
 
-  /// Check value and print an informative error message if invalid
-  void check_equal(uint value, uint valid_value, std::string task, std::string value_name);
-
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
 
@@ -126,8 +152,10 @@ namespace dolfin
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() \
   do { \
-    error("The function '%s' has not been implemented (in %s line %d).", \
-          __FUNCTION__, __FILE__, __LINE__); \
+    dolfin_error("log.h", \
+                 "perform call to DOLFIN function %s", \
+                 "The function %s has not been implemented (in %s line %d)", \
+                 __FUNCTION__, __FUNCTION__, __FILE__, __LINE__); \
   } while (false)
 
 #endif

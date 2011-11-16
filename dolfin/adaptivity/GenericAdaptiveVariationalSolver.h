@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-31
+// Last changed: 2011-11-09
 
 #ifndef __GENERIC_ADAPTIVE_VARIATIONAL_SOLVER_H
 #define __GENERIC_ADAPTIVE_VARIATIONAL_SOLVER_H
@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/BoundaryCondition.h>
+#include <dolfin/adaptivity/ErrorControl.h>
 
 namespace dolfin
 {
@@ -34,7 +35,6 @@ namespace dolfin
   class Form;
   class Function;
   class FunctionSpace;
-  class ErrorControl;
   class GoalFunctional;
   class Mesh;
   class Parameters;
@@ -141,8 +141,8 @@ namespace dolfin
       p.add("marking_fraction", 0.5, 0.0, 1.0);
 
       // Set parameters for dual solver
-      //Parameters p_dual("dual_variational_solver");
-      //p.add(p_dual);
+      Parameters ec_params(ErrorControl::default_parameters());
+      p.add(ec_params);
 
       return p;
     }

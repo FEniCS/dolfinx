@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-10-21
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -53,7 +53,9 @@ dolfin::uint TetrahedronCell::num_entities(uint dim) const
   case 3:
     return 1; // cells
   default:
-    error("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("TetrahedronCell.cpp",
+                 "access number of entities of tetrahedron cell",
+                 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -72,7 +74,9 @@ dolfin::uint TetrahedronCell::num_vertices(uint dim) const
   case 3:
     return 4; // cells
   default:
-    error("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("TetrahedronCell.cpp",
+                 "access number of vertices for subsimplex of tetrahedron cell",
+                 "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -116,7 +120,9 @@ void TetrahedronCell::create_entities(uint** e, uint dim, const uint* v) const
     e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
     break;
   default:
-    error("Don't know how to create entities of topological dimension %d.", dim);
+    dolfin_error("TetrahedronCell.cpp",
+                 "create entities of tetrahedron cell",
+                 "Don't know how to create entities of topological dimension %d", dim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -251,19 +257,34 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
     editor.add_cell(current_cell++, v3, e5, e4, e3);
     break;
   default:
-    error("Illegal rule for irregular refinement of tetrahedron.");
+    dolfin_error("TetrahedronCell.cpp",
+                 "perform regular cut refinement of tetrahedron",
+                 "Illegal rule (%d) for irregular refinement of tetrahedron",
+                 refinement_rule);
   }
   */
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
+  // Check that we get a tetrahedron
+  if (tetrahedron.dim() != 3)
+  {
+    dolfin_error("TetrahedronCell.cpp",
+                 "compute volume of tetrahedron cell",
+                 "Illegal mesh entity, not a tetrahedron");
+  }
+
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
-    error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
+  {
+    dolfin_error("TetrahedronCell.cpp",
+                 "compute volume of tetrahedron",
+                 "Only know how to compute volume when embedded in R^3");
+  }
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
@@ -283,12 +304,22 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 //-----------------------------------------------------------------------------
 double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 {
+  // Check that we get a tetrahedron
+  if (tetrahedron.dim() != 2)
+  {
+    dolfin_error("TetrahedronCell.cpp",
+                 "compute diameter of tetrahedron cell",
+                 "Illegal mesh entity, not a tetrahedron");
+  }
+
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
-    error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
+    dolfin_error("TetrahedronCell.cpp",
+                 "compute diameter",
+                 "Tetrahedron is not embedded in R^3, only know how to compute diameter in that case");
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
@@ -586,8 +617,9 @@ dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const
   }
 
   // We should not reach this
-  error("Unable to find edge.");
-
+  dolfin_error("TetrahedronCell.cpp",
+               "find specified edge in cell",
+               "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

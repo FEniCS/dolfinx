@@ -117,7 +117,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   {
     dolfin_error("BlockMatrix.cpp",
                  "compute transpose matrix-vector product",
-                 "not implemented for block matrices");
+                 "Not implemented for block matrices");
   }
 
   // Create tempory vector
@@ -158,7 +158,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
   {
     dolfin_error("BlockMatric.cpp",
                  "compute Schur complement approximation",
-                 "not implemented for unsymmetric matrix");
+                 "Not implemented for unsymmetric matrix");
   }
 
   assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);

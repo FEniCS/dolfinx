@@ -83,7 +83,7 @@ dolfin::uint MTL4Matrix::size(uint dim) const
 
   dolfin_error("MTL4Matrix.cpp",
                "get size of MTL4 matrix",
-               "dimension must be 1 or 2 (not %d)", dim);
+               "Dimension must be 1 or 2 (not %d)", dim);
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -356,7 +356,7 @@ inline void MTL4Matrix::assert_no_inserter() const
   {
     dolfin_error("MTL4Matrix.cpp",
                  "perform operation on MTL4 matrix",
-                 "Operation not allowed while inserter active. Did you forget to call apply()?");
+                 "Operation not allowed while inserter active. You may have forgotten to call apply()");
   }
 }
 //-----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-02-10
-// Last changed: 2010-02-26
+// Last changed: 2011-10-31
 //
 // This file defines free functions for mesh refinement.
 //
@@ -81,9 +81,9 @@ namespace dolfin
   ///         Point origin(0.0, 0.0, 0.0);
   ///         for (CellIterator cell(mesh); !cell.end(); ++cell)
   ///         {
-  ///             Point p = cell.midpoint();
+  ///             Point p = cell->midpoint();
   ///             if (p.distance(origin) < 0.1)
-  ///                 cell_markers[cell] = true;
+  ///                 cell_markers[*cell] = true;
   ///         }
   ///         mesh = refine(mesh, cell_markers);
   ///

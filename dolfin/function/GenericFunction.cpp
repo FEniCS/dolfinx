@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2011-01-19
+// Last changed: 2011-11-14
 
 #include <string>
 #include <dolfin/fem/FiniteElement.h>
@@ -44,14 +44,20 @@ void GenericFunction::eval(Array<double>& values, const Array<double>& x,
 //-----------------------------------------------------------------------------
 void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
 {
-  error("Missing eval() function (must be overloaded).");
+  dolfin_error("GenericFunction.cpp",
+               "evaluate function",
+               "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 double GenericFunction::operator() (double x)
 {
   // Check that function is scalar
   if (value_rank() != 0)
-    error("Function is not scalar.");
+  {
+    dolfin_error("GenericFunction.cpp",
+                 "evaluate function at point",
+                 "Function is not scalar");
+  }
 
   // Set up Array arguments
   Array<double> values(1);
@@ -69,7 +75,11 @@ double GenericFunction::operator() (double x, double y)
 {
   // Check that function is scalar
   if (value_rank() != 0)
-    error("Function is not scalar.");
+  {
+    dolfin_error("GenericFunction.cpp",
+                 "evaluate function at point",
+                 "Function is not scalar");
+  }
 
   // Set up Array arguments
   Array<double> values(1);
@@ -88,7 +98,11 @@ double GenericFunction::operator() (double x, double y, double z)
 {
   // Check that function is scalar
   if (value_rank() != 0)
-    error("Function is not scalar.");
+  {
+    dolfin_error("GenericFunction.cpp",
+                 "evaluate function at point",
+                 "Function is not scalar");
+  }
 
   // Set up Array arguments
   Array<double> values(1);

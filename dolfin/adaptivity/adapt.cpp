@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-10-04
+// Last changed: 2011-11-12
 
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -323,7 +323,11 @@ dolfin::adapt(const LinearVariationalProblem& problem,
       refined_bcs.push_back(bc->child_shared_ptr());
     }
     else
-      error("Refinement of bcs only implemented for DirichletBCs!");
+    {
+      dolfin_error("adapt.cpp",
+                   "adapt linear variational problem",
+                   "Only implemented for Dirichlet boundary conditions");
+    }
   }
 
   // Create new problem
@@ -386,7 +390,11 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
       refined_bcs.push_back(bc->child_shared_ptr());
     }
     else
-      error("Refinement of bcs only implemented for DirichletBCs!");
+    {
+      dolfin_error("adapt.cpp",
+                   "adapt nonlinear variational problem",
+                   "Only implemented for Dirichlet boundary conditions");
+    }
   }
 
   // Create new problem
@@ -422,13 +430,12 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
-  boost::shared_ptr<const FunctionSpace> W = bc.function_space_ptr();
+  boost::shared_ptr<const FunctionSpace> W = bc.function_space();
   assert(W);
-  boost::shared_ptr<const FunctionSpace> V;
-
 
   // Refine function space
   const std::vector<uint> component = W->component();
+  boost::shared_ptr<const FunctionSpace> V;
   if (component.size() == 0)
   {
     adapt(*W, adapted_mesh);
@@ -539,7 +546,11 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
 
   // Check that parent map exists
   if (!parent.get())
-    error("Unable to extract information about parent mesh entites");
+  {
+    dolfin_error("adapt.cpp",
+                 "adapt mesh function",
+                 "Unable to extract information about parent mesh entites");
+  }
 
   // Define an unused value as 'undefined'. MER: This will hence
   // increase with the number of iterations. Not sure if that is good
@@ -586,7 +597,11 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
 
   // Check that parent maps exist
   if (!parent_cells.get() || !parent_facets.get())
-    error("Unable to extract information about parent mesh entites");
+  {
+    dolfin_error("adapt.cpp",
+                 "adapt markers",
+                 "Unable to extract information about parent mesh entites");
+  }
 
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets

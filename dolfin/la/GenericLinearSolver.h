@@ -49,7 +49,7 @@ namespace dolfin
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
-                   "not supported by current linear algebra backend");
+                   "Not supported by current linear algebra backend");
     }
 
     /// Solve linear system Ax = b
@@ -57,7 +57,7 @@ namespace dolfin
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear systtem",
-                   "not supported by current linear algebra backend, consider using solve(x, b)");
+                   "Not supported by current linear algebra backend. Consider using solve(x, b)");
       return 0;
     }
 
@@ -66,7 +66,7 @@ namespace dolfin
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear systtem",
-                   "not supported by current linear algebra backend, consider using solve(x, b)");
+                   "Not supported by current linear algebra backend. Consider using solve(x, b)");
       return 0;
     }
 

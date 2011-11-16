@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-11-23
-// Last changed: 2008-11-13
+// Last changed: 2011-11-15
 
 #include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
@@ -32,7 +32,9 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   if ( nx < 1 )
-    error("Size of unit interval must be at least 1.");
+    dolfin_error("UnitInterval.cpp",
+                 "create unit interval",
+                 "Size of unit interval must be at least 1");
 
   rename("mesh", "Mesh of the unit interval (0,1)");
 

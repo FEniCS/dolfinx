@@ -47,13 +47,17 @@ SubDomain::~SubDomain()
 //-----------------------------------------------------------------------------
 bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
 {
-  error("Unable to determine if point is inside subdomain, function inside() not implemented by user.");
+  dolfin_error("SubDomain.cpp",
+               "check whether point is inside subdomain",
+               "Function inside() not implemented by user");
   return false;
 }
 //-----------------------------------------------------------------------------
 void SubDomain::map(const Array<double>& x, Array<double>&) const
 {
-  error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
+  dolfin_error("SubDomain.cpp",
+               "map points within subdomain",
+               "Function map() not implemented by user. (Required for periodic boundary conditions)");
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark_cells(Mesh& mesh, unsigned int sub_domain) const
@@ -123,7 +127,9 @@ dolfin::uint SubDomain::geometric_dimension() const
 {
   // Check that dim has been set
   if (_geometric_dimension == 0)
-    error("Internal error, dimension for subdomain has not been specified.");
+    dolfin_error("SubDomain.cpp",
+                 "get geometric dimension",
+                 "Dimension of subdomain has not been specified");
 
   return _geometric_dimension;
 }

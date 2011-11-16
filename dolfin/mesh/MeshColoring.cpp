@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
-// Modified by Johannes Ring, 2011.
+// Modified by Anders Logg 2010-2011
+// Modified by Johannes Ring 2011
 //
 // First added:  2010-11-15
-// Last changed: 2011-05-11
+// Last changed: 2011-11-14
 
 #include <map>
 #include <utility>
@@ -110,11 +110,19 @@ dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
   //const uint num_verticies = mesh.num_entities(colored_vertex_dim);
 
   if (coloring_type.front() != coloring_type.back())
-    error("MeshColoring::compute_colors does not support dim i - j coloring.");
+  {
+    dolfin_error("MeshColoring.cpp",
+                 "compute mesh colors",
+                 "Mesh coloring does not support dim i - j coloring");
+  }
 
-  // Check that mesh functon has right dimension
+  // Check that mesh function has right dimension
   if (colors.dim() != colored_vertex_dim)
-    error("MeshFunction has wrong dim. MeshColoring::compute_colors does not support dim i - j coloring.");
+  {
+    dolfin_error("MeshColoring.cpp",
+                 "compute mesh colors",
+                 "Wrong dimension of mesh function");
+  }
 
   // Create graph
   /*
@@ -143,8 +151,10 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
   // Check that coloring type is valid
   if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
   {
-    error("Coloring type '%s' unknown. Options are \"vertex\", \"edge\" or \"facet\".",
-          coloring_type.c_str());
+    dolfin_error("MeshColoring.cpp",
+                 "compute mesh colors",
+                 "Unknown coloring type (\"%s\"). Known options are \"vertex\", \"edge\" and \"facet\"",
+                 coloring_type.c_str());
   }
 
   // Select topological dimension

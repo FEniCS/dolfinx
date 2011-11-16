@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008-2009.
+// Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2011-03-17
+// Last changed: 2011-11-14
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
@@ -121,7 +121,11 @@ void LocalMeshData::clear()
 void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 {
   if (!mesh.domains().is_empty())
-    error("LocalMeshData::extract_mesh_data does not yet support marked domains.");
+  {
+    dolfin_error("LocalMeshData.cpp",
+                 "extract local mesh data",
+                 "Marked subdomains are not yet supported");
+  }
 
   // Clear old data
   clear();

@@ -123,7 +123,7 @@ void LinearVariationalSolver::solve()
       {
         dolfin_error("LinearVariationalSolver.cpp",
                      "assemble linear form in linear variational solver",
-                     "Empty linear forms cannot have coefficient.");
+                     "Empty linear forms cannot have coefficient");
       }
       A->resize(*b, 0);
     }
