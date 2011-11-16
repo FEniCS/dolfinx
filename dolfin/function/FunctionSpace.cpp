@@ -91,6 +91,20 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   return *this;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::operator==(const FunctionSpace& V) const
+{
+  // Compare pointers to shared objects
+  return _element.get() == V._element.get() && 
+    _mesh.get() == V._mesh.get() && 
+    _dofmap.get() == V._dofmap.get(); 
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::operator!=(const FunctionSpace& V) const
+{
+  // Compare pointers to shared objects
+  return !(*this == V); 
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<const Mesh> FunctionSpace::mesh() const
 {
   return _mesh;

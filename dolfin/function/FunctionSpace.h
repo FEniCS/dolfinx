@@ -115,6 +115,20 @@ namespace dolfin
     ///         Another function space.
     const FunctionSpace& operator= (const FunctionSpace& V);
 
+    /// Equality operator
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         Another function space.
+    bool operator== (const FunctionSpace& V) const;
+
+    /// Unequality operator
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         Another function space.
+    bool operator!= (const FunctionSpace& V) const;
+
     /// Return mesh
     ///
     /// *Returns*
