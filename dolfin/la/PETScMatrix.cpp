@@ -53,7 +53,9 @@ PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
 #ifndef HAS_PETSC_CUSP
   if (use_gpu) 
   {
-    error("PETSc not compiled with Cusp support, cannot create GPU matrix");
+    dolfin_error("PETScMatrix.cpp",
+        "create GPU matrix",
+        "PETSc not compiled with Cusp support");
   }
 #endif
 
@@ -66,7 +68,9 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) :
 #ifndef HAS_PETSC_CUSP
   if (use_gpu) 
   {
-    error("PETSc not compiled with Cusp support, cannot create GPU matrix");
+    dolfin_error("PETScMatrix.cpp",
+        "create GPU matrix",
+        "PETSc not compiled with Cusp support");
   }
 #endif
   

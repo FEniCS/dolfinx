@@ -111,7 +111,9 @@ LinearAlgebraFactory& DefaultFactory::factory()
 #ifdef HAS_PETSC_CUSP
     return PETScCuspFactory::instance();
 #else
-    error("PETSc-Cusp linear algebra backend is not available.");
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "PETScCusp linear algebra backend is not available");
 #endif
   }
   else if (backend == "Epetra")

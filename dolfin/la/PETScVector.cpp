@@ -56,7 +56,11 @@ PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
 
 #ifndef HAS_PETSC_CUSP
   if (_use_gpu)
-    error("PETSc not compiled with Cusp support, cannot create GPU vector");
+  {
+    dolfin_error("PETScVector.cpp",
+        "create GPU vector",
+        "PETSc not compiled with Cusp support");
+  }
 #endif
 
   // Empty ghost indices vector
@@ -75,7 +79,11 @@ PETScVector::PETScVector(uint N, std::string type, bool use_gpu) : _use_gpu(use_
 {
 #ifndef HAS_PETSC_CUSP
   if (_use_gpu)
-    error("PETSc not compiled with Cusp support, cannot create GPU vector");
+  {
+    dolfin_error("PETScVector.cpp",
+        "create GPU vector",
+        "PETSc not compiled with Cusp support");
+  }
 #endif
 
   // Empty ghost indices vector
