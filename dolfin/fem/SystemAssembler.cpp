@@ -137,7 +137,10 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   assert(L.rank() == 1);
 
   // Check that forms share a function space
-  assert(a.function_space(1).get() == L.function_space(0).get());
+  if (*a.function_space(1) != *L.function_space(0))
+    dolfin_error("SystemAssembler.cpp",
+		 "assemble system",
+		 "expected forms (a, L) to share a FunctionSpace");
 
   // FIXME: This may gather coefficients twice. Checked for shared coefficients
 
