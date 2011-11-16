@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-07-19
-// Last changed:
+// Last changed: 2011-11-14
 
 #include <fstream>
 #include <ostream>
@@ -68,7 +70,11 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   // Get rank of Function
   const uint rank = u.value_rank();
   if(rank > 2)
-    error("Only scalar, vector and tensor functions can be saved in VTK format.");
+  {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle vector function with dimension other than 2 or 3");
+  }
 
   // Get number of components
   const uint data_dim = u.value_size();
@@ -85,14 +91,22 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   else if (rank == 1)
   {
     if(!(data_dim == 2 || data_dim == 3))
-      error("Don't know what to do with vector function with dim other than 2 or 3.");
+    {
+      dolfin_error("VTKWriter.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle vector function with dimension other than 2 or 3");
+    }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     if(!(data_dim == 4 || data_dim == 9))
-      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+    {
+      dolfin_error("VTKFile.cpp",
+                   "write data to VTK file",
+                   "Don't know how to handle tensor function with dimension other than 4 or 9");
+    }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
@@ -216,7 +230,11 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
   if (!file.is_open())
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("VTKWriter.cpp",
+                 "write mesh to VTK file"
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
   // Write vertex positions
   file << "<Points>" << std::endl;
@@ -268,7 +286,11 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
   if ( !file.is_open() )
-    error("Unable to open file %s", filename.c_str());
+  {
+    dolfin_error("VTKWriter.cpp",
+                 "write mesh to VTK file",
+                 "Unable to open file \"%s\"", filename.c_str());
+  }
 
   // Write vertex positions
   file << "<Points>" << std::endl;
@@ -339,7 +361,11 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, uint cell_dim)
   else if (mesh.topology().dim() - 1 == cell_dim)
     cell_type = mesh.type().facet_type();
   else
-    error("Can only handle cells and cell facets with VTK output for now.");
+  {
+    dolfin_error("VTKWriter.cpp",
+                 "write data to VTK file",
+                 "Can only handle cells and cell facets with VTK output for now");
+  }
 
   // Determine VTK cell type
   boost::uint8_t vtk_cell_type = 0;
@@ -350,7 +376,11 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, uint cell_dim)
   else if (cell_type == CellType::interval)
     vtk_cell_type = 3;
   else
-    error("Unknown cell type");
+  {
+    dolfin_error("VTKWriter.cpp",
+                 "write data to VTK file",
+                 "Unknown cell type (%d)", cell_type);
+  }
 
   return vtk_cell_type;
 }

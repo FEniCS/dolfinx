@@ -35,7 +35,9 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 
   // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
-    error("Size of unit cube must be at least 1 in each dimension.");
+    dolfin_error("UnitCube.cpp",
+                 "create unit cube",
+                 "Cube has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
 
   // Set name
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");

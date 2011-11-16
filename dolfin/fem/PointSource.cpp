@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2011-08-10
+// Last changed: 2011-11-15
 
 #include <boost/scoped_array.hpp>
 
@@ -68,7 +68,11 @@ void PointSource::apply(GenericVector& b)
   const Mesh& mesh = *V->mesh();
   int cell_index = mesh.intersected_cell(p);
   if (cell_index < 0)
-    error("Unable to apply point source; point is outside of domain: %s", p.str().c_str());
+  {
+    dolfin_error("PointSource.cpp",
+                 "apply point source to vector",
+                 "The point is outside of the domain (%s)", p.str().c_str());
+  }
 
   // Create cell
   Cell cell(mesh, static_cast<uint>(cell_index));
@@ -99,6 +103,10 @@ void PointSource::check_is_scalar(const FunctionSpace& V)
 {
   assert(V.element());
   if (V.element()->value_rank() != 0)
-    error("Unable to create point source; function is not scalar.");
+  {
+    dolfin_error("PointSource.cpp",
+                 "create point source",
+                 "Function is not scalar");
+  }
 }
 //-----------------------------------------------------------------------------

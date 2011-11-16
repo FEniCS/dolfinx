@@ -44,8 +44,10 @@ MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
     return;
 
   // Illegal index range
-  error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
-        index,_mesh->num_entities(dim), dim);
+  dolfin_error("MeshEntity.cpp",
+               "create mesh entity",
+               "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
+               index, _mesh->num_entities(dim), dim);
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
@@ -105,7 +107,9 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if ( _mesh != entity._mesh )
-    error("Unable to compute index of given entity defined on a different mesh.");
+    dolfin_error("MeshEntity.cpp",
+                 "compute index of mesh entity",
+                 "Mesh entity is defined on a different mesh");
 
   // Get list of entities for given topological dimension
   const uint* entities = _mesh->topology()(_dim, entity._dim)(_index);
@@ -117,7 +121,9 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  error("Unable to compute index of given entity (not found).");
+  dolfin_error("MeshEntity.cpp",
+               "compute index of mesh entity",
+               "Mesh entity was not found");
 
   return 0;
 }

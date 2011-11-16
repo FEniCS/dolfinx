@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2007-03-01
-// Last changed: 2011-01-24
+// Last changed: 2011-11-14
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(), 
+    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(),
         use_global_indices(use_global_indices),
         num_vertices(0), num_higher_order_vertices(0)
     {
@@ -55,9 +55,9 @@ namespace dolfin
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(), 
+    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(),
         use_global_indices(use_global_indices),
-        num_vertices(0), num_higher_order_vertices(0) 
+        num_vertices(0), num_higher_order_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -89,7 +89,9 @@ namespace dolfin
         num_vertices = 4;
         break;
       default:
-        error("Unknown cell type.");
+        dolfin_error("UFCCell.h",
+                     "create UFC cell wrapper",
+                     "Unknown cell type (%d)", cell.type());
       }
 
       // Mesh

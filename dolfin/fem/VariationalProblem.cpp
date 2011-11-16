@@ -64,6 +64,6 @@ void VariationalProblem::error_message() const
 {
   dolfin_error("VariationalProblem.cpp",
                "create variational problem",
-               "The VariationalProblem class has been removed. Please visit http://fenicsproject.org/releases/1.0-beta/ to see which changes you need to make to your program.");
+               "The VariationalProblem class has been removed. Please visit http://fenicsproject.org/releases/1.0-beta/ to see which changes you need to make to your program");
 }
 //-----------------------------------------------------------------------------

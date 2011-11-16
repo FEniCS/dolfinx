@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2002-12-06
-// Last changed: 2011-06-21
+// Last changed: 2011-11-14
 
 #include "pugixml.hpp"
 
@@ -36,7 +38,11 @@ void XMLFunctionPlotData::read(FunctionPlotData& plot_data,
 {
   const pugi::xml_node xml_plot_node = xml_mesh.child("function_plot_data");
   if (!xml_plot_node)
-    error("Not a DOLFIN FunctionPlotData file.");
+  {
+    dolfin_error("XMLFunctionPlotData.cpp",
+                 "read plot data from XML file",
+                 "Not a DOLFIN FunctionPlotData file");
+  }
 
   // Get rank
   const unsigned int rank = xml_plot_node.attribute("rank").as_uint();

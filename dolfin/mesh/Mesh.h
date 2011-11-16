@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2011-08-29
+// Last changed: 2011-11-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -565,6 +565,17 @@ namespace dolfin
     ///     std::pair<_Point_, uint>
     ///         A pair consisting of the closest point and corresponding cell index.
     std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
+
+    /// Computes the distance between a given point and the mesh
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         A _Point_ object.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The distance to the mesh.
+    double distance(const Point& point) const;
 
     /// Compute minimum cell diameter.
     ///

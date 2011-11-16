@@ -337,14 +337,16 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
   // boundary conditions but a more robust test requires access to the
   // function space.
 
-  error("is_compatible() has not been updated for the new Function class interface.");
+  dolfin_error("DirichletBC.cpp",
+               "call is_compatible",
+               "This function has not been updated for the new Function class interface");
 
   /*
   // Compute value size
   uint size = 1;
-  const uint rank = g->function_space().element().value_rank();
+  const uint rank = g->function_space().element()->value_rank();
   for (uint i = 0; i < rank ; i++)
-    size *= g->function_space().element().value_dimension(i);
+    size *= g->function_space().element()->value_dimension(i);
   double* g_values = new double[size];
   double* v_values = new double[size];
 
@@ -361,7 +363,9 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
     Facet facet(mesh, facet_number);
 
     // Make cell and facet available to user-defined function
-    error("Does the new GenericFunction class need an 'update' function?");
+    dolfin_error("DirichletBC.cpp",
+                 "add proper message here",
+                 "Does the new GenericFunction class need an 'update' function?");
     //g->update(cell, facet_number);
     //v.update(cell, facet_number);
 
@@ -510,27 +514,47 @@ void DirichletBC::check() const
 
   // Check for common errors, message below might be cryptic
   if (g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
-    error("Unable to create boundary condition. Reason: Expecting a vector-valued boundary value but given function is scalar.");
+  {
+    dolfin_error("DirichletBC.cpp",
+                 "create Dirichlet boundary condition",
+                 "Expecting a vector-valued boundary value but given function is scalar");
+  }
   if (g->value_rank() == 1 && _function_space->element()->value_rank() == 0)
-    error("Unable to create boundary condition. Reason: Expecting a scalar boundary value but given function is vector-valued.");
+  {
+    dolfin_error("DirichletBC.cpp",
+                 "create Dirichlet boundary condition",
+                 "Expecting a scalar boundary value but given function is vector-valued");
+  }
 
   // Check that value shape of boundary value
-  check_equal(g->value_rank(), _function_space->element()->value_rank(),
-              "create boundary condition", "value rank");
+  dolfin_error("DirichletBC.cpp",
+               "create Dirichlet boundary condition",
+               "Illegal value rank (%d), expecting (%d)",
+               g->value_rank(), _function_space->element()->value_rank());
   for (uint i = 0; i < g->value_rank(); i++)
   {
-    check_equal(g->value_dimension(i), _function_space->element()->value_dimension(i),
-                "create boundary condition", "value dimension");
+    dolfin_error("DirichletBC.cpp",
+                 "create Dirichlet boundary condition",
+                 "Illegal value dimension (%d), expecting (%d)",
+                 g->value_dimension(i), _function_space->element()->value_dimension(i));
   }
 
   // Check that boundary condition method is known
   if (methods.count(_method) == 0)
-    error("Unable to create boundary condition, unknown method specified.");
+  {
+    dolfin_error("DirichletBC.cpp",
+                 "create Dirichlet boundary condition",
+                 "unknown method (\"%s\")", _method.c_str());
+  }
 
   // Check that the mesh is ordered
   assert(_function_space->mesh());
   if (!_function_space->mesh()->ordered())
-    error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
+  {
+    dolfin_error("DirichletBC.cpp",
+                 "create Dirichlet boundary condition",
+                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+  }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain)
@@ -634,7 +658,11 @@ void DirichletBC::compute_bc(Map& boundary_values,
   else if (method == "pointwise")
     compute_bc_pointwise(boundary_values, data);
   else
-    error("Unknown method for application of boundary conditions.");
+  {
+    dolfin_error("DirichletBC.cpp",
+                 "compute boundary conditions",
+                 "Unknown method for application of boundary conditions");
+  }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_topological(Map& boundary_values,
@@ -884,7 +912,9 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
       return false;
   }
 
-  error("Unable to determine if given point is on facet (not implemented for given facet dimension).");
+  dolfin_error("DirichletBC.cpp",
+               "determine if given point is on facet",
+               "Not implemented for given facet dimension");
 
   return false;
 }

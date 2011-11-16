@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2011-09-27
+// Last changed: 2011-11-14
 
 #include <algorithm>
 #include <iomanip>
@@ -61,7 +61,11 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
     // Check that we have a XML function data
     const pugi::xml_node xml_function_data_node = xml_dolfin.child("function_data");
     if (!xml_function_data_node)
-      error("XMLFunctionData::read: not a DOLFIN funcation data file.");
+    {
+      dolfin_error("XMLFunctionData.cpp",
+                   "read function from XML file",
+                   "Not a DOLFIN Function XML file");
+    }
 
     const uint size = xml_function_data_node.attribute("size").as_uint();
     assert(vector.size() == size);

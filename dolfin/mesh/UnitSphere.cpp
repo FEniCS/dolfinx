@@ -34,13 +34,15 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
+  if (nx < 1)
+    dolfin_error("UnitSphere.cpp",
+                 "create unit sphere",
+                 "Size of unit sphere must be at least 1");
+
   const uint ny = nx;
   const uint nz = nx;
 
-  if (nx < 1 || ny < 1 || nz < 1)
-    error("Size of unit cube must be at least 1 in each dimension.");
-
-  rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
+  rename("mesh", "Mesh of the unit sphere");
 
   // Open mesh for editing
   MeshEditor editor;

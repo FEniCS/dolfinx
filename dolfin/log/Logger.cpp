@@ -231,7 +231,9 @@ double Logger::timing(std::string task, bool reset)
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
-    error(line.str());
+    dolfin_error("Logger.cpp",
+                 "extract timing for task",
+                 line.str());
   }
 
   // Compute average

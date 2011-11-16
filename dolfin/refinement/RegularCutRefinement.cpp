@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-09-01
+// Last changed: 2011-11-15
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
@@ -41,11 +41,15 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
 
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
-    error("Regular-cut mesh refinement is currently only implemented in 2D.");
+    dolfin_error("RegularCutRefinement.cpp",
+                 "refine mesh",
+                 "Mesh is not two-dimensional: regular-cut mesh refinement is currently only implemented in 2D");
 
   // Check that mesh is ordered
   if (!mesh.ordered())
-    error("Unable to refine mesh; mesh is not ordered.");
+    dolfin_error("RegularCutRefinement.cpp",
+                 "refine mesh",
+                 "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
 
   // Initialize edges
   mesh.init(1);
@@ -201,7 +205,9 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
     // Sanity check
     else
-      error("Internal error in mesh refinement; unexpected number of marked edges.");
+      dolfin_error("RegularCutRefinement.cpp",
+                   "compute marked edges",
+                   "Unexpected number of edges marked");
   }
 }
 //-----------------------------------------------------------------------------
@@ -482,7 +488,10 @@ dolfin::uint RegularCutRefinement::extract_edge(const std::vector<bool>& markers
   for (uint i = 0; i < markers.size(); i++)
     if (markers[i])
       return i;
-  error("Internal error in mesh refinement; unable to extract edge.");
+
+  dolfin_error("RegularCutRefinement.cpp",
+               "extract edge",
+               "Internal error in algorithm: edge not found");
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -534,7 +543,9 @@ RegularCutRefinement::find_common_edges(const Cell& cell,
         return std::make_pair(i, j);
 
   // Not found
-  error("Internal error in mesh refinement; unable to find common edge.");
+  dolfin_error("RegularCutRefinement.cpp",
+               "find common edges between cells",
+               "Internal error in algorithm: common edge not found");
 
   return std::make_pair(0, 0);
 }
@@ -586,7 +597,9 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   }
 
   // Not found
-  error("Internal error in mesh refinement; unable to find bisection edge.");
+  dolfin_error("RegularCutRefinement.cpp",
+               "find edge for bisection",
+               "Internal error in algorithm; bisection edge not found");
 
   return std::make_pair(0, 0);
 }
@@ -625,7 +638,9 @@ RegularCutRefinement::find_bisection_vertices(const Cell& cell,
   }
 
   // Not found
-  error("Internal error in mesh refinement; unable to find bisection vertex.");
+  dolfin_error("RegularCutRefinement.cpp",
+               "find bisection vertices",
+               "Internal error in algorithm: bisection vertex not found");
 
   return std::make_pair(0, 0);
 }
