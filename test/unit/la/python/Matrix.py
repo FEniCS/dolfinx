@@ -243,13 +243,13 @@ if MPI.num_processes() == 1:
         class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
 
+    if has_linear_algebra_backend("PETScCusp"):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+            backend    = "PETScCusp"
+
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
-
-if has_linear_algebra_backend("PETScCusp"):
-    class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-        backend    = "PETScCusp"
 
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
