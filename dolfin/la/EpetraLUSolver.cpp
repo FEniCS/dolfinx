@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-10-19
+// Last changed: 2011-11-16
 
 #ifdef HAS_TRILINOS
 
@@ -67,6 +67,12 @@ std::string EpetraLUSolver::choose_method(std::string method) const
       method = "Amesos_Umfpack";
     else if (factory.Query("Amesos_Klu"))
       method = "Amesos_Klu";
+    else
+    {
+      dolfin_error("EpetraLUSolver.cpp",
+                   "choose default Epetra LU solver",
+                   "No methods available");
+    }
   }
   else if (method == "umfpack")
     method = "Amesos_Umfpack";
@@ -102,11 +108,20 @@ EpetraLUSolver::EpetraLUSolver(std::string method)
   parameters = default_parameters();
 
   // Choose method
-  method = choose_method(method);
+  this->method = choose_method(method);
 
   // Initialize solver
   Amesos factory;
-  solver.reset(factory.Create(method, *linear_problem));
+  solver.reset(factory.Create(this->method, *linear_problem));
+
+  // Check that solver was initialized correctly
+  if (!solver)
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "create Epetra LU solver",
+                 "Epetra was not able to create linear solver \"%s\"",
+                 this->method.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
@@ -123,11 +138,20 @@ EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
   assert(this->A);
 
   // Choose method
-  method = choose_method(method);
+  this->method = choose_method(method);
 
   // Initialize solver
   Amesos factory;
-  solver.reset(factory.Create(method, *linear_problem));
+  solver.reset(factory.Create(this->method, *linear_problem));
+
+  // Check that solver was initialized correctly
+  if (!solver)
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "create Epetra LU solver",
+                 "Epetra was not able to create linear solver \"%s\"",
+                 this->method.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::~EpetraLUSolver()
@@ -165,7 +189,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
-    log(PROGRESS, "Solving linear system of size %d x %d (Epetra LU solver).", A->size(0), A->size(1));
+    log(PROGRESS, "Solving linear system of size %d x %d using Epetra LU solver (%s).",
+        A->size(0), A->size(1), method.c_str());
 
   // Downcast vector
   EpetraVector& _x = x.down_cast<EpetraVector>();
@@ -227,9 +252,6 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     AMESOS_CHK_ERR(solver->NumericFactorization());
     numeric_factorized = true;
   }
-
-  log(PROGRESS, "Solving linear system of size %d x %d (Trilinos LU solver (%s)).",
-      A->NumGlobalRows(), A->NumGlobalCols(), method.c_str());
 
   // Solve
   AMESOS_CHK_ERR(solver->Solve());
