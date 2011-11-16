@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-07-17
-// Last changed: 2009-11-14
+// Last changed: 2011-11-16
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -48,7 +48,9 @@ void MeshCoordinates::eval(Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(const Mesh& mesh)
-  : mesh(mesh)
+  : mesh(mesh),
+    not_on_boundary("*** Warning: evaluating special function FacetArea on a "
+                    "non-facet domain, returning zero.")
 {
   // Do nothing
 }
@@ -66,9 +68,8 @@ void FacetArea::eval(Array<double>& values,
   }
   else
   {
-    dolfin_error("SpecialFunctions.cpp",
-                 "evaluate FacetArea expression",
-                 "Facet area is only defined on mesh boundaries");
+    not_on_boundary();
+    values[0] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------

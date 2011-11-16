@@ -20,12 +20,13 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-09
-// Last changed: 2009-10-05
+// Last changed: 2011-11-16
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
-#include "dolfin/common/Array.h"
+#include <dolfin/log/Event.h>
+#include <dolfin/common/Array.h>
 #include "Expression.h"
 
 namespace dolfin
@@ -70,6 +71,9 @@ namespace dolfin
 
     // The mesh
     const Mesh& mesh;
+
+    // Warning when evaluating on cells
+    mutable Event not_on_boundary;
 
   };
 
