@@ -93,36 +93,6 @@ namespace dolfin
   /// * The 'reason' string should try to explain why the task failed in the
   ///   context of the task that failed ("subdomains are not yet handled").
   /// * Write "initialize mesh function" rather than "initialize MeshFunction".
-  ///
-  /// Some examples:
-  ///
-  /// dolfin_error("DofMap.cpp",
-  ///              "create mapping of degrees of freedom",
-  ///              "Mesh is not ordered according to the UFC numbering convention. "
-  ///              "Consider calling mesh.order()");
-  ///
-  /// dolfin_error("File.cpp",
-  ///              "open file",
-  ///              "Could not create directory \"%s\"",
-  ///              path.parent_path().string().c_str());
-  ///
-  /// dolfin_error("TriangleCell.cpp",
-  ///              "access number of entities of triangle cell",
-  ///              "Illegal topological dimension (%d)", dim);
-  ///
-  /// dolfin_error("VTKFile.cpp",
-  ///              "Create VTK file",
-  ///              "Unknown encoding (\"%s\"). "
-  ///              "Known encodings are \"ascii\", \"base64\" and \"compressed\"",
-  ///              encoding.c_str());
-  ///
-  /// dolfin_error("SubSystemsManager.cpp",
-  ///              "initialize PETSc subsystem",
-  ///              "DOLFIN has not been configured with PETSc support");
-  ///
-  /// dolfin_error("PETScKrylovSolver.cpp",
-  ///              "solve linear system with PETSc Krylov solver",
-  ///              "Matrix does not have a nonzero number of rows and columns");
   void dolfin_error(std::string location,
                     std::string task,
                     std::string reason, ...);
