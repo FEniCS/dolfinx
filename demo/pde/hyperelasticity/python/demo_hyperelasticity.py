@@ -63,26 +63,22 @@ T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
 
 # Kinematics
 I = Identity(V.cell().d)    # Identity tensor
-Ft = I + grad(u)             # Deformation gradient
-J = det(Ft)
-F = (1./J)**(1./3)*Ft
+F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
 Ic = tr(C)
-#J  = det(F)
+J  = det(F)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-#mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
-mu, kappa = Constant(1.0), Constant(100.0)
+mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
 
 # Stored strain energy density (compressible neo-Hookean model)
-psi = mu*(Ic-3)+kappa/4*((J-1)**2 + (ln(J))**2)
-#psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
+psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
 # Total potential energy
-Pi = psi*dx - dot(B, u)*dx #- dot(T, u)*ds
+Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds
 
 # Compute first variation of Pi (directional derivative about u in the direction of v)
 F = derivative(Pi, u, v)
