@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2011-03-03
-# Last changed: 2011-03-03
+# Last changed: 2011-11-17
 
 import unittest
 from dolfin import *
@@ -158,6 +160,7 @@ class AbstractBaseTest(object):
         A = Matrix()
         self.assertEqual(A.size(0), 0)
         self.assertEqual(A.size(1), 0)
+        info(A)
 
     def test_copy_empty_matrix(self):
         A = Matrix()

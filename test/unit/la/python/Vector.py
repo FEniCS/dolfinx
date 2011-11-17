@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2011-03-01
-# Last changed: 2011-03-01
+# Last changed: 2011-11-17
 
 import unittest
 from dolfin import *
@@ -60,6 +62,7 @@ class AbstractBaseTest(object):
 
     def test_create_empty_vector(self):
         v0 = Vector()
+        info(v0)
         self.assertEqual(v0.size(), 0)
 
     def test_create_vector(self):
