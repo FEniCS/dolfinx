@@ -185,11 +185,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     if (!_use_gpu)
       MatSetType(*A, MATSEQAIJ);
 #ifdef HAS_PETSC_CUSP
-    else {
-      warning("Setting matrix to cusp type ...");
+    else
       MatSetType(*A, MATSEQAIJCUSP);
-      warning("Matrix set to cusp type");
-    }
 #endif
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
