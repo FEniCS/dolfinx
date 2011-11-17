@@ -106,7 +106,11 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 {
   // Check that the requested method is known
   if (_methods.count(method) == 0)
-    error("Requested PETSc Krylov solver '%s' is unknown,", method.c_str());
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "create PETSc Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
 
   // Set parameter values
   parameters = default_parameters();
@@ -178,7 +182,11 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
   if (!A)
-    error("Operator for PETScKrylovSolver has not been set.");
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "access operator for PETSc Krylov solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -205,7 +213,11 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   const uint N = A->size(1);
   const uint M = A->size(0);
   if (N != b.size())
-    error("Non-matching dimensions for linear system.");
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "solve linear system using PETSc Krylov solver",
+                 "Non-matching dimensions for linear system");
+  }
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
@@ -255,7 +267,12 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     const char *reason_str = KSPConvergedReasons[reason];
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
+    {
+      dolfin_error("PETScKrylovSolver.cpp",
+                   "solve linear system using PETSc Krylov solver",
+                   "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
+                   num_iterations, reason_str, rnorm);
+    }
     else
       warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
   }
@@ -272,7 +289,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A, PETScVector& x,
   // Check dimensions
   const uint N = A.size(1);
   if (N != b.size())
-    error("Non-matching dimensions for linear system.");
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "Solve linear system using PETSc Krylov solver",
+                 "Non-matching dimensions for linear system");
+  }
 
   // Set operator
   boost::shared_ptr<const PETScBaseMatrix> _A(&A, NoDeleter());
@@ -304,7 +325,11 @@ void PETScKrylovSolver::init(const std::string& method)
 {
   // Check that nobody else shares this solver
   if (_ksp && !_ksp.unique())
-    error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "initialize PETSc Krylov solver",
+                 "More than one object points to the underlying PETSc object");
+  }
 
   // Create new KSP object
   _ksp.reset(new KSP, PETScKSPDeleter());
@@ -433,17 +458,29 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
 {
   // Check dimensions of A
   if (A.size(0) == 0 || A.size(1) == 0)
-    error("Unable to solve linear system; matrix must have a nonzero number of rows and columns.");
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "Unable to solve linear system with PETSc Krylov solver",
+                 "Matrix does not have a nonzero number of rows and columns");
+  }
 
   // Check dimensions of A vs b
   if (A.size(0) != b.size())
-    error("Unable to solve linear system; matrix dimension (%d rows) does not match dimension of righ-hand side vector (%d).",
-          A.size(0), b.size());
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "Unable to solve linear system with PETSc Krylov solver",
+                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 A.size(0), b.size());
+  }
 
   // Check dimensions of A vs x
   if (x.size() > 0 && x.size() != A.size(1))
-    error("Unable to solve linear system; matrix dimension (%d columns) does not match dimension of solution vector (%d).",
-          A.size(1), x.size());
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "Unable to solve linear system with PETSc Krylov solver",
+                 "Non-matching dimensions for linear system (matrix has %d columns and solution vector has %d rows)",
+                 A.size(1), x.size());
+  }
 
   // FIXME: We could implement a more thorough check of local/global
   // FIXME: dimensions for distributed matrices and vectors here.

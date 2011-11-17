@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2010.
+// Modified by Garth N. Wells 2010
 //
 // First added:  2008-05-15
-// Last changed: 2011-10-06
+// Last changed: 2011-11-11
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
@@ -102,9 +102,17 @@ void SingularSolver::init(const GenericMatrix& A)
 {
   // Check size of system
   if (A.size(0) != A.size(1))
-    error("Matrix must be square.");
+  {
+    dolfin_error("SingularSolver.cpp",
+                 "initialize singular solver",
+                 "matrix is not square");
+  }
   if (A.size(0) == 0)
-    error("Matrix size must be non-zero.");
+  {
+    dolfin_error("SingularSolver.cpp",
+                 "initialize singular solver",
+                 "matrix is empty");
+  }
 
   // Get dimension
   const uint N = A.size(0);

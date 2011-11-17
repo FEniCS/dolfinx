@@ -18,7 +18,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-17
+// Last changed: 2011-11-08
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -103,7 +103,7 @@ namespace dolfin
 
     /// Copy constructor
     MeshEntityIterator(const MeshEntityIterator& it)
-      : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {};
+      : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
 
     /// Destructor
     virtual ~MeshEntityIterator() {}

@@ -91,7 +91,11 @@ void ITLKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix>
 const GenericMatrix& ITLKrylovSolver::get_operator() const
 {
   if (!A)
-    error("Operator for linear solver has not been set.");
+  {
+    dolfin_error("ITLKrylovSolver.cpp",
+                 "access operator for ITL Krylov solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -173,12 +177,9 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
-      error("ITL Krylov solver failed to converge (%s, %s)\n\t%d iterations,"
-            " Resid=%8.2e",
-            method.c_str(),
-            preconditioner.c_str(),
-            iter.iterations(),
-            iter.resid());
+      dolfin_error("ITLKrylovSolver.cpp",
+                   "solve linear system using ITL Krylov solver",
+                   "Solution failed to converge");
     }
     else
     {

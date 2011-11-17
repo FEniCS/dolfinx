@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg 2006-2011
 //
 // First added:  2006-06-23
-// Last changed: 2009-07-03
+// Last changed: 2011-11-11
 
 #ifndef __UBLAS_PRECONDITIONER_H
 #define __UBLAS_PRECONDITIONER_H
@@ -47,15 +47,27 @@ namespace dolfin
 
     /// Initialise preconditioner (sparse matrix)
     virtual void init(const uBLASMatrix<ublas_sparse_matrix>& P)
-      { error("No init(..) function for preconditioner uBLASMatrix<ublas_sparse_matrix>"); }
+    {
+      dolfin_error("uBLASPreconditioner",
+                   "initialize uBLAS preconditioner",
+                   "no init() function for preconditioner uBLASMatrix<ublas_sparse_matrix>");
+    }
 
     /// Initialise preconditioner (dense matrix)
     virtual void init(const uBLASMatrix<ublas_dense_matrix>& P)
-      { error("No init(..) function for preconditioner uBLASMatrix<ublas_dense_matrix>"); }
+    {
+      dolfin_error("uBLASPreconditioner",
+                   "initialize uBLAS preconditioner",
+                   "no init() function for preconditioner uBLASMatrix<ublas_dense_matrix>");
+    }
 
     /// Initialise preconditioner (virtual matrix)
     virtual void init(const uBLASKrylovMatrix& P)
-      { error("No init(..) function for preconditioning uBLASKrylovMatrix"); }
+    {
+      dolfin_error("uBLASPreconditioner",
+                   "initialize uBLAS preconditioner",
+                   "no init() function for preconditioner uBLASKrylovMatrix");
+    }
 
     /// Solve linear system (M^-1)Ax = y
     virtual void solve(uBLASVector& x, const uBLASVector& b) const = 0;

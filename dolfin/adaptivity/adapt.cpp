@@ -19,7 +19,6 @@
 // Last changed: 2011-10-04
 
 #include <map>
-
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
@@ -147,10 +146,12 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   }
 
   // Create DOLFIN finite element and dofmap
+  assert(space.dofmap());
+  assert(space.element());
   boost::shared_ptr<const FiniteElement>
-    refined_element(space.element().create());
+    refined_element(space.element()->create());
   boost::shared_ptr<const GenericDofMap>
-    refined_dofmap(space.dofmap().copy(*adapted_mesh));
+    refined_dofmap(space.dofmap()->copy(*adapted_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>
@@ -174,7 +175,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   }
 
   // Refine function space
-  boost::shared_ptr<const FunctionSpace> space = function.function_space_ptr();
+  boost::shared_ptr<const FunctionSpace> space = function.function_space();
   adapt(*space, adapted_mesh);
   boost::shared_ptr<const FunctionSpace>
     refined_space = space->child_shared_ptr();
@@ -421,13 +422,12 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     return bc.child();
   }
 
-  boost::shared_ptr<const FunctionSpace> W = bc.function_space_ptr();
+  boost::shared_ptr<const FunctionSpace> W = bc.function_space();
   assert(W);
-  boost::shared_ptr<const FunctionSpace> V;
-
 
   // Refine function space
   const std::vector<uint> component = W->component();
+  boost::shared_ptr<const FunctionSpace> V;
   if (component.size() == 0)
   {
     adapt(*W, adapted_mesh);

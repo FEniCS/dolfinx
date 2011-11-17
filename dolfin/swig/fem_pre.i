@@ -114,8 +114,7 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
 //-----------------------------------------------------------------------------
-%ignore dolfin::BoundaryCondition::function_space;
-%rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;
+%rename (_function_space) dolfin::BoundaryCondition::function_space;
 
 //-----------------------------------------------------------------------------
 // Ignores domain assignment and operator== for Form class
@@ -130,21 +129,21 @@
 // a typemap
 //-----------------------------------------------------------------------------
 %ignore dolfin::FiniteElement::evaluate_basis(uint i,
-					      double* values,
-					      const double* x,
-					      const Cell& cell) const;
+                                             double* values,
+                                             const double* x,
+                                             const Cell& cell) const;
 
 %ignore dolfin::FiniteElement::evaluate_basis_all(double* values,
-						  const double* coordinates,
-						  const Cell& cell) const;
+                                                  const double* coordinates,
+                                                  const Cell& cell) const;
 
 %ignore dolfin::DofMap::tabulate_coordinates(
-			      boost::multi_array<double, 2>& coordinates,
-			      const Cell& cell) const;
+                                    boost::multi_array<double, 2>& coordinates,
+                                    const Cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
-                              boost::multi_array<double, 2>& coordinates,
-			      const Cell& cell) const;
+                                    boost::multi_array<double, 2>& coordinates,
+                                    const Cell& cell) const;
 
 %ignore dolfin::DofMap::tabulate_coordinates(
 			      boost::multi_array<double, 2>& coordinates,
@@ -152,7 +151,7 @@
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
                               boost::multi_array<double, 2>& coordinates,
-			      const ufc::cell& cell) const;
+                              const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell

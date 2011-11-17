@@ -173,7 +173,12 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
     x -= (*y);
   }
   else
-    error("Unknown normalization type.");
+  {
+    dolfin_error("solve.cpp",
+                 "normalize vector",
+                 "Unknown normalization type (\"%s\")",
+                 normalization_type.c_str());
+  }
 
   return c;
 }

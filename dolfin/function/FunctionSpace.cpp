@@ -96,21 +96,20 @@ boost::shared_ptr<const Mesh> FunctionSpace::mesh() const
   return _mesh;
 }
 //-----------------------------------------------------------------------------
-const FiniteElement& FunctionSpace::element() const
+boost::shared_ptr<const FiniteElement> FunctionSpace::element() const
 {
-  assert(_element);
-  return *_element;
+  return _element;
 }
 //-----------------------------------------------------------------------------
-const GenericDofMap& FunctionSpace::dofmap() const
+boost::shared_ptr<const GenericDofMap> FunctionSpace::dofmap() const
 {
-  assert(_dofmap);
-  return *_dofmap;
+  return _dofmap;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FunctionSpace::dim() const
 {
-  return dofmap().global_dimension();
+  assert(_dofmap);
+  return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
@@ -121,13 +120,13 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   assert(_dofmap);
 
   // Check that function ranks match
-  if (element().value_rank() != v.value_rank())
+  if (_element->value_rank() != v.value_rank())
     error("Cannot interpolate functions of different ranks.");
 
   // Check that function dims match
-  for (uint i = 0; i < element().value_rank(); ++i)
+  for (uint i = 0; i < _element->value_rank(); ++i)
   {
-    if (element().value_dimension(i) != v.value_dimension(i))
+    if (_element->value_dimension(i) != v.value_dimension(i))
       error("Cannot interpolate functions with different value dimensions.");
   }
 
@@ -148,7 +147,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     ufc_cell.update(*cell);
 
     // Restrict function to cell
-    v.restrict(&cell_coefficients[0], this->element(), *cell, ufc_cell);
+    v.restrict(&cell_coefficients[0], *_element, *cell, ufc_cell);
 
     // Tabulate dofs
     const std::vector<uint>& cell_dofs = _dofmap->cell_dofs(cell->index());
@@ -227,7 +226,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& FunctionSpace::component() const
+std::vector<dolfin::uint> FunctionSpace::component() const
 {
   return _component;
 }

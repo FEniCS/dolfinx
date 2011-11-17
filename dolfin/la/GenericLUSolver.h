@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2011
+//
 // First added:  2010-07-11
-// Last changed:
+// Last changed: 2011-11-11
 
 #ifndef __GENERIC_LU_SOLVER_H
 #define __GENERIC_LU_SOLVER_H
@@ -47,7 +49,12 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-    { error("solve(A, x, b) is not implemented. Consider trying solve(x, b)."); return 0; }
+    {
+      dolfin_error("GenericLLUSolver.h",
+                   "solve linear system",
+                   "not supported by current linear algebra backend, consider using solve(x, b)");
+      return 0;
+    }
 
   };
 

@@ -127,14 +127,14 @@ namespace dolfin
     /// *Returns*
     ///     _FiniteElement_
     ///         The finite element.
-    const FiniteElement& element() const;
+    boost::shared_ptr<const FiniteElement> element() const;
 
     /// Return dofmap
     ///
     /// *Returns*
     ///     _GenericDofMap_
     ///         The dofmap.
-    const GenericDofMap& dofmap() const;
+    boost::shared_ptr<const GenericDofMap> dofmap() const;
 
     /// Return dimension of function space
     ///
@@ -225,7 +225,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<uint>
     ///         The component (relative to superspace).
-    const std::vector<uint>& component() const;
+    std::vector<uint> component() const;
 
     /// Return informal string representation (pretty-print)
     ///

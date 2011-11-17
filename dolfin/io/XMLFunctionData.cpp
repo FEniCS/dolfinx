@@ -45,8 +45,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 {
-  GenericVector& vector = u.vector();
-  const FunctionSpace& V = u.function_space();
+  assert(u.vector());
+  GenericVector& vector = *u.vector();
+  assert(u.function_space());
+  const FunctionSpace& V = *u.function_space();
 
   std::vector<std::pair<uint, uint> > global_to_cell_dof;
   Array<double> x;
@@ -119,13 +121,15 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 {
   Array<double> x;
+  assert(u.vector());
   if (MPI::num_processes() > 1)
-    u.vector().gather_on_zero(x);
+    u.vector()->gather_on_zero(x);
   else
-    u.vector().get_local(x);
+    u.vector()->get_local(x);
 
   // Get function space
-  const FunctionSpace& V = u.function_space();
+  assert(u.function_space());
+  const FunctionSpace& V = *u.function_space();
 
   // Build map
   std::vector<std::vector<std::pair<uint, uint> > > global_dof_to_cell_dof;
@@ -157,8 +161,9 @@ void XMLFunctionData::build_global_to_cell_dof(
 {
   // Get mesh and dofmap
   assert(V.mesh());
+  assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = V.dofmap();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
   std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
@@ -218,8 +223,9 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
 {
   // Get mesh and dofmap
   assert(V.mesh());
+  assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = V.dofmap();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   const uint num_cells = MPI::sum(mesh.num_cells());
 

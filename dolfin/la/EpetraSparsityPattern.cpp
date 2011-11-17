@@ -71,7 +71,11 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
   }
   else
-    error("Illegal rank for Epetra sparsity pattern.");
+  {
+    dolfin_error("EpetraSparsityPattern.cpp",
+                 "initialize Epetra sparsity pattern",
+                 "illegal rank (%d)", _rank);
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::insert(const uint* num_rows,
@@ -107,7 +111,9 @@ uint EpetraSparsityPattern::size(uint i) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint dim) const
 {
-  error("EpetraSparsityPattern::local_range not implemented.");
+  dolfin_error("EpetraSparsityPattern.cpp",
+               "access local range for Epetra sparsity pattern",
+               "not implemented");
   return std::make_pair(0, 0);
   //assert(dim < 2);
   //return MPI::local_range(size(dim));

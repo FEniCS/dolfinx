@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2006-2009.
-// Modified by Ola Skavhaug, 2007-2008.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Martin Sandve Alnes, 2008.
-// Modified by Dag Lindbo, 2008
+// Modified by Anders Logg 2006-2011
+// Modified by Ola Skavhaug 2007-2008
+// Modified by Kent-Andre Mardal 2008
+// Modified by Martin Sandve Alnes 2008
+// Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2010-06-28
+// Last changed: 2011-11-11
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -34,8 +34,8 @@
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
-#include "uBLASVector.h"
 #include "uBLASFactory.h"
+#include "uBLASVector.h"
 
 namespace dolfin
 {
@@ -272,7 +272,10 @@ namespace dolfin
       return norm_frobenius(A);
     else
     {
-      error("Unknown norm type in uBLASMatrix.");
+      dolfin_error("uBLASMatrix.h",
+                   "compute norm of uBLAS matrix",
+                   "unknown norm type (\"%s\")",
+                   norm_type.c_str());
       return 0.0;
     }
   }
@@ -455,7 +458,9 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::transpmult(const GenericVector& x, GenericVector& y) const
   {
-    error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
+    dolfin_error("uBLASMatrix.h",
+                 "compute transpose matrix-vector product",
+                 "not supported by the uBLAS linear algebra backend");
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -547,7 +552,11 @@ namespace dolfin
     // Get underlying pattern
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (!pattern_pointer)
-      error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "initialize uBLAS matrix",
+                   "cannot convert GenericSparsityPattern to concrete SparsityPattern type");
+    }
     const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
     // Add entries
@@ -582,15 +591,19 @@ namespace dolfin
   inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
   {
     // Check for same size
-    if ( size(0) != A.size(0) or size(1) != A.size(1) )
-      error("Matrices must be of same size.");
+    if (size(0) != A.size(0) or size(1) != A.size(1))
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "perform axpy operation with uBLAS matrix",
+                   "dimensions don't match");
+    }
 
     this->A += (a)*(A.down_cast<uBLASMatrix>().mat());
   }
   //---------------------------------------------------------------------------
   template <>
   inline std::tr1::tuple<const std::size_t*, const std::size_t*,
-             const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
+                         const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
   {
     typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
     return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
@@ -598,9 +611,11 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename Mat>
   inline std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>
-                                                 uBLASMatrix<Mat>::data() const
+  uBLASMatrix<Mat>::data() const
   {
-    error("Unable to return pointers to underlying data for this uBLASMatrix type.");
+    dolfin_error("GenericMatrix.h",
+                 "return pointers to underlying matrix data",
+                 "not implemented for this uBLAS matrix type");
     return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
@@ -615,8 +630,13 @@ namespace dolfin
 
     // Factorise (with pivoting)
     uint singular = ublas::lu_factorize(A, pmatrix);
-    if( singular > 0)
-      error("Singularity detected in uBLAS matrix factorization on line %u.", singular-1);
+    if (singular > 0)
+    {
+      dolfin_error("uBLASMatrix.h",
+                   "solve in-place using uBLAS matrix",
+                   "singularity detected in matrix factorization on row %u.",
+                   singular - 1);
+    }
 
     // Back substitute
     ublas::lu_substitute(A, pmatrix, X);

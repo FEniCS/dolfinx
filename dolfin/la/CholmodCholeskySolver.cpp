@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-15
-// Last changed: 2011-10-06
+// Last changed: 2011-11-11
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
@@ -105,10 +105,18 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
   const uint N = b.size();
 
   if (!cholmod.factorized)
-    error("Factorized solve must be preceded by call to factorize.");
+  {
+    dolfin_error("CholmodCholeskySolver.cpp",
+                 "perform factorized solve using CHOLMOD Cholesky solver",
+                 "factorized solve no preceded by call to factorize()");
+  }
 
   if (N != cholmod.N)
-    error("Vector does not match size of factored matrix");
+  {
+    dolfin_error("CholmodCholeskySolver.cpp",
+                 "perform factorized solve using CHOLMOD Cholesky solver",
+                 "vector does not match size of factored matrix");
+  }
 
   // Initialise solution vector and solve
   x.resize(N);
@@ -135,14 +143,18 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 {
-  error("CHOLMOD must be installed to perform sparse Cholesky factorization.");
+  dolfin_error("CholdmodCholeskySolver.cpp",
+               "perform factorization using CHOLMOD Cholesky solver",
+               "CHOLMOD is not installed");
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
                                                      const GenericVector& b)
 {
-  error("CHOLMOD must be installed to perform sparse back and forward substitution");
+  dolfin_error("CholdmodCholeskySolver.cpp",
+               "perform factorized solve using CHOLMOD Cholesky solver",
+               "CHOLMOD is not installed");
   return 0;
 }
 #endif

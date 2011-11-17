@@ -64,7 +64,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
     dofmap._dofmap[cell->index()].resize(local_dim);
 
     // Tabulate standard UFC dof map
-    dofmap._ufc_dofmap->tabulate_dofs(&dofmap._dofmap[cell->index()][0], ufc_mesh, ufc_cell);
+    dofmap._ufc_dofmap->tabulate_dofs(&dofmap._dofmap[cell->index()][0],
+                                      ufc_mesh, ufc_cell);
   }
 
   // Build (renumber) dofmap when running in parallel
@@ -402,7 +403,8 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                           ufc_mesh);
 
       // Get offset
-      offset += sub_dofmap->global_dimension();
+      if (sub_dofmap->num_sub_dofmaps() == 0)
+        offset += sub_dofmap->global_dimension();
     }
   }
 }

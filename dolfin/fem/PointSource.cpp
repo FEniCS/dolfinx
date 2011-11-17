@@ -75,27 +75,30 @@ void PointSource::apply(GenericVector& b)
   UFCCell ufc_cell(cell);
 
   // Evaluate all basis functions at the point()
-  assert(V->element().value_rank() == 0);
-  std::vector<double> values(V->element().space_dimension());
-  V->element().evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
+  assert(V->element());
+  assert(V->element()->value_rank() == 0);
+  std::vector<double> values(V->element()->space_dimension());
+  V->element()->evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
 
   // Scale by magnitude
-  for (uint i = 0; i < V->element().space_dimension(); i++)
+  for (uint i = 0; i < V->element()->space_dimension(); i++)
     values[i] *= magnitude;
 
   // Compute local-to-global mapping
-  std::vector<uint> dofs(V->dofmap().cell_dimension(cell.index()));
-  V->dofmap().tabulate_dofs(&dofs[0], cell);
+  assert(V->dofmap());
+  std::vector<uint> dofs(V->dofmap()->cell_dimension(cell.index()));
+  V->dofmap()->tabulate_dofs(&dofs[0], cell);
 
   // Add values to vector
-  assert(V->element().space_dimension() == V->dofmap().cell_dimension(cell.index()));
-  b.add(&values[0], V->element().space_dimension(), &dofs[0]);
+  assert(V->element()->space_dimension() == V->dofmap()->cell_dimension(cell.index()));
+  b.add(&values[0], V->element()->space_dimension(), &dofs[0]);
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_is_scalar(const FunctionSpace& V)
 {
-  if (V.element().value_rank() != 0)
+  assert(V.element());
+  if (V.element()->value_rank() != 0)
     error("Unable to create point source; function is not scalar.");
 }
 //-----------------------------------------------------------------------------

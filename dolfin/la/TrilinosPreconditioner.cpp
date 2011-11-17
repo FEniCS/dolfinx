@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-25
-// Last changed: 2011-10-19
+// Last changed: 2011-11-11
 
 #ifdef HAS_TRILINOS
 
@@ -99,7 +99,11 @@ TrilinosPreconditioner::TrilinosPreconditioner(std::string preconditioner)
 
   // Check that the requested method is known
   if (_preconditioners.count(preconditioner) == 0)
-    error("Requested Trilinos proconditioner '%s' is unknown,", preconditioner.c_str());
+  {
+    dolfin_error("TrilinosPreconditioner.cpp",
+                 "create Trilinos preconditioner",
+                 "Unknown preconditioner (\"%s\")", preconditioner.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 TrilinosPreconditioner::~TrilinosPreconditioner()

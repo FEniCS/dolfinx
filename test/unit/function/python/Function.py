@@ -29,6 +29,15 @@ W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Interpolate(unittest.TestCase):
 
+    def test_in_function_space(self):
+        u = Function(W)
+        v = Function(W)
+        self.assertTrue(u in W)
+        self.assertTrue(u in u.function_space())
+        self.assertTrue(u in v.function_space())
+        for i, usub in enumerate(u.split()):
+            self.assertTrue(usub in W.sub(i))
+
     def test_interpolation_mismatch_rank0(self):
         f = Expression("1.0")
         self.assertRaises(RuntimeError, interpolate, f, W)
@@ -51,7 +60,7 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
-    def testInterpolation(self):
+    def test_interpolation_old(self):
         class F0(Expression):
             def eval(self, values, x):
                 values[0] = 1.0

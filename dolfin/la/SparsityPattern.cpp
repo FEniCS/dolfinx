@@ -179,7 +179,11 @@ void SparsityPattern::num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) con
 {
   // Check rank
   if (shape.size() != 2)
-    error("Non-zero entries per row can be computed for matrices only.");
+  {
+    dolfin_error("SparsityPattern.cpp",
+                 "access number of nonzero diagonal entries",
+                 "Non-zero entries per row can be computed for matrices only");
+  }
 
   // Resize vector
   num_nonzeros.resize(diagonal.size());
@@ -194,7 +198,11 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros)
 {
   // Check rank
   if (shape.size() != 2)
-    error("Non-zero entries per row can be computed for matrices only.");
+  {
+    dolfin_error("SparsityPattern.cpp",
+                 "access number of nonzero off-diagonal entries",
+                 "Non-zero entries per row can be computed for matrices only");
+  }
 
   // Resize vector
   num_nonzeros.resize(diagonal.size());
@@ -257,8 +265,10 @@ void SparsityPattern::apply()
       // Sanity check
       if (I < row_range_min || I >= row_range_max)
       {
-        error("Received illegal sparsity pattern entry for row %d, not in range [%d, %d].",
-              I, row_range_min, row_range_max);
+        dolfin_error("SparsityPattern.cpp",
+                     "apply changes to sparsity pattern",
+                     "Received illegal sparsity pattern entry for row %d, not in range [%d, %d]",
+                     I, row_range_min, row_range_max);
       }
 
       // Subtract offset
@@ -286,7 +296,11 @@ std::string SparsityPattern::str() const
 {
   // Check rank
   if (shape.size() != 2)
-    error("Sparsity pattern can only be displayed for matrices.");
+  {
+    dolfin_error("SparsityPattern.cpp",
+                 "return string representation of sparsity pattern",
+                 "Only available for matrices");
+  }
 
   // Print each row
   std::stringstream s;

@@ -51,13 +51,7 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& BoundaryCondition::function_space() const
-{
-  assert(_function_space);
-  return *_function_space;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() const
+boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space() const
 {
   return _function_space;
 }
@@ -109,10 +103,10 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(V.dofmap().max_cell_dimension()),
+  : n(V.dofmap()->max_cell_dimension()),
     w(n, 0.0),
     cell_dofs(n, 0),
-    facet_dofs(V.dofmap().num_facet_dofs(), 0),
+    facet_dofs(V.dofmap()->num_facet_dofs(), 0),
     coordinates(boost::extents[n][V.mesh()->geometry().dim()])
 {
   // Do nothing

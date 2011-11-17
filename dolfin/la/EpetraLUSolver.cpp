@@ -150,7 +150,11 @@ void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A
 const GenericMatrix& EpetraLUSolver::get_operator() const
 {
   if (!A)
-    error("Operator for linear solver has not been set.");
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "access operator for Epetra LU solver",
+                 "Operator has not been set");
+  }
   return *A;
 }
 //-----------------------------------------------------------------------------
@@ -168,14 +172,22 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   const EpetraVector& _b = b.down_cast<EpetraVector>();
 
   // Get operator matrix
-  const Epetra_RowMatrix* A =	linear_problem->GetMatrix();
+  const Epetra_RowMatrix* A = linear_problem->GetMatrix();
   if (!A)
-    error("Operator has not been set for EpetraLUSolver.");
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "solve linear system using Epetra LU solver",
+                 "Operator has not been set");
+  }
 
   const uint M = A->NumGlobalRows();
   const uint N = A->NumGlobalCols();
   if (N != b.size())
-    error("Non-matching dimensions for linear system.");
+  {
+    dolfin_error("EpetraLUSolver.cpp",
+                 "solve linear system using Epetra LU solver",
+                 "Non-matching dimensions for linear system");
+  }
 
   // Initialize solution vector
   if (x.size() != M)
