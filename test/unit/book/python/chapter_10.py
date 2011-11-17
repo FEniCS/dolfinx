@@ -73,7 +73,7 @@ class TestPage5(unittest.TestCase):
     def test_box_3(self):
         if skip_in_parallel(): return
         A, x, b = create_data()
-        solve(A, x, b, "lu");
+        solve(A, x, b, "lu")
         solve(A, x, b, "gmres", "ilu")
 
     def test_box_4(self):
@@ -720,7 +720,7 @@ class TestPage36(unittest.TestCase):
     def test_box_1(self):
         if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
-        matrix, vector, b = create_data()
+        matrix, x, vector = create_data()
 
         vector_file = File("vector.xml")
         vector_file << vector

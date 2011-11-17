@@ -161,6 +161,7 @@ class AbstractBaseTest(object):
         self.assertEqual(A.size(0), 0)
         self.assertEqual(A.size(1), 0)
         info(A)
+        info(A, True)
 
     def test_copy_empty_matrix(self):
         A = Matrix()

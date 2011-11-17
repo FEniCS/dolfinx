@@ -36,7 +36,6 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-
     def assemble_vectors(self):
         mesh = UnitSquare(7, 4)
 
@@ -48,7 +47,6 @@ class AbstractBaseTest(object):
 
         return assemble(v*dx), assemble(t*dx)
 
-
     def test_distributed(self):
         a, b = self.assemble_vectors()
         if self.backend == "PETSc" or self.backend == "Epetra":
@@ -59,10 +57,10 @@ class AbstractBaseTest(object):
         else:
            self.assertFalse(a.distributed())
 
-
     def test_create_empty_vector(self):
         v0 = Vector()
         info(v0)
+        info(v0, True)
         self.assertEqual(v0.size(), 0)
 
     def test_create_vector(self):
