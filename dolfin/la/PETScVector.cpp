@@ -598,6 +598,9 @@ double PETScVector::sum(const Array<uint>& rows) const
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
 {
+  if (!x)
+    return "<Uninitialized PETScVector>";
+
   std::stringstream s;
 
   if (verbose)
@@ -606,6 +609,7 @@ std::string PETScVector::str(bool verbose) const
 
     // Get vector type
     const VecType petsc_type;
+    assert(x);
     VecGetType(*x, &petsc_type);
 
     if (strcmp(petsc_type, VECSEQ) == 0)

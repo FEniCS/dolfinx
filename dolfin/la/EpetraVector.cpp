@@ -287,6 +287,9 @@ void EpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
 {
+  if (!x)
+    return "<Uninitialized EpetraVector>";
+
   std::stringstream s;
   if (verbose)
   {
