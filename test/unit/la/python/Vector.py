@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2011-03-01
-# Last changed: 2011-03-01
+# Last changed: 2011-11-17
 
 import unittest
 from dolfin import *
@@ -34,7 +36,6 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-
     def assemble_vectors(self):
         mesh = UnitSquare(7, 4)
 
@@ -46,7 +47,6 @@ class AbstractBaseTest(object):
 
         return assemble(v*dx), assemble(t*dx)
 
-
     def test_distributed(self):
         a, b = self.assemble_vectors()
         if self.backend == "PETSc" or self.backend == "Epetra":
@@ -57,9 +57,10 @@ class AbstractBaseTest(object):
         else:
            self.assertFalse(a.distributed())
 
-
     def test_create_empty_vector(self):
         v0 = Vector()
+        info(v0)
+        info(v0, True)
         self.assertEqual(v0.size(), 0)
 
     def test_create_vector(self):

@@ -20,7 +20,7 @@ Unit tests for Chapter 1 (A FEniCS tutorial).
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-10-20
-# Last changed: 2011-11-08
+# Last changed: 2011-11-17
 
 import unittest
 import inspect, os, sys
@@ -74,12 +74,24 @@ def run_test(path, args=[]):
     # Run script with default parameters
     run_path(file_path, args)
 
-    # Set parameters from file (as they were at the time of book release)
-    file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
-    file >> parameters
+    # Try reading parameters, might not always work if running without PETSc
+    # and the parameter file specifies PETSc to be used
+    try:
+        file = File(os.path.join("chapter_1_files", "dolfin_parameters.xml"))
+        file >> parameters
+        print
+        print "Running again using stored parameter values"
+        print
+        new_parameters = True
+    except:
+        print
+        print "Unable to read old parameters, skipping this test"
+        print
+        new_parameters = False
 
     # Run script again with book parameters
-    run_path(file_path, args)
+    if new_parameters:
+        run_path(file_path, args)
 
     # Reset parameters
     parameters.update(dolfin_parameters)

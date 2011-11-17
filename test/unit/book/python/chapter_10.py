@@ -73,7 +73,7 @@ class TestPage5(unittest.TestCase):
     def test_box_3(self):
         if skip_in_parallel(): return
         A, x, b = create_data()
-        solve(A, x, b, "lu");
+        solve(A, x, b, "lu")
         solve(A, x, b, "gmres", "ilu")
 
     def test_box_4(self):
@@ -149,6 +149,7 @@ class TestPage8(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
+        if not has_linear_algebra_backend("PETSc"): return
         A = PETScMatrix()
         A, x, b = create_data(A)
         eigensolver = SLEPcEigenSolver(A)
@@ -159,6 +160,7 @@ class TestPage9(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
+        if not has_linear_algebra_backend("PETSc"): return
         A = PETScMatrix()
         M = PETScMatrix()
         A, x, b = create_data(A)
@@ -167,6 +169,7 @@ class TestPage9(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
+        if not has_linear_algebra_backend("PETSc"): return
         parameters["linear_algebra_backend"] = "PETSc"
 
         # Reset parameter again so we don't mess with other tests
@@ -174,6 +177,7 @@ class TestPage9(unittest.TestCase):
 
     def test_box_3(self):
         if skip_in_parallel(): return
+        if not has_linear_algebra_backend("PETSc"): return
         x = PETScVector()
         solver = PETScLUSolver()
 
@@ -716,7 +720,7 @@ class TestPage36(unittest.TestCase):
     def test_box_1(self):
         if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
-        matrix, vector, b = create_data()
+        matrix, x, vector = create_data()
 
         vector_file = File("vector.xml")
         vector_file << vector
@@ -986,12 +990,13 @@ class TestPage50(unittest.TestCase):
         v = TestFunction(V)
         L = v*dx
 
+        default_linear_algebra_backend = parameters["linear_algebra_backend"]
         parameters["linear_algebra_backend"] = "uBLAS"
         b = assemble(L)
         bb = b.data()
 
         # Reset linear algebra backend so that other tests work
-        parameters["linear_algebra_backend"] = "PETSc"
+        parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
     def test_box_4(self):
         if skip_in_parallel(): return
@@ -1002,13 +1007,14 @@ class TestPage50(unittest.TestCase):
         a = u*v*dx
 
         # Only test when MTL4 is available
+        default_linear_algebra_backend = parameters["linear_algebra_backend"]
         if has_linear_algebra_backend("MTL4"):
             parameters["linear_algebra_backend"] = "MTL4"
             A = assemble(a)
             rows, columns, values = A.data()
 
         # Reset linear algebra backend so that other tests work
-        parameters["linear_algebra_backend"] = "PETSc"
+        parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
 class TestPage51(unittest.TestCase):
 
@@ -1019,6 +1025,7 @@ class TestPage51(unittest.TestCase):
         u = TrialFunction(V)
         v = TestFunction(V)
         a = u*v*dx
+        default_linear_algebra_backend = parameters["linear_algebra_backend"]
         parameters["linear_algebra_backend"] = "uBLAS"
         A = assemble(a)
 
@@ -1031,7 +1038,7 @@ class TestPage51(unittest.TestCase):
             csr = csr_matrix((values, columns, rows))
 
         # Reset linear algebra backend so that other tests work
-        parameters["linear_algebra_backend"] = "PETSc"
+        parameters["linear_algebra_backend"] = default_linear_algebra_backend
 
     def test_box_2(self):
         if skip_in_parallel(): return
