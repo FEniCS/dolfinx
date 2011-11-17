@@ -287,12 +287,11 @@ void EpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
 {
-  assert(x);
-
   std::stringstream s;
   if (verbose)
   {
     warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
+    assert(x);
     x->Print(std::cout);
   }
   else
