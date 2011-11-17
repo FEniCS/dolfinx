@@ -116,25 +116,38 @@ namespace dolfin
       return s.str();
     }
 
+    /// Clear array
+    void clear()
+    {
+      this->x.reset();
+      this->_size = 0;
+    }
+
     /// Resize array to size N. If size changes, contents will be destroyed.
     void resize(uint N)
     {
+      // Special case
       if (N == _size)
         return;
+
+      // Special case
+      if (N == 0)
+      {
+        clear();
+        return;
+      }
+
+      // FIXME: Do we want to allow resizing of shared data?
+      if (x.unique())
+      {
+        _size = N;
+        x.reset(new T[N]);
+      }
       else
       {
-        // FIXME: Do we want to allow resizing of shared data?
-        if (x.unique())
-        {
-          _size = N;
-          x.reset(new T[N]);
-        }
-        else
-        {
-          dolfin_error("Array.h",
-                       "resize Array",
-                       "Data is shared");
-        }
+        dolfin_error("Array.h",
+                     "resize Array",
+                     "Data is shared");
       }
     }
 
