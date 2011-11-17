@@ -770,11 +770,8 @@ void PETScVector::init(std::pair<uint, uint> range,
     if (!_use_gpu)
       VecSetType(*x, VECSEQ);
 #ifdef HAS_PETSC_CUSP
-    else {
-      warning("Setting vector to cusp type ...");
+    else
       VecSetType(*x, VECSEQCUSP);
-      warning("Vector set to cusp type.");
-    }
 #endif
 
     VecSetSizes(*x, local_size, PETSC_DECIDE);
