@@ -83,7 +83,13 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const
     {
-      assert(dim < 2);
+      if (dim > 1)
+      {
+        dolfin_error("STLMatrix.cpp",
+                     "access size of STL matrix",
+                     "Illegal axis (%d), must be 0 or 1", dim);
+      }
+
       if (dim == 0)
         return dolfin::MPI::sum(_local_range.second - _local_range.first);
       else

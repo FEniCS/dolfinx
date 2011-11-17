@@ -447,9 +447,12 @@ std::string Mesh::str(bool verbose) const
   }
   else
   {
+    std::string cell_type("undefined cell type");
+    if (_cell_type)
+      cell_type = _cell_type->description(true);
     s << "<Mesh of topological dimension "
       << topology().dim() << " ("
-      << _cell_type->description(true) << ") with "
+      << cell_type << ") with "
       << num_vertices() << " vertices and "
       << num_cells() << " cells, "
       << (_ordered ? "ordered" : "unordered") << ">";

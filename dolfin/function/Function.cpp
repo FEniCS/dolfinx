@@ -225,7 +225,7 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
-    // Create new collapase FunctionsSpapce
+    // Create new collapsed FunctionSpace
     boost::unordered_map<uint, uint> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
@@ -552,7 +552,14 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 {
   assert(_function_space);
   assert(_function_space->mesh());
-  assert(&mesh == _function_space->mesh().get());
+
+  // Check that the mesh matches
+  if (&mesh != _function_space->mesh().get())
+  {
+    dolfin_error("Function.cpp",
+                 "interpolate function values at vertices",
+                 "Non-matching mesh");
+  }
 
   // Gather ghosts dofs
   gather();

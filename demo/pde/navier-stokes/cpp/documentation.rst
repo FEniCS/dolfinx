@@ -382,7 +382,7 @@ pressure equation:
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "gmres", "ml_amg");
+    solve(A2, *p1.vector(), b2, "gmres", "amg");
     end();
 
     // Velocity correction

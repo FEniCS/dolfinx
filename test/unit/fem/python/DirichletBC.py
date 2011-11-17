@@ -58,15 +58,24 @@ class DirichletBCTest(unittest.TestCase):
         bc = DirichletBC(V, 0.0, upper)
         bc_values = bc.get_boundary_values()
 
+        print
+        info("bc_values:")
+        for dof in bc_values:
+            info("%d %d" % (dof, bc_values[dof]))
+        print
+
         for cell in cells(mesh):
             V.dofmap().tabulate_dofs(dofs, cell)
             coords = V.dofmap().tabulate_coordinates(cell)
+            print
+            info(str(cell))
             for i, dof in enumerate(dofs):
+                info("checking dof_%d = %d at x = %s" % (i, dof, str(coords[i, :])))
                 if upper(coords[i, :], None):
-                    self.assertTrue(dofs[i] in bc_values)
-                    self.assertAlmostEqual(bc_values[dofs[i]], 0.0)
+                    self.assertTrue(dof in bc_values)
+                    self.assertAlmostEqual(bc_values[dof], 0.0)
                 else:
-                    self.assertTrue(dofs[i] not in bc_values)
+                    self.assertTrue(dof not in bc_values)
 
     def test_meshdomain_bcs(self):
         """Test application of Dirichlet boundary conditions stored as
