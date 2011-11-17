@@ -255,7 +255,11 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos)
+  find_package(Trilinos 10.8.1 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  if (Trilinos_FOUND)
+    message(STATUS "Trilinos found: ${Trilinos_DIR}")
+    message(STATUS "Trilinos version: ${Trilinos_VERSION}")
+  endif()
 endif()
 
 # Check for MTL4
