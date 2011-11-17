@@ -6,7 +6,7 @@
 #  LAPACK_LIBRARIES    - libraries for LAPACK
 #
 # This test is necessary since the CMake supplied FindLAPACK script
-# requires Forran (Fortran which may not be installed).
+# requires Fortran (Fortran which may not be installed).
 #
 
 message(STATUS "Checking for package 'LAPACK'")

@@ -22,7 +22,7 @@
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -257,6 +257,13 @@ namespace dolfin
   template <typename Mat>
   uint uBLASMatrix<Mat>::size(uint dim) const
   {
+    if (dim > 1)
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "access size of uBLAS matrix",
+                   "Illegal axis (%d), must be 0 or 1", dim);
+    }
+
     assert(dim < 2);
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
   }

@@ -18,7 +18,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2010-11-17
+// Last changed: 2011-11-15
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -62,6 +62,17 @@ namespace dolfin
 
     /// Destructor
     virtual ~MeshEntity();
+
+    /// Initialize mesh entity with given data
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (uint)
+    ///         The topological dimension.
+    ///     index (uint)
+    ///         The index.
+    void init(const Mesh& mesh, uint dim, uint index);
 
     /// Comparision Operator
     ///

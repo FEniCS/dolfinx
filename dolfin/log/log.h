@@ -82,17 +82,8 @@ namespace dolfin
   ///     ... (primitive types like int, uint, double, bool)
   ///         Optional arguments for the format string.
   ///
-  /// Some rules of thumb:
-  ///
-  /// * The 'task' string should be sufficiently high level ("assemble form")
-  ///   to make sense to a user.
-  /// * Use the same 'task' string from all errors originating from the same
-  ///   function.
-  /// * The 'task' string should provide details of which particular algorithm
-  ///   or method that was used ("assemble form using OpenMP assembler").
-  /// * The 'reason' string should try to explain why the task failed in the
-  ///   context of the task that failed ("subdomains are not yet handled").
-  /// * Write "initialize mesh function" rather than "initialize MeshFunction".
+  /// Developers should read the file dolfin/log/README in the DOLFIN
+  /// source tree for further notes about the use of this function.
   void dolfin_error(std::string location,
                     std::string task,
                     std::string reason, ...);

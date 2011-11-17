@@ -30,7 +30,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dolfin::uint PETScBaseMatrix::size(uint dim) const
 {
-  assert(dim <= 1);
+  if (dim > 1)
+  {
+    dolfin_error("PETScBaseMatrix.cpp",
+                 "access size of PETSc matrix",
+                 "Illegal axis (%d), must be 0 or 1", dim);
+  }
+
   if (A)
   {
     int m(0), n(0);
