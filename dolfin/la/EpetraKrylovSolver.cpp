@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-11-11
+// Last changed: 2011-11-17
 
 #ifdef HAS_TRILINOS
 
@@ -185,6 +185,10 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   if (x.size() != M)
   {
     A->resize(x, 1);
+    x.zero();
+  }
+  else if (!parameters["nonzero_initial_guess"])
+  {
     x.zero();
   }
 
