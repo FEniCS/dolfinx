@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2008-2010
 //
 // First added:  2008-04-21
-// Last changed: 2011-11-11
+// Last changed: 2011-11-17
 
 #ifdef HAS_TRILINOS
 
@@ -401,9 +401,9 @@ void EpetraMatrix::apply(std::string mode)
   assert(A);
   int err = 0;
   if (mode == "add")
-    err = A->GlobalAssemble(Add);
+    err = A->GlobalAssemble(true, Add);
   else if (mode == "insert")
-    err = A->GlobalAssemble(Insert);
+    err = A->GlobalAssemble(true, Insert);
   else
   {
     dolfin_error("EpetraMatrix.cpp",
