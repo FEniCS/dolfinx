@@ -54,7 +54,11 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   const uint num_cells = mesh.size(mesh.topology().dim());
 
   // Check cell marker
-  if ( cell_marker.size() != num_cells ) error("Wrong dimension of cell_marker");
+  if ( cell_marker.size() != num_cells )
+    dolfin_error("LocalMeshCoarsening.cpp",
+                 "coarsen mesh by collapsing edges",
+                 "Number of cell markers (%d) does not match number of cells (%d)",
+                 cell_marker.size(), num_cells);
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -165,7 +169,9 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
   else if ( edge_vertex[1] == vert_slave )
     vert_master = edge_vertex[0];
   else
-    error("Node to delete and edge to collapse not compatible.");
+    dolfin_error("LocalMeshCoarsening.cpp",
+                 "collapse edge",
+                 "The node to delete and edge to collapse are not compatible");
 
   for (CellIterator c(vertex_to_remove); !c.end(); ++c)
   {

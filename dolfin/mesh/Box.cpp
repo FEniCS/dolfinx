@@ -45,10 +45,14 @@ Box::Box(double x0, double y0, double z0,
   const double f = z1;
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
-    error("Box must have nonzero width, height and depth.");
+    dolfin_error("Box.cpp",
+                 "create box",
+                 "Box seems to have zero width, height or depth. Consider checking your dimensions");
 
   if ( nx < 1 || ny < 1 || nz < 1 )
-    error("Size of box must be at least 1 in each dimension.");
+    dolfin_error("Box.cpp",
+                 "create box",
+                 "Box has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
 
   rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 

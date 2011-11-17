@@ -21,7 +21,7 @@
 // Modified by Anders Logg 2010-2011
 //
 // First added:  2010-11-10
-// Last changed: 2011-09-29
+// Last changed: 2011-11-14
 
 #ifdef HAS_OPENMP
 
@@ -72,7 +72,11 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool finalize_tensor)
 {
   if (MPI::num_processes() > 1)
-    error("OpenMpAssembler has not been tested in combination with MPI.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "The OpenMp assembler has not been tested in combination with MPI");
+  }
 
    assert(a.ufc_form());
 
@@ -158,7 +162,11 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
@@ -289,7 +297,11 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
            std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
@@ -437,7 +449,11 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
   // Get integral for sub domain (if any)
   if (domains && domains->size() > 0)
-    error("Sub-domains not yet handled by OpenMpAssembler.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Subdomains are not yet handled");
+  }
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -472,8 +488,10 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
-    error("Expecting facet orientation to be defined on facets (not dimension %d).",
-          facet_orientation->dim());
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Expecting facet orientation to be defined on facets (not dimension %d)",
+                 facet_orientation->dim());
   }
 
   // Get coloring data
@@ -483,7 +501,11 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
-    error("Requested mesh coloring has not been computed. Cannot used multithreaded assembly.");
+  {
+    dolfin_error("OpenMPAssembler.cpp",
+                 "perform multithreaded assembly using OpenMP assembler",
+                 "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data
   const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;

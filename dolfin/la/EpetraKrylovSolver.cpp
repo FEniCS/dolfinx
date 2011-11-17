@@ -222,7 +222,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     {
       dolfin_error("EpetraKrylovSolver.cpp",
                    "solve linear system using Epetra Krylov solver",
-                   "solution failed to converge (error code %.f)",
+                   "Solution failed to converge (error code %.f)",
                    status[AZ_why]);
     }
     else

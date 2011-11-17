@@ -87,6 +87,9 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
   _C = cone.function_space();
   _cell_cone.reset(new Function(_C));
+
+  // Set parameters
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
@@ -152,6 +155,7 @@ void ErrorControl::compute_dual(Function& z,
   // Solve dual problem
   LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
   LinearVariationalSolver solver(dual_problem);
+  solver.parameters.update(parameters("dual_variational_solver"));
   solver.solve();
 }
 //-----------------------------------------------------------------------------
@@ -185,7 +189,9 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   else
   {
     _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
-    error("Not implemented for tensor-valued functions");
+    dolfin_error("ErrorControl.cpp",
+                 "compute error indicators",
+                 "Not implemented for tensor-valued functions");
   }
 
   // Compute residual representation

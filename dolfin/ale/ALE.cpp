@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-02
-// Last changed: 2011-08-24
+// Last changed: 2011-11-12
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -79,7 +79,11 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
     // Get vertex index on boundary0 (step 4)
     it = mesh_to_boundary_0.find(mesh_index_0);
     if (it == mesh_to_boundary_0.end())
-      error("Unable to move mesh, non-matching vertex mappings.");
+    {
+      dolfin_error("ALE.cpp",
+                   "move mesh using mesh smoothing",
+                   "Non-matching vertex mappings");
+    }
     const uint boundary_index_0 = it->second;
 
     // Update vertex coordinate
@@ -101,7 +105,9 @@ void ALE::move(Mesh& mesh, const Function& displacement)
   if (!((element.value_rank() == 0 && gdim == 0) ||
         (element.value_rank() == 1 && gdim == element.value_dimension(0))))
   {
-    error("Unable to move mesh, illegal value dimension of displacement function.");
+    dolfin_error("ALE.cpp",
+                 "move mesh using mesh smoothing",
+                 "Illegal value dimension of displacement function");
   }
 
   // Interpolate at vertices

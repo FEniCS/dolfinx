@@ -64,7 +64,7 @@ namespace dolfin
     {
       dolfin_error("CholmodCholeskySolver.h",
                    "set operator for CHOLMOD Cholesky solver",
-                   "not implemented");
+                   "Not implemented");
     }
 
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD

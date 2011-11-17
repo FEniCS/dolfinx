@@ -181,7 +181,13 @@ EpetraMatrix* EpetraMatrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraMatrix::size(uint dim) const
 {
-  assert(dim < 2);
+  if (dim > 1)
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "access size of Epetra matrix",
+                 "Illegal axis (%d), must be 0 or 1", dim);
+  }
+
   if (A)
   {
     const int M = A->NumGlobalRows();
@@ -222,7 +228,7 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   {
     dolfin_error("EpetraMatrix.cpp",
                  "resize Epetra vector to match Epetra matrix",
-                 "dimension must be 0 or 1, not %d", dim);
+                 "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Reset vector with new map

@@ -127,7 +127,7 @@ namespace dolfin
     /// The AABB search tree
     boost::scoped_ptr<Tree> tree;
 
-    /// Boolean flag to indicate whether Kd tree has already been built 
+    /// Boolean flag to indicate whether Kd tree has already been built
     mutable bool point_search_tree_constructed;
 
   };
@@ -161,7 +161,9 @@ namespace dolfin
       case 1: tree->all_intersected_primitives(PrimitiveTraits<IntervalCell,K>::datum(entity), output_it); break;
       case 2: tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(entity), output_it); break;
       case 3: tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(entity), output_it); break;
-      default: error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
+    default: dolfin_error("IntersectionOperatorImplementation.h",
+                          "find all intersected entities",
+                          "Cannot handle mesh entities of dimension %d. Allowed dimensions are 0, 1, 2, 3", entity.dim());
     }
   }
 
@@ -180,7 +182,9 @@ namespace dolfin
           tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*entity), output_it); break;
         case 3:
           tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*entity), output_it); break;
-        default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh EntityType is not known.");
+      default: dolfin_error("IntersectionOperatorImplementation.h",
+                            "find all intersected entities",
+                            "Cannot handle mesh entities of dimension %d. Allowed dimensions are 0, 1, 2, 3", entity->dim());
       }
   }
 
@@ -210,8 +214,9 @@ namespace dolfin
           for (CellIterator cell(another_mesh); !cell.end(); ++cell)
             tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell), output_it);
           break;
-      default:
-        error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known.");
+    default: dolfin_error("IntersectionOperatorImplementation.h",
+                          "find all intersected entities",
+                          "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
     }
   }
 
@@ -318,7 +323,7 @@ namespace dolfin
   {
     return closest_point_and_cell(point).second;
   }
-   
+
   ///Temporary ugly helper class to specialize for non existing implementation for Tetrahedron meshes.
   template<class P, class K, class Tree>
   struct Distance
@@ -366,7 +371,7 @@ namespace dolfin
       point_search_tree_constructed = tree->accelerate_distance_queries();
     return  Distance<P,K,Tree>::compute(*tree,PrimitiveTraits<PointPrimitive,K>::datum(point));
   }
-    
+
   template <class P, class K>
   std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell(const Point& point) const
   {
@@ -408,7 +413,9 @@ namespace dolfin
 
     IntersectionOperatorImplementation()
     {
-      error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
+      dolfin_error("IntersectionOperatorImplementation.h",
+                   "create intersection operator implementation",
+                   "IntersectionOperatorImplementation is not available, DOLFIN has been compiled without CGAL");
     }
     virtual ~IntersectionOperatorImplementation() {}
     virtual void all_intersected_entities(const Point& point, std::set<uint>& ids_result) const {}

@@ -190,7 +190,11 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
                                                                uint N)
 {
   if (process != 0 || num_processes() > 1)
-    error("MPI is required for local_range with more than one process.");
+  {
+    dolfin_error("MPI.cpp",
+                 "access local range for process",
+                 "DOLFIN has not been configured with MPI support");
+  }
   return std::make_pair(0, N);
 }
 //-----------------------------------------------------------------------------
@@ -199,7 +203,11 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
                                                                uint num_processes)
 {
   if (process != 0 || num_processes > 1)
-    error("MPI is required for local_range with more than one process.");
+  {
+    dolfin_error("MPI.cpp",
+                 "access local range for process",
+                 "DOLFIN has not been configured with MPI support");
+  }
   return std::make_pair(0, N);
 }
 //-----------------------------------------------------------------------------

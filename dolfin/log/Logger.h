@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2011-04-11
+// Last changed: 2011-11-15
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -118,6 +118,10 @@ namespace dolfin
 
     // List of timings for tasks, map from string to (num_timings, total_time)
     std::map<std::string, std::pair<uint, double> > timings;
+
+    // MPI data (initialized to 0)
+    mutable uint num_processes;
+    mutable uint process_number;
 
   };
 

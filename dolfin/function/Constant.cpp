@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Sandve Alnes, 2008.
-// Modified by Garth N. Wells, 2009-2011.
+// Modified by Martin Sandve Alnes 2008
+// Modified by Garth N. Wells 2009-2011
 //
 // First added:  2006-02-09
-// Last changed: 2011-05-15
+// Last changed: 2011-11-14
 
 #include <dolfin/log/log.h>
 #include "Constant.h"
@@ -78,7 +78,11 @@ const Constant& Constant::operator= (const Constant& constant)
 {
   // Check value shape
   if (constant.value_shape != value_shape)
-    error("Unable to assign value to constant, value shape mismatch.");
+  {
+    dolfin_error("Constant.cpp",
+                 "assign value to constant",
+                 "Value shape mismatch");
+  }
 
   // Assign values
   _values = constant._values;
@@ -90,7 +94,11 @@ const Constant& Constant::operator= (double constant)
 {
   // Check value shape
   if (value_shape.size() != 0)
-    error("Unable to assign value to constant, not a scalar.");
+  {
+    dolfin_error("Constant.cpp",
+                 "assigne scalar value to constant",
+                 "Constant is not a scalar");
+  }
 
   // Assign value
   assert(_values.size() == 1);
@@ -103,7 +111,11 @@ Constant::operator double() const
 {
   // Check value shape
   if (value_shape.size() != 0)
-    error("Unable to convert constant to double, not a scalar.");
+  {
+    dolfin_error("Constant.cpp",
+                 "convert constant to double",
+                 "Constant is not a scalar");
+  }
 
   // Return value
   assert(_values.size() == 1);

@@ -153,7 +153,9 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   {
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("Newton solver did not converge.");
+      dolfin_error("NewtonSolver.cpp",
+                   "solve nonlinear system with NewtonSolver",
+                   "Newton solver did not converge. Bummer");
     else
       warning("Newton solver did not converge.");
   }
@@ -196,7 +198,9 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   else if (convergence_criterion == "incremental")
     _residual = dx.norm("l2");
   else
-    error("Unknown Newton convergence criterion");
+    dolfin_error("NewtonSolver.cpp",
+                 "check for convergence",
+                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)

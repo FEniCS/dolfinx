@@ -22,7 +22,7 @@
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -257,6 +257,13 @@ namespace dolfin
   template <typename Mat>
   uint uBLASMatrix<Mat>::size(uint dim) const
   {
+    if (dim > 1)
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "access size of uBLAS matrix",
+                   "Illegal axis (%d), must be 0 or 1", dim);
+    }
+
     assert(dim < 2);
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
   }
@@ -274,7 +281,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "compute norm of uBLAS matrix",
-                   "unknown norm type (\"%s\")",
+                   "Unknown norm type (\"%s\")",
                    norm_type.c_str());
       return 0.0;
     }
@@ -460,7 +467,7 @@ namespace dolfin
   {
     dolfin_error("uBLASMatrix.h",
                  "compute transpose matrix-vector product",
-                 "not supported by the uBLAS linear algebra backend");
+                 "Not supported by the uBLAS linear algebra backend");
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -555,7 +562,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "initialize uBLAS matrix",
-                   "cannot convert GenericSparsityPattern to concrete SparsityPattern type");
+                   "Cannot convert GenericSparsityPattern to concrete SparsityPattern type");
     }
     const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
@@ -595,7 +602,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "perform axpy operation with uBLAS matrix",
-                   "dimensions don't match");
+                   "Dimensions don't match");
     }
 
     this->A += (a)*(A.down_cast<uBLASMatrix>().mat());
@@ -615,7 +622,7 @@ namespace dolfin
   {
     dolfin_error("GenericMatrix.h",
                  "return pointers to underlying matrix data",
-                 "not implemented for this uBLAS matrix type");
+                 "Not implemented for this uBLAS matrix type");
     return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
@@ -634,7 +641,7 @@ namespace dolfin
     {
       dolfin_error("uBLASMatrix.h",
                    "solve in-place using uBLAS matrix",
-                   "singularity detected in matrix factorization on row %u.",
+                   "Singularity detected in matrix factorization on row %u",
                    singular - 1);
     }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Marie Rognes 2011
+//
 // First added:  2009-05-08
-// Last changed: 2009-10-12
+// Last changed: 2011-11-15
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -67,107 +69,139 @@ dolfin::uint Parameter::change_count() const
 //-----------------------------------------------------------------------------
 void Parameter::set_range(int min_value, int max_value)
 {
-  error("Cannot set int-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "set range for parameter",
+               "Cannot set int-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::set_range(double min_value, double max_value)
 {
-  error("Cannot set double-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "set range for parameter",
+               "Cannot set double-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::set_range(std::set<std::string> range)
 {
-  error("Cannot set string-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "set range for parameter",
+               "Cannot set string-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::get_range(int& min_value, int& max_value) const
 {
-  error("Cannot get int-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "get range for parameter",
+               "Cannot get int-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::get_range(double& min_value, double& max_value) const
 {
-  error("Cannot get double-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "get range for parameter",
+               "Cannot get double-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::get_range(std::set<std::string>& range) const
 {
-  error("Cannot get string-valued range for parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "get range for parameter",
+               "Cannot get string-valued range for parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (int value)
 {
-  error("Cannot assign int-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "assign parameter",
+               "Cannot assign int-value to parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (double value)
 {
-  error("Cannot assign double-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "assign parameter",
+               "Cannot assign double-value to parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (std::string value)
 {
-  error("Cannot assign string-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "assign parameter",
+               "Cannot assign string-value to parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (const char* value)
 {
-  error("Cannot assign string-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "assign parameter",
+               "Cannot assign char-value to parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (bool value)
 {
-  error("Cannot assign bool-value to parameter \"%s\" of type %s.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "assign parameter",
+               "Cannot assign bool-value to parameter \"%s\" of type %s",
+               _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator int() const
 {
-  error("Unable to convert parameter \"%s\" of type %s to int.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "convert to integer",
+               "Cannot convert parameter \"%s\" of type %s to int",
+               _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator uint() const
 {
-  error("Unable to convert parameter \"%s\" of type %s to uint.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "convert to unsigned integer",
+               "Cannot convert parameter \"%s\" of type %s to uint",
+               _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator double() const
 {
-  error("Unable to convert parameter \"%s\"r of type %s to double.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "convert to double",
+               "Cannot convert parameter \"%s\" of type %s to double",
+               _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator std::string() const
 {
-  error("Unable to convert parameter \"%s\" of type %s to string.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "convert to string",
+               "Cannot convert parameter \"%s\" of type %s to string",
+               _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator bool() const
 {
-  error("Unable to convert parameter \"%s\" of type %s to bool.",
-        _key.c_str(), type_str().c_str());
+  dolfin_error("Parameter.cpp",
+               "convert to string",
+               "Cannot convert parameter \"%s\" of type %s to bool",
+               _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -177,8 +211,12 @@ void Parameter::check_key(std::string key)
   for (uint i = 0; i < key.size(); i++)
   {
     if (key[i] == ' ' || key[i] == '.')
-      error("Illegal character '%c' in parameter key \"%s\".",
-            key[i], key.c_str());
+    {
+      dolfin_error("Parameter.cpp",
+                   "check allowed name for key",
+                   "Illegal character '%c' in parameter key \"%s\"",
+                   key[i], key.c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -205,8 +243,12 @@ void IntParameter::set_range(int min_value, int max_value)
 {
   // Check range
   if (min_value > max_value)
-    error("Illegal range for int-valued parameter: [%d, %d].",
-          min_value, max_value);
+  {
+    dolfin_error("Parameter.cpp",
+                 "set range for parameter",
+                 "Illegal range for int-valued parameter: [%d, %d]",
+                 min_value, max_value);
+  }
 
   // Set range
   _min  = min_value;
@@ -224,8 +266,12 @@ const IntParameter& IntParameter::operator= (int value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
-    error("Parameter value %d for parameter \"%s\" out of range [%d, %d].",
-          value, key().c_str(), _min, _max);
+  {
+    dolfin_error("Parameter.cpp",
+                 "assign value to parameter",
+                 "Value %d out of allowed range [%d, %d] for parameter\"%s\"",
+                 value, _min, _max, key().c_str());
+  }
 
   // Set value
   _value = value;
@@ -238,7 +284,12 @@ const IntParameter& IntParameter::operator= (int value)
 IntParameter::operator int() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert parameter to int",
+                 "Parameter has not been set");
+  }
+
   _access_count++;
   return _value;
 }
@@ -246,11 +297,19 @@ IntParameter::operator int() const
 IntParameter::operator dolfin::uint() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert int parameter to uint",
+                 "Parameter has not been set");
+  }
 
   if (_value < 0)
-    error("Unable to convert value %d for parameter \"%s\" to uint (unsigned integer), value is negative.",
-          _value, key().c_str());
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert int parameter to uint",
+                 "Parameter \"%s\" has negative value %d",
+                 key().c_str(), _value);
+  }
 
   _access_count++;
   return _value;
@@ -264,7 +323,12 @@ std::string IntParameter::type_str() const
 std::string IntParameter::value_str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of value",
+                 "Parameter has not been set");
+  }
+
   std::stringstream s;
   s << _value;
   return s.str();
@@ -283,7 +347,12 @@ std::string IntParameter::range_str() const
 std::string IntParameter::str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of parameter",
+                 "Parameter has not been set");
+  }
+
   std::stringstream s;
   s << "<int-valued parameter named \""
     << key()
@@ -316,8 +385,12 @@ void DoubleParameter::set_range(double min_value, double max_value)
 {
   // Check range
   if (min_value > max_value)
-    error("Illegal range for double-valued parameter: [%g, %g].",
-          min_value, max_value);
+  {
+    dolfin_error("Parameter.cpp",
+                 "set range for parameter",
+                 "Illegal range for double-valued parameter: [%g, %g]",
+                 min_value, max_value);
+  }
 
   // Set range
   _min = min_value;
@@ -335,8 +408,12 @@ const DoubleParameter& DoubleParameter::operator= (double value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
-    error("Parameter value %g for parameter \"%s\" out of range [%g, %g].",
-          value, key().c_str(), _min, _max);
+  {
+    dolfin_error("Parameter.cpp",
+                 "assign value to parameter",
+                 "Value %g out of allowed range [%g, %g] for parameter\"%s\"",
+                 value, _min, _max, key().c_str());
+  }
 
   // Set value
   _value = value;
@@ -349,7 +426,12 @@ const DoubleParameter& DoubleParameter::operator= (double value)
 DoubleParameter::operator double() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert parameter to double",
+                 "Parameter has not been set");
+  }
+
   _access_count++;
   return _value;
 }
@@ -362,7 +444,12 @@ std::string DoubleParameter::type_str() const
 std::string DoubleParameter::value_str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of value",
+                 "Parameter has not been set");
+  }
+
   std::stringstream s;
   s << _value;
   return s.str();
@@ -381,7 +468,11 @@ std::string DoubleParameter::range_str() const
 std::string DoubleParameter::str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of parameter",
+                 "Parameter has not been set");
+  }
 
   std::stringstream s;
   s << "<double-valued parameter named \""
@@ -428,7 +519,9 @@ const StringParameter& StringParameter::operator= (std::string value)
   {
     std::stringstream s;
     s << "Illegal value for parameter. Allowed values are: " << range_str();
-    error(s.str());
+    dolfin_error("Parameter.cpp",
+                 "assign parameter value",
+                 s.str());
   }
 
   // Set value
@@ -448,7 +541,9 @@ const StringParameter& StringParameter::operator= (const char* value)
   {
     std::stringstream s;
     s << "Illegal value for parameter. Allowed values are: " << range_str();
-    error(s.str());
+    dolfin_error("Parameter.cpp",
+                 "assign parameter value",
+                 s.str());
   }
 
   // Set value
@@ -462,7 +557,12 @@ const StringParameter& StringParameter::operator= (const char* value)
 StringParameter::operator std::string() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert parameter to string ",
+                 "Parameter has not been set");
+  }
+
   _access_count++;
   return _value;
 }
@@ -475,7 +575,11 @@ std::string StringParameter::type_str() const
 std::string StringParameter::value_str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of value",
+                 "Parameter has not been set");
+  }
   return _value;
 }
 //-----------------------------------------------------------------------------
@@ -499,7 +603,12 @@ std::string StringParameter::range_str() const
 std::string StringParameter::str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of parameter",
+                 "Parameter has not been set");
+  }
+
   std::stringstream s;
   s << "<string-valued parameter named \""
     << key()
@@ -540,7 +649,12 @@ const BoolParameter& BoolParameter::operator= (bool value)
 BoolParameter::operator bool() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "convert parameter to bool",
+                 "Parameter has not been set");
+  }
+
   _access_count++;
   return _value;
 }
@@ -553,7 +667,11 @@ std::string BoolParameter::type_str() const
 std::string BoolParameter::value_str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of value",
+                 "Parameter has not been set");
+  }
 
   if (_value)
     return "true";
@@ -569,7 +687,11 @@ std::string BoolParameter::range_str() const
 std::string BoolParameter::str() const
 {
   if (!_is_set)
-    error("Parameter has not been set.");
+  {
+    dolfin_error("Parameter.cpp",
+                 "get string representation of parameter",
+                 "Parameter has not been set");
+  }
 
   std::stringstream s;
   s << "<bool-valued parameter named \""

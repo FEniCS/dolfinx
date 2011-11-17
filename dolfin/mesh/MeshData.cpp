@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson, 2008.
+// Modified by Niclas Jansson 2008
 //
 // First added:  2008-05-19
-// Last changed: 2010-11-18
+// Last changed: 2011-11-14
 
 #include <sstream>
 #include <dolfin/common/utils.h>
@@ -228,8 +228,10 @@ void MeshData::check_deprecated(std::string name) const
   {
     if (name == _deprecated_names[i])
     {
-      error("Mesh data named \"%s\" is no longer recognized by DOLFIN.",
-              name.c_str());
+      dolfin_error("MeshData.cpp",
+                   "access mesh data",
+                   "Mesh data named \"%s\" is no longer recognized by DOLFIN",
+                   name.c_str());
     }
   }
 }

@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2008-2009.
-// Modified by Anders Logg, 2008-2009.
-// Modified by Niclas Jansson, 2009.
+// Modified by Ola Skavhaug 2008-2009
+// Modified by Anders Logg 2008-2011
+// Modified by Niclas Jansson 2009
 //
 // First added:  2007-11-30
 // Last changed: 2011-09-28
@@ -195,7 +195,9 @@ namespace dolfin
       boost::mpi::all_reduce(comm, value, out, op);
       return out;
       #else
-      error("MPI::all_reduce requires MPI to be configured.");
+      dolfin_error("MPI.h",
+                   "call MPI::all_reduce",
+                   "DOLFIN has been configured without MPI support");
       return T(0);
       #endif
     }
@@ -219,7 +221,9 @@ namespace dolfin
       reqs[1] = comm.irecv(source, 0, recv_value);
       boost::mpi::wait_all(reqs, reqs + 2);
       #else
-      error("MPI::send_recv requires MPI to be configured.");
+      dolfin_error("MPI.h",
+                   "call MPI::send_recv",
+                   "DOLFIN has been configured without MPI support");
       #endif
     }
 
@@ -245,7 +249,9 @@ namespace dolfin
     // Return MPI data type
     template<typename T> static MPI_Datatype mpi_type()
     {
-      error("MPI data type unknown.");
+      dolfin_error("MPI.h",
+                   "perform MPI operation",
+                   "MPI data type unknown");
       return MPI_CHAR;
     }
     #endif
@@ -325,11 +331,12 @@ namespace dolfin
                        std::vector<T>& out_values,
                        std::vector<uint>& sources)
   {
-    error("Distribution of partitioned values requires MPI.");
+    dolfin_error("MPI.h",
+                 "call MPI::distribute",
+                 "DOLFIN has been configured without MPI support");
   }
   #endif
   //---------------------------------------------------------------------------
-
 
 }
 

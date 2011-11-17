@@ -52,7 +52,7 @@ namespace dolfin
     {
       dolfin_error("GenericLLUSolver.h",
                    "solve linear system",
-                   "not supported by current linear algebra backend, consider using solve(x, b)");
+                   "Not supported by current linear algebra backend. Consider using solve(x, b)");
       return 0;
     }
 

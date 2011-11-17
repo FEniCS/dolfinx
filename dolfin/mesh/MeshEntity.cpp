@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2010-02-11
+// Last changed: 2011-11-15
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -30,22 +30,34 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
-  : _mesh(&mesh), _dim(dim), _index(index)
+  : _mesh(0), _dim(0), _index(0)
 {
+  init(mesh, dim, index);
+}
+//-----------------------------------------------------------------------------
+void MeshEntity::init(const Mesh& mesh, uint dim, uint index)
+{
+  // Store variables
+  _mesh = &mesh; // Yes, we should probably use a shared pointer here...
+  _dim = dim;
+  _index = index;
+
   // Check index range
   if (index < _mesh->num_entities(dim))
     return;
 
   // Initialize mesh entities
-  mesh.init(dim);
+  _mesh->init(dim);
 
   // Check index range again
   if (index < _mesh->num_entities(dim))
     return;
 
   // Illegal index range
-  error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
-        index,_mesh->num_entities(dim), dim);
+  dolfin_error("MeshEntity.cpp",
+               "create mesh entity",
+               "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
+               index, _mesh->num_entities(dim), dim);
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
@@ -105,7 +117,9 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if ( _mesh != entity._mesh )
-    error("Unable to compute index of given entity defined on a different mesh.");
+    dolfin_error("MeshEntity.cpp",
+                 "compute index of mesh entity",
+                 "Mesh entity is defined on a different mesh");
 
   // Get list of entities for given topological dimension
   const uint* entities = _mesh->topology()(_dim, entity._dim)(_index);
@@ -117,7 +131,9 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  error("Unable to compute index of given entity (not found).");
+  dolfin_error("MeshEntity.cpp",
+               "compute index of mesh entity",
+               "Mesh entity was not found");
 
   return 0;
 }

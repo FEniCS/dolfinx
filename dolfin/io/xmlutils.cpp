@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-15
-// Last changed: 2011-09-15
+// Last changed: 2011-11-15
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
@@ -39,7 +39,7 @@ dolfin::get_node(const pugi::xml_node& xml_node,
   if (!*child_node)
   {
     dolfin_error("xmlutils.cpp",
-                 "Read DOLFIN XML data",
+                 "read DOLFIN XML data",
                  "Unable to find tag <%s>", node_name.c_str());
   }
   return child_node;

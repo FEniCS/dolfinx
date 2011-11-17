@@ -1,6 +1,6 @@
 "Run all tests"
 
-# Copyright (C) 2007-2009 Anders Logg
+# Copyright (C) 2007-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -18,14 +18,14 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2007-06-09
-# Last changed: 2011-05-22
+# Last changed: 2011-11-14
 
 import re, sys, os
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["unit", "regression", "system", "documentation"]
+tests = ["unit", "regression", "system", "documentation", "codingstyle"]
 
 # Check if we should enable memory testing
 if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":

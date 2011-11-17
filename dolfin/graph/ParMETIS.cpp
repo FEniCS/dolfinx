@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg
+// Copyright (C) 2008-2011 Niclas Jansson, Ola Skavhaug and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2010
+// Modified by Garth N. Wells 2010
 //
 // First added:  2010-02-10
-// Last changed:
+// Last changed: 2011-11-14
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
@@ -32,6 +32,7 @@
 using namespace dolfin;
 
 #ifdef HAS_PARMETIS
+
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
                                             const LocalMeshData& mesh_data)
@@ -51,7 +52,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
-    error("ParMETIS cannot partition graphs if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead.");
+  {
+    dolfin_error("ParMETIS.cpp",
+                 "compute mesh partitioning using ParMETIS",
+                 "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
+  }
 
   // Communicate number of cells between all processors
   std::vector<uint> num_cells;
@@ -122,7 +127,10 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
                                     const LocalMeshData& data)
 {
-  error("ParMETIS::compute_partition requires ParMETIS");
+  dolfin_error("ParMETIS.cpp",
+               "compute mesh partitioning using ParMETIS",
+               "DOLFIN has been configured without support for ParMETIS");
 }
 //-----------------------------------------------------------------------------
+
 #endif

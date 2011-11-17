@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-02-07
+// Last changed: 2011-11-15
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/log.h>
@@ -53,7 +53,9 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
   else if (refinement_algorithm == "regular_cut")
     RegularCutRefinement::refine(refined_mesh, mesh, cell_markers);
   else
-    error("Unknown local mesh refinement algorithm: %s", refinement_algorithm.c_str());
+    dolfin_error("LocalMeshRefinement.cpp",
+                 "refine mesh locally",
+                 "Unknown local mesh refinement algorithm: %s. Allowed algorithms are 'recursive_bisection' and 'regular_cut'", refinement_algorithm.c_str());
 
   // Report the number of refined cells
   if (refined_mesh.topology().dim() > 0)

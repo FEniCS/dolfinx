@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
-// Last changed: 2011-10-04
+// Last changed: 2011-11-14
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -137,7 +137,10 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   assert(L.rank() == 1);
 
   // Check that forms share a function space
-  assert(a.function_space(1).get() == L.function_space(0).get());
+  if (*a.function_space(1) != *L.function_space(0))
+    dolfin_error("SystemAssembler.cpp",
+		 "assemble system",
+		 "expected forms (a, L) to share a FunctionSpace");
 
   // FIXME: This may gather coefficients twice. Checked for shared coefficients
 
@@ -584,7 +587,11 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 {
   // Facet orientation not supported
   if (cell0.mesh().data().mesh_function("facet_orientation"))
-    error("Facet orientation not supported by system assembler.");
+  {
+    dolfin_error("SystemAssembler.cpp",
+                 "assemble system",
+                 "User-defined facet orientation is not supported by system assembler");
+  }
 
   const uint cell0_index = cell0.index();
   const uint cell1_index = cell1.index();

@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Hoffman, 2007.
-// Modified by Garth N. Wells 2007-2011.
-// Modified by Niclas Jansson 2008.
-// Modified by Kristoffer Selim 2008.
-// Modified by Andre Massing, 2009-2010.
+// Modified by Johan Hoffman 2007
+// Modified by Garth N. Wells 2007-2011
+// Modified by Niclas Jansson 2008
+// Modified by Kristoffer Selim 2008
+// Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-11
+// Last changed: 2011-11-14
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -168,7 +168,11 @@ dolfin::uint Mesh::init(uint dim) const
 
   // Check that mesh is ordered
   if (!ordered())
-    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+  {
+    dolfin_error("Mesh.cpp",
+                 "initialize mesh entities",
+                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+  }
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
@@ -201,7 +205,11 @@ void Mesh::init(uint d0, uint d1) const
 
   // Check that mesh is ordered
   if (!ordered())
-    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+  {
+    dolfin_error("Mesh.cpp",
+                 "initialize mesh connectivity",
+                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+  }
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
@@ -439,9 +447,12 @@ std::string Mesh::str(bool verbose) const
   }
   else
   {
+    std::string cell_type("undefined cell type");
+    if (_cell_type)
+      cell_type = _cell_type->description(true);
     s << "<Mesh of topological dimension "
       << topology().dim() << " ("
-      << _cell_type->description(true) << ") with "
+      << cell_type << ") with "
       << num_vertices() << " vertices and "
       << num_cells() << " cells, "
       << (_ordered ? "ordered" : "unordered") << ">";

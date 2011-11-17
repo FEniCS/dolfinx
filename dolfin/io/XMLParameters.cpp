@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-16
-// Last changed: 2011-10-24
+// Last changed: 2011-11-14
 
 #include "pugixml.hpp"
 #include <dolfin/log/log.h>
@@ -34,11 +34,19 @@ void XMLParameters::read(Parameters& p, const pugi::xml_node xml_dolfin)
   // Check that we have a XML Parameters
   const pugi::xml_node xml_parameters = xml_dolfin.child("parameters");
   if (!xml_parameters)
-    error("Not a DOLFIN Parameters XML file.");
+  {
+    dolfin_error("XMLParameters.cpp",
+                 "read parameters from XML file",
+                 "Not a DOLFIN Parameters XML file");
+  }
 
   // Check that there is only one root parameters set
   if (xml_dolfin.first_child().next_sibling())
-    error("Two parameter sets (not nested) are defined in XML file.");
+  {
+    dolfin_error("XMLParameters.cpp",
+                 "read parameters from XML file",
+                 "Two parameter sets (not nested) are defined in XML file");
+  }
 
   // Get name of root parameters and rename parameter set
   const std::string name = xml_parameters.attribute("name").value();
@@ -76,8 +84,10 @@ void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
       parameter_node.append_attribute("value") = static_cast<std::string>(parameter).c_str();
     else
     {
-      error("Unable to write parameter \"%s\" to XML file, unknown type: \"%s\".",
-            parameter.key().c_str(), parameter.type_str().c_str());
+      dolfin_error("XMLParameters.cpp",
+                   "write parameters to XML file",
+                   "Unknown type (\"%s\") of parameters \"%s\"",
+                   parameter.type_str().c_str(), parameter.key().c_str());
     }
   }
 
@@ -125,10 +135,20 @@ void XMLParameters::read_parameter_nest(Parameters& p,
       else if (type == "string")
         XMLParameters::add_parameter(p, key, value.value());
       else
-        error("Parameter type \"%s\" unknown in XMLParameters::read.", type.c_str());
+      {
+        dolfin_error("XMLParameters.cpp",
+                     "read parameters from XML file",
+                     "Unknown type (\"%s\") of parameters \"%s\"",
+                     type.c_str(), key.c_str());
+      }
     }
     else
-      error("Unknown field in XML Parameter file");
+    {
+      dolfin_error("XMLParameters.cpp",
+                   "read parameters from XML file",
+                   "Unknown tag (\"%s\") in XML Parameters file",
+                   node_name.c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------
