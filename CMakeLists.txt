@@ -73,7 +73,7 @@ list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
-list(APPEND OPTIONAL_PACKAGES "HDF5")
+#list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
@@ -253,12 +253,55 @@ if (DOLFIN_ENABLE_CHOLMOD)
   find_package(CHOLMOD)
 endif()
 
-# Check for Trilinos
+# Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
+  message(STATUS "Checking for Trilinos")
   find_package(Trilinos 10.8.1 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  # Check for required packages
+  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
   if (Trilinos_FOUND)
-    message(STATUS "Trilinos found: ${Trilinos_DIR}")
-    message(STATUS "Trilinos version: ${Trilinos_VERSION}")
+    message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
+
+    # Check for packages
+    set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
+    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+      find_package(${package} PATHS $ENV{TRILINOS_DIR} QUIET)
+      if (NOT ${package}_FOUND)
+        set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+      endif()
+    endforeach()
+  endif()
+
+  if (DOLFIN_TRILINOS_PACKAGES_FOUND)
+    message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
+    set(Trilinos_FOUND true)
+
+    # Set defintions
+    set(DOLFIN_TRILINOS_DEFINITIONS ${TRILINOS_DEFINITIONS} -DTRILINOS_USE_RCP)
+
+    # Loop over package libs and get full path
+    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+      foreach (lib ${${package}_LIBRARIES})
+        find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
+        if (TRILINOS_LIB_${lib})
+          list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
+        endif()
+      endforeach()
+    endforeach()
+
+    # Remove duplicates
+    list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+    list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
+    list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+
+  else()
+    message(STATUS "Trilinos found, but some required components are missing.")
+    set(Trilinos_FOUND false)
+    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+      message(STATUS "  ${package}: ${package}_FOUND$")
+    endforeach()
   endif()
 endif()
 
@@ -292,13 +335,13 @@ if (DOLFIN_ENABLE_ZLIB)
 endif()
 
 # Check for HDF5
-if (DOLFIN_ENABLE_HDF5)
-  find_package(HDF5)
-  if (NOT HDF5_IS_PARALLEL)
-    message(WARNING "HDF5 found, but is not configured to run in parallel.")
-    set(HDF5_FOUND FALSE)
-  endif()
-endif()
+#if (DOLFIN_ENABLE_HDF5)
+#  find_package(HDF5)
+#  if (NOT HDF5_IS_PARALLEL)
+#    message(WARNING "HDF5 found, but is not configured to run in parallel.")
+#    set(HDF5_FOUND FALSE)
+#  endif()
+#endif()
 
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
