@@ -254,6 +254,18 @@ void Logger::__debug(std::string msg) const
   write(DBG, s);
 }
 //-----------------------------------------------------------------------------
+void Logger::__assert(std::string file, unsigned long line,
+                      std::string function, std::string check) const
+{
+  std::stringstream location;
+  location << file << " (line " << line << ")";
+  std::stringstream task;
+  task << "complete call to function " << function << "()";
+  std::stringstream reason;
+  reason << "Assertion " << check << " failed";
+  dolfin_error(location.str(), task.str(), reason.str());
+}
+//-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
