@@ -83,7 +83,7 @@ class IntegrateDerivatives(unittest.TestCase):
         else:
             print "Warning: skipping test of erf, old python version and no scipy."
 
-        if True:
+        if 0:
             print "Warning: skipping tests of bessel functions, doesn't build on all platforms."
         elif scipy is None:
             print "Warning: skipping tests of bessel functions, missing scipy."

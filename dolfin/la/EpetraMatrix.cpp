@@ -417,11 +417,14 @@ void EpetraMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
-  assert(A);
+  if (!A)
+    return "<Uninitialized EpetraMatrix>";
+
   std::stringstream s;
   if (verbose)
   {
     warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
+    assert(A);
     A->Print(std::cout);
   }
   else

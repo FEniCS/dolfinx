@@ -518,6 +518,9 @@ void PETScMatrix::binary_dump(std::string file_name) const
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
+  if (!A)
+    return "<Uninitialized PETScMatrix>";
+
   std::stringstream s;
 
   if (verbose)

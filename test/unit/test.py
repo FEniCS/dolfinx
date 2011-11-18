@@ -83,7 +83,11 @@ for prefix in prefixes:
             if platform.system() == 'Windows':
                 cpptest_executable += '.exe'
             print "C++:   ",
-            if not only_python and os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+            if only_python:
+                print "Skipping tests as requested (--only-python)"
+            elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+                print "This test set does not have a C++ version"
+            else:
                 status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
                                    (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
                 if status == 0 and "OK" in output:
@@ -92,8 +96,6 @@ for prefix in prefixes:
                 else:
                     print "*** Failed"
                     failed += [(test, subtest, "C++", output)]
-            else:
-                print "Skipping"
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):

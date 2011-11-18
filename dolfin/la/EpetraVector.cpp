@@ -287,12 +287,14 @@ void EpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
 {
-  assert(x);
+  if (!x)
+    return "<Uninitialized EpetraVector>";
 
   std::stringstream s;
   if (verbose)
   {
     warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
+    assert(x);
     x->Print(std::cout);
   }
   else
@@ -303,7 +305,12 @@ std::string EpetraVector::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(Array<double>& values) const
 {
-  assert(x);
+  if (!x)
+  {
+    values.clear();
+    return;
+  }
+
   values.resize(x->MyLength());
 
   const int err = x->ExtractCopy(values.data().get(), 0);
@@ -349,6 +356,7 @@ void EpetraVector::add_local(const Array<double>& values)
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
+
   const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
                                          block, 0);
 
