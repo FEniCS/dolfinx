@@ -26,7 +26,7 @@
 %pythoncode %{
 def __contains__(self,u):
     "Check whether a function is in the FunctionSpace"
-    dolfin_assert(isinstance(u,Function))
+    assert(isinstance(u,Function))
     return u._in(self)
 %}
 }

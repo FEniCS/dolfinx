@@ -148,7 +148,7 @@ class MeshFunction(object):
 del _doc_string
 
 def _new_closure(MeshType):
-    dolfin_assert(isinstance(MeshType,str))
+    assert(isinstance(MeshType,str))
     def new(cls, tp, mesh, value=0):
         if not isinstance(tp, str):
             raise TypeError, "expected a 'str' as first argument"
