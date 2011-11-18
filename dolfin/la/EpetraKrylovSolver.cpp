@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal
+// Copyright (C) 2008-2011 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-11-17
+// Last changed: 2011-11-18
 
 #ifdef HAS_TRILINOS
 
@@ -39,13 +39,13 @@
 #include <Epetra_LinearProblem.h>
 
 #include <dolfin/log/dolfin_log.h>
-#include "GenericMatrix.h"
-#include "GenericVector.h"
-#include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "TrilinosPreconditioner.h"
+#include "GenericMatrix.h"
+#include "GenericVector.h"
 #include "KrylovSolver.h"
+#include "TrilinosPreconditioner.h"
+#include "EpetraKrylovSolver.h"
 
 using namespace dolfin;
 
@@ -205,8 +205,13 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   assert(P);
   preconditioner->set(*this, *P);
 
+  // Set covergence check method
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
+
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
+
+  cout << "True residual (2): " << solver->TrueResidual() << endl; 
 
   // Check solve status
   const double* status = solver->GetAztecStatus();
@@ -261,5 +266,4 @@ boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
   return solver;
 }
 //-----------------------------------------------------------------------------
-
 #endif

@@ -211,7 +211,6 @@ LA_PRE_FACTORY(EpetraFactory)
 // Typemaps for Teuchos::RCP (Trilinos backend)
 //-----------------------------------------------------------------------------
 
-#ifdef TRILINOS_USE_RCP
 %define %RCP_to_const_ref_typemap(Type)
 %typemap(in) const Type& {
   int res = SWIG_ConvertPtr($input, (void**)&$1, $1_descriptor, 0);
@@ -251,7 +250,6 @@ LA_PRE_FACTORY(EpetraFactory)
 
 %RCP_to_const_ref_typemap(Epetra_CrsGraph);
 %RCP_to_const_ref_typemap(Epetra_BlockMap);
-#endif
 #endif
 
 //-----------------------------------------------------------------------------

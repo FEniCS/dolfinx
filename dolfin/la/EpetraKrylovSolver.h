@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal
+// Copyright (C) 2008-2011 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //

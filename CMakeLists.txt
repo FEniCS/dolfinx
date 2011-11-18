@@ -294,11 +294,11 @@ if (DOLFIN_ENABLE_TRILINOS)
     message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
     set(Trilinos_FOUND true)
 
-    # Set defintions
-    set(DOLFIN_TRILINOS_DEFINITIONS ${TRILINOS_DEFINITIONS} -DTRILINOS_USE_RCP)
+    set(DOLFIN_TRILINOS_DEFINITIONS)
 
-    # Loop over package libs and get full path
+    # Loop over each package
     foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+      # Loop over libs and get full path
       foreach (lib ${${package}_LIBRARIES})
         find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
         if (TRILINOS_LIB_${lib})
