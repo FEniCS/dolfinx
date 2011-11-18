@@ -183,8 +183,6 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
-
-
   if (ii < num_computed_eigenvalues)
   {
     #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
@@ -326,7 +324,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
 
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(eps, EPS_TARGET_MAGNITUDE);
