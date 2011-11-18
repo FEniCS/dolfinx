@@ -254,7 +254,7 @@ void Logger::__debug(std::string msg) const
   write(DBG, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::__assert(std::string file, unsigned long line,
+void Logger::__dolfin_assert(std::string file, unsigned long line,
                       std::string function, std::string check) const
 {
   std::stringstream location;

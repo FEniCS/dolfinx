@@ -110,7 +110,7 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
 {
-  assert(space.mesh());
+  dolfin_assert(space.mesh());
 
   // Refine mesh
   adapt(*space.mesh());
@@ -124,7 +124,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
                                            const MeshFunction<bool>& cell_markers)
 {
-  assert(space.mesh());
+  dolfin_assert(space.mesh());
 
   // Refine mesh
   adapt(*space.mesh(), cell_markers);
@@ -146,8 +146,8 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   }
 
   // Create DOLFIN finite element and dofmap
-  assert(space.dofmap());
-  assert(space.element());
+  dolfin_assert(space.dofmap());
+  dolfin_assert(space.element());
   boost::shared_ptr<const FiniteElement>
     refined_element(space.element()->create());
   boost::shared_ptr<const GenericDofMap>
@@ -297,15 +297,15 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
 
   // Refine forms
-  assert(a);
-  assert(L);
+  dolfin_assert(a);
+  dolfin_assert(L);
   adapt(*a, adapted_mesh);
   adapt(*L, adapted_mesh);
 
   // FIXME: Note const-cast here, don't know how to get around it
 
   // Refine solution variable
-  assert(u);
+  dolfin_assert(u);
   adapt(*u, adapted_mesh);
   boost::shared_ptr<Function> refined_u =
     reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
@@ -318,7 +318,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
     {
-      assert(V);
+      dolfin_assert(V);
       adapt(*bc, adapted_mesh, *V);
       refined_bcs.push_back(bc->child_shared_ptr());
     }
@@ -331,9 +331,9 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   }
 
   // Create new problem
-  assert(a);
-  assert(L);
-  assert(u);
+  dolfin_assert(a);
+  dolfin_assert(L);
+  dolfin_assert(u);
   boost::shared_ptr<LinearVariationalProblem>
     refined_problem(new LinearVariationalProblem(a->child_shared_ptr(),
                                                  L->child_shared_ptr(),
@@ -364,7 +364,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
 
   // Refine forms
-  assert(F);
+  dolfin_assert(F);
   adapt(*F, adapted_mesh);
   if (J)
     adapt(*J, adapted_mesh);
@@ -372,7 +372,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // FIXME: Note const-cast here, don't know how to get around it
 
   // Refine solution variable
-  assert(u);
+  dolfin_assert(u);
   adapt(*u, adapted_mesh);
   boost::shared_ptr<Function> refined_u =
     reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
@@ -385,7 +385,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
     {
-      assert(V);
+      dolfin_assert(V);
       adapt(*bc, adapted_mesh, *V);
       refined_bcs.push_back(bc->child_shared_ptr());
     }
@@ -398,8 +398,8 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   }
 
   // Create new problem
-  assert(F);
-  assert(u);
+  dolfin_assert(F);
+  dolfin_assert(u);
   boost::shared_ptr<NonlinearVariationalProblem> refined_problem;
   if (J)
     refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
@@ -421,7 +421,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
                                     boost::shared_ptr<const Mesh> adapted_mesh,
                                     const FunctionSpace& S)
 {
-  assert(adapted_mesh);
+  dolfin_assert(adapted_mesh);
 
   // Skip refinement if already refined
   if (bc.has_child())
@@ -431,7 +431,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   }
 
   boost::shared_ptr<const FunctionSpace> W = bc.function_space();
-  assert(W);
+  dolfin_assert(W);
 
   // Refine function space
   const std::vector<uint> component = W->component();
@@ -467,7 +467,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     const std::vector<std::pair<uint, uint> >& markers = bc.markers();
 
     // Create refined markers
-    assert(W->mesh());
+    dolfin_assert(W->mesh());
     std::vector<std::pair<uint, uint> > refined_markers;
     adapt_markers(refined_markers, *adapted_mesh, markers, *W->mesh());
 
@@ -484,7 +484,7 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
                                     boost::shared_ptr<const Mesh> adapted_mesh,
                                     bool adapt_coefficients)
 {
-  assert(adapted_mesh);
+  dolfin_assert(adapted_mesh);
 
   // Skip refinement if already refined
   if (ec.has_child())
@@ -628,7 +628,7 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     Cell parent_cell(mesh, (*parent_cells)[cell]);
 
     // Extract (global) index of parent facet
-    // Add assert here.
+    // Add dolfin_assert here.
     const uint parent_facet_index = (*parent_facets)[*facet];
 
     // Extract local number of parent facet wrt parent cell

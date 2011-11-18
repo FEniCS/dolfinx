@@ -24,7 +24,6 @@
 #define __LOG_H
 
 #include <string>
-#include <cassert>
 #include <dolfin/common/types.h>
 #include "LogLevel.h"
 
@@ -36,7 +35,7 @@ namespace dolfin
 
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
-  /// macros are provided for debug messages and assertions.
+  /// macros are provided for debug messages and dolfin_assertions.
   ///
   /// Only messages with a debug level higher than or equal to the current
   /// log level are printed (the default being zero). Logging may also be
@@ -130,8 +129,8 @@ namespace dolfin
                std::string function,
                std::string format, ...);
 
-  // Helper function for dolfin_assert macro
-  void __assert(std::string file,
+  // Helper function for dolfin_dolfin_assert macro
+  void __dolfin_assert(std::string file,
                 unsigned long line,
                 std::string function,
                 std::string check);
@@ -164,7 +163,7 @@ namespace dolfin
   do { \
     if (!(check)) \
     { \
-      dolfin::__assert(__FILE__, __LINE__, __FUNCTION__, #check);    \
+      dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, #check);    \
     } \
   } while (false)
 #else

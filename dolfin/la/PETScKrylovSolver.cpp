@@ -175,8 +175,8 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 {
   this->A = A;
   this->P = P;
-  assert(this->A);
-  assert(this->P);
+  dolfin_assert(this->A);
+  dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -206,8 +206,8 @@ dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
-  assert(A);
-  assert(_ksp);
+  dolfin_assert(A);
+  dolfin_assert(_ksp);
 
   // Check dimensions
   const uint N = A->size(1);
@@ -350,8 +350,8 @@ void PETScKrylovSolver::init(const std::string& method)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_operators()
 {
-  assert(A);
-  assert(P);
+  dolfin_assert(A);
+  dolfin_assert(P);
 
   // Get some parameters
   const bool reuse_precon = parameters("preconditioner")["reuse"];

@@ -78,7 +78,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                  "The OpenMp assembler has not been tested in combination with MPI");
   }
 
-   assert(a.ufc_form());
+   dolfin_assert(a.ufc_form());
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -261,11 +261,11 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);
   mesh.init(D - 1, D);
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Get connectivity
   const MeshConnectivity& connectivity = mesh.topology()(D, D - 1);
-  assert(connectivity.size() > 0);
+  dolfin_assert(connectivity.size() > 0);
 
   // Dummy UFC object since each thread needs to created its own UFC object
   UFC ufc(_ufc);
@@ -482,7 +482,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
   boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");

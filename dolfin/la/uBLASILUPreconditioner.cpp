@@ -158,9 +158,9 @@ void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
   const ublas_vector& _b = b.vec();
   const ublas_sparse_matrix & _M = M.mat();
 
-  assert(_M.size1() > 0 && _M.size2() > 0);
-  assert( _x.size() == _M.size1() );
-  assert( _x.size() == _b.size());
+  dolfin_assert(_M.size1() > 0 && _M.size2() > 0);
+  dolfin_assert( _x.size() == _M.size1() );
+  dolfin_assert( _x.size() == _b.size());
 
   // Solve in-place
   _x.assign(_b);

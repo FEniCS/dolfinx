@@ -870,17 +870,17 @@ def get_tensor_type(tensor):
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
     global _has_type_map
-    assert _has_type_map
-    assert subclass in _has_type_map
+    dolfin_assert _has_type_map
+    dolfin_assert subclass in _has_type_map
     return bool(_has_type_map[subclass](tensor))
 
 def down_cast(tensor, subclass=None):
     "Cast tensor to the given subclass, passing the wrong class is an error."
     global _down_cast_map
-    assert _down_cast_map
+    dolfin_assert _down_cast_map
     if subclass is None:
         subclass = get_tensor_type(tensor)
-    assert subclass in _down_cast_map
+    dolfin_assert subclass in _down_cast_map
     ret = _down_cast_map[subclass](tensor)
 
     # Store the tensor to avoid garbage collection

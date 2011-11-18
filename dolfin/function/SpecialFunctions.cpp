@@ -40,8 +40,8 @@ void MeshCoordinates::eval(Array<double>& values,
                            const Array<double>& x,
                            const ufc::cell& cell) const
 {
-  assert(cell.geometric_dimension == mesh.geometry().dim());
-  assert(x.size() == mesh.geometry().dim());
+  dolfin_assert(cell.geometric_dimension == mesh.geometry().dim());
+  dolfin_assert(x.size() == mesh.geometry().dim());
 
   for (uint i = 0; i < cell.geometric_dimension; ++i)
     values[i] = x[i];
@@ -59,7 +59,7 @@ void FacetArea::eval(Array<double>& values,
                      const Array<double>& x,
                      const ufc::cell& cell) const
 {
-  assert(cell.geometric_dimension == mesh.geometry().dim());
+  dolfin_assert(cell.geometric_dimension == mesh.geometry().dim());
 
   if (cell.local_facet >= 0)
   {

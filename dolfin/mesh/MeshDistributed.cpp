@@ -69,7 +69,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   const std::vector<uint> global_entity_indices
       = mesh.parallel_data().global_entity_indices_as_vector(dim);
 
-  assert(global_entity_indices.size() == mesh.num_cells());
+  dolfin_assert(global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
   std::map<uint, std::set<std::pair<uint, uint> > > processes;
@@ -110,7 +110,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   */
 
   // FIXME: handle case when my_entities.size() == 0
-  //assert(my_entities.size() > 0);
+  //dolfin_assert(my_entities.size() > 0);
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();

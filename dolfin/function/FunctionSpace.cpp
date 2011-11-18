@@ -122,16 +122,16 @@ boost::shared_ptr<const GenericDofMap> FunctionSpace::dofmap() const
 //-----------------------------------------------------------------------------
 dolfin::uint FunctionSpace::dim() const
 {
-  assert(_dofmap);
+  dolfin_assert(_dofmap);
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
 
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
@@ -200,9 +200,9 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 boost::shared_ptr<FunctionSpace>
 FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
 
   // Check if sub space is already in the cache
   std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
@@ -241,7 +241,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 boost::shared_ptr<FunctionSpace>
 FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
 {
-  assert(_mesh);
+  dolfin_assert(_mesh);
 
   if (_component.size() == 0)
   {
@@ -281,7 +281,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  assert(_mesh);
+  dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     const uint n = _dofmap->cell_dimension(cell->index());

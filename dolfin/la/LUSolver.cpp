@@ -53,14 +53,14 @@ LUSolver::~LUSolver()
 //-----------------------------------------------------------------------------
 void LUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
-  assert(solver);
+  dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
 
   Timer timer("LU solver");
   solver->parameters.update(parameters);
@@ -70,7 +70,7 @@ dolfin::uint LUSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
                              const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
 
   Timer timer("LU solver");
   solver->parameters.update(parameters);

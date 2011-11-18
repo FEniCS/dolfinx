@@ -69,7 +69,7 @@ dolfin::uint Form::rank() const
     return _rank;
   else
   {
-    assert(_ufc_form->rank() == _rank);
+    dolfin_assert(_ufc_form->rank() == _rank);
     return _rank;
   }
 }
@@ -80,7 +80,7 @@ dolfin::uint Form::num_coefficients() const
     return _coefficients.size();
   else
   {
-    assert(_ufc_form->num_coefficients() == _coefficients.size());
+    dolfin_assert(_ufc_form->num_coefficients() == _coefficients.size());
     return _coefficients.size();
   }
 }
@@ -135,7 +135,7 @@ const Mesh& Form::mesh() const
   {
     if (_function_spaces[i])
     {
-      assert(_function_spaces[i]->mesh());
+      dolfin_assert(_function_spaces[i]->mesh());
       meshes.push_back(_function_spaces[i]->mesh());
     }
   }
@@ -177,7 +177,7 @@ const Mesh& Form::mesh() const
   }
 
   // Return first mesh
-  assert(meshes[0]);
+  dolfin_assert(meshes[0]);
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ boost::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Form::function_space(uint i) const
 {
-  assert(i < _function_spaces.size());
+  dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +200,7 @@ std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() con
 void Form::set_coefficient(uint i,
                            boost::shared_ptr<const GenericFunction> coefficient)
 {
-  assert(i < _coefficients.size());
+  dolfin_assert(i < _coefficients.size());
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
@@ -219,7 +219,7 @@ void Form::set_coefficients(std::map<std::string, boost::shared_ptr<const Generi
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericFunction> Form::coefficient(uint i) const
 {
-  assert(i < _coefficients.size());
+  dolfin_assert(i < _coefficients.size());
   return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
@@ -291,7 +291,7 @@ boost::shared_ptr<const ufc::form> Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  assert(_ufc_form);
+  dolfin_assert(_ufc_form);
 
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
@@ -315,8 +315,8 @@ void Form::check() const
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
     boost::scoped_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
-    assert(element);
-    assert(_function_spaces[i]->element());
+    dolfin_assert(element);
+    dolfin_assert(_function_spaces[i]->element());
     if (element->signature() != _function_spaces[i]->element()->signature())
     {
       log(ERROR, "Expected element: %s", element->signature());

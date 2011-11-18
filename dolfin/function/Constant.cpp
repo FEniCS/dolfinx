@@ -101,7 +101,7 @@ const Constant& Constant::operator= (double constant)
   }
 
   // Assign value
-  assert(_values.size() == 1);
+  dolfin_assert(_values.size() == 1);
   _values[0] = constant;
 
   return *this;
@@ -118,7 +118,7 @@ Constant::operator double() const
   }
 
   // Return value
-  assert(_values.size() == 1);
+  dolfin_assert(_values.size() == 1);
   return _values[0];
 }
 //-----------------------------------------------------------------------------

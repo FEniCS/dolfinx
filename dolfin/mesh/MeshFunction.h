@@ -395,17 +395,17 @@ namespace dolfin
   {
     _dim = mesh_value_collection.dim();
     init(_dim);
-    assert(_mesh);
+    dolfin_assert(_mesh);
 
     // Get mesh connectivity D --> d
     const uint d = _dim;
     const uint D = _mesh->topology().dim();
-    assert(d <= D);
+    dolfin_assert(d <= D);
 
     // Generate connectivity if it does not excist
     _mesh->init(D, d);
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
-    assert(connectivity.size() > 0);
+    dolfin_assert(connectivity.size() > 0);
 
     // Iterate over all values
     boost::unordered_set<uint> entities_values_set;
@@ -422,18 +422,18 @@ namespace dolfin
       if (d != D)
       {
         // Get global (local to to process) entity index
-        assert(cell_index < _mesh->num_cells());
+        dolfin_assert(cell_index < _mesh->num_cells());
         entity_index = connectivity(cell_index)[local_entity];
 
       }
       else
       {
         entity_index = cell_index;
-        assert(local_entity == 0);
+        dolfin_assert(local_entity == 0);
       }
 
       // Set value for entity
-      assert(entity_index < _size);
+      dolfin_assert(entity_index < _size);
       _values[entity_index] = value;
 
       // Add entity index to set (used to check that all values are set)
@@ -452,7 +452,7 @@ namespace dolfin
   template <typename T>
   const Mesh& MeshFunction<T>::mesh() const
   {
-    assert(_mesh);
+    dolfin_assert(_mesh);
     return *_mesh;
   }
   //---------------------------------------------------------------------------
@@ -483,36 +483,36 @@ namespace dolfin
   template <typename T>
   T& MeshFunction<T>::operator[] (const MeshEntity& entity)
   {
-    assert(_values);
-    assert(&entity.mesh() == _mesh);
-    assert(entity.dim() == _dim);
-    assert(entity.index() < _size);
+    dolfin_assert(_values);
+    dolfin_assert(&entity.mesh() == _mesh);
+    dolfin_assert(entity.dim() == _dim);
+    dolfin_assert(entity.index() < _size);
     return _values[entity.index()];
   }
   //---------------------------------------------------------------------------
   template <typename T>
   const T& MeshFunction<T>::operator[] (const MeshEntity& entity) const
   {
-    assert(_values);
-    assert(&entity.mesh() == _mesh);
-    assert(entity.dim() == _dim);
-    assert(entity.index() < _size);
+    dolfin_assert(_values);
+    dolfin_assert(&entity.mesh() == _mesh);
+    dolfin_assert(entity.dim() == _dim);
+    dolfin_assert(entity.index() < _size);
     return _values[entity.index()];
   }
   //---------------------------------------------------------------------------
   template <typename T>
   T& MeshFunction<T>::operator[] (uint index)
   {
-    assert(_values);
-    assert(index < _size);
+    dolfin_assert(_values);
+    dolfin_assert(index < _size);
     return _values[index];
   }
   //---------------------------------------------------------------------------
   template <typename T>
   const T& MeshFunction<T>::operator[] (uint index) const
   {
-    assert(_values);
-    assert(index < _size);
+    dolfin_assert(_values);
+    dolfin_assert(index < _size);
     return _values[index];
   }
   //---------------------------------------------------------------------------
@@ -559,7 +559,7 @@ namespace dolfin
   {
     // Initialize mesh for entities of given dimension
     mesh.init(dim);
-    assert(mesh.size(dim) == size);
+    dolfin_assert(mesh.size(dim) == size);
 
     // Initialize data
     _mesh = &mesh;
@@ -572,16 +572,16 @@ namespace dolfin
   template <typename T>
   void MeshFunction<T>::set_value(uint index, T& value)
   {
-    assert(_values);
-    assert(index < _size);
+    dolfin_assert(_values);
+    dolfin_assert(index < _size);
     _values[index] = value;
   }
   //---------------------------------------------------------------------------
   template <typename T>
   void MeshFunction<T>::set_values(const std::vector<T>& values)
   {
-    assert(_values);
-    assert(_size == values.size());
+    dolfin_assert(_values);
+    dolfin_assert(_size == values.size());
     for (uint i = 0; i < _size; i++)
       _values[i] = values[i];
   }
@@ -589,7 +589,7 @@ namespace dolfin
   template <typename T>
   void MeshFunction<T>::set_all(const T& value)
   {
-    assert(_values);
+    dolfin_assert(_values);
     for (uint i = 0; i < _size; i++)
       _values[i] = value;
   }

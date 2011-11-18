@@ -50,13 +50,13 @@ bool Equation::is_linear() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const Form> Equation::lhs() const
 {
-  assert(_lhs);
+  dolfin_assert(_lhs);
   return _lhs;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const Form> Equation::rhs() const
 {
-  assert(_rhs);
+  dolfin_assert(_rhs);
   return _rhs;
 }
 //-----------------------------------------------------------------------------

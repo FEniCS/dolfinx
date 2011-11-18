@@ -52,7 +52,7 @@ dolfin::uint PETScBaseMatrix::size(uint dim) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> PETScBaseMatrix::local_range(uint dim) const
 {
-  assert(dim <= 1);
+  dolfin_assert(dim <= 1);
   if (dim == 1)
   {
     dolfin_error("PETScBaseMatrix.cpp",
@@ -72,7 +72,7 @@ std::pair<dolfin::uint, dolfin::uint> PETScBaseMatrix::local_range(uint dim) con
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Downcast vector
   PETScVector& _y = y.down_cast<PETScVector>();

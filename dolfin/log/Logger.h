@@ -99,8 +99,8 @@ namespace dolfin
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
 
-    /// Helper function for dolfin_assert macro
-    void __assert(std::string file, unsigned long line,
+    /// Helper function for dolfin_dolfin_assert macro
+    void __dolfin_assert(std::string file, unsigned long line,
                   std::string function, std::string check) const;
 
   private:

@@ -43,11 +43,11 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
 {
   // Only rank 1 and 2 sparsity patterns are supported
-  assert(dims.size() < 3);
+  dolfin_assert(dims.size() < 3);
 
   // Check that dimensions match
-  assert(dims.size() == ownership_range.size());
-  assert(dims.size() == off_process_owner.size());
+  dolfin_assert(dims.size() == ownership_range.size());
+  dolfin_assert(dims.size() == off_process_owner.size());
 
   // Store dimensions
   shape = dims;
@@ -58,7 +58,7 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   // Store copy of nonlocal index to owning process map
   for (uint i = 0; i < off_process_owner.size(); ++i)
   {
-    assert(off_process_owner[i]);
+    dolfin_assert(off_process_owner[i]);
     this->off_process_owner.push_back(*off_process_owner[i]);
   }
 
@@ -82,7 +82,7 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   col_range_max = this->ownership_range[1].second;
 
   // Resize diagonal block
-  assert(row_range_max > row_range_min);
+  dolfin_assert(row_range_max > row_range_min);
   diagonal.resize(row_range_max - row_range_min);
 
   // Resize off-diagonal block (only needed when local range != global range)
@@ -96,9 +96,9 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   if (shape.size() != 2)
     return;
 
-  assert(entries.size() == 2);
-  assert(entries[0]);
-  assert(entries[1]);
+  dolfin_assert(entries.size() == 2);
+  dolfin_assert(entries[0]);
+  dolfin_assert(entries[1]);
 
   // Get local rows and columns to insert
   const std::vector<uint>& map_i = *entries[0];
@@ -126,12 +126,12 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
         {
           if (col_range_min <= *col && *col < col_range_max)
           {
-            assert(I < diagonal.size());
+            dolfin_assert(I < diagonal.size());
             diagonal[I].insert(*col);
           }
           else
           {
-            assert(I < off_diagonal.size());
+            dolfin_assert(I < off_diagonal.size());
             off_diagonal[I].insert(*col);
           }
         }
@@ -156,13 +156,13 @@ dolfin::uint SparsityPattern::rank() const
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::size(uint i) const
 {
-  assert(i < shape.size());
+  dolfin_assert(i < shape.size());
   return shape[i];
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) const
 {
-  assert(dim < 2);
+  dolfin_assert(dim < 2);
   return ownership_range[dim];
 }
 //-----------------------------------------------------------------------------
@@ -230,7 +230,7 @@ void SparsityPattern::apply()
   if (row_range_min != 0 || row_range_max != shape[0])
   {
     // Figure out correct process for each non-local entry
-    assert(non_local.size() % 2 == 0);
+    dolfin_assert(non_local.size() % 2 == 0);
     std::vector<uint> destinations(non_local.size());
     for (uint i = 0; i < non_local.size(); i += 2)
     {
@@ -240,11 +240,11 @@ void SparsityPattern::apply()
       // Figure out which process owns the row
       boost::unordered_map<uint, uint>::const_iterator non_local_index
           = off_process_owner[0].find(I);
-      assert(non_local_index != off_process_owner[0].end());
+      dolfin_assert(non_local_index != off_process_owner[0].end());
       const uint p = non_local_index->second;
 
-      assert(p < num_processes);
-      assert(p != proc_number);
+      dolfin_assert(p < num_processes);
+      dolfin_assert(p != proc_number);
 
       destinations[i] = p;
       destinations[i + 1] = p;
@@ -255,7 +255,7 @@ void SparsityPattern::apply()
     MPI::distribute(non_local, destinations, non_local_received);
 
     // Insert non-local entries received from other processes
-    assert(non_local_received.size() % 2 == 0);
+    dolfin_assert(non_local_received.size() % 2 == 0);
     for (uint i = 0; i < non_local_received.size(); i+= 2)
     {
       // Get row and column
@@ -277,12 +277,12 @@ void SparsityPattern::apply()
       // Insert in diagonal or off-diagonal block
       if (col_range_min <= J && J < col_range_max)
       {
-        assert(I < diagonal.size());
+        dolfin_assert(I < diagonal.size());
         diagonal[I].insert(J);
       }
       else
       {
-        assert(I < off_diagonal.size());
+        dolfin_assert(I < off_diagonal.size());
         off_diagonal[I].insert(J);
       }
     }

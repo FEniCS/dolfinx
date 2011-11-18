@@ -245,11 +245,11 @@ namespace dolfin
     {
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
-      assert(connectivity.size() > 0);
+      dolfin_assert(connectivity.size() > 0);
       for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
-        assert(connectivity.size(entity_index) > 0);
+        dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
         for (uint i = 0; i < entity.num_entities(D) ; ++i)
         {
@@ -319,11 +319,11 @@ namespace dolfin
     {
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
-      assert(connectivity.size() > 0);
+      dolfin_assert(connectivity.size() > 0);
       for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
-        assert(connectivity.size(entity_index) > 0);
+        dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
         for (uint i = 0; i < entity.num_entities(D) ; ++i)
         {
@@ -402,8 +402,8 @@ namespace dolfin
     const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
 
     // Find the cell
-    assert(connectivity.size() > 0);
-    assert(connectivity.size(entity_index) > 0);
+    dolfin_assert(connectivity.size() > 0);
+    dolfin_assert(connectivity.size(entity_index) > 0);
     const MeshEntity entity(mesh, _dim, entity_index);
     const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
 

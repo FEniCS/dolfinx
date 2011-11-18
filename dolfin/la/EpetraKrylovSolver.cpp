@@ -140,8 +140,8 @@ void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatr
 {
   this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
   this->P = GenericTensor::down_cast<const EpetraMatrix>(P);
-  assert(this->A);
-  assert(this->P);
+  dolfin_assert(this->A);
+  dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& EpetraKrylovSolver::get_operator() const
@@ -163,9 +163,9 @@ dolfin::uint EpetraKrylovSolver::solve(GenericVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
-  assert(solver);
-  assert(A);
-  assert(P);
+  dolfin_assert(solver);
+  dolfin_assert(A);
+  dolfin_assert(P);
 
   // Check dimensions
   const uint M = A->size(0);
@@ -209,7 +209,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Configure preconditioner
   //if (preconditioner && !preconditioner_set)
   //{
-    assert(P);
+    dolfin_assert(P);
     preconditioner->set(*this, *P);
     //preconditioner_set = true;
   //}

@@ -159,7 +159,7 @@ namespace dolfin
   private:
 
     void init_inserter(uint nnz);
-    void assert_no_inserter() const;
+    void dolfin_assert_no_inserter() const;
 
     // MTL4 matrix object
     mtl4_sparse_matrix A;

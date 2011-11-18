@@ -39,7 +39,7 @@ FacetCell::FacetCell(const BoundaryMesh& mesh, const Cell& facet)
 
   // Get cell index (pick first, there is only one)
   const uint D = mesh.topology().dim();
-  assert(mesh_facet.num_entities(D) == 1);
+  dolfin_assert(mesh_facet.num_entities(D) == 1);
   _index = mesh_facet.entities(D)[0];
 
   // Get local index of facet

@@ -249,7 +249,7 @@ void LocalMeshData::receive_mesh_data()
   {
     std::vector<uint> values;
     MPI::broadcast(values);
-    assert(values.size() == 5);
+    dolfin_assert(values.size() == 5);
     gdim = values[0];
     tdim = values[1];
     num_global_vertices = values[2];
@@ -287,7 +287,7 @@ void LocalMeshData::receive_mesh_data()
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 {
-  assert(values.size() % gdim == 0);
+  dolfin_assert(values.size() % gdim == 0);
   vertex_coordinates.clear();
   const uint num_vertices = values.size() / gdim;
   uint k = 0;
@@ -304,7 +304,7 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
 {
-  assert(values.size() == vertex_coordinates.size());
+  dolfin_assert(values.size() == vertex_coordinates.size());
   vertex_indices.clear();
   for (uint i = 0; i < values.size(); i++)
     vertex_indices.push_back(values[i]);
@@ -314,7 +314,7 @@ void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
 {
-  assert(values.size() % (tdim + 2) == 0);
+  dolfin_assert(values.size() % (tdim + 2) == 0);
   cell_vertices.clear();
   global_cell_indices.clear();
   const uint num_cells = values.size() / (tdim + 2);
