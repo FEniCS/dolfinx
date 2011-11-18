@@ -189,7 +189,7 @@ namespace dolfin
     ///         Local-to-global mapping of dofs.
     const std::vector<uint>& cell_dofs(uint cell_index) const
     {
-      assert(cell_index < _dofmap.size());
+      dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
     }
 
@@ -203,7 +203,7 @@ namespace dolfin
     void tabulate_dofs(uint* dofs, const Cell& cell) const
     {
       const uint cell_index = cell.index();
-      assert(cell_index < _dofmap.size());
+      dolfin_assert(cell_index < _dofmap.size());
       std::copy(_dofmap[cell_index].begin(), _dofmap[cell_index].end(), dofs);
     }
 

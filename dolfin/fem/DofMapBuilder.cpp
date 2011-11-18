@@ -50,7 +50,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
 
   dofmap._off_process_owner.clear();
 
-  assert(dofmap._ufc_dofmap);
+  dolfin_assert(dofmap._ufc_dofmap);
 
   // Build dofmap from ufc::dofmap
   dolfin::UFCCell ufc_cell(dolfin_mesh);
@@ -232,7 +232,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Check that sum of locally owned dofs is equal to global dimension
   const uint _owned_dim = owned_dofs.size();
-  assert(MPI::sum(_owned_dim) == dofmap.global_dimension());
+  dolfin_assert(MPI::sum(_owned_dim) == dofmap.global_dimension());
 
   log(TRACE, "Finished determining dof ownership for parallel dof map");
 }
@@ -254,7 +254,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
   const std::vector<std::vector<uint> >& old_dofmap = dofmap._dofmap;
   std::vector<std::vector<uint> > new_dofmap(old_dofmap.size());
-  assert(old_dofmap.size() == mesh.num_cells());
+  dolfin_assert(old_dofmap.size() == mesh.num_cells());
 
   // Compute offset for owned and non-shared dofs
   const uint process_offset = MPI::global_offset(owned_dofs.size(), true);
@@ -364,7 +364,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
 {
-  assert(dofmap);
+  dolfin_assert(dofmap);
   const uint D = dolfin_mesh.topology().dim();
 
   if (dofmap->num_sub_dofmaps() == 0)

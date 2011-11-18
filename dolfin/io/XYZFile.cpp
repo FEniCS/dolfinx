@@ -89,7 +89,7 @@ void XYZFile::results_write(const Function& u) const
   for (uint i = 0; i < rank; i++)
     dim *= u.function_space()->element()->value_dimension(i);
 
-  assert(u.function_space()->mesh());
+  dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Allocate memory for function values at vertices

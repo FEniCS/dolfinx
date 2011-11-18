@@ -161,7 +161,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 
     // Compute weights for linear interpolation
     const double dt = _vector_times[i1] - _vector_times[i0];
-    assert(std::abs(dt) > DOLFIN_EPS);
+    dolfin_assert(std::abs(dt) > DOLFIN_EPS);
     const double w0 = (_vector_times[i1] - t) / dt;
     const double w1 = 1.0 - w0;
 

@@ -92,8 +92,8 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();

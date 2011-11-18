@@ -128,7 +128,7 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
 {
-  assert(index < N);
+  dolfin_assert(index < N);
 
   // Get number of processes
   const uint _num_processes = num_processes();
@@ -213,7 +213,7 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
 {
-  assert(i < N);
+  dolfin_assert(i < N);
   return 0;
 }
 //-----------------------------------------------------------------------------

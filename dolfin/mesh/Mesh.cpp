@@ -134,13 +134,13 @@ const MeshData& Mesh::data() const
 //-----------------------------------------------------------------------------
 ParallelData& Mesh::parallel_data()
 {
-  assert(_parallel_data);
+  dolfin_assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 const ParallelData& Mesh::parallel_data() const
 {
-  assert(_parallel_data);
+  dolfin_assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------

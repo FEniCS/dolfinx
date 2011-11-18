@@ -84,7 +84,7 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 bool EpetraMatrix::distributed() const
 {
-  assert(A);
+  dolfin_assert(A);
   return A->Graph().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +200,7 @@ dolfin::uint EpetraMatrix::size(uint dim) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
 {
-  assert(dim < 2);
+  dolfin_assert(dim < 2);
   if (dim == 1)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -209,14 +209,14 @@ std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
   }
 
   const Epetra_BlockMap& row_map = A->RowMap();
-  assert(row_map.LinearMap());
+  dolfin_assert(row_map.LinearMap());
 
   return std::make_pair(row_map.MinMyGID(), row_map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::resize(GenericVector& y, uint dim) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get map appropriate map
   const Epetra_Map* map = 0;
@@ -239,7 +239,7 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
                        uint n, const uint* cols) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   int num_entities = 0;
   int* indices;
@@ -294,7 +294,7 @@ void EpetraMatrix::set(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
   /*
@@ -304,7 +304,7 @@ void EpetraMatrix::set(const double* block,
     const double* values = block + i*n;
     const int err = A->ReplaceGlobalValues(row, n, values,
                                            reinterpret_cast<const int*>(cols));
-    assert(!err);
+    dolfin_assert(!err);
   }
   */
 
@@ -323,7 +323,7 @@ void EpetraMatrix::add(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
   /*
@@ -333,7 +333,7 @@ void EpetraMatrix::add(const double* block,
     const double* values = block + i*n;
     const int err = A->SumIntoGlobalValues(row, n, values,
                                            reinterpret_cast<const int*>(cols));
-    assert(!err);
+    dolfin_assert(!err);
   }
   */
 
@@ -386,7 +386,7 @@ double EpetraMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
-  assert(A);
+  dolfin_assert(A);
   const int err = A->PutScalar(0.0);
   if (err != 0)
   {
@@ -398,7 +398,7 @@ void EpetraMatrix::zero()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply(std::string mode)
 {
-  assert(A);
+  dolfin_assert(A);
   int err = 0;
   if (mode == "add")
     err = A->GlobalAssemble(true, Add);
@@ -428,7 +428,7 @@ std::string EpetraMatrix::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
-    assert(A);
+    dolfin_assert(A);
     A->Print(std::cout);
   }
   else
@@ -439,8 +439,8 @@ std::string EpetraMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(uint m, const uint* rows)
 {
-  assert(A);
-  assert(A->Filled() == true);
+  dolfin_assert(A);
+  dolfin_assert(A->Filled() == true);
 
   // FIXME: This is a major hack and will not scale for large numbers of
   // processes. The problem is that a dof is not guaranteed to reside on
@@ -534,7 +534,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   // FIXME: This can be made more efficient by eliminating creation of some
   //        obejcts inside the loop
 
-  assert(A);
+  dolfin_assert(A);
   const Epetra_CrsGraph& graph = A->Graph();
   for (uint i = 0; i < m; ++i)
   {
@@ -558,7 +558,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  assert(A);
+  dolfin_assert(A);
   const EpetraVector& x = x_.down_cast<EpetraVector>();
   EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
@@ -572,8 +572,8 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   // Resize RHS
   this->resize(Ax, 0);
 
-  assert(x.vec());
-  assert(Ax.vec());
+  dolfin_assert(x.vec());
+  dolfin_assert(Ax.vec());
   const int err = A->Multiply(false, *(x.vec()), *(Ax.vec()));
   if (err != 0)
   {
@@ -585,7 +585,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  assert(A);
+  dolfin_assert(A);
   const EpetraVector& x = x_.down_cast<EpetraVector>();
   EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
 
@@ -611,7 +611,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
                           std::vector<double>& values) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get local row index
   const int local_row_index = A->LRID(row);
@@ -686,7 +686,7 @@ boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator*= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   const int err = A->Scale(a);
   if (err !=0)
   {
@@ -699,7 +699,7 @@ const EpetraMatrix& EpetraMatrix::operator*= (double a)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator/= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   int err = A->Scale(1.0/a);
   if (err !=0)
   {

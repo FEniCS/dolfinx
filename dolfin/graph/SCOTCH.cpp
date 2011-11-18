@@ -125,7 +125,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
   // Sanity check
   for (uint i = 1; i <= proc_num; ++i)
-    assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
+    dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 
   // Print graph data -------------------------------------
   const bool dislay_graph_data = false;

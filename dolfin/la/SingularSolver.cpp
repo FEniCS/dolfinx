@@ -189,8 +189,8 @@ void SingularSolver::init(const GenericMatrix& A)
 void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
                             const GenericMatrix* M)
 {
-  assert(B);
-  assert(c);
+  dolfin_assert(B);
+  dolfin_assert(c);
 
   log(TRACE, "Creating extended hopefully non-singular system...");
 

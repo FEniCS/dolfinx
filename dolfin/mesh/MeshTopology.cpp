@@ -83,8 +83,8 @@ dolfin::uint MeshTopology::size(uint dim) const
 {
   if (!num_entities)
     return 0;
-  assert(num_entities);
-  assert(dim <= _dim);
+  dolfin_assert(num_entities);
+  dolfin_assert(dim <= _dim);
   return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
@@ -113,9 +113,9 @@ void MeshTopology::clear()
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(uint d0, uint d1)
 {
-  assert(d0 <= _dim);
-  assert(d1 <= _dim);
-  assert(connectivity[d0][d1]);
+  dolfin_assert(d0 <= _dim);
+  dolfin_assert(d1 <= _dim);
+  dolfin_assert(connectivity[d0][d1]);
   connectivity[d0][d1]->clear();
 }
 //-----------------------------------------------------------------------------
@@ -144,25 +144,25 @@ void MeshTopology::init(uint dim)
 //-----------------------------------------------------------------------------
 void MeshTopology::init(uint dim, uint size)
 {
-  assert(num_entities);
-  assert(dim <= _dim);
+  dolfin_assert(num_entities);
+  dolfin_assert(dim <= _dim);
 
   num_entities[dim] = size;
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
 {
-  assert(connectivity);
-  assert(d0 <= _dim && d1 <= _dim);
-  assert(connectivity[d0][d1]);
+  dolfin_assert(connectivity);
+  dolfin_assert(d0 <= _dim && d1 <= _dim);
+  dolfin_assert(connectivity[d0][d1]);
   return *connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) const
 {
-  assert(connectivity);
-  assert(d0 <= _dim && d1 <= _dim);
-  assert(connectivity[d0][d1]);
+  dolfin_assert(connectivity);
+  dolfin_assert(d0 <= _dim && d1 <= _dim);
+  dolfin_assert(connectivity[d0][d1]);
   return *connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------

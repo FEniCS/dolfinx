@@ -112,8 +112,8 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();
@@ -299,7 +299,7 @@ void TriangleCell::order(Cell& cell,
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   if (topology(1, 0).size() > 0)
   {
-    assert(topology(2, 1).size() > 0);
+    dolfin_assert(topology(2, 1).size() > 0);
 
     // Get edges
     const uint* cell_edges = cell.entities(1);
@@ -322,7 +322,7 @@ void TriangleCell::order(Cell& cell,
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
   if (topology(2, 1).size() > 0)
   {
-    assert(topology(2, 1).size() > 0);
+    dolfin_assert(topology(2, 1).size() > 0);
 
     // Get cell vertices and edges
     const uint* cell_vertices = cell.entities(0);
@@ -362,14 +362,14 @@ dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Look for edge satisfying ordering convention
   for (uint j = 0; j < 3; j++)
   {
     const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
-    assert(ev);
+    dolfin_assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;
   }

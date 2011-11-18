@@ -151,7 +151,7 @@ namespace dolfin
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
     {
-      assert(row < dims[0]);
+      dolfin_assert(row < dims[0]);
       columns = this->cols[row];
       values = this->vals[row];
     }

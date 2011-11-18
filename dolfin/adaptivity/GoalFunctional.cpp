@@ -29,12 +29,12 @@ GoalFunctional::GoalFunctional(uint rank, uint num_coefficients)
   : Form(rank, num_coefficients), _ec(0)
 {
   // Check that rank is 0
-  assert(rank == 0);
+  dolfin_assert(rank == 0);
 }
 //-----------------------------------------------------------------------------
 // boost::scoped_ptr<ErrorControl> GoalFunctional::ec()
 // {
-//   assert(_ec);
+//   dolfin_assert(_ec);
 //   return _ec;
 // }
 //-----------------------------------------------------------------------------

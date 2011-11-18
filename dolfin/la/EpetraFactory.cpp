@@ -106,7 +106,7 @@ Epetra_SerialComm& EpetraFactory::get_serial_comm()
   if (!serial_comm)
   {
     serial_comm.reset(new Epetra_SerialComm());
-    assert(serial_comm);
+    dolfin_assert(serial_comm);
   }
   return *serial_comm;
 }
@@ -117,7 +117,7 @@ Epetra_MpiComm& EpetraFactory::get_mpi_comm()
   {
     SubSystemsManager::init_mpi();
     mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
-    assert(mpi_comm);
+    dolfin_assert(mpi_comm);
   }
   return *mpi_comm;
 }

@@ -100,9 +100,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     datum->add("time_solve_primal", timer.stop());
 
     // Extract views to primal trial space and mesh
-    assert(u->function_space());
+    dolfin_assert(u->function_space());
     const FunctionSpace& V = *u->function_space();
-    assert(V.mesh());
+    dolfin_assert(V.mesh());
     const Mesh& mesh = *V.mesh();
 
     // Evaluate goal functional
@@ -136,7 +136,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     //--- Stage 2: Compute error indicators
     begin("Stage %d.2: Computing error indicators...", i);
     Vector indicators(mesh.num_cells());
-    assert(u);
+    dolfin_assert(u);
     timer.start();
     ec.compute_indicators(indicators, *u);
     datum->add("time_compute_indicators", timer.stop());

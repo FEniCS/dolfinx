@@ -81,7 +81,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
   _B = bubble.function_space();
   _cell_bubble.reset(new Function(_B));
-  assert(_cell_bubble->vector());
+  dolfin_assert(_cell_bubble->vector());
   *(_cell_bubble->vector()) = 1.0;
 
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
@@ -96,7 +96,7 @@ double ErrorControl::estimate_error(const Function& u,
   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
-  assert(_a_star);
+  dolfin_assert(_a_star);
   Function z_h(_a_star->function_space(1));
   compute_dual(z_h, bcs);
 
@@ -255,13 +255,13 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Extract common space, mesh and dofmap
   const FunctionSpace& V = *R_T.function_space();
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   const Mesh& mesh(*V.mesh());
-  assert(V.dofmap());
+  dolfin_assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for cell-residual problems
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint N = V.element()->space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
@@ -291,7 +291,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    assert(R_T.vector());
+    dolfin_assert(R_T.vector());
     R_T.vector()->set(x.memptr(), N, &dofs[0]);
   }
   end();
@@ -304,18 +304,18 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
-  assert(R_dT[0].function_space());
+  dolfin_assert(R_dT[0].function_space());
   const FunctionSpace& V = *R_dT[0].function_space();
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint N = V.element()->space_dimension();
 
   // Extract mesh
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   const Mesh& mesh = *V.mesh();
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  assert(_C->element());
+  dolfin_assert(_C->element());
   const int local_cone_dim = _C->element()->space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
@@ -334,7 +334,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, _R_T);
 
   // Extract (common) dof map
-  assert(V.dofmap());
+  dolfin_assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
@@ -361,12 +361,12 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     // Construct "cone function" for this local facet number by
     // setting the "right" degree of freedom equal to one on each
     // cell. (Requires dof-ordering knowledge.)
-    assert(_cell_cone->vector());
+    dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
     for (uint k = 0; k < num_cells; k++)
       facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
-    assert(_cell_cone->vector());
+    dolfin_assert(_cell_cone->vector());
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
 
     // Attach cell cone  to _a_R_dT and _L_R_dT
@@ -403,7 +403,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      assert(R_dT[local_facet].vector());
+      dolfin_assert(R_dT[local_facet].vector());
       R_dT[local_facet].vector()->set(x.memptr(), N, &dofs[0]);
     }
   }
@@ -419,10 +419,10 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
   {
     // Only handle DirichletBCs
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    assert(bc);
+    dolfin_assert(bc);
 
     // Extract SubSpace component
-    assert(bc->function_space());
+    dolfin_assert(bc->function_space());
     const std::vector<uint> component = bc->function_space()->component();
 
     // Extract sub-domain

@@ -369,7 +369,7 @@ void MeshEditor::add_higher_order_cell_data(uint c,
 void MeshEditor::close(bool order)
 {
   // Order mesh if requested
-  assert(mesh);
+  dolfin_assert(mesh);
   if (order && !mesh->ordered())
     mesh->order();
 

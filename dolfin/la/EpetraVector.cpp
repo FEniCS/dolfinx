@@ -84,7 +84,7 @@ EpetraVector::~EpetraVector()
 //-----------------------------------------------------------------------------
 bool EpetraVector::distributed() const
 {
-  assert(x);
+  dolfin_assert(x);
   return x->Map().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
@@ -142,7 +142,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
 
   // Compute local size
   const uint local_size = range.second - range.first;
-  assert(range.second - range.first >= 0);
+  dolfin_assert(range.second - range.first >= 0);
 
   // Create vector
   if (type == "local")
@@ -181,7 +181,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
 {
-  assert(x);
+  dolfin_assert(x);
   return new EpetraVector(*this);
 }
 //-----------------------------------------------------------------------------
@@ -197,8 +197,8 @@ dolfin::uint EpetraVector::local_size() const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 {
-  assert(x);
-  assert(x->Map().LinearMap());
+  dolfin_assert(x);
+  dolfin_assert(x->Map().LinearMap());
   const Epetra_BlockMap& map = x->Map();
   return std::make_pair<uint, uint>(map.MinMyGID(), map.MaxMyGID() + 1);
 }
@@ -210,7 +210,7 @@ bool EpetraVector::owns_index(uint i) const
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
-  assert(x);
+  dolfin_assert(x);
   const int err = x->PutScalar(0.0);
   //apply("add");
   if (err != 0)
@@ -223,7 +223,7 @@ void EpetraVector::zero()
 //-----------------------------------------------------------------------------
 void EpetraVector::apply(std::string mode)
 {
-  assert(x);
+  dolfin_assert(x);
 
   // Special treatement required for values applied using 'set'
   // This would be simpler if we required that only local values (on this process) can be set
@@ -294,7 +294,7 @@ std::string EpetraVector::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
-    assert(x);
+    dolfin_assert(x);
     x->Print(std::cout);
   }
   else
@@ -324,7 +324,7 @@ void EpetraVector::get_local(Array<double>& values) const
 //-----------------------------------------------------------------------------
 void EpetraVector::set_local(const Array<double>& values)
 {
-  assert(x);
+  dolfin_assert(x);
   const uint local_size = x->MyLength();
 
   if (values.size() != local_size)
@@ -340,7 +340,7 @@ void EpetraVector::set_local(const Array<double>& values)
 //-----------------------------------------------------------------------------
 void EpetraVector::add_local(const Array<double>& values)
 {
-  assert(x);
+  dolfin_assert(x);
   const uint local_size = x->MyLength();
   if (values.size() != local_size)
   {
@@ -355,7 +355,7 @@ void EpetraVector::add_local(const Array<double>& values)
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
-  assert(x);
+  dolfin_assert(x);
 
   const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
                                          block, 0);
@@ -367,9 +367,9 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
                  "Did not manage to perform Epetra_Vector::ReplaceGlobalValues");
   }
 
-  assert(x);
+  dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();
-  assert(x->Map().LinearMap());
+  dolfin_assert(x->Map().LinearMap());
   const uint n0 = map.MinMyGID();
   const uint n1 = map.MaxMyGID();
 
@@ -392,7 +392,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
                  "Must be called between calling EpetraVector::set and EpetraVector::add");
   }
 
-  assert(x);
+  dolfin_assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    block, 0);
 
@@ -406,9 +406,9 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
-  assert(x);
+  dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();
-  assert(x->Map().LinearMap());
+  dolfin_assert(x->Map().LinearMap());
   const uint n0 = map.MinMyGID();
 
   // Get values
@@ -419,7 +419,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
   }
   else
   {
-    assert(x_ghost);
+    dolfin_assert(x_ghost);
     const uint n1 = map.MaxMyGID();
     const Epetra_BlockMap& ghost_map = x_ghost->Map();
     for (uint i = 0; i < m; ++i)
@@ -431,10 +431,10 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
         // FIXME: Check if look-up in std::map is faster than Epetra_BlockMap::LID
         // Get local index
         const int local_index = ghost_map.LID(rows[i]);
-        assert(local_index != -1);
+        dolfin_assert(local_index != -1);
 
         //boost::unordered_map<uint, uint>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);
-        //assert(_local_index != ghost_global_to_local.end());
+        //dolfin_assert(_local_index != ghost_global_to_local.end());
         //const int local_index = _local_index->second;
 
         // Get value
@@ -447,7 +447,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 void EpetraVector::gather(GenericVector& y,
                           const Array<dolfin::uint>& indices) const
 {
-  assert(x);
+  dolfin_assert(x);
 
   // Down cast to an EpetraVector
   EpetraVector& _y = y.down_cast<EpetraVector>();
@@ -462,7 +462,7 @@ void EpetraVector::gather(GenericVector& y,
 
   // Reset vector y
   _y.reset(target_map);
-  assert(_y.vec());
+  dolfin_assert(_y.vec());
 
   // Create importer
   Epetra_Import importer(target_map, x->Map());
@@ -475,13 +475,13 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
 {
   const uint _size = indices.size();
   x.resize(_size);
-  assert(x.size() == _size);
+  dolfin_assert(x.size() == _size);
 
   // Gather values into a vector
   EpetraVector y;
   gather(y, indices);
 
-  assert(y.size() == _size);
+  dolfin_assert(y.size() == _size);
   const Epetra_FEVector& _y = *(y.vec());
 
   // Copy values into x
@@ -521,7 +521,7 @@ boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 //-----------------------------------------------------------------------------
 double EpetraVector::inner(const GenericVector& y) const
 {
-  assert(x);
+  dolfin_assert(x);
 
   const EpetraVector& v = y.down_cast<EpetraVector>();
   if (!v.x)
@@ -545,7 +545,7 @@ double EpetraVector::inner(const GenericVector& y) const
 //-----------------------------------------------------------------------------
 void EpetraVector::axpy(double a, const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
 
   const EpetraVector& _y = y.down_cast<EpetraVector>();
   if (!_y.x)
@@ -573,7 +573,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 //-----------------------------------------------------------------------------
 void EpetraVector::abs()
 {
-  assert(x);
+  dolfin_assert(x);
   x->Abs(*x);
 }
 //-----------------------------------------------------------------------------
@@ -590,16 +590,16 @@ const EpetraVector& EpetraVector::operator= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (double a)
 {
-  assert(x);
+  dolfin_assert(x);
   x->PutScalar(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::update_ghost_values()
 {
-  assert(x);
-  assert(x_ghost);
-  assert(x_ghost->MyLength() == (int) ghost_global_to_local.size());
+  dolfin_assert(x);
+  dolfin_assert(x_ghost);
+  dolfin_assert(x_ghost->MyLength() == (int) ghost_global_to_local.size());
 
   // Create importer
   Epetra_Import importer(x_ghost->Map(), x->Map());
@@ -613,7 +613,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   // FIXME: Epetra assignment operator leads to an errror. Must vectors have
   //        the same size for assigenment to work?
 
-  assert(v.x);
+  dolfin_assert(v.x);
   if (this != &v)
   {
     // Copy vector
@@ -629,21 +629,21 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator+= (const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
   axpy(1.0, y);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
   axpy(-1.0, y);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator*= (double a)
 {
-  assert(x);
+  dolfin_assert(x);
   const int err = x->Scale(a);
   if (err!= 0)
   {
@@ -656,7 +656,7 @@ const EpetraVector& EpetraVector::operator*= (double a)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
   const EpetraVector& v = y.down_cast<EpetraVector>();
 
   if (!v.x)
@@ -692,7 +692,7 @@ const EpetraVector& EpetraVector::operator/=(double a)
 //-----------------------------------------------------------------------------
 double EpetraVector::norm(std::string norm_type) const
 {
-  assert(x);
+  dolfin_assert(x);
 
   double value = 0.0;
   int err = 0;
@@ -715,7 +715,7 @@ double EpetraVector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double EpetraVector::min() const
 {
-  assert(x);
+  dolfin_assert(x);
   double value = 0.0;
   const int err = x->MinValue(&value);
   if (err!= 0)
@@ -730,7 +730,7 @@ double EpetraVector::min() const
 //-----------------------------------------------------------------------------
 double EpetraVector::max() const
 {
-  assert(x);
+  dolfin_assert(x);
   double value = 0.0;
   const int err = x->MaxValue(&value);
   if (err != 0)
@@ -745,7 +745,7 @@ double EpetraVector::max() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum() const
 {
-  assert(x);
+  dolfin_assert(x);
   const uint local_size = x->MyLength();
 
   // Get local values
@@ -766,7 +766,7 @@ double EpetraVector::sum() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum(const Array<uint>& rows) const
 {
-  assert(x);
+  dolfin_assert(x);
   const uint n0 = local_range().first;
   const uint n1 = local_range().second;
 

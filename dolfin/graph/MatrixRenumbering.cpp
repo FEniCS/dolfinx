@@ -152,8 +152,8 @@ void MatrixRenumbering::get_number_edges(void *data, int num_gid_entries,
 
   //std::cout << "Testing global id entires: " << num_gid_entries << "  " << objs->num_global_objects() << std::endl;
   //std::cout << "Testing local id entires: "  << num_lid_entries << "  " << objs->num_local_objects() << std::endl;
-  //assert(num_gid_entries == objs->num_global_objects());
-  //assert(num_lid_entries == objs->num_local_objects());
+  //dolfin_assert(num_gid_entries == objs->num_global_objects());
+  //dolfin_assert(num_lid_entries == objs->num_local_objects());
 
   // Get number of edges for each graph vertex
   std::vector<uint> number_edges;
@@ -181,7 +181,7 @@ void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,
   uint sum = 0;
   for (uint i = 0; i < edges.size(); ++i)
   {
-    assert(edges[i].size() == (uint) num_edges[i]);
+    dolfin_assert(edges[i].size() == (uint) num_edges[i]);
     for (uint j = 0; j < edges[i].size(); ++j)
       nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
     sum += edges[i].size();

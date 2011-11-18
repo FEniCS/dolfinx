@@ -43,7 +43,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
@@ -91,7 +91,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
@@ -122,7 +122,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 {
   // Ownership range is set to zero since dofmap is a view
 
-  assert(component.size() > 0);
+  dolfin_assert(component.size() > 0);
 
   // Create UFC mesh
   const UFCMesh ufc_mesh(mesh);
@@ -136,7 +136,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Extract ufc sub-dofmap from parent and get offset
   _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
                                            component, ufc_mesh, mesh));
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, mesh);
@@ -184,7 +184,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
       {
         // Get dof index
         ufc_to_current_dof = parent_dofmap.ufc_map_to_dofmap.find(*dof);
-        assert(ufc_to_current_dof != parent_dofmap.ufc_map_to_dofmap.end());
+        dolfin_assert(ufc_to_current_dof != parent_dofmap.ufc_map_to_dofmap.end());
 
         // Add to ufc-to-current dof map
         ufc_map_to_dofmap.insert(*ufc_to_current_dof);
@@ -206,7 +206,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
              : _ufc_dofmap(dofmap_view._ufc_dofmap->create()), ufc_offset(0),
                _is_view(false), _distributed(distributed)
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, mesh);
@@ -230,9 +230,9 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   DofMapBuilder::build(*this, mesh, ufc_mesh, _distributed);
 
   // Dimension checks
-  assert(dofmap_view._dofmap.size() == mesh.num_cells());
-  assert(global_dimension() == dofmap_view.global_dimension());
-  assert(_dofmap.size() == mesh.num_cells());
+  dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
+  dolfin_assert(global_dimension() == dofmap_view.global_dimension());
+  dolfin_assert(_dofmap.size() == mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map if the collapsed
   //        dof map is contiguous (0, . . . , n)?
@@ -243,7 +243,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   {
     const std::vector<uint>& view_cell_dofs = dofmap_view._dofmap[i];
     const std::vector<uint>& cell_dofs = _dofmap[i];
-    assert(view_cell_dofs.size() == cell_dofs.size());
+    dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (uint j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
@@ -257,38 +257,38 @@ DofMap::~DofMap()
 //-----------------------------------------------------------------------------
 bool DofMap::needs_mesh_entities(unsigned int d) const
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->needs_mesh_entities(d);
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::global_dimension() const
 {
-  assert(_ufc_dofmap);
-  assert(_ufc_dofmap->global_dimension() > 0);
+  dolfin_assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap->global_dimension() > 0);
   return _ufc_dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(uint cell_index) const
 {
-  assert(cell_index < _dofmap.size());
+  dolfin_assert(cell_index < _dofmap.size());
   return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::max_cell_dimension() const
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->max_local_dimension();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::geometric_dimension() const
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->geometric_dimension();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::num_facet_dofs() const
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
@@ -311,7 +311,7 @@ const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owne
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
-  assert(_ufc_dofmap);
+  dolfin_assert(_ufc_dofmap);
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
@@ -400,7 +400,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   {
     // Extract sub dofmap
     boost::scoped_ptr<ufc::dofmap> ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
-    assert(ufc_tmp_dofmap);
+    dolfin_assert(ufc_tmp_dofmap);
 
     // Initialise
     init_ufc_dofmap(*ufc_tmp_dofmap, ufc_mesh, dolfin_mesh);
@@ -411,7 +411,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
 
   // Create UFC sub-system
   ufc::dofmap* sub_dofmap = ufc_dofmap.create_sub_dofmap(component[0]);
-  assert(sub_dofmap);
+  dolfin_assert(sub_dofmap);
 
   // Return sub-system if sub-sub-system should not be extracted, otherwise
   // recursively extract the sub sub system
@@ -471,7 +471,7 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
 //-----------------------------------------------------------------------------
 void DofMap::renumber(const std::vector<uint>& renumbering_map)
 {
-  assert(global_dimension() == renumbering_map.size());
+  dolfin_assert(global_dimension() == renumbering_map.size());
 
   // Update or build ufc-to-dofmap
   if (ufc_map_to_dofmap.size() == 0)

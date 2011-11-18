@@ -62,18 +62,18 @@ void LinearVariationalSolver::solve()
   const bool print_matrix   = parameters["print_matrix"];
 
   // Get problem data
-  assert(problem);
+  dolfin_assert(problem);
   boost::shared_ptr<const Form> a(problem->bilinear_form());
   boost::shared_ptr<const Form> L(problem->linear_form());
   boost::shared_ptr<Function> u(problem->solution());
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
 
-  assert(a);
-  assert(L);
-  assert(u);
+  dolfin_assert(a);
+  dolfin_assert(L);
+  dolfin_assert(u);
 
   // Create matrix and vector
-  assert(u->vector());
+  dolfin_assert(u->vector());
   boost::scoped_ptr<GenericMatrix> A(u->vector()->factory().create_matrix());
   boost::scoped_ptr<GenericVector> b(u->vector()->factory().create_vector());
 
@@ -92,7 +92,7 @@ void LinearVariationalSolver::solve()
     std::vector<const DirichletBC*> _bcs;
     for (uint i = 0; i < bcs.size(); i++)
     {
-      assert(bcs[i]);
+      dolfin_assert(bcs[i]);
       const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
       if (!_bc)
       {
@@ -131,7 +131,7 @@ void LinearVariationalSolver::solve()
     // Apply boundary conditions
     for (uint i = 0; i < bcs.size(); i++)
     {
-      assert(bcs[i]);
+      dolfin_assert(bcs[i]);
       bcs[i]->apply(*A, *b);
     }
   }
@@ -153,7 +153,7 @@ void LinearVariationalSolver::solve()
 
   // Solve linear system
   LinearSolver solver(solver_type, pc_type);
-  assert(u->vector());
+  dolfin_assert(u->vector());
   solver.solve(*A, *u->vector(), *b);
 
   end();

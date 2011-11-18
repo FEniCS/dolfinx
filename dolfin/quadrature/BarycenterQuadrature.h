@@ -60,7 +60,7 @@ namespace dolfin
 
     /// Return number of quadrature points/weights
     uint size() const
-    { assert(_points.size() == _weights.size()); return _points.size(); }
+    { dolfin_assert(_points.size() == _weights.size()); return _points.size(); }
 
   private:
 

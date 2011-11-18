@@ -36,7 +36,7 @@ UFC::UFC(const Form& form)
  : form(*form.ufc_form()), cell(form.mesh(), false), cell0(form.mesh(), false),
    cell1(form.mesh(), false), coefficients(form.coefficients()), dolfin_form(form)
 {
-  assert(form.ufc_form());
+  dolfin_assert(form.ufc_form());
   init(form);
 }
 //-----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ void UFC::init(const Form& form)
   std::vector<uint> max_macro_local_dimension;
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    assert(V[i]->dofmap());
+    dolfin_assert(V[i]->dofmap());
     max_local_dimension.push_back(V[i]->dofmap()->max_cell_dimension());
     max_macro_local_dimension.push_back(2*V[i]->dofmap()->max_cell_dimension());
   }

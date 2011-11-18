@@ -176,14 +176,14 @@ NonlinearVariationalProblem::bcs() const
 boost::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
-  assert(_u);
+  dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
-  assert(_F);
+  dolfin_assert(_F);
   return _F->function_space(0);
 }
 //-----------------------------------------------------------------------------
@@ -195,7 +195,7 @@ bool NonlinearVariationalProblem::has_jacobian() const
 void NonlinearVariationalProblem::check_forms() const
 {
   // Check rank of residual F
-  assert(_F);
+  dolfin_assert(_F);
   if (_F->rank() != 1)
     dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
@@ -220,6 +220,6 @@ void NonlinearVariationalProblem::check_forms() const
 
   // FIXME: Should we add a check here that matches the function space
   // FIXME: of the solution variable u to a coefficient space for F?
-  assert(_u);
+  dolfin_assert(_u);
 }
 //-----------------------------------------------------------------------------

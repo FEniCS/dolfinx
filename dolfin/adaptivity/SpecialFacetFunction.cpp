@@ -39,7 +39,7 @@ SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
 //-----------------------------------------------------------------------------
 Function& SpecialFacetFunction::operator[] (uint i) const
 {
-  assert(i < f_e.size());
+  dolfin_assert(i < f_e.size());
   return f_e[i];
 }
 //-----------------------------------------------------------------------------

@@ -93,7 +93,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Get mesh
   const Mesh& mesh = a.mesh();
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Get cell domains
   if (!cell_domains || cell_domains->size() == 0)
@@ -133,8 +133,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   AssemblerTools::check(L);
 
   // Check that we have a bilinear and a linear form
-  assert(a.rank() == 2);
-  assert(L.rank() == 1);
+  dolfin_assert(a.rank() == 2);
+  dolfin_assert(L.rank() == 1);
 
   // Check that forms share a function space
   if (*a.function_space(1) != *L.function_space(0))
@@ -190,7 +190,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (MPI::num_processes() > 1)
       warning("Parallel symmetric assembly over interior facets for nonlinear problems is untested");
 
-    assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
+    dolfin_assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
 
     const uint num_bc_dofs = boundary_values.size();
     std::vector<uint> bc_indices;
@@ -271,7 +271,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -422,7 +422,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
     L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
 
-    assert(L_dofs[0] == a_dofs[1]);
+    dolfin_assert(L_dofs[0] == a_dofs[1]);
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);

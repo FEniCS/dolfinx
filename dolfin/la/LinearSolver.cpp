@@ -119,7 +119,7 @@ LinearSolver::~LinearSolver()
 //-----------------------------------------------------------------------------
 void LinearSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
-  assert(solver);
+  dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operator(A);
 }
@@ -127,7 +127,7 @@ void LinearSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 void LinearSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                  const boost::shared_ptr<const GenericMatrix> P)
 {
-  assert(solver);
+  dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operators(A, P);
 }
@@ -135,7 +135,7 @@ void LinearSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
 dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
   //check_dimensions(A, x, b);
 
   solver->parameters.update(parameters);
@@ -144,7 +144,7 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
   //check_dimensions(get_operator(), x, b);
 
   solver->parameters.update(parameters);

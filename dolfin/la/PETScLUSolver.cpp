@@ -144,13 +144,13 @@ PETScLUSolver::~PETScLUSolver()
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   this->A = GenericTensor::down_cast<const PETScMatrix>(A);
-  assert(this->A);
+  dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
 {
   this->A = A;
-  assert(this->A);
+  dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& PETScLUSolver::get_operator() const
@@ -166,8 +166,8 @@ const GenericMatrix& PETScLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_ksp);
-  assert(A);
+  dolfin_assert(_ksp);
+  dolfin_assert(A);
 
   // Downcast matrix and vectors
   const PETScVector& _b = b.down_cast<PETScVector>();
@@ -342,7 +342,7 @@ void PETScLUSolver::init_solver(std::string& method)
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()
 {
-  assert(A->mat());
+  dolfin_assert(A->mat());
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];

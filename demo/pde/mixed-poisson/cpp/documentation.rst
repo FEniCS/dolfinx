@@ -115,7 +115,7 @@ Then follows the definition of the coefficient functions (for
      void eval(Array<double>& values, const Array<double>& x,
                const ufc::cell& ufc_cell) const
      {
-       assert(ufc_cell.local_facet >= 0);
+       dolfin_assert(ufc_cell.local_facet >= 0);
 
        Cell cell(mesh, ufc_cell.index);
        Point n = cell.normal(ufc_cell.local_facet);

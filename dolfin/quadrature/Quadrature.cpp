@@ -43,13 +43,13 @@ int Quadrature::size() const
 //-----------------------------------------------------------------------------
 double Quadrature::point(unsigned int i) const
 {
-  assert(i < points.size());
+  dolfin_assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
 double Quadrature::weight(unsigned int i) const
 {
-  assert(i < points.size());
+  dolfin_assert(i < points.size());
   return weights[i];
 }
 //-----------------------------------------------------------------------------

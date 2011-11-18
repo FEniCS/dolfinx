@@ -311,10 +311,10 @@ namespace dolfin
     /// *Returns*
     ///     _CellType_
     ///         The cell type object associated with the mesh.
-    CellType& type() { assert(_cell_type); return *_cell_type; }
+    CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Get mesh cell type (const version).
-    const CellType& type() const { assert(_cell_type); return *_cell_type; }
+    const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension.
     ///
