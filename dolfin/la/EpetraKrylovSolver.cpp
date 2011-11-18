@@ -188,11 +188,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     x.zero();
   }
   else if (!parameters["nonzero_initial_guess"])
-  {
     x.zero();
-  }
-
-  // FIXME: permit initial guess
 
   // Create linear problem
   Epetra_LinearProblem linear_problem(A->mat().get(), x.vec().get(),
@@ -206,13 +202,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
     solver->SetAztecOption(AZ_output, AZ_none);
 
-  // Configure preconditioner
-  //if (preconditioner && !preconditioner_set)
-  //{
-    assert(P);
-    preconditioner->set(*this, *P);
-    //preconditioner_set = true;
-  //}
+  assert(P);
+  preconditioner->set(*this, *P);
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
