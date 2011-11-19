@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-07-11
-// Last changed: 2011-06-28
+// Last changed: 2011-11-19
 //
 // This demo program solves Poisson's equation,
 //
@@ -32,6 +32,14 @@ using namespace dolfin;
 
 int main()
 {
+  // Periodic BCs don't work with Epetra
+  const std::string backend = parameters["linear_algebra_backend"];
+  if (backend == "Epetra")
+  {
+    info("Sorry, this demo does not work with the Epetra backend");
+    return 0;
+  }
+
   // Source term
   class Source : public Expression
   {
