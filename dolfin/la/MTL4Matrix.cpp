@@ -45,7 +45,7 @@ MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz) : ins(0), nnz_row(nz)
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat) : ins(0), nnz_row(0)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
 
   // Deep copy
   A = mat.mat();
@@ -59,7 +59,7 @@ MTL4Matrix::~MTL4Matrix()
 //-----------------------------------------------------------------------------
 void MTL4Matrix::resize(uint M, uint N)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   A.change_dim(M, N);
 }
 //-----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 MTL4Matrix* MTL4Matrix::copy() const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   return new MTL4Matrix(*this);
 }
 //-----------------------------------------------------------------------------
@@ -99,7 +99,7 @@ void MTL4Matrix::resize(GenericVector& y, uint dim) const
 void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n,
                      const uint* cols) const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       block[i*n+j] = A[rows[i]][cols[j]];
@@ -167,7 +167,7 @@ double MTL4Matrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   A *= 0;
 }
 //-----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ void MTL4Matrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string MTL4Matrix::str(bool verbose) const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
 
   std::stringstream s;
   if (verbose)
@@ -207,7 +207,7 @@ void MTL4Matrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero(uint m, const uint* rows)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
 
   // Define cursors
   typedef mtl::traits::range_generator<mtl::tag::row, mtl4_sparse_matrix >::type c_type;
@@ -228,7 +228,7 @@ void MTL4Matrix::zero(uint m, const uint* rows)
       cursor += rows[i] - rows[i-1];
 
     // Check that we haven't gone beyond last row
-    assert(*cursor <= *cend);
+    dolfin_assert(*cursor <= *cend);
 
     // Zero row
     for (ic_type icursor(mtl::begin<mtl::tag::nz>(cursor)),
@@ -242,21 +242,21 @@ void MTL4Matrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   Ax_.down_cast<MTL4Vector>().vec() = trans(this->A)*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
                         std::vector<double>& values) const
 {
-  assert_no_inserter();
-  assert(row_idx < this->size(0));
+  dolfin_assert_no_inserter();
+  dolfin_assert(row_idx < this->size(0));
 
   columns.clear();
   values.clear();
@@ -281,8 +281,8 @@ void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
 //-----------------------------------------------------------------------------
 void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
 {
-  assert(columns.size() == values.size());
-  assert(row < this->size(0));
+  dolfin_assert(columns.size() == values.size());
+  dolfin_assert(row < this->size(0));
 
   if (!ins)
     init_inserter(nnz_row);
@@ -298,26 +298,26 @@ LinearAlgebraFactory& MTL4Matrix::factory() const
 //-----------------------------------------------------------------------------
 const mtl4_sparse_matrix& MTL4Matrix::mat() const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   return A;
 }
 //-----------------------------------------------------------------------------
 mtl4_sparse_matrix& MTL4Matrix::mat()
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   return A;
 }
 //-----------------------------------------------------------------------------
 const MTL4Matrix& MTL4Matrix::operator*= (double a)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   A *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Matrix& MTL4Matrix::operator/= (double a)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   A /= a;
   return *this;
 }
@@ -340,21 +340,21 @@ const MTL4Matrix& MTL4Matrix::operator= (const MTL4Matrix& A)
 //-----------------------------------------------------------------------------
 std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
   return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::init_inserter(uint nnz)
 {
-  assert_no_inserter();
+  dolfin_assert_no_inserter();
   if (nnz > 0)
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz);
   else
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 25);
 }
 //-----------------------------------------------------------------------------
-inline void MTL4Matrix::assert_no_inserter() const
+inline void MTL4Matrix::dolfin_assert_no_inserter() const
 {
   if (ins)
   {

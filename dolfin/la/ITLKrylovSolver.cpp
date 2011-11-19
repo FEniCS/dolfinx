@@ -84,8 +84,8 @@ void ITLKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix>
 {
   this->A = GenericTensor::down_cast<const MTL4Matrix>(A);
   this->A = GenericTensor::down_cast<const MTL4Matrix>(P);
-  assert(this->A);
-  assert(this->P);
+  dolfin_assert(this->A);
+  dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& ITLKrylovSolver::get_operator() const
@@ -106,8 +106,8 @@ dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
 {
-  assert(A);
-  assert(P);
+  dolfin_assert(A);
+  dolfin_assert(P);
 
   // Fall back in default method if unknown
   if(method != "cg" && method != "bicgstab" && method != "default")

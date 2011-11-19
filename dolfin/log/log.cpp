@@ -17,11 +17,11 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007, 2009.
-// Modified by Garth N. Wells, 2009.
+// Modified by Ola Skavhaug 2007,
+// Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-14
+// Last changed: 2011-11-17
 
 #include <cstdarg>
 #include <cstdlib>
@@ -229,5 +229,11 @@ void dolfin::__debug(std::string file, unsigned long line,
   ost << file << ":" << line << " in " << function << "()";
   std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
   LogManager::logger.__debug(msg);
+}
+//-----------------------------------------------------------------------------
+void dolfin::__dolfin_assert(std::string file, unsigned long line,
+                      std::string function, std::string check)
+{
+  LogManager::logger.__dolfin_assert(file, line, function, check);
 }
 //-----------------------------------------------------------------------------

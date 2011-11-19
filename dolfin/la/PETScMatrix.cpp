@@ -69,7 +69,7 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 bool PETScMatrix::distributed() const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get type
   const MatType petsc_type;
@@ -129,14 +129,14 @@ void PETScMatrix::resize(uint M, uint N)
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   // Get global dimensions and local range
-  assert(sparsity_pattern.rank() == 2);
+  dolfin_assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
   const std::pair<uint, uint> row_range = sparsity_pattern.local_range(0);
   const std::pair<uint, uint> col_range = sparsity_pattern.local_range(1);
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
-  assert(M > 0 && N > 0 && m > 0 && n > 0);
+  dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
@@ -248,7 +248,7 @@ PETScMatrix* PETScMatrix::copy() const
 void PETScMatrix::get(double* block, uint m, const uint* rows,
                                      uint n, const uint* cols) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get matrix entries (must be on this process)
   MatGetValues(*A,
@@ -260,7 +260,7 @@ void PETScMatrix::get(double* block, uint m, const uint* rows,
 void PETScMatrix::set(const double* block, uint m, const uint* rows,
                                            uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
@@ -270,7 +270,7 @@ void PETScMatrix::set(const double* block, uint m, const uint* rows,
 void PETScMatrix::add(const double* block, uint m, const uint* rows,
                                            uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
@@ -281,8 +281,8 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
                        bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
-  assert(this->A);
-  assert(AA->mat());
+  dolfin_assert(this->A);
+  dolfin_assert(AA->mat());
   if (same_nonzero_pattern)
     MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
   else
@@ -292,7 +292,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
 void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const int *cols = 0;
   const double *vals = 0;
@@ -309,7 +309,7 @@ void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
 void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
                          const std::vector<double>& values)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Check size of arrays
   if (columns.size() != values.size())
@@ -330,7 +330,7 @@ void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
 {
-  assert(A);
+  dolfin_assert(A);
 
   IS is = 0;
   PetscScalar null = 0.0;
@@ -354,7 +354,7 @@ void PETScMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
-  assert(A);
+  dolfin_assert(A);
 
   IS is = 0;
   PetscScalar one = 1.0;
@@ -378,7 +378,7 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   PETScVector& yy = y.down_cast<PETScVector>();
@@ -396,7 +396,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   PETScVector& yy = y.down_cast<PETScVector>();
@@ -414,7 +414,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Check that norm is known
   if (norm_types.count(norm_type) == 0)
@@ -431,7 +431,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
-  assert(A);
+  dolfin_assert(A);
   if (mode == "add")
   {
     MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
@@ -457,20 +457,20 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
-  assert(A);
+  dolfin_assert(A);
   MatZeroEntries(*A);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   MatScale(*A, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   MatScale(*A, 1.0 / a);
   return *this;
 }
@@ -528,7 +528,7 @@ std::string PETScMatrix::str(bool verbose) const
     warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");
 
     // FIXME: Maybe this could be an option?
-    assert(A);
+    dolfin_assert(A);
     if (MPI::num_processes() > 1)
       MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
     else

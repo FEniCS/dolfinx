@@ -42,7 +42,7 @@ dolfin::uint BoostGraphInterface::compute_local_vertex_coloring(const Graph& gra
 {
   // Number of vertices in graph
   const uint num_vertices = graph.size();
-  assert(num_vertices == colors.size());
+  dolfin_assert(num_vertices == colors.size());
 
   // Copy Graph data structure into a BoostGraph
   BoostBidirectionalGraph g(num_vertices);

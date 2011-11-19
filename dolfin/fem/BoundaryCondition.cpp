@@ -59,7 +59,7 @@ boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space() const
 void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
                                         const GenericVector* x) const
 {
-  assert(_function_space);
+  dolfin_assert(_function_space);
 
   // Check matrix and vector dimensions
   if (A && x && A->size(0) != x->size())

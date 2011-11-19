@@ -155,7 +155,7 @@ void STLMatrix::apply(std::string mode)
   // Add/insert off-process data
   for (uint i = 0; i < received_non_local_rows.size(); ++i)
   {
-    assert(received_non_local_rows[i] < _local_range.second && received_non_local_rows[i] >= _local_range.first);
+    dolfin_assert(received_non_local_rows[i] < _local_range.second && received_non_local_rows[i] >= _local_range.first);
     const uint I_local = received_non_local_rows[i] - _local_range.first;
     assert(I_local < this->_cols.size());
     assert(I_local < this->_vals.size());
@@ -193,7 +193,7 @@ double STLMatrix::norm(std::string norm_type) const
 void STLMatrix::getrow(uint row, std::vector<uint>& columns,
                        std::vector<double>& values) const
 {
-  assert(row < _local_range.second && row >= _local_range.first);
+  dolfin_assert(row < _local_range.second && row >= _local_range.first);
   const uint local_row = row - _local_range.first;
   columns = this->_cols[local_row];
   values  = this->_vals[local_row];

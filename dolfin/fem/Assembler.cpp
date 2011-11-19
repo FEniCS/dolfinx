@@ -65,7 +65,7 @@ void Assembler::assemble(GenericTensor& A,
                          bool add_values,
                          bool finalize_tensor)
 {
-  assert(a.ufc_form());
+  dolfin_assert(a.ufc_form());
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -210,7 +210,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Cell integral
-  assert(ufc.cell_integrals.size() > 0);
+  dolfin_assert(ufc.cell_integrals.size() > 0);
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
@@ -278,7 +278,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Exterior facet integral
-  assert(ufc.exterior_facet_integrals.size() > 0);
+  dolfin_assert(ufc.exterior_facet_integrals.size() > 0);
   const ufc::exterior_facet_integral*
     integral = ufc.exterior_facet_integrals[0].get();
 
@@ -286,7 +286,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);
   mesh.init(D - 1, D);
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"),
@@ -315,7 +315,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-    assert(facet->num_entities(D) == 1);
+    dolfin_assert(facet->num_entities(D) == 1);
     Cell mesh_cell(mesh, facet->entities(D)[0]);
 
     // Get local index of facet with respect to the cell
@@ -367,7 +367,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   std::vector<std::vector<uint> > macro_dofs(form_rank);
 
   // Interior facet integral
-  assert(ufc.interior_facet_integrals.size() > 0);
+  dolfin_assert(ufc.interior_facet_integrals.size() > 0);
   const ufc::interior_facet_integral*
     integral = ufc.interior_facet_integrals[0].get();
 
@@ -375,7 +375,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);
   mesh.init(D - 1, D);
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
   boost::shared_ptr<MeshFunction<unsigned int> >

@@ -61,7 +61,7 @@ MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d)
 //-----------------------------------------------------------------------------
 const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) const
 {
-  assert(have_global_entity_indices(d));
+  dolfin_assert(have_global_entity_indices(d));
   return _global_entity_indices.find(d)->second;
 }
 //-----------------------------------------------------------------------------
@@ -87,10 +87,10 @@ const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity
     std::map<uint, uint> tmp;
     std::pair<std::map<uint, std::map<uint, uint> >::iterator, bool> ret;
     ret = _global_to_local_entity_indices.insert(std::make_pair(d, tmp));
-    assert(ret.second);
+    dolfin_assert(ret.second);
     ret.first->second.insert(data.begin(), data.end());
     it = ret.first;
-    assert(it->second.size() == local_global.size());
+    dolfin_assert(it->second.size() == local_global.size());
   }
   return it->second;
 }
@@ -121,13 +121,13 @@ const std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_v
 //-----------------------------------------------------------------------------
 MeshFunction<bool>& ParallelData::exterior_facet()
 {
-  assert(_exterior_facet);
+  dolfin_assert(_exterior_facet);
   return *_exterior_facet;
 }
 //-----------------------------------------------------------------------------
 const MeshFunction<bool>& ParallelData::exterior_facet() const
 {
-  assert(_exterior_facet);
+  dolfin_assert(_exterior_facet);
   return *_exterior_facet;
 }
 //-----------------------------------------------------------------------------
@@ -172,7 +172,7 @@ MeshFunction<dolfin::uint>& ParallelData::entity_colors(uint D, uint d, uint rho
   // Create if not found
   _entity_colors[tuple] = MeshFunction<uint>(_mesh);
   it = _entity_colors.find(tuple);
-  assert(it != _entity_colors.end());
+  dolfin_assert(it != _entity_colors.end());
 
   return it->second;
 }
@@ -210,7 +210,7 @@ ParallelData::colored_entities(uint D, uint d, uint rho)
   // Create if not found
   _colored_entities[tuple] = std::vector<std::vector<uint> >();
   it = _colored_entities.find(tuple);
-  assert(it != _colored_entities.end());
+  dolfin_assert(it != _colored_entities.end());
 
   return it->second;
 }

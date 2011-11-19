@@ -116,7 +116,7 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 bool PETScVector::distributed() const
 {
-  assert(x);
+  dolfin_assert(x);
 
   // Get type
   const VecType petsc_type;
@@ -177,7 +177,7 @@ void PETScVector::resize(std::pair<uint, uint> range,
                          const std::vector<uint>& ghost_indices)
 {
   // Get local size
-  assert(range.second - range.first >= 0);
+  dolfin_assert(range.second - range.first >= 0);
 
   // FIXME: Can this check be made robust? Need to avoid parallel lock-up.
   //        Cannot just check size because range may change.
@@ -200,7 +200,7 @@ PETScVector* PETScVector::copy() const
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(Array<double>& values) const
 {
-  assert(x);
+  dolfin_assert(x);
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
   values.resize(local_size);
@@ -217,7 +217,7 @@ void PETScVector::get_local(Array<double>& values) const
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const Array<double>& values)
 {
-  assert(x);
+  dolfin_assert(x);
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
@@ -240,7 +240,7 @@ void PETScVector::set_local(const Array<double>& values)
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
 {
-  assert(x);
+  dolfin_assert(x);
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
@@ -263,7 +263,7 @@ void PETScVector::add_local(const Array<double>& values)
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, uint m, const uint* rows) const
 {
-  assert(x);
+  dolfin_assert(x);
   int _m = static_cast<int>(m);
   const int* _rows = reinterpret_cast<const int*>(rows);
 
@@ -283,7 +283,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
   }
   else
   {
-    assert(x_ghosted);
+    dolfin_assert(x_ghosted);
 
     // Get local range
     const uint n0 = local_range().first;
@@ -299,7 +299,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
       else
       {
         boost::unordered_map<uint, uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
-        assert(local_index != ghost_global_to_local.end());
+        dolfin_assert(local_index != ghost_global_to_local.end());
         local_rows[i] = local_index->second + local_size;
       }
     }
@@ -311,7 +311,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
 {
-  assert(x);
+  dolfin_assert(x);
 
   if (m == 0)
     return;
@@ -321,7 +321,7 @@ void PETScVector::set(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
 {
-  assert(x);
+  dolfin_assert(x);
 
   if (m == 0)
     return;
@@ -331,14 +331,14 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
 {
-  assert(x);
+  dolfin_assert(x);
   VecAssemblyBegin(*x);
   VecAssemblyEnd(*x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::zero()
 {
-  assert(x);
+  dolfin_assert(x);
   double a = 0.0;
   VecSet(*x, a);
 }
@@ -363,7 +363,7 @@ std::pair<dolfin::uint, dolfin::uint> PETScVector::local_range() const
 {
   std::pair<uint, uint> range;
   VecGetOwnershipRange(*x, (int*) &range.first, (int*) &range.second);
-  assert(range.first <= range.second);
+  dolfin_assert(range.first <= range.second);
   return range;
 }
 //-----------------------------------------------------------------------------
@@ -383,7 +383,7 @@ const GenericVector& PETScVector::operator= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  assert(v.x);
+  dolfin_assert(v.x);
 
   // Check for self-assignment
   if (this != &v)
@@ -409,7 +409,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (double a)
 {
-  assert(x);
+  dolfin_assert(x);
   VecSet(*x, a);
   return *this;
 }
@@ -434,17 +434,17 @@ const PETScVector& PETScVector::operator-= (const GenericVector& x)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const double a)
 {
-  assert(x);
+  dolfin_assert(x);
   VecScale(*x, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
 
   const PETScVector& v = y.down_cast<PETScVector>();
-  assert(v.x);
+  dolfin_assert(v.x);
 
   if (size() != v.size())
   {
@@ -459,8 +459,8 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator/= (const double a)
 {
-  assert(x);
-  assert(a != 0.0);
+  dolfin_assert(x);
+  dolfin_assert(a != 0.0);
 
   const double b = 1.0/a;
   VecScale(*x, b);
@@ -469,10 +469,10 @@ const PETScVector& PETScVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 double PETScVector::inner(const GenericVector& y) const
 {
-  assert(x);
+  dolfin_assert(x);
 
   const PETScVector& _y = y.down_cast<PETScVector>();
-  assert(_y.x);
+  dolfin_assert(_y.x);
 
   double a;
   VecDot(*(_y.x), *x, &a);
@@ -481,10 +481,10 @@ double PETScVector::inner(const GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(double a, const GenericVector& y)
 {
-  assert(x);
+  dolfin_assert(x);
 
   const PETScVector& _y = y.down_cast<PETScVector>();
-  assert(_y.x);
+  dolfin_assert(_y.x);
 
   if (size() != _y.size())
   {
@@ -498,13 +498,13 @@ void PETScVector::axpy(double a, const GenericVector& y)
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
 {
-  assert(x);
+  dolfin_assert(x);
   VecAbs(*x);
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
 {
-  assert(x);
+  dolfin_assert(x);
   if (norm_types.count(norm_type) == 0)
   {
     dolfin_error("PETScVector.cpp",
@@ -519,7 +519,7 @@ double PETScVector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
 {
-  assert(x);
+  dolfin_assert(x);
 
   double value = 0.0;
   int position = 0;
@@ -529,7 +529,7 @@ double PETScVector::min() const
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
-  assert(x);
+  dolfin_assert(x);
 
   double value = 0.0;
   int position = 0;
@@ -539,7 +539,7 @@ double PETScVector::max() const
 //-----------------------------------------------------------------------------
 double PETScVector::sum() const
 {
-  assert(x);
+  dolfin_assert(x);
 
   double value = 0.0;
   VecSum(*x, &value);
@@ -548,7 +548,7 @@ double PETScVector::sum() const
 //-----------------------------------------------------------------------------
 double PETScVector::sum(const Array<uint>& rows) const
 {
-  assert(x);
+  dolfin_assert(x);
   const uint n0 = local_range().first;
   const uint n1 = local_range().second;
 
@@ -609,7 +609,7 @@ std::string PETScVector::str(bool verbose) const
 
     // Get vector type
     const VecType petsc_type;
-    assert(x);
+    dolfin_assert(x);
     VecGetType(*x, &petsc_type);
 
     if (strcmp(petsc_type, VECSEQ) == 0)
@@ -625,7 +625,7 @@ std::string PETScVector::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 {
-  assert(x);
+  dolfin_assert(x);
 
   // Down cast to a PETScVector
   PETScVector& _y = y.down_cast<PETScVector>();
@@ -686,7 +686,7 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   x.resize(indices.size());
   PETScVector y("local");
   gather(y, indices);
-  assert(y.local_size() == x.size());
+  dolfin_assert(y.local_size() == x.size());
 
   y.get_local(x);
 
@@ -736,7 +736,7 @@ void PETScVector::init(std::pair<uint, uint> range,
   x.reset(new Vec(0), PETScVectorDeleter());
 
   const uint local_size = range.second - range.first;
-  assert(range.second - range.first >= 0);
+  dolfin_assert(range.second - range.first >= 0);
 
   // Initialize vector, either default or MPI vector
   if (!distributed)

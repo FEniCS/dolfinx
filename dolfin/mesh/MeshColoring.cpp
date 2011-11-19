@@ -76,7 +76,7 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
   data.coloring.insert(std::make_pair(coloring_type, _color_data));
 
   // Convenience references to data
-  assert(data.coloring.find(coloring_type) != data.coloring.end());
+  dolfin_assert(data.coloring.find(coloring_type) != data.coloring.end());
   ColorData& color_data = data.coloring.find(coloring_type)->second;
 
   MeshFunction<uint>& colors = color_data.first;
@@ -92,7 +92,7 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
   for (uint i = 0; i < colors.size(); i++)
   {
     const uint color = colors[i];
-    assert(color < num_colors);
+    dolfin_assert(color < num_colors);
     entities_of_color[color].push_back(i);
   }
 

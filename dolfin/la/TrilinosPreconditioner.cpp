@@ -114,7 +114,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
 void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
                                  const EpetraMatrix& P)
 {
-  assert(solver.aztecoo());
+  dolfin_assert(solver.aztecoo());
 
   // Pointer to preconditioner matrix
   Epetra_RowMatrix* _P = P.mat().get();
@@ -142,7 +142,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
       preconditioner = "ILU";
     Ifpack ifpack_factory;
     ifpack_preconditioner.reset(ifpack_factory.Create(preconditioner, _P, overlap));
-    assert(ifpack_preconditioner != 0);
+    dolfin_assert(ifpack_preconditioner != 0);
 
     // Set up preconditioner
     ifpack_preconditioner->SetParameters(list);

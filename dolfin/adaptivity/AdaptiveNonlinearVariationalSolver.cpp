@@ -63,12 +63,12 @@ void AdaptiveNonlinearVariationalSolver::solve(const double tol,
   // Initialize goal functional
   boost::shared_ptr<const Form> a = problem->jacobian_form();
   boost::shared_ptr<const Form> L = problem->residual_form();
-  assert(a);
-  assert(L);
+  dolfin_assert(a);
+  dolfin_assert(L);
   M.update_ec(*a, *L);
 
   // Extract error control from goal functional
-  assert(M._ec);
+  dolfin_assert(M._ec);
   ErrorControl& ec(*(M._ec));
 
   // Call solve with given error control

@@ -51,7 +51,7 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { assert(rank == 1); resize(dims[0]); }
+    { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
@@ -66,11 +66,11 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { assert(dim == 0); return size(); }
+    { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
-    { assert(dim == 0); return local_range(); }
+    { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,

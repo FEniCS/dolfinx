@@ -18,13 +18,12 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-14
+// Last changed: 2011-11-17
 
 #ifndef __LOG_H
 #define __LOG_H
 
 #include <string>
-#include <cassert>
 #include <dolfin/common/types.h>
 #include "LogLevel.h"
 
@@ -36,7 +35,7 @@ namespace dolfin
 
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
-  /// macros are provided for debug messages and assertions.
+  /// macros are provided for debug messages and dolfin_assertions.
   ///
   /// Only messages with a debug level higher than or equal to the current
   /// log level are printed (the default being zero). Logging may also be
@@ -125,11 +124,20 @@ namespace dolfin
   void not_working_in_parallel(std::string what);
 
   // Helper function for dolfin_debug macro
-  void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
+  void __debug(std::string file,
+               unsigned long line,
+               std::string function,
+               std::string format, ...);
+
+  // Helper function for dolfin_dolfin_assert macro
+  void __dolfin_assert(std::string file,
+                unsigned long line,
+                std::string function,
+                std::string check);
 
 }
 
-// The following two macros are the only "functions" in DOLFIN
+// The following three macros are the only "functions" in DOLFIN
 // named dolfin_foo. Other functions can be placed inside the
 // DOLFIN namespace and therefore don't require a prefix.
 
@@ -148,5 +156,18 @@ namespace dolfin
                  "The function %s has not been implemented (in %s line %d)", \
                  __FUNCTION__, __FUNCTION__, __FILE__, __LINE__); \
   } while (false)
+
+// Assertion, only active if DEBUG is defined
+#ifdef DEBUG
+#define dolfin_assert(check) \
+  do { \
+    if (!(check)) \
+    { \
+      dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, #check);    \
+    } \
+  } while (false)
+#else
+#define dolfin_assert(check)
+#endif
 
 #endif

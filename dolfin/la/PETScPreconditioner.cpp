@@ -108,7 +108,7 @@ PETScPreconditioner::~PETScPreconditioner()
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 {
-  assert(solver.ksp());
+  dolfin_assert(solver.ksp());
 
   // Get PETSc PC pointer
   PC pc;

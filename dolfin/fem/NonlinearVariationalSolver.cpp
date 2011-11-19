@@ -53,14 +53,14 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   begin("Solving nonlinear variational problem.");
 
   // Check that the Jacobian has been defined
-  assert(problem);
+  dolfin_assert(problem);
   if (!problem->has_jacobian())
     dolfin_error("NonlinearVariationalSolver.cpp",
                  "solve nonlinear variational problem",
                  "The Jacobian form has not been defined");
 
   // Get problem data
-  assert(problem);
+  dolfin_assert(problem);
   boost::shared_ptr<Function> u(problem->solution());
 
   // Create nonlinear problem
@@ -73,7 +73,7 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   newton_solver.parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
-  assert(u->vector());
+  dolfin_assert(u->vector());
   const std::pair<uint, bool> ret
     = newton_solver.solve(nonlinear_problem, *u->vector());
 
@@ -103,23 +103,23 @@ void NonlinearVariationalSolver::
 NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 {
   // Get problem data
-  assert(problem);
+  dolfin_assert(problem);
   boost::shared_ptr<const Form> F(problem->residual_form());
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
 
   // Assemble right-hand side
-  assert(F);
+  dolfin_assert(F);
   assemble(b, *F);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
   {
-    assert(bcs[i]);
+    dolfin_assert(bcs[i]);
     bcs[i]->apply(b, x);
   }
 
   // Print vector
-  assert(solver);
+  dolfin_assert(solver);
   const bool print_rhs = solver->parameters["print_rhs"];
   if (print_rhs)
     info(b, true);
@@ -129,17 +129,17 @@ void NonlinearVariationalSolver::
 NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
 {
   // Get problem data
-  assert(problem);
+  dolfin_assert(problem);
   boost::shared_ptr<const Form> J(problem->jacobian_form());
   std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
 
   // Check if Jacobian matrix sparsity pattern should be reset
-  assert(solver);
+  dolfin_assert(solver);
   bool reset_sparsity = !(solver->parameters["reset_jacobian"] &&
                           jacobian_initialized);
 
   // Assemble left-hand side
-  assert(J);
+  dolfin_assert(J);
   assemble(A, *J, reset_sparsity);
 
   // Remember that Jacobian has been initialized
@@ -148,12 +148,12 @@ NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
   {
-    assert(bcs[i]);
+    dolfin_assert(bcs[i]);
     bcs[i]->apply(A);
   }
 
   // Print matrix
-  assert(solver);
+  dolfin_assert(solver);
   const bool print_matrix = solver->parameters["print_matrix"];
   if (print_matrix)
     info(A, true);

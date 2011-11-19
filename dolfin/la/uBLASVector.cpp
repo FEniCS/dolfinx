@@ -150,14 +150,14 @@ void uBLASVector::get_local(Array<double>& values) const
 //-----------------------------------------------------------------------------
 void uBLASVector::set_local(const Array<double>& values)
 {
-  assert(values.size() == size());
+  dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::add_local(const Array<double>& values)
 {
-  assert(values.size() == size());
+  dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];
 }
@@ -167,7 +167,7 @@ void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
   not_working_in_parallel("uBLASVector::gather)");
 
   const uint _size = indices.size();
-  assert(this->size() >= _size);
+  dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
   ublas_vector& _x = x.down_cast<uBLASVector>().vec();
@@ -181,7 +181,7 @@ void uBLASVector::gather(Array<double>& x, const Array<uint>& indices) const
 
   const uint _size = indices.size();
   x.resize(_size);
-  assert(x.size() == _size);
+  dolfin_assert(x.size() == _size);
   for (uint i = 0; i < _size; i++)
     x[i] = (*this->x)(indices[i]);
 }
@@ -257,7 +257,7 @@ double uBLASVector::sum(const Array<uint>& rows) const
   for (uint i = 0; i < rows.size(); ++i)
   {
     const uint index = rows[i];
-    assert(index < size());
+    dolfin_assert(index < size());
     if (row_set.find(index) == row_set.end())
     {
       _sum += (*x)[index];
@@ -281,7 +281,7 @@ void uBLASVector::axpy(double a, const GenericVector& y)
 //-----------------------------------------------------------------------------
 void uBLASVector::abs()
 {
-  assert(x);
+  dolfin_assert(x);
   const uint size = x->size();
   for (uint i = 0; i < size; i++)
     (*x)[i] = std::abs((*x)[i]);

@@ -208,7 +208,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     break;
   case CellType::triangle:
     {
-      assert(facet.num_entities(0) == 2);
+      dolfin_assert(facet.num_entities(0) == 2);
 
       const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
@@ -225,7 +225,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     break;
   case CellType::tetrahedron:
     {
-      assert(facet.num_entities(0) == 3);
+      dolfin_assert(facet.num_entities(0) == 3);
 
       const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       const Point p1 = mesh.geometry().point(facet.entities(0)[1]);

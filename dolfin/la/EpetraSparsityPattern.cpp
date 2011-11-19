@@ -100,7 +100,7 @@ uint EpetraSparsityPattern::size(uint i) const
 
   if (_rank == 2)
   {
-    assert(epetra_graph);
+    dolfin_assert(epetra_graph);
     if (i == 0)
       return epetra_graph->NumGlobalRows();
     else
@@ -115,7 +115,7 @@ std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint di
                "access local range for Epetra sparsity pattern",
                "Not implemented");
   return std::make_pair(0, 0);
-  //assert(dim < 2);
+  //dolfin_assert(dim < 2);
   //return MPI::local_range(size(dim));
 }
 //-----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ std::vector<std::vector<uint> > EpetraSparsityPattern::off_diagonal_pattern(Type
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::apply()
 {
-  assert(epetra_graph);
+  dolfin_assert(epetra_graph);
   epetra_graph->FillComplete();
   //epetra_graph->GlobalAssemble();
 }

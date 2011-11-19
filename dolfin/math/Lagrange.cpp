@@ -44,7 +44,7 @@ Lagrange::Lagrange(const Lagrange& p)
 //-----------------------------------------------------------------------------
 void Lagrange::set(unsigned int i, double x)
 {
-  assert(i <= q);
+  dolfin_assert(i <= q);
 
   points[i] = x;
 
@@ -65,7 +65,7 @@ unsigned int Lagrange::degree() const
 //-----------------------------------------------------------------------------
 double Lagrange::point(unsigned int i) const
 {
-  assert(i < points.size());
+  dolfin_assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ double Lagrange::operator() (unsigned int i, double x)
 //-----------------------------------------------------------------------------
 double Lagrange::eval(unsigned int i, double x)
 {
-  assert(i < points.size());
+  dolfin_assert(i < points.size());
 
   double product(constants[i]);
   for (unsigned int j = 0; j < points.size(); j++)
@@ -90,7 +90,7 @@ double Lagrange::eval(unsigned int i, double x)
 //-----------------------------------------------------------------------------
 double Lagrange::ddx(uint i, double x)
 {
-  assert(i < points.size());
+  dolfin_assert(i < points.size());
 
   double s(0.0);
   double prod(1.0);

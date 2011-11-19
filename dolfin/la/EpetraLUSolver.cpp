@@ -135,7 +135,7 @@ EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
 
   // Set operator
   this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
-  assert(this->A);
+  dolfin_assert(this->A);
 
   // Choose method
   this->method = choose_method(method);
@@ -161,10 +161,10 @@ EpetraLUSolver::~EpetraLUSolver()
 //-----------------------------------------------------------------------------
 void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
-  assert(linear_problem);
+  dolfin_assert(linear_problem);
 
   this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
-  assert(this->A);
+  dolfin_assert(this->A);
   linear_problem->SetOperator(this->A->mat().get());
 
   symbolic_factorized = false;
@@ -184,8 +184,8 @@ const GenericMatrix& EpetraLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(linear_problem);
-  assert(solver);
+  dolfin_assert(linear_problem);
+  dolfin_assert(solver);
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)

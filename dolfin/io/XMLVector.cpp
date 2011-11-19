@@ -86,7 +86,7 @@ void XMLVector::read(Array<double>& x, Array<uint>& indices,
   {
     const unsigned int index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_double();
-    assert(index < size);
+    dolfin_assert(index < size);
     indices[index] = index;
     x[index] = value;
   }
@@ -133,7 +133,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
 
   if (write_to_stream)
   {
-    assert(size == x.size());
+    dolfin_assert(size == x.size());
 
     // Add vector node
     pugi::xml_node vector_node = xml_node.append_child("vector");

@@ -160,7 +160,7 @@ void IntersectionOperator::clear()
 //-----------------------------------------------------------------------------
 const Mesh& IntersectionOperator::mesh() const
 {
-  assert(_mesh);
+  dolfin_assert(_mesh);
   return *_mesh;
 }
 //-----------------------------------------------------------------------------

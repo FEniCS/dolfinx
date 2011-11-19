@@ -176,8 +176,8 @@ void GenericFunction::evaluate(double* values,
                                const double* coordinates,
                                const ufc::cell& cell) const
 {
-  assert(values);
-  assert(coordinates);
+  dolfin_assert(values);
+  dolfin_assert(coordinates);
 
   // Wrap data
   Array<double> _values(value_size(), values);
@@ -192,7 +192,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
                                                const Cell& dolfin_cell,
                                                const ufc::cell& ufc_cell) const
 {
-  assert(w);
+  dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
   element.evaluate_dofs(w, *this, ufc_cell);

@@ -62,12 +62,12 @@ void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
   // Initialize goal functional
   boost::shared_ptr<const Form> a = problem->bilinear_form();
   boost::shared_ptr<const Form> L = problem->linear_form();
-  assert(a);
-  assert(L);
+  dolfin_assert(a);
+  dolfin_assert(L);
   M.update_ec(*a, *L);
 
   // Extract error control from goal functional
-  assert(M._ec);
+  dolfin_assert(M._ec);
   ErrorControl& ec(*M._ec);
 
   // Call solve with given error control
@@ -94,7 +94,7 @@ AdaptiveLinearVariationalSolver::extract_bcs() const
 double AdaptiveLinearVariationalSolver::
 evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 {
-  assert(M.num_coefficients() > 0);
+  dolfin_assert(M.num_coefficients() > 0);
   M.set_coefficient(M.num_coefficients() - 1, u);
   return assemble(M);
 }

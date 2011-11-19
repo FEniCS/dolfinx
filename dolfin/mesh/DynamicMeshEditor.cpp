@@ -153,8 +153,8 @@ void DynamicMeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::close(bool order)
 {
-  assert(mesh);
-  assert(cell_type);
+  dolfin_assert(mesh);
+  dolfin_assert(cell_type);
 
   // Open default mesh editor
   MeshEditor editor;

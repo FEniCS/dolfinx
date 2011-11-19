@@ -293,7 +293,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       {
         const uint bisection_twin = (*bisection_twins)[cell->index()];
         const int twin_marker = refinement_markers[bisection_twin];
-        assert(twin_marker == no_refinement);
+        dolfin_assert(twin_marker == no_refinement);
         if (unrefined_cells[bisection_twin] >= 0)
         {
           const uint i = current_cell - 1;
@@ -307,13 +307,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
-      assert(unrefined_cells[cell->index()] == -1);
+      dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
       const uint* v = cell->entities(0);
       const uint* e = cell->entities(1);
-      assert(v);
-      assert(e);
+      dolfin_assert(v);
+      dolfin_assert(e);
 
       // Get offset for new vertex indices
       const uint offset = mesh.num_vertices();
@@ -336,12 +336,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // Special case: backtrack bisected cells
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
-      assert(unrefined_cells[cell->index()] == -1);
+      dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get index for bisection twin
-      assert(bisection_twins);
+      dolfin_assert(bisection_twins);
       const uint bisection_twin = (*bisection_twins)[cell->index()];
-      assert(bisection_twin != cell->index());
+      dolfin_assert(bisection_twin != cell->index());
 
       // Let lowest number twin handle refinement
       if (bisection_twin < cell->index())
@@ -361,10 +361,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const uint* vertices_1 = twin.entities(0);
       const uint* edges_0 = cell->entities(1);
       const uint* edges_1 = twin.entities(1);
-      assert(vertices_0);
-      assert(vertices_1);
-      assert(edges_0);
-      assert(edges_1);
+      dolfin_assert(vertices_0);
+      dolfin_assert(vertices_1);
+      dolfin_assert(edges_0);
+      dolfin_assert(edges_1);
 
       // Get offset for new vertex indices
       const uint offset = mesh.num_vertices();
@@ -426,16 +426,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // One edge marked for refinement: do bisection
     else
     {
-      assert(unrefined_cells[cell->index()] == -1);
+      dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
       const uint* v = cell->entities(0);
       const uint* e = cell->entities(1);
-      assert(v);
-      assert(e);
+      dolfin_assert(v);
+      dolfin_assert(e);
 
       // Get edge number (equal to marker)
-      assert(marker >= 0);
+      dolfin_assert(marker >= 0);
       const uint local_edge_index = static_cast<uint>(marker);
       const uint global_edge_index = e[local_edge_index];
       const uint ee = mesh.num_vertices() + marked_edges.find(global_edge_index);
@@ -464,12 +464,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Close mesh editor
-  assert(num_cells == current_cell);
+  dolfin_assert(num_cells == current_cell);
   editor.close();
 
   // Attach data for bisection twins
   boost::shared_ptr<MeshFunction<unsigned int> > _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
-  assert(_refined_bisection_twins);
+  dolfin_assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
   _refined_bisection_twins->set_values(refined_bisection_twins);
 }
@@ -532,8 +532,8 @@ RegularCutRefinement::find_common_edges(const Cell& cell,
   const Cell twin(mesh, bisection_twin);
   const uint* e0 = cell.entities(1);
   const uint* e1 = twin.entities(1);
-  assert(e0);
-  assert(e1);
+  dolfin_assert(e0);
+  dolfin_assert(e1);
 
   // Iterate over all combinations of edges
   const uint num_edges = cell.num_entities(1);
@@ -559,8 +559,8 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   const Cell twin(mesh, bisection_twin);
   const uint* e0 = cell.entities(1);
   const uint* e1 = twin.entities(1);
-  assert(e0);
-  assert(e1);
+  dolfin_assert(e0);
+  dolfin_assert(e1);
 
   // Iterate over all combinations of edges
   const uint num_edges = cell.num_entities(1);
@@ -569,7 +569,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
     // Get list of vertices for edge
     const Edge edge_0(mesh, e0[i]);
     const uint* v0 = edge_0.entities(0);
-    assert(v0);
+    dolfin_assert(v0);
 
     for (uint j = 0; j < num_edges; j++)
     {
@@ -580,7 +580,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
       // Get list of vertices for edge
       const Edge edge_1(mesh, e1[j]);
       const uint* v1 = edge_1.entities(0);
-      assert(v1);
+      dolfin_assert(v1);
 
       // Check that we have a common vertex
       if (v0[0] != v1[0] && v0[0] != v1[1] && v0[1] != v1[0] && v0[1] != v1[1])
@@ -614,16 +614,16 @@ RegularCutRefinement::find_bisection_vertices(const Cell& cell,
   const Cell twin(mesh, bisection_twin);
   const uint* e0 = cell.entities(1);
   const uint* e1 = twin.entities(1);
-  assert(e0);
-  assert(e1);
+  dolfin_assert(e0);
+  dolfin_assert(e1);
 
   // Get vertices of the two edges
   Edge edge_0(mesh, e0[bisection_edges.first]);
   Edge edge_1(mesh, e1[bisection_edges.second]);
   const uint* v0 = edge_0.entities(0);
   const uint* v1 = edge_1.entities(0);
-  assert(v0);
-  assert(v1);
+  dolfin_assert(v0);
+  dolfin_assert(v1);
 
   // Find common vertex
   if (v0[0] == v1[0] || v0[0] == v1[1])

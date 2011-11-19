@@ -120,8 +120,8 @@ namespace dolfin
       boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
       boost::mpi::scatter(comm, in_values, out_value, sending_process);
       #else
-      assert(sending_process == 0);
-      assert(in_values.size() == 1);
+      dolfin_assert(sending_process == 0);
+      dolfin_assert(in_values.size() == 1);
       out_value = in_values[0];
       #endif
     }
@@ -277,7 +277,7 @@ namespace dolfin
                        std::vector<T>& out_values,
                        std::vector<uint>& sources)
   {
-    assert(in_values.size() == destinations.size());
+    dolfin_assert(in_values.size() == destinations.size());
 
     // Get number of processes and process number
     const uint num_processes  = MPI::num_processes();
@@ -289,7 +289,7 @@ namespace dolfin
     {
       // Get process number data should be sent to
       const uint p = destinations[i];
-      assert(p < send_data.size());
+      dolfin_assert(p < send_data.size());
 
       // Append data to array for process p
       send_data[p].push_back(in_values[i]);
