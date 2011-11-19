@@ -1,4 +1,4 @@
-B1;2802;0c# This demo program solves Poisson's equation
+# This demo program solves Poisson's equation
 #
 #     - div grad u(x, y) = f(x, y)
 #
