@@ -288,36 +288,36 @@ if (DOLFIN_ENABLE_TRILINOS)
         set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
       endif()
     endforeach()
-  endif()
 
-  if (DOLFIN_TRILINOS_PACKAGES_FOUND)
-    message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
-    set(Trilinos_FOUND true)
+    if (DOLFIN_TRILINOS_PACKAGES_FOUND)
+      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
+      set(DOLFIN_TRILINOS_DEFINITIONS)
 
-    set(DOLFIN_TRILINOS_DEFINITIONS)
-
-    # Loop over each package
-    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-      # Loop over libs and get full path
-      foreach (lib ${${package}_LIBRARIES})
-        find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
-        if (TRILINOS_LIB_${lib})
-          list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
-        endif()
+      # Loop over each package
+      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+        # Loop over libs and get full path
+        foreach (lib ${${package}_LIBRARIES})
+          find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
+          if (TRILINOS_LIB_${lib})
+            list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
+          endif()
+        endforeach()
       endforeach()
-    endforeach()
 
-    # Remove duplicates
-    list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
-    list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
-    list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+      # Remove duplicates
+      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+      list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
+      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+
+    else()
+      message(STATUS "Trilinos found, but some required components are missing.")
+      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+        message(STATUS "  ${package}: ${${package}_FOUND}")
+      endforeach()
+    endif()
 
   else()
-    message(STATUS "Trilinos found, but some required components are missing.")
-    set(Trilinos_FOUND false)
-    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-      message(STATUS "  ${package}: ${${package}_FOUND}")
-    endforeach()
+    message(STATUS "Trilinos could not be found")
   endif()
 endif()
 
