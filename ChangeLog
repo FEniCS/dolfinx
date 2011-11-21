@@ -1,3 +1,6 @@
+ - 33 bugs fixed
+ - Implement traversal of bounding box trees for all codimensions
+ - Edit and improve all error messages
  - Added [un]equality operator to FunctionSpace
  - Remove batch compilation of Expression (Expressions) from Python interface
  - Added get_value to MeshValueCollection
