@@ -25,17 +25,18 @@
 #include <dolfin/common/unittest.h>
 #include <armadillo>
 
-using namespace dolfin;
+//using namespace dolfin;
 
 class Default : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(Default);
-  CPPUNIT_TEST(test_solve);
+  //CPPUNIT_TEST(test_square_solve);
+  CPPUNIT_TEST(test_least_square_solve);
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
-  void test_solve()
+  void test_square_solve()
   {
     arma::mat A = arma::eye<arma::mat>(5, 5);
     arma::vec b = arma::randu<arma::vec>(5);
@@ -43,6 +44,17 @@ public:
     double norm = arma::norm(x - b, 2);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(0.0, norm, 1.0e-12);
   }
+
+  void test_least_square_solve()
+  {
+    arma::mat A = arma::randu<arma::mat>(8, 6);
+    arma::vec b = arma::randu<arma::vec>(8);
+    arma::vec x;
+    bool result = arma::solve(x, A, b);
+    CPPUNIT_ASSERT(result);
+  }
+
+
 
 };
 
