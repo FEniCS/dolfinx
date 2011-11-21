@@ -31,6 +31,7 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
+    "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
