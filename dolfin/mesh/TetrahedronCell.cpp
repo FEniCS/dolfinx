@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2011-11-21
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -305,7 +305,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron
-  if (tetrahedron.dim() != 2)
+  if (tetrahedron.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
                  "compute diameter of tetrahedron cell",
