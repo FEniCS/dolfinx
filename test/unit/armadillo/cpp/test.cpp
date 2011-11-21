@@ -30,7 +30,7 @@
 class Default : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(Default);
-  //CPPUNIT_TEST(test_square_solve);
+  CPPUNIT_TEST(test_square_solve);
   CPPUNIT_TEST(test_least_square_solve);
   CPPUNIT_TEST_SUITE_END();
 
