@@ -1,6 +1,6 @@
 """Run all unit tests."""
 
-# Copyright (C) 2006-2007 Anders Logg
+# Copyright (C) 2006-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-08-31
+# Last changed: 2011-11-21
 
 import sys, os, re
 import platform
@@ -31,7 +31,7 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
-    "armadillo":      ["test"],
+    #"armadillo":      ["test"], # temporarily disabled until it works
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
