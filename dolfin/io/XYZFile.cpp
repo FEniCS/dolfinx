@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-07-02
-// Last changed: 2011-11-14
+// Last changed: 2011-11-21
 
 #include <fstream>
 #include <sstream>
@@ -53,7 +53,7 @@ XYZFile::~XYZFile()
 void XYZFile::operator<<(const Function& u)
 {
   // Update xyz file name and clear file
-  xyz_name_update(counter);
+  xyz_name_update();
 
   // Write results
   results_write(u);
@@ -112,13 +112,15 @@ void XYZFile::results_write(const Function& u) const
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     ss.str("");
-    ss << vertex->x(0) << " " << vertex->x(1) << " " << values[ vertex->index() ];
+    for (uint i = 0; i < mesh.geometry().dim(); i++)
+      ss << vertex->x(i) << " ";
+    ss << values[vertex->index()];
     ss <<std::endl;
-    fp << ss.str( );
+    fp << ss.str();
   }
 }
 //----------------------------------------------------------------------------
-void XYZFile::xyz_name_update(int counter)
+void XYZFile::xyz_name_update()
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
@@ -131,7 +133,6 @@ void XYZFile::xyz_name_update(int counter)
 
   fileid << counter;
   newfilename << filestart << fileid.str() << ".xyz";
-
   xyz_filename = newfilename.str();
 
   // Make sure file is empty
@@ -140,7 +141,33 @@ void XYZFile::xyz_name_update(int counter)
   {
     dolfin_error("XYZFile.cpp",
                  "write data to XYZ file",
+                 "Unable to open file \"%s\"", xyz_filename.c_str());
+  }
+
+  // Add to index file
+  std::ofstream fp_index(filename.c_str(), std::ios_base::trunc);
+  if (!fp_index)
+  {
+    dolfin_error("XYZFile.cpp",
+                 "write data to XYZ file",
                  "Unable to open file \"%s\"", filename.c_str());
+  }
+  else
+  {
+    // File is cleared in GenericFile::write so we rewrite the whole
+    // index every time, easier than messing with a flag to say that
+    // the file should not be cleared. This whole file needs some
+    // cleanup but we can sort that out later.
+    for (uint i = 0; i < counter + 1; i++)
+    {
+      std::ostringstream fileid;
+      fileid.fill('0');
+      fileid.width(6);
+      fileid << i;
+      std::ostringstream f;
+      f << filestart << fileid.str() << ".xyz";
+      fp_index << f.str() << "\n";
+    }
   }
 }
 //----------------------------------------------------------------------------
@@ -148,7 +175,7 @@ template<typename T>
 void XYZFile::mesh_function_write(T& meshfunction)
 {
   // Update xyz file name and clear file
-  xyz_name_update(counter);
+  xyz_name_update();
 
   Mesh& mesh = meshfunction.mesh();
 
@@ -168,9 +195,9 @@ void XYZFile::mesh_function_write(T& meshfunction)
                  "Unable to open file \"%s\"", filename.c_str());
   }
 
-  fp << mesh.num_cells() <<std::endl;
+  fp << mesh.num_cells() << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    fp << meshfunction.get( cell->index() )  << std::endl;
+    fp << meshfunction.get(cell->index())  << std::endl;
 
   // Increase the number of times we have saved the mesh function
   counter++;
