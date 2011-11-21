@@ -191,6 +191,10 @@
 %shared_ptr(dolfin::TrilinosPreconditioner)
 #endif
 
+#ifdef HAS_PASTIX
+%shared_ptr(dolfin::PaStiXLUSolver)
+#endif
+
 %shared_ptr(dolfin::UmfpackLUSolver)
 %shared_ptr(dolfin::CholmodCholeskySolver)
 
