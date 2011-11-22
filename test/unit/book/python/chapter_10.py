@@ -149,7 +149,7 @@ class TestPage8(unittest.TestCase):
 
     def test_box_2(self):
         if skip_in_parallel(): return
-        if not has_linear_algebra_backend("PETSc"): return
+        if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
         A = PETScMatrix()
         A, x, b = create_data(A)
         eigensolver = SLEPcEigenSolver(A)
@@ -160,7 +160,7 @@ class TestPage9(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
-        if not has_linear_algebra_backend("PETSc"): return
+        if not has_linear_algebra_backend("PETSc") or not has_slepc() : return
         A = PETScMatrix()
         M = PETScMatrix()
         A, x, b = create_data(A)
