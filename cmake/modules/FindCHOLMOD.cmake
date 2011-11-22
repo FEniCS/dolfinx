@@ -9,6 +9,7 @@ message(STATUS "Checking for package 'CHOLMOD'")
 
 # Find packages that CHOLMOD depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(AMD)
 find_package(BLAS)
 find_package(LAPACK)
