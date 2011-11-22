@@ -86,6 +86,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
+/*
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : Hierarchical<Function>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
@@ -104,6 +105,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   dolfin_assert(V.dofmap());
   dolfin_assert(V.dofmap()->global_dimension() <= x.size());
 }
+*/
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
@@ -160,10 +162,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                  "create function",
                  "Cannot be created from subspace. Consider collapsing the function space");
   }
-
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
 
   // Initialize vector
   init_vector();

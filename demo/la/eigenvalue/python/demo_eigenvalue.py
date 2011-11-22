@@ -64,8 +64,9 @@ r, c, rx, cx = eigensolver.get_eigenpair(0)
 
 print "Largest eigenvalue: ", r
 
-# Initialize function with eigenvector
-u = Function(V, rx)
+# Initialize function and assign eigenvector
+u = Function(V)
+u.vector()[:] = rx 
 
 # Plot eigenfunction
 plot(u)
