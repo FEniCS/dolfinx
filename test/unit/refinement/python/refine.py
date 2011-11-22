@@ -25,6 +25,13 @@ from dolfin import *
 
 class MeshRefinement(unittest.TestCase):
 
+    def test_uniform_refine1D(self):
+        if MPI.num_processes() == 1:
+            mesh = UnitInterval(2)
+            mesh2 = refine(mesh)
+            self.assertEqual(mesh.hmax(), 0.5)
+            self.assertEqual(mesh2.hmax(), 0.25)
+
     def test_uniform_refine2D(self):
         if MPI.num_processes() == 1:
             mesh = UnitSquare(4, 6)

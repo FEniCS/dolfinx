@@ -17,6 +17,7 @@
 //
 // Modified by Kristian Oelgaard, 2007.
 // Modified by Kristoffer Selim, 2008.
+// Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-06-05
 // Last changed: 2011-11-14
@@ -89,11 +90,9 @@ void IntervalCell::create_entities(uint** e, uint dim, const uint* v) const
 void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
                               uint& current_cell) const
 {
-  // Get vertices and edges
+  // Get vertices
   const uint* v = cell.entities(0);
-  const uint* e = cell.entities(1);
   dolfin_assert(v);
-  dolfin_assert(e);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();
@@ -101,7 +100,7 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Compute indices for the three new vertices
   const uint v0 = v[0];
   const uint v1 = v[1];
-  const uint e0 = offset + e[0];
+  const uint e0 = offset + cell.index();
 
   // Add the two new cells
   editor.add_cell(current_cell++, v0, e0);
