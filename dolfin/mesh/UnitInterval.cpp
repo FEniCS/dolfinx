@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-11-23
-// Last changed: 2011-11-15
+// Last changed: 2011-11-22
 
 #include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
@@ -55,9 +55,9 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
 
   // Create intervals
   for (uint ix = 0; ix < nx; ix++) {
-  	const uint v0 = ix;
-  	const uint v1 = v0 + 1;
-  	editor.add_cell(ix, v0, v1);
+    const uint v0 = ix;
+    const uint v1 = v0 + 1;
+    editor.add_cell(ix, v0, v1);
   }
 
   // Close mesh editor
