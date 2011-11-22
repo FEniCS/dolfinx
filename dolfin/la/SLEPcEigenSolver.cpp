@@ -170,6 +170,14 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
+                                     GenericVector& r, GenericVector& c) const
+{
+  PETScVector& _r = r.down_cast<PETScVector>();
+  PETScVector& _c = c.down_cast<PETScVector>();
+  get_eigenpair(lr, lc, _r, _c, 0);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c) const
 {
   get_eigenpair(lr, lc, r, c, 0);
@@ -200,8 +208,17 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                    PETScVector& r, PETScVector& c,
-                                    uint i) const
+                                     GenericVector& r, GenericVector& c,
+                                     uint i) const
+{
+  PETScVector& _r = r.down_cast<PETScVector>();
+  PETScVector& _c = c.down_cast<PETScVector>();
+  get_eigenpair(lr, lc, _r, _c, i);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
+                                     PETScVector& r, PETScVector& c,
+                                     uint i) const
 {
   const int ii = static_cast<int>(i);
 

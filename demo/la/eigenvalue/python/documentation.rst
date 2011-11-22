@@ -100,8 +100,8 @@ Finally, we want to examine the results. The eigenvalue can easily be
 printed. But, the real part of eigenvector is probably most easily
 visualized by constructing the corresponding eigenfunction. This can
 be done by creating a :py:class:`Function
-<dolfin.functions.function.Function>` in the function space ``V`` with
-the eigenvector ``rx`` as an additional argument. Then the
+<dolfin.functions.function.Function>` in the function space ``V`` 
+and the associating eigenvector ``rx`` with the Function. Then the
 eigenfunction can be manipulated as any other :py:class:`Function
 <dolfin.functions.function.Function>`, and in particular plotted:
 
@@ -109,8 +109,9 @@ eigenfunction can be manipulated as any other :py:class:`Function
 
   print "Largest eigenvalue: ", r
 
-  # Initialize function with eigenvector
-  u = Function(V, rx)
+  # Initialize function and assign eigenvector
+  u = Function(V)
+  u.vector()[:] = rx 
 
   # Plot eigenfunction
   plot(u)

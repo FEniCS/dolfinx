@@ -88,16 +88,9 @@ namespace dolfin
     explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///     x (_GenericVector_)
-    ///         The vector.
-    Function(const FunctionSpace& V, GenericVector& x);
-
-    /// Create function on given function space with a given vector
     /// (shared data)
+    ///
+    /// *Warning: This constructor is intended for internal library use only*
     ///
     /// *Arguments*
     ///     V (_FunctionSpace_)
@@ -116,17 +109,17 @@ namespace dolfin
     ///         The name of the file containing the vector.
     ///     filename_dofdata (std::string)
     ///         The name of the file containing the dofmap data.
-    Function(const FunctionSpace& V, std::string filename_vector);
+    Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
     /// *Arguments*
     ///     V (_FunctionSpace_)
     ///         The function space.
-    ///     filename (std::string)
-    ///         The name of the file containing the vector.
+    ///     filename_dofdata (std::string)
+    ///         The name of the file containing the dofmap data.
     Function(boost::shared_ptr<const FunctionSpace> V,
-             std::string filename_vector);
+             std::string filename);
 
     /// Copy constructor
     ///

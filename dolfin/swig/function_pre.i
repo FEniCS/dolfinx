@@ -19,11 +19,11 @@
 // Modified by Ola Skavhaug, 2008
 // Modified by Martin Sandve Alnaes, 2008
 // Modified by Johan Hake, 2008-2011
-// Modified by Garth Wells, 2008-2010
+// Modified by Garth Wells, 2008-2011
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2011-01-31
+// Last changed: 2011-11-22
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -44,9 +44,7 @@ namespace dolfin
 // Ignore reference (to FunctionSpaces) constructors of Function
 //-----------------------------------------------------------------------------
 %ignore dolfin::Function::Function(const FunctionSpace&);
-%ignore dolfin::Function::Function(const FunctionSpace&, GenericVector&);
 %ignore dolfin::Function::Function(const FunctionSpace&, std::string);
-
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
