@@ -88,6 +88,13 @@ bool EpetraVector::distributed() const
   return x->Map().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericVector> EpetraVector::copy() const
+{
+  dolfin_assert(x);
+  boost::shared_ptr<GenericVector> y(new EpetraVector(*this));
+  return y;
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::resize(uint N)
 {
   if (x && this->size() == N)
@@ -177,12 +184,6 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
                             ghost_entries, 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
-}
-//-----------------------------------------------------------------------------
-EpetraVector* EpetraVector::copy() const
-{
-  dolfin_assert(x);
-  return new EpetraVector(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const

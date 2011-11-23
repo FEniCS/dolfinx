@@ -58,8 +58,7 @@ namespace dolfin
     Vector(const Vector& x) : vector(x.vector->copy()) {}
 
     /// Create a Vector from a GenericVetor
-    Vector(const GenericVector& x)
-    { vector.reset(x.copy()); }
+    Vector(const GenericVector& x) : vector(x.copy()) {}
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -67,11 +66,10 @@ namespace dolfin
     virtual bool distributed() const
     { return vector->distributed(); }
 
-    /// Return copy of tensor
-    virtual Vector* copy() const
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const
     {
-      Vector* x = new Vector();
-      x->vector.reset(vector->copy());
+      boost::shared_ptr<Vector> x(new Vector(*this));
       return x;
     }
 

@@ -69,9 +69,10 @@ uBLASVector::~uBLASVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector* uBLASVector::copy() const
+boost::shared_ptr<GenericVector> uBLASVector::copy() const
 {
-  return new uBLASVector(*this);
+  boost::shared_ptr<GenericVector> y(new uBLASVector(*this));
+  return y;
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(uint N)

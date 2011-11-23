@@ -47,6 +47,9 @@ namespace dolfin
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
+    /// Create a Vector from a GenericVetor
+    Matrix(const GenericMatrix& A) : matrix(A.copy()) {}
+
     /// Destructor
     virtual ~Matrix() {}
 
@@ -59,14 +62,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
-
-    /// Return copy of tensor
-    virtual Matrix* copy() const
-    {
-      Matrix* A = new Matrix();
-      A->matrix.reset(matrix->copy());
-      return A;
-    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -89,6 +84,13 @@ namespace dolfin
     { return "<Matrix wrapper of " + matrix->str(verbose) + ">"; }
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const
+    {
+      boost::shared_ptr<Matrix> A(new Matrix(*this));
+      return A;
+    }
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
