@@ -142,6 +142,13 @@ namespace dolfin
     ///         True if the file exists.
     static bool exists(std::string filename);
 
+    // Create parent path for file if file has a parent path
+    ///
+    /// *Arguments*
+    ///     filename (std::string)
+    ///         Name of file / path.
+    static void create_parent_path(std::string filename);
+
   private:
 
     // Pointer to implementation (envelope-letter design)

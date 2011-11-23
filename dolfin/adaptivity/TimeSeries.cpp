@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-11-12
+// Last changed: 2011-11-23
 
 #include <iostream>
 
@@ -67,29 +67,37 @@ TimeSeries::TimeSeries(std::string name, bool compressed,
   // Set default parameters
   parameters = default_parameters();
 
-  // Read vector times
-  std::string filename = TimeSeries::filename_times(_name, "vector", _compressed);
-  if (File::exists(filename))
+  // Read vector times if any
+  std::string filename_vector = TimeSeries::filename_times(_name,
+                                                           "vector",
+                                                           _compressed);
+  if (File::exists(filename_vector))
   {
     // Read from file
-    File file(filename);
+    File file(filename_vector);
     file >> _vector_times;
     log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
   }
   else
     log(PROGRESS, "No vector samples found in time series.");
 
-  // Read mesh times
-  filename = TimeSeries::filename_times(_name, "mesh", _compressed);
-  if (File::exists(filename))
+  // Read mesh times if any
+  std::string filename_mesh = TimeSeries::filename_times(_name,
+                                                         "mesh",
+                                                         _compressed);
+  if (File::exists(filename_mesh))
   {
     // Read from file
-    File file(filename);
+    File file(filename_mesh);
     file >> _mesh_times;
     log(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
   }
   else
     log(PROGRESS, "No mesh samples found in time series.");
+
+  // Create subdirectories (should really be enough with just one call)
+  File::create_parent_path(filename_vector);
+  File::create_parent_path(filename_mesh);
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
