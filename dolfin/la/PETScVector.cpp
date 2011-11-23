@@ -104,9 +104,24 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v)
+PETScVector::PETScVector(const PETScVector& v) 
+  : x(new Vec(0), PETScVectorDeleter())
 {
-  *this = v;
+  dolfin_assert(v.x);
+
+  // Create new vector
+  VecDuplicate(*(v.x), x.get());
+
+  // Copy data
+  VecCopy(*(v.x), *x);
+
+  // Copy ghost data
+  this->ghost_global_to_local = v.ghost_global_to_local;
+
+  // Create ghost view
+  this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
+  if (ghost_global_to_local.size() > 0)
+    VecGhostGetLocalForm(*x, x_ghosted.get());
 }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()

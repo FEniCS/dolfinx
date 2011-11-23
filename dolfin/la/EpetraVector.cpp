@@ -72,9 +72,17 @@ EpetraVector::EpetraVector(const Epetra_BlockMap& map)
   x.reset(new Epetra_FEVector(map));
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const EpetraVector& v) : type(v.type)
+EpetraVector::EpetraVector(const EpetraVector& v) : type(v.type),
+  ghost_global_to_local(v.ghost_global_to_local)
 {
-  *this = v;
+  dolfin_assert(v.x);
+ 
+  // Copy Epetra vector 
+  x.reset(new Epetra_FEVector(*(v.x)));
+
+  // Copy ghost data
+  if (v.x_ghost)
+    x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
 }
 //-----------------------------------------------------------------------------
 EpetraVector::~EpetraVector()
