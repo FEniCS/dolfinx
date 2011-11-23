@@ -68,10 +68,11 @@ void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
   resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix* MTL4Matrix::copy() const
+boost::shared_ptr<GenericMatrix> MTL4Matrix::copy() const
 {
   dolfin_assert_no_inserter();
-  return new MTL4Matrix(*this);
+  boost::shared_ptr<GenericMatrix> A(new MTL4Matrix(*this));
+  return A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Matrix::size(uint dim) const

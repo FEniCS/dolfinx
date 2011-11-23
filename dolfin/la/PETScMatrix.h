@@ -73,7 +73,7 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    virtual PETScMatrix* copy() const;
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Return size of given dimension
     uint size(uint dim) const { return PETScBaseMatrix::size(dim); }

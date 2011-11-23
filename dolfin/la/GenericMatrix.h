@@ -51,7 +51,10 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Return copy of tensor
-    virtual GenericMatrix* copy() const = 0;
+    //virtual GenericMatrix* copy() const = 0;
+
+    /// Return copy of tensor
+    //virtual boost::shared_ptr<GenericMatrix> new_copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
@@ -96,6 +99,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Matrix interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel

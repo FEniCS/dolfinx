@@ -77,8 +77,11 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    virtual STLMatrix* copy() const
-    { dolfin_not_implemented(); return 0; }
+    virtual boost::shared_ptr<GenericMatrix> copy() const
+    {
+      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      return A;
+    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const

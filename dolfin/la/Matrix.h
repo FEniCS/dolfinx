@@ -47,6 +47,9 @@ namespace dolfin
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
+    /// Create a Vector from a GenericVetor
+    Matrix(const GenericMatrix& A) : matrix(A.copy()) {}
+
     /// Destructor
     virtual ~Matrix() {}
 
@@ -61,10 +64,9 @@ namespace dolfin
     { matrix->init(sparsity_pattern); }
 
     /// Return copy of tensor
-    virtual Matrix* copy() const
+    virtual boost::shared_ptr<GenericMatrix> copy() const
     {
-      Matrix* A = new Matrix();
-      A->matrix.reset(matrix->copy());
+      boost::shared_ptr<Matrix> A(new Matrix(*this));
       return A;
     }
 

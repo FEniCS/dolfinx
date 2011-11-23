@@ -216,7 +216,7 @@ const Function& Function::operator= (const Function& v)
     _function_space = v._function_space;
 
     // Copy vector
-    _vector.reset(v._vector->copy());
+    _vector = v._vector->copy();
 
     // Clear subfunction cache
     sub_functions.clear();

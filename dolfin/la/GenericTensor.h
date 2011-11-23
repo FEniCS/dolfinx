@@ -56,7 +56,10 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Return copy of tensor
-    virtual GenericTensor* copy() const = 0;
+    //virtual GenericTensor* copy() const = 0;
+
+    /// Return copy of tensor
+    //virtual boost::shared_ptr<GenericTensor> copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const = 0;

@@ -179,10 +179,11 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   x_ghost.reset(new Epetra_Vector(ghost_map));
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraVector::copy() const
+boost::shared_ptr<GenericVector> EpetraVector::copy() const
 {
   dolfin_assert(x);
-  return new EpetraVector(*this);
+  boost::shared_ptr<GenericVector> y(new EpetraVector(*this));
+  return y;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const

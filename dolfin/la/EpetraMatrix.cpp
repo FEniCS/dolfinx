@@ -170,9 +170,10 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix* EpetraMatrix::copy() const
+boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
 {
-  return new EpetraMatrix(*this);
+  boost::shared_ptr<EpetraMatrix> B(new EpetraMatrix(*this));
+  return B;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraMatrix::size(uint dim) const

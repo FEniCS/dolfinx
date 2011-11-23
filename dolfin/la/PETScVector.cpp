@@ -192,9 +192,9 @@ void PETScVector::resize(std::pair<uint, uint> range,
   init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScVector::copy() const
+boost::shared_ptr<GenericVector> PETScVector::copy() const
 {
-  PETScVector* v = new PETScVector(*this);
+  boost::shared_ptr<GenericVector> v(new PETScVector(*this));
   return v;
 }
 //-----------------------------------------------------------------------------

@@ -70,7 +70,7 @@ namespace dolfin
     { return false; }
 
     /// Return copy of tensor
-    virtual MTL4Vector* copy() const;
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();

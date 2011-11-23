@@ -89,7 +89,7 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    virtual uBLASMatrix<Mat>* copy() const;
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;
@@ -249,9 +249,10 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  uBLASMatrix<Mat>* uBLASMatrix<Mat>::copy() const
+  boost::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
   {
-    return new uBLASMatrix<Mat>(*this);
+    boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
+    return A;
   }
   //---------------------------------------------------------------------------
   template <typename Mat>

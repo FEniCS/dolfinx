@@ -230,10 +230,13 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
 }
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScMatrix::copy() const
+boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
   if (!A)
-    return new PETScMatrix();
+  {
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix());
+    return B;
+  }
   else
   {
     // Create copy of PETSc matrix
@@ -241,7 +244,8 @@ PETScMatrix* PETScMatrix::copy() const
     MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
     // Create PETScMatrix
-    return new PETScMatrix(_Acopy);
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix(_Acopy));
+    return B;
   }
 }
 //-----------------------------------------------------------------------------

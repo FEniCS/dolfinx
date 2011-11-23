@@ -68,8 +68,8 @@ namespace dolfin
     { value = 0.0; }
 
     /// Return copy of tensor
-    virtual Scalar* copy() const
-    { Scalar* s = new Scalar(); s->value = value; return s; }
+    //virtual Scalar* copy() const
+    //{ Scalar* s = new Scalar(); s->value = value; return s; }
 
     /// Return tensor rank (number of dimensions)
     uint rank() const
@@ -139,6 +139,14 @@ namespace dolfin
     }
 
     //--- Scalar interface ---
+
+    /// Return copy of scalar
+    virtual boost::shared_ptr<Scalar> copy() const
+    {
+      boost::shared_ptr<Scalar> s(new Scalar);
+      s->value = value;
+      return s;
+    }
 
     /// Cast to double
     operator double() const

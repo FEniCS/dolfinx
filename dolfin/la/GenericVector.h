@@ -58,7 +58,7 @@ namespace dolfin
     { resize(sparsity_pattern.local_range(0)); zero(); }
 
     /// Return copy of tensor
-    virtual GenericVector* copy() const = 0;
+    //virtual GenericVector* copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
@@ -105,6 +105,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Vector interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
     /// Resize vector to global size N
     virtual void resize(uint N) = 0;

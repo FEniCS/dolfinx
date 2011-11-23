@@ -82,7 +82,7 @@ namespace dolfin
     virtual bool distributed() const;
 
     /// Return copy of tensor
-    virtual EpetraVector* copy() const;
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();

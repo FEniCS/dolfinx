@@ -72,7 +72,7 @@ namespace dolfin
     { return false; }
 
     /// Create copy of tensor
-    virtual uBLASVector* copy() const;
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
