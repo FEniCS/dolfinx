@@ -398,6 +398,15 @@ const GenericVector& PETScVector::operator= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
+  if (size() != v.size())
+  {
+    std::cout << "Sizes: " << size() << ", " << v.size() << std::endl; 
+    dolfin_error("PETScVector.cpp",
+                 "assigning one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+
   dolfin_assert(v.x);
 
   // Check for self-assignment
