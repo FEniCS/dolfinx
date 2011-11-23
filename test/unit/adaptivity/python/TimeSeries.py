@@ -29,15 +29,15 @@ from dolfin import *
 class TimeSeriesTest(unittest.TestCase):
 
     def test_retrieve_compressed(self):
-        self.test_retrieve(True, False)
+        self._test_retrieve(True, False)
 
     def test_retrieve_compressed_all_connectivities(self):
-        self.test_retrieve(True, True)
+        self._test_retrieve(True, True)
 
     def test_retrieve_all_connectivities(self):
-        self.test_retrieve(False, True)
+        self._test_retrieve(False, True)
 
-    def test_retrieve(self, compressed=False, all_connectivities=False):
+    def _test_retrieve(self, compressed=False, all_connectivities=False):
 
         if MPI.num_processes() > 1:
             return
@@ -66,7 +66,7 @@ class TimeSeriesTest(unittest.TestCase):
         # Test retreiving of mesh
         mesh_retreived = Mesh()
         series.retrieve(mesh_retreived, 0.1)
-        
+
         mesh_test = mesh if all_connectivities else UnitCube(*mesh_size)
 
         for entity in range(4):
