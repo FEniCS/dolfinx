@@ -50,13 +50,13 @@ class TimeSeriesTest(unittest.TestCase):
         V = FunctionSpace(mesh, "CG", 2)
 
         u = Function(V)
-        series = TimeSeries("u", compressed, all_connectivities)
+        series = TimeSeries("TimeSeries_test_retrieve", compressed, all_connectivities)
         for t in times:
             u.vector()[:] = t
             series.store(u.vector(), t)
             series.store(mesh, t)
 
-        series = TimeSeries("u", compressed)
+        series = TimeSeries("TimeSeries_test_retrieve", compressed)
         t0 = series.vector_times()[0]
         T = series.mesh_times()[-1]
 
