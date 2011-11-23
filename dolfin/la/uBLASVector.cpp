@@ -292,15 +292,24 @@ double uBLASVector::inner(const GenericVector& y) const
   return ublas::inner_prod(*x, y.down_cast<uBLASVector>().vec());
 }
 //-----------------------------------------------------------------------------
-const GenericVector& uBLASVector::operator= (const GenericVector& y)
+const GenericVector& uBLASVector::operator= (const GenericVector& v)
 {
-  *x = y.down_cast<uBLASVector>().vec();
+  *this = v.down_cast<uBLASVector>();
   return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator= (const uBLASVector& y)
+const uBLASVector& uBLASVector::operator= (const uBLASVector& v)
 {
-  *x = y.vec();
+  if (size() != v.size())
+  {
+    dolfin_error("uBLASVector.cpp",
+                 "assigning one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+
+  assert(x);
+  *x = v.vec();
   return *this;
 }
 //-----------------------------------------------------------------------------

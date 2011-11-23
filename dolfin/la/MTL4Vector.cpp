@@ -45,7 +45,8 @@ MTL4Vector::MTL4Vector(uint N)
 //-----------------------------------------------------------------------------
 MTL4Vector::MTL4Vector(const MTL4Vector& v)
 {
-  *this = v;
+  resize(v.size());
+  x = v.x;
 }
 //-----------------------------------------------------------------------------
 MTL4Vector::~MTL4Vector()
@@ -285,8 +286,14 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
-  resize(v.size());
-  x = v.vec();
+  if (size() != v.size())
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "assigning one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+  x = v.x;
   return *this;
 }
 //-----------------------------------------------------------------------------

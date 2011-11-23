@@ -617,6 +617,15 @@ void EpetraVector::update_ghost_values()
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 {
+  if (size() != v.size())
+  {
+    std::cout << "Sizes: " << size() << ", " << v.size() << std::endl; 
+    dolfin_error("EpetraVector.cpp",
+                 "assigning one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+
   // FIXME: Epetra assignment operator leads to an errror. Must vectors have
   //        the same size for assigenment to work?
 
