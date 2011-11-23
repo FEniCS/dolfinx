@@ -66,7 +66,7 @@ namespace dolfin
     virtual bool distributed() const
     { return vector->distributed(); }
 
-    /// Return copy of tensor
+    /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const
     {
       boost::shared_ptr<Vector> x(new Vector(*this));

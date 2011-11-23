@@ -69,9 +69,6 @@ namespace dolfin
     virtual bool distributed() const
     { return false; }
 
-    /// Return copy of tensor
-    virtual boost::shared_ptr<GenericVector> copy() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -82,6 +79,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
     virtual void resize(uint N);

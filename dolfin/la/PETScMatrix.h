@@ -72,9 +72,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
-    /// Return copy of tensor
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
-
     /// Return size of given dimension
     uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
 
@@ -97,6 +94,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface --
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);

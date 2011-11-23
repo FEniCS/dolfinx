@@ -56,10 +56,6 @@ namespace dolfin
     /// Create empty matrix
     STLMatrix() : _local_range(0, 0), ncols(0) {}
 
-    /// Create M x N matrix
-    //STLMatrix(uint M, uint N)
-    //{ resize(M, N); }
-
     /// Copy constructor
     STLMatrix(const STLMatrix& A)
     { dolfin_not_implemented(); }
@@ -75,13 +71,6 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
-
-    /// Return copy of tensor
-    virtual boost::shared_ptr<GenericMatrix> copy() const
-    {
-      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
-      return A;
-    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -123,6 +112,13 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const
+    {
+      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      return A;
+    }
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel

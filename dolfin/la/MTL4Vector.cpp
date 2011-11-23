@@ -53,6 +53,12 @@ MTL4Vector::~MTL4Vector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericVector> MTL4Vector::copy() const
+{
+  boost::shared_ptr<GenericVector> x(new MTL4Vector(*this));
+  return x;
+}
+//-----------------------------------------------------------------------------
 void MTL4Vector::resize(uint N)
 {
   if (this->size() != N)
@@ -82,12 +88,6 @@ void MTL4Vector::resize(std::pair<uint, uint> range,
   }
 
   resize(range);
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> MTL4Vector::copy() const
-{
-  boost::shared_ptr<GenericVector> x(new MTL4Vector(*this));
-  return x;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Vector::size() const

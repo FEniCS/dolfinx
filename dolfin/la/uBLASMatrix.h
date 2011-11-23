@@ -88,9 +88,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
-    /// Return copy of tensor
-    virtual boost::shared_ptr<GenericMatrix> copy() const;
-
     /// Return size of given dimension
     virtual uint size(uint dim) const;
 
@@ -108,6 +105,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
@@ -241,18 +241,18 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
+  boost::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
+  {
+    boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
+    return A;
+  }
+  //---------------------------------------------------------------------------
+  template <typename Mat>
   void uBLASMatrix< Mat >::resize(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
       A.Mat::resize(M, N, false);
-  }
-  //---------------------------------------------------------------------------
-  template <typename Mat>
-  boost::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
-  {
-    boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
-    return A;
   }
   //---------------------------------------------------------------------------
   template <typename Mat>

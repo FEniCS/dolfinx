@@ -138,6 +138,12 @@ bool PETScVector::distributed() const
   return _distributed;
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericVector> PETScVector::copy() const
+{
+  boost::shared_ptr<GenericVector> v(new PETScVector(*this));
+  return v;
+}
+//-----------------------------------------------------------------------------
 void PETScVector::resize(uint N)
 {
   if (x && this->size() == N)
@@ -190,12 +196,6 @@ void PETScVector::resize(std::pair<uint, uint> range,
 
   // Re-initialise vector
   init(range, ghost_indices, _distributed);
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> PETScVector::copy() const
-{
-  boost::shared_ptr<GenericVector> v(new PETScVector(*this));
-  return v;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(Array<double>& values) const

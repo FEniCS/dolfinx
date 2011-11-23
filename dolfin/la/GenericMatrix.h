@@ -50,12 +50,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
-    /// Return copy of tensor
-    //virtual GenericMatrix* copy() const = 0;
-
-    /// Return copy of tensor
-    //virtual boost::shared_ptr<GenericMatrix> new_copy() const = 0;
-
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
     { return 2; }
@@ -100,7 +94,7 @@ namespace dolfin
 
     //--- Matrix interface ---
 
-    /// Return copy of vector
+    /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Resize vector y such that is it compatible with matrix for

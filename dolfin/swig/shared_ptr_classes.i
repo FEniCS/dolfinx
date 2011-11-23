@@ -157,7 +157,7 @@
 %shared_ptr(dolfin::STLMatrix)
 %shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
 %shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,\
-	    boost::numeric::ublas::row_major> >)
+            boost::numeric::ublas::row_major> >)
 %shared_ptr(dolfin::uBLASVector)
 
 #ifdef HAS_PETSC

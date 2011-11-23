@@ -145,9 +145,6 @@
 %ignore dolfin::GenericVector::get(double*, uint, const uint*) const;
 %ignore dolfin::GenericVector::set(const double* , uint m, const uint*);
 
-%newobject dolfin::Vector::copy;
-%newobject dolfin::GenericVector::copy;
-
 %ignore dolfin::GenericVector::data() const;
 %ignore dolfin::GenericVector::data();
 
@@ -160,9 +157,6 @@
 %ignore dolfin::GenericMatrix::operator/=;
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
-
-%newobject dolfin::Matrix::copy;
-%newobject dolfin::GenericMatrix::copy;
 
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
@@ -191,8 +185,6 @@ LA_PRE_FACTORY(DefaultFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 LA_PRE_FACTORY(PETScFactory)
-%newobject dolfin::PETScMatrix::copy;
-%newobject dolfin::PETScVector::copy;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -204,8 +196,6 @@ LA_PRE_FACTORY(EpetraFactory)
 %rename(_vec) dolfin::EpetraVector::vec;
 %ignore dolfin::EpetraMatrix::mat;
 %ignore dolfin::EpetraVector::vec;
-%newobject dolfin::EpetraMatrix::copy;
-%newobject dolfin::EpetraVector::copy;
 
 //-----------------------------------------------------------------------------
 // Typemaps for Teuchos::RCP (Trilinos backend)
@@ -257,8 +247,6 @@ LA_PRE_FACTORY(EpetraFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
 LA_PRE_FACTORY(MTL4Factory)
-%newobject dolfin::MTL4Vector::copy;
-%newobject dolfin::MTL4Matrix::copy;
 %ignore dolfin::MTL4Vector::vec;
 %ignore dolfin::MTL4Matrix::mat;
 #endif
@@ -273,6 +261,7 @@ LA_PRE_FACTORY(MTL4Factory)
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector
 //-----------------------------------------------------------------------------
+/*
 %typemap(directorin) dolfin::PETScVector& {
   // Director in dolfin::PETScVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
@@ -284,3 +273,4 @@ LA_PRE_FACTORY(MTL4Factory)
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
+*/

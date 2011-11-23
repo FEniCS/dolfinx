@@ -126,6 +126,25 @@ void PETScMatrix::resize(uint M, uint N)
   }
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
+{
+  if (!A)
+  {
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix());
+    return B;
+  }
+  else
+  {
+    // Create copy of PETSc matrix
+    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
+
+    // Create PETScMatrix
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix(_Acopy));
+    return B;
+  }
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   // Get global dimensions and local range
@@ -227,25 +246,6 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     #endif
 
     MatSetFromOptions(*A);
-  }
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
-{
-  if (!A)
-  {
-    boost::shared_ptr<GenericMatrix> B(new PETScMatrix());
-    return B;
-  }
-  else
-  {
-    // Create copy of PETSc matrix
-    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
-    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
-
-    // Create PETScMatrix
-    boost::shared_ptr<GenericMatrix> B(new PETScMatrix(_Acopy));
-    return B;
   }
 }
 //-----------------------------------------------------------------------------

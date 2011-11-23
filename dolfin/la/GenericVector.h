@@ -57,9 +57,6 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { resize(sparsity_pattern.local_range(0)); zero(); }
 
-    /// Return copy of tensor
-    //virtual GenericVector* copy() const = 0;
-
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
     { return 1; }
