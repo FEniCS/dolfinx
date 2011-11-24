@@ -147,7 +147,6 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         first, last = self.local_range()
         return first > 0 or len(self) > last
 
-
     def __is_compatible(self, other):
         "Returns True if self, and other are compatible Vectors"
         if not isinstance(other, GenericVector):
@@ -229,9 +228,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __setslice__(self, i, j, values):
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
-            if isinstance(values, GenericVector) and len(values) != len(self):
-                    raise ValueError, "dimension error"
             from numpy import isscalar
+            # No test for equal lengths because this is checked by DOLFIN in _assign
             if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
                 return

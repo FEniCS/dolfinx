@@ -73,8 +73,15 @@ EpetraVector::EpetraVector(const Epetra_BlockMap& map)
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v) : type(v.type)
-{
-  *this = v;
+{ 
+  // Copy Epetra vector 
+  dolfin_assert(v.x);
+  x.reset(new Epetra_FEVector(*(v.x)));
+
+  // Copy ghost data
+  if (v.x_ghost)
+    x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
+  ghost_global_to_local = v.ghost_global_to_local;
 }
 //-----------------------------------------------------------------------------
 EpetraVector::~EpetraVector()
@@ -611,20 +618,29 @@ void EpetraVector::update_ghost_values()
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 {
-  // FIXME: Epetra assignment operator leads to an errror. Must vectors have
-  //        the same size for assigenment to work?
-
-  dolfin_assert(v.x);
-  if (this != &v)
+  // Check that vector lengths are equal
+  if (size() != v.size())
   {
-    // Copy vector
-    x.reset(new Epetra_FEVector(*(v.x)));
-
-    // Copy ghost data
-    if (v.x_ghost)
-      x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
-    ghost_global_to_local = v.ghost_global_to_local;
+    dolfin_error("EpetraVector.cpp",
+                 "assign one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
   }
+
+  // Check that maps (parallel layout) are the same
+  dolfin_assert(x);
+  dolfin_assert(v.x);
+  if (!x->Map().SameAs(v.x->Map()))
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "assign one vector to another",
+                 "Vectors must have the same parallel layout when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+  
+  // Assign values   
+  *x = *v.x;
+
   return *this;
 }
 //-----------------------------------------------------------------------------

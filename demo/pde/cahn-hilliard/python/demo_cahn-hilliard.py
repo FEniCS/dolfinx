@@ -112,7 +112,7 @@ t = 0.0
 T = 80*dt
 while (t < T):
     t += dt
-    u0.vector()[:] = u.vector()[:]
+    u0.vector()[:] = u.vector()
     solver.solve(problem, u.vector())
     file << (u.split()[0], t)
 
