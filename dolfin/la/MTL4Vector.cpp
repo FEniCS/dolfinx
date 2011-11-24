@@ -43,10 +43,9 @@ MTL4Vector::MTL4Vector(uint N)
   resize(N);
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(const MTL4Vector& v)
+MTL4Vector::MTL4Vector(const MTL4Vector& v) : x(v.x)
 {
-  resize(v.size());
-  x = v.x;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MTL4Vector::~MTL4Vector()

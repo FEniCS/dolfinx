@@ -398,35 +398,31 @@ const GenericVector& PETScVector::operator= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
+  // Check that vector lengths are equal
   if (size() != v.size())
   {
-    std::cout << "Sizes: " << size() << ", " << v.size() << std::endl; 
     dolfin_error("PETScVector.cpp",
                  "assigning one vector to another",
                  "Vectors must be of the same length when assigning. "
                  "Consider using the copy constructor instead");
   }
 
-  dolfin_assert(v.x);
+  // Check that vector local ranges are equal (relevant in parallel)
+  if (local_range() != v.local_range())
+  {
+    dolfin_error("PETScVector.cpp",
+                 "assigning one vector to another",
+                 "Vectors must have the same parallel layout when assigning. "
+                 "Consider using the copy constructor instead");
+  }
 
   // Check for self-assignment
   if (this != &v)
   {
-    x.reset(new Vec(0), PETScVectorDeleter());
-
-    // Create new vector
-    VecDuplicate(*(v.x), x.get());
-
-    // Copy data
+    // Copy data (local operatrion)
+    dolfin_assert(v.x);
+    dolfin_assert(x);
     VecCopy(*(v.x), *x);
-
-    // Copy ghost data
-    this->ghost_global_to_local = v.ghost_global_to_local;
-
-    // Create ghost view
-    this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-    if (ghost_global_to_local.size() > 0)
-      VecGhostGetLocalForm(*x, x_ghosted.get());
   }
   return *this;
 }
