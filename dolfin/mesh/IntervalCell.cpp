@@ -178,7 +178,7 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
 //-----------------------------------------------------------------------------
 double IntervalCell::facet_area(const Cell& cell, uint facet) const
 {
-  return 0.0;
+  return 1.0;
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
