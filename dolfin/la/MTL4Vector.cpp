@@ -288,7 +288,7 @@ const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
   if (size() != v.size())
   {
     dolfin_error("MTL4Vector.cpp",
-                 "assigning one vector to another",
+                 "assign one vector to another",
                  "Vectors must be of the same length when assigning. "
                  "Consider using the copy constructor instead");
   }

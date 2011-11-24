@@ -280,6 +280,16 @@ class AbstractBaseTest(object):
         v0 = v1
         self.assertEqual(v0.sum(), 2.0*n)
 
+    def test_vector_assignment_length(self):
+        # Test that assigning vectors of different lengths fails
+        m, n = 301, 345
+        v0 = Vector(m)
+        v1 = Vector(n)
+        def wrong_assignment(v0, v1):
+            v0[:] = v1
+        self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
+
+
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester:

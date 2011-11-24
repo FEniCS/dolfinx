@@ -229,9 +229,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __setslice__(self, i, j, values):
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
-            if isinstance(values, GenericVector) and len(values) != len(self):
-                    raise ValueError, "dimension error"
             from numpy import isscalar
+            # No test for equal lengths because this is checked by DOLFIN in _assign
             if isinstance(values, GenericVector) or isscalar(values):
                 self._assign(values)
                 return

@@ -621,7 +621,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   if (size() != v.size())
   {
     dolfin_error("EpetraVector.cpp",
-                 "assigning one vector to another",
+                 "assign one vector to another",
                  "Vectors must be of the same length when assigning. "
                  "Consider using the copy constructor instead");
   }
@@ -632,7 +632,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   if (!x->Map().SameAs(v.x->Map()))
   {
     dolfin_error("EpetraVector.cpp",
-                 "assigning one vector to another",
+                 "assign one vector to another",
                  "Vectors must have the same parallel layout when assigning. "
                  "Consider using the copy constructor instead");
   }

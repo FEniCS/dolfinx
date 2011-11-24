@@ -37,9 +37,11 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
   // Check and store rank
   rank = v.value_rank();
   if (rank > 1)
+  {
     dolfin_error("FunctionPlotData.cpp",
                  "create plotting data for function",
                  "Plotting of rank %d functions not supported", rank);
+  }
 
   // Initialize local vector
   DefaultFactory factory;

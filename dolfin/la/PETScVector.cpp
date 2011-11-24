@@ -402,7 +402,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   if (size() != v.size())
   {
     dolfin_error("PETScVector.cpp",
-                 "assigning one vector to another",
+                 "assign one vector to another",
                  "Vectors must be of the same length when assigning. "
                  "Consider using the copy constructor instead");
   }
@@ -411,7 +411,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   if (local_range() != v.local_range())
   {
     dolfin_error("PETScVector.cpp",
-                 "assigning one vector to another",
+                 "assign one vector to another",
                  "Vectors must have the same parallel layout when assigning. "
                  "Consider using the copy constructor instead");
   }
