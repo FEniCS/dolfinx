@@ -4,7 +4,7 @@
 //
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
+// the Free Software Foundation, either versio1n 3 of the License, or
 // (at your option) any later version.
 //
 // DOLFIN is distributed in the hope that it will be useful,
@@ -339,10 +339,10 @@ const MTL4Matrix& MTL4Matrix::operator= (const MTL4Matrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
+boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
   dolfin_assert_no_inserter();
-  typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+  typedef boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
   return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
 }
 //-----------------------------------------------------------------------------

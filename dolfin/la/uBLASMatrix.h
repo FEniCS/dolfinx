@@ -29,7 +29,7 @@
 
 #include <sstream>
 #include <iomanip>
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
@@ -162,7 +162,7 @@ namespace dolfin
 
     /// Return pointers to underlying compresssed storage data
     /// See GenericMatrix for documentation.
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
@@ -610,21 +610,21 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline std::tr1::tuple<const std::size_t*, const std::size_t*,
+  inline boost::tuples::tuple<const std::size_t*, const std::size_t*,
                          const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
   {
-    typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+    typedef boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
     return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  inline std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>
+  inline boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>
   uBLASMatrix<Mat>::data() const
   {
     dolfin_error("GenericMatrix.h",
                  "return pointers to underlying matrix data",
                  "Not implemented for this uBLAS matrix type");
-    return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+    return boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
   template<typename Mat> template<typename B>

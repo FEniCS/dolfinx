@@ -387,13 +387,13 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   PyObject* _data() {
 
     PyObject* rows = %make_numpy_array(1, ulong)(self->size(0)+1,
-						 std::tr1::get<0>(self->data()),
+						 boost::tuples::get<0>(self->data()),
 						 false);
-    PyObject* cols = %make_numpy_array(1, ulong)(std::tr1::get<3>(self->data()),
-						 std::tr1::get<1>(self->data()),
+    PyObject* cols = %make_numpy_array(1, ulong)(boost::tuples::get<3>(self->data()),
+						 boost::tuples::get<1>(self->data()),
 						 false);
-    PyObject* values = %make_numpy_array(1, double)(std::tr1::get<3>(self->data()),
-						    std::tr1::get<2>(self->data()),
+    PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),
+						    boost::tuples::get<2>(self->data()),
 						    false);
 
     if ( rows == NULL || cols == NULL || values == NULL)
