@@ -147,7 +147,6 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         first, last = self.local_range()
         return first > 0 or len(self) > last
 
-
     def __is_compatible(self, other):
         "Returns True if self, and other are compatible Vectors"
         if not isinstance(other, GenericVector):

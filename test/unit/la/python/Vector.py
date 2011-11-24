@@ -289,6 +289,31 @@ class AbstractBaseTest(object):
             v0[:] = v1
         self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
 
+    def test_vector_assignment_length(self):
+        # Test that assigning with diffrent parallel layouts fails
+        if MPI.num_processes() > 1:
+            m = 301
+            local_range0 = MPI.local_range(m)
+            print "local range", local_range0[0], local_range0[1]
+
+            # Shift parallel partitiong but preserve global size
+            if MPI.process_number() == 0: 
+                local_range1 = (local_range0[0], local_range0[1] + 1)
+            elif MPI.process_number() == MPI.num_processes() - 1: 
+                local_range1 = (local_range0[0] + 1, local_range0[1])
+            else:
+                local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
+
+            v0 = Vector()
+            v0.resize(local_range0)
+            v1 = Vector()
+            v1.resize(local_range1)
+            self.assertEqual(v0.size(), v1.size())
+
+            def wrong_assignment(v0, v1):
+                v0[:] = v1
+            self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
+
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
