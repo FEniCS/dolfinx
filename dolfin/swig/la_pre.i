@@ -80,14 +80,14 @@
 
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
 {
-    // rows typemap
-    $1 = PyArray_Check($input);
+  // rows typemap
+  $1 = PyArray_Check($input);
 }
 
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols)
 {
-    // cols typemap
-    $1 = PyArray_Check($input);
+  // cols typemap
+  $1 = PyArray_Check($input);
 }
 
 //-----------------------------------------------------------------------------
@@ -114,15 +114,6 @@
 %newobject _get_vector_sub_vector;
 //%newobject _get_matrix_sub_vector;
 //%newobject _get_matrix_sub_matrix;
-
-//-----------------------------------------------------------------------------
-// Define a macros for the linear algebra factory interface
-//-----------------------------------------------------------------------------
-%define LA_PRE_FACTORY(FACTORY_TYPE)
-%newobject dolfin::FACTORY_TYPE::create_matrix;
-%newobject dolfin::FACTORY_TYPE::create_pattern;
-%newobject dolfin::FACTORY_TYPE::create_vector;
-%enddef
 
 //-----------------------------------------------------------------------------
 // Modify the GenericVector interface
@@ -168,30 +159,11 @@
 //-----------------------------------------------------------------------------
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
-%newobject dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::copy;
-%newobject dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::copy;
-
-// NOTE: Silly SWIG complains when running the LA_PRE_FACTORY macro
-//LA_PRE_FACTORY(uBLASFactory<uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >)
-%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_matrix;
-%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_pattern;
-%newobject dolfin::uBLASFactory<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::create_vector;
-LA_PRE_FACTORY(uBLASFactory<boost::numeric::ublas::matrix<double> >)
-
-LA_PRE_FACTORY(DefaultFactory)
 
 //-----------------------------------------------------------------------------
-// Run macros for PETSc backend
-//-----------------------------------------------------------------------------
-#ifdef HAS_PETSC
-LA_PRE_FACTORY(PETScFactory)
-#endif
-
-//-----------------------------------------------------------------------------
-// Run macros for Trilinos backend
+// Trilinos backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
-LA_PRE_FACTORY(EpetraFactory)
 %rename(_mat) dolfin::EpetraMatrix::mat;
 %rename(_vec) dolfin::EpetraVector::vec;
 %ignore dolfin::EpetraMatrix::mat;
@@ -246,7 +218,6 @@ LA_PRE_FACTORY(EpetraFactory)
 // Run macros for MTL4 backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
-LA_PRE_FACTORY(MTL4Factory)
 %ignore dolfin::MTL4Vector::vec;
 %ignore dolfin::MTL4Matrix::mat;
 #endif

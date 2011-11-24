@@ -184,8 +184,7 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 }
 
 // Get item for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector> 
-  _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
+boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
 {
 
   Indices* inds;
@@ -200,8 +199,7 @@ boost::shared_ptr<dolfin::GenericVector>
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   // Fill the return vector
-  try 
-  {
+  try {
     indices = inds->indices();
   }
 
@@ -220,15 +218,16 @@ boost::shared_ptr<dolfin::GenericVector>
   // Resize the vector to the size of the indices
   return_vec->resize(m);
 
-  range = inds->range();
+  range  = inds->range();
 
-  values = std::vector<double>(m);
+  values = new double[m];
 
-  self->get_local(values, &m[0], indices);
-  return_vec->set(values, &m[0], range);
+  self->get_local(values, m, indices);
+  return_vec->set(values, m, range);
   return_vec->apply("insert");
 
   delete inds;
+  delete [] values;
   return return_vec;
 }
 
@@ -267,14 +266,15 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 
   m = inds->size();
   range = inds->range();
-  values = std::vector<double>(m);
+  values = new double[m];
 
   // Get and set values
-  other.get_local(values, &m[0], range);
-  self->set(values, &m[0], indices);
+  other.get_local(values, m, range);
+  self->set(values, m, indices);
   self->apply("insert");
 
   delete inds;
+  delete[] values;
 }
 
 // Set items using a GenericVector
@@ -366,13 +366,14 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     }
 
     // Fill and array with the value and call set()
-    values = std::vector<double>(inds->size());
+    values = new double[inds->size()];
     for ( i = 0; i < inds->size(); i++)
       values[i] = value;
 
-    self->set(&values[0], inds->size(), indices);
+    self->set(values, inds->size(), indices);
 
     delete inds;
+    delete[] values;
   }
   self->apply("insert");
 }
@@ -388,8 +389,7 @@ double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n 
  }
 
 // Get items for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector> 
-  _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row )
+boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row )
 {
   // Get the correct Indices
   Indices* inds;
