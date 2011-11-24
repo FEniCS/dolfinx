@@ -34,52 +34,59 @@ using namespace dolfin;
 PETScFactory PETScFactory::factory;
 
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScFactory::create_matrix() const
+boost::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
 {
-  return new PETScMatrix();
+  boost::shared_ptr<GenericMatrix> A(new PETScMatrix);
+  return A;
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScFactory:: create_vector() const
+boost::shared_ptr<GenericVector> PETScFactory:: create_vector() const
 {
-  return new PETScVector("global");
+  boost::shared_ptr<GenericVector> x(new PETScVector("global"));
+  return x;
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScFactory:: create_local_vector() const
+boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
 {
-  return new PETScVector("local");
+  boost::shared_ptr<GenericVector> x(new PETScVector("local"));
+  return x;
 }
 //-----------------------------------------------------------------------------
-SparsityPattern* PETScFactory::create_pattern() const
+boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern() const
 {
-  return new SparsityPattern;
+  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern);
+  return pattern;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver* PETScFactory::create_lu_solver(std::string method) const
+boost::shared_ptr<GenericLUSolver> PETScFactory::create_lu_solver(std::string method) const
 {
-  return new PETScLUSolver(method);
+  boost::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
+  return solver;
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver*
+boost::shared_ptr<GenericLinearSolver>
 PETScFactory::create_krylov_solver(std::string method,
                                    std::string preconditioner) const
 {
-  return new PETScKrylovSolver(method, preconditioner);
+  boost::shared_ptr<GenericLinearSolver> 
+    solver(new PETScKrylovSolver(method, preconditioner));
+  return solver;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::lu_solver_methods() const
+  PETScFactory::lu_solver_methods() const
 {
   return PETScLUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::krylov_solver_methods() const
+  PETScFactory::krylov_solver_methods() const
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScFactory::krylov_solver_preconditioners() const
+  PETScFactory::krylov_solver_preconditioners() const
 {
   return PETScKrylovSolver::preconditioners();
 }

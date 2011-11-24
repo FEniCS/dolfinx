@@ -168,7 +168,7 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   parameters = dolfin::parameters("krylov_solver");
 
   // Initialize solver
-  solver.reset(factory.create_krylov_solver(method, preconditioner));
+  solver = factory.create_krylov_solver(method, preconditioner);
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

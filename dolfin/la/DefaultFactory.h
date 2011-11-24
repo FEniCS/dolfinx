@@ -22,6 +22,7 @@
 #define __DEFAULT_FACTORY_H
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -41,35 +42,36 @@ namespace dolfin
     virtual ~DefaultFactory() {}
 
     /// Create empty matrix
-    virtual dolfin::GenericMatrix* create_matrix() const;
+    virtual boost::shared_ptr<dolfin::GenericMatrix> create_matrix() const;
 
     /// Create empty vector (global)
-    virtual dolfin::GenericVector* create_vector() const;
+    virtual boost::shared_ptr<dolfin::GenericVector> create_vector() const;
 
     /// Create empty vector (local)
-    virtual dolfin::GenericVector* create_local_vector() const;
+    virtual boost::shared_ptr<dolfin::GenericVector> create_local_vector() const;
 
     /// Create empty sparsity pattern
-    virtual dolfin::GenericSparsityPattern* create_pattern() const;
+    virtual boost::shared_ptr<dolfin::GenericSparsityPattern> create_pattern() const;
 
     /// Create LU solver
-    virtual dolfin::GenericLinearSolver* create_lu_solver(std::string method) const;
+    virtual boost::shared_ptr<dolfin::GenericLUSolver> 
+      create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    virtual dolfin::GenericLinearSolver*
-    create_krylov_solver(std::string method, std::string preconditioner) const;
+    virtual boost::shared_ptr<dolfin::GenericLinearSolver>
+      create_krylov_solver(std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const;
+      lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const;
+      krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const;
+      krylov_solver_preconditioners() const;
 
     /// Return instance of default backend
     static LinearAlgebraFactory& factory();

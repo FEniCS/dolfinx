@@ -44,13 +44,16 @@ namespace dolfin
 
     /// Create empty vector
     Vector()
-    { DefaultFactory factory; vector.reset(factory.create_vector()); }
+    { 
+      DefaultFactory factory; 
+      vector = factory.create_vector(); 
+    }
 
     /// Create vector of size N
     explicit Vector(uint N)
     {
       DefaultFactory factory;
-      vector.reset(factory.create_vector());
+      vector = factory.create_vector();
       vector->resize(N);
     }
 

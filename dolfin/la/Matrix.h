@@ -42,7 +42,10 @@ namespace dolfin
 
     /// Create empty matrix
     Matrix()
-    { DefaultFactory factory; matrix.reset(factory.create_matrix()); }
+    { 
+      DefaultFactory factory; 
+      matrix = factory.create_matrix(); 
+    }
 
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}

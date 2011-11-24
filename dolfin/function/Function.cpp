@@ -644,7 +644,7 @@ void Function::init_vector()
   if (!_vector)
   {
     DefaultFactory factory;
-    _vector.reset(factory.create_vector());
+    _vector = factory.create_vector();
   }
   dolfin_assert(_vector);
 

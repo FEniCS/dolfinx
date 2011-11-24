@@ -43,16 +43,16 @@ dolfin::Array<double>& _get_vector_values( dolfin::GenericVector* self)
 }
 
 // A contains function for Vectors
-bool _contains( dolfin::GenericVector* self, double value )
+bool _contains(dolfin::GenericVector* self, double value)
 {
   bool contains = false;
   dolfin::uint i;
   dolfin::Array<double>& values = _get_vector_values(self);
 
   // Check if value is in values
-  for ( i = 0; i < self->size(); i++)
+  for (i = 0; i < self->size(); i++)
   {
-    if ( fabs(values[i]-value) < DOLFIN_EPS )
+    if (fabs(values[i]-value) < DOLFIN_EPS)
     {
       contains = true;
       break;
@@ -184,14 +184,15 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 }
 
 // Get item for slice, list, or numpy array object
-dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
+boost::shared_ptr<dolfin::GenericVector> 
+  _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
 {
 
   Indices* inds;
   double* values;
   dolfin::uint* range;
   dolfin::uint* indices;
-  dolfin::GenericVector* return_vec;
+  boost::shared_ptr<dolfin::GenericVector> return_vec;
   dolfin::uint m;
 
   // Get the correct Indices
@@ -199,12 +200,14 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   // Fill the return vector
-  try {
+  try 
+  {
     indices = inds->indices();
   }
 
   // We can only throw and catch runtime_errors. These will be caught by swig.
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     delete inds;
     throw;
   }
@@ -217,16 +220,15 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
   // Resize the vector to the size of the indices
   return_vec->resize(m);
 
-  range  = inds->range();
+  range = inds->range();
 
-  values = new double[m];
+  values = std::vector<double>(m);
 
-  self->get_local(values, m, indices);
-  return_vec->set(values, m, range);
+  self->get_local(values, &m[0], indices);
+  return_vec->set(values, &m[0], range);
   return_vec->apply("insert");
 
   delete inds;
-  delete[] values;
   return return_vec;
 }
 
@@ -265,15 +267,14 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 
   m = inds->size();
   range = inds->range();
-  values = new double[m];
+  values = std::vector<double>(m);
 
   // Get and set values
-  other.get_local(values, m, range);
-  self->set(values, m, indices);
+  other.get_local(values, &m[0], range);
+  self->set(values, &m[0], indices);
   self->apply("insert");
 
   delete inds;
-  delete[] values;
 }
 
 // Set items using a GenericVector
@@ -365,14 +366,13 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     }
 
     // Fill and array with the value and call set()
-    values = new double[inds->size()];
+    values = std::vector<double>(inds->size());
     for ( i = 0; i < inds->size(); i++)
       values[i] = value;
 
-    self->set(values, inds->size(), indices);
+    self->set(&values[0], inds->size(), indices);
 
     delete inds;
-    delete[] values;
   }
   self->apply("insert");
 }
@@ -388,7 +388,8 @@ double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n 
  }
 
 // Get items for slice, list, or numpy array object
-dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row )
+boost::shared_ptr<dolfin::GenericVector> 
+  _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row )
 {
   // Get the correct Indices
   Indices* inds;
@@ -418,7 +419,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
     self->get(values->data().get(), inds->size(), indices, 1, &single);
 
   // Create the return vector and set the values
-  dolfin::GenericVector* return_vec = self->factory().create_vector();
+  boost::shared_ptr<dolfin::GenericVector> return_vec = self->factory().create_vector();
   self->resize(*return_vec, 1);
   return_vec->set_local(*values);
   return_vec->apply("insert");

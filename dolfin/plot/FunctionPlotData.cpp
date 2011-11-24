@@ -45,7 +45,7 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
 
   // Initialize local vector
   DefaultFactory factory;
-  _vertex_values.reset(factory.create_local_vector());
+  _vertex_values = factory.create_local_vector();
   dolfin_assert(_vertex_values);
   const uint N = v.value_size()*mesh.num_vertices();
   _vertex_values->resize(N);
@@ -59,7 +59,7 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
 FunctionPlotData::FunctionPlotData() : rank(0)
 {
   DefaultFactory factory;
-  _vertex_values.reset(factory.create_local_vector());
+  _vertex_values = factory.create_local_vector();
   dolfin_assert(_vertex_values);
 }
 //-----------------------------------------------------------------------------

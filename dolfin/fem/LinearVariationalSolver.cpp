@@ -74,8 +74,8 @@ void LinearVariationalSolver::solve()
 
   // Create matrix and vector
   dolfin_assert(u->vector());
-  boost::scoped_ptr<GenericMatrix> A(u->vector()->factory().create_matrix());
-  boost::scoped_ptr<GenericVector> b(u->vector()->factory().create_vector());
+  boost::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
+  boost::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)

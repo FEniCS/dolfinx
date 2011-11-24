@@ -25,7 +25,6 @@
 #define __NEWTON_SOLVER_H
 
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 
@@ -134,10 +133,10 @@ namespace dolfin
     boost::shared_ptr<GenericMatrix> A;
 
     /// Solution vector
-    boost::scoped_ptr<GenericVector> dx;
+    boost::shared_ptr<GenericVector> dx;
 
     /// Resdiual vector
-    boost::scoped_ptr<GenericVector> b;
+    boost::shared_ptr<GenericVector> b;
 
   };
 

@@ -100,7 +100,7 @@ void LUSolver::init(std::string method)
   parameters = dolfin::parameters("lu_solver");
 
   // Initialize solver
-  solver.reset(factory.create_lu_solver(method));
+  solver = factory.create_lu_solver(method);
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

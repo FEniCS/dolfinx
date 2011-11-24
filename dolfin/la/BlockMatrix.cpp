@@ -22,7 +22,7 @@
 // Last changed: 2011-11-11
 
 #include <iostream>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include "dolfin/common/utils.h"
@@ -122,7 +122,8 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
   // Create tempory vector
   dolfin_assert(matrices[0][0]);
-  boost::scoped_ptr<GenericVector> z_tmp(matrices[0][0]->factory().create_vector());
+  boost::shared_ptr<GenericVector> 
+    z_tmp = matrices[0][0]->factory().create_vector();
 
   // Loop over block rows
   for(uint row = 0; row < matrices.shape()[0]; row++)

@@ -21,7 +21,7 @@
 // First added:  2007-04-30
 // Last changed: 2011-10-07
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
@@ -149,7 +149,7 @@ double dolfin::residual(const GenericMatrix& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::scoped_ptr<GenericVector> y(A.factory().create_vector());
+  boost::shared_ptr<GenericVector> y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");
@@ -165,7 +165,7 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   }
   else if (normalization_type == "average")
   {
-    boost::scoped_ptr<GenericVector> y(x.factory().create_vector());
+    boost::shared_ptr<GenericVector> y = x.factory().create_vector();
     y->resize(x.size());
     (*y) = 1.0 / static_cast<double>(x.size());
     c = x.inner(*y);

@@ -25,6 +25,7 @@
 #define __UBLAS_FACTORY_H
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
@@ -47,33 +48,52 @@ namespace dolfin
     virtual ~uBLASFactory() {}
 
     /// Create empty matrix
-    uBLASMatrix<Mat>* create_matrix() const
-    { return new uBLASMatrix<Mat>(); }
+    boost::shared_ptr<GenericMatrix> create_matrix() const
+    { 
+      boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>);
+      return A; 
+    }
 
     /// Create empty vector
-    uBLASVector* create_vector() const
-    { return new uBLASVector(); }
+    boost::shared_ptr<GenericVector> create_vector() const
+    { 
+      boost::shared_ptr<GenericVector> x(new uBLASVector);
+      return x; 
+    }
 
     /// Create empty vector (local)
-    uBLASVector* create_local_vector() const
-    { return new uBLASVector(); }
+    boost::shared_ptr<GenericVector> create_local_vector() const
+    { 
+      boost::shared_ptr<GenericVector> x(new uBLASVector);
+      return x; 
+    }
 
     /// Create empty sparsity pattern
-    SparsityPattern* create_pattern() const
-    { return new SparsityPattern(); }
+    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
+    { 
+      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern);
+      return pattern; 
+    }
 
     /// Create LU solver
-    UmfpackLUSolver* create_lu_solver(std::string method) const
-    { return new UmfpackLUSolver(); }
+    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    { 
+      boost::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
+      return solver; 
+    }
 
     /// Create Krylov solver
-    GenericLinearSolver* create_krylov_solver(std::string method,
+    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
                                               std::string preconditioner) const
-    { return new uBLASKrylovSolver(method, preconditioner); }
+    { 
+      boost::shared_ptr<GenericLinearSolver> 
+        solver(new uBLASKrylovSolver(method, preconditioner));
+      return solver; 
+    }
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const
+      lu_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       methods.push_back(std::make_pair("default",
@@ -85,14 +105,14 @@ namespace dolfin
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
+      krylov_solver_methods() const
     {
       return uBLASKrylovSolver::methods();
     }
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const
+      krylov_solver_preconditioners() const
     {
       return uBLASKrylovSolver::preconditioners();
     }

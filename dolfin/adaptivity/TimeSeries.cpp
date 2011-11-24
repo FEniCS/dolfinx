@@ -18,9 +18,8 @@
 // First added:  2009-11-11
 // Last changed: 2011-11-23
 
-#include <iostream>
-
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <boost/scoped_ptr.hpp>
 
@@ -152,7 +151,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 
     // Read vectors
     GenericVector& x0(vector);
-    boost::scoped_ptr<GenericVector> x1(x0.factory().create_vector());
+    boost::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
     File f0(filename_data(_name, "vector", i0, _compressed));
     File f1(filename_data(_name, "vector", i1, _compressed));
     f0 >> x0;
@@ -202,8 +201,8 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index,
-						   _compressed) << std::endl;
+  std::cout << "Mesh file name: " 
+      << filename_data(_name, "mesh", index, _compressed) << std::endl;
   File file(filename_data(_name, "mesh", index, _compressed));
   file >> mesh;
 }

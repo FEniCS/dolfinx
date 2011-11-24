@@ -174,9 +174,9 @@ void SingularSolver::init(const GenericMatrix& A)
   s.insert(_rows);
 
   // Create matrix and vector
-  B.reset(A.factory().create_matrix());
-  y.reset(A.factory().create_vector());
-  c.reset(A.factory().create_vector());
+  B = A.factory().create_matrix();
+  y = A.factory().create_vector();
+  c = A.factory().create_vector();
   B->init(s);
   y->resize(N + 1);
   c->resize(N + 1);
@@ -212,8 +212,8 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   values.resize(N);
   if (M)
   {
-    boost::scoped_ptr<GenericVector> ones(A.factory().create_vector());
-    boost::scoped_ptr<GenericVector> z(A.factory().create_vector());
+    boost::shared_ptr<GenericVector> ones = A.factory().create_vector();
+    boost::shared_ptr<GenericVector> z = A.factory().create_vector();
     ones->resize(N);
     *ones = 1.0;
     z->resize(N);
