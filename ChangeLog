@@ -1,3 +1,5 @@
+ - Remove all tr1::tuple and use boost::tuple
+ - Fix login behind vector assignment, especially in parallel
 1.0-rc1 [2011-11-21]
  - 33 bugs fixed
  - Implement traversal of bounding box trees for all codimensions
