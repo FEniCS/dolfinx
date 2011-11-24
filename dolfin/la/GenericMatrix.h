@@ -27,7 +27,7 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 #include <vector>
 #include "GenericTensor.h"
 
@@ -167,13 +167,13 @@ namespace dolfin
     /// Return pointers to underlying compresssed row/column storage data
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*,
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
                             const double*, int> data() const
     {
       dolfin_error("GenericMatrix.h",
                    "return pointers to underlying matrix data",
                    "Not implemented by current linear algebra backend");
-      return std::tr1::tuple<const std::size_t*, const std::size_t*,
+      return boost::tuples::tuple<const std::size_t*, const std::size_t*,
                                                const double*, int>(0, 0, 0, 0);
     }
 

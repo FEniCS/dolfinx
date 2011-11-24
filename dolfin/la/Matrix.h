@@ -25,7 +25,7 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
@@ -154,7 +154,7 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---
