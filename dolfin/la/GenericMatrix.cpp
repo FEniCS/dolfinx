@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2010-02-23
-// Last changed: 2011-03-17
+// Last changed: 2011-11-25
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
