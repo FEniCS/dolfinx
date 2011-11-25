@@ -73,8 +73,8 @@ void GenericMatrix::ident_zeros()
   // has been assembled into those rows.
   for (uint i = 0; i < zero_rows.size(); i++)
   {
-     std::pair<uint, uint> ij(zero_rows[i], zero_rows[i]);
-     setitem(ij, 1.0);
+    std::pair<uint, uint> ij(zero_rows[i], zero_rows[i]);
+    setitem(ij, 1.0);
   }
 
   // Apply changes
