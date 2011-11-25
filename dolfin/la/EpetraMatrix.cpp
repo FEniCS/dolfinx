@@ -17,6 +17,7 @@
 //
 // Modified by Anders Logg 2008-2011
 // Modified by Garth N. Wells 2008-2010
+// Modified by Mikael Mortensen 2011
 //
 // First added:  2008-04-21
 // Last changed: 2011-11-17
@@ -635,7 +636,7 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
     values.resize(num_entries);
     for (int i = 0; i < num_entries; i++)
     {
-      columns[i] = indices[i];
+      columns[i] = A->GCID(indices[i]);  // Return global column indices
       values[i]  = vals[i];
     }
   }
