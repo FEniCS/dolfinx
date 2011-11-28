@@ -334,12 +334,6 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 endif()
 
-# FIXME: Check for GMPXX (C++ bindings) too? CGAL seems to need it
-# Check for GMP
-if (DOLFIN_ENABLE_GMP)
-  find_package(GMP)
-endif()
-
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
   find_package(CGAL)
@@ -349,15 +343,6 @@ endif()
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
 endif()
-
-# Check for HDF5
-#if (DOLFIN_ENABLE_HDF5)
-#  find_package(HDF5)
-#  if (NOT HDF5_IS_PARALLEL)
-#    message(WARNING "HDF5 found, but is not configured to run in parallel.")
-#    set(HDF5_FOUND FALSE)
-#  endif()
-#endif()
 
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
