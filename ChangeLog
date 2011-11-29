@@ -1,4 +1,5 @@
 1.0-rc2 [2011-11-28]
+ - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
  - Fix bug in 1D mesh refinement
  - Fix bug in handling of subdirectories for TimeSeries
  - Remove all tr1::tuple and use boost::tuple
