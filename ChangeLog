@@ -1,4 +1,7 @@
+[trunk]
  - Remove all tr1::tuple and use boost::tuple
+[1.0]
+ - Check number of dofs on local patch in extrapolation
 1.0-rc2 [2011-11-28]
  - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
  - Fix bug in 1D mesh refinement
