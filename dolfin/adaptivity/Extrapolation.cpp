@@ -126,10 +126,20 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   std::set<uint> unique_dofs;
   build_unique_dofs(unique_dofs, cell2dof2row, cell0, c0, V);
 
-  // Create linear system
+  // Compute size of linear system
   dolfin_assert(W.element());
   const uint N = W.element()->space_dimension();
   const uint M = unique_dofs.size();
+
+  // Check size of system
+  if (M < N)
+  {
+    dolfin_error("Extrapolation.cpp",
+                 "compute extrapolation",
+                 "Not enough degrees of freedom on local patch to build extrapolation");
+  }
+
+  // Create matrix and vector for linear system
   arma::mat A(M, N);
   arma::vec b(M);
 
