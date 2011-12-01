@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
 set(DOLFIN_VERSION_MINOR "0")
-set(DOLFIN_VERSION_MICRO "rc1+")
+set(DOLFIN_VERSION_MICRO "rc2+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
@@ -71,21 +71,15 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
-#list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
-  if (${OPTION_NAME} MATCHES "GMP")
-    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." OFF)
-  else()
-    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
-  endif()
+  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
 endforeach()
 
 #------------------------------------------------------------------------------
