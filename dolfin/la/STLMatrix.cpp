@@ -123,7 +123,7 @@ void STLMatrix::apply(std::string mode)
     const uint global_row = entry->first.first;
 
     // FIXME: This can be more efficient by storing sparsity pattern,
-    //        or caching owning for repeated assembly
+    //        or caching owning process for repeated assembly
 
     // Get owning process
     uint owner = 0;
@@ -197,6 +197,34 @@ void STLMatrix::getrow(uint row, std::vector<uint>& columns,
   const uint local_row = row - _local_range.first;
   columns = this->_cols[local_row];
   values  = this->_vals[local_row];
+}
+//-----------------------------------------------------------------------------
+void STLMatrix::ident(uint m, const uint* rows)
+{
+  std::pair<uint, uint> row_range = local_range(0);
+  for (uint i = 0; i < m; ++i)
+  {
+    const uint global_row = rows[i];
+    if (global_row >= row_range.first && global_row < row_range.second)
+    {
+      const uint local_row = global_row - row_range.first;
+      std::vector<uint>& rcols   = this->_cols[local_row];
+      std::vector<double>& rvals = this->_vals[local_row];
+
+      // Zero row
+      std::fill(rvals.begin(), rvals.end(), 0.0);
+
+      // Place one on diagonal
+      std::vector<uint>::const_iterator column = std::find(rcols.begin(), rcols.end(), global_row);
+      if (column != rcols.end())
+        rvals[column - rcols.begin()] = 1.0;
+      else
+      {
+        rcols.push_back(global_row);
+        rvals.push_back(1.0);
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::string STLMatrix::str(bool verbose) const

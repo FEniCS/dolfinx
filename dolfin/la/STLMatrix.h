@@ -162,8 +162,7 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows)
-    { dolfin_not_implemented(); }
+    virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
