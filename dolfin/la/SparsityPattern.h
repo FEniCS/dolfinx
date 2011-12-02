@@ -43,9 +43,9 @@ namespace dolfin
   {
 
     // Set type used for the rows of the sparsity pattern
-    //typedef dolfin::Set<uint> set_type;
+    typedef dolfin::Set<uint> set_type;
     //typedef std::set<uint> set_type;
-    typedef boost::unordered_set<dolfin::uint> set_type;
+    //typedef boost::unordered_set<dolfin::uint> set_type;
 
   public:
 
