@@ -103,10 +103,9 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   const std::vector<std::vector<dolfin::uint> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
   const std::vector<std::vector<dolfin::uint> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
 
-  // Get number of non-zeroes per row (on and off diagonal)
-  std::vector<uint> dnum_nonzeros, onum_nonzeros;
-  sparsity_pattern.num_nonzeros_diagonal(dnum_nonzeros);
-  sparsity_pattern.num_nonzeros_off_diagonal(onum_nonzeros);
+  // Get number of non-zeroes per row
+  std::vector<uint> num_nonzeros;
+  sparsity_pattern.num_local_nonzeros(num_nonzeros);
 
   // Create row map
   EpetraFactory& f = EpetraFactory::instance();
@@ -122,23 +121,13 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   Epetra_Map domain_map(sparsity_pattern.size(1), num_local_cols, 0, comm);
 
   // Create Epetra_FECrsGraph
-  Epetra_FECrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&dnum_nonzeros[0]));
+  Epetra_CrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0]));
 
   // Add diagonal block indices
-  std::vector<std::vector<dolfin::uint> >::const_iterator row_set;
-  for (row_set = d_pattern.begin(); row_set != d_pattern.end(); ++row_set)
-  {
-    const uint global_row = row_set - d_pattern.begin() + n0;
-    const std::vector<dolfin::uint>& nz_entries = *row_set;
-    std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
-    matrix_map.InsertGlobalIndices(global_row, row_set->size(),
-                                   reinterpret_cast<int*>(&_nz_entries[0]));
-  }
-
   for (uint local_row = 0; local_row < d_pattern.size(); local_row++)
   {
     const uint global_row = local_row + n0;
-    std::vector<uint> &entries = const_cast<std::vector<uint>&>(d_pattern[local_row]);
+    std::vector<uint>& entries = const_cast<std::vector<uint>&>(d_pattern[local_row]);
     matrix_map.InsertGlobalIndices(global_row, entries.size(),
                                    reinterpret_cast<int*>(&entries[0]));
   }
@@ -147,7 +136,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   for (uint local_row = 0; local_row < o_pattern.size(); local_row++)
   {
     const uint global_row = local_row + n0;
-    std::vector<uint> &entries = const_cast<std::vector<uint>&>(o_pattern[local_row]);
+    std::vector<uint>& entries = const_cast<std::vector<uint>&>(o_pattern[local_row]);
     matrix_map.InsertGlobalIndices(global_row, entries.size(),
                                    reinterpret_cast<int*>(&entries[0]));
   }
@@ -156,7 +145,9 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   {
     // Finalise map. Here, row_map is standing in for RangeMap, which is
     // probably ok but should be double-checked.
-    matrix_map.GlobalAssemble(domain_map, row_map);
+    //matrix_map.GlobalAssemble(domain_map, row_map);
+    //matrix_map.OptimizeStorage();
+    matrix_map.FillComplete(domain_map, row_map);
     matrix_map.OptimizeStorage();
   }
   catch (int err)

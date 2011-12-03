@@ -31,6 +31,8 @@
 #include <iomanip>
 #include <boost/assign/list_of.hpp>
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
@@ -174,32 +176,23 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
-    MatCreate(PETSC_COMM_SELF, A.get());
+    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 0,
+                    reinterpret_cast<int*>(&num_nonzeros[0]), A.get());
 
-    // Set size
-    MatSetSizes(*A, M, N, M, N);
-
-    // Set matrix type
-    MatSetType(*A, MATSEQAIJ);
-
-    // Allocate space (using data from sparsity pattern)
-    MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
-
-    /*
     // Set column indices
-    std::vector<std::vector<uint> > _column_indices = sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
-    std::vector<int> column_indices(sparsity_pattern.num_nonzeros());
-    uint k = 0;
+    /*
+    const std::vector<std::vector<uint> > _column_indices
+        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
+    std::vector<int> column_indices;
+    column_indices.reserve(sparsity_pattern.num_nonzeros());
     for (uint i = 0; i < _column_indices.size(); ++i)
-    {
-      for (uint j = 0; j < _column_indices[i].size(); ++j)
-        column_indices[k++] = _column_indices[i][j];
-    }
-    MatSeqAIJSetColumnIndices(*A, reinterpret_cast<int*>(&column_indices[0]));
-    */
+      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
+
+    MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
 
     // Do not allow new nonzero entries
-    //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    */
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1

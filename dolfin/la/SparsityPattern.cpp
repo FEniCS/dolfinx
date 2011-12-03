@@ -214,6 +214,19 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros)
     num_nonzeros[row - off_diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
+{
+  num_nonzeros_diagonal(num_nonzeros);
+  if (off_diagonal.size() > 0)
+  {
+    std::vector<uint> tmp;
+    num_nonzeros_off_diagonal(tmp);
+    dolfin_assert(num_nonzeros.size() == tmp.size());
+    std::transform(num_nonzeros.begin(), num_nonzeros.end(), tmp.begin(),
+                   num_nonzeros.begin(), std::plus<uint>());
+  }
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
   // Check rank, ignore if not a matrix

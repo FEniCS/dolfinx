@@ -80,6 +80,9 @@ namespace dolfin
     /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
     void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
 
+    /// Fill vector with number of nonzeros in local_range for dimension 0
+    void num_local_nonzeros(std::vector<uint>& num_nonzeros) const;
+
     /// Finalize sparsity pattern
     void apply();
 

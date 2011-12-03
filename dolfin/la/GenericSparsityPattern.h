@@ -77,6 +77,9 @@ namespace dolfin
     /// Fill vector with number of nonzeros for off-diagonal block in local_range for dimension 0
     virtual void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const = 0;
 
+    /// Fill vector with number of nonzeros in local_range for dimension 0
+    virtual void num_local_nonzeros(std::vector<uint>& num_nonzeros) const = 0;
+
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.
     virtual std::vector<std::vector<uint> > diagonal_pattern(Type type) const = 0;
