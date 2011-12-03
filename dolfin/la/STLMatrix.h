@@ -30,15 +30,16 @@
 #include <vector>
 #include <boost/unordered_map.hpp>
 
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
-#include "GenericVector.h"
 
 namespace dolfin
 {
+
+  class GenericSparsityPattern;
+  class GenericVector;
 
   /// Simple STL-based implementation of the GenericMatrix interface.
   /// The sparse matrix is stored as a pair of std::vector of
@@ -67,43 +68,19 @@ namespace dolfin
 
     /// Return true if matrix is distributed
     virtual bool distributed() const
-    { return false; }
+    { dolfin_not_implemented(); return false; }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const
-    {
-      if (dim > 1)
-      {
-        dolfin_error("STLMatrix.cpp",
-                     "access size of STL matrix",
-                     "Illegal axis (%d), must be 0 or 1", dim);
-      }
-
-      if (dim == 0)
-        return dolfin::MPI::sum(_local_range.second - _local_range.first);
-      else
-        return ncols;
-    }
+    virtual uint size(uint dim) const;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const
-    {
-      assert(dim < 2);
-      if (dim == 0)
-        return _local_range;
-      else
-        return std::make_pair(0, ncols);
-    }
+    virtual std::pair<uint, uint> local_range(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
-    virtual void zero()
-    {
-      for (std::vector<std::vector<double> >::iterator row = _vals.begin(); row != _vals.end(); ++row)
-        std::fill(row->begin(), row->end(), 0);
-    }
+    virtual void zero();
 
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);

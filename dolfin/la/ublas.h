@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Garth N. Wells
+// Copyright (C) 2006-2011 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,16 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-
-// Last changed: 2006-10-10
+// Last changed: 2011-12-03
 
-#ifndef __UBLAS_H
-#define __UBLAS_H
-
-#include <dolfin/common/types.h>
+#ifndef __DOLFIN_UBLAS_H
+#define __DOLFIN_UBLAS_H
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_of_vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 
 // These two files must be included due to a bug in Boost version < 1.33.
@@ -59,15 +56,7 @@ namespace dolfin
   typedef ublas::compressed_matrix<double, ublas::row_major> ublas_sparse_matrix;
 
   // uBLAS sparse matrix (column major format)
-  typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
-
-  // uBLAS sparse matrix for temporary assembly
-  typedef ublas::generalized_vector_of_vector<double, ublas::row_major,
-            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
-
-  // uBLAS sparse matrix for temporary assembly (column major format)
-  typedef ublas::generalized_vector_of_vector<double, ublas::column_major,
-            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix_cmajor;
+  //typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
 
   // uBLAS upper triangular matrix (column major format)
   typedef ublas::triangular_matrix<double, ublas::upper, ublas::column_major> ublas_matrix_cmajor_tri;

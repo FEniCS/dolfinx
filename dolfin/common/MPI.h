@@ -25,11 +25,13 @@
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
 
+#include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 
 #ifdef HAS_MPI
+#include <boost/serialization/utility.hpp>
 #include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
@@ -229,15 +231,15 @@ namespace dolfin
 
     /// Return local range for local process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
-    static std::pair<uint, uint> local_range(uint N);
+    static std::pair<unsigned int, unsigned int> local_range(uint N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process, uint N);
+    static std::pair<unsigned int, unsigned int> local_range(uint process, uint N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process, uint N,
+    static std::pair<unsigned int, unsigned int> local_range(uint process, uint N,
                                              uint num_processes);
 
     /// Return which process owns index (inverse of local_range)

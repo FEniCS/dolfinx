@@ -21,11 +21,14 @@
 // First added:  2007-01-17
 // Last changed: 2011-10-29
 
+
 #include <iomanip>
-#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include "STLFactory.h"
 #include "STLMatrix.h"
 
@@ -43,6 +46,36 @@ void STLMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
   // FIXME: Add function to sparsity pattern to get nnz per row to
   //        to reserve space for vectors
+}
+//-----------------------------------------------------------------------------
+dolfin::uint STLMatrix::size(uint dim) const
+{
+  if (dim > 1)
+  {
+    dolfin_error("STLMatrix.cpp",
+                 "access size of STL matrix",
+                 "Illegal axis (%d), must be 0 or 1", dim);
+  }
+
+  if (dim == 0)
+    return dolfin::MPI::sum(_local_range.second - _local_range.first);
+  else
+    return ncols;
+}
+//-----------------------------------------------------------------------------
+std::pair<uint, uint> STLMatrix::local_range(uint dim) const
+{
+  dolfin_assert(dim < 2);
+  if (dim == 0)
+    return _local_range;
+  else
+    return std::make_pair(0, ncols);
+}
+//-----------------------------------------------------------------------------
+void STLMatrix::zero()
+{
+  for (std::vector<std::vector<double> >::iterator row = _vals.begin(); row != _vals.end(); ++row)
+    std::fill(row->begin(), row->end(), 0);
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::add(const double* block, uint m, const uint* rows, uint n,
@@ -256,7 +289,6 @@ std::string STLMatrix::str(bool verbose) const
   {
     s << "<STLMatrix of size " << size(0) << " x " << size(1) << ">";
   }
-
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -298,20 +330,6 @@ void STLMatrix::csr(std::vector<double>& vals, std::vector<uint>& cols,
   {
     vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
     cols.insert(cols.end(), _cols[local_row].begin(), _cols[local_row].end());
-
-    /*
-    // Sort entries
-    std::set<std::pair<uint, double> > data_pair_set;
-    for (uint i = 0; i < _cols[local_row].size(); ++i)
-      data_pair_set.insert(std::make_pair(_cols[local_row][i], _vals[local_row][i]));
-
-    std::set<std::pair<uint, double> >::const_iterator data_pair;
-    for (data_pair = data_pair_set.begin(); data_pair != data_pair_set.end(); ++data_pair)
-    {
-      cols.push_back(data_pair->first);
-      vals.push_back(data_pair->second);
-    }
-    */
 
     row_ptr.push_back(row_ptr.back() + _cols[local_row].size());
     local_to_global_row.push_back(_local_range.first + local_row);

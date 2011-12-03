@@ -20,14 +20,15 @@
 // First added:  2008-05-21
 // Last changed: 2011-11-11
 
-#ifndef __STL_FACTORY_H
-#define __STL_FACTORY_H
+#ifndef __DOLFIN_STL_FACTORY_H
+#define __DOLFIN_STL_FACTORY_H
 
 #include <boost/shared_ptr.hpp>
+#include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 #include "STLMatrix.h"
-#include "uBLASVector.h"
+#include "Vector.h"
 
 namespace dolfin
 {
@@ -41,30 +42,30 @@ namespace dolfin
 
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const
-    { 
+    {
       boost::shared_ptr<GenericMatrix> A(new STLMatrix);
-      return A; 
+      return A;
     }
-  
+
     /// Create empty vector (global)
     boost::shared_ptr<GenericVector> create_vector() const
-    { 
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
-      return x; 
+    {
+      boost::shared_ptr<GenericVector> x(new Vector);
+      return x;
     }
 
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const
-    { 
-      boost::shared_ptr<GenericVector> x(new uBLASVector);
-      return x; 
+    {
+      boost::shared_ptr<GenericVector> x(new Vector);
+      return x;
     }
 
     /// Create empty sparsity pattern
     boost::shared_ptr<GenericSparsityPattern> create_pattern() const
-    { 
+    {
       boost::shared_ptr<GenericSparsityPattern> pattern;
-      return pattern; 
+      return pattern;
     }
 
     /// Create LU solver
@@ -74,7 +75,7 @@ namespace dolfin
                    "create LU solver",
                    "LU solver not available for the STL backend");
       boost::shared_ptr<GenericLUSolver> solver;
-      return solver; 
+      return solver;
     }
 
     /// Create Krylov solver
@@ -85,7 +86,7 @@ namespace dolfin
                    "create Krylov solver",
                    "Krylov solver not available for the STL backend");
       boost::shared_ptr<GenericLinearSolver> solver;
-      return solver; 
+      return solver;
     }
 
     /// Return singleton instance
