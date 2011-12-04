@@ -54,8 +54,6 @@ public:
     CPPUNIT_ASSERT(result);
   }
 
-
-
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Default);
