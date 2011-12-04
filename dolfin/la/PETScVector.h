@@ -30,15 +30,18 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <petscvec.h>
 
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/types.h>
+
 #include "PETScObject.h"
 #include "GenericVector.h"
 
-#include <dolfin/log/dolfin_log.h>
 
 namespace dolfin
 {

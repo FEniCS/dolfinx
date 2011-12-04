@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 #include <dolfin/log/log.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 

@@ -26,7 +26,11 @@
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
+#include <string>
+#include <utility>
+#include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericVector.h"
 

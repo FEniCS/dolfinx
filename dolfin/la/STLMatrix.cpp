@@ -26,6 +26,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <boost/serialization/utility.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
@@ -63,7 +64,7 @@ dolfin::uint STLMatrix::size(uint dim) const
     return ncols;
 }
 //-----------------------------------------------------------------------------
-std::pair<uint, uint> STLMatrix::local_range(uint dim) const
+std::pair<dolfin::uint, dolfin::uint> STLMatrix::local_range(uint dim) const
 {
   dolfin_assert(dim < 2);
   if (dim == 0)
