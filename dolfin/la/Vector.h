@@ -23,10 +23,13 @@
 // First added:  2007-07-03
 // Last changed: 2011-01-14
 
-#ifndef __VECTOR_H
-#define __VECTOR_H
+#ifndef __DOLFIN_VECTOR_H
+#define __DOLFIN_VECTOR_H
 
+#include <string>
+#include <utility>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -44,9 +47,9 @@ namespace dolfin
 
     /// Create empty vector
     Vector()
-    { 
-      DefaultFactory factory; 
-      vector = factory.create_vector(); 
+    {
+      DefaultFactory factory;
+      vector = factory.create_vector();
     }
 
     /// Create vector of size N

@@ -28,11 +28,13 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <dolfin/common/types.h>
 #include "GenericVector.h"
 
 class Epetra_FEVector;

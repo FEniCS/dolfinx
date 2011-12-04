@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <utility>
+#include <string>
 
 #include <dolfin/common/types.h>
 #include "mtl4.h"

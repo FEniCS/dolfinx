@@ -26,6 +26,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <boost/serialization/utility.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
