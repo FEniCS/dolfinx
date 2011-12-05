@@ -13,7 +13,7 @@ find_package(CGAL
   HINTS
   ${CGAL_DIR}
   $ENV{CGAL_DIR}
-  PATH_SUFFIXES lib cmake/modules)
+  PATH_SUFFIXES lib cmake/modules lib/cmake)
 
 # Set variables
 set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${CGAL_3RD_PARTY_INCLUDE_DIRS})
