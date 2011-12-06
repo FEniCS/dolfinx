@@ -17,9 +17,10 @@
 //
 // Modified by Ola Skavhaug 2008.
 // Modified by Garth N. Wells 2011.
+// Modified by Mikael Mortensen 2011.
 //
 // First added:  2007-04-30
-// Last changed: 2011-10-07
+// Last changed: 2011-12-06
 
 #include <boost/shared_ptr.hpp>
 
@@ -166,7 +167,7 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   else if (normalization_type == "average")
   {
     boost::shared_ptr<GenericVector> y = x.factory().create_vector();
-    y->resize(x.size());
+    y->resize(x.local_range());
     (*y) = 1.0 / static_cast<double>(x.size());
     c = x.inner(*y);
     (*y) = c;
