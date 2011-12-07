@@ -35,6 +35,7 @@ index_template = """
 
    programmers-reference/index
    demo/index
+   quick_reference
 """
 
 body = """

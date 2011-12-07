@@ -29,6 +29,11 @@ file(COPY "${CMAKE_CURRENT_BINARY_DIR}/sphinx-common/"
 file(COPY "${CMAKE_CURRENT_BINARY_DIR}/sphinx-common/"
   DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_PYTHON_SPHINX_DIR}")
 
+configure_file("${CMAKE_CURRENT_BINARY_DIR}/quick_reference_python.rst"
+  "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}/quick_reference.rst" COPYONLY)
+configure_file("${CMAKE_CURRENT_BINARY_DIR}/quick_reference_cpp.rst"
+  "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_CPP_SPHINX_SOURCE_DIR}/quick_reference.rst" COPYONLY)
+
 execute_process(COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/generate_main_index.py" "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_CPP_SPHINX_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${DOLFIN_PYTHON_SPHINX_SOURCE_DIR}" "${DOLFIN_VERSION}")
 
 # Add target doc_api: generate reST files from code for cpp and
