@@ -211,8 +211,6 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
 
-  cout << "True residual (2): " << solver->TrueResidual() << endl; 
-
   // Check solve status
   const double* status = solver->GetAztecStatus();
   if ((int) status[AZ_why] != AZ_normal)
