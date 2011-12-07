@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
-// Last changed: 2009-02-11
+// Last changed: 2011-12-07
 
 #ifndef __BOX_H
 #define __BOX_H
@@ -43,14 +43,14 @@ namespace dolfin
     /// *Arguments*
     ///     x0 (double)
     ///         :math:`x`-min.
-    ///     x1 (double)
-    ///         :math:`x`-max.
     ///     y0 (double)
     ///         :math:`y`-min.
-    ///     y1 (double)
-    ///         :math:`y`-max.
     ///     z0 (double)
     ///         :math:`z`-min.
+    ///     x1 (double)
+    ///         :math:`x`-max.
+    ///     y1 (double)
+    ///         :math:`y`-max.
     ///     z1 (double)
     ///         :math:`z`-max.
     ///     xn (double)
@@ -64,7 +64,7 @@ namespace dolfin
     ///     .. code-block:: c++
     ///
     ///         // Mesh with 6 cells in each direction on the
-    ///         // interval [-1,2] x [-1,2] x [-1,2].
+    ///         // set [-1,2] x [-1,2] x [-1,2].
     ///         Box mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
     ///
     Box(double x0, double y0, double z0, double x1, double y1, double z1,
