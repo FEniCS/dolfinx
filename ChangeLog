@@ -1,3 +1,4 @@
+ - Fix wrong link in Python quick reference.
  - Remove all tr1::tuple and use boost::tuple
 1.0.0 [2011-12-07]
  - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.

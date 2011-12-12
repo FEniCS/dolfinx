@@ -33,7 +33,7 @@ functions, organized by topic:
       - :py:class:`Vector <dolfin.cpp.Vector>`
 
     * - :py:class:`Function <dolfin.functions.function.Function>`
-      - :py:class:`SubDomain <dolfin.functions.expression.Expression>`
+      - :py:class:`SubDomain <dolfin.cpp.SubDomain>`
       - :py:class:`LinearVariationalSolver <dolfin.fem.solving.LinearVariationalSolver>`
       - :py:class:`Matrix <dolfin.cpp.Matrix>`
 
