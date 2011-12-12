@@ -1,3 +1,4 @@
+- Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]
  - Recompile all forms with FFC 1.0.0
  - Fix for CGAL 3.9 on OS X
