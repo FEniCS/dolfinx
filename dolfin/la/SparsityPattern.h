@@ -44,7 +44,6 @@ namespace dolfin
 
     // Set type used for the rows of the sparsity pattern
     typedef dolfin::Set<uint> set_type;
-    //typedef std::set<uint> set_type;
     //typedef boost::unordered_set<dolfin::uint> set_type;
 
   public:
@@ -104,12 +103,6 @@ namespace dolfin
 
     // Shape of tensor
     std::vector<uint> shape;
-
-    // Local range
-    uint row_range_min;
-    uint row_range_max;
-    uint col_range_min;
-    uint col_range_max;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;

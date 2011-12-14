@@ -24,16 +24,15 @@
 
 #include <algorithm>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/common/MPI.h>
 #include "SparsityPattern.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
-                                     col_range_min(0), col_range_max(0)
+SparsityPattern::SparsityPattern()
 {
   // Do nothing
 }
@@ -71,22 +70,13 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   if (shape.size() != 2)
     return;
 
-  // Set ownership range
-  this->ownership_range = ownership_range;
-
-  // Get local range
-  row_range_min = this->ownership_range[0].first;
-  row_range_max = this->ownership_range[0].second;
-  col_range_min = this->ownership_range[1].first;
-  col_range_max = this->ownership_range[1].second;
-
   // Resize diagonal block
-  dolfin_assert(row_range_max > row_range_min);
-  diagonal.resize(row_range_max - row_range_min);
+  dolfin_assert(ownership_range[0].second > ownership_range[0].first);
+  diagonal.resize(ownership_range[0].second - ownership_range[0].first);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  if (row_range_min != 0 || row_range_max != shape[0])
-    off_diagonal.resize(row_range_max - row_range_min);
+  if (ownership_range[0].first != 0 || ownership_range[0].second != shape[0])
+    off_diagonal.resize(ownership_range[0].second - ownership_range[0].first);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entries)
@@ -104,10 +94,11 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   const std::vector<uint>& map_j = *entries[1];
 
   // Check local range
-  if (row_range_min == 0 && row_range_max == shape[0])
+  if (ownership_range[0].first == 0 && ownership_range[0].second == shape[0])
   {
     // Sequential mode, do simple insertion
-    for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
+    std::vector<uint>::const_iterator row;
+    for (row = map_i.begin(); row != map_i.end(); ++row)
       diagonal[*row].insert(map_j.begin(), map_j.end());
   }
   else
@@ -115,15 +106,15 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
     // Parallel mode, use either diagonal, off_diagonal or non_local
     for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
     {
-      if (row_range_min <= *row && *row < row_range_max)
+      if (ownership_range[0].first <= *row && *row < ownership_range[0].second)
       {
         // Subtract offset
-        const uint I = *row - row_range_min;
+        const uint I = *row - ownership_range[0].first;
 
         // Store local entry in diagonal or off-diagonal block
         for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
         {
-          if (col_range_min <= *col && *col < col_range_max)
+          if (ownership_range[1].first <= *col && *col < ownership_range[1].second)
           {
             dolfin_assert(I < diagonal.size());
             diagonal[I].insert(*col);
@@ -138,7 +129,8 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
       else
       {
         // Store non-local entry (communicated later during apply())
-        for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
+        std::vector<uint>::const_iterator col;
+        for (col = map_j.begin(); col != map_j.end(); ++col)
         {
           non_local.push_back(*row);
           non_local.push_back(*col);
@@ -241,7 +233,7 @@ void SparsityPattern::apply()
     info_statistics();
 
   // Communicate non-local blocks if any
-  if (row_range_min != 0 || row_range_max != shape[0])
+  if (ownership_range[0].first != 0 || ownership_range[0].second != shape[0])
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
@@ -277,19 +269,19 @@ void SparsityPattern::apply()
       const uint J = non_local_received[i + 1];
 
       // Sanity check
-      if (I < row_range_min || I >= row_range_max)
+      if (I < ownership_range[0].first || I >= ownership_range[0].second)
       {
         dolfin_error("SparsityPattern.cpp",
                      "apply changes to sparsity pattern",
                      "Received illegal sparsity pattern entry for row %d, not in range [%d, %d]",
-                     I, row_range_min, row_range_max);
+                     I, ownership_range[0].first, ownership_range[0].second);
       }
 
       // Subtract offset
-      I -= row_range_min;
+      I -= ownership_range[0].first;
 
       // Insert in diagonal or off-diagonal block
-      if (col_range_min <= J && J < col_range_max)
+      if (ownership_range[1].first <= J && J < ownership_range[1].second)
       {
         dolfin_assert(I < diagonal.size());
         diagonal[I].insert(J);
