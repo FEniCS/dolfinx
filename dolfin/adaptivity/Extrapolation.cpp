@@ -77,18 +77,15 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   std::vector<std::vector<double> > coefficients;
   coefficients.resize(W.dim());
 
-  // Local array for dof indices
-  dolfin_assert(W.dofmap());
-  std::vector<uint> dofs(W.dofmap()->max_cell_dimension());
-
   // Iterate over cells in mesh
+  dolfin_assert(W.dofmap());
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    W.dofmap()->tabulate_dofs(&dofs[0], *cell0);
+    const std::vector<uint>& dofs = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
     uint offset = 0;
@@ -239,9 +236,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    std::set<uint>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-
-  std::vector<uint> dofs(V.dofmap()->cell_dimension(cell.index()));
-  V.dofmap()->tabulate_dofs(&dofs[0], cell);
+  const std::vector<uint>& dofs = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;

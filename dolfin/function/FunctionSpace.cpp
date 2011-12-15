@@ -94,15 +94,15 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() && 
-    _mesh.get() == V._mesh.get() && 
-    _dofmap.get() == V._dofmap.get(); 
+  return _element.get() == V._element.get() &&
+    _mesh.get() == V._mesh.get() &&
+    _dofmap.get() == V._dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return !(*this == V); 
+  return !(*this == V);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const Mesh> FunctionSpace::mesh() const
@@ -284,12 +284,10 @@ void FunctionSpace::print_dofmap() const
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const uint n = _dofmap->cell_dimension(cell->index());
-    std::vector<uint> dofs(n);
-    _dofmap->tabulate_dofs(&dofs[0], *cell);
+    const std::vector<uint>& dofs = _dofmap->cell_dofs(cell->index());
 
     cout << cell->index() << ":";
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < dofs.size(); i++)
       cout << " " << dofs[i];
     cout << endl;
   }

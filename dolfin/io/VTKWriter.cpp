@@ -113,7 +113,6 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Allocate memory for function values at cell centres
   const uint size = num_cells*data_dim;
-  std::vector<uint> dofs(dofmap.max_cell_dimension());
 
   // Build lists of dofs and create map
   std::vector<uint> dof_set;
@@ -122,7 +121,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    dofmap.tabulate_dofs(&dofs[0], *cell);
+    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
     for(uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 

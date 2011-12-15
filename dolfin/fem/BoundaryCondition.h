@@ -49,7 +49,7 @@ namespace dolfin
     BoundaryCondition(const FunctionSpace& V);
 
     /// Constructor
-    BoundaryCondition(boost::shared_ptr<const FunctionSpace> V);
+    explicit BoundaryCondition(boost::shared_ptr<const FunctionSpace> V);
 
     /// Destructor
     virtual ~BoundaryCondition();
@@ -67,7 +67,8 @@ namespace dolfin
     virtual void apply(GenericVector& b, const GenericVector& x) const = 0;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
-    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b,
+                       const GenericVector& x) const = 0;
 
     /// Return shared pointer to function space
     boost::shared_ptr<const FunctionSpace> function_space() const;
@@ -87,14 +88,8 @@ namespace dolfin
       // Constructor
       LocalData(const FunctionSpace& V);
 
-      // Local dimension
-      const uint n;
-
       // Coefficients
       std::vector<double> w;
-
-      // Cell dofs
-      std::vector<uint> cell_dofs;
 
       // Facet dofs
       std::vector<uint> facet_dofs;

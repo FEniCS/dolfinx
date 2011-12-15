@@ -90,8 +90,7 @@ void PointSource::apply(GenericVector& b)
 
   // Compute local-to-global mapping
   dolfin_assert(V->dofmap());
-  std::vector<uint> dofs(V->dofmap()->cell_dimension(cell.index()));
-  V->dofmap()->tabulate_dofs(&dofs[0], cell);
+  const std::vector<uint>& dofs = V->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
   dolfin_assert(V->element()->space_dimension() == V->dofmap()->cell_dimension(cell.index()));

@@ -712,7 +712,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
+    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);
@@ -720,7 +720,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Pick values for facet
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
-      const uint global_dof = data.cell_dofs[data.facet_dofs[i]];
+      const uint global_dof = cell_dofs[data.facet_dofs[i]];
       const double value = data.w[data.facet_dofs[i]];
       boundary_values[global_dof] = value;
     }
@@ -782,6 +782,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         // Tabulate coordinates of dofs on cell
         dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
+        // Tabulate dofs on cell
+        const std::vector<uint>& cell_dofs = dofmap.cell_dofs(c->index());
+
         // Loop over all dofs on cell
         for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
         {
@@ -791,15 +794,12 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
           if (!interpolated)
           {
-            // Tabulate dofs on cell
-            dofmap.tabulate_dofs(&data.cell_dofs[0], *c);
-
             // Restrict coefficient to cell
             g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
           }
 
           // Set boundary value
-          const uint global_dof = data.cell_dofs[i];
+          const uint global_dof = cell_dofs[i];
           const double value = data.w[i];
           boundary_values[global_dof] = value;
         }
@@ -839,6 +839,9 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     // Tabulate coordinates of dofs on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
+    // Tabulate dofs on cell
+    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell->index());
+
     // Interpolate function only once and only on cells where necessary
     bool already_interpolated = false;
 
@@ -855,15 +858,12 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       {
         already_interpolated = true;
 
-        // Tabulate dofs on cell
-        dofmap.tabulate_dofs(&data.cell_dofs[0], *cell);
-
         // Restrict coefficient to cell
         g->restrict(&data.w[0], *_function_space->element(), *cell, ufc_cell);
       }
 
       // Set boundary value
-      const uint global_dof = data.cell_dofs[i];
+      const uint global_dof = cell_dofs[i];
       const double value = data.w[i];
       boundary_values[global_dof] = value;
     }
