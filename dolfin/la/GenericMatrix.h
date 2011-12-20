@@ -20,9 +20,10 @@
 // Modified by Ola Skavhaug 2007-2008
 // Modified by Kent-Andre Mardal 2008
 // Modified by Martin Alnæs 2008
+// Modified by Mikael Mortensen 2011
 //
 // First added:  2006-04-24
-// Last changed: 2011-02-05
+// Last changed: 2011-11-25
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -194,6 +195,9 @@ namespace dolfin
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
+    
+    /// Compress matrix
+    virtual void compress();
 
   };
 

@@ -18,9 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
+# Modified by Mikael Mortensen 2011
 #
 # First added:  2011-03-03
-# Last changed: 2011-11-17
+# Last changed: 2011-11-25
 
 import unittest
 from dolfin import *
@@ -181,6 +182,18 @@ class AbstractBaseTest(object):
         self.assertEqual(B0.size(0), B1.size(0))
         self.assertEqual(B0.size(1), B1.size(1))
         self.assertEqual(B0.norm("frobenius"), B1.norm("frobenius"))
+        
+    def test_compress_matrix(self):
+        
+        if self.backend == "MTL4" or self.backend == "STL":
+            # These two backends do not create sparsity patterns
+            pass
+        else:
+            A0, B0 = self.assemble_matrices()
+            A0_norm_0 = A0.norm('frobenius')
+            A0.compress()
+            A0_norm_1 = A0.norm('frobenius')
+            self.assertAlmostEqual(A0_norm_0, A0_norm_1)
 
     #def test_create_from_sparsity_pattern(self):
 
