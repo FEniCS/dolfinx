@@ -73,8 +73,8 @@ EpetraVector::EpetraVector(const Epetra_BlockMap& map)
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v) : type(v.type)
-{ 
-  // Copy Epetra vector 
+{
+  // Copy Epetra vector
   dolfin_assert(v.x);
   x.reset(new Epetra_FEVector(*(v.x)));
 
@@ -637,8 +637,8 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
                  "Vectors must have the same parallel layout when assigning. "
                  "Consider using the copy constructor instead");
   }
-  
-  // Assign values   
+
+  // Assign values
   *x = *v.x;
 
   return *this;
@@ -651,10 +651,28 @@ const EpetraVector& EpetraVector::operator+= (const GenericVector& y)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator+= (double a)
+{
+  dolfin_assert(x);
+  Epetra_FEVector y(*x);
+  y.PutScalar(a);
+  x->Update(1.0, y, 1.0);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 {
   dolfin_assert(x);
   axpy(-1.0, y);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator-= (double a)
+{
+  dolfin_assert(x);
+  Epetra_FEVector y(*x);
+  y.PutScalar(-a);
+  x->Update(1.0, y, 1.0);
   return *this;
 }
 //-----------------------------------------------------------------------------

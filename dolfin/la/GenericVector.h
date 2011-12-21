@@ -199,8 +199,14 @@ namespace dolfin
     /// Add given vector
     virtual const GenericVector& operator+= (const GenericVector& x) = 0;
 
+    /// Add number to all components of a vector
+    virtual const GenericVector& operator+= (double a) = 0;
+
     /// Subtract given vector
     virtual const GenericVector& operator-= (const GenericVector& x) = 0;
+
+    /// Subtract number from all components of a vector
+    virtual const GenericVector& operator-= (double a) = 0;
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;

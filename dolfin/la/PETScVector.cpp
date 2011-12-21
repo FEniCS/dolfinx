@@ -104,7 +104,7 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v) 
+PETScVector::PETScVector(const PETScVector& v)
   : x(new Vec(0), PETScVectorDeleter())
 {
   dolfin_assert(v.x);
@@ -446,9 +446,23 @@ const PETScVector& PETScVector::operator+= (const GenericVector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator+= (double a)
+{
+  dolfin_assert(x);
+  VecShift(*x, a);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator-= (const GenericVector& x)
 {
   this->axpy(-1.0, x);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator-= (double a)
+{
+  dolfin_assert(x);
+  VecShift(*x, -a);
   return *this;
 }
 //-----------------------------------------------------------------------------

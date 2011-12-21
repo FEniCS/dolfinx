@@ -303,9 +303,21 @@ const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator+= (double a)
+{
+  x += a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
 {
   x -= v.down_cast<MTL4Vector>().vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator-= (double a)
+{
+  x -= a;
   return *this;
 }
 //-----------------------------------------------------------------------------

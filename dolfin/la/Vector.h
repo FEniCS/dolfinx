@@ -204,9 +204,17 @@ namespace dolfin
     virtual const Vector& operator+= (const GenericVector& x)
     { axpy(1.0, x); return *this; }
 
+    /// Add number to all components of a vector
+    virtual const GenericVector& operator+= (double a)
+    { *vector += a; return *this; }
+
     /// Subtract given vector
     virtual const Vector& operator-= (const GenericVector& x)
     { axpy(-1.0, x); return *this; }
+
+    /// Subtract number from all components of a vector
+    virtual const GenericVector& operator-= (double a)
+    { *vector -= a; return *this; }
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x)

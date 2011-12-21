@@ -158,6 +158,13 @@ double dolfin::residual(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
+  if (x.size() == 0)
+  {
+    dolfin_error("solve.cpp",
+                 "normalize vector",
+                 "Cannot normalize vector of zero length");
+  }
+
   double c = 0.0;
   if (normalization_type == "l2")
   {
@@ -166,12 +173,8 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   }
   else if (normalization_type == "average")
   {
-    boost::shared_ptr<GenericVector> y = x.factory().create_vector();
-    y->resize(x.local_range());
-    (*y) = 1.0 / static_cast<double>(x.size());
-    c = x.inner(*y);
-    (*y) = c;
-    x -= (*y);
+    c = x.sum()/static_cast<double>(x.size());
+    x -= c;
   }
   else
   {

@@ -344,9 +344,23 @@ const uBLASVector& uBLASVector::operator+= (const GenericVector& y)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const uBLASVector& uBLASVector::operator+= (double a)
+{
+  boost::numeric::ublas::scalar_vector<double> _a(x->size(), a);
+  *x += _a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator-= (const GenericVector& y)
 {
   *x -= y.down_cast<uBLASVector>().vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const uBLASVector& uBLASVector::operator-= (double a)
+{
+  boost::numeric::ublas::scalar_vector<double> _a(x->size(), a);
+  *x -= _a;
   return *this;
 }
 //-----------------------------------------------------------------------------

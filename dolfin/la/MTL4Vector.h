@@ -172,8 +172,14 @@ namespace dolfin
     /// Add given vector
     virtual const MTL4Vector& operator+= (const GenericVector& x);
 
+    /// Add number to all components of a vector
+    virtual const MTL4Vector& operator+= (double a);
+
     /// Subtract given vector
     virtual const MTL4Vector& operator-= (const GenericVector& x);
+
+    /// Subtract number from all components of a vector
+    virtual const MTL4Vector& operator-= (double a);
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);
