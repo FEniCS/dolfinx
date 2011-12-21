@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg
+// Copyright (C) 2010-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2010-02-23
-// Last changed: 2011-11-25
+// Last changed: 2011-12-21
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
@@ -39,7 +39,7 @@ void GenericMatrix::ident_zeros()
                  "ident_zeros",
                  "Matrix is not square");
   }
-  
+
   std::vector<uint> columns;
   std::vector<double> values;
   std::vector<uint> zero_rows;
@@ -51,7 +51,7 @@ void GenericMatrix::ident_zeros()
   {
     // Get global row number
     int global_row = row + row_range.first;
-    
+
     // Get value for row
     getrow(global_row, columns, values);
 
@@ -81,14 +81,24 @@ void GenericMatrix::ident_zeros()
   apply("insert");
 }
 //-----------------------------------------------------------------------------
-
 void GenericMatrix::compress()
 {
   Timer timer("Compress matrix");
-  
+
   // Create new sparsity pattern
-  boost::shared_ptr<GenericSparsityPattern> new_sparsity_pattern = factory().create_pattern();
-    
+  boost::shared_ptr<GenericSparsityPattern>
+    new_sparsity_pattern = factory().create_pattern();
+
+  // Check that we get a sparsity pattern (not available for all backends)
+  if (!new_sparsity_pattern)
+  {
+    warning("Current linear algebra backend does not supply a sparsity pattern, "
+            "ignoring call to compress().");
+    return;
+  }
+
+  dolfin_debug("check");
+
   // Retrieve global and local matrix info
   std::vector<uint> global_dimensions(2);
   global_dimensions[0] = size(0);
@@ -97,26 +107,25 @@ void GenericMatrix::compress()
   loc_range[0] = local_range(0);
   loc_range[1].first = 0;  // Column range not provided by all backends
   loc_range[1].second = size(1);
-  
-  // With the row-by-row algorithm used here there is no need for inserting non_local 
+
+  // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner
   std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(2);
   const boost::unordered_map<uint, uint> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
   const std::pair<uint, uint> row_range = loc_range[0];
-  const std::pair<uint, uint> col_range = loc_range[1];
   const uint m = row_range.second - row_range.first;
-    
+
   // Initialize sparsity pattern
   new_sparsity_pattern->init(global_dimensions, loc_range, off_process_owner);
-    
+
   // Declare some variables used to extract matrix information
   std::vector<uint> columns;
   std::vector<double> values;
-  std::vector<double> allvalues;   // Hold all values of local matrix
-  std::vector<uint> allcolumns;    // Hold the column id for all values of local matrix
-  std::vector<uint> offset(m+1);   // Hold accumulated number of cols on local matrix
+  std::vector<double> allvalues; // Hold all values of local matrix
+  std::vector<uint> allcolumns;  // Hold column id for all values of local matrix
+  std::vector<uint> offset(m+1); // Hold accumulated number of cols on local matrix
   offset[0] = 0;
   std::vector<uint> thisrow(1);
   std::vector<uint> thiscolumn;
@@ -124,17 +133,18 @@ void GenericMatrix::compress()
   dofs[0] = &thisrow;
   dofs[1] = &thiscolumn;
 
+  // Iterate over rows
   for (uint i = 0; i < m; i++)
   {
     // Get row and locate nonzeros. Store non-zero values and columns for later
-    int global_row = i + row_range.first;        
+    const uint global_row = i + row_range.first;
     getrow(global_row, columns, values);
     uint count = 0;
     thiscolumn.clear();
     for (uint j = 0; j < columns.size(); j++)
     {
       // Store if non-zero or diagonal entry. PETSc solvers require this
-      if(std::abs(values[j]) > DOLFIN_EPS || columns[j] == global_row)
+      if (std::abs(values[j]) > DOLFIN_EPS || columns[j] == global_row)
       {
         thiscolumn.push_back(columns[j]);
         allvalues.push_back(values[j]);
@@ -142,27 +152,28 @@ void GenericMatrix::compress()
         count++;
       }
     }
-    
+
     thisrow[0] = global_row;
     offset[i+1] = offset[i] + count;
 
     // Build new compressed sparsity pattern
     new_sparsity_pattern->insert(dofs);
   }
-  
+
   // Finalize sparsity pattern
   new_sparsity_pattern->apply();
 
   // Recreate matrix with the new sparsity pattern
   init(*new_sparsity_pattern);
-    
+
   // Put the old values back in the newly compressed matrix
   for (uint i = 0; i < m; i++)
   {
-    uint global_row = i + row_range.first;
-    set(&allvalues[offset[i]], 1, &global_row, offset[i+1]-offset[i], &allcolumns[offset[i]]);
+    const uint global_row = i + row_range.first;
+    set(&allvalues[offset[i]], 1, &global_row,
+        offset[i+1]-offset[i], &allcolumns[offset[i]]);
   }
 
-  apply("insert");      
+  apply("insert");
 }
 //-----------------------------------------------------------------------------

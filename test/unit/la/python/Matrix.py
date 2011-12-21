@@ -182,18 +182,14 @@ class AbstractBaseTest(object):
         self.assertEqual(B0.size(0), B1.size(0))
         self.assertEqual(B0.size(1), B1.size(1))
         self.assertEqual(B0.norm("frobenius"), B1.norm("frobenius"))
-        
+
     def test_compress_matrix(self):
-        
-        if self.backend == "MTL4" or self.backend == "STL":
-            # These two backends do not create sparsity patterns
-            pass
-        else:
-            A0, B0 = self.assemble_matrices()
-            A0_norm_0 = A0.norm('frobenius')
-            A0.compress()
-            A0_norm_1 = A0.norm('frobenius')
-            self.assertAlmostEqual(A0_norm_0, A0_norm_1)
+
+        A0, B0 = self.assemble_matrices()
+        A0_norm_0 = A0.norm('frobenius')
+        A0.compress()
+        A0_norm_1 = A0.norm('frobenius')
+        self.assertAlmostEqual(A0_norm_0, A0_norm_1)
 
     #def test_create_from_sparsity_pattern(self):
 
