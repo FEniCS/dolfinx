@@ -25,17 +25,23 @@ from dolfin import *
 
 class solveTest(unittest.TestCase):
 
-    def test_normalize(self):
+    def test_normalize_average(self):
         size = 200
+        value = 2.0
         x = Vector(size)
-        print "Sum", x.sum()
-        x[:] = 2.0
-        print "Sum", x.sum()
-        cpp.normalize(x, "l2")
-        print "Sum", x.norm("l2")
-        cpp.normalize(x, "average")
-        print "Sum", x.sum()
+        x[:] = value
+        factor =normalize(x, "average")
+        self.assertEqual(factor, value)
+        self.assertEqual(x.sum(), 0.0)
 
+    def test_normalize_l2(self):
+        size = 200
+        value = 2.0
+        x = Vector(size)
+        x[:] = value
+        factor = normalize(x, "l2")
+        self.assertEqual(factor, sqrt(size*value*value))
+        self.assertEqual(x.norm("l2"), 1.0)
 
 if __name__ == "__main__":
     # Turn of DOLFIN output
