@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug 2008.
-// Modified by Garth N. Wells 2011.
-// Modified by Mikael Mortensen 2011.
+// Modified by Ola Skavhaug 2008
+// Modified by Garth N. Wells 2011
+// Modified by Mikael Mortensen 2011
 //
 // First added:  2007-04-30
-// Last changed: 2011-12-06
+// Last changed: 2011-12-21
 
 #include <boost/shared_ptr.hpp>
 
@@ -184,4 +184,3 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   return c;
 }
 //-----------------------------------------------------------------------------
-
