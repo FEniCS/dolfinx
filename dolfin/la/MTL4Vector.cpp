@@ -305,7 +305,8 @@ const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator+= (double a)
 {
-  x += a;
+  mtl::dense_vector<double> _a(this->size(), a);
+  x += _a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -317,7 +318,8 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator-= (double a)
 {
-  x -= a;
+  mtl::dense_vector<double> _a(this->size(), a);
+  x -= _a;
   return *this;
 }
 //-----------------------------------------------------------------------------
