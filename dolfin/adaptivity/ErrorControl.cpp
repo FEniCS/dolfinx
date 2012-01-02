@@ -104,6 +104,7 @@ double ErrorControl::estimate_error(const Function& u,
   compute_extrapolation(z_h, bcs);
 
   // Extract number of coefficients in residual
+  dolfin_assert(_residual);
   const uint num_coeffs = _residual->num_coefficients();
 
   // Attach improved dual approximation to residual
@@ -137,7 +138,9 @@ void ErrorControl::compute_dual(Function& z,
     // Only handle DirichletBCs
     const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (!bc_ptr)
-      continue;
+      dolfin_error("ErrorControl.cpp",
+                   "compute dual solution",
+                   "Only DirichletBCs can be homogenized (for now)");
 
     // Create shared_ptr to boundary condition
     boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
@@ -165,6 +168,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
   info("Extrapolating dual solution.");
 
   // Extrapolate
+  dolfin_assert(_E);
   _Ez_h.reset(new Function(_E));
   _Ez_h->extrapolate(z);
 
@@ -175,9 +179,11 @@ void ErrorControl::compute_extrapolation(const Function& z,
 void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
 {
   // Create Function for the strong cell residual (R_T)
+  dolfin_assert(_a_R_T);
   _R_T.reset(new Function(_a_R_T->function_space(1)));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
+  dolfin_assert(_a_R_dT);
   std::vector<Function> f_e;
   for (uint i = 0; i <= _R_T->geometric_dimension(); i++)
     f_e.push_back(Function(_a_R_dT->function_space(1)));
@@ -198,6 +204,8 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   residual_representation(*_R_T, *_R_dT, u);
 
   // Interpolate dual extrapolation into primal test (dual trial space)
+  dolfin_assert(_a_star);
+  dolfin_assert(_Ez_h);
   _Pi_E_z_h.reset(new Function(_a_star->function_space(1)));
   _Pi_E_z_h->interpolate(*_Ez_h);
 
@@ -208,6 +216,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
+  dolfin_assert(_eta_T);
   assemble(indicators, *_eta_T);
 
   // Take absolute value of indicators
@@ -235,6 +244,10 @@ void ErrorControl::residual_representation(Function& R_T,
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation.");
+
+  dolfin_assert(_a_R_T);
+  dolfin_assert(_L_R_T);
+  dolfin_assert(_cell_bubble);
 
   // Attach cell bubble to _a_R_T and _L_R_T
   const uint num_coeffs = _L_R_T->num_coefficients();
@@ -320,6 +333,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
+  dolfin_assert(_L_R_dT);
   const uint L_R_dT_num_coefficients = _L_R_dT->num_coefficients();
 
   // Attach primal approximation if linear (already attached
@@ -331,6 +345,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   }
 
   // Attach cell residual to residual form
+  dolfin_assert(_R_T);
   _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, _R_T);
 
   // Extract (common) dof map
@@ -348,6 +363,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   std::vector<uint> facet_dofs(num_cells);
 
   // Extract cell_domains etc from right-hand side form
+  dolfin_assert(_L_R_T);
   const MeshFunction<uint>*
     cell_domains = _L_R_T->cell_domains_shared_ptr().get();
   const MeshFunction<uint>*
@@ -355,6 +371,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const MeshFunction<uint>*
     interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
+  dolfin_assert(_a_R_dT);
   // Compute the facet residual for each local facet number
   for (int local_facet = 0; local_facet < (dim + 1); local_facet++)
   {
