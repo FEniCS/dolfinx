@@ -159,7 +159,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   {
     // Build sparsity pattern
     Timer t0("Build sparsity");
-    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern 
+    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
         = A.factory().create_pattern();
     if (sparsity_pattern)
     {
@@ -190,8 +190,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       }
 
       // Create and build sparsity pattern
-      SparsityPattern _sparsity_pattern;
-      _sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+      const SparsityPattern _sparsity_pattern(global_dimensions, 0,
+                                              local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
     }

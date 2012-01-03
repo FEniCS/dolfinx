@@ -118,7 +118,7 @@ void GenericMatrix::compress()
   const uint m = row_range.second - row_range.first;
 
   // Initialize sparsity pattern
-  new_sparsity_pattern->init(global_dimensions, loc_range, off_process_owner);
+  new_sparsity_pattern->init(global_dimensions, 0, loc_range, off_process_owner);
 
   // Declare some variables used to extract matrix information
   std::vector<uint> columns;

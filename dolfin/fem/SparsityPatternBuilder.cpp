@@ -53,7 +53,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   }
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+  sparsity_pattern.init(global_dimensions, 0, local_range, off_process_owner);
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)

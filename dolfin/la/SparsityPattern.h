@@ -51,8 +51,15 @@ namespace dolfin
     /// Create empty sparsity pattern
     SparsityPattern();
 
+    /// Create sparsity pattern for a generic tensor
+    SparsityPattern(const std::vector<uint>& dims,
+                    uint primary_dim,
+                    const std::vector<std::pair<uint, uint> >& ownership_range,
+                    const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
+
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<uint>& dims,
+              uint primary_dim,
               const std::vector<std::pair<uint, uint> >& ownership_range,
               const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
@@ -61,6 +68,10 @@ namespace dolfin
 
     /// Return rank
     uint rank() const;
+
+    /// Return primary dimension (e.g., 0=row parition, 1=column partition)
+    uint primary_dim() const
+    { return _primary_dim; }
 
     /// Return global size for dimension i
     uint size(uint i) const;
@@ -104,11 +115,14 @@ namespace dolfin
     // Shape of tensor
     std::vector<uint> shape;
 
+    // Primary dimension (0=row major, 1=col major, etc)
+    uint _primary_dim;
+
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
 
-    // Sparsity pattern for non-local entries stored as [i, j, i, j, ...]
+    // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<uint> non_local;
 
     // Ownership range for each dimension
