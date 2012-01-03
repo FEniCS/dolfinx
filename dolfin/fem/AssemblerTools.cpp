@@ -138,6 +138,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
+                                        uint primary_dim,
                                         bool reset_sparsity, bool add_values)
 {
   dolfin_assert(a.ufc_form());
@@ -160,7 +161,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern
     Timer t0("Build sparsity");
     boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-        = A.factory().create_pattern();
+        = A.factory().create_pattern(primary_dim);
     if (sparsity_pattern)
     {
 
@@ -190,8 +191,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       }
 
       // Create and build sparsity pattern
-      SparsityPattern _sparsity_pattern;
-      _sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+      const SparsityPattern _sparsity_pattern(global_dimensions, primary_dim,
+                                              local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
     }

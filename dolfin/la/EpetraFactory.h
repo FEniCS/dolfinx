@@ -63,13 +63,13 @@ namespace dolfin
     boost::shared_ptr<GenericVector> create_local_vector() const;
 
     /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern() const;
+    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    boost::shared_ptr<GenericLinearSolver> 
+    boost::shared_ptr<GenericLinearSolver>
       create_krylov_solver(std::string method,
                            std::string preconditioner) const;
 

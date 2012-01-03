@@ -87,7 +87,7 @@ void GenericMatrix::compress()
 
   // Create new sparsity pattern
   boost::shared_ptr<GenericSparsityPattern>
-    new_sparsity_pattern = factory().create_pattern();
+    new_sparsity_pattern = factory().create_pattern(0);
 
   // Check that we get a sparsity pattern (not available for all backends)
   if (!new_sparsity_pattern)

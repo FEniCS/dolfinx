@@ -158,8 +158,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(b, L, 0, reset_sparsity, add_values);
 
   // Allocate data
   Scratch data(a, L);
