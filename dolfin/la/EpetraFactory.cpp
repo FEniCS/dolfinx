@@ -70,9 +70,9 @@ boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> EpetraFactory::create_pattern() const
+boost::shared_ptr<GenericSparsityPattern> EpetraFactory::create_pattern(uint primary_dim) const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern);
+  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
   return pattern;
 }
 //-----------------------------------------------------------------------------

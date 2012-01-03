@@ -52,7 +52,6 @@ namespace dolfin
 
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(const std::vector<uint>& dims,
-                      uint primary_dim,
                       const std::vector<std::pair<uint, uint> >& ownership_range,
                       const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner) = 0;
 

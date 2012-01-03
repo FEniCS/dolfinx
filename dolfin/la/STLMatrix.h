@@ -55,7 +55,7 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix() : _local_range(0, 0), ncols(0) {}
+    STLMatrix() : primary_dim(0), _local_range(0, 0), num_codim_entities(0) {}
 
     /// Copy constructor
     STLMatrix(const STLMatrix& A)
@@ -174,6 +174,12 @@ namespace dolfin
              std::vector<uint>& local_to_global_row,
              bool base_one = false) const;
 
+    /// Return matrix in CSC format
+    void csc(std::vector<double>& vals, std::vector<uint>& rows,
+             std::vector<uint>& col_ptr,
+             std::vector<uint>& local_to_global_col,
+             bool base_one = false) const;
+
     /// Return number of global non-zero entries
     uint nnz() const;
 
@@ -182,19 +188,32 @@ namespace dolfin
 
   private:
 
-    // Local row range
+    /// Return matrix in compressed format
+    void compressed_storage(std::vector<double>& vals,
+                            std::vector<uint>& rows,
+                            std::vector<uint>& col_ptr,
+                            std::vector<uint>& local_to_global_col,
+                            bool base_one) const;
+
+    // Primary dimension (0=row-wise storage, 1=column-wise storage)
+    uint primary_dim;
+
+    // Local ownership range (row range for row-wise storage, column
+    // range for column-wise storage)
     std::pair<uint, uint> _local_range;
 
-    // Number of columns
-    uint ncols;
+    // Number of columns (row-wise storage) or number of rows (column-wise
+    // storage)
+    uint num_codim_entities;
 
-    // Storages of columns
-    std::vector<std::vector<uint> > _cols;
+    // Storage of columns (row-wise storgae) / row (column-wise storgae)
+    // indices
+    std::vector<std::vector<uint> > codim_indices;
 
     // Storage of values
     std::vector<std::vector<double> > _vals;
 
-    // Off-process data
+    // Off-process data ([i, j], value)
     boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
 
   };

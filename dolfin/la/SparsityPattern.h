@@ -49,7 +49,7 @@ namespace dolfin
   public:
 
     /// Create empty sparsity pattern
-    SparsityPattern();
+    SparsityPattern(uint primary_dim);
 
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<uint>& dims,
@@ -59,7 +59,6 @@ namespace dolfin
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<uint>& dims,
-              uint primary_dim,
               const std::vector<std::pair<uint, uint> >& ownership_range,
               const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
@@ -116,7 +115,7 @@ namespace dolfin
     std::vector<uint> shape;
 
     // Primary dimension (0=row major, 1=col major, etc)
-    uint _primary_dim;
+    const uint _primary_dim;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;

@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern() : _primary_dim(0)
+SparsityPattern::SparsityPattern(uint primary_dim) : _primary_dim(primary_dim)
 {
   // Do nothing
 }
@@ -41,11 +41,12 @@ SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
   uint primary_dim,
   const std::vector<std::pair<uint, uint> >& ownership_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
+  : _primary_dim(primary_dim)
 {
-  init(dims, primary_dim, ownership_range, off_process_owner);
+  init(dims, ownership_range, off_process_owner);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const std::vector<uint>& dims, uint primary_dim,
+void SparsityPattern::init(const std::vector<uint>& dims,
   const std::vector<std::pair<uint, uint> >& ownership_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
 {
@@ -58,9 +59,6 @@ void SparsityPattern::init(const std::vector<uint>& dims, uint primary_dim,
 
   // Store dimensions
   shape = dims;
-
-  // Store primary dimsion index
-  _primary_dim = primary_dim;
 
  // Set ownership range
   this->ownership_range = ownership_range;

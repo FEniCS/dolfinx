@@ -93,23 +93,23 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // PaStiX object
   pastix_data_t* pastix_data = NULL;
 
-  // Matrix data
+  // Matrix data in compressed sparse column format
   std::vector<double> vals;
-  std::vector<uint> cols, row_ptr, local_to_global_rows;
-  A->csr(vals, cols, row_ptr, local_to_global_rows, false);
+  std::vector<uint> rows, col_ptr, local_to_global_cols;
+  A->csc(vals, rows, col_ptr, local_to_global_cols, false);
 
-  int* _row_ptr = reinterpret_cast<int*>(&row_ptr[0]);
-  int* _cols = reinterpret_cast<int*>(&cols[0]);
-  int* _local_to_global_rows = reinterpret_cast<int*>(&local_to_global_rows[0]);
+  int* _col_ptr = reinterpret_cast<int*>(&col_ptr[0]);
+  int* _rows = reinterpret_cast<int*>(&rows[0]);
+  int* _local_to_global_cols = reinterpret_cast<int*>(&local_to_global_cols[0]);
   double* _vals = &vals[0];
 
-  const uint n = row_ptr.size() - 1;
+  const uint n = col_ptr.size() - 1;
 
   // Check matrix
   if (parameters["check_matrix"])
   {
     d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_YES, API_YES,
-		                     n, &_row_ptr, &_cols, &_vals, &_local_to_global_rows, 1);
+		                     n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
   }
 
   // Number of threads per MPI process
@@ -143,8 +143,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Graph (matrix) is distributed
   iparm[IPARM_GRAPHDIST] = API_YES;
 
-  Array<int> perm(local_to_global_rows.size());
-  Array<int> invp(local_to_global_rows.size());
+  Array<int> perm(local_to_global_cols.size());
+  Array<int> invp(local_to_global_cols.size());
 
   // Number of RHS vectors
   const int nrhs = 1;
@@ -152,16 +152,16 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Re-order
   iparm[IPARM_START_TASK] = API_TASK_ORDERING;
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
-  d_dpastix(&pastix_data, mpi_comm, n, _row_ptr, _cols, _vals,
-            _local_to_global_rows,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+            _local_to_global_cols,
             perm.data().get(), invp.data().get(),
             NULL, nrhs, iparm, dparm);
 
   // Factorise
   iparm[IPARM_START_TASK] = API_TASK_NUMFACT;
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
-  d_dpastix(&pastix_data, mpi_comm, n, _row_ptr, _cols, _vals,
-            _local_to_global_rows,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+            _local_to_global_cols,
             perm.data().get(), invp.data().get(),
             NULL, nrhs, iparm, dparm);
 
@@ -184,7 +184,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
-            _local_to_global_rows,
+            _local_to_global_cols,
             perm.data().get(), invp.data().get(),
             b_ptr, nrhs, iparm, dparm);
 

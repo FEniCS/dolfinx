@@ -87,7 +87,7 @@ void GenericMatrix::compress()
 
   // Create new sparsity pattern
   boost::shared_ptr<GenericSparsityPattern>
-    new_sparsity_pattern = factory().create_pattern();
+    new_sparsity_pattern = factory().create_pattern(0);
 
   // Check that we get a sparsity pattern (not available for all backends)
   if (!new_sparsity_pattern)
@@ -118,7 +118,7 @@ void GenericMatrix::compress()
   const uint m = row_range.second - row_range.first;
 
   // Initialize sparsity pattern
-  new_sparsity_pattern->init(global_dimensions, 0, loc_range, off_process_owner);
+  new_sparsity_pattern->init(global_dimensions, loc_range, off_process_owner);
 
   // Declare some variables used to extract matrix information
   std::vector<uint> columns;
