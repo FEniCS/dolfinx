@@ -140,8 +140,11 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
   }
 
-  // Graph (matrix) is distributed
-  iparm[IPARM_GRAPHDIST] = API_YES;
+  // Graph (matrix) distributed
+  if (MPI::num_processes() > 1)
+    iparm[IPARM_GRAPHDIST] = API_YES;
+  else
+    iparm[IPARM_GRAPHDIST] = API_NO;
 
   Array<int> perm(local_to_global_cols.size());
   Array<int> invp(local_to_global_cols.size());
