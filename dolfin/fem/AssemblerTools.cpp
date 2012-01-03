@@ -159,7 +159,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   {
     // Build sparsity pattern
     Timer t0("Build sparsity");
-    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern 
+    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
         = A.factory().create_pattern();
     if (sparsity_pattern)
     {
@@ -206,7 +206,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // If tensor is not reset, check that dimensions are correct
     for (uint i = 0; i < a.rank(); ++i)
     {
-      if (A.size(i) != dofmaps[i]-> global_dimension())
+      if (A.size(i) != dofmaps[i]->global_dimension())
       {
         dolfin_error("AssemblerTools.cpp",
                      "assemble form",
