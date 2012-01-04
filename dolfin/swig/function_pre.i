@@ -47,6 +47,11 @@ namespace dolfin
 %ignore dolfin::Function::Function(const FunctionSpace&, std::string);
 
 //-----------------------------------------------------------------------------
+// Modifying the interface of GenericFunction
+//-----------------------------------------------------------------------------
+%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
+
+//-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
 %rename(_function_space) dolfin::Function::function_space;
