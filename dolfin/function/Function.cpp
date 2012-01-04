@@ -355,15 +355,10 @@ void Function::eval(Array<double>& values,
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
-  // FIXME: Rather than computing num_tensor_entries, we could just use
-  //        values.size()
-
   // Compute in tensor (one for scalar function, . . .)
-  uint num_tensor_entries = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    num_tensor_entries *= element.value_dimension(i);
+  const uint value_size_loc = value_size();
 
-  dolfin_assert(values.size() == num_tensor_entries);
+  dolfin_assert(values.size() == value_size_loc);
 
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -372,17 +367,17 @@ void Function::eval(Array<double>& values,
   restrict(&coefficients[0], element, dolfin_cell, ufc_cell);
 
   // Create work vector for basis
-  std::vector<double> basis(num_tensor_entries);
+  std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (uint j = 0; j < num_tensor_entries; ++j)
+  for (uint j = 0; j < value_size_loc; ++j)
     values[j] = 0.0;
 
   // Compute linear combination
   for (uint i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
-    for (uint j = 0; j < num_tensor_entries; ++j)
+    for (uint j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
 }
@@ -549,15 +544,13 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
-  uint num_tensor_entries = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    num_tensor_entries *= element.value_dimension(i);
+  const uint value_size_loc = value_size();
 
   // Resize Array for holding vertex values
-  vertex_values.resize(num_tensor_entries*(_function_space->mesh()->num_vertices()));
+  vertex_values.resize(value_size_loc*(mesh.num_vertices()));
 
   // Create vector to hold cell vertex values
-  std::vector<double> cell_vertex_values(num_tensor_entries*num_cell_vertices);
+  std::vector<double> cell_vertex_values(value_size_loc*num_cell_vertices);
 
   // Create vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -580,9 +573,9 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < num_tensor_entries; ++i)
+      for (uint i = 0; i < value_size_loc; ++i)
       {
-        const uint local_index  = vertex.pos()*num_tensor_entries + i;
+        const uint local_index  = vertex.pos()*value_size_loc + i;
         const uint global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }

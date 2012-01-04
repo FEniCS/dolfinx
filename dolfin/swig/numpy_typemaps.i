@@ -120,7 +120,7 @@ SWIGINTERN bool convert_numpy_to_array_no_check_ ## TYPE_NAME(PyObject* input, T
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous and uses dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, and uses dtype='DESCR'.");
   return false;
 }
 }
@@ -172,14 +172,15 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
   if (PyArray_Check(input)) 
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
-    if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE))
+    if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE) && 
+	(PyArray_NDIM(xa)==1))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
       _array_dim = static_cast<dolfin::uint>(PyArray_DIM(xa,0));
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous and uses dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, with 1 dimension, and uses dtype='DESCR'.");
   return false;
 }
 }
