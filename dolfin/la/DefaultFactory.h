@@ -23,6 +23,7 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin

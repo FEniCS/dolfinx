@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -56,7 +57,8 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> create_local_vector() const = 0;
 
     /// Create empty sparsity pattern (returning zero if not used/needed)
-    virtual boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const = 0;
+    virtual boost::shared_ptr<GenericSparsityPattern>
+      create_pattern(uint primary_dim) const = 0;
 
     /// Create LU solver
     virtual boost::shared_ptr<GenericLUSolver>
@@ -64,8 +66,7 @@ namespace dolfin
 
     /// Create Krylov solver
     virtual boost::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(std::string method,
-      std::string preconditioner) const = 0;
+      create_krylov_solver(std::string method, std::string preconditioner) const = 0;
 
     /// Return a list of available LU solver methods.
     /// This function should be overloaded by subclass if non-empty.
