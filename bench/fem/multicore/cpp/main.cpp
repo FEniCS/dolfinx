@@ -75,7 +75,7 @@ double bench(std::string form, const Mesh& mesh)
   Matrix A;
 
   // Intialise matrix
-  AssemblerTools::init_global_tensor(A, *a, true, false);
+  AssemblerTools::init_global_tensor(A, *a, 0, true, false);
 
   // Assemble
   Timer timer("Total time");
