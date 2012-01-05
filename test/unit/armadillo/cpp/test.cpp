@@ -39,7 +39,7 @@ public:
   void test_square_solve()
   {
     arma::mat A = arma::eye<arma::mat>(5, 5);
-    arma::vec b = arma::randu<arma::vec>(5);
+    arma::vec b = arma::randn<arma::vec>(5);
     arma::vec x = arma::solve(A, b);
     double norm = arma::norm(x - b, 2);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(0.0, norm, 1.0e-12);
@@ -47,8 +47,8 @@ public:
 
   void test_least_square_solve()
   {
-    arma::mat A = arma::randu<arma::mat>(8, 6);
-    arma::vec b = arma::randu<arma::vec>(8);
+    arma::mat A = arma::randn<arma::mat>(8, 6);
+    arma::vec b = arma::randn<arma::vec>(8);
     arma::vec x;
     bool result = arma::solve(x, A, b);
     CPPUNIT_ASSERT(result);
