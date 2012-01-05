@@ -47,46 +47,46 @@ namespace dolfin
 
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const
-    { 
+    {
       boost::shared_ptr<GenericMatrix> A(new MTL4Matrix);
-      return A; 
+      return A;
     }
 
     /// Create empty vector (global)
     boost::shared_ptr<GenericVector> create_vector() const
-    { 
+    {
       boost::shared_ptr<GenericVector> x(new MTL4Vector);
-      return x; 
+      return x;
     }
 
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const
-    { 
+    {
       boost::shared_ptr<GenericVector> x(new MTL4Vector);
-      return x; 
+      return x;
     }
 
     /// Dummy sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
-    { 
+    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    {
       boost::shared_ptr<GenericSparsityPattern> pattern;
-      return pattern; 
+      return pattern;
     }
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
-    { 
+    {
       boost::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
-      return solver; 
+      return solver;
     }
 
     /// Create Krylov solver
     boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
                                               std::string preconditioner) const
-    { 
-      boost::shared_ptr<GenericLinearSolver> 
+    {
+      boost::shared_ptr<GenericLinearSolver>
         solver(new ITLKrylovSolver(method, preconditioner));
-      return solver; 
+      return solver;
     }
 
     /// Return a list of available LU solver methods

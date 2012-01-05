@@ -195,7 +195,7 @@ namespace dolfin
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
-    
+
     /// Compress matrix
     virtual void compress();
 

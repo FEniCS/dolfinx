@@ -158,8 +158,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(b, L, 0, reset_sparsity, add_values);
 
   // Allocate data
   Scratch data(a, L);
@@ -397,7 +397,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                                      A_ufc.cell,
                                                      local_facet);
           for (uint i = 0; i < data.Ae.size(); i++)
-              data.Ae[i] += A_ufc.A[i];
+            data.Ae[i] += A_ufc.A[i];
         }
 
         // Add exterior facet tensor for b
@@ -566,13 +566,21 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
     if (bc_value != boundary_values.end())
     {
       b[i] = bc_value->second;
+
+      // Zero row (i th)
       for (uint k = 0; k < n; ++k)
-        A[k + i*n] = 0.0;
+        A[i*n + k] = 0.0;
+
       for (uint j = 0; j < m; ++j)
       {
+        // Modify RHS
         b[j] -= A[i + j*n]*bc_value->second;
+
+        // Zero column (i th)
         A[i + j*n] = 0.0;
       }
+
+      // Place one on diagonal (i th)
       A[i + i*n] = 1.0;
     }
   }

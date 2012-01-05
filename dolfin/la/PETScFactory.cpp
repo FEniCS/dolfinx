@@ -52,9 +52,9 @@ boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern() const
+boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern(uint primary_dim) const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern);
+  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
   return pattern;
 }
 //-----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ boost::shared_ptr<GenericLinearSolver>
 PETScFactory::create_krylov_solver(std::string method,
                                    std::string preconditioner) const
 {
-  boost::shared_ptr<GenericLinearSolver> 
+  boost::shared_ptr<GenericLinearSolver>
     solver(new PETScKrylovSolver(method, preconditioner));
   return solver;
 }

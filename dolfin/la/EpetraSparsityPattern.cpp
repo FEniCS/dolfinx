@@ -40,15 +40,22 @@ using namespace dolfin;
 using dolfin::uint;
 
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern::EpetraSparsityPattern() : _rank(0), epetra_graph(0)
+EpetraSparsityPattern::EpetraSparsityPattern(uint primary_dim) : _rank(0)
 {
+  if (primary_dim != 0)
+  {
+    dolfin_error("EpetraSparsityPattern.cpp",
+                 "creating sparsity pattern",
+                 "EpetraSparsityPattern can only be created row-wise.");
+  }
+
   dims[0] = 0;
   dims[1] = 0;
 }
 //-----------------------------------------------------------------------------
 EpetraSparsityPattern::~EpetraSparsityPattern()
 {
-  delete epetra_graph;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
@@ -68,7 +75,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     EpetraFactory& f = EpetraFactory::instance();
     Epetra_MpiComm comm = f.get_mpi_comm();
     Epetra_Map row_map(dims[0], num_local_rows, 0, comm);
-    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
+    epetra_graph.reset(new Epetra_FECrsGraph(Copy, row_map, 0));
   }
   else
   {
@@ -83,6 +90,7 @@ void EpetraSparsityPattern::insert(const uint* num_rows,
 {
   if (_rank == 2)
   {
+    dolfin_assert(epetra_graph);
     epetra_graph->InsertGlobalIndices(num_rows[0], reinterpret_cast<const int*>(rows[0]),
                                       num_rows[1], reinterpret_cast<const int*>(rows[1]));
   }
@@ -156,6 +164,7 @@ void EpetraSparsityPattern::apply()
 //-----------------------------------------------------------------------------
 Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const
 {
+  dolfin_assert(epetra_graph);
   return *epetra_graph;
 }
 //-----------------------------------------------------------------------------
