@@ -46,7 +46,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 GenericAdaptiveVariationalSolver::~GenericAdaptiveVariationalSolver()
 {
-  //delete &_adaptive_data;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::solve(const double tol,

@@ -102,7 +102,7 @@ solver.parameters["reference"] = 0.40863917;
 solver.solve(tol, M)
 
 # Write a summary
-summary()
+list_timings()
 
 # Extract solutions on coarsest and finest mesh:
 (u0, p0) = w.root_node().split()

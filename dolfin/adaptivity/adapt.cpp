@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2011-11-12
+// Last changed: 2012-01-02
 
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -552,16 +552,8 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
                  "Unable to extract information about parent mesh entites");
   }
 
-  // Define an unused value as 'undefined'. MER: This will hence
-  // increase with the number of iterations. Not sure if that is good
-  // or bad.
-  uint max_value = 0;
-  for (uint i = 0; i < mesh_function.size(); i++)
-  {
-    if (mesh_function[i] > max_value)
-      max_value = mesh_function[i];
-  }
-  const uint undefined = max_value + 1;
+  // Use very large value as 'undefined'
+  const uint undefined = std::numeric_limits<unsigned int>::max();
 
   // Map values of mesh function into refined mesh function
   boost::shared_ptr<MeshFunction<uint> >
@@ -628,7 +620,6 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     Cell parent_cell(mesh, (*parent_cells)[cell]);
 
     // Extract (global) index of parent facet
-    // Add dolfin_assert here.
     const uint parent_facet_index = (*parent_facets)[*facet];
 
     // Extract local number of parent facet wrt parent cell

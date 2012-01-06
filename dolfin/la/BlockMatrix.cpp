@@ -122,7 +122,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
   // Create tempory vector
   dolfin_assert(matrices[0][0]);
-  boost::shared_ptr<GenericVector> 
+  boost::shared_ptr<GenericVector>
     z_tmp = matrices[0][0]->factory().create_vector();
 
   // Loop over block rows
@@ -157,7 +157,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
   // Currently returns [diag(C * diag(A)^-1 * B) - D]
   if (!symmetry)
   {
-    dolfin_error("BlockMatric.cpp",
+    dolfin_error("BlockMatrix.cpp",
                  "compute Schur complement approximation",
                  "Not implemented for unsymmetric matrix");
   }
