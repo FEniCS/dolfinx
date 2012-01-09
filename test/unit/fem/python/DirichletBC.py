@@ -29,6 +29,16 @@ from dolfin import *
 
 class DirichletBCTest(unittest.TestCase):
 
+    def test_instantiation(self):
+        """ A rudimentary test for instantiation"""
+        # FIXME: Need to be expanded
+        mesh = UnitCube(8, 8, 8)
+        V = FunctionSpace(mesh, "CG", 1)
+
+        bc0 = DirichletBC(V, 1, "x[0]<0")
+        bc1 = DirichletBC(bc0)
+        self.assertTrue(bc0.function_space() == bc1.function_space())
+    
     def test_director_lifetime(self):
         """Test for any problems with objects with directors going out
         of scope"""
