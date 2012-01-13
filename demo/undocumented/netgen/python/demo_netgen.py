@@ -23,6 +23,12 @@
 from dolfin import *
 from dolfin.mesh.netgen import *
 
+# Check that we have NETGEN
+if not has_netgen():
+    print "Sorry, this demo requires NETGEN."
+    import sys
+    sys.exit(0)
+
 # Create an interesting geometry (adapted from NETGEN demo cubeandspheres.geo)
 cube = Brick(0, 0, 0, 1, 1, 1)
 inner = Sphere(0.5, 0.5, 0.5, 0.58)
