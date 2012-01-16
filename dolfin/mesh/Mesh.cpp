@@ -40,6 +40,7 @@
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
 #include "MeshSmoothing.h"
+#include "MeshTransformation.h"
 #include "ParallelData.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -281,6 +282,16 @@ dolfin::Mesh Mesh::renumber_by_color() const
   const uint D = topology().dim();
   coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
+}
+//-----------------------------------------------------------------------------
+void Mesh::rotate(double angle, uint axis)
+{
+  MeshTransformation::rotate(*this, angle, axis);
+}
+//-----------------------------------------------------------------------------
+void Mesh::rotate(double angle, uint axis, const Point& p)
+{
+  MeshTransformation::rotate(*this, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary)

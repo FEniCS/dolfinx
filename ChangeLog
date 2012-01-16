@@ -1,3 +1,4 @@
+ - Add functionality for rotating meshes
  - Add mesh generation based on NETGEN constructive solid geometry
  - Generalise SparsityPattern and STLMatrix to support column-wise storage
  - Add interfaces to wrap PaStiX and MUMPS direct solvers
