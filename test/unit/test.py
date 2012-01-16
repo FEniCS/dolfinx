@@ -38,19 +38,20 @@ tests = {
                        "FiniteElement", "SystemAssembler"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace",
                        "SpecialFunctions"],
-    "io":             ["test", "vtk", "XMLMeshFunction", "XMLMesh",
-                       "XMLMeshValueCollection", "XMLVector"],
+    "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
+                       "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData"],
     "jit":            ["test"],
     "la":             ["test", "Matrix", "Scalar", "Vector"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["test", "Edge", "Face", "MeshData", "MeshEditor",
+    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
                        "MeshFunction", "MeshIterator", "MeshMarkers",
                        "MeshValueCollection"],
-    "parameter":      ["test"],
+    "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "quadrature":     ["test"],
+    "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
+    "intersection":   ["IntersectionOperator"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
@@ -81,7 +82,7 @@ for prefix in prefixes:
             print "Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix)
             print "----------------------------------------------------------------------"
 
-            cpptest_executable = subtest + "_" + test
+            cpptest_executable = "test_" + subtest
             if platform.system() == 'Windows':
                 cpptest_executable += '.exe'
             print "C++:   ",

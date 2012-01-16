@@ -1,3 +1,4 @@
+ - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]

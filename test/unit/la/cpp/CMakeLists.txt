@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 include_directories(${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(Vector Vector.cpp)
+add_executable(test_Vector Vector.cpp)
 
 # Target libraries
-target_link_libraries(Vector ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_Vector ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

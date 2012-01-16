@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-14
-// Last changed: 2011-10-30
+// Last changed: 2012-01-11
 //
 // Unit tests for the mesh library
 
@@ -218,166 +218,6 @@ public:
 
 };
 
-class MeshValueCollections : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(MeshValueCollections);
-  CPPUNIT_TEST(testAssign2DCells);
-  CPPUNIT_TEST(testAssign2DFacets);
-  CPPUNIT_TEST(testAssign2DVertices);
-  CPPUNIT_TEST(testMeshFunctionAssign2DCells);
-  CPPUNIT_TEST(testMeshFunctionAssign2DFacets);
-  CPPUNIT_TEST(testMeshFunctionAssign2DVertices);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void testAssign2DCells()
-  {
-    UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
-    MeshValueCollection<int> f(2);
-    bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      bool this_new;
-      const int value = ncells - cell->index();
-      this_new = f.set_value(cell->index(), value, mesh);
-      all_new = all_new && this_new;
-    }
-    MeshValueCollection<int> g(2);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(ncells, f.size());
-    CPPUNIT_ASSERT_EQUAL(ncells, g.size());
-    CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const int value = ncells - cell->index();
-      CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
-    }
-  }
-
-  void testAssign2DFacets()
-  {
-    UnitSquare mesh(3, 3);
-    mesh.init(2,1);
-    const dolfin::uint ncells = mesh.num_cells();
-    MeshValueCollection<int> f(1);
-    bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
-      {
-        bool this_new;
-        this_new = f.set_value(cell->index(), i, value+i);
-        all_new = all_new && this_new;
-      }
-    }
-    MeshValueCollection<int> g(1);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
-    CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
-    CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
-      {
-        const int value = ncells - cell->index() + i;
-        CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
-      }
-    }
-  }
-
-  void testAssign2DVertices()
-  {
-    UnitSquare mesh(3, 3);
-    mesh.init(2,0);
-    const dolfin::uint ncells = mesh.num_cells();
-    MeshValueCollection<int> f(0);
-    bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
-      {
-        bool this_new;
-        this_new = f.set_value(cell->index(), i, value+i);
-        all_new = all_new && this_new;
-      }
-    }
-    MeshValueCollection<int> g(0);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
-    CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
-    CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
-      {
-        const int value = ncells - cell->index() + i;
-        CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
-      }
-    }
-  }
-
-  void testMeshFunctionAssign2DCells()
-  {
-    UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
-    MeshFunction<int> f(mesh, 2, 0);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      f[cell->index()] = ncells - cell->index();
-    }
-    MeshValueCollection<int> g(2);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(ncells, f.size());
-    CPPUNIT_ASSERT_EQUAL(ncells, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const int value = ncells - cell->index();
-      CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
-    }
-  }
-
-  void testMeshFunctionAssign2DFacets()
-  {
-    UnitSquare mesh(3, 3);
-    mesh.init(1);
-    MeshFunction<int> f(mesh, 1, 25);
-    MeshValueCollection<int> g(1);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(mesh.num_facets(), f.size());
-    CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
-      {
-        CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
-      }
-    }
-  }
-
-  void testMeshFunctionAssign2DVertices()
-  {
-    UnitSquare mesh(3, 3);
-    mesh.init(0);
-    MeshFunction<int> f(mesh, 0, 25);
-    MeshValueCollection<int> g(0);
-    g = f;
-    CPPUNIT_ASSERT_EQUAL(mesh.num_vertices(), f.size());
-    CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
-      {
-        CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
-      }
-    }
-  }
-
-};
-
 class InputOutput : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(InputOutput);
@@ -465,7 +305,6 @@ public:
 int main()
 {
   CPPUNIT_TEST_SUITE_REGISTRATION(MeshIterators);
-  CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollections);
 
   // FIXME: The following test breaks in parallel
   if (dolfin::MPI::num_processes() == 1)

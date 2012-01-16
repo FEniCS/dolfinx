@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Johannes Ring
+// Copyright (C) 2007 Magnus Vikstrøm
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,37 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-09-11
-// Last changed: 2009-09-11
+// First added:  2007-05-29
+// Last changed: 2012-01-12
 //
-// Just a convenience test runner everything went smooth (it did!)
 
 #include <dolfin.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/common/unittest.h>
 
 using namespace dolfin;
+
+class LocalMeshDataIO : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE(LocalMeshDataIO);
+  CPPUNIT_TEST(testRead);
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+// FIXME: Not a proper unit test. When LocalMeshData has a public interface
+// FIXME: we can expand on these
+  void testRead()
+  {
+    // Create undirected graph with edges added out of order (should pass)
+    File file("../../../../data/meshes/snake.xml.gz");
+    LocalMeshData localdata;
+    file >> localdata;
+  }
+};
+
+
+CPPUNIT_TEST_SUITE_REGISTRATION(LocalMeshDataIO);
 
 int main()
 {
