@@ -23,28 +23,14 @@
 import unittest
 from dolfin import *
 
-class VectorXML_IO(unittest.TestCase):
-
-    def testSaveReadVector(self):
-        size = 512
-        x = Vector(size)
-        x[:] = 1.0
-
-        out_file = File("test_vector_xml.xml")
-        out_file << x
-
-        y = Vector()
-        out_file >> y
-        self.assertEqual(x.size(), y.size())
-        self.assertAlmostEqual((x - y).norm("l2"), 0.0)
-
+# FIXME: Not a proper unit test. When LocalMeshData has a public interface
+# FIXME: we can expand on these
 class LocalMeshDataXML_IO(unittest.TestCase):
 
     def testRead(self):
-        file = File("../../../../data/meshes/snake.xml.gz");
-        localdata = cpp.LocalMeshData();
-        file >> localdata;
-
+        file = File("../../../../data/meshes/snake.xml.gz")
+        localdata = cpp.LocalMeshData()
+        file >> localdata
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,11 +1,13 @@
+ - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
+ - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes
  - Add mesh generation based on NETGEN constructive solid geometry
  - Generalise SparsityPattern and STLMatrix to support column-wise storage
  - Add interfaces to wrap PaStiX and MUMPS direct solvers
  - Add CoordinateMatrix class
  - Make STLMatrix work in parallel
- - Fix wrong link in Python quick reference
  - Remove all tr1::tuple and use boost::tuple
+ - Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]
  - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
  - Recompile all forms with FFC 1.0.0

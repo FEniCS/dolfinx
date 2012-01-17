@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-29
-// Last changed: 2007-05-29
+// Last changed: 2012-01-12
 //
 
 #include <dolfin.h>
@@ -24,24 +24,6 @@
 #include <dolfin/common/unittest.h>
 
 using namespace dolfin;
-
-class LocalMeshDataIO : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(LocalMeshDataIO);
-  CPPUNIT_TEST(testRead);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void testRead()
-  {
-    // Create undirected graph with edges added out of order (should pass)
-    File file("../../../../data/meshes/snake.xml.gz");
-    LocalMeshData localdata;
-    file >> localdata;
-  }
-};
-
 
 class MeshValueCollectionIO : public CppUnit::TestFixture
 {
@@ -73,7 +55,6 @@ public:
 };
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION(LocalMeshDataIO);
 CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollectionIO);
 
 int main()
