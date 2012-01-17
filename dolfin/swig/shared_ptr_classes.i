@@ -140,7 +140,6 @@
 %shared_ptr(dolfin::FacetFunction<dolfin::uint>)
 %shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 
-
 // parameters
 %shared_ptr(dolfin::Parameters)
 %shared_ptr(dolfin::GlobalParameters)
