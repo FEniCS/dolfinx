@@ -22,6 +22,7 @@ endforeach()
 
 # List of possible locations for SLEPC_DIR
 set(slepc_dir_locations "")
+list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.2")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.1")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.0.0")
 list(APPEND slepc_dir_locations "/usr/local/lib/slepc")
