@@ -28,51 +28,64 @@
 
 import os
 import re
+import glob
+import time
+from codesnippets import *
 
-# Template code for all combined SWIG modules
-swig_template = r"""
-%%{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL %s
-#include <numpy/arrayobject.h>
-%%}
+# Create time info for labeling generated code
+_local_time = time.localtime()
+_date_form = dict(year = _local_time.tm_year,
+                  month = _local_time.tm_mon,
+                  day = _local_time.tm_yday)
 
-%%init%%{
-import_array();
-%%}
+# Create form for copyright statement to a SWIG interface file
+_copyright_form_swig = dict(comment = r"//")
+_copyright_form_swig.update(_date_form)
 
-// Global shared ptr declarations
-%%include "dolfin/swig/shared_ptr_classes.i"
+# Combined modules with sub modules
+combined_modules = dict(common = ["common", "parameter", "log", "io"],
+                        la = ["la", "nls"],
+                        mesh = ["mesh", "intersection", "refinement", "ale"],
+                        function = ["function", "plot", "math"],
+                        fem = ["fem", "adaptivity", "quadrature"])
 
-// Global typemaps
-%%include "dolfin/swig/typemaps.i"
-%%include "dolfin/swig/std_pair_typemaps.i"
-%%include "dolfin/swig/numpy_typemaps.i"
-%%include "dolfin/swig/array_typemaps.i"
-%%include "dolfin/swig/std_vector_typemaps.i"
-%%include "dolfin/swig/std_set_typemaps.i"
-%%include "dolfin/swig/std_map_typemaps.i"
-
-// Global exceptions
-%%include <exception.i>
-%%include "dolfin/swig/exceptions.i"
-
-// Do not expand default arguments in C++ by generating two an extra 
-// function in the SWIG layer. This reduces code bloat.
-%%feature("compactdefaultargs");
-
-// STL SWIG string class
-%%include <std_string.i>
-"""
+# List of headers to exclude (add more here)
+excludes = ["plot.h", "IntersectionOperatorImplementation.h" ]
 
 def create_combined_module_file(combined_module):
     """
     Create and initiate the main SWIG interface file for each
     comined module file
     """
+
+    # Open file
     combined_module_file = open(os.path.join("modules", \
                                              combined_module+".i"), "w")
+
+    combined_module_file.write(copyright_statement%(_copyright_form_swig))
+
+    combined_module_file.write()
     
+    # FIXME: Continue here
+    return combined_module_file
+
+def generate_typemap_includes():
+    """
+    Generate an include file which includes all typemap files under
+
+       dolfin/swig/typemaps
+       
+    """
+
+    include_file = open(os.path.join("typemaps", "includes.i"), "w")
+    include_file.write(copyright_statement%(_copyright_form_swig))
+    include_file.write("""
+//-----------------------------------------------------------------------------
+// Include all global typemap files
+//-----------------------------------------------------------------------------
+""")
+    for typemap_file in glob.glob("typemaps/*.i"):
+        include_file.write("%%include dolfin/swig/typemaps/%s\n"%typemap_file)
 
 def extract_module_header_files(module):
     """
@@ -88,109 +101,116 @@ def extract_module_header_files(module):
             # Get just the file name (after last /) and check against excludes:
             if not header.split("/")[-1] in excludes:
                 module_headers.append(header)
-            
+    
     return module_headers
 
-
-def write_module_code(module, combined_module, combined_module_file):
+def write_module_code(module, combinedmodule):
     """
     Write SWIG module code.
 
-    1) Append %include statements for a combined module
+    1) Write include.i file which consist of include of dolfin header files
     2) Write an import file to facilitate SWIG type import for each module
-    3) Write %shared_ptr statements which each combined module reads in
     
     """
 
-    # Generate module imports
-    import_file = open(os.path.join("import", module + ".i"), "w")
-    import_file.write("// Auto generated import statements for the "\
-                      "SWIG module: '%s'\n\n"% module)
-    combined_module_file.write("\n// DOLFIN headers included from %s\n" % module)
+    def write_include_modifier(module, modifier):
+        """
+        Write an include statements for pre or post modifier
+        """
+        if os.path.isfile(os.path.join(module, modifier + ".i")):
+            files[file_type].write("%%include \"dolfin/swig/%s/%s.i\"\n" % \
+                                   (module, modifier))
 
-    # Check if there is a foo_pre.i file
-    if os.path.isfile(module+"_pre.i"):
-        combined_module_file.write("%%include \"dolfin/swig/%s_pre.i\"\n" % module)
+    # Get all headers in module
+    headers = extract_module_header_files(module)
 
-    # Iterate over all headers in the module
-    for header in extract_module_header_files(module):
-        
-        # Write header include statement to the combined %include file
-        combined_module_file.write("%%include \"%s\"\n" % header)
-
-        # Write header import statement
-        import_file.write('%%import(module="dolfin.cpp.%s") "%s"\n'%\
-                          (combined_module, header))
+    # File form
+    header_forms = dict(includes="%%include \"%s\"\n",
+                        imports="%%%%import(module=\"dolfin.cpp.%s\") \"%%s\"\n" %\
+                        combinedmodule)
     
-    # Check if there is a foo_post.i file
-    if os.path.isfile(module+"_post.i"):
-        combined_module_file.write("%%include \"dolfin/swig/%s_post.i\"\n" % module)
+    # Generate files
+    files = {}
+    for file_type, header_form in header_forms.items():
 
-
-# Combined modules with sub modules
-combined_modules = dict(common = ["common", "parameter", "log", "io"],
-                        la = ["la", "nls"],
-                        mesh = ["mesh", "intersection", "refinement", "ale"],
-                        function = ["function", "plot", "math"],
-                        fem = ["fem", "adaptivity", "quadrature"])
-
-# List of headers to exclude (add more here)
-excludes = ["plot.h", "IntersectionOperatorImplementation.h" ]
-
-# Extract header files
-headers = []
-for combined_module, modules in combined_modules.items():
-
-    # Create a file being the root of the combined module
-    combined_module_file = create_combined_module_file(combined_module)
+        # Create the file
+        files[file_type] = open(os.path.join(module, file_type + ".i"), "w")
+        files[file_type].write(copyright_statement%(_copyright_form_swig))
     
-    # Iterate over modules in each combined module and extract headers
-    for module in modules:
-        write_module_code(module, combined_module, combined_module_file)
-        
+        files[file_type].write("// Auto generated %s statements for the "\
+                               "module: %s\n\n"% (file_type[:-1], module))
 
-# Generate list of header files
-print "Generating file %s" % interface_file
-f = open(interface_file, "w")
-f.write("// Generated list of include files for PyDOLFIN\n")
-for (module, module_headers) in headers:
-    # Generate module imports
-    f_import = open(os.path.join("import", module + ".i"), "w")
-    f_import.write("// Auto generated import statements for the SWIG kernel module: '%s'\n\n"% module)
-    f.write("\n// DOLFIN headers included from %s\n" % module)
-    if os.path.isfile(module+"_pre.i"):
-        f.write("%%include \"dolfin/swig/%s_pre.i\"\n" % module)
-    for header in module_headers:
-        f.write("%%include \"%s\"\n" % header)
-        f_import.write('%%import(module="dolfin.cpp") "%s"\n'%header)
-    if os.path.isfile(module+"_post.i"):
-        f.write("%%include \"dolfin/swig/%s_post.i\"\n" % module)
-    f_import.close()
-f.close()
+        # Check if there is a foo/pre.i file
+        if file_type == "includes":
+            write_include_modifier(module, "pre")
 
-# Create docstrings.i file from docstrings module (only for dolfin.cpp)
-from documentation import generate_docstrings
-generate_docstrings()
+        # Write include or import statement for each individual file
+        for header in headers:
+            files[file_type].write(header_form % header)
+    
+        # Check if there is a foo/post.i file
+        if file_type == "includes":
+            write_include_modifier(module, "post")
 
-# Extract all shared_ptr stored classes and store them in a pyton module
-# and place that under dolfin.compilemodeuls.sharedptrclasses.py
-shared_ptr_classes = re.findall("%shared_ptr\(dolfin::(.+)\)", \
-                                open("shared_ptr_classes.i").read())
+        files[file_type].close()
 
-shared_ptr_classes = filter(lambda x: "NAME" not in x, shared_ptr_classes)
-template = """
-'''
-This module contains the names of the classes in DOLFIN that is
-stored using shared_ptrs. The file is automatically generated by the
-generate.py script in the dolfin/swig directory.
-'''
+def generate_swig_include_files():
 
-__all__ = ['shared_ptr_classes']
+    # Scan typemap directory and generate an include file
+    generate_typemap_includes()
 
-shared_ptr_classes = %s
-"""
+    # Iterate over all combined modules
+    for combined_module, modules in combined_modules.items():
 
-par = os.path.pardir
-open(os.path.join(par, par, "site-packages", "dolfin", \
-                  "compilemodules", "sharedptrclasses.py"), "w").write(\
-    template%(repr(shared_ptr_classes)))
+        # Create a file being the root of the combined module
+        combined_module_file = create_combined_module_file(combined_module)
+    
+        # Iterate over modules in each combined module and extract headers
+        for module in modules:
+            write_module_code(module, combined_module)
+
+## Generate list of header files
+#print "Generating file %s" % interface_file
+#f = open(interface_file, "w")
+#f.write("// Generated list of include files for PyDOLFIN\n")
+#for (module, module_headers) in headers:
+#    # Generate module imports
+#    f_import = open(os.path.join("import", module + ".i"), "w")
+#    f_import.write("// Auto generated import statements for the SWIG kernel module: '%s'\n\n"% module)
+#    f.write("\n// DOLFIN headers included from %s\n" % module)
+#    if os.path.isfile(module+"_pre.i"):
+#        f.write("%%include \"dolfin/swig/%s_pre.i\"\n" % module)
+#    for header in module_headers:
+#        f.write("%%include \"%s\"\n" % header)
+#        f_import.write('%%import(module="dolfin.cpp") "%s"\n'%header)
+#    if os.path.isfile(module+"_post.i"):
+#        f.write("%%include \"dolfin/swig/%s_post.i\"\n" % module)
+#    f_import.close()
+#f.close()
+#
+## Create docstrings.i file from docstrings module (only for dolfin.cpp)
+#from documentation import generate_docstrings
+#generate_docstrings()
+#
+## Extract all shared_ptr stored classes and store them in a pyton module
+## and place that under dolfin.compilemodeuls.sharedptrclasses.py
+#shared_ptr_classes = re.findall("%shared_ptr\(dolfin::(.+)\)", \
+#                                open("shared_ptr_classes.i").read())
+#
+#shared_ptr_classes = filter(lambda x: "NAME" not in x, shared_ptr_classes)
+#template = """
+#'''
+#This module contains the names of the classes in DOLFIN that is
+#stored using shared_ptrs. The file is automatically generated by the
+#generate.py script in the dolfin/swig directory.
+#'''
+#
+#__all__ = ['shared_ptr_classes']
+#
+#shared_ptr_classes = %s
+#"""
+#
+#par = os.path.pardir
+#open(os.path.join(par, par, "site-packages", "dolfin", \
+#                  "compilemodules", "sharedptrclasses.py"), "w").write(\
+#    template%(repr(shared_ptr_classes)))
