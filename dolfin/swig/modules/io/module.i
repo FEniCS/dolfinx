@@ -21,12 +21,12 @@
 // Last changed: 2012-01-20
 
 
-// The PyDOLFIN extension module for the common module
-%module(package="dolfin.cpp.common", directors="1") common
+// The PyDOLFIN extension module for the io module
+%module(package="dolfin.cpp.io", directors="1") io
 
 %{
 #include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_COMMON
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_IO
 #include <numpy/arrayobject.h>
 %}
 
@@ -39,17 +39,29 @@ import_array();
 %include "dolfin/swig/globalincludes.i"
 
 // Import types from other combined modules
-
+%include "dolfin/swig/common/imports.i"
+%include "dolfin/swig/parameter/imports.i"
+%include "dolfin/swig/log/imports.i"
+%include "dolfin/swig/la/imports.i"
+%include "dolfin/swig/nls/imports.i"
+%include "dolfin/swig/intersection/imports.i"
+%include "dolfin/swig/mesh/imports.i"
+%include "dolfin/swig/refinement/imports.i"
+%include "dolfin/swig/function/imports.i"
+%include "dolfin/swig/graph/imports.i"
+%include "dolfin/swig/math/imports.i"
+%include "dolfin/swig/quadrature/imports.i"
+%include "dolfin/swig/ale/imports.i"
+%include "dolfin/swig/fem/imports.i"
+%include "dolfin/swig/adaptivity/imports.i"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
 //%feature("autodoc", "1");
-%include "dolfin/swig/common/docstrings.i"
-%include "dolfin/swig/parameter/docstrings.i"
-%include "dolfin/swig/log/docstrings.i"
+%include "dolfin/swig/plot/docstrings.i"
+%include "dolfin/swig/io/docstrings.i"
 
 // Include generated include files for the DOLFIN headers for this module
-%include "dolfin/swig/common/includes.i"
-%include "dolfin/swig/parameter/includes.i"
-%include "dolfin/swig/log/includes.i"
+%include "dolfin/swig/plot/includes.i"
+%include "dolfin/swig/io/includes.i"
 

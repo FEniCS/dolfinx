@@ -48,6 +48,7 @@ import_array();
 %include "dolfin/swig/mesh/imports.i"
 %include "dolfin/swig/refinement/imports.i"
 %include "dolfin/swig/graph/imports.i"
+%include "dolfin/swig/plot/imports.i"
 %include "dolfin/swig/quadrature/imports.i"
 %include "dolfin/swig/ale/imports.i"
 %include "dolfin/swig/fem/imports.i"
@@ -58,11 +59,9 @@ import_array();
 // generated docstrings
 //%feature("autodoc", "1");
 %include "dolfin/swig/function/docstrings.i"
-%include "dolfin/swig/plot/docstrings.i"
 %include "dolfin/swig/math/docstrings.i"
 
 // Include generated include files for the DOLFIN headers for this module
 %include "dolfin/swig/function/includes.i"
-%include "dolfin/swig/plot/includes.i"
 %include "dolfin/swig/math/includes.i"
 
