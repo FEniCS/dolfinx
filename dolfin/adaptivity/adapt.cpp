@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2012-01-02
+// Last changed: 2012-01-20
 
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -34,6 +34,7 @@
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
@@ -42,7 +43,6 @@
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/plot/plot.h>
 #include "ErrorControl.h"
-#include "SpecialFacetFunction.h"
 #include "adapt.h"
 
 using namespace dolfin;
