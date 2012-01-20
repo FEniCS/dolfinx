@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """This script provides a benchmark for Extrapolation"""
 
 # Copyright (C) 2010 Marie E. Rognes
