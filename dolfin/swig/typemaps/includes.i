@@ -1,4 +1,4 @@
-// Auto generated SWIG file for Python interface of DOLFIN
+// SWIG interface file for including all typemaps
 //
 // Copyright (C) 2012 Johan Hake
 //
@@ -18,17 +18,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-01-18
-
+// Last changed: 2012-01-20
 
 //-----------------------------------------------------------------------------
 // Include all global typemap files
 //-----------------------------------------------------------------------------
-%include dolfin/swig/typemaps/typemaps/numpy.i
-%include dolfin/swig/typemaps/typemaps/std_set.i
-%include dolfin/swig/typemaps/typemaps/std_map.i
-%include dolfin/swig/typemaps/typemaps/includes.i
-%include dolfin/swig/typemaps/typemaps/std_vector.i
-%include dolfin/swig/typemaps/typemaps/primitives.i
-%include dolfin/swig/typemaps/typemaps/std_pair.i
-%include dolfin/swig/typemaps/typemaps/array.i
+%include dolfin/swig/typemaps/primitives.i
+%include dolfin/swig/typemaps/std_pair.i
+%include dolfin/swig/typemaps/numpy.i
+%include dolfin/swig/typemaps/array.i
+%include dolfin/swig/typemaps/std_vector.i
+%include dolfin/swig/typemaps/std_set.i
+%include dolfin/swig/typemaps/std_map.i

@@ -18,8 +18,8 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-01-18
+// Last changed: 2012-01-20
 
-// Auto generated import statements for the SWIG module: 'refinement'
+// Auto generated import statements for the module: refinement
 
 %import(module="dolfin.cpp.mesh") "dolfin/refinement/refine.h"

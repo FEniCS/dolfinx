@@ -18,10 +18,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-01-18
+// Last changed: 2012-01-20
 
-// Auto generated import statements for the SWIG module: 'la'
+// Auto generated import statements for the module: la
 
+%include "dolfin/swig/la/pre.i"
 %import(module="dolfin.cpp.la") "dolfin/la/ublas.h"
 %import(module="dolfin.cpp.la") "dolfin/la/GenericLinearSolver.h"
 %import(module="dolfin.cpp.la") "dolfin/la/GenericLUSolver.h"

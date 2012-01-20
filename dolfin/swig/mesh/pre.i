@@ -155,14 +155,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::SubDomain;
 
-//-----------------------------------------------------------------------------
-// Instantiate Hierarchical Mesh template classes
-//-----------------------------------------------------------------------------
-namespace dolfin {
-  class Mesh;
-  template<typename T> class MeshFunction;
-}
-
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
 
 %define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)

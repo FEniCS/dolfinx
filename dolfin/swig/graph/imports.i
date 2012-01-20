@@ -20,15 +20,5 @@
 // First added:  2012-01-18
 // Last changed: 2012-01-20
 
-// Auto generated include statements for the module: function
+// Auto generated import statements for the module: graph
 
-%include "dolfin/swig/function/pre.i"
-%include "dolfin/function/GenericFunction.h"
-%include "dolfin/function/Expression.h"
-%include "dolfin/function/Function.h"
-%include "dolfin/function/FunctionSpace.h"
-%include "dolfin/function/SubSpace.h"
-%include "dolfin/function/Constant.h"
-%include "dolfin/function/SpecialFunctions.h"
-%include "dolfin/function/SpecialFacetFunction.h"
-%include "dolfin/swig/function/post.i"

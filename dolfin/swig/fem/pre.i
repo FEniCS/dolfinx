@@ -179,14 +179,6 @@
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical classes
 //-----------------------------------------------------------------------------
-namespace dolfin
-{
-  class Form;
-  class LinearVariationalProblem;
-  class NonlinearVariationalProblem;
-  class DirichletBC;
-}
-
 %template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
 %template (HierarchicalLinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::LinearVariationalProblem>;

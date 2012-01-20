@@ -33,14 +33,6 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
-// Forward declare FiniteElement
-//-----------------------------------------------------------------------------
-namespace dolfin
-{
-  class FiniteElement;
-}
-
-//-----------------------------------------------------------------------------
 // Ignore reference (to FunctionSpaces) constructors of Function
 //-----------------------------------------------------------------------------
 %ignore dolfin::Function::Function(const FunctionSpace&);
@@ -65,6 +57,11 @@ namespace dolfin
 %rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
 %ignore dolfin::FunctionSpace::collapse() const;
+
+//-----------------------------------------------------------------------------
+// Rename [] for SpecialFacetFunction -> _sub
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::SpecialFacetFunction::operator[];
 
 //-----------------------------------------------------------------------------
 // Ingore operator() in GenericFunction, implemented separately in
@@ -102,10 +99,5 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical FunctionSpace, Function template class
 //-----------------------------------------------------------------------------
-namespace dolfin {
-  class FunctionSpace;
-  class Function;
-}
-
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
 %template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-22
-// Last changed: 2011-10-04
+// Last changed: 2012-01-20
 
 //=============================================================================
 // SWIG directives for the DOLFIN common kernel module (pre)
@@ -25,14 +25,6 @@
 // The directives in this file are applied _before_ the header files of the
 // modules has been loaded.
 //=============================================================================
-
-//-----------------------------------------------------------------------------
-// Forward declare Parameters
-//-----------------------------------------------------------------------------
-namespace dolfin
-{
-  class Parameters;
-}
 
 //-----------------------------------------------------------------------------
 // Global modifications to the Array interface
@@ -61,14 +53,6 @@ namespace dolfin
 // Ignores for Hierarchical
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::operator=;
-
-//-----------------------------------------------------------------------------
-// Forward declare Hierarchical template class
-//-----------------------------------------------------------------------------
-namespace dolfin {
-  template<typename T>
-    class Hierarchical;
-}
 
 //-----------------------------------------------------------------------------
 // Ignore all foo and rename foo_shared_ptr to _foo for SWIG >= 2.0

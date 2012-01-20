@@ -28,19 +28,10 @@
 // modules has been loaded.
 // ===========================================================================
 
-namespace dolfin {
-  class ErrorControl;
-}
-
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical ErrorControl template class
 //-----------------------------------------------------------------------------
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
-
-//-----------------------------------------------------------------------------
-// Rename [] for SpecialFacetFunction -> _sub
-//-----------------------------------------------------------------------------
-%rename(_sub) dolfin::SpecialFacetFunction::operator[];
 
 //-----------------------------------------------------------------------------
 // Ignore GoalFunctional entirely

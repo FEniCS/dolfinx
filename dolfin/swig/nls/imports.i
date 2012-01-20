@@ -18,9 +18,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-01-18
+// Last changed: 2012-01-20
 
-// Auto generated import statements for the SWIG module: 'nls'
+// Auto generated import statements for the module: nls
 
+%include "dolfin/swig/nls/pre.i"
 %import(module="dolfin.cpp.la") "dolfin/nls/NonlinearProblem.h"
 %import(module="dolfin.cpp.la") "dolfin/nls/NewtonSolver.h"
