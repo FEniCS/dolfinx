@@ -152,9 +152,9 @@ namespace dolfin
 #define dolfin_not_implemented() \
   do { \
     dolfin_error("log.h", \
-                 "perform call to DOLFIN function %s", \
+                 "perform call to DOLFIN function", \
                  "The function %s has not been implemented (in %s line %d)", \
-                 __FUNCTION__, __FUNCTION__, __FILE__, __LINE__); \
+                 __FUNCTION__, __FILE__, __LINE__); \
   } while (false)
 
 // Assertion, only active if DEBUG is defined
