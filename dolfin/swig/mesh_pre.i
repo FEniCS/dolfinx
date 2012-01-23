@@ -180,6 +180,9 @@ namespace dolfin {
 %shared_ptr(dolfin::FaceFunction<TYPE>)
 %shared_ptr(dolfin::FacetFunction<TYPE>)
 %shared_ptr(dolfin::VertexFunction<TYPE>)
+
+// Include shared_ptr declaration of MeshValueCollection
+%shared_ptr(dolfin::MeshValueCollection<TYPE>)
 %enddef
 
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)

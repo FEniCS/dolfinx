@@ -192,7 +192,6 @@ CellFunction = type("CellFunction", (),\
 // MeshValueCollection macro
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHVALUECOLLECTION(TYPE, TYPENAME)
-%shared_ptr(dolfin::MeshValueCollection<TYPE>)
 %template(MeshValueCollection ## TYPENAME) dolfin::MeshValueCollection<TYPE>;
 
 %feature("docstring") dolfin::MeshValueCollection::assign "Missing docstring";
