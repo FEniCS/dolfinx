@@ -330,7 +330,7 @@ endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL)
+  find_package(CGAL 3.8)
 endif()
 
 # Check for zlib
