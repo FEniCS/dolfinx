@@ -275,13 +275,13 @@ const std::vector<TYPE>&  ARG_NAME
       else
       {
         SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected."\
-          " Make sure that the numpy array use dtype='DESCR'.");
+          " Make sure that the numpy array use dtype=DESCR.");
       }
     }
     else
     {
       SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected. "\
-		     "Make sure that the numpy array use dtype='DESCR'.");
+		     "Make sure that the numpy array use dtype=DESCR.");
     }
   }
 }
@@ -464,8 +464,8 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE, double, d)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_UINT, uint, I)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE, double, float_)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_UINT, uint, uintc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)

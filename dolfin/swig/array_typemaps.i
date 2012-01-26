@@ -32,13 +32,12 @@
 // NUMPYTYPE  : The NumPy type that is going to be checked for
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
 //              'dolfin::uint'
-// DESCR      : The char descriptor of the NumPy type
 // ARGNAME    : The name of the argument the typemap will kick in for pass nothing
 //              and the typemap will kick in for all argument names
 // CONSTARRAY : If the dolfin::Array is of type const, then pass const for this
 //              argument
 //-----------------------------------------------------------------------------
-%define IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPECHECK, NUMPYTYPE, TYPE_NAME, DESCR, ARGNAME, CONSTARRAY)
+%define IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPECHECK, NUMPYTYPE, TYPE_NAME, ARGNAME, CONSTARRAY)
 
 %typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (CONSTARRAY dolfin::Array<TYPE> &ARGNAME) (dolfin::uint size, TYPE* data)
 {
@@ -103,15 +102,15 @@
 //-----------------------------------------------------------------------------
 
 // Instantiate argument name specific typemaps for non const arguments
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, values, )
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, indices,)
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, vertex_values, )
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, values, )
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, indices,)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, vertex_values, )
 
 // Instantiate argument name independent typemaps for all
 // const Array <{int, uint, double}>& arguments
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, , const)
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, , const)
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, i, , const)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, , const)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, , const)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, , const)
 
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, NPY_UINT)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)

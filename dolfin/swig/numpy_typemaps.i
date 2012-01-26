@@ -120,7 +120,7 @@ SWIGINTERN bool convert_numpy_to_array_no_check_ ## TYPE_NAME(PyObject* input, T
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, and uses dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, and uses dtype=DESCR.");
   return false;
 }
 }
@@ -180,7 +180,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
       return true;
     }
   }
-  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, with 1 dimension, and uses dtype='DESCR'.");
+  PyErr_SetString(PyExc_TypeError,"contiguous numpy array of 'TYPE_NAME' expected. Make sure that the numpy array is contiguous, with 1 dimension, and uses dtype=DESCR.");
   return false;
 }
 }
@@ -208,13 +208,13 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 // NOTE: If a typemap is not used an error will be issued as the generated 
 //       typemap function will not be used 
 //-----------------------------------------------------------------------------
-UNSAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,I)
-UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
-//UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,i)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
+UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
+//UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
-SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,I)
-SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,d)
-SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,i)
+SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
+SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
+SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
 
 NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
