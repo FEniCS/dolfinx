@@ -20,13 +20,12 @@
 // First added:  2012-01-18
 // Last changed: 2012-01-22
 
-// Auto generated include statements for the module: log
+// Auto generated local_import statements for the module: log
 
 %include "dolfin/swig/log/pre.i"
-%include "dolfin/log/log.h"
-%include "dolfin/log/Event.h"
-%include "dolfin/log/LogStream.h"
-%include "dolfin/log/Progress.h"
-%include "dolfin/log/Table.h"
-%include "dolfin/log/LogLevel.h"
-%include "dolfin/swig/log/post.i"
+%import(module="common") "dolfin/log/log.h"
+%import(module="common") "dolfin/log/Event.h"
+%import(module="common") "dolfin/log/LogStream.h"
+%import(module="common") "dolfin/log/Progress.h"
+%import(module="common") "dolfin/log/Table.h"
+%import(module="common") "dolfin/log/LogLevel.h"

@@ -319,6 +319,6 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Parameters> get_global_parameters
 %}
 
 %pythoncode%{
-parameters = _cpp.get_global_parameters()
-del _cpp.get_global_parameters
+parameters = _common.get_global_parameters()
+del _common.get_global_parameters
 %}

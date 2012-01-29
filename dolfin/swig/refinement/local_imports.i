@@ -20,13 +20,6 @@
 // First added:  2012-01-18
 // Last changed: 2012-01-22
 
-// Auto generated include statements for the module: log
+// Auto generated local_import statements for the module: refinement
 
-%include "dolfin/swig/log/pre.i"
-%include "dolfin/log/log.h"
-%include "dolfin/log/Event.h"
-%include "dolfin/log/LogStream.h"
-%include "dolfin/log/Progress.h"
-%include "dolfin/log/Table.h"
-%include "dolfin/log/LogLevel.h"
-%include "dolfin/swig/log/post.i"
+%import(module="mesh") "dolfin/refinement/refine.h"

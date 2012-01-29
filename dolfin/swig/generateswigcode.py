@@ -2,7 +2,7 @@
 #
 # Generate SWIG files for Python interface of DOLFIN
 #
-# Copyright (C) 2007 Anders Logg
+# Copyright (C) 2012 Johan Hake
 #
 # This file is part of DOLFIN.
 #
@@ -19,12 +19,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by <aasmund@simula.no>
-# Modified by Johan Hake, 2009-2012
-# Modified by Kristian B. Oelgaard, 2010
-#
-# First added:  2007-04-12
-# Last changed: 2012-01-17
+# First added:  2012-01-17
+# Last changed: 2012-01-20
 
 import os
 import re
@@ -140,7 +136,7 @@ def create_combined_module_file(combined_module, modules):
             # Do not import files from modules of the same combined module
             if module in modules:
                 continue
-            module_imports.append("%%include \"dolfin/swig/%s/imports.i\""%module)
+            module_imports.append("%%include \"dolfin/swig/%s/local_imports.i\""%module)
 
         combined_module_form["module_imports"] = "\n".join(module_imports)
     else:
@@ -189,6 +185,8 @@ def write_module_code(module, combinedmodule):
     # File form
     header_forms = dict(includes="%%include \"%s\"\n",
                         imports="%%%%import(module=\"dolfin.cpp.%s\") \"%%s\"\n" %\
+                        combinedmodule,
+                        local_imports="%%%%import(module=\"%s\") \"%%s\"\n" %\
                         combinedmodule)
     
     # Generate include and import files
@@ -218,8 +216,10 @@ def write_module_code(module, combinedmodule):
 
         files[file_type].close()
 
-        not_include = [os.path.join(module, "includes.i"),
-                       os.path.join(module, "modules.i")]
+        not_include = [#os.path.join(module, "includes.i"),
+                       #os.path.join(module, "modules.i"),
+                       os.path.join(module, "imports.i"),
+                       ]
 
         # Add interface files
         interface_files = ["../../%s/"%module + \

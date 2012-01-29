@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-01-20
+// Last changed: 2012-01-22
 
 
 // The PyDOLFIN extension module for the io module
@@ -39,21 +39,21 @@ import_array();
 %include "dolfin/swig/globalincludes.i"
 
 // Import types from other combined modules
-%include "dolfin/swig/common/imports.i"
-%include "dolfin/swig/parameter/imports.i"
-%include "dolfin/swig/log/imports.i"
-%include "dolfin/swig/la/imports.i"
-%include "dolfin/swig/nls/imports.i"
-%include "dolfin/swig/intersection/imports.i"
-%include "dolfin/swig/mesh/imports.i"
-%include "dolfin/swig/refinement/imports.i"
-%include "dolfin/swig/function/imports.i"
-%include "dolfin/swig/graph/imports.i"
-%include "dolfin/swig/math/imports.i"
-%include "dolfin/swig/quadrature/imports.i"
-%include "dolfin/swig/ale/imports.i"
-%include "dolfin/swig/fem/imports.i"
-%include "dolfin/swig/adaptivity/imports.i"
+%include "dolfin/swig/common/local_imports.i"
+%include "dolfin/swig/parameter/local_imports.i"
+%include "dolfin/swig/log/local_imports.i"
+%include "dolfin/swig/la/local_imports.i"
+%include "dolfin/swig/nls/local_imports.i"
+%include "dolfin/swig/intersection/local_imports.i"
+%include "dolfin/swig/mesh/local_imports.i"
+%include "dolfin/swig/refinement/local_imports.i"
+%include "dolfin/swig/function/local_imports.i"
+%include "dolfin/swig/graph/local_imports.i"
+%include "dolfin/swig/math/local_imports.i"
+%include "dolfin/swig/quadrature/local_imports.i"
+%include "dolfin/swig/ale/local_imports.i"
+%include "dolfin/swig/fem/local_imports.i"
+%include "dolfin/swig/adaptivity/local_imports.i"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings

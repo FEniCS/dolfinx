@@ -118,11 +118,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // Python. These are then used in the extended Python classes. See below.
 // ---------------------------------------------------------------------------
 %{
-#include "dolfin/swig/Indices.i"
-#include "dolfin/swig/la_get_set_items.i"
+#include "dolfin/swig/la/Indices.i"
+#include "dolfin/swig/la/la_get_set_items.i"
 %}
 
-%include "dolfin/swig/la_get_set_items.i"
+%include "dolfin/swig/la/la_get_set_items.i"
 
 // ---------------------------------------------------------------------------
 // Modify the GenericVector interface
@@ -683,16 +683,16 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define DOWN_CAST_MACRO(TENSOR_TYPE)
 %inline %{
-bool has_type_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
+bool _has_type_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
 { return tensor.has_type<dolfin::TENSOR_TYPE>(); }
 
-dolfin::TENSOR_TYPE & down_cast_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
+dolfin::TENSOR_TYPE & _down_cast_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::TENSOR_TYPE>(); }
 %}
 
 %pythoncode %{
-_has_type_map[TENSOR_TYPE] = has_type_ ## TENSOR_TYPE
-_down_cast_map[TENSOR_TYPE] = down_cast_ ## TENSOR_TYPE
+_has_type_map[TENSOR_TYPE] = _has_type_ ## TENSOR_TYPE
+_down_cast_map[TENSOR_TYPE] = _down_cast_ ## TENSOR_TYPE
 %}
 
 %enddef
@@ -720,24 +720,24 @@ DOWN_CAST_MACRO(uBLASVector)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool has_type_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
+bool _has_type_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
 { return tensor.has_type<dolfin::uBLASDenseMatrix>(); }
 
-dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > & down_cast_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
+dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > & _down_cast_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::uBLASDenseMatrix>(); }
 
-bool has_type_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
+bool _has_type_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
 { return tensor.has_type<dolfin::uBLASSparseMatrix>(); }
 
-dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > & down_cast_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
+dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > & _down_cast_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::uBLASSparseMatrix>(); }
 %}
 
 %pythoncode %{
-_has_type_map[uBLASDenseMatrix] = has_type_uBLASDenseMatrix
-_down_cast_map[uBLASDenseMatrix] = down_cast_uBLASDenseMatrix
-_has_type_map[uBLASSparseMatrix] = has_type_uBLASSparseMatrix
-_down_cast_map[uBLASSparseMatrix] = down_cast_uBLASSparseMatrix
+_has_type_map[uBLASDenseMatrix] = _has_type_uBLASDenseMatrix
+_down_cast_map[uBLASDenseMatrix] = _down_cast_uBLASDenseMatrix
+_has_type_map[uBLASSparseMatrix] = _has_type_uBLASSparseMatrix
+_down_cast_map[uBLASSparseMatrix] = _down_cast_uBLASSparseMatrix
 %}
 
 // ---------------------------------------------------------------------------

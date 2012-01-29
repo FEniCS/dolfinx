@@ -20,13 +20,19 @@
 // First added:  2012-01-18
 // Last changed: 2012-01-22
 
-// Auto generated include statements for the module: log
+// Auto generated local_import statements for the module: common
 
-%include "dolfin/swig/log/pre.i"
-%include "dolfin/log/log.h"
-%include "dolfin/log/Event.h"
-%include "dolfin/log/LogStream.h"
-%include "dolfin/log/Progress.h"
-%include "dolfin/log/Table.h"
-%include "dolfin/log/LogLevel.h"
-%include "dolfin/swig/log/post.i"
+%include "dolfin/swig/common/pre.i"
+%import(module="common") "dolfin/common/init.h"
+%import(module="common") "dolfin/common/defines.h"
+%import(module="common") "dolfin/common/types.h"
+%import(module="common") "dolfin/common/constants.h"
+%import(module="common") "dolfin/common/timing.h"
+%import(module="common") "dolfin/common/Array.h"
+%import(module="common") "dolfin/common/IndexSet.h"
+%import(module="common") "dolfin/common/Set.h"
+%import(module="common") "dolfin/common/Timer.h"
+%import(module="common") "dolfin/common/Variable.h"
+%import(module="common") "dolfin/common/Hierarchical.h"
+%import(module="common") "dolfin/common/MPI.h"
+%import(module="common") "dolfin/common/SubSystemsManager.h"
