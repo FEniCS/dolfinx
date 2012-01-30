@@ -43,17 +43,19 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("bjacobi",          PCBJACOBI)
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
+                              #if PETSC_HAVE_HYPRE
                               ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
+                              #endif
+                              #if PETSC_HAVE_ML
                               ("ml_amg",           PCML);
+                              #endif
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-PETScPreconditioner::preconditioners()
-{
-  return boost::assign::pair_list_of
+// Mapping from preconditioner string to description string
+const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_methods_descr 
+  = boost::assign::pair_list_of
     ("default",          "default preconditioner")
     ("none",             "No preconditioner")
     ("ilu",              "Incomplete LU factorization")
@@ -62,11 +64,20 @@ PETScPreconditioner::preconditioners()
     ("bjacobi",          "Block Jacobi iteration")
     ("sor",              "Successive over-relaxation")
     ("additive_schwarz", "Additive Schwarz")
+    #if PETSC_HAVE_HYPRE
     ("amg",              "Algebraic multigrid")
     ("hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)")
     ("hypre_euclid",     "Hypre parallel incomplete LU factorization")
     ("hypre_parasails",  "Hypre parallel sparse approximate inverse")
+    #endif
+    #if PETSC_HAVE_ML
     ("ml_amg",           "ML algebraic multigrid");
+    #endif
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScPreconditioner::preconditioners()
+{
+  return PETScPreconditioner::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()

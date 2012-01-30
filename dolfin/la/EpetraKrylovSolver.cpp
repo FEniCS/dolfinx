@@ -57,16 +57,19 @@ const std::map<std::string, int> EpetraKrylovSolver::_methods
                               ("tfqmr",    AZ_tfqmr)
                               ("bicgstab", AZ_bicgstab);
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EpetraKrylovSolver::methods()
-{
-  return boost::assign::pair_list_of
+// List of available solvers descriptions
+const std::vector<std::pair<std::string, std::string> > 
+EpetraKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
     ("gmres",      "Generalized minimal residual method")
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraKrylovSolver::methods()
+{
+  return EpetraKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
