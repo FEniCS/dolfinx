@@ -1,3 +1,4 @@
+ - Splitted the SWIG interface into 6 combined modules instead of 1
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes
