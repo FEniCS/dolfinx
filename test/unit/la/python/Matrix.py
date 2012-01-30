@@ -54,9 +54,9 @@ class AbstractBaseTest(object):
 
         if use_backend:
             if self.backend == "uBLAS":
-                backend = globals()[self.backend + self.sub_backend + 'Factory_instance']()
+                backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             else:
-                backend = globals()[self.backend + 'Factory_instance']()
+                backend = globals()[self.backend + 'Factory'].instance()
             return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
             return assemble(a), assemble(b)

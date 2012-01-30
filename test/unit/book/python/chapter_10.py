@@ -356,6 +356,7 @@ class TestPage19(unittest.TestCase):
 
     def test_box_1(self):
         if skip_in_parallel(): return
+        from ufl import FiniteElement
         element = FiniteElement("Lagrange", tetrahedron, 5)
         element = FiniteElement("CG", tetrahedron, 5)
         element = FiniteElement("Brezzi-Douglas-Marini", triangle, 3)
