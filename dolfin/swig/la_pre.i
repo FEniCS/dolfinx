@@ -190,6 +190,11 @@ LA_PRE_FACTORY(DefaultFactory)
 // Run macros for PETSc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
+
+// Ignore reference version of constructor
+%ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
+%ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
+
 LA_PRE_FACTORY(PETScFactory)
 %newobject dolfin::PETScMatrix::copy;
 %newobject dolfin::PETScVector::copy;
