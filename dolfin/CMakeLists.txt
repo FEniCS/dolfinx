@@ -4,28 +4,27 @@ install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Developmen
 #set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+# Macros
+
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
-set(DOLFIN_DIRS
-  adaptivity
-  ale
-  common
-  fem
-  function
-  graph
-  intersection
-  io
-  la
-  log
-  math
-  mesh
-  nls
-  parameter
-  plot
-  quadrature
-  refinement
-  )
+# All files and directories in this directory
+file(GLOB DOLFIN_CONTENT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
+
+# Initialize list
+set(DOLFIN_DIRS)
+
+# List of excluded files and directories
+set(EXCLUDES ${DOLFIN_H} swig CMakeLists.txt)
+
+# Iterate over all directories and files and append to DOLFIN_DIRS
+foreach(_DIR_NAME ${DOLFIN_CONTENT})
+  list(FIND EXCLUDES ${_DIR_NAME} INDEX_EXCLUDES)
+  if (${INDEX_EXCLUDES} LESS 0)
+    list(APPEND DOLFIN_DIRS ${_DIR_NAME})
+  endif()
+endforeach()
 
 #------------------------------------------------------------------------------
 # Install header files
