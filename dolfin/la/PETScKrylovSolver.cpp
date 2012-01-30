@@ -69,11 +69,9 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
                               ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-PETScKrylovSolver::methods()
-{
-  return boost::assign::pair_list_of
+// Mapping from method string to description
+const std::vector<std::pair<std::string, std::string> > 
+  PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
     ("gmres",      "Generalized minimal residual method")
@@ -81,6 +79,11 @@ PETScKrylovSolver::methods()
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("richardson", "Richardson method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScKrylovSolver::methods()
+{
+  return PETScKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >

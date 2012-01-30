@@ -146,6 +146,9 @@ namespace dolfin
     // Available solvers
     static const std::map<std::string, const KSPType> _methods;
 
+    // Available solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+
     /// DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;
 

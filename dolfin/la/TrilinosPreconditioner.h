@@ -86,6 +86,9 @@ namespace dolfin
     // Available named preconditioners
     static const std::map<std::string, int> _preconditioners;
 
+    // Available named preconditionersdescriptions
+    static const std::vector<std::pair<std::string, std::string> >_preconditioners_descr;
+
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
     boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
   };
