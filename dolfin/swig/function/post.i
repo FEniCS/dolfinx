@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-02
-// Last changed: 2012-01-04
+// Last changed: 2012-01-30
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
@@ -49,15 +49,15 @@ def compute_vertex_values(self, values, mesh):
     # Argument checks
     from numpy import ndarray
     if not isinstance(values, ndarray) or len(values.shape) != 1:
-        dolfin_error("function_post.i",
-                     "compute values at the vertices",
-                     "Expected a numpy array with dimension 1 as first argument")
+        common.dolfin_error("function_post.i",
+			    "compute values at the vertices",
+			    "Expected a numpy array with dimension 1 as first argument")
     
     value_size = self.value_size()*mesh.num_vertices()
     if len(values) != value_size:
-        dolfin_error("function_post.i",
-                     "compute values at the vertices",
-                     "The provided array need to be of size value_size()*mesh.num_vertices()")
+        common.dolfin_error("function_post.i",
+			    "compute values at the vertices",
+			    "The provided array need to be of size value_size()*mesh.num_vertices()")
 
     # Call the actuall method
     self._compute_vertex_values(values, mesh)

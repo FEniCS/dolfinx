@@ -172,6 +172,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %shared_ptr(dolfin::FaceFunction<TYPE>)
 %shared_ptr(dolfin::FacetFunction<TYPE>)
 %shared_ptr(dolfin::VertexFunction<TYPE>)
+%shared_ptr(dolfin::MeshValueCollection<TYPE>)
 %enddef
 
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)

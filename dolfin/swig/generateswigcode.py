@@ -43,12 +43,12 @@ copyright_form_swig.update(_date_form)
 
 # Extract original modules from dolfin.h
 # NOTE: We need these, in particular the order
-original_modules = []
+original_submodules = []
 f = open("../dolfin.h")
 for line in f:
     if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
         module = line.split("/")[1]
-        original_modules += [module]
+        original_submodules += [module]
 f.close()
 
 # Combined modules with sub modules
@@ -80,7 +80,7 @@ for combined_module, modules in combined_modules.items():
                            "subdirectory under the 'modules' directory." % \
                            combined_module)
     for module in modules:
-        if module not in original_modules:
+        if module not in original_submodules:
             raise RuntimeError("Found a module: '%s' listed in the '%s' "\
                                "combined module, which is not part of the "\
                                "original DOLFIN modules." % \
@@ -88,16 +88,16 @@ for combined_module, modules in combined_modules.items():
 
 # Create a map from original modules to the combined
 original_to_combined = {}
-for module in original_modules:
-    for combined_module, modules in combined_modules.items():
-        if module in modules:
-            original_to_combined[module] = combined_module
+for submodule in original_submodules:
+    for combined_module, submodules in combined_modules.items():
+        if submodule in submodules:
+            original_to_combined[submodule] = combined_module
             break
 
 # List of headers to exclude (add more here)
 excludes = ["plot.h", "IntersectionOperatorImplementation.h" ]
 
-def create_combined_module_file(combined_module, modules):
+def create_combined_module_file(combined_module, submodules):
     """
     Create and initiate the main SWIG interface file for each
     comined module file
@@ -115,15 +115,15 @@ def create_combined_module_file(combined_module, modules):
         )
 
     # Create includes for header files and docstrings
-    for module_include in ["docstrings", "includes"]:
+    for submodule_include in ["docstrings", "includes"]:
         includes = []
-        for module in original_modules:
+        for submodule in original_submodules:
             # Only include files from modules of the same combined module
-            if module not in modules:
+            if submodule not in submodules:
                 continue
             includes.append("%%include \"dolfin/swig/%s/%s.i\""%\
-                            (module, module_include))
-        combined_module_form[module_include] = "\n".join(includes)
+                            (submodule, submodule_include))
+        combined_module_form[submodule_include] = "\n".join(includes)
 
     # Create includes for import of types from other modules
     # NOTE: Special case for common module. This should not be dependent
@@ -131,27 +131,28 @@ def create_combined_module_file(combined_module, modules):
     # NOTE: is needed by other modules and issues warnigs when these types
     # NOTE: are imported
     if combined_module != "common":
-        module_imports = []
-        for module in original_modules:
+        submodule_imports = []
+        for submodule in original_submodules:
             # Do not import files from modules of the same combined module
-            if module in modules:
+            if submodule in submodules:
                 continue
-            module_imports.append("%%include \"dolfin/swig/%s/local_imports.i\""%module)
+            submodule_imports.append(\
+                "%%include \"dolfin/swig/%s/local_imports.i\""%submodule)
 
-        combined_module_form["module_imports"] = "\n".join(module_imports)
+        combined_module_form["module_imports"] = "\n".join(submodule_imports)
     else:
         combined_module_form["module_imports"] = ""
     
     # Write the generated code
     combined_module_file.write(combined_module_template % combined_module_form)
 
-def extract_module_header_files(module):
+def extract_module_header_files(submodule):
     """
-    Extract header files for a module
+    Extract header files for a submodule
     """
     module_headers = []
-    print("Processing dolfin_%s.h..." % module)
-    f = open("../%s/dolfin_%s.h" % (module, module))
+    print("Processing dolfin_%s.h..." % submodule)
+    f = open("../%s/dolfin_%s.h" % (submodule, submodule))
     for line in f:
         if re.search("^#include ",line):
             header = line.split()[1].replace("<", "").replace(">", "")
@@ -162,7 +163,7 @@ def extract_module_header_files(module):
     
     return module_headers
 
-def write_module_code(module, combinedmodule):
+def write_module_code(submodule, combinedmodule):
     """
     Write SWIG module code.
 
@@ -171,16 +172,16 @@ def write_module_code(module, combinedmodule):
     
     """
 
-    def write_include_modifier(module, modifier):
+    def write_include_modifier(submodule, modifier):
         """
         Write an include statements for pre or post modifier
         """
-        if os.path.isfile(os.path.join(module, modifier + ".i")):
-            interface_file = "dolfin/swig/%s/%s.i" % (module, modifier)
+        if os.path.isfile(os.path.join(submodule, modifier + ".i")):
+            interface_file = "dolfin/swig/%s/%s.i" % (submodule, modifier)
             files[file_type].write("%%include \"%s\"\n" % interface_file)
 
     # Get all headers in module
-    headers = extract_module_header_files(module)
+    headers = extract_module_header_files(submodule)
 
     # File form
     header_forms = dict(includes="%%include \"%s\"\n",
@@ -196,15 +197,14 @@ def write_module_code(module, combinedmodule):
     for file_type, header_form in header_forms.items():
 
         # Create the file
-        files[file_type] = open(os.path.join(module, file_type + ".i"), "w")
+        files[file_type] = open(os.path.join(submodule, file_type + ".i"), "w")
         files[file_type].write(copyright_statement%(copyright_form_swig))
     
         files[file_type].write("// Auto generated %s statements for the "\
-                               "module: %s\n\n"% (file_type[:-1], module))
+                               "module: %s\n\n"% (file_type[:-1], submodule))
 
         # Check if there is a foo/pre.i file
-        #if file_type == "includes":
-        write_include_modifier(module, "pre")
+        write_include_modifier(submodule, "pre")
 
         # Write include or import statement for each individual file
         for header in headers:
@@ -212,20 +212,18 @@ def write_module_code(module, combinedmodule):
     
         # Check if there is a foo/post.i file
         if file_type == "includes":
-            write_include_modifier(module, "post")
+            write_include_modifier(submodule, "post")
 
         files[file_type].close()
 
-        not_include = [#os.path.join(module, "includes.i"),
-                       #os.path.join(module, "modules.i"),
-                       os.path.join(module, "imports.i"),
+        not_include = [os.path.join(submodule, "imports.i"),
                        ]
 
         # Add interface files
-        interface_files = ["../../%s/"%module + \
+        interface_files = ["../../%s/"%submodule + \
                            interface_file.split(os.path.sep)[-1] \
                            for interface_file in \
-                           glob.glob(os.path.join(module, "*.i")) \
+                           glob.glob(os.path.join(submodule, "*.i")) \
                            if interface_file not in not_include]
 
     # Make the header files relative to where the combined module lives
@@ -252,26 +250,50 @@ def generate_swig_include_files():
                                    "../../version.i",
                                    "../../forwarddeclarations.i"])
 
+    # Collect header files and interface files for each submodule
+    all_headers = []
+    interface_files = {}
+    for submodule in original_submodules:
+        headers, interface_files[submodule] = \
+            write_module_code(submodule, original_to_combined[submodule])
+        all_headers.extend(headers)
+
     # Iterate over all combined modules
-    for combined_module, modules in combined_modules.items():
+    for combined_module, submodules in combined_modules.items():
 
+        # Collect interface files specific for this module
+        module_interface_files = []
+
+        # Iterate over all submodules and collect interface files
+        for submodule in original_submodules:
+            
+            # If the submodule is included in the combined module
+            if submodule in submodules:
+                module_interface_files.extend(interface_files[submodule])
+
+            # Else if we are gathering interface files for the common
+            # modules we continue as the common module does not import
+            # other submodules
+            elif combined_module == "common":
+                continue
+            
+            # Else just add the local_import.i and pre.i file 
+            else:
+                module_interface_files.append(\
+                    "../../%s/local_imports.i"%submodule)
+                if os.path.isfile(os.path.join(submodule, "pre.i")):
+                    module_interface_files.append(\
+                        "../../%s/pre.i"%submodule)
+        
         # Create a file being the root of the combined module
-        create_combined_module_file(combined_module, modules)
+        create_combined_module_file(combined_module, submodules)
     
-        all_headers = []
-        all_interface_files = []
-
-        # Iterate over modules in each combined module and extract headers
-        for module in modules:
-            headers, interface_files = write_module_code(module, combined_module)
-            all_headers.extend(headers)
-            all_interface_files.extend(interface_files)
-
         # Add global interface files
-        all_interface_files.extend(global_interface_files)
+        module_interface_files.extend(global_interface_files)
 
         # Add modules file
-        all_interface_files.append("../../modules/%s/module.i" % combined_module)
+        module_interface_files.append("../../modules/%s/module.i" % \
+                                      combined_module)
 
         # Generate CMake help file
         header_files_file = open(os.path.join("modules", combined_module,
@@ -280,7 +302,7 @@ def generate_swig_include_files():
 
         interface_files_file = open(os.path.join("modules", combined_module,
                                                  "interface_files.txt"), "w")
-        interface_files_file.write(";".join(all_interface_files))
+        interface_files_file.write(";".join(module_interface_files))
         
 
 if __name__ == "__main__":

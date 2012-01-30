@@ -18,6 +18,10 @@ include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
 # Get combined modules
 file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/modules/*)
 
+# Sort and reverse the list so la combined module comes early
+list(SORT COMBINED_MODULES)
+list(REVERSE COMBINED_MODULES)
+
 # Iterate over the combined modules and add each as a target
 foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})
   add_subdirectory(${COMBINED_MODULE_DIR})
@@ -26,22 +30,38 @@ endforeach()
 # List of files which should not be installed
 set(NOT_INSTALL )
 
-# Iterate over each module and add install targets
+# Iterate over each sub module and add install targets
 foreach(MODULE_DIR ${DOLFIN_DIRS})
-  file(GLOB INTERFACE_FILES RELATIVE ${MODULE_DIR} ${MODULE_DIR}/*.i)
-  foreach(INTERFACE_FILE ${INTERFACE_FILES})
-    get_filename_component(LOCAL_INTERFACE_FILE ${INTERFACE_FILE} NAME)
-    if (NOT ${_DIR_NAME} STREQUAL ${DOLFIN_H} AND 
-	NOT ${_DIR_NAME} STREQUAL swig AND 
-	NOT ${_DIR_NAME} STREQUAL CMakeLists.txt )
-      list(APPEND DOLFIN_DIRS ${_DIR_NAME})
-    endif()
-    message("INTERFACE_FILE: ${INTERFACE_FILE}")
-  endforeach()
-  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR} COMPONENT Development)
+
+  # Install module imports
+  install(FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/imports.i 
+    DESTINATION 
+    ${DOLFIN_INCLUDE_DIR}/dolfin/swig/${MODULE_DIR} 
+    COMPONENT Development)
+  
+  # Install pre.i if exists
+  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i)
+    install(FILES 
+      ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i 
+      DESTINATION 
+      ${DOLFIN_INCLUDE_DIR}/dolfin/swig/${MODULE_DIR} 
+      COMPONENT Development)
+  endif()
+    
 endforeach()
 
-#install(FILES ${ALL_INTERFACE_FILES}
-#  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig
-#  COMPONENT Development
-#  )
+# Add global interface files
+file(GLOB GLOBAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
+install(FILES ${GLOBAL_INTERFACE_FILES}
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig
+  COMPONENT Development
+  )
+
+# Add global typemap interface files
+file(GLOB TYPEMAP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/typemaps/*.i)
+install(FILES ${TYPEMAP_FILES}
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig/typemaps
+  COMPONENT Development
+  )
+

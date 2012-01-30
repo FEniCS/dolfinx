@@ -17,10 +17,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-20
-// Last changed: 2012-01-20
+// Last changed: 2012-01-30
 
 //=============================================================================
-// Forward declarations of common types in DOLFIN
+// Forward declarations of common types in DOLFIN needed for template
+// instantiations
 //=============================================================================
 
 namespace dolfin
@@ -35,7 +36,9 @@ namespace dolfin
 
   // mesh
   class Mesh;
+  class LocalMeshData;
   template<typename T> class MeshFunction;
+  template<typename T> class MeshValueCollection;
 
   // adaptivity
   class ErrorControl;
@@ -50,5 +53,11 @@ namespace dolfin
   // function
   class FunctionSpace;
   class Function;
+  class FunctionPlotData;
+
+  // la
+  class GenericVector;
+  class GenericMatrix;
+
 }
 

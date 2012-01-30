@@ -31,6 +31,11 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
+// Rename solve so it wont clash with solve from la
+//-----------------------------------------------------------------------------
+%rename(fem_solve) dolfin::solve;
+
+//-----------------------------------------------------------------------------
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
 // version of constructors to these types
 //-----------------------------------------------------------------------------
@@ -156,24 +161,44 @@
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
 //-----------------------------------------------------------------------------
-%typemap(in) const ufc::cell& (void *argp)
+%typemap(in) const ufc::cell& (void *argp, bool dolfin_cell, int res)
 {
   // const ufc::cell& cell Typemap
-  int res = SWIG_ConvertPtr($input, &argp, $descriptor(dolfin::Cell*), 0);
-  if (!SWIG_IsOK(res))
-    SWIG_exception(SWIG_TypeError, "expected a dolfin.Cell");
-
-  $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
+  // First try dolfin::Cell
+  res = SWIG_ConvertPtr($input, &argp, $descriptor(dolfin::Cell*), 0);
+  if (SWIG_IsOK(res))
+  {
+    dolfin_cell = true;
+    $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
+  }
+  
+  else
+  {
+    dolfin_cell = false;
+    res = SWIG_ConvertPtr($input, &argp, $descriptor(ufc::cell*), 0);
+    if (SWIG_IsOK(res))
+      $1 = reinterpret_cast<ufc::cell *>(argp);
+    else
+      SWIG_exception(SWIG_TypeError, "expected a dolfin.Cell or a ufc::cell");
+  }
 }
 
-%typemap(freearg) const ufc::cell&
+%typemap(freearg) const ufc::cell& (bool dolfin_cell)
 {
-  delete $1;
+  // If a dolfin cell was created delete it
+  if(dolfin_cell)
+    delete $1;
 }
 
 %typecheck(SWIG_TYPECHECK_POINTER) const ufc::cell& {
+  // TYPECHECK const ufc::cell&
   int res = SWIG_ConvertPtr($input, 0, $descriptor(dolfin::Cell*), 0);
   $1 = SWIG_CheckState(res);
+  if (!$1)
+  {
+    res = SWIG_ConvertPtr($input, 0, $descriptor(ufc::cell*), 0);
+    $1 = SWIG_CheckState(res);
+  }
 }
 
 //-----------------------------------------------------------------------------
