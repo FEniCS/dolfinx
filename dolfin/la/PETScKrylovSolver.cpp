@@ -131,8 +131,30 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
+                                     boost::shared_ptr<PETScPreconditioner> preconditioner)
+  : preconditioner(preconditioner),
+    preconditioner_set(false)
+
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScUserPreconditioner& preconditioner)
   : pc_dolfin(&preconditioner), preconditioner_set(false)
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
+                                     boost::shared_ptr<PETScUserPreconditioner> preconditioner)
+  : pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();

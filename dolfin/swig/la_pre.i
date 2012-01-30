@@ -160,6 +160,11 @@
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
 
+// Ignore reference version of constructor
+%ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
+%ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
+
+
 //-----------------------------------------------------------------------------
 // Trilinos backend
 //-----------------------------------------------------------------------------
