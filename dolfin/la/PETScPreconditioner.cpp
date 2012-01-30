@@ -50,8 +50,9 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("hypre_parasails",  PCHYPRE)
                               #endif
                               #if PETSC_HAVE_ML
-                              ("ml_amg",           PCML);
+                              ("ml_amg",           PCML)
                               #endif
+                              ;
 
 // Mapping from preconditioner string to description string
 const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_methods_descr 
@@ -71,8 +72,9 @@ const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_me
     ("hypre_parasails",  "Hypre parallel sparse approximate inverse")
     #endif
     #if PETSC_HAVE_ML
-    ("ml_amg",           "ML algebraic multigrid");
+    ("ml_amg",           "ML algebraic multigrid")
     #endif
+    ;
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScPreconditioner::preconditioners()
