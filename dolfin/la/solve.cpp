@@ -22,7 +22,7 @@
 // First added:  2007-04-30
 // Last changed: 2011-12-21
 
-#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Timer.h>
@@ -181,7 +181,7 @@ double dolfin::residual(const GenericMatrix& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::shared_ptr<GenericVector> y = A.factory().create_vector();
+  boost::scoped_ptr<GenericVector> y(A.factory().create_vector());
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");
@@ -189,13 +189,6 @@ double dolfin::residual(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
-  if (x.size() == 0)
-  {
-    dolfin_error("solve.cpp",
-                 "normalize vector",
-                 "Cannot normalize vector of zero length");
-  }
-
   double c = 0.0;
   if (normalization_type == "l2")
   {
@@ -204,8 +197,12 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   }
   else if (normalization_type == "average")
   {
-    c = x.sum()/static_cast<double>(x.size());
-    x -= c;
+    boost::scoped_ptr<GenericVector> y(x.factory().create_vector());
+    y->resize(x.size());
+    (*y) = 1.0 / static_cast<double>(x.size());
+    c = x.inner(*y);
+    (*y) = c;
+    x -= (*y);
   }
   else
   {
@@ -214,7 +211,7 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
                  "Unknown normalization type (\"%s\")",
                  normalization_type.c_str());
   }
-
+  
   return c;
 }
 //-----------------------------------------------------------------------------
