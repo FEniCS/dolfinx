@@ -550,7 +550,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             ret = self.copy()
             ret._scale(other)
             return ret
-        elif isinstance(other,GenericVector):
+        elif isinstance(other, GenericVector):
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
@@ -844,9 +844,16 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
     for k, v in _has_type_map.items():
+        print 
+        print "tensor:", tensor
+        print "has type:", v(tensor)
         if v(tensor):
             return k
-    dolfin_error("Unregistered tensor type.")
+    
+    common.dolfin_error("la/post.i",
+                        "checking compatability of tensor",
+                        "The tensor '%s' type is not a registered tensor." % \
+                        type(tensor).__name__
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."

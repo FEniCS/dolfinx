@@ -49,7 +49,7 @@ def compute_vertex_values(self, values, mesh):
     # Argument checks
     from numpy import ndarray
     if not isinstance(values, ndarray) or len(values.shape) != 1:
-        common.dolfin_error("function_post.i",
+        common.dolfin_error("function/post.i",
 			    "compute values at the vertices",
 			    "Expected a numpy array with dimension 1 as first argument")
     
