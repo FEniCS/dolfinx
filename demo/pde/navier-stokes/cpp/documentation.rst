@@ -332,6 +332,9 @@ may therefore assemble these before the time-stepping begins:
     // Create vectors
     Vector b1, b2, b3;
 
+    // Use amg preconditioner if available
+    const std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
+
 We also created the vectors that will be used below to assemble
 right-hand sides.
 
@@ -365,7 +368,7 @@ right-hand side, apply boundary conditions, and solve a linear
 system. Note the different use of preconditioners. Incomplete LU
 factorization is used for the computation of the tentative velocity
 and the velocity update, while algebraic multigrid is used for the
-pressure equation:
+pressure equation if available:
 
 .. code-block:: c++
 
@@ -382,7 +385,7 @@ pressure equation:
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "gmres", "amg");
+    solve(A2, *p1.vector(), b2, "gmres", prec);
     end();
 
     // Velocity correction
