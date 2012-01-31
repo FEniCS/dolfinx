@@ -853,7 +853,7 @@ def get_tensor_type(tensor):
     common.dolfin_error("la/post.i",
                         "checking compatability of tensor",
                         "The tensor '%s' type is not a registered tensor." % \
-                        type(tensor).__name__
+                        type(tensor).__name__)
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
