@@ -61,9 +61,6 @@ namespace dolfin
   // Return true if DOLFIN is compiled with ZLIB
   bool has_zlib();
 
-  // Return true if a specific linear algebra backend is supported
-  bool has_linear_algebra_backend(std::string backend);
-
 }
 
 #endif
