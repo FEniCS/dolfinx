@@ -1,4 +1,6 @@
-- Fix wrong link in Python quick reference.
+ - Add has_foo to easy check what solver and precondictioners are available
+ - Add convinient functions for listing available linear_algebra_backends
+ - Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]
  - Recompile all forms with FFC 1.0.0
  - Fix for CGAL 3.9 on OS X
