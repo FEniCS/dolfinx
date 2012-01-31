@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-30
-// Last changed: 2011-11-16
+// Last changed: 2012-01-31
 //
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
@@ -145,6 +145,9 @@ int main()
   // Create vectors
   Vector b1, b2, b3;
 
+  // Use amg preconditioner if available
+  const std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
+
   // Create files for storing solution
   File ufile("results/velocity.pvd");
   File pfile("results/pressure.pvd");
@@ -169,7 +172,7 @@ int main()
     assemble(b2, L2);
     for (dolfin::uint i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "gmres", "amg");
+    solve(A2, *p1.vector(), b2, "gmres", prec);
     end();
 
     // Velocity correction
