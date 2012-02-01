@@ -550,7 +550,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             ret = self.copy()
             ret._scale(other)
             return ret
-        elif isinstance(other, GenericVector):
+        elif isinstance(other,GenericVector):
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
@@ -721,16 +721,16 @@ DOWN_CAST_MACRO(uBLASVector)
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
 bool _has_type_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.has_type<dolfin::uBLASDenseMatrix>(); }
+{ return tensor.has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(); }
 
 dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > & _down_cast_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.down_cast<dolfin::uBLASDenseMatrix>(); }
+{ return tensor.down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(); }
 
 bool _has_type_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.has_type<dolfin::uBLASSparseMatrix>(); }
+{ return tensor.has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(); }
 
 dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > & _down_cast_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.down_cast<dolfin::uBLASSparseMatrix>(); }
+{ return tensor.down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(); }
 %}
 
 %pythoncode %{
@@ -844,16 +844,9 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
     for k, v in _has_type_map.items():
-        print 
-        print "tensor:", tensor
-        print "has type:", v(tensor)
         if v(tensor):
             return k
-    
-    common.dolfin_error("la/post.i",
-                        "checking compatability of tensor",
-                        "The tensor '%s' type is not a registered tensor." % \
-                        type(tensor).__name__)
+    dolfin_error("Unregistered tensor type.")
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
