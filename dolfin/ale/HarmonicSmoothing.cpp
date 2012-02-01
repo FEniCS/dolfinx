@@ -92,7 +92,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   Vector x;
 
   // Pick amg as preconditioner if available
-  std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
+  const std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
 
   for (uint dim = 0; dim < d; dim++)
   {
