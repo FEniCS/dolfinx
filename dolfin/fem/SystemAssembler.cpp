@@ -683,7 +683,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 
   // Resize dof vector
   a_macro_dofs[0].resize(a0_dofs0.size() + a0_dofs1.size());
-  a_macro_dofs[1].resize(a0_dofs1.size() + a1_dofs1.size());
+  a_macro_dofs[1].resize(a1_dofs0.size() + a1_dofs1.size());
   L_macro_dofs[0].resize(L_dofs0.size() + L_dofs1.size());
 
   // Tabulate dofs for each dimension on macro element

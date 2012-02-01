@@ -113,6 +113,37 @@ namespace dolfin
                        bool add_values=false,
                        bool finalize_tensor=true);
 
+  /// Symmetric assembly of As, storing the modifications in An. To create
+  /// matching RHS, assemble and apply bcs normally, then subtract An*b.
+  /// In this variant of symmetric_assemble, rows and columns use the same BCs.
+  void symmetric_assemble(GenericMatrix& As,
+                          GenericMatrix& An,
+                          const Form& a,
+                          const std::vector<const DirichletBC*>& bcs,
+                          const MeshFunction<unsigned int>* cell_domains=NULL,
+                          const MeshFunction<unsigned int>* exterior_facet_domains=NULL,
+                          const MeshFunction<unsigned int>* interior_facet_domains=NULL,
+                          bool reset_sparsity=true,
+                          bool add_values=false,
+                          bool finalize_tensor=true);
+
+  /// Symmetric assembly of As, storing the modifications in An. To create
+  /// matching RHS, assemble and apply bcs normally, then subtract An*b.
+  /// In this variant of symmetric_assemble, rows and columns use (potentially)
+  /// different BCs. The BCs will be different for example in coupling
+  /// (i.e., off-diagonal) blocks of a block matrix.
+  void symmetric_assemble(GenericMatrix& As,
+                          GenericMatrix& An,
+                          const Form& a,
+                          const std::vector<const DirichletBC*>& row_bcs,
+                          const std::vector<const DirichletBC*>& col_bcs,
+                          const MeshFunction<unsigned int>* cell_domains=NULL,
+                          const MeshFunction<unsigned int>* exterior_facet_domains=NULL,
+                          const MeshFunction<unsigned int>* interior_facet_domains=NULL,
+                          bool reset_sparsity=true,
+                          bool add_values=false,
+                          bool finalize_tensor=true);
+
   //--- Specialized versions for scalars ---
 
   /// Assemble scalar
