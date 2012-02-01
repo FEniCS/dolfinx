@@ -213,6 +213,11 @@ class AbstractBaseTest(object):
 
     def test_matrix_vector(self, use_backend=False):
         from numpy import dot, absolute
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+
         A,B = self.assemble_matrices(use_backend)
         v,w = self.assemble_vectors()
 
@@ -228,7 +233,6 @@ class AbstractBaseTest(object):
         Bw_norm = 0.0149136743079
         Cv_norm = 0.00951459156865
 
-        print "Matrix:", A, "use_backend", use_backend
         u = A*v
 
         self.assertTrue(isinstance(u, type(v)))
@@ -269,8 +273,6 @@ class AbstractBaseTest(object):
 
             self.assertTrue(absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v))
             self.assertTrue(absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v))
-
-
 
     def test_matrix_vector_with_backend(self):
         self.test_matrix_vector(True)

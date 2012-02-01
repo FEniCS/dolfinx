@@ -846,11 +846,9 @@ def get_tensor_type(tensor):
     for k, v in _has_type_map.items():
         if v(tensor):
             return k
-    print
-    print "Failure:", tensor, _has_type_map.items()
     common.dolfin_error("Compatability check of tensor failed.",
-                        "The tensor '%s' type is not a registered tensor" %
-                        type(tensor).__name__,
+                        "Most probably you are trying to do something with "
+                        "a uBLAS Matrix. Tensor type: '%s'" % type(tensor).__name__,
                         "dolfin/swig/la/post.i")
 
 def has_type(tensor, subclass):
