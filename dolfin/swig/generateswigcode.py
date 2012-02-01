@@ -35,7 +35,7 @@ from documentation import generate_docstrings
 _local_time = time.localtime()
 _date_form = dict(year = _local_time.tm_year,
                   month = _local_time.tm_mon,
-                  day = _local_time.tm_yday)
+                  day = _local_time.tm_mday)
 
 # Create form for copyright statement to a SWIG interface file
 copyright_form_swig = dict(comment = r"//", holder="Johan Hake")
@@ -237,8 +237,8 @@ def generate_swig_include_files():
     """
 
     # Generate all docstrings
-    # FIXME: Might be integratable into write_module_code
-    #generate_docstrings()
+    # FIXME: Might be integratable into write_module_code?
+    generate_docstrings()
 
     global_interface_files =  ["../../typemaps/" + \
                                interface_file.split(os.path.sep)[-1] \

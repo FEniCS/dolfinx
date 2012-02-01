@@ -2,7 +2,7 @@
 Automatic regeneration of SWIG interface
 ========================================
 
-The SWIG interface of DOLFIN is partly automatically generated. 
+The SWIG interface of DOLFIN is partly generated automatically. 
 
   * Run generateswigcode.py to regenerate the SWIG interface
 
@@ -18,13 +18,13 @@ generated files need to be committed to the bazaar repository.
 Modularized interface
 =====================
 
-Modules
--------
+Submodules
+----------
 
-The SWIG interface is divided into several modules, each corresponding
+The SWIG interface is divided into several submodules, each corresponding
 to the directory structure of DOLFIN. SWIG specialization files
-resides in a subdirectory with the same name as the module. Most
-common are pre.i and post.i files which are include before or after
+resides in a subdirectory with the same name as the submodule. Most
+common are pre.i and post.i files, which are include before and after
 the header files of the corresponding module.
 
   * When ever a dolfin/foo subdirectory is added to DOLFIN a
