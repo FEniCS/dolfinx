@@ -38,6 +38,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
+#include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/solve.h>
@@ -45,7 +46,6 @@
 #include <dolfin/mesh/Facet.h>
 
 #include "LocalAssembler.h"
-#include "SpecialFacetFunction.h"
 #include "ErrorControl.h"
 
 using namespace dolfin;

@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2005-2006 Johan Hake
+// Copyright (C) 2007-2012 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2011-03-11
+// Last changed: 2012-01-20
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -229,54 +229,3 @@
 %shared_ptr(dolfin::GaussQuadrature)
 %shared_ptr(dolfin::GaussianQuadrature)
 
-
-//-----------------------------------------------------------------------------
-// Include knowledge of the NoDeleter template, used in macros below
-//-----------------------------------------------------------------------------
-%{
-#include <dolfin/common/NoDeleter.h>
-%}
-
-//-----------------------------------------------------------------------------
-// Macros for defining in and out typemaps for foreign types that DOLFIN
-// use as in and ouput from functions. More specific Epetra_FEFoo
-// FIXME: Make these const aware...
-//-----------------------------------------------------------------------------
-%define FOREIGN_SHARED_PTR_TYPEMAPS(TYPE)
-
-//-----------------------------------------------------------------------------
-// Make swig aware of the type and the shared_ptr version of it
-//-----------------------------------------------------------------------------
-%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE>*, TYPE*);
-
-//-----------------------------------------------------------------------------
-// Typecheck
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  int res = SWIG_ConvertPtr($input, 0, $descriptor(TYPE*), 0);
-  $1 = SWIG_CheckState(res);
-}
-
-//-----------------------------------------------------------------------------
-// In typemap
-//-----------------------------------------------------------------------------
-%typemap(in) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  void *argp = 0;
-  TYPE * arg = 0;
-  int res = SWIG_ConvertPtr($input, &argp, $descriptor(TYPE*), 0);
-  if (SWIG_IsOK(res)) {
-    arg = reinterpret_cast<TYPE *>(argp);
-    $1 = dolfin::reference_to_no_delete_pointer(*arg);
-  }
-  else
-    SWIG_exception(SWIG_TypeError, "expected a TYPE");
-}
-
-//-----------------------------------------------------------------------------
-// In typemap
-//-----------------------------------------------------------------------------
-%typemap(out) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
-  TYPE * out = $1.get();
-  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), $descriptor(TYPE*), 0 | 0 );
-}
-%enddef

@@ -50,9 +50,9 @@ class AbstractBaseTest(object):
 
         if use_backend:
             if self.backend == "uBLAS":
-                backend = globals()[self.backend+self.sub_backend+'Factory_instance']()
+                backend = getattr(cpp, self.backend+self.sub_backend+'Factory').instance()
             else:
-                backend = globals()[self.backend+'Factory_instance']()
+                backend = getattr(cpp, self.backend+'Factory').instance()
             return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
             return assemble(a), assemble(b)
@@ -211,9 +211,14 @@ class AbstractBaseTest(object):
             self.assertAlmostEqual(A.sum(),A2.sum())
             self.assertAlmostEqual(I.sum(),I2.sum())
 
-    def test_matrix_vector(self):
+    def test_matrix_vector(self, use_backend=False):
         from numpy import dot, absolute
-        A,B = self.assemble_matrices()
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+
+        A,B = self.assemble_matrices(use_backend)
         v,w = self.assemble_vectors()
 
         # Get local ownership range (relevant for parallel vectors)
@@ -269,41 +274,10 @@ class AbstractBaseTest(object):
             self.assertTrue(absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v))
             self.assertTrue(absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v))
 
-
-# A DataTester class that test the acces of the raw data through pointers
-# This is only available for uBLAS and MTL4 backends
-class DataTester(AbstractBaseTest):
-    def test_matrix_data(self):
-        """ Test for ordinary Matrix"""
-        A,B = self.assemble_matrices()
-        array = A.array()
-        rows, cols, values = A.data()
-        i = 0
-        for row in xrange(A.size(0)):
-            for col in xrange(rows[row],rows[row+1]):
-                self.assertEqual(array[row,cols[col]],values[i])
-                i += 1
-
-        # Test for down_casted Matrix
-        A = down_cast(A)
-        rows, cols, values = A.data()
-        for row in xrange(A.size(0)):
-            for k in xrange(rows[row],rows[row+1]):
-                self.assertEqual(array[row,cols[k]],values[k])
-
-    def test_vector_data(self):
-        # Test for ordinary Vector
-        v,w = self.assemble_vectors()
-        array = v.array()
-        data = v.data()
-        self.assertTrue((data==array).all())
-
-        # Test for down_casted Vector
-        v = down_cast(v)
-        data = v.data()
-        self.assertTrue((data==array).all())
-
-class DataNotWorkingTester(AbstractBaseTest):
+    def test_matrix_vector_with_backend(self):
+        self.test_matrix_vector(True)
+        
+class DataNotWorkingTester:
     def test_matrix_data(self):
         A,B = self.assemble_matrices()
         self.assertRaises(RuntimeError,A.data)
@@ -320,26 +294,27 @@ class DataNotWorkingTester(AbstractBaseTest):
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
+if has_linear_algebra_backend("PETSc"):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETSc"
+
+if has_linear_algebra_backend("Epetra"):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "Epetra"
+
 if MPI.num_processes() == 1:
-    class uBLASSparseTester(DataTester, unittest.TestCase):
+    class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
 
-    class uBLASDenseTester(DataTester, unittest.TestCase):
+    class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
 
     if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(DataTester, unittest.TestCase):
+        class MTL4Tester(AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
 
-if has_linear_algebra_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, unittest.TestCase):
-        backend    = "PETSc"
-
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, unittest.TestCase):
-        backend    = "Epetra"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output

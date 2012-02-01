@@ -54,9 +54,9 @@ class AbstractBaseTest(object):
 
         if use_backend:
             if self.backend == "uBLAS":
-                backend = globals()[self.backend + self.sub_backend + 'Factory_instance']()
+                backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             else:
-                backend = globals()[self.backend + 'Factory_instance']()
+                backend = globals()[self.backend + 'Factory'].instance()
             return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
             return assemble(a), assemble(b)
@@ -75,6 +75,11 @@ class AbstractBaseTest(object):
 
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+        
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
 
@@ -209,9 +214,14 @@ class AbstractBaseTest(object):
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester:
-    def test_matrix_data(self):
+    def test_matrix_data(self, use_backend=False):
         """ Test for ordinary Matrix"""
-        A, B = self.assemble_matrices()
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and \
+               (not use_backend or self.sub_backend =="Dense"):
+            return
+
+        A, B = self.assemble_matrices(use_backend)
         array = A.array()
         rows, cols, values = A.data()
         i = 0
@@ -234,6 +244,9 @@ class DataTester:
         for row in xrange(A.size(0)):
             for k in xrange(rows[row], rows[row+1]):
                 self.assertEqual(array[row,cols[k]], values[k])
+
+    def test_matrix_data_use_backend(self):
+        self.test_matrix_data(True)
 
 class DataNotWorkingTester:
     def test_matrix_data(self):
