@@ -43,7 +43,7 @@ this. We therefore start by checking that either "PETSc" or "Epetra"
     if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
         info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
         exit()
-    
+
     if not has_krylov_solver_preconditioner("amg"):
         info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
              "preconditioner, Hypre or ML.");
