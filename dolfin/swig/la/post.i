@@ -683,11 +683,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 %define DOWN_CAST_MACRO(TENSOR_TYPE)
 %inline %{
-bool _has_type_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
-{ return tensor.has_type<dolfin::TENSOR_TYPE>(); }
+bool _has_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+{ return tensor->has_type<dolfin::TENSOR_TYPE>(); }
 
-dolfin::TENSOR_TYPE & _down_cast_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
-{ return tensor.down_cast<dolfin::TENSOR_TYPE>(); }
+boost::shared_ptr<dolfin::TENSOR_TYPE> _down_cast_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+{ return dolfin::GenericTensor::down_cast<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
 %pythoncode %{
@@ -720,17 +720,17 @@ DOWN_CAST_MACRO(uBLASVector)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
-bool _has_type_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(); }
+bool _has_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+{ return tensor->has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(); }
 
-dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > & _down_cast_uBLASDenseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(); }
+boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _down_cast_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+{ return dolfin::GenericTensor::down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
-bool _has_type_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(); }
+bool _has_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor > tensor)
+{ return tensor->has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(); }
 
-dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > & _down_cast_uBLASSparseMatrix(dolfin::GenericTensor & tensor)
-{ return tensor.down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(); }
+const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _down_cast_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+{ return dolfin::GenericTensor::down_cast<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
 %pythoncode %{
@@ -844,10 +844,7 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
     for k, v in _has_type_map.items():
-        print 
         if v(tensor):
-            print
-            print "Succes:", k, v, tensor
             return k
     print
     print "Failure:", tensor, _has_type_map.items()

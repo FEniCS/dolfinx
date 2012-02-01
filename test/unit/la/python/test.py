@@ -228,6 +228,7 @@ class AbstractBaseTest(object):
         Bw_norm = 0.0149136743079
         Cv_norm = 0.00951459156865
 
+        print "Matrix:", A, "use_backend", use_backend
         u = A*v
 
         self.assertTrue(isinstance(u, type(v)))
