@@ -844,9 +844,17 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
     for k, v in _has_type_map.items():
+        print 
         if v(tensor):
+            print
+            print "Succes:", k, v, tensor
             return k
-    dolfin_error("Unregistered tensor type.")
+    print
+    print "Failure:", tensor, _has_type_map.items()
+    common.dolfin_error("Compatability check of tensor failed.",
+                        "The tensor '%s' type is not a registered tensor" %
+                        type(tensor).__name__,
+                        "dolfin/swig/la/post.i")
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
