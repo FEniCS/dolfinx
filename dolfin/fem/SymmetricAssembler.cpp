@@ -41,80 +41,88 @@
 
 using namespace dolfin;
 
-namespace // anonymous
+/// The private implementation class. It holds all relevant parameters for a
+/// single assemble, the implementation, and some scratch variables. Its
+/// lifetime is never longer than the assemble itself, so it's safe to keep
+/// references to parameters.
+class SymmetricAssembler::PImpl
 {
-  class Impl
+public:
+  // User-provided parameters
+  GenericMatrix &A, &A_nonsymm;
+  const Form &a;
+  const std::vector<const DirichletBC*> &row_bcs, &col_bcs;
+  const MeshFunction<uint> *cell_domains, *exterior_facet_domains, *interior_facet_domains;
+  bool reset_sparsity, add_values, finalize_tensor;
+
+  PImpl(GenericMatrix &_A, GenericMatrix &_A_nonsymm,
+        const Form &_a,
+        const std::vector<const DirichletBC*> &_row_bcs,
+        const std::vector<const DirichletBC*> &_col_bcs,
+        const MeshFunction<uint> *_cell_domains,
+        const MeshFunction<uint> *_exterior_facet_domains,
+        const MeshFunction<uint> *_interior_facet_domains,
+        bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
+    : A(_A), A_nonsymm(_A_nonsymm), a(_a),
+      row_bcs(_row_bcs), col_bcs(_col_bcs),
+      cell_domains(_cell_domains),
+      exterior_facet_domains(_exterior_facet_domains),
+      interior_facet_domains(_interior_facet_domains),
+      reset_sparsity(_reset_sparsity),
+      add_values(_add_values),
+      finalize_tensor(_finalize_tensor),
+      ufc(_a), ufc_nonsymm(_a), mesh(_a.mesh())
   {
-  public:
-    GenericMatrix &As, &An;
-    const Form &a;
-    const std::vector<const DirichletBC*> &row_bcs, &col_bcs;
-    const MeshFunction<uint> *cell_domains, *exterior_facet_domains, *interior_facet_domains;
-    bool reset_sparsity, add_values, finalize_tensor;
+    init();
+  }
 
-    Impl(GenericMatrix &_As, GenericMatrix &_An,
-         const Form &_a,
-         const std::vector<const DirichletBC*> &_row_bcs,
-         const std::vector<const DirichletBC*> &_col_bcs,
-         const MeshFunction<uint> *_cell_dom,
-         const MeshFunction<uint> *_ext_fac_dom,
-         const MeshFunction<uint> *_int_fac_dom,
-         bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
-    : As(_As), An(_An), a(_a), row_bcs(_row_bcs), col_bcs(_col_bcs),
-      cell_domains(_cell_dom), exterior_facet_domains(_ext_fac_dom), interior_facet_domains(_int_fac_dom),
-      reset_sparsity(_reset_sparsity), add_values(_add_values), finalize_tensor(_finalize_tensor),
-      ufc(_a), mesh(_a.mesh())
-    {
-      init();
-    }
+  void assemble();
 
-    void assemble();
+private:
+  void init();
+  void assemble_cells();
+  void assemble_exterior_facets();
+  void assemble_interior_facets();
 
-  private:
-    void init();
-    void assemble_cells();
-    void assemble_exterior_facets();
-    void assemble_interior_facets();
+  void apply_local_bc(std::vector<double> &elm_A, std::vector<double> &elm_A_nonsymm,
+                      const std::vector<const std::vector<uint>*> &dofs);
 
-    void apply_local_bc(std::vector<double> &elm_As, std::vector<double> &elm_An,
-                       const std::vector<const std::vector<uint>*> &dofs);
+  // These are derived from the variables above:
+  const Mesh &mesh;     // = Mesh(a)
+  UFC ufc;              // = UFC(a)
+  UFC ufc_nonsymm;      // = UFC(a), used for scratch local tensors
+  bool matching_bcs;    // true if row_bcs==col_bcs
+  DirichletBC::Map row_bc_values; // derived from row_bcs
+  DirichletBC::Map col_bc_values; // derived from col_bcs, but empty if matching_bcs
 
-    // These are derived from the variables above
-    const Mesh &mesh;
-    UFC ufc;
-    bool matching_bcs;
-    DirichletBC::Map row_bc_values;
-    DirichletBC::Map col_bc_values;
+  // Used to ensure that each diagonal entry is set only once. An alternative
+  // is to leave the diagonal unset, and use DirichletBC::apply afterwards to
+  // set the diagonal to 1.0.
+  std::set<uint> already_set_diagonals;
 
-    // Used to ensure that each diagonal entry is set only once
-    std::set<uint> diagonal_done;
-
-    // Scratch variables
-    std::vector<bool> lrow_is_bc;
-    std::vector<double> tensor;
-    std::vector<double> macro_tensor;
-  };
-}
+  // Scratch variables
+  std::vector<bool> local_row_is_bc;
+};
 //-----------------------------------------------------------------------------
-void SymmetricAssembler::assemble(GenericMatrix& As,
-                         GenericMatrix& An,
-                         const Form& a,
-                         const std::vector<const DirichletBC*> &row_bcs,
-                         const std::vector<const DirichletBC*> &col_bcs,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity,
-                         bool add_values,
-                         bool finalize_tensor)
+void SymmetricAssembler::assemble(GenericMatrix& A,
+                                  GenericMatrix& A_nonsymm,
+                                  const Form& a,
+                                  const std::vector<const DirichletBC*> &row_bcs,
+                                  const std::vector<const DirichletBC*> &col_bcs,
+                                  const MeshFunction<uint>* cell_domains,
+                                  const MeshFunction<uint>* exterior_facet_domains,
+                                  const MeshFunction<uint>* interior_facet_domains,
+                                  bool reset_sparsity,
+                                  bool add_values,
+                                  bool finalize_tensor)
 {
-  Impl impl(As, An, a, row_bcs, col_bcs,
+  PImpl pImpl(A, A_nonsymm, a, row_bcs, col_bcs,
             cell_domains, exterior_facet_domains, interior_facet_domains,
             reset_sparsity, add_values, finalize_tensor);
-  impl.assemble();
+  pImpl.assemble();
 }
 //-----------------------------------------------------------------------------
-void Impl::init()
+void SymmetricAssembler::PImpl::init()
 {
   // If the bcs match (which is the usual case), we are assembling a normal
   // square matrix which contains the diagonal (and the dofmaps should match,
@@ -151,13 +159,9 @@ void Impl::init()
   }
 
   dolfin_assert(a.rank() == 2);
-
-  tensor.resize(ufc.A.size());
-  macro_tensor.resize(ufc.macro_A.size());
-
 }
 //-----------------------------------------------------------------------------
-void Impl::assemble()
+void SymmetricAssembler::PImpl::assemble()
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -206,8 +210,8 @@ void Impl::assemble()
     coefficients[i]->gather();
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(As, a, 0, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(An, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A_nonsymm, a, 0, reset_sparsity, add_values);
 
   // Assemble over cells
   assemble_cells();
@@ -221,12 +225,12 @@ void Impl::assemble()
   // Finalize assembly of global tensor
   if (finalize_tensor)
   {
-    As.apply("add");
-    An.apply("add");
+    A.apply("add");
+    A_nonsymm.apply("add");
   }
 }
 //-----------------------------------------------------------------------------
-void Impl::assemble_cells()
+void SymmetricAssembler::PImpl::assemble_cells()
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_domains() == 0)
@@ -251,7 +255,7 @@ void Impl::assemble_cells()
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
-  Progress p(AssemblerTools::progress_message(As.rank(), "cells"), mesh.num_cells());
+  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -279,17 +283,17 @@ void Impl::assemble_cells()
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
     // Apply boundary conditions
-    apply_local_bc(ufc.A, tensor, dofs);
+    apply_local_bc(ufc.A, ufc_nonsymm.A, dofs);
 
     // Add entries to global tensor.
-    As.add(&ufc.A[0], dofs);
-    An.add(&tensor[0], dofs);
+    A.add(&ufc.A[0], dofs);
+    A_nonsymm.add(&ufc_nonsymm.A[0], dofs);
 
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void Impl::assemble_exterior_facets()
+void SymmetricAssembler::PImpl::assemble_exterior_facets()
 {
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_domains() == 0)
@@ -322,7 +326,7 @@ void Impl::assemble_exterior_facets()
   dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(AssemblerTools::progress_message(As.rank(), "exterior facets"),
+  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -365,17 +369,17 @@ void Impl::assemble_exterior_facets()
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
 
     // Apply boundary conditions
-    apply_local_bc(ufc.A, tensor, dofs);
+    apply_local_bc(ufc.A, ufc_nonsymm.A, dofs);
 
     // Add entries to global tensor
-    As.add(&ufc.A[0], dofs);
-    An.add(&tensor[0], dofs);
+    A.add(&ufc.A[0], dofs);
+    A_nonsymm.add(&ufc_nonsymm.A[0], dofs);
 
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void Impl::assemble_interior_facets()
+void SymmetricAssembler::PImpl::assemble_interior_facets()
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_domains() == 0)
@@ -425,7 +429,7 @@ void Impl::assemble_interior_facets()
   }
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(As.rank(), "interior facets"),
+  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -464,7 +468,7 @@ void Impl::assemble_interior_facets()
     ufc.update(cell0, local_facet0, cell1, local_facet1);
 
     // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < form_rank; i++)
+    for (uint i = 0; i < form_rank; ++i)
     {
       // Get dofs for each cell
       const std::vector<uint>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
@@ -485,77 +489,79 @@ void Impl::assemble_interior_facets()
                               local_facet0, local_facet1);
 
     // Apply boundary conditions
-    apply_local_bc(ufc.macro_A, macro_tensor, macro_dof_ptrs);
+    apply_local_bc(ufc.macro_A, ufc_nonsymm.macro_A, macro_dof_ptrs);
 
     // Add entries to global tensor
-    As.add(&ufc.macro_A[0], macro_dofs);
-    An.add(&macro_tensor[0], macro_dofs);
+    A.add(&ufc.macro_A[0], macro_dofs);
+    A_nonsymm.add(&ufc_nonsymm.macro_A[0], macro_dofs);
 
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void Impl::apply_local_bc(std::vector<double> &elm_As, std::vector<double> &elm_An,
-                          const std::vector<const std::vector<uint>*> &dofs)
+void SymmetricAssembler::PImpl::apply_local_bc(std::vector<double> &local_A,
+                                               std::vector<double> &local_A_nonsymm,
+                                               const std::vector<const std::vector<uint>*> &dofs)
 {
   // Get local dimensions
-  const uint n_lrows = dofs[0]->size();
-  const uint n_lcols = dofs[1]->size();
-  const uint n_entries = n_lrows*n_lcols;
+  const uint num_local_rows = dofs[0]->size();
+  const uint num_local_cols = dofs[1]->size();
+  const uint num_entries = num_local_rows*num_local_cols;
 
-  zerofill(elm_An);
+  // Initialize the nonsymmetric part to 0.0
+  zerofill(local_A_nonsymm);
 
   // Convenience aliases
-  const std::vector<uint> &grows = *dofs[0];
-  const std::vector<uint> &gcols = *dofs[1];
+  const std::vector<uint> &row_dofs = *dofs[0];
+  const std::vector<uint> &col_dofs = *dofs[1];
 
-  if (matching_bcs && grows!=gcols)
+  if (matching_bcs && row_dofs!=col_dofs)
     dolfin_error("SymmetricAssembler.cpp",
                  "apply_local_bc",
                  "Same BCs are used for rows and columns, but dofmaps don't match");
 
-  // Store the local boundary conditions
-  lrow_is_bc.resize(n_lrows);
-  for (uint lrow=0; lrow<n_lrows; lrow++)
+  // Store the local boundary conditions, to avoid having to search for them
+  // twice in the (common) case of matching_bcs.
+  local_row_is_bc.resize(num_local_rows);
+  for (uint row = 0; row < num_local_rows; ++row)
   {
-    DirichletBC::Map::const_iterator bc_item = row_bc_values.find(grows[lrow]);
-    lrow_is_bc[lrow] = (bc_item != row_bc_values.end());
+    DirichletBC::Map::const_iterator bc_item = row_bc_values.find(row_dofs[row]);
+    local_row_is_bc[row] = (bc_item != row_bc_values.end());
   }
 
-  // Zero BC rows in elm_As
-  for (uint lrow=0; lrow<n_lrows; lrow++) {
-    if (!lrow_is_bc[lrow])
-      continue;
-    zerofill(&elm_As[lrow*n_lcols], n_lcols);
-  }
+  // Zero BC rows in local_A
+  for (uint row = 0; row < num_local_rows; ++row)
+    if (local_row_is_bc[row])
+      zerofill(&local_A[row*num_local_cols], num_local_cols);
 
-  // Move BC columns from elm_As to elm_An
-  for (uint lcol=0; lcol<n_lcols; lcol++)
+  for (uint col = 0; col < num_local_cols; ++col)
   {
+    // Do nothing if column is not affected by BCs
     if (matching_bcs) {
-      if (!lrow_is_bc[lcol])
+      if (!local_row_is_bc[col])
         continue;
     }
     else
     {
-      DirichletBC::Map::const_iterator bc_item = col_bc_values.find(gcols[lcol]);
+      DirichletBC::Map::const_iterator bc_item = col_bc_values.find(col_dofs[col]);
       if (bc_item == col_bc_values.end())
         continue;
     }
 
-    for (uint idx=lcol; idx<n_entries; idx+=n_lcols)
+    // The column is affected by BCs, so move it to A_nonsymm and zero it in A
+    for (uint entry = col; entry < num_entries; entry += num_local_cols)
     {
-      elm_An[idx] = elm_As[idx];
-      elm_As[idx] = 0.0;
+      local_A_nonsymm[entry] = local_A[entry];
+      local_A[entry] = 0.0;
     }
 
     // Set diagonal to 1.0, IF the matrix is a diagonal block (i.e, if the bcs
     // match). Do this only once per dof, even if it is part of multiple cells.
     if (matching_bcs)
     {
-      const bool diagonal_already_inserted = !diagonal_done.insert(gcols[lcol]).second;
-      if (!diagonal_already_inserted)
-        elm_As[lcol+lcol*n_lcols] = 1.0;
+      const bool diagonal_already_set = !already_set_diagonals.insert(col_dofs[col]).second;
+      if (!diagonal_already_set)
+        local_A[col+col*num_local_cols] = 1.0;
     }
   }
 }

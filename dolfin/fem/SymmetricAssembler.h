@@ -60,8 +60,8 @@ namespace dolfin
     ///
     /// Note: row_bcs and col_bcs will normally be the same, but are different
     /// for e.g. off-diagonal block matrices in a mixed PDE.
-    static void assemble(GenericMatrix &As,
-                         GenericMatrix &An,
+    static void assemble(GenericMatrix &A,
+                         GenericMatrix &A_nonsymm,
                          const Form &a,
                          const std::vector<const DirichletBC*> &row_bcs,
                          const std::vector<const DirichletBC*> &col_bcs,
@@ -71,6 +71,9 @@ namespace dolfin
                          bool reset_sparsity=true,
                          bool add_values=false,
                          bool finalize_tensor=true);
+
+  private:
+    class PImpl;
   };
 }
 
