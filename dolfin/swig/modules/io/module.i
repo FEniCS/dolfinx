@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-01
+// Last changed: 2012-02-02
 
 
 // The PyDOLFIN extension module for the io module
@@ -46,6 +46,7 @@ import_array();
 %include "dolfin/swig/nls/local_imports.i"
 %include "dolfin/swig/intersection/local_imports.i"
 %include "dolfin/swig/mesh/local_imports.i"
+%include "dolfin/swig/generation/local_imports.i"
 %include "dolfin/swig/refinement/local_imports.i"
 %include "dolfin/swig/function/local_imports.i"
 %include "dolfin/swig/graph/local_imports.i"

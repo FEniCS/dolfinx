@@ -53,13 +53,13 @@ f.close()
 
 # Combined modules with sub modules
 # NOTE: Changes in combined modules should be done here.
-combined_modules = dict(common = ["common", "parameter", "log"],
-                        la = ["la", "nls"],
-                        mesh = ["mesh", "intersection", "refinement", "ale",\
-                                "graph"],
+combined_modules = dict(common   = ["common", "parameter", "log"],
+                        la       = ["la", "nls"],
+                        mesh     = ["mesh", "intersection", "refinement", \
+                                    "ale", "graph", "generation"],
                         function = ["function", "math"],
-                        fem = ["fem", "quadrature", "adaptivity"],
-                        io = ["io", "plot"])
+                        fem      = ["fem", "quadrature", "adaptivity"],
+                        io       = ["io", "plot"])
 
 # Check that the directory structure of the combined modules
 # corresponds to the above dict
@@ -67,7 +67,7 @@ module_dirs = []
 for module_dir in glob.glob("modules/*"):
     module_dirs.append(module_dir.split(os.path.sep)[-1])
 
-# Some sanity checks 
+# Some sanity checks
 for module_dir in module_dirs:
     if module_dir not in combined_modules:
         raise RuntimeError("Found a subdirectory: '%s' under the 'modules' "\
@@ -142,7 +142,7 @@ def create_combined_module_file(combined_module, submodules):
         combined_module_form["module_imports"] = "\n".join(submodule_imports)
     else:
         combined_module_form["module_imports"] = ""
-    
+
     # Write the generated code
     combined_module_file.write(combined_module_template % combined_module_form)
 
@@ -156,11 +156,11 @@ def extract_module_header_files(submodule):
     for line in f:
         if re.search("^#include ",line):
             header = line.split()[1].replace("<", "").replace(">", "")
-            
+
             # Get just the file name (after last /) and check against excludes:
             if not header.split("/")[-1] in excludes:
                 module_headers.append(header)
-    
+
     return module_headers
 
 def write_module_code(submodule, combinedmodule):
@@ -169,7 +169,7 @@ def write_module_code(submodule, combinedmodule):
 
     1) Write include.i file which consist of include of dolfin header files
     2) Write an import file to facilitate SWIG type import for each module
-    
+
     """
 
     def write_include_modifier(submodule, modifier):
@@ -189,17 +189,17 @@ def write_module_code(submodule, combinedmodule):
                         combinedmodule,
                         local_imports="%%%%import(module=\"%s\") \"%%s\"\n" %\
                         combinedmodule)
-    
+
     # Generate include and import files
     files = {}
     interface_files = []
-    
+
     for file_type, header_form in header_forms.items():
 
         # Create the file
         files[file_type] = open(os.path.join(submodule, file_type + ".i"), "w")
         files[file_type].write(copyright_statement%(copyright_form_swig))
-    
+
         files[file_type].write("// Auto generated %s statements for the "\
                                "module: %s\n\n"% (file_type[:-1], submodule))
 
@@ -209,7 +209,7 @@ def write_module_code(submodule, combinedmodule):
         # Write include or import statement for each individual file
         for header in headers:
             files[file_type].write(header_form % header)
-    
+
         # Check if there is a foo/post.i file
         if file_type == "includes":
             write_include_modifier(submodule, "post")
@@ -266,7 +266,7 @@ def generate_swig_include_files():
 
         # Iterate over all submodules and collect interface files
         for submodule in original_submodules:
-            
+
             # If the submodule is included in the combined module
             if submodule in submodules:
                 module_interface_files.extend(interface_files[submodule])
@@ -276,18 +276,18 @@ def generate_swig_include_files():
             # other submodules
             elif combined_module == "common":
                 continue
-            
-            # Else just add the local_import.i and pre.i file 
+
+            # Else just add the local_import.i and pre.i file
             else:
                 module_interface_files.append(\
                     "../../%s/local_imports.i"%submodule)
                 if os.path.isfile(os.path.join(submodule, "pre.i")):
                     module_interface_files.append(\
                         "../../%s/pre.i"%submodule)
-        
+
         # Create a file being the root of the combined module
         create_combined_module_file(combined_module, submodules)
-    
+
         # Add global interface files
         module_interface_files.extend(global_interface_files)
 
@@ -303,7 +303,7 @@ def generate_swig_include_files():
         interface_files_file = open(os.path.join("modules", combined_module,
                                                  "interface_files.txt"), "w")
         interface_files_file.write(";".join(module_interface_files))
-        
+
 
 if __name__ == "__main__":
     generate_swig_include_files()

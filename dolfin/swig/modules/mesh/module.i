@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-01
+// Last changed: 2012-02-02
 
 
 // The PyDOLFIN extension module for the mesh module
@@ -57,6 +57,7 @@ import_array();
 //%feature("autodoc", "1");
 %include "dolfin/swig/intersection/docstrings.i"
 %include "dolfin/swig/mesh/docstrings.i"
+%include "dolfin/swig/generation/docstrings.i"
 %include "dolfin/swig/refinement/docstrings.i"
 %include "dolfin/swig/graph/docstrings.i"
 %include "dolfin/swig/ale/docstrings.i"
@@ -64,6 +65,7 @@ import_array();
 // Include generated include files for the DOLFIN headers for this module
 %include "dolfin/swig/intersection/includes.i"
 %include "dolfin/swig/mesh/includes.i"
+%include "dolfin/swig/generation/includes.i"
 %include "dolfin/swig/refinement/includes.i"
 %include "dolfin/swig/graph/includes.i"
 %include "dolfin/swig/ale/includes.i"
