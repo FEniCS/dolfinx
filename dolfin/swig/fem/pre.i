@@ -183,10 +183,10 @@
   }
 }
 
-%typemap(freearg) const ufc::cell& (bool dolfin_cell)
+%typemap(freearg) const ufc::cell&
 {
   // If a dolfin cell was created delete it
-  if(dolfin_cell)
+  if(dolfin_cell$argnum)
     delete $1;
 }
 
