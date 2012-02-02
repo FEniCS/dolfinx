@@ -53,3 +53,5 @@ int main()
 {
   info("DOLFIN must be compiled with CGAL to run this demo.");
 }
+
+#endif
