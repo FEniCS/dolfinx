@@ -38,6 +38,6 @@ mesh = Mesh()
 Triangulate.triangulate(mesh, random_points, 2)
 plot(mesh, interactive=True)
 
-# Triangulate points in 2D and plot mesh
+# Triangulate points in 3D and plot mesh
 Triangulate.triangulate(mesh, random_points, 3)
 plot(mesh, interactive=True)
