@@ -30,6 +30,9 @@ using namespace dolfin;
 
 int main()
 {
+  // Create empty mesh
+  Mesh mesh;
+
   // Polygonal domain vertices
   std::vector<Point> domain_vertices;
   domain_vertices.push_back(Point(0.0, 0.0));
@@ -39,11 +42,42 @@ int main()
   domain_vertices.push_back(Point(0.0, 1.0));
   domain_vertices.push_back(domain_vertices[0]);
 
-  // Create empty mesh
-  Mesh mesh;
-
-  // Generate mesh and plot
+  // Generate 2D mesh and plot
   PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.025);
+  plot(mesh);
+
+
+  // Polyhedron face vertices
+  std::vector<Point> face_vertices;
+  face_vertices.push_back(Point(0.0, 0.0, 0.0));
+  face_vertices.push_back(Point(0.0, 0.0, 1.0));
+  face_vertices.push_back(Point(0.0, 1.0, 0.0));
+  face_vertices.push_back(Point(1.0, 0.0, 0.0));
+
+  // Polyhedron faces (must be triangular) for a tetrahedron
+  std::vector<std::vector<unsigned int> > faces(4, std::vector<unsigned int>(3));
+  faces[0][0] = 3;
+  faces[0][1] = 2;
+  faces[0][2] = 1;
+
+  faces[1][0] = 0;
+  faces[1][1] = 3;
+  faces[1][2] = 1;
+
+  faces[2][0] = 0;
+  faces[2][1] = 2;
+  faces[2][2] = 3;
+
+  faces[3][0] = 0;
+  faces[3][1] = 1;
+  faces[3][2] = 2;
+
+  // Generate 3D mesh and plot
+  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.05);
+  plot(mesh);
+
+  // Generate 3D mesh from OFF file input (distorted cube)
+  PolyhedralMeshGenerator::generate(mesh, "cube.off", 0.2);
   plot(mesh);
 }
 
