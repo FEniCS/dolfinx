@@ -21,6 +21,8 @@
 #ifndef __DOLFIN_POLYHEDRALMESHGENERATOR_H
 #define __DOLFIN_POLYHEDRALMESHGENERATOR_H
 
+#ifdef HAS_CGAL
+
 #include <string>
 #include <vector>
 
@@ -54,4 +56,5 @@ namespace dolfin
 
 }
 
+#endif
 #endif
