@@ -30,9 +30,9 @@ using namespace dolfin;
 int main()
 {
   // Generate collection of random points
-  const uint num_points = 2000;
+  const unsigned int num_points = 2000;
   std::vector<Point> random_points;
-  for (uint i = 0; i < num_points; ++i)
+  for (unsigned int i = 0; i < num_points; ++i)
     random_points.push_back(Point(dolfin::rand(), dolfin::rand(), dolfin::rand()));
 
   // Create empty Mesh
