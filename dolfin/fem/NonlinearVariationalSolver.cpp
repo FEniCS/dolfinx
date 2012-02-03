@@ -135,8 +135,8 @@ NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
 
   // Check if Jacobian matrix sparsity pattern should be reset
   dolfin_assert(solver);
-  bool reset_sparsity = !(solver->parameters["reset_jacobian"] &&
-                          jacobian_initialized);
+  const bool reset_jacobian = solver->parameters["reset_jacobian"];
+  bool reset_sparsity = reset_jacobian || !jacobian_initialized;
 
   // Assemble left-hand side
   dolfin_assert(J);
