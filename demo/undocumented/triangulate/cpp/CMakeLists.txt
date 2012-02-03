@@ -1,7 +1,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(demo_generation)
+project(demo_triangulate)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -25,7 +25,8 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 
 # Include directories
-include_directories(${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
+include_directories(${DOLFIN_INCLUDE_DIRS})
+include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 add_executable(demo_triangulate main.cpp)
