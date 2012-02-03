@@ -62,5 +62,5 @@ faces = [face0, face1, face2, face3]
 #plot(mesh, interactive=True)
 
 # Generate 3D mesh from OFF file input (distorted cube)
-PolyhedralMeshGenerator.generate(mesh, "cube.off", 0.2)
+PolyhedralMeshGenerator.generate(mesh, "cube.off", 0.21)
 plot(mesh, interactive=True)
