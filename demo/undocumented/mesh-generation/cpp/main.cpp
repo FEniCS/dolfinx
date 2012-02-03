@@ -76,7 +76,7 @@ int main()
   plot(mesh);
 
   // Generate 3D mesh from OFF file input (distorted cube)
-  PolyhedralMeshGenerator::generate(mesh, "cube.off", 0.21);
+  PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.21);
   plot(mesh);
 }
 
