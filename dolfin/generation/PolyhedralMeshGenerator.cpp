@@ -28,6 +28,7 @@
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Mesh_polyhedron_3.h>
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
 
