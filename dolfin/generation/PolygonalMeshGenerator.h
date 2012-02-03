@@ -1,6 +1,4 @@
-// Auto generated SWIG file for Python interface of DOLFIN
-//
-// Copyright (C) 2012 Johan Hake
+// Copyright (C) 2012 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -17,18 +15,36 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-01-18
-// Last changed: 2012-02-03
+// First added:  2012-01-05
+// Last changed:
 
-// Auto generated include statements for the module: function
+#ifndef __DOLFIN_POLYGONALMESHGENERATOR_H
+#define __DOLFIN_POLYGONALMESHGENERATOR_H
 
-%include "dolfin/swig/function/pre.i"
-%include "dolfin/function/GenericFunction.h"
-%include "dolfin/function/Expression.h"
-%include "dolfin/function/Function.h"
-%include "dolfin/function/FunctionSpace.h"
-%include "dolfin/function/SubSpace.h"
-%include "dolfin/function/Constant.h"
-%include "dolfin/function/SpecialFunctions.h"
-%include "dolfin/function/SpecialFacetFunction.h"
-%include "dolfin/swig/function/post.i"
+#ifdef HAS_CGAL
+
+#include <vector>
+
+namespace dolfin
+{
+
+  class Mesh;
+
+  /// Polygonal mesh generator that uses CGAL
+
+  class PolygonalMeshGenerator
+  {
+  public:
+
+    /// Generate mesh of a polygonal domain described by domain vertices
+    static void generate(Mesh& mesh, const std::vector<Point>& vertices,
+                         double cell_size);
+
+  private:
+
+  };
+
+}
+
+#endif
+#endif
