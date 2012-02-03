@@ -23,4 +23,5 @@
 // Auto generated include statements for the module: generation
 
 %include "dolfin/generation/PolygonalMeshGenerator.h"
+%include "dolfin/generation/PolyhedralMeshGenerator.h"
 %include "dolfin/generation/Triangulate.h"

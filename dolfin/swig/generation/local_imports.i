@@ -23,4 +23,5 @@
 // Auto generated local_import statements for the module: generation
 
 %import(module="mesh") "dolfin/generation/PolygonalMeshGenerator.h"
+%import(module="mesh") "dolfin/generation/PolyhedralMeshGenerator.h"
 %import(module="mesh") "dolfin/generation/Triangulate.h"

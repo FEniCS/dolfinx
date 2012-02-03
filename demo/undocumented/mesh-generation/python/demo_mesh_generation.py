@@ -41,3 +41,26 @@ mesh = Mesh()
 # Generate mesh and plot
 PolygonalMeshGenerator.generate(mesh, domain_vertices, 0.025);
 plot(mesh, interactive=True)
+
+# Polyhedron face vertices
+face_vertices = [Point(0.0, 0.0, 0.0),
+                 Point(0.0, 0.0, 1.0),
+                 Point(0.0, 1.0, 0.0),
+                 Point(1.0, 0.0, 0.0)]
+
+# Polyhedron faces (must be triangular) for a tetrahedron
+face0 = [3, 2, 1]
+face1 = [0, 3, 1]
+face2 = [0, 2, 3]
+face3 = [0, 1, 2]
+faces = [face0, face1, face2, face3]
+
+# FIXME: Need SWIG typemap for std::vector<std::vector<unisgned int> >
+
+# Generate 3D mesh and plot
+#PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
+#plot(mesh, interactive=True)
+
+# Generate 3D mesh from OFF file input (distorted cube)
+PolyhedralMeshGenerator.generate(mesh, "cube.off", 0.2)
+plot(mesh, interactive=True)

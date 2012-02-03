@@ -46,7 +46,6 @@ int main()
   PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.025);
   plot(mesh);
 
-
   // Polyhedron face vertices
   std::vector<Point> face_vertices;
   face_vertices.push_back(Point(0.0, 0.0, 0.0));
