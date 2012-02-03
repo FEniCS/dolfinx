@@ -22,13 +22,41 @@
 
 #include <vector>
 
-#include "cgal_triangulate.h"
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Triangulation_2.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Triangulation_3.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
+#include <CGAL/Triangulation_cell_base_with_info_3.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/Point.h>
 #include "CGALMeshBuilder.h"
 #include "PolygonalMeshGenerator.h"
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+
+typedef CGAL::Triangulation_vertex_base_2<K> Vbase;
+typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, K, Vbase> Vb;
+typedef CGAL::Delaunay_mesh_face_base_2<K> Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;
+typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+typedef CGAL::Delaunay_mesher_2<CDT, Criteria> CGAL_Mesher;
+
+typedef CDT::Vertex_handle Vertex_handle;
+typedef CDT::Point CGAL_Point;
 
 using namespace dolfin;
 

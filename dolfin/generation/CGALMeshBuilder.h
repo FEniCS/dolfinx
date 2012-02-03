@@ -24,12 +24,14 @@
 #ifdef HAS_CGAL
 
 #include <vector>
+
+#include <CGAL/Triangulation_2.h>
+#include <CGAL/Triangulation_3.h>
+
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/Point.h>
-
-#include "cgal_triangulate.h"
 
 namespace dolfin
 {

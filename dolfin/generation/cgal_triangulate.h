@@ -32,8 +32,6 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 
-#include <CGAL/Projection_traits_xy_3.h>
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
@@ -54,17 +52,6 @@ namespace dolfin
   typedef CGAL::Triangulation_face_base_2<K> Tfb2;
   typedef CGAL::Triangulation_data_structure_2<Tvb2, Tfb2> Tds2;
   typedef CGAL::Delaunay_triangulation_2<K, Tds2> Triangulation2;
-
-  // 2D/3D triangulation typedefs
-  /*
-  typedef CGAL::Projection_traits_xy_3<K> Gt;
-  typedef CGAL::Triangulation_vertex_base_2<Gt> Tvb2base;
-  typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Gt, Tvb2base> Tvb2;
-  typedef CGAL::Triangulation_face_base_2<Gt> Tfb2;
-  typedef CGAL::Triangulation_data_structure_2<Tvb2, Tfb2> Tds2;
-
-  typedef CGAL::Delaunay_triangulation_2<Gt, Tds2> Triangulation2;
-  */
 
   // 3D triangulation typedefs
   typedef CGAL::Triangulation_vertex_base_3<K> Tvb3base;

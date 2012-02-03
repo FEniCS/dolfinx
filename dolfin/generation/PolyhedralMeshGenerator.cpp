@@ -22,22 +22,22 @@
 
 #include <vector>
 
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/Point.h>
-#include "CGALMeshBuilder.h"
-#include "PolyhedralMeshGenerator.h"
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
-#include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
-#include <CGAL/make_mesh_3.h>
 #include <CGAL/Mesh_polyhedron_3.h>
+#include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
+#include <CGAL/Triangulation_cell_base_with_info_3.h>
+#include <CGAL/make_mesh_3.h>
 
-using namespace dolfin;
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/Point.h>
+#include "PolyhedralMeshGenerator.h"
+
+#include "CGALMeshBuilder.h"
 
 // CGAL kernel typedefs
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -58,7 +58,6 @@ typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain, Tcb3test> Cell_base;
 typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base> Tds_mesh;
 typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh>             Tr;
 
-
 // CGAL 3D mesh typedef
 typedef CGAL::Mesh_complex_3_in_triangulation_3<
   Tr, Mesh_domain::Corner_index, Mesh_domain::Curve_segment_index> C3t3;
@@ -71,6 +70,8 @@ typedef CGAL::Mesh_polyhedron_3<K>::Type Polyhedron;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 template <class HDS>
