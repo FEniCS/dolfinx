@@ -197,7 +197,7 @@ namespace dolfin
     virtual void ident_zeros();
 
     /// Compress matrix
-    virtual void compress();
+    virtual void compress(bool keep_diagonal=true);
 
   };
 

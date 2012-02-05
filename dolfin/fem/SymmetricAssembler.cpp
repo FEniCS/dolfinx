@@ -49,19 +49,23 @@ class SymmetricAssembler::PImpl
 {
 public:
   // User-provided parameters
-  GenericMatrix &A, &A_nonsymm;
-  const Form &a;
-  const std::vector<const DirichletBC*> &row_bcs, &col_bcs;
-  const MeshFunction<uint> *cell_domains, *exterior_facet_domains, *interior_facet_domains;
+  GenericMatrix& A;
+  GenericMatrix& A_nonsymm;
+  const Form& a;
+  const std::vector<const DirichletBC*>& row_bcs;
+  const std::vector<const DirichletBC*>& col_bcs;
+  const MeshFunction<uint>* cell_domains;
+  const MeshFunction<uint>* exterior_facet_domains;
+  const MeshFunction<uint>* interior_facet_domains;
   bool reset_sparsity, add_values, finalize_tensor;
 
-  PImpl(GenericMatrix &_A, GenericMatrix &_A_nonsymm,
-        const Form &_a,
-        const std::vector<const DirichletBC*> &_row_bcs,
-        const std::vector<const DirichletBC*> &_col_bcs,
-        const MeshFunction<uint> *_cell_domains,
-        const MeshFunction<uint> *_exterior_facet_domains,
-        const MeshFunction<uint> *_interior_facet_domains,
+  PImpl(GenericMatrix& _A, GenericMatrix& _A_nonsymm,
+        const Form& _a,
+        const std::vector<const DirichletBC*>& _row_bcs,
+        const std::vector<const DirichletBC*>& _col_bcs,
+        const MeshFunction<uint>* _cell_domains,
+        const MeshFunction<uint>* _exterior_facet_domains,
+        const MeshFunction<uint>* _interior_facet_domains,
         bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
     : A(_A), A_nonsymm(_A_nonsymm), a(_a),
       row_bcs(_row_bcs), col_bcs(_col_bcs),
@@ -84,11 +88,11 @@ private:
   void assemble_exterior_facets();
   void assemble_interior_facets();
 
-  void apply_local_bc(std::vector<double> &elm_A, std::vector<double> &elm_A_nonsymm,
-                      const std::vector<const std::vector<uint>*> &dofs);
+  void apply_local_bc(std::vector<double>& elm_A, std::vector<double>& elm_A_nonsymm,
+                      const std::vector<const std::vector<uint>*>& dofs);
 
   // These are derived from the variables above:
-  const Mesh &mesh;     // = Mesh(a)
+  const Mesh& mesh;     // = Mesh(a)
   UFC ufc;              // = UFC(a)
   UFC ufc_nonsymm;      // = UFC(a), used for scratch local tensors
   bool matching_bcs;    // true if row_bcs==col_bcs
@@ -107,8 +111,8 @@ private:
 void SymmetricAssembler::assemble(GenericMatrix& A,
                                   GenericMatrix& A_nonsymm,
                                   const Form& a,
-                                  const std::vector<const DirichletBC*> &row_bcs,
-                                  const std::vector<const DirichletBC*> &col_bcs,
+                                  const std::vector<const DirichletBC*>& row_bcs,
+                                  const std::vector<const DirichletBC*>& col_bcs,
                                   const MeshFunction<uint>* cell_domains,
                                   const MeshFunction<uint>* exterior_facet_domains,
                                   const MeshFunction<uint>* interior_facet_domains,
@@ -499,9 +503,9 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
   }
 }
 //-----------------------------------------------------------------------------
-void SymmetricAssembler::PImpl::apply_local_bc(std::vector<double> &local_A,
-                                               std::vector<double> &local_A_nonsymm,
-                                               const std::vector<const std::vector<uint>*> &dofs)
+void SymmetricAssembler::PImpl::apply_local_bc(std::vector<double>& local_A,
+                                               std::vector<double>& local_A_nonsymm,
+                                               const std::vector<const std::vector<uint>*>& dofs)
 {
   // Get local dimensions
   const uint num_local_rows = dofs[0]->size();
@@ -512,8 +516,8 @@ void SymmetricAssembler::PImpl::apply_local_bc(std::vector<double> &local_A,
   zerofill(local_A_nonsymm);
 
   // Convenience aliases
-  const std::vector<uint> &row_dofs = *dofs[0];
-  const std::vector<uint> &col_dofs = *dofs[1];
+  const std::vector<uint>& row_dofs = *dofs[0];
+  const std::vector<uint>& col_dofs = *dofs[1];
 
   if (matching_bcs && row_dofs!=col_dofs)
     dolfin_error("SymmetricAssembler.cpp",
