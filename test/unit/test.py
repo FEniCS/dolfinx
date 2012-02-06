@@ -46,7 +46,7 @@ tests = {
     "meshconvert":    ["test"],
     "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
                        "MeshFunction", "MeshIterator", "MeshMarkers",
-                       "MeshValueCollection"],
+                       "MeshValueCollection", "Mesh"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
