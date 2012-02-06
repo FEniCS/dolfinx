@@ -145,7 +145,7 @@ void XMLFile::operator>> (GenericVector& input)
   // Read vector on root process
   if (MPI::process_number() == 0)
   {
-    assert(dolfin_node);
+    dolfin_assert(dolfin_node);
     XMLVector::read(input, dolfin_node);
   }
 

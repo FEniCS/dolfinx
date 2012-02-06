@@ -37,13 +37,13 @@ double Legendre::eval(uint n, double x)
 //-----------------------------------------------------------------------------
 double Legendre::ddx(uint n, double x)
 {
-  assert(1.0 - x*x > 0.0);
+  dolfin_assert(1.0 - x*x > 0.0);
   return -boost::math::legendre_p(n, 1, x)/(std::sqrt(1.0 - x*x));
 }
 //-----------------------------------------------------------------------------
 double Legendre::d2dx(uint n, double x)
 {
-  assert(1.0 - x*x != 0.0);
+  dolfin_assert(1.0 - x*x != 0.0);
   return boost::math::legendre_p(n, 2, x)/(1.0 - x*x);
 }
 //-----------------------------------------------------------------------------

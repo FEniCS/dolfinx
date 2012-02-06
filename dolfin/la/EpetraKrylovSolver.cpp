@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal
+// Copyright (C) 2008-2011 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008
-// Last changed: 2011-11-11
+// Last changed: 2011-11-18
 
 #ifdef HAS_TRILINOS
 
@@ -39,13 +39,13 @@
 #include <Epetra_LinearProblem.h>
 
 #include <dolfin/log/dolfin_log.h>
-#include "GenericMatrix.h"
-#include "GenericVector.h"
-#include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "TrilinosPreconditioner.h"
+#include "GenericMatrix.h"
+#include "GenericVector.h"
 #include "KrylovSolver.h"
+#include "TrilinosPreconditioner.h"
+#include "EpetraKrylovSolver.h"
 
 using namespace dolfin;
 
@@ -57,16 +57,19 @@ const std::map<std::string, int> EpetraKrylovSolver::_methods
                               ("tfqmr",    AZ_tfqmr)
                               ("bicgstab", AZ_bicgstab);
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-EpetraKrylovSolver::methods()
-{
-  return boost::assign::pair_list_of
+// List of available solvers descriptions
+const std::vector<std::pair<std::string, std::string> > 
+EpetraKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
     ("gmres",      "Generalized minimal residual method")
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+EpetraKrylovSolver::methods()
+{
+  return EpetraKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -140,8 +143,8 @@ void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatr
 {
   this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
   this->P = GenericTensor::down_cast<const EpetraMatrix>(P);
-  assert(this->A);
-  assert(this->P);
+  dolfin_assert(this->A);
+  dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& EpetraKrylovSolver::get_operator() const
@@ -163,9 +166,9 @@ dolfin::uint EpetraKrylovSolver::solve(GenericVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
-  assert(solver);
-  assert(A);
-  assert(P);
+  dolfin_assert(solver);
+  dolfin_assert(A);
+  dolfin_assert(P);
 
   // Check dimensions
   const uint M = A->size(0);
@@ -187,8 +190,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     A->resize(x, 1);
     x.zero();
   }
-
-  // FIXME: permit initial guess
+  else if (!parameters["nonzero_initial_guess"])
+    x.zero();
 
   // Create linear problem
   Epetra_LinearProblem linear_problem(A->mat().get(), x.vec().get(),
@@ -202,13 +205,11 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
     solver->SetAztecOption(AZ_output, AZ_none);
 
-  // Configure preconditioner
-  //if (preconditioner && !preconditioner_set)
-  //{
-    assert(P);
-    preconditioner->set(*this, *P);
-    //preconditioner_set = true;
-  //}
+  assert(P);
+  preconditioner->set(*this, *P);
+
+  // Set covergence check method
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
@@ -266,5 +267,4 @@ boost::shared_ptr<AztecOO> EpetraKrylovSolver::aztecoo() const
   return solver;
 }
 //-----------------------------------------------------------------------------
-
 #endif

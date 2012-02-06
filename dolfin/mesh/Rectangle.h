@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Anders Logg
+// Copyright (C) 2005-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-02
-// Last changed: 2009-09-29
+// Last changed: 2011-12-07
 
 #ifndef __RECTANGLE_H
 #define __RECTANGLE_H
@@ -31,15 +31,35 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
   ///
-  /// std::string diagonal ("left", "right", "right/left", "left/right", or "crossed")
-  /// indicates the direction of the diagonals.
+  /// *Arguments*
+  ///     x0 (double)
+  ///         :math:`x`-min.
+  ///     y0 (double)
+  ///         :math:`y`-min.
+  ///     x1 (double)
+  ///         :math:`x`-max.
+  ///     y1 (double)
+  ///         :math:`y`-max.
+  ///     xn (double)
+  ///         Number of cells in :math:`x`-direction.
+  ///     yn (double)
+  ///         Number of cells in :math:`y`-direction.
+  ///     diagonal (string)
+  ///         Direction of diagonals: "left", "right", "left/right", "crossed"
+  ///
+  /// *Example*
+  ///     .. code-block:: c++
+  ///
+  ///         // Mesh with 6 cells in each direction on the
+  ///         // set [-1,2] x [-1,2]
+  ///         Box mesh(-1, -1, 2, 2, 6, 6;
 
   class Rectangle : public Mesh
   {
   public:
 
     Rectangle(double x0, double y0, double x1, double y1,
-              uint nx, uint ny, std::string diagonal = "right");
+              uint nx, uint ny, std::string diagonal="right");
 
   };
 

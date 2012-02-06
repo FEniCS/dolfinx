@@ -87,10 +87,10 @@ NewtonSolver::~NewtonSolver()
 std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
-  assert(A);
-  assert(b);
-  assert(dx);
-  assert(solver);
+  dolfin_assert(A);
+  dolfin_assert(b);
+  dolfin_assert(dx);
+  dolfin_assert(solver);
 
   const uint maxiter = parameters["maximum_iterations"];
 
@@ -180,7 +180,7 @@ double NewtonSolver::relative_residual() const
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
-  assert(solver);
+  dolfin_assert(solver);
   return *solver;
 }
 //-----------------------------------------------------------------------------

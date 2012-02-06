@@ -55,9 +55,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
-    /// Return copy of tensor
-    virtual GenericTensor* copy() const = 0;
-
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const = 0;
 

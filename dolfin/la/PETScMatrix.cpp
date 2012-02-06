@@ -31,6 +31,8 @@
 #include <iomanip>
 #include <boost/assign/list_of.hpp>
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
@@ -89,7 +91,7 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 bool PETScMatrix::distributed() const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get type
   const MatType petsc_type;
@@ -147,17 +149,36 @@ void PETScMatrix::resize(uint M, uint N)
   }
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
+{
+  if (!A)
+  {
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix());
+    return B;
+  }
+  else
+  {
+    // Create copy of PETSc matrix
+    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
+
+    // Create PETScMatrix
+    boost::shared_ptr<GenericMatrix> B(new PETScMatrix(_Acopy));
+    return B;
+  }
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   // Get global dimensions and local range
-  assert(sparsity_pattern.rank() == 2);
+  dolfin_assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
   const std::pair<uint, uint> row_range = sparsity_pattern.local_range(0);
   const std::pair<uint, uint> col_range = sparsity_pattern.local_range(1);
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
-  assert(M > 0 && N > 0 && m > 0 && n > 0);
+  dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
@@ -193,21 +214,20 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 
-    /*
     // Set column indices
-    std::vector<std::vector<uint> > _column_indices = sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
-    std::vector<int> column_indices(sparsity_pattern.num_nonzeros());
-    uint k = 0;
+    /*
+    const std::vector<std::vector<uint> > _column_indices
+        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
+    std::vector<int> column_indices;
+    column_indices.reserve(sparsity_pattern.num_nonzeros());
     for (uint i = 0; i < _column_indices.size(); ++i)
-    {
-      for (uint j = 0; j < _column_indices[i].size(); ++j)
-        column_indices[k++] = _column_indices[i][j];
-    }
-    MatSeqAIJSetColumnIndices(*A, reinterpret_cast<int*>(&column_indices[0]));
-    */
+      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
+
+    MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
 
     // Do not allow new nonzero entries
-    //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    */
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
@@ -261,25 +281,10 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
 }
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScMatrix::copy() const
-{
-  if (!A)
-    return new PETScMatrix();
-  else
-  {
-    // Create copy of PETSc matrix
-    boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
-    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
-
-    // Create PETScMatrix
-    return new PETScMatrix(_Acopy);
-  }
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block, uint m, const uint* rows,
                                      uint n, const uint* cols) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get matrix entries (must be on this process)
   MatGetValues(*A,
@@ -291,7 +296,7 @@ void PETScMatrix::get(double* block, uint m, const uint* rows,
 void PETScMatrix::set(const double* block, uint m, const uint* rows,
                                            uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
@@ -301,7 +306,7 @@ void PETScMatrix::set(const double* block, uint m, const uint* rows,
 void PETScMatrix::add(const double* block, uint m, const uint* rows,
                                            uint n, const uint* cols)
 {
-  assert(A);
+  dolfin_assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
@@ -312,8 +317,8 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
                        bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
-  assert(this->A);
-  assert(AA->mat());
+  dolfin_assert(this->A);
+  dolfin_assert(AA->mat());
   if (same_nonzero_pattern)
     MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
   else
@@ -323,7 +328,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
 void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const int *cols = 0;
   const double *vals = 0;
@@ -340,7 +345,7 @@ void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
 void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
                          const std::vector<double>& values)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Check size of arrays
   if (columns.size() != values.size())
@@ -361,7 +366,7 @@ void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
 {
-  assert(A);
+  dolfin_assert(A);
 
   IS is = 0;
   PetscScalar null = 0.0;
@@ -385,7 +390,7 @@ void PETScMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
-  assert(A);
+  dolfin_assert(A);
 
   IS is = 0;
   PetscScalar one = 1.0;
@@ -409,7 +414,7 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   PETScVector& yy = y.down_cast<PETScVector>();
@@ -427,7 +432,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   PETScVector& yy = y.down_cast<PETScVector>();
@@ -445,7 +450,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Check that norm is known
   if (norm_types.count(norm_type) == 0)
@@ -462,7 +467,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
-  assert(A);
+  dolfin_assert(A);
   if (mode == "add")
   {
     MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
@@ -488,20 +493,20 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
-  assert(A);
+  dolfin_assert(A);
   MatZeroEntries(*A);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   MatScale(*A, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
-  assert(A);
+  dolfin_assert(A);
   MatScale(*A, 1.0 / a);
   return *this;
 }
@@ -549,6 +554,9 @@ void PETScMatrix::binary_dump(std::string file_name) const
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
+  if (!A)
+    return "<Uninitialized PETScMatrix>";
+
   std::stringstream s;
 
   if (verbose)
@@ -556,7 +564,7 @@ std::string PETScMatrix::str(bool verbose) const
     warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");
 
     // FIXME: Maybe this could be an option?
-    assert(A);
+    dolfin_assert(A);
     if (MPI::num_processes() > 1)
       MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
     else

@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2011-11-21
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -132,8 +132,8 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();
@@ -154,7 +154,7 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   // to make the partition in a way that does not make the aspect
   // ratio worse in each refinement. We do this by cutting the middle
   // octahedron along the shortest of three possible paths.
-  assert(editor.mesh);
+  dolfin_assert(editor.mesh);
   const Point p0 = editor.mesh->geometry().point(e0);
   const Point p1 = editor.mesh->geometry().point(e1);
   const Point p2 = editor.mesh->geometry().point(e2);
@@ -208,8 +208,8 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();
@@ -305,7 +305,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron
-  if (tetrahedron.dim() != 2)
+  if (tetrahedron.dim() != 3)
   {
     dolfin_error("TetrahedronCell.cpp",
                  "compute diameter of tetrahedron cell",
@@ -403,8 +403,8 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
 //-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
 {
-  assert(cell.mesh().topology().dim() == 3);
-  assert(cell.mesh().geometry().dim() == 3);
+  dolfin_assert(cell.mesh().topology().dim() == 3);
+  dolfin_assert(cell.mesh().geometry().dim() == 3);
 
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(2)[facet]);
@@ -438,7 +438,7 @@ void TetrahedronCell::order(Cell& cell,
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   if (topology(1, 0).size() > 0)
   {
-    assert(topology(3, 1).size() > 0);
+    dolfin_assert(topology(3, 1).size() > 0);
 
     // Get edges
     const uint* cell_edges = cell.entities(1);
@@ -454,7 +454,7 @@ void TetrahedronCell::order(Cell& cell,
   // Sort local vertices on facets in ascending order, connectivity 2 - 0
   if (topology(2, 0).size() > 0)
   {
-    assert(topology(3, 2).size() > 0);
+    dolfin_assert(topology(3, 2).size() > 0);
 
     // Get facets
     const uint* cell_facets = cell.entities(2);
@@ -470,9 +470,9 @@ void TetrahedronCell::order(Cell& cell,
   // Sort local edges on local facets after non-incident vertex, connectivity 2 - 1
   if (topology(2, 1).size() > 0)
   {
-    assert(topology(3, 2).size() > 0);
-    assert(topology(2, 0).size() > 0);
-    assert(topology(1, 0).size() > 0);
+    dolfin_assert(topology(3, 2).size() > 0);
+    dolfin_assert(topology(2, 0).size() > 0);
+    dolfin_assert(topology(1, 0).size() > 0);
 
     // Get facet numbers
     const uint* cell_facets = cell.entities(2);
@@ -521,7 +521,7 @@ void TetrahedronCell::order(Cell& cell,
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
   if (topology(3, 1).size() > 0)
   {
-    assert(topology(1, 0).size() > 0);
+    dolfin_assert(topology(1, 0).size() > 0);
 
     // Get cell vertices and edge numbers
     const uint* cell_vertices = cell.entities(0);
@@ -559,7 +559,7 @@ void TetrahedronCell::order(Cell& cell,
   // Sort local facets on cell after non-incident vertex, connectivity 3 - 2
   if (topology(3, 2).size() > 0)
   {
-    assert(topology(2, 0).size() > 0);
+    dolfin_assert(topology(2, 0).size() > 0);
 
     // Get cell vertices and facet numbers
     const uint* cell_vertices = cell.entities(0);
@@ -599,8 +599,8 @@ dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
+  dolfin_assert(e);
 
   // Ordering convention for edges (order of non-incident vertices)
   static uint EV[6][2] = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
@@ -609,7 +609,7 @@ dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const
   for (uint j = 0; j < 6; j++)
   {
     const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
-    assert(ev);
+    dolfin_assert(ev);
     const uint v0 = v[EV[i][0]];
     const uint v1 = v[EV[i][1]];
     if (ev[0] != v0 && ev[0] != v1 && ev[1] != v0 && ev[1] != v1)

@@ -126,7 +126,7 @@ void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> 
   symbolic.reset();
   numeric.reset();
   this->A = A;
-  assert(this->A);
+  dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& UmfpackLUSolver::get_operator() const
@@ -142,7 +142,7 @@ const GenericMatrix& UmfpackLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -186,16 +186,16 @@ void UmfpackLUSolver::symbolic_factorize()
   numeric.reset();
 
   // Get matrix data
-  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
-  const std::size_t* Ap  = std::tr1::get<0>(data);
-  const std::size_t* Ai  = std::tr1::get<1>(data);
-  const double*      Ax  = std::tr1::get<2>(data);
-  const uint         nnz = std::tr1::get<3>(data);
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = boost::tuples::get<0>(data);
+  const std::size_t* Ai  = boost::tuples::get<1>(data);
+  const double*      Ax  = boost::tuples::get<2>(data);
+  const uint         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
   const uint M   = A->size(0);
   const uint N   = A->size(1);
-  assert(nnz >= M);
+  dolfin_assert(nnz >= M);
 
   // Factorize and solve
   log(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
@@ -214,21 +214,21 @@ void UmfpackLUSolver::numeric_factorize()
   }
 
   // Get matrix data
-  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
-  const std::size_t* Ap  = std::tr1::get<0>(data);
-  const std::size_t* Ai  = std::tr1::get<1>(data);
-  const double*      Ax  = std::tr1::get<2>(data);
-  const uint         nnz = std::tr1::get<3>(data);
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = boost::tuples::get<0>(data);
+  const std::size_t* Ai  = boost::tuples::get<1>(data);
+  const double*      Ax  = boost::tuples::get<2>(data);
+  const uint         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
   const uint M   = A->size(0);
   const uint N   = A->size(1);
-  assert(nnz >= M);
+  dolfin_assert(nnz >= M);
 
   // Factorize and solve
   log(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
-  assert(symbolic);
+  dolfin_assert(symbolic);
   numeric.reset();
 
   // Perform LU factorisation
@@ -245,8 +245,8 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
                  "Operator has not been set");
   }
 
-  assert(A->size(0) == A->size(0));
-  assert(A->size(0) == b.size());
+  dolfin_assert(A->size(0) == A->size(0));
+  dolfin_assert(A->size(0) == b.size());
 
   // Resize x if required
   if (A->size(1) != x.size())
@@ -267,10 +267,10 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Get matrix data
-  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
-  const std::size_t* Ap  = std::tr1::get<0>(data);
-  const std::size_t* Ai  = std::tr1::get<1>(data);
-  const double*      Ax  = std::tr1::get<2>(data);
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = boost::tuples::get<0>(data);
+  const std::size_t* Ai  = boost::tuples::get<1>(data);
+  const double*      Ax  = boost::tuples::get<2>(data);
 
   log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
       A->size(0), A->size(1));
@@ -288,9 +288,9 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint
                                                                     const std::size_t* Ai,
                                                                     const double* Ax)
 {
-  assert(Ap);
-  assert(Ai);
-  assert(Ax);
+  dolfin_assert(Ap);
+  dolfin_assert(Ai);
+  dolfin_assert(Ax);
 
   void* symbolic = 0;
   boost::scoped_ptr<double> dnull;
@@ -327,10 +327,10 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::si
                                                  const double* Ax,
                                                  void* symbolic)
 {
-  assert(Ap);
-  assert(Ai);
-  assert(Ax);
-  assert(symbolic);
+  dolfin_assert(Ap);
+  dolfin_assert(Ai);
+  dolfin_assert(Ax);
+  dolfin_assert(symbolic);
 
   void* numeric = 0;
   boost::scoped_ptr<double> dnull;
@@ -368,12 +368,12 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
                                     const double* Ax, double* x,
                                     const double* b, void* numeric)
 {
-  assert(Ap);
-  assert(Ai);
-  assert(Ax);
-  assert(x);
-  assert(b);
-  assert(numeric);
+  dolfin_assert(Ap);
+  dolfin_assert(Ai);
+  dolfin_assert(Ax);
+  dolfin_assert(x);
+  dolfin_assert(b);
+  dolfin_assert(numeric);
 
   boost::scoped_ptr<double> dnull;
 

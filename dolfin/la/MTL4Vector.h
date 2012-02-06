@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <utility>
+#include <string>
 
 #include <dolfin/common/types.h>
 #include "mtl4.h"
@@ -69,9 +70,6 @@ namespace dolfin
     virtual bool distributed() const
     { return false; }
 
-    /// Return copy of tensor
-    virtual MTL4Vector* copy() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -82,6 +80,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
     virtual void resize(uint N);
@@ -171,8 +172,14 @@ namespace dolfin
     /// Add given vector
     virtual const MTL4Vector& operator+= (const GenericVector& x);
 
+    /// Add number to all components of a vector
+    virtual const MTL4Vector& operator+= (double a);
+
     /// Subtract given vector
     virtual const MTL4Vector& operator-= (const GenericVector& x);
+
+    /// Subtract number from all components of a vector
+    virtual const MTL4Vector& operator-= (double a);
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);

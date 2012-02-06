@@ -55,7 +55,8 @@ int main()
   std::cout << "Largest eigenvalue: " << r << std::endl;
 
   // Initialize function with eigenvector
-  Function u(V, rx);
+  Function u(V);
+  *u.vector() = rx;  
 
   // Plot eigenfunction
   plot(u);

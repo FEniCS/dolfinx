@@ -25,7 +25,7 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
@@ -42,10 +42,16 @@ namespace dolfin
 
     /// Create empty matrix
     Matrix()
-    { DefaultFactory factory; matrix.reset(factory.create_matrix()); }
+    { 
+      DefaultFactory factory; 
+      matrix = factory.create_matrix(); 
+    }
 
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
+
+    /// Create a Vector from a GenericVetor
+    Matrix(const GenericMatrix& A) : matrix(A.copy()) {}
 
     /// Destructor
     virtual ~Matrix() {}
@@ -59,14 +65,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
-
-    /// Return copy of tensor
-    virtual Matrix* copy() const
-    {
-      Matrix* A = new Matrix();
-      A->matrix.reset(matrix->copy());
-      return A;
-    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -89,6 +87,13 @@ namespace dolfin
     { return "<Matrix wrapper of " + matrix->str(verbose) + ">"; }
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const
+    {
+      boost::shared_ptr<Matrix> A(new Matrix(*this));
+      return A;
+    }
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
@@ -154,7 +159,7 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---

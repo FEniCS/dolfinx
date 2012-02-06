@@ -57,14 +57,14 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
 {
-  assert(V);
+  dolfin_assert(V);
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   // Find the cell containing the point (may be more than one cell but
   // we only care about the first). Well-defined if the basis
   // functions are continuous but may give unexpected results for DG.
-  assert(V->mesh());
+  dolfin_assert(V->mesh());
   const Mesh& mesh = *V->mesh();
   int cell_index = mesh.intersected_cell(p);
   if (cell_index < 0)
@@ -79,8 +79,8 @@ void PointSource::apply(GenericVector& b)
   UFCCell ufc_cell(cell);
 
   // Evaluate all basis functions at the point()
-  assert(V->element());
-  assert(V->element()->value_rank() == 0);
+  dolfin_assert(V->element());
+  dolfin_assert(V->element()->value_rank() == 0);
   std::vector<double> values(V->element()->space_dimension());
   V->element()->evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
 
@@ -89,19 +89,18 @@ void PointSource::apply(GenericVector& b)
     values[i] *= magnitude;
 
   // Compute local-to-global mapping
-  assert(V->dofmap());
-  std::vector<uint> dofs(V->dofmap()->cell_dimension(cell.index()));
-  V->dofmap()->tabulate_dofs(&dofs[0], cell);
+  dolfin_assert(V->dofmap());
+  const std::vector<uint>& dofs = V->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
-  assert(V->element()->space_dimension() == V->dofmap()->cell_dimension(cell.index()));
+  dolfin_assert(V->element()->space_dimension() == V->dofmap()->cell_dimension(cell.index()));
   b.add(&values[0], V->element()->space_dimension(), &dofs[0]);
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_is_scalar(const FunctionSpace& V)
 {
-  assert(V.element());
+  dolfin_assert(V.element());
   if (V.element()->value_rank() != 0)
   {
     dolfin_error("PointSource.cpp",

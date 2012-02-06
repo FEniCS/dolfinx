@@ -100,7 +100,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get vertices xml node
   pugi::xml_node xml_vertices = mesh_node.child("vertices");
-  assert(xml_vertices);
+  dolfin_assert(xml_vertices);
 
   // Get number of vertices and init editor
   const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
@@ -120,7 +120,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Get cells node
   pugi::xml_node xml_cells = mesh_node.child("cells");
-  assert(xml_cells);
+  dolfin_assert(xml_cells);
 
   // Get number of cells and init editor
   const unsigned int num_cells = xml_cells.attribute("size").as_uint();
@@ -191,7 +191,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
           array = data.array(data_set_name);
         if (!array)
           array = data.create_array(data_set_name);
-        assert(array);
+        dolfin_assert(array);
 
         // Read vector
         read_array_uint(*array, data_set);
@@ -211,7 +211,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
         mf = data.mesh_function(data_set_name);
       if (!mf)
         mf = data.create_mesh_function(data_set_name);
-      assert(mf);
+      dolfin_assert(mf);
 
       // Read  MeshFunction
       XMLMeshFunction::read(*mf, data_type, *it);
@@ -302,7 +302,7 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   {
     const unsigned int index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_uint();
-    assert(index < size);
+    dolfin_assert(index < size);
     array[index] = value;
   }
 }
@@ -358,7 +358,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
     cell_node.append_attribute("index") = c->index();
 
     const uint* vertices = c->entities(0);
-    assert(vertices);
+    dolfin_assert(vertices);
 
     switch (_cell_type)
     {
@@ -403,7 +403,7 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
   {
     std::string name = it->first;
     boost::shared_ptr<MeshFunction<unsigned int> > mf = it->second;
-    assert(mf);
+    dolfin_assert(mf);
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
     data_entry_node.append_attribute("name") = name.c_str();
@@ -430,7 +430,7 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
   {
     std::string name = it->first;
     boost::shared_ptr<std::vector<unsigned int> > array = it->second;
-    assert(array);
+    dolfin_assert(array);
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
     data_entry_node.append_attribute("name") = name.c_str();

@@ -27,8 +27,7 @@ mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
-class Interpolate(unittest.TestCase):
-
+class Interface(unittest.TestCase):
     def test_in_function_space(self):
         u = Function(W)
         v = Function(W)
@@ -37,6 +36,30 @@ class Interpolate(unittest.TestCase):
         self.assertTrue(u in v.function_space())
         for i, usub in enumerate(u.split()):
             self.assertTrue(usub in W.sub(i))
+
+    def test_compute_vertex_values(self):
+        from numpy import zeros, all, array
+        u = Function(V)
+        v = Function(W)
+        
+        u.vector()[:] = 1.
+        v.vector()[:] = 1.
+        
+        u_values = zeros(mesh.num_vertices(),dtype='d')
+        v_values = zeros(mesh.num_vertices()*3,dtype='d')
+        
+        u.compute_vertex_values(u_values, mesh)
+        v.compute_vertex_values(v_values, mesh)
+        
+        self.assertTrue(all(u_values==1))
+        self.assertTrue(all(v_values==1))
+        self.assertRaises(RuntimeError, u.compute_vertex_values, v_values, mesh)
+        self.assertRaises(RuntimeError, v.compute_vertex_values, u_values, mesh)
+
+        self.assertRaises(RuntimeError, u.compute_vertex_values, 1, mesh)
+        self.assertRaises(RuntimeError, u.compute_vertex_values, array(1, dtype='d'), mesh)
+
+class Interpolate(unittest.TestCase):
 
     def test_interpolation_mismatch_rank0(self):
         f = Expression("1.0")

@@ -197,7 +197,7 @@ double solve3D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.parameters["relative_tolerance"] = -1e-14;
+  solver.parameters["relative_tolerance"] = 1e-14;
   solver.solve(A, x, b);
 
   // Compute maximum norm of error

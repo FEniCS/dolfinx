@@ -22,14 +22,14 @@
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2011-11-11
+// Last changed: 2011-11-15
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
 #include <sstream>
 #include <iomanip>
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
@@ -88,9 +88,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
-    /// Return copy of tensor
-    virtual uBLASMatrix<Mat>* copy() const;
-
     /// Return size of given dimension
     virtual uint size(uint dim) const;
 
@@ -108,6 +105,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
@@ -162,7 +162,7 @@ namespace dolfin
 
     /// Return pointers to underlying compresssed storage data
     /// See GenericMatrix for documentation.
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
@@ -241,6 +241,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
+  boost::shared_ptr<GenericMatrix> uBLASMatrix<Mat>::copy() const
+  {
+    boost::shared_ptr<GenericMatrix> A(new uBLASMatrix<Mat>(*this));
+    return A;
+  }
+  //---------------------------------------------------------------------------
+  template <typename Mat>
   void uBLASMatrix< Mat >::resize(uint M, uint N)
   {
     // Resize matrix
@@ -249,15 +256,16 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  uBLASMatrix<Mat>* uBLASMatrix<Mat>::copy() const
-  {
-    return new uBLASMatrix<Mat>(*this);
-  }
-  //---------------------------------------------------------------------------
-  template <typename Mat>
   uint uBLASMatrix<Mat>::size(uint dim) const
   {
-    assert(dim < 2);
+    if (dim > 1)
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "access size of uBLAS matrix",
+                   "Illegal axis (%d), must be 0 or 1", dim);
+    }
+
+    dolfin_assert(dim < 2);
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
   }
   //---------------------------------------------------------------------------
@@ -284,7 +292,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns,
                                 std::vector<double>& values) const
   {
-    assert(row_idx < this->size(0));
+    dolfin_assert(row_idx < this->size(0));
 
     // Reference to matrix row
     const ublas::matrix_row<const Mat> row(A, row_idx);
@@ -304,11 +312,11 @@ namespace dolfin
   void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns,
                                 const std::vector<double>& values)
   {
-    assert(columns.size() == values.size());
-    assert(row_idx < this->size(0));
+    dolfin_assert(columns.size() == values.size());
+    dolfin_assert(row_idx < this->size(0));
 
     ublas::matrix_row<Mat> row(A, row_idx);
-    assert(columns.size() <= row.size());
+    dolfin_assert(columns.size() <= row.size());
 
     row *= 0;
     for(uint i = 0; i < columns.size(); i++)
@@ -376,7 +384,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::solveInPlace(uBLASVector& x, const uBLASVector& b)
   {
     const uint M = A.size1();
-    assert(M == b.size());
+    dolfin_assert(M == b.size());
 
     // Initialise solution vector
     if( x.vec().size() != M )
@@ -391,7 +399,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::invert()
   {
     const uint M = A.size1();
-    assert(M == A.size2());
+    dolfin_assert(M == A.size2());
 
     // Create indentity matrix
     Mat X(M, M);
@@ -602,28 +610,28 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline std::tr1::tuple<const std::size_t*, const std::size_t*,
+  inline boost::tuples::tuple<const std::size_t*, const std::size_t*,
                          const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
   {
-    typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+    typedef boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
     return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  inline std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>
+  inline boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>
   uBLASMatrix<Mat>::data() const
   {
     dolfin_error("GenericMatrix.h",
                  "return pointers to underlying matrix data",
                  "Not implemented for this uBLAS matrix type");
-    return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+    return boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
   template<typename Mat> template<typename B>
   void uBLASMatrix<Mat>::solveInPlace(B& X)
   {
     const uint M = A.size1();
-    assert(M == A.size2());
+    dolfin_assert(M == A.size2());
 
     // Create permutation matrix
     ublas::permutation_matrix<std::size_t> pmatrix(M);

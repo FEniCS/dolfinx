@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 #include <dolfin/log/log.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -51,14 +52,11 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { assert(rank == 1); resize(dims[0]); }
+    { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { resize(sparsity_pattern.local_range(0)); zero(); }
-
-    /// Return copy of tensor
-    virtual GenericVector* copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
@@ -66,11 +64,11 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { assert(dim == 0); return size(); }
+    { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
-    { assert(dim == 0); return local_range(); }
+    { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
@@ -105,6 +103,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Vector interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const = 0;
 
     /// Resize vector to global size N
     virtual void resize(uint N) = 0;
@@ -198,8 +199,14 @@ namespace dolfin
     /// Add given vector
     virtual const GenericVector& operator+= (const GenericVector& x) = 0;
 
+    /// Add number to all components of a vector
+    virtual const GenericVector& operator+= (double a) = 0;
+
     /// Subtract given vector
     virtual const GenericVector& operator-= (const GenericVector& x) = 0;
+
+    /// Subtract number from all components of a vector
+    virtual const GenericVector& operator-= (double a) = 0;
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;

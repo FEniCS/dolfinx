@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2011-11-12
+// Last changed: 2012-02-01
 
 #include <boost/shared_ptr.hpp>
 
@@ -90,6 +90,10 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   std::vector<double> values(num_dofs);
   Array<double> new_coordinates(d*N);
   Vector x;
+
+  // Pick amg as preconditioner if available
+  const std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
+
   for (uint dim = 0; dim < d; dim++)
   {
     // Get boundary coordinates
@@ -101,7 +105,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     b.apply("insert");
 
     // Solve system
-    solve(A, x, b, "gmres", "amg");
+    solve(A, x, b, "gmres", prec);
 
     // Get new coordinates
     Array<double> _new_coordinates(N, new_coordinates.data().get() + dim*N);

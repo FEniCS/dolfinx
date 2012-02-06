@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2011-11-11
+// Last changed: 2012-01-16
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -311,10 +311,10 @@ namespace dolfin
     /// *Returns*
     ///     _CellType_
     ///         The cell type object associated with the mesh.
-    CellType& type() { assert(_cell_type); return *_cell_type; }
+    CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Get mesh cell type (const version).
-    const CellType& type() const { assert(_cell_type); return *_cell_type; }
+    const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension.
     ///
@@ -355,6 +355,13 @@ namespace dolfin
     ///     UFC documentation (put link here!)
     void order();
 
+    /// Check if mesh is ordered according to the UFC numbering convention.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         The return values is true iff the mesh is ordered.
+    bool ordered() const;
+
     /// Renumber mesh entities by coloring. This function is currently
     /// restricted to renumbering by cell coloring. The cells
     /// (cell-vertex connectivity) and the coordinates of the mesh are
@@ -363,12 +370,26 @@ namespace dolfin
     /// cell-vertex connectivity exists as part of the mesh.
     Mesh renumber_by_color() const;
 
-    /// Check if mesh is ordered according to the UFC numbering convention.
+    /// Rotate mesh around a coordinate axis through center of mass
+    /// of all mesh vertices
     ///
-    /// *Returns*
-    ///     bool
-    ///         The return values is true iff the mesh is ordered.
-    bool ordered() const;
+    /// *Arguments*
+    ///     angle (double)
+    ///         The number of degrees (0-360) of rotation
+    ///     axis (uint)
+    ///         The coordinate axis around which to rotate the mesh
+    void rotate(double angle, uint axis=2);
+
+    /// Rotate mesh around a coordinate axis through a given point
+    ///
+    /// *Arguments*
+    ///     angle (double)
+    ///         The number of degrees (0-360) of rotation
+    ///     axis (uint)
+    ///         The coordinate axis around which to rotate the mesh
+    ///     point (_Point_)
+    ///         The point around which to rotate the mesh
+    void rotate(double angle, uint axis, const Point& p);
 
     /// Move coordinates of mesh according to new boundary coordinates.
     ///

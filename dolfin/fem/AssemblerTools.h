@@ -47,6 +47,7 @@ namespace dolfin
     // Initialize global tensor
     static void init_global_tensor(GenericTensor& A,
                                    const Form& a,
+                                   uint primary_dim,
                                    bool reset_sparsity,
                                    bool add_values);
 

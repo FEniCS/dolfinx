@@ -28,12 +28,12 @@
 #include <utility>
 #include <boost/shared_array.hpp>
 
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 
 #include "NoDeleter.h"
-
 
 namespace dolfin
 {
@@ -80,8 +80,8 @@ namespace dolfin
       // Copy data
       if (_size > 0)
       {
-        assert(this->x);
-        assert(x.x);
+        dolfin_assert(this->x);
+        dolfin_assert(x.x);
         std::copy(&x.x[0], &x.x[_size], &this->x[0]);
       }
 
@@ -116,25 +116,38 @@ namespace dolfin
       return s.str();
     }
 
+    /// Clear array
+    void clear()
+    {
+      this->x.reset();
+      this->_size = 0;
+    }
+
     /// Resize array to size N. If size changes, contents will be destroyed.
     void resize(uint N)
     {
+      // Special case
       if (N == _size)
         return;
+
+      // Special case
+      if (N == 0)
+      {
+        clear();
+        return;
+      }
+
+      // FIXME: Do we want to allow resizing of shared data?
+      if (x.unique())
+      {
+        _size = N;
+        x.reset(new T[N]);
+      }
       else
       {
-        // FIXME: Do we want to allow resizing of shared data?
-        if (x.unique())
-        {
-          _size = N;
-          x.reset(new T[N]);
-        }
-        else
-        {
-          dolfin_error("Array.h",
-                       "resize Array",
-                       "Data is shared");
-        }
+        dolfin_error("Array.h",
+                     "resize Array",
+                     "Data is shared");
       }
     }
 
@@ -144,35 +157,35 @@ namespace dolfin
 
     /// Zero array
     void zero()
-    { assert(x); std::fill(&x[0], &x[_size], 0.0); }
+    { dolfin_assert(x); std::fill(&x[0], &x[_size], 0.0); }
 
     /// Set entries which meet (abs(x[i]) < eps) to zero
     void zero_eps(double eps=DOLFIN_EPS);
 
     /// Return minimum value of array
     T min() const
-    { assert(x); return *std::min_element(&x[0], &x[_size]); }
+    { dolfin_assert(x); return *std::min_element(&x[0], &x[_size]); }
 
     /// Return maximum value of array
     T max() const
-    { assert(x); return *std::max_element(&x[0], &x[_size]); }
+    { dolfin_assert(x); return *std::max_element(&x[0], &x[_size]); }
 
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
-    { assert(x); assert(i < _size); return x[i]; }
+    { dolfin_assert(x); dolfin_assert(i < _size); return x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
     {
-      assert(x);
-      assert(i < _size);
+      dolfin_assert(x);
+      dolfin_assert(i < _size);
       return x[i];
     }
 
     /// Assign value to all entries
     const Array<T>& operator= (T& x)
     {
-      assert(this->x);
+      dolfin_assert(this->x);
       for (uint i = 0; i < _size; ++i)
         this->x[i] = x;
       return *this;
@@ -207,7 +220,7 @@ namespace dolfin
   template <>
   inline void Array<double>::zero_eps(double eps)
   {
-    assert(x);
+    dolfin_assert(x);
     for (uint i = 0; i < _size; ++i)
     {
       if (std::abs(x[i]) < eps)

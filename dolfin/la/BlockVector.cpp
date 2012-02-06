@@ -55,19 +55,19 @@ BlockVector* BlockVector::copy() const
 //-----------------------------------------------------------------------------
 void BlockVector::set_block(uint i, boost::shared_ptr<GenericVector> v)
 {
-  assert(i < vectors.size());
+  dolfin_assert(i < vectors.size());
   vectors[i] = v;
 }
 //-----------------------------------------------------------------------------
 const boost::shared_ptr<GenericVector> BlockVector::get_block(uint i) const
 {
-  assert(i < vectors.size());
+  dolfin_assert(i < vectors.size());
   return vectors[i];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> BlockVector::get_block(uint i)
 {
-  assert(i < vectors.size());
+  dolfin_assert(i < vectors.size());
   return vectors[i];
 }
 //-----------------------------------------------------------------------------

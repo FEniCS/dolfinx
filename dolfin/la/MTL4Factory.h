@@ -26,6 +26,7 @@
 #define __MTL4_FACTORY_H
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
@@ -45,33 +46,52 @@ namespace dolfin
     virtual ~MTL4Factory() {}
 
     /// Create empty matrix
-    MTL4Matrix* create_matrix() const
-    { return new MTL4Matrix(); }
+    boost::shared_ptr<GenericMatrix> create_matrix() const
+    {
+      boost::shared_ptr<GenericMatrix> A(new MTL4Matrix);
+      return A;
+    }
 
     /// Create empty vector (global)
-    MTL4Vector* create_vector() const
-    { return new MTL4Vector(); }
+    boost::shared_ptr<GenericVector> create_vector() const
+    {
+      boost::shared_ptr<GenericVector> x(new MTL4Vector);
+      return x;
+    }
 
     /// Create empty vector (local)
-    MTL4Vector* create_local_vector() const
-    { return new MTL4Vector(); }
+    boost::shared_ptr<GenericVector> create_local_vector() const
+    {
+      boost::shared_ptr<GenericVector> x(new MTL4Vector);
+      return x;
+    }
 
     /// Dummy sparsity pattern
-    GenericSparsityPattern* create_pattern() const
-    { return 0; }
+    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    {
+      boost::shared_ptr<GenericSparsityPattern> pattern;
+      return pattern;
+    }
 
     /// Create LU solver
-    UmfpackLUSolver* create_lu_solver(std::string method) const
-    { return new UmfpackLUSolver(); }
+    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    {
+      boost::shared_ptr<GenericLUSolver> solver(new UmfpackLUSolver);
+      return solver;
+    }
 
     /// Create Krylov solver
-    ITLKrylovSolver* create_krylov_solver(std::string method,
-                                          std::string preconditioner) const
-    { return new ITLKrylovSolver(method, preconditioner); }
+    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
+                                              std::string preconditioner) const
+    {
+      boost::shared_ptr<GenericLinearSolver>
+        solver(new ITLKrylovSolver(method, preconditioner));
+      return solver;
+    }
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const
+      lu_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       methods.push_back(std::make_pair("default",
@@ -83,12 +103,12 @@ namespace dolfin
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
+      krylov_solver_methods() const
     { return ITLKrylovSolver::methods(); }
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const
+      krylov_solver_preconditioners() const
     { return ITLKrylovSolver::preconditioners(); }
 
     // Return singleton instance

@@ -29,15 +29,15 @@ from dolfin import *
 class TimeSeriesTest(unittest.TestCase):
 
     def test_retrieve_compressed(self):
-        self.test_retrieve(True, False)
+        self._test_retrieve(True, False)
 
     def test_retrieve_compressed_all_connectivities(self):
-        self.test_retrieve(True, True)
+        self._test_retrieve(True, True)
 
     def test_retrieve_all_connectivities(self):
-        self.test_retrieve(False, True)
+        self._test_retrieve(False, True)
 
-    def test_retrieve(self, compressed=False, all_connectivities=False):
+    def _test_retrieve(self, compressed=False, all_connectivities=False):
 
         if MPI.num_processes() > 1:
             return
@@ -50,13 +50,13 @@ class TimeSeriesTest(unittest.TestCase):
         V = FunctionSpace(mesh, "CG", 2)
 
         u = Function(V)
-        series = TimeSeries("u", compressed, all_connectivities)
+        series = TimeSeries("TimeSeries_test_retrieve", compressed, all_connectivities)
         for t in times:
             u.vector()[:] = t
             series.store(u.vector(), t)
             series.store(mesh, t)
 
-        series = TimeSeries("u", compressed)
+        series = TimeSeries("TimeSeries_test_retrieve", compressed)
         t0 = series.vector_times()[0]
         T = series.mesh_times()[-1]
 
@@ -66,7 +66,7 @@ class TimeSeriesTest(unittest.TestCase):
         # Test retreiving of mesh
         mesh_retreived = Mesh()
         series.retrieve(mesh_retreived, 0.1)
-        
+
         mesh_test = mesh if all_connectivities else UnitCube(*mesh_size)
 
         for entity in range(4):
@@ -77,6 +77,30 @@ class TimeSeriesTest(unittest.TestCase):
             for j in range(4):
                 self.assertEqual(mesh_retreived.topology()(i, j).size(),
                                  mesh_test.topology()(i, j).size())
+
+    def test_subdirectory(self):
+        "Test that retrieve/store works with nonexisting subdirectory"
+
+        if MPI.num_processes() > 1:
+            return
+
+        name = "TimeSeries_test_subdirectory/foo"
+
+        series0 = TimeSeries(name)
+        m0 = UnitSquare(3, 3)
+        x0 = Vector(10)
+
+        series0.store(m0, 0.1)
+        series0.store(x0, 0.1)
+        series0.store(m0, 0.2)
+        series0.store(x0, 0.2)
+
+        series1 = TimeSeries(name)
+        m1 = Mesh()
+        x1 = Vector()
+
+        series1.retrieve(m1, 0.15)
+        series1.retrieve(x1, 0.15)
 
 if __name__ == "__main__":
     print ""

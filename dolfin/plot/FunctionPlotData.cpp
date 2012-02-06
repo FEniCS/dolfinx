@@ -37,14 +37,16 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
   // Check and store rank
   rank = v.value_rank();
   if (rank > 1)
+  {
     dolfin_error("FunctionPlotData.cpp",
                  "create plotting data for function",
                  "Plotting of rank %d functions not supported", rank);
+  }
 
   // Initialize local vector
   DefaultFactory factory;
-  _vertex_values.reset(factory.create_local_vector());
-  assert(_vertex_values);
+  _vertex_values = factory.create_local_vector();
+  dolfin_assert(_vertex_values);
   const uint N = v.value_size()*mesh.num_vertices();
   _vertex_values->resize(N);
 
@@ -57,8 +59,8 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
 FunctionPlotData::FunctionPlotData() : rank(0)
 {
   DefaultFactory factory;
-  _vertex_values.reset(factory.create_local_vector());
-  assert(_vertex_values);
+  _vertex_values = factory.create_local_vector();
+  dolfin_assert(_vertex_values);
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()
@@ -68,7 +70,7 @@ FunctionPlotData::~FunctionPlotData()
 //-----------------------------------------------------------------------------
 GenericVector& FunctionPlotData::vertex_values() const
 {
-  assert(_vertex_values);
+  dolfin_assert(_vertex_values);
   return *_vertex_values;
 }
 //-----------------------------------------------------------------------------

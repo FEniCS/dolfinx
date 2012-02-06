@@ -104,7 +104,7 @@ MeshData::create_mesh_function(std::string name)
 
   // Create new data
   boost::shared_ptr<MeshFunction<unsigned int> > f(new MeshFunction<uint>(mesh));
-  assert(f);
+  dolfin_assert(f);
 
   // Add to map
   mesh_functions[name] = f;

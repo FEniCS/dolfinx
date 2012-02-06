@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal
+// Copyright (C) 2008-2011 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -110,6 +110,9 @@ namespace dolfin
 
     // Available solvers
     static const std::map<std::string, int> _methods;
+
+    // Available solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;

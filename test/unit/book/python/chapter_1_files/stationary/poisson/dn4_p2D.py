@@ -76,8 +76,8 @@ if mesh.num_cells() < 16:
     print 'b after incorporation of essential BC:\n', b.array()
 
 # Compute solution
-solver = KrylovSolver('cg', 'ilu')
-#solver = KrylovSolver('cg', 'none')
+prec = 'ilu' if parameters['linear_algebra_backend'] == 'PETSc' else 'jacobi'
+solver = KrylovSolver('cg', prec)
 info(solver.parameters, True)
 solver.parameters['absolute_tolerance'] = 1E-7
 solver.parameters['relative_tolerance'] = 1E-4

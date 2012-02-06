@@ -31,15 +31,18 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <petscvec.h>
 
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/types.h>
+
 #include "PETScObject.h"
 #include "GenericVector.h"
 
-#include <dolfin/log/dolfin_log.h>
 
 namespace dolfin
 {
@@ -50,11 +53,13 @@ namespace dolfin
     void operator() (Vec* x)
     {
       if (*x)
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
+      {
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         VecDestroy(*x);
-#else
+        #else
         VecDestroy(x);
-#endif
+        #endif
+      }
       delete x;
     }
   };
@@ -97,9 +102,6 @@ namespace dolfin
     /// Return true if tensor is distributed
     virtual bool distributed() const;
 
-    /// Return copy of tensor
-    virtual PETScVector* copy() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -110,6 +112,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
+
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to global size N
     virtual void resize(uint N);
@@ -196,8 +201,14 @@ namespace dolfin
     /// Add given vector
     virtual const PETScVector& operator+= (const GenericVector& x);
 
+    /// Add number to all components of a vector
+    virtual const PETScVector& operator+= (double a);
+
     /// Subtract given vector
     virtual const PETScVector& operator-= (const GenericVector& x);
+
+    /// Subtract number from all components of a vector
+    virtual const PETScVector& operator-= (double a);
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);

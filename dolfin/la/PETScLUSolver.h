@@ -94,6 +94,9 @@ namespace dolfin
     // Available LU solvers
     static const std::map<std::string, const MatSolverPackage> _methods;
 
+    // Available LU solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
 

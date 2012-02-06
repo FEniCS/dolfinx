@@ -137,7 +137,7 @@ void PeriodicBC::apply(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
 {
-  assert(_function_space);
+  dolfin_assert(_function_space);
 
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
@@ -166,7 +166,7 @@ void PeriodicBC::apply(GenericMatrix* A,
                        GenericVector* b,
                        const GenericVector* x) const
 {
-  assert(num_dof_pairs > 0);
+  dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
 
@@ -238,7 +238,7 @@ void PeriodicBC::apply(GenericMatrix* A,
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
                                    std::vector<std::pair<uint, uint> >& dof_pairs)
 {
-  assert(function_space.element());
+  dolfin_assert(function_space.element());
 
   // Call recursively for subspaces, should work for arbitrary nesting
   const uint num_sub_spaces = function_space.element()->num_sub_elements();
@@ -253,11 +253,11 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   }
 
   // Assuming we have a non-mixed element
-  assert(function_space.element()->num_sub_elements() == 0);
+  dolfin_assert(function_space.element()->num_sub_elements() == 0);
 
   // Get mesh and dofmap
-  assert(function_space.mesh());
-  assert(function_space.dofmap());
+  dolfin_assert(function_space.mesh());
+  dolfin_assert(function_space.dofmap());
   const Mesh& mesh = *function_space.mesh();
   const GenericDofMap& dofmap = *function_space.dofmap();
 
@@ -291,7 +291,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs and coordinates on cell
-    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
+    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell.index());
     dofmap.tabulate_coordinates(data.coordinates, cell);
 
     // Tabulate which dofs are on the facet
@@ -302,7 +302,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = data.cell_dofs[local_dof];
+      const int global_dof = cell_dofs[local_dof];
       //const Array<double>& x = data.array_coordinates[local_dof];
       for (uint j = 0; j < gdim; ++j)
         x[j] = data.coordinates[local_dof][j];

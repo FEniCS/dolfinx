@@ -52,39 +52,45 @@ EpetraFactory::~EpetraFactory()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix* EpetraFactory::create_matrix() const
+boost::shared_ptr<GenericMatrix> EpetraFactory::create_matrix() const
 {
-  return new EpetraMatrix();
+  boost::shared_ptr<GenericMatrix> A(new EpetraMatrix);
+  return A;
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraFactory::create_vector() const
+boost::shared_ptr<GenericVector> EpetraFactory::create_vector() const
 {
-  return new EpetraVector("global");
+  boost::shared_ptr<GenericVector> x(new EpetraVector("global"));
+  return x;
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraFactory::create_local_vector() const
+boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
 {
-  return new EpetraVector("local");
+  boost::shared_ptr<GenericVector> x(new EpetraVector("local"));
+  return x;
 }
 //-----------------------------------------------------------------------------
-SparsityPattern* EpetraFactory::create_pattern() const
+boost::shared_ptr<GenericSparsityPattern> EpetraFactory::create_pattern(uint primary_dim) const
 {
-  return new SparsityPattern;
+  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
+  return pattern;
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver* EpetraFactory::create_lu_solver(std::string method) const
+boost::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
 {
-  return new EpetraLUSolver(method);
+  boost::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));
+  return solver;
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver* EpetraFactory::create_krylov_solver(std::string method,
+boost::shared_ptr<GenericLinearSolver> EpetraFactory::create_krylov_solver(std::string method,
                                               std::string preconditioner) const
 {
-  return new EpetraKrylovSolver(method, preconditioner);
+  boost::shared_ptr<GenericLinearSolver> solver(new EpetraKrylovSolver(method, preconditioner));
+  return solver;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraFactory::lu_solver_methods() const
+  EpetraFactory::lu_solver_methods() const
 {
   return EpetraLUSolver::methods();
 }
@@ -96,7 +102,7 @@ EpetraFactory::krylov_solver_methods() const
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-EpetraFactory::krylov_solver_preconditioners() const
+  EpetraFactory::krylov_solver_preconditioners() const
 {
   return EpetraKrylovSolver::preconditioners();
 }
@@ -106,7 +112,7 @@ Epetra_SerialComm& EpetraFactory::get_serial_comm()
   if (!serial_comm)
   {
     serial_comm.reset(new Epetra_SerialComm());
-    assert(serial_comm);
+    dolfin_assert(serial_comm);
   }
   return *serial_comm;
 }
@@ -117,7 +123,7 @@ Epetra_MpiComm& EpetraFactory::get_mpi_comm()
   {
     SubSystemsManager::init_mpi();
     mpi_comm.reset(new Epetra_MpiComm(MPI_COMM_WORLD));
-    assert(mpi_comm);
+    dolfin_assert(mpi_comm);
   }
   return *mpi_comm;
 }

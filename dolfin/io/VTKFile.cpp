@@ -141,14 +141,14 @@ void VTKFile::operator<<(const Function& u)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
 {
-  assert(u.first);
+  dolfin_assert(u.first);
   u.first->gather();
   write(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------
 void VTKFile::write(const Function& u, double time)
 {
-  assert(u.function_space()->mesh());
+  dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Get vtu file name and intialise
@@ -240,13 +240,13 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   }
 
   // Test for cell-based element type
-  assert(u.function_space()->mesh());
+  dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
-  assert(u.function_space()->dofmap());
+  dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap= *u.function_space()->dofmap();
   if (dofmap.max_cell_dimension() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
@@ -272,7 +272,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Get function values at vertices and zero any small values
   u.compute_vertex_values(values, mesh);
-  assert(values.size() == size);
+  dolfin_assert(values.size() == size);
   values.zero_eps(DOLFIN_EPS);
   if (rank == 0)
   {
@@ -383,7 +383,7 @@ void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
 
   // Get Collection node
   pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
-  assert(xml_collections);
+  dolfin_assert(xml_collections);
 
   // Append data set
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
@@ -522,7 +522,7 @@ void VTKFile::pvtu_write_mesh(const std::string filename) const
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_write(const Function& u, const std::string filename) const
 {
-  assert(u.function_space()->element());
+  dolfin_assert(u.function_space()->element());
   const uint rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
@@ -537,8 +537,8 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   // Test for cell-based element type
   std::string data_type = "point";
   uint cell_based_dim = 1;
-  assert(u.function_space()->mesh());
-  assert(u.function_space()->dofmap());
+  dolfin_assert(u.function_space()->mesh());
+  dolfin_assert(u.function_space()->dofmap());
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
   if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)

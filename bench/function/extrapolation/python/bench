@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """This script provides a benchmark for Extrapolation"""
 
 # Copyright (C) 2010 Marie E. Rognes
@@ -26,8 +28,8 @@ from time import time
 SIZE = 4
 mesh = UnitCube(SIZE, SIZE, SIZE)
 
-V = FunctionSpace(mesh, "CG", 2) * FunctionSpace(mesh, "DG", 1)
-W = FunctionSpace(mesh, "CG", 3) * FunctionSpace(mesh, "DG", 2)
+V = VectorFunctionSpace(mesh, "CG", 2) * FunctionSpace(mesh, "DG", 1)
+W = VectorFunctionSpace(mesh, "CG", 3) * FunctionSpace(mesh, "DG", 2)
 
 u = Expression(("sin(x[0])", "1.0", "x[0]*x[1]", "0.0"), degree=3)
 u = interpolate(u, V)

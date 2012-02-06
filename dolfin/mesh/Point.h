@@ -87,7 +87,7 @@ namespace dolfin
     ///     double
     ///         Adress of coordinate in the given direction.
     double& operator[] (uint i)
-    { assert(i < 3); return _x[i]; }
+    { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
     ///
@@ -99,7 +99,7 @@ namespace dolfin
     ///     double
     ///         The coordinate in the given direction.
     double operator[] (uint i) const
-    { assert(i < 3); return _x[i]; }
+    { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     ///

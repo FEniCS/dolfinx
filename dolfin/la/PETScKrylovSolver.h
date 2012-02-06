@@ -64,7 +64,17 @@ namespace dolfin
     PETScKrylovSolver(std::string method, PETScPreconditioner& preconditioner);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
+    /// shared_ptr version
+    PETScKrylovSolver(std::string method, 
+		      boost::shared_ptr<PETScPreconditioner> preconditioner);
+
+    /// Create Krylov solver for a particular method and PETScPreconditioner
     PETScKrylovSolver(std::string method, PETScUserPreconditioner& preconditioner);
+
+    /// Create Krylov solver for a particular method and PETScPreconditioner
+    /// shared_ptr version
+    PETScKrylovSolver(std::string method, 
+		      boost::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver from given PETSc KSP pointer
     explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
@@ -135,6 +145,9 @@ namespace dolfin
 
     // Available solvers
     static const std::map<std::string, const KSPType> _methods;
+
+    // Available solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
     /// DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;

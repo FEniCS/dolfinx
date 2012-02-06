@@ -20,14 +20,15 @@
 // Modified by Ola Skavhaug 2007-2008
 // Modified by Kent-Andre Mardal 2008
 // Modified by Martin Alnæs 2008
+// Modified by Mikael Mortensen 2011
 //
 // First added:  2006-04-24
-// Last changed: 2011-02-05
+// Last changed: 2011-11-25
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 #include <vector>
 #include "GenericTensor.h"
 
@@ -49,9 +50,6 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
-
-    /// Return copy of tensor
-    virtual GenericMatrix* copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
@@ -96,6 +94,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Matrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel
@@ -167,13 +168,13 @@ namespace dolfin
     /// Return pointers to underlying compresssed row/column storage data
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*,
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
                             const double*, int> data() const
     {
       dolfin_error("GenericMatrix.h",
                    "return pointers to underlying matrix data",
                    "Not implemented by current linear algebra backend");
-      return std::tr1::tuple<const std::size_t*, const std::size_t*,
+      return boost::tuples::tuple<const std::size_t*, const std::size_t*,
                                                const double*, int>(0, 0, 0, 0);
     }
 
@@ -194,6 +195,9 @@ namespace dolfin
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
+
+    /// Compress matrix
+    virtual void compress();
 
   };
 

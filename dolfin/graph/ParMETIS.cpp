@@ -72,7 +72,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   std::vector<int> eind(num_local_cells*num_cell_vertices, 0);
   for (uint i = 0; i < num_local_cells; i++)
   {
-    assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
+    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i*num_cell_vertices;
     for (uint j = 0; j < num_cell_vertices; j++)
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];

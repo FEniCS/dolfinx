@@ -509,8 +509,8 @@ void DirichletBC::apply(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  assert(g);
-  assert(_function_space->element());
+  dolfin_assert(g);
+  dolfin_assert(_function_space->element());
 
   // Check for common errors, message below might be cryptic
   if (g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
@@ -555,7 +555,7 @@ void DirichletBC::check() const
   }
 
   // Check that the mesh is ordered
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space->mesh());
   if (!_function_space->mesh()->ordered())
   {
     dolfin_error("DirichletBC.cpp",
@@ -566,14 +566,14 @@ void DirichletBC::check() const
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain)
 {
-  assert(facets.size() == 0);
+  dolfin_assert(facets.size() == 0);
 
   // FIXME: This can be made more efficient, we should be able to
   // FIXME: extract the facets without first creating a MeshFunction on
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Create mesh function for sub domain markers on facets
@@ -597,9 +597,9 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
 void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
                                           uint sub_domain)
 {
-  assert(facets.size() == 0);
+  dolfin_assert(facets.size() == 0);
 
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Make sure we have the facet - cell connectivity
@@ -626,7 +626,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh(uint sub_domain)
 {
-  assert(facets.size() == 0);
+  dolfin_assert(facets.size() == 0);
 
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
@@ -634,7 +634,7 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // or it won't do anything good (since the markers are wrong anyway).
   // In conclusion: we don't need to order the mesh here.
 
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Assign domain numbers for each facet
@@ -675,8 +675,8 @@ void DirichletBC::compute_bc(Map& boundary_values,
 void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          BoundaryCondition::LocalData& data) const
 {
-  assert(_function_space);
-  assert(g);
+  dolfin_assert(_function_space);
+  dolfin_assert(g);
 
   // Special case
   if (facets.size() == 0)
@@ -687,8 +687,8 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 
   // Get mesh and dofmap
-  assert(_function_space->mesh());
-  assert(_function_space->dofmap());
+  dolfin_assert(_function_space->mesh());
+  dolfin_assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
@@ -696,7 +696,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   UFCCell ufc_cell(mesh);
 
   // Iterate over facets
-  assert(_function_space->element());
+  dolfin_assert(_function_space->element());
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
   for (uint f = 0; f < facets.size(); ++f)
   {
@@ -712,7 +712,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(&data.cell_dofs[0], cell);
+    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);
@@ -720,7 +720,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Pick values for facet
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
-      const uint global_dof = data.cell_dofs[data.facet_dofs[i]];
+      const uint global_dof = cell_dofs[data.facet_dofs[i]];
       const double value = data.w[data.facet_dofs[i]];
       boundary_values[global_dof] = value;
     }
@@ -732,9 +732,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
-  assert(_function_space);
-  assert(_function_space->element());
-  assert(g);
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
+  dolfin_assert(g);
 
   // Special case
   if (facets.size() == 0)
@@ -745,8 +745,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   }
 
   // Get mesh and dofmap
-  assert(_function_space->mesh());
-  assert(_function_space->dofmap());
+  dolfin_assert(_function_space->mesh());
+  dolfin_assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
@@ -782,6 +782,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         // Tabulate coordinates of dofs on cell
         dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
+        // Tabulate dofs on cell
+        const std::vector<uint>& cell_dofs = dofmap.cell_dofs(c->index());
+
         // Loop over all dofs on cell
         for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
         {
@@ -791,15 +794,12 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
           if (!interpolated)
           {
-            // Tabulate dofs on cell
-            dofmap.tabulate_dofs(&data.cell_dofs[0], *c);
-
             // Restrict coefficient to cell
             g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
           }
 
           // Set boundary value
-          const uint global_dof = data.cell_dofs[i];
+          const uint global_dof = cell_dofs[i];
           const double value = data.w[i];
           boundary_values[global_dof] = value;
         }
@@ -811,14 +811,14 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
-  assert(_function_space);
-  assert(_function_space->element());
-  assert(g);
-  assert(_user_sub_domain);
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
+  dolfin_assert(g);
+  dolfin_assert(_user_sub_domain);
 
   // Get mesh and dofmap
-  assert(_function_space->mesh());
-  assert(_function_space->dofmap());
+  dolfin_assert(_function_space->mesh());
+  dolfin_assert(_function_space->dofmap());
   const Mesh& mesh = *_function_space->mesh();
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
@@ -839,6 +839,9 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     // Tabulate coordinates of dofs on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
+    // Tabulate dofs on cell
+    const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell->index());
+
     // Interpolate function only once and only on cells where necessary
     bool already_interpolated = false;
 
@@ -855,15 +858,12 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       {
         already_interpolated = true;
 
-        // Tabulate dofs on cell
-        dofmap.tabulate_dofs(&data.cell_dofs[0], *cell);
-
         // Restrict coefficient to cell
         g->restrict(&data.w[0], *_function_space->element(), *cell, ufc_cell);
       }
 
       // Set boundary value
-      const uint global_dof = data.cell_dofs[i];
+      const uint global_dof = cell_dofs[i];
       const double value = data.w[i];
       boundary_values[global_dof] = value;
     }

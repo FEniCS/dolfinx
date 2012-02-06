@@ -112,7 +112,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   {
     // Get vertices from cell
     const uint* vertices = c->entities(0);
-    assert(vertices);
+    dolfin_assert(vertices);
 
     // Create entities
     cell_type.create_entities(entities, dim, vertices);
@@ -132,7 +132,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   {
     // Get vertices from cell
     const uint* vertices = c->entities(0);
-    assert(vertices);
+    dolfin_assert(vertices);
 
     // Create entities
     cell_type.create_entities(entities, dim, vertices);
@@ -205,7 +205,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   else
   {
     // These connections should already exist
-    assert(!(d0 > 0 && d1 == 0));
+    dolfin_assert(!(d0 > 0 && d1 == 0));
 
     // Choose how to take intersection
     uint d = 0;
@@ -238,7 +238,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Need connectivity d1 - d0
-  assert(topology(d1, d0).size() > 0);
+  dolfin_assert(topology(d1, d0).size() > 0);
 
   // Temporary array
   std::vector<uint> tmp(topology.size(d0));
@@ -275,9 +275,9 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   MeshTopology& topology = mesh.topology();
 
   // Check preconditions
-  assert(d0 >= d1);
-  assert(topology(d0, d).size() > 0);
-  assert(topology(d, d1).size() > 0);
+  dolfin_assert(d0 >= d1);
+  dolfin_assert(topology(d0, d).size() > 0);
+  dolfin_assert(topology(d, d1).size() > 0);
 
   // Temporary dynamic storage, later copied into static storage
   std::vector<std::vector<uint> > connectivity(topology.size(d0));
@@ -330,7 +330,7 @@ dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
   // cells to see if the entity has already been counted.
 
   // Needs to be a cell
-  assert(cell.dim() == mesh.topology().dim());
+  dolfin_assert(cell.dim() == mesh.topology().dim());
 
   // Iterate over the given list of entities
   uint num_entities = 0;
@@ -369,7 +369,7 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
   // we add any entities that are new.
 
   // Needs to be a cell
-  assert(cell.dim() == mesh.topology().dim());
+  dolfin_assert(cell.dim() == mesh.topology().dim());
 
   // Iterate over the given list of entities
   for (uint i = 0; i < m; i++)
@@ -419,8 +419,8 @@ bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
 //----------------------------------------------------------------------------
 bool TopologyComputation::contains(const uint* v0, uint n0, const uint* v1, uint n1)
 {
-  assert(v0);
-  assert(v1);
+  dolfin_assert(v0);
+  dolfin_assert(v1);
 
   for (uint i1 = 0; i1 < n1; i1++)
   {

@@ -32,6 +32,7 @@ namespace dolfin
 
   class Mesh;
   class Cell;
+  class Point;
   class FiniteElement;
 
   /// This is a common base class for functions. Functions can be

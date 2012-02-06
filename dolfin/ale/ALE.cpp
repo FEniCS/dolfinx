@@ -49,8 +49,8 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
     = mesh1.data().mesh_function("parent_vertex_indices");
   const MeshFunction<unsigned int>& boundary_to_mesh_0 = boundary0.vertex_map();
   const MeshFunction<unsigned int>& boundary_to_mesh_1 = boundary1.vertex_map();
-  assert(local_to_global_0);
-  assert(local_to_global_1);
+  dolfin_assert(local_to_global_0);
+  dolfin_assert(local_to_global_1);
 
   // Build global-to-local vertex mapping for mesh
   std::map<uint, uint> global_to_local_0;
@@ -99,7 +99,7 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 void ALE::move(Mesh& mesh, const Function& displacement)
 {
   // Check dimensions
-  assert(displacement.function_space()->element());
+  dolfin_assert(displacement.function_space()->element());
   const FiniteElement& element = *displacement.function_space()->element();
   const uint gdim = mesh.geometry().dim();
   if (!((element.value_rank() == 0 && gdim == 0) ||

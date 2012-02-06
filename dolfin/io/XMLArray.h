@@ -83,7 +83,7 @@ namespace dolfin
     {
       const unsigned int index = it->attribute("index").as_uint();
       const double value = it->attribute("value").as_double();
-      assert(index < size);
+      dolfin_assert(index < size);
       indices[index] = index;
       x[index] = value;
     }

@@ -22,7 +22,7 @@
 // Last changed: 2011-11-11
 
 #include <iostream>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include "dolfin/common/utils.h"
@@ -49,28 +49,28 @@ BlockMatrix::~BlockMatrix()
 //-----------------------------------------------------------------------------
 void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
 {
-  assert(i < matrices.shape()[0]);
-  assert(j < matrices.shape()[1]);
+  dolfin_assert(i < matrices.shape()[0]);
+  dolfin_assert(j < matrices.shape()[1]);
   matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
 const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j) const
 {
-  assert(i < matrices.shape()[0]);
-  assert(j < matrices.shape()[1]);
+  dolfin_assert(i < matrices.shape()[0]);
+  dolfin_assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j)
 {
-  assert(i < matrices.shape()[0]);
-  assert(j < matrices.shape()[1]);
+  dolfin_assert(i < matrices.shape()[0]);
+  dolfin_assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const
 {
-  assert(dim < 1);
+  dolfin_assert(dim < 1);
   return matrices.shape()[dim];
 }
 //-----------------------------------------------------------------------------
@@ -121,8 +121,9 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   }
 
   // Create tempory vector
-  assert(matrices[0][0]);
-  boost::scoped_ptr<GenericVector> z_tmp(matrices[0][0]->factory().create_vector());
+  dolfin_assert(matrices[0][0]);
+  boost::shared_ptr<GenericVector>
+    z_tmp = matrices[0][0]->factory().create_vector();
 
   // Loop over block rows
   for(uint row = 0; row < matrices.shape()[0]; row++)
@@ -131,7 +132,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     GenericVector& _y = *(y.get_block(row));
 
     // Resize y and zero
-    assert(matrices[row][0]);
+    dolfin_assert(matrices[row][0]);
     const GenericMatrix& _A = *matrices[row][0];
     _A.resize(_y, 0);
     _y.zero();
@@ -144,7 +145,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     for(uint col = 0; col < matrices.shape()[1]; ++col)
     {
       const GenericVector& _x = *(x.get_block(col));
-      assert(matrices[row][col]);
+      dolfin_assert(matrices[row][col]);
       matrices[row][col]->mult(_x, *z_tmp);
       _y += *z_tmp;
     }
@@ -156,12 +157,12 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
   // Currently returns [diag(C * diag(A)^-1 * B) - D]
   if (!symmetry)
   {
-    dolfin_error("BlockMatric.cpp",
+    dolfin_error("BlockMatrix.cpp",
                  "compute Schur complement approximation",
                  "Not implemented for unsymmetric matrix");
   }
 
-  assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);
+  dolfin_assert(matrices.size()==2 && matrices[0].size()==2 && matrices[1].size()==2);
 
   GenericMatrix &A = *matrices[0][0];
   GenericMatrix &C = *matrices[1][0];

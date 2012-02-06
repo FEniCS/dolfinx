@@ -27,7 +27,7 @@
 #define __LU_SOLVER_H
 
 #include <string>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "GenericLUSolver.h"
 
 namespace dolfin
@@ -80,7 +80,7 @@ namespace dolfin
     void init(std::string method);
 
     // Solver
-    boost::scoped_ptr<GenericLinearSolver> solver;
+    boost::shared_ptr<GenericLinearSolver> solver;
 
   };
 }

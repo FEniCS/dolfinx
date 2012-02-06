@@ -30,15 +30,16 @@
 #include <vector>
 #include <boost/unordered_map.hpp>
 
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
-#include "GenericVector.h"
 
 namespace dolfin
 {
+
+  class GenericSparsityPattern;
+  class GenericVector;
 
   /// Simple STL-based implementation of the GenericMatrix interface.
   /// The sparse matrix is stored as a pair of std::vector of
@@ -54,11 +55,7 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix() : _local_range(0, 0), ncols(0) {}
-
-    /// Create M x N matrix
-    //STLMatrix(uint M, uint N)
-    //{ resize(M, N); }
+    STLMatrix() : primary_dim(0), _local_range(0, 0), num_codim_entities(0) {}
 
     /// Copy constructor
     STLMatrix(const STLMatrix& A)
@@ -71,41 +68,19 @@ namespace dolfin
 
     /// Return true if matrix is distributed
     virtual bool distributed() const
-    { return false; }
+    { dolfin_not_implemented(); return false; }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
-    /// Return copy of tensor
-    virtual STLMatrix* copy() const
-    { dolfin_not_implemented(); return 0; }
-
     /// Return size of given dimension
-    virtual uint size(uint dim) const
-    {
-      assert(dim < 2);
-      if (dim == 0)
-        return dolfin::MPI::sum(_local_range.second - _local_range.first);
-      else
-        return ncols;
-    }
+    virtual uint size(uint dim) const;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const
-    {
-      assert(dim < 2);
-      if (dim == 0)
-        return _local_range;
-      else
-        return std::make_pair(0, ncols);
-    }
+    virtual std::pair<uint, uint> local_range(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
-    virtual void zero()
-    {
-      for (std::vector<std::vector<double> >::iterator row = _vals.begin(); row != _vals.end(); ++row)
-        std::fill(row->begin(), row->end(), 0);
-    }
+    virtual void zero();
 
     /// Finalize assembly of tensor
     virtual void apply(std::string mode);
@@ -114,6 +89,13 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const
+    {
+      boost::shared_ptr<GenericMatrix> A(new STLMatrix(*this));
+      return A;
+    }
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
@@ -157,8 +139,7 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows)
-    { dolfin_not_implemented(); }
+    virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
@@ -193,6 +174,12 @@ namespace dolfin
              std::vector<uint>& local_to_global_row,
              bool base_one = false) const;
 
+    /// Return matrix in CSC format
+    void csc(std::vector<double>& vals, std::vector<uint>& rows,
+             std::vector<uint>& col_ptr,
+             std::vector<uint>& local_to_global_col,
+             bool base_one = false) const;
+
     /// Return number of global non-zero entries
     uint nnz() const;
 
@@ -201,19 +188,32 @@ namespace dolfin
 
   private:
 
-    // Local row range
+    /// Return matrix in compressed format
+    void compressed_storage(std::vector<double>& vals,
+                            std::vector<uint>& rows,
+                            std::vector<uint>& col_ptr,
+                            std::vector<uint>& local_to_global_col,
+                            bool base_one) const;
+
+    // Primary dimension (0=row-wise storage, 1=column-wise storage)
+    uint primary_dim;
+
+    // Local ownership range (row range for row-wise storage, column
+    // range for column-wise storage)
     std::pair<uint, uint> _local_range;
 
-    // Number of columns
-    uint ncols;
+    // Number of columns (row-wise storage) or number of rows (column-wise
+    // storage)
+    uint num_codim_entities;
 
-    // Storages of columns
-    std::vector<std::vector<uint> > _cols;
+    // Storage of columns (row-wise storgae) / row (column-wise storgae)
+    // indices
+    std::vector<std::vector<uint> > codim_indices;
 
     // Storage of values
     std::vector<std::vector<double> > _vals;
 
-    // Off-process data
+    // Off-process data ([i, j], value)
     boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
 
   };

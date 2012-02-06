@@ -26,7 +26,7 @@
 #define __MTL4_MATRIX_H
 
 #include <utility>
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
 #include "GenericMatrix.h"
 #include "mtl4.h"
 
@@ -64,9 +64,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
-    /// Return copy of tensor
-    virtual MTL4Matrix* copy() const;
-
     /// Return size of given dimension
     virtual uint size(uint dim) const;
 
@@ -84,6 +81,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
@@ -137,7 +137,7 @@ namespace dolfin
 
     /// Return pointers to underlying compresssed storage data
     /// See GenericMatrix for documentation.
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
@@ -159,7 +159,7 @@ namespace dolfin
   private:
 
     void init_inserter(uint nnz);
-    void assert_no_inserter() const;
+    void dolfin_assert_no_inserter() const;
 
     // MTL4 matrix object
     mtl4_sparse_matrix A;

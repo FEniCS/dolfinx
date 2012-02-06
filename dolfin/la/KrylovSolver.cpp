@@ -99,7 +99,7 @@ KrylovSolver::~KrylovSolver()
 //-----------------------------------------------------------------------------
 void KrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
-  assert(solver);
+  dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operator(A);
 }
@@ -107,14 +107,14 @@ void KrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 void KrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                  const boost::shared_ptr<const GenericMatrix> P)
 {
-  assert(solver);
+  dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
   //check_dimensions(solver->get_operator(), x, b);
 
   Timer timer("Krylov solver");
@@ -125,7 +125,7 @@ dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
-  assert(solver);
+  dolfin_assert(solver);
   //check_dimensions(A, x, b);
 
   Timer timer("Krylov solver");
@@ -168,7 +168,7 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   parameters = dolfin::parameters("krylov_solver");
 
   // Initialize solver
-  solver.reset(factory.create_krylov_solver(method, preconditioner));
+  solver = factory.create_krylov_solver(method, preconditioner);
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

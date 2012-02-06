@@ -27,11 +27,14 @@ from dolfin import *
 
 # Test for PETSc or Epetra
 if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
-    print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
+    info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
     exit()
 
-print "This demo is unlikely to converge if PETSc is not configured with Hypre or ML."
-
+if not has_krylov_solver_preconditioner("amg"):
+    info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
+	 "preconditioner, Hypre or ML.");
+    exit()
+    
 # Load mesh
 mesh = UnitCube(16, 16, 16)
 

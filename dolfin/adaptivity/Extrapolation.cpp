@@ -63,7 +63,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   // Extract mesh and function spaces
   const FunctionSpace& V = *v.function_space();
   const FunctionSpace& W = *w.function_space();
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   const Mesh& mesh = *V.mesh();
 
   // Initialize cell-cell connectivity
@@ -77,18 +77,15 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   std::vector<std::vector<double> > coefficients;
   coefficients.resize(W.dim());
 
-  // Local array for dof indices
-  assert(W.dofmap());
-  std::vector<uint> dofs(W.dofmap()->max_cell_dimension());
-
   // Iterate over cells in mesh
+  dolfin_assert(W.dofmap());
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    W.dofmap()->tabulate_dofs(&dofs[0], *cell0);
+    const std::vector<uint>& dofs = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
     uint offset = 0;
@@ -109,7 +106,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          uint& offset)
 {
   // Call recursively for mixed elements
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
@@ -126,16 +123,26 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   std::set<uint> unique_dofs;
   build_unique_dofs(unique_dofs, cell2dof2row, cell0, c0, V);
 
-  // Create linear system
-  assert(W.element());
+  // Compute size of linear system
+  dolfin_assert(W.element());
   const uint N = W.element()->space_dimension();
   const uint M = unique_dofs.size();
+
+  // Check size of system
+  if (M < N)
+  {
+    dolfin_error("Extrapolation.cpp",
+                 "compute extrapolation",
+                 "Not enough degrees of freedom on local patch to build extrapolation");
+  }
+
+  // Create matrix and vector for linear system
   arma::mat A(M, N);
   arma::vec b(M);
 
   // Add equations on cell and neighboring cells
   add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v, cell2dof2row[cell0.index()]);
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   UFCCell c1(*V.mesh());
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
@@ -150,7 +157,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   arma::Col<double> x = arma::solve(A, b);
 
   // Insert resulting coefficients into global coefficient vector
-  assert(W.dofmap());
+  dolfin_assert(W.dofmap());
   for (uint i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
@@ -166,7 +173,7 @@ void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
 {
   // Counter for matrix row index
   uint row = 0;
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   UFCCell c1(*V.mesh());
 
   // Compute unique dofs on center cell
@@ -192,12 +199,12 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
                                        std::map<uint, uint>& dof2row)
 {
   // Extract coefficents for v on patch cell
-  assert(V.element());
+  dolfin_assert(V.element());
   std::vector<double> dof_values(V.element()->space_dimension());
   v.restrict(&dof_values[0], *V.element(), cell1, c1);
 
   // Iterate over given local dofs for V on patch cell
-  assert(W.element());
+  dolfin_assert(W.element());
   for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++)
   {
     const uint i = it->first;
@@ -228,10 +235,8 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    uint& row,
                                    std::set<uint>& unique_dofs)
 {
-  assert(V.dofmap());
-
-  std::vector<uint> dofs(V.dofmap()->cell_dimension(cell.index()));
-  V.dofmap()->tabulate_dofs(&dofs[0], cell);
+  dolfin_assert(V.dofmap());
+  const std::vector<uint>& dofs = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;
@@ -271,7 +276,7 @@ void Extrapolation::average_coefficients(Function& w,
   }
 
   // Update dofs for w
-  assert(w.vector());
+  dolfin_assert(w.vector());
   w.vector()->set_local(dof_values);
 }
 //-----------------------------------------------------------------------------

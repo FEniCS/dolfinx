@@ -38,6 +38,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
+#include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/solve.h>
@@ -45,7 +46,6 @@
 #include <dolfin/mesh/Facet.h>
 
 #include "LocalAssembler.h"
-#include "SpecialFacetFunction.h"
 #include "ErrorControl.h"
 
 using namespace dolfin;
@@ -81,7 +81,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
   _B = bubble.function_space();
   _cell_bubble.reset(new Function(_B));
-  assert(_cell_bubble->vector());
+  dolfin_assert(_cell_bubble->vector());
   *(_cell_bubble->vector()) = 1.0;
 
   const Function& cone = dynamic_cast<const Function&>(*_a_R_dT->coefficient(0));
@@ -96,7 +96,7 @@ double ErrorControl::estimate_error(const Function& u,
   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Compute discrete dual approximation
-  assert(_a_star);
+  dolfin_assert(_a_star);
   Function z_h(_a_star->function_space(1));
   compute_dual(z_h, bcs);
 
@@ -104,6 +104,7 @@ double ErrorControl::estimate_error(const Function& u,
   compute_extrapolation(z_h, bcs);
 
   // Extract number of coefficients in residual
+  dolfin_assert(_residual);
   const uint num_coeffs = _residual->num_coefficients();
 
   // Attach improved dual approximation to residual
@@ -137,7 +138,9 @@ void ErrorControl::compute_dual(Function& z,
     // Only handle DirichletBCs
     const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (!bc_ptr)
-      continue;
+      dolfin_error("ErrorControl.cpp",
+                   "compute dual solution",
+                   "Only DirichletBCs can be homogenized (for now)");
 
     // Create shared_ptr to boundary condition
     boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
@@ -165,6 +168,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
   info("Extrapolating dual solution.");
 
   // Extrapolate
+  dolfin_assert(_E);
   _Ez_h.reset(new Function(_E));
   _Ez_h->extrapolate(z);
 
@@ -175,9 +179,11 @@ void ErrorControl::compute_extrapolation(const Function& z,
 void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
 {
   // Create Function for the strong cell residual (R_T)
+  dolfin_assert(_a_R_T);
   _R_T.reset(new Function(_a_R_T->function_space(1)));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
+  dolfin_assert(_a_R_dT);
   std::vector<Function> f_e;
   for (uint i = 0; i <= _R_T->geometric_dimension(); i++)
     f_e.push_back(Function(_a_R_dT->function_space(1)));
@@ -198,6 +204,8 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   residual_representation(*_R_T, *_R_dT, u);
 
   // Interpolate dual extrapolation into primal test (dual trial space)
+  dolfin_assert(_a_star);
+  dolfin_assert(_Ez_h);
   _Pi_E_z_h.reset(new Function(_a_star->function_space(1)));
   _Pi_E_z_h->interpolate(*_Ez_h);
 
@@ -208,6 +216,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
+  dolfin_assert(_eta_T);
   assemble(indicators, *_eta_T);
 
   // Take absolute value of indicators
@@ -236,6 +245,10 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation.");
 
+  dolfin_assert(_a_R_T);
+  dolfin_assert(_L_R_T);
+  dolfin_assert(_cell_bubble);
+
   // Attach cell bubble to _a_R_T and _L_R_T
   const uint num_coeffs = _L_R_T->num_coefficients();
   _a_R_T->set_coefficient(0, _cell_bubble);
@@ -255,13 +268,13 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Extract common space, mesh and dofmap
   const FunctionSpace& V = *R_T.function_space();
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   const Mesh& mesh(*V.mesh());
-  assert(V.dofmap());
+  dolfin_assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for cell-residual problems
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint N = V.element()->space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
@@ -291,7 +304,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    assert(R_T.vector());
+    dolfin_assert(R_T.vector());
     R_T.vector()->set(x.memptr(), N, &dofs[0]);
   }
   end();
@@ -304,22 +317,23 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   begin("Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
-  assert(R_dT[0].function_space());
+  dolfin_assert(R_dT[0].function_space());
   const FunctionSpace& V = *R_dT[0].function_space();
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint N = V.element()->space_dimension();
 
   // Extract mesh
-  assert(V.mesh());
+  dolfin_assert(V.mesh());
   const Mesh& mesh = *V.mesh();
   const int dim = mesh.topology().dim();
 
   // Extract dimension of cell cone space (DG_{dim})
-  assert(_C->element());
+  dolfin_assert(_C->element());
   const int local_cone_dim = _C->element()->space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
+  dolfin_assert(_L_R_dT);
   const uint L_R_dT_num_coefficients = _L_R_dT->num_coefficients();
 
   // Attach primal approximation if linear (already attached
@@ -331,10 +345,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   }
 
   // Attach cell residual to residual form
+  dolfin_assert(_R_T);
   _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, _R_T);
 
   // Extract (common) dof map
-  assert(V.dofmap());
+  dolfin_assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
@@ -348,6 +363,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   std::vector<uint> facet_dofs(num_cells);
 
   // Extract cell_domains etc from right-hand side form
+  dolfin_assert(_L_R_T);
   const MeshFunction<uint>*
     cell_domains = _L_R_T->cell_domains_shared_ptr().get();
   const MeshFunction<uint>*
@@ -355,18 +371,19 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const MeshFunction<uint>*
     interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
+  dolfin_assert(_a_R_dT);
   // Compute the facet residual for each local facet number
   for (int local_facet = 0; local_facet < (dim + 1); local_facet++)
   {
     // Construct "cone function" for this local facet number by
     // setting the "right" degree of freedom equal to one on each
     // cell. (Requires dof-ordering knowledge.)
-    assert(_cell_cone->vector());
+    dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
     for (uint k = 0; k < num_cells; k++)
       facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
-    assert(_cell_cone->vector());
+    dolfin_assert(_cell_cone->vector());
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
 
     // Attach cell cone  to _a_R_dT and _L_R_dT
@@ -403,7 +420,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      assert(R_dT[local_facet].vector());
+      dolfin_assert(R_dT[local_facet].vector());
       R_dT[local_facet].vector()->set(x.memptr(), N, &dofs[0]);
     }
   }
@@ -419,10 +436,10 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
   {
     // Only handle DirichletBCs
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    assert(bc);
+    dolfin_assert(bc);
 
     // Extract SubSpace component
-    assert(bc->function_space());
+    dolfin_assert(bc->function_space());
     const std::vector<uint> component = bc->function_space()->component();
 
     // Extract sub-domain

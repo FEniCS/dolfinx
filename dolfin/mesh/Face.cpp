@@ -29,8 +29,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 double Face::area() const
 {
-  assert(_mesh);
-  assert(_mesh->ordered());
+  dolfin_assert(_mesh);
+  dolfin_assert(_mesh->ordered());
 
   // Initialize needed connectivity
   const uint D = _mesh->topology().dim();
@@ -47,8 +47,8 @@ double Face::area() const
 //-----------------------------------------------------------------------------
 double Face::normal(uint i) const
 {
-  assert(_mesh);
-  assert(_mesh->ordered());
+  dolfin_assert(_mesh);
+  dolfin_assert(_mesh->ordered());
 
   // Initialize needed connectivity
   const uint D = _mesh->topology().dim();
@@ -65,8 +65,8 @@ double Face::normal(uint i) const
 //-----------------------------------------------------------------------------
 Point Face::normal() const
 {
-  assert(_mesh);
-  assert(_mesh->ordered());
+  dolfin_assert(_mesh);
+  dolfin_assert(_mesh->ordered());
 
   // Initialize needed connectivity
   const uint D = _mesh->topology().dim();

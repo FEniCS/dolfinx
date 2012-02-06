@@ -49,8 +49,8 @@ dolfin::uint MeshDomains::dim() const
 //-----------------------------------------------------------------------------
 dolfin::uint MeshDomains::num_marked(uint dim) const
 {
-  assert(dim < _markers.size());
-  assert(_markers[dim]);
+  dolfin_assert(dim < _markers.size());
+  dolfin_assert(_markers[dim]);
   return _markers[dim]->size();
 }
 //-----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ bool MeshDomains::is_empty() const
   uint size = 0;
   for (uint i = 0; i < _markers.size(); i++)
   {
-    assert(_markers[i]);
+    dolfin_assert(_markers[i]);
     size += _markers[i]->size();
   }
   return size == 0;
@@ -67,31 +67,31 @@ bool MeshDomains::is_empty() const
 //-----------------------------------------------------------------------------
 MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim)
 {
-  assert(dim < _markers.size());
-  assert(_markers[dim]);
+  dolfin_assert(dim < _markers.size());
+  dolfin_assert(_markers[dim]);
   return *_markers[dim];
 }
 //-----------------------------------------------------------------------------
 const MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim) const
 {
-  assert(dim < _markers.size());
-  assert(_markers[dim]);
+  dolfin_assert(dim < _markers.size());
+  dolfin_assert(_markers[dim]);
   return *_markers[dim];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshValueCollection<unsigned int> >
 MeshDomains::markers_shared_ptr(uint dim)
 {
-  assert(dim < _markers.size());
-  assert(_markers[dim]);
+  dolfin_assert(dim < _markers.size());
+  dolfin_assert(_markers[dim]);
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshValueCollection<unsigned int> >
 MeshDomains::markers_shared_ptr(uint dim) const
 {
-  assert(dim < _markers.size());
-  assert(_markers[dim]);
+  dolfin_assert(dim < _markers.size());
+  dolfin_assert(_markers[dim]);
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ MeshDomains::cell_domains(const Mesh& mesh) const
 
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
-  assert(_markers.size() == D + 1);
+  dolfin_assert(_markers.size() == D + 1);
   if (_markers[D]->size() == 0)
     return _cell_domains;
 
@@ -125,7 +125,7 @@ MeshDomains::facet_domains(const Mesh& mesh) const
 
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
-  assert(_markers.size() == D + 1);
+  dolfin_assert(_markers.size() == D + 1);
   if (_markers[D - 1]->size() == 0)
     return _facet_domains;
 
@@ -164,9 +164,9 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   const uint D = mesh.topology().dim();
 
   // Get mesh connectivity D --> d
-  assert(d <= D);
+  dolfin_assert(d <= D);
   const MeshConnectivity& connectivity = mesh.topology()(D, d);
-  assert(D == d || connectivity.size() > 0);
+  dolfin_assert(D == d || connectivity.size() > 0);
 
   // Set all values of mesh function to maximum uint value
   mesh_function.set_all(std::numeric_limits<unsigned int>::max());

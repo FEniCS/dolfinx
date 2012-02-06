@@ -43,14 +43,20 @@ MTL4Vector::MTL4Vector(uint N)
   resize(N);
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(const MTL4Vector& v)
+MTL4Vector::MTL4Vector(const MTL4Vector& v) : x(v.x)
 {
-  *this = v;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MTL4Vector::~MTL4Vector()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericVector> MTL4Vector::copy() const
+{
+  boost::shared_ptr<GenericVector> x(new MTL4Vector(*this));
+  return x;
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::resize(uint N)
@@ -82,11 +88,6 @@ void MTL4Vector::resize(std::pair<uint, uint> range,
   }
 
   resize(range);
-}
-//-----------------------------------------------------------------------------
-MTL4Vector* MTL4Vector::copy() const
-{
-  return new MTL4Vector(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Vector::size() const
@@ -157,14 +158,14 @@ void MTL4Vector::get_local(Array<double>& values) const
 //-----------------------------------------------------------------------------
 void MTL4Vector::set_local(const Array<double>& values)
 {
-  assert(values.size() == size());
+  dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::add_local(const Array<double>& values)
 {
-  assert(values.size() == size());
+  dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];
 }
@@ -186,7 +187,7 @@ void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
   not_working_in_parallel("MTL4Vector::gather)");
 
   const uint _size = indices.size();
-  assert(this->size() >= _size);
+  dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
   mtl4_vector& _x = x.down_cast<MTL4Vector>().vec();
@@ -200,7 +201,7 @@ void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
 
   const uint _size = indices.size();
   x.resize(_size);
-  assert(x.size() == _size);
+  dolfin_assert(x.size() == _size);
   for (uint i = 0; i < _size; i++)
     x[i] = this->x[ indices[i] ];
 }
@@ -285,8 +286,14 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
-  resize(v.size());
-  x = v.vec();
+  if (size() != v.size())
+  {
+    dolfin_error("MTL4Vector.cpp",
+                 "assign one vector to another",
+                 "Vectors must be of the same length when assigning. "
+                 "Consider using the copy constructor instead");
+  }
+  x = v.x;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -296,9 +303,23 @@ const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator+= (double a)
+{
+  mtl::dense_vector<double> _a(this->size(), a);
+  x += _a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
 {
   x -= v.down_cast<MTL4Vector>().vec();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator-= (double a)
+{
+  mtl::dense_vector<double> _a(this->size(), a);
+  x -= _a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -322,13 +343,13 @@ double MTL4Vector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double MTL4Vector::min() const
 {
-  assert(size() > 0);
+  dolfin_assert(size() > 0);
   return mtl::min(x);
 }
 //-----------------------------------------------------------------------------
 double MTL4Vector::max() const
 {
-  assert(size() > 0);
+  dolfin_assert(size() > 0);
   return mtl::max(x);
 }
 //-----------------------------------------------------------------------------
@@ -344,7 +365,7 @@ double MTL4Vector::sum(const Array<uint>& rows) const
   for (uint i = 0; i < rows.size(); ++i)
   {
     const uint index = rows[i];
-    assert(index < size());
+    dolfin_assert(index < size());
     if (row_set.find(index) == row_set.end())
     {
       _sum += x[index];

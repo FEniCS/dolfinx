@@ -86,15 +86,15 @@ void RAWFile::ResultsWrite(const Function& u) const
   std::string data_type = "point";
 
   // For brevity
-  assert(u.function_space());
+  dolfin_assert(u.function_space());
   const FunctionSpace& V = *u.function_space();
-  assert(V.mesh());
-  assert(V.dofmap());
+  dolfin_assert(V.mesh());
+  dolfin_assert(V.dofmap());
   const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Get rank of Function
-  assert(V.element());
+  dolfin_assert(V.element());
   const uint rank = V.element()->value_rank();
   if (rank > 1)
   {
@@ -126,7 +126,7 @@ void RAWFile::ResultsWrite(const Function& u) const
     Array<double> values(size);
 
     // Get function values on cells
-    assert(u.vector());
+    dolfin_assert(u.vector());
     u.vector()->get_local(values);
 
     // Write function data at cells

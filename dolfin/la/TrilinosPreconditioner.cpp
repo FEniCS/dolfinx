@@ -54,11 +54,9 @@ const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
                               ("amg",       -1)
                               ("ml_amg",    -1);
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-TrilinosPreconditioner::preconditioners()
-{
-  return boost::assign::pair_list_of
+// Mapping from preconditioner string to Trilinos
+const std::vector<std::pair<std::string, std::string> > TrilinosPreconditioner::_preconditioners_descr
+  = boost::assign::pair_list_of
     ("default",   "default preconditioner")
     ("none",      "No preconditioner")
     ("ilu",       "Incomplete LU factorization")
@@ -67,6 +65,12 @@ TrilinosPreconditioner::preconditioners()
     ("sor",       "Successive over-relaxation")
     ("amg",       "Algebraic multigrid")
     ("ml_amg",    "ML algebraic multigrid");
+
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+TrilinosPreconditioner::preconditioners()
+{
+  return TrilinosPreconditioner::_preconditioners_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters TrilinosPreconditioner::default_parameters()
@@ -114,7 +118,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
 void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
                                  const EpetraMatrix& P)
 {
-  assert(solver.aztecoo());
+  dolfin_assert(solver.aztecoo());
 
   // Pointer to preconditioner matrix
   Epetra_RowMatrix* _P = P.mat().get();
@@ -142,7 +146,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
       preconditioner = "ILU";
     Ifpack ifpack_factory;
     ifpack_preconditioner.reset(ifpack_factory.Create(preconditioner, _P, overlap));
-    assert(ifpack_preconditioner != 0);
+    dolfin_assert(ifpack_preconditioner != 0);
 
     // Set up preconditioner
     ifpack_preconditioner->SetParameters(list);

@@ -87,13 +87,13 @@ namespace dolfin
     LinearSolver linear_solver;
 
     // Extended matrix
-    boost::scoped_ptr<GenericMatrix> B;
+    boost::shared_ptr<GenericMatrix> B;
 
     // Solution of extended system
-    boost::scoped_ptr<GenericVector> y;
+    boost::shared_ptr<GenericVector> y;
 
     // Extended vector
-    boost::scoped_ptr<GenericVector> c;
+    boost::shared_ptr<GenericVector> c;
 
   };
 

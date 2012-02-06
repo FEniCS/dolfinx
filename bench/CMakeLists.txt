@@ -23,6 +23,9 @@ if (dolfin_FOUND)
     add_subdirectory(${cpp_dir})
   endforeach()
 
+  # Add fem/speedup/cpp manually (no main.cpp so not picked up automatically)
+  add_subdirectory(fem/speedup/cpp)
+
 else()
 
   message(STATUS "Could not locate dolfin-config.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")

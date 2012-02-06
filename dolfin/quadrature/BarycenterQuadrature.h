@@ -25,8 +25,6 @@
 
 #ifdef HAS_CGAL
 
-#include "BarycenterQuadrature.h"
-
 #include <vector>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Nef_polyhedron_3.h>
@@ -47,7 +45,7 @@ namespace dolfin
   {
   public:
 
-    /// Create barycenter quadrature rule for given polyhedron
+    /// Create barycenter quadrature rule for given CGAL polyhedron
     BarycenterQuadrature(const Nef_polyhedron_3& polyhedron);
 
     /// Return points
@@ -60,7 +58,7 @@ namespace dolfin
 
     /// Return number of quadrature points/weights
     uint size() const
-    { assert(_points.size() == _weights.size()); return _points.size(); }
+    { dolfin_assert(_points.size() == _weights.size()); return _points.size(); }
 
   private:
 

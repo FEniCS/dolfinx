@@ -45,7 +45,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void AssemblerTools::check(const Form& a)
 {
-  assert(a.ufc_form());
+  dolfin_assert(a.ufc_form());
 
   // Check the form
   a.check();
@@ -107,7 +107,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   if (a.rank() + a.ufc_form()->num_coefficients() > 0)
   {
     boost::scoped_ptr<ufc::finite_element> element(a.ufc_form()->create_finite_element(0));
-    assert(element);
+    dolfin_assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
     {
       dolfin_error("AssemblerTools.cpp",
@@ -138,9 +138,10 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
+                                        uint primary_dim,
                                         bool reset_sparsity, bool add_values)
 {
-  assert(a.ufc_form());
+  dolfin_assert(a.ufc_form());
 
   // Check that we should not add values
   if (reset_sparsity && add_values)
@@ -159,7 +160,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   {
     // Build sparsity pattern
     Timer t0("Build sparsity");
-    boost::scoped_ptr<GenericSparsityPattern> sparsity_pattern(A.factory().create_pattern());
+    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
+        = A.factory().create_pattern(primary_dim);
     if (sparsity_pattern)
     {
 
@@ -182,15 +184,15 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
       for (uint i = 0; i < a.rank(); i++)
       {
-        assert(dofmaps[i]);
+        dolfin_assert(dofmaps[i]);
         global_dimensions[i] = dofmaps[i]->global_dimension();
         local_range[i]       = dofmaps[i]->ownership_range();
         off_process_owner[i] = &(dofmaps[i]->off_process_owner());
       }
 
       // Create and build sparsity pattern
-      SparsityPattern _sparsity_pattern;
-      _sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
+      const SparsityPattern _sparsity_pattern(global_dimensions, primary_dim,
+                                              local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
     }
@@ -205,7 +207,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // If tensor is not reset, check that dimensions are correct
     for (uint i = 0; i < a.rank(); ++i)
     {
-      if (A.size(i) != dofmaps[i]-> global_dimension())
+      if (A.size(i) != dofmaps[i]->global_dimension())
       {
         dolfin_error("AssemblerTools.cpp",
                      "assemble form",
