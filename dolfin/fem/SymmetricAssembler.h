@@ -69,8 +69,7 @@ namespace dolfin
                          const MeshFunction<uint> *exterior_facet_domains=NULL,
                          const MeshFunction<uint> *interior_facet_domains=NULL,
                          bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool add_values=false);
 
   private:
     class PImpl;

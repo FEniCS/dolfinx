@@ -62,7 +62,7 @@ class TestSymmetricAssembler(unittest.TestCase):
 
         # Define boundary condition
         def boundary(x):
-            return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+            return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant((1.0, 2.0, 3.0))
         bc = DirichletBC(V, u0, boundary)
 
@@ -101,7 +101,7 @@ class TestSymmetricAssembler(unittest.TestCase):
 
         # Define boundary condition
         def boundary(x):
-            return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+            return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant(1.0)
         bc = DirichletBC(V, u0, boundary)
 
@@ -129,41 +129,49 @@ class TestSymmetricAssembler(unittest.TestCase):
             def inside(self, x, inside):
                 return x[0] < 0.5 + DOLFIN_EPS
 
+        # Define subdomain for right of x = 0.5
+        class S1(SubDomain):
+            def inside(self, x, inside):
+                return x[0] >= 0.5 + DOLFIN_EPS
+
         # Mark mesh
         f0 = F0()
         f1 = F1()
         f2 = F2()
         s0 = S0()
+        s1 = S1()
         f0.mark_facets(mesh, 0)
         f1.mark_facets(mesh, 1)
         f2.mark_facets(mesh, 2)
         s0.mark_cells(mesh, 0)
+        s1.mark_cells(mesh, 1)
 
         # Define test and trial functions
         V = FunctionSpace(mesh, "CG", 1)
         u = TrialFunction(V)
         v = TestFunction(V)
 
+        # FIXME: If the Z terms are not present, PETSc will claim:
+        #    Object is in wrong state!
+        #    Matrix is missing diagonal entry in row 124!
+        Z = Constant(0.0)
+
         # Define forms on marked subdomains
-        a0 = 1*u*v*dx(0) + 2*u*v*ds(0) + 3*u*v*ds(1) + 4*u*v*ds(2)
+        a0 = 1*u*v*dx(0) + 2*u*v*ds(0) + 3*u*v*ds(1) + 4*u*v*ds(2) + Z*u*v*dx(1)
         L0 = 1*v*dx(0) + 2*v*ds(0) + 3*v*ds(1) + 4*v*ds(2)
 
         # Defined forms on unmarked subdomains (should be zero)
-        a1 = 1*u*v*dx(1) + 2*u*v*ds(3)
-        L1 = 1*v*dx(1) + 2*v*ds(3)
+        a1 = 1*u*v*dx(2) + 2*u*v*ds(3) + Z*u*v*dx(0) + Z*u*v*dx(1)
+        L1 = 1*v*dx(2) + 2*v*ds(3)
 
         # Define boundary condition
         def boundary(x):
-            return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+            return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant(1.0)
         bc = DirichletBC(V, u0, boundary)
 
-        print "FIXME: A=assemble(a0);bc.apply(A) fails in PETSc, comparing without BCs"
-        #self._check_against_reference(a0, L0, bc)
-        #self._check_against_reference(a1, L1, bc)
-
-        self._check_against_reference(a0, L0, None)
-        self._check_against_reference(a1, L1, None)
+        self._check_against_reference(a0, L0, bc)
+        self._check_against_reference(a1, L1, bc)
 
 if __name__ == "__main__":
     print ""

@@ -131,12 +131,11 @@ void dolfin::symmetric_assemble(GenericMatrix& As,
                                 const MeshFunction<unsigned int>* exterior_facet_domains,
                                 const MeshFunction<unsigned int>* interior_facet_domains,
                                 bool reset_sparsity,
-                                bool add_values,
-                                bool finalize_tensor)
+                                bool add_values)
 {
   SymmetricAssembler::assemble(As, An, a, bcs, bcs,
                                cell_domains, exterior_facet_domains, interior_facet_domains,
-                               reset_sparsity, add_values, finalize_tensor);
+                               reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void dolfin::symmetric_assemble(GenericMatrix& As,
@@ -148,12 +147,11 @@ void dolfin::symmetric_assemble(GenericMatrix& As,
                                 const MeshFunction<unsigned int>* exterior_facet_domains,
                                 const MeshFunction<unsigned int>* interior_facet_domains,
                                 bool reset_sparsity,
-                                bool add_values,
-                                bool finalize_tensor)
+                                bool add_values)
 {
   SymmetricAssembler::assemble(As, An, a, row_bcs, col_bcs,
                                cell_domains, exterior_facet_domains, interior_facet_domains,
-                               reset_sparsity, add_values, finalize_tensor);
+                               reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
