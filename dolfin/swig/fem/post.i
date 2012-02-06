@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-10-22
-// Last changed: 2011-08-18
+// Last changed: 2012-02-02
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (post)
@@ -35,6 +35,28 @@ def function_space(self):
     "Return the FunctionSpace"
     from dolfin.functions.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
+%}
+}
+
+//-----------------------------------------------------------------------------
+// Extend Function so f.function_space() return a dolfin.FunctionSpace
+//-----------------------------------------------------------------------------
+%extend dolfin::BoundaryCondition {
+%pythoncode %{
+def function_space(self, i):
+    """
+    Return function space for given argument
+    
+     *Arguments*
+         i (uint)
+             Index
+    
+     *Returns*
+         _FunctionSpace_
+             Function space shared pointer.
+    """
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(self._function_space(i))
 %}
 }
 

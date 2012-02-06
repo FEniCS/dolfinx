@@ -122,6 +122,11 @@
 %rename (_function_space) dolfin::BoundaryCondition::function_space;
 
 //-----------------------------------------------------------------------------
+// Modifying the interface of BoundaryCondition
+//-----------------------------------------------------------------------------
+%rename (_function_space) dolfin::Form::function_space;
+
+//-----------------------------------------------------------------------------
 // Ignores domain assignment and operator== for Form class
 //-----------------------------------------------------------------------------
 %ignore dolfin::Form::dx;

@@ -35,7 +35,7 @@ tests = {
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
-                       "FiniteElement", "SystemAssembler"],
+                       "FiniteElement", "SystemAssembler", "Form"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace",
                        "SpecialFunctions"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
