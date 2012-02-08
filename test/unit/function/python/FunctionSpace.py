@@ -26,6 +26,7 @@ from dolfin import *
 mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
+Q = W*V
 f = Function(V)
 V2 = f.function_space()
 g = Function(W)
@@ -46,6 +47,9 @@ class Interface(unittest.TestCase):
     def test_sub_equality(self):
         self.assertEqual(W.sub(0), W.sub(0))
         self.assertNotEqual(W.sub(0), W.sub(1))
+        self.assertEqual(W.sub(0), W.extract_sub_space([0]))
+        self.assertEqual(W.sub(1), W.extract_sub_space([1]))
+        self.assertEqual(Q.sub(0), Q.extract_sub_space([0]))
 
     def test_in_operator(self):
         self.assertTrue(f in V)

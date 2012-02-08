@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2012-02-06
+// Last changed: 2012-02-08
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -384,6 +384,26 @@ const std::vector<TYPE>&  ARG_NAME
 // Macro for out typemaps of primitives of const std::vector<TYPE>& It returns
 // readonly NumPy array
 //
+// TYPE       : The primitive type
+// NUMPY_TYPE : The corresponding NumPy type
+//-----------------------------------------------------------------------------
+%define OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+
+%typemap(out) std::vector<TYPE> {
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+  npy_intp adims = $1.size();
+  
+  $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  std::copy($1.begin(), $1.end(), data);
+}
+
+%enddef
+
+//-----------------------------------------------------------------------------
+// Macro for out typemaps of primitives of std::vector<TYPE> It returns a copied
+// NumPy array
+//
 // TYPE      : The primitive type
 // TYPE_NAME : The name of the pointer type, 'double' for 'double', 'uint' for
 //             'dolfin::uint'
@@ -535,14 +555,19 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE, double, float_)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_UINT, uint, uintc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint, uintc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
+
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, NPY_UINT)
 
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
