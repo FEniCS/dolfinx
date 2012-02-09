@@ -20,6 +20,8 @@
 // First added:  2005-12-02
 // Last changed: 2010-10-19
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/common/MPI.h>
 #include "MeshPartitioning.h"
 #include "MeshEditor.h"
@@ -31,7 +33,11 @@ using namespace dolfin;
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
@@ -95,6 +101,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_broadcaster())
+    MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------

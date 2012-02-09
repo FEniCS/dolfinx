@@ -101,8 +101,8 @@ void BinaryFile::operator>> (Mesh& mesh)
         c.num_entities = read_uint();
         c.connections = new uint[c._size];
         read_array(c._size, c.connections);
-        c.offsets = new uint[c.num_entities + 1];
-        read_array(c.num_entities + 1, c.offsets);
+        c.offsets.resize(c.num_entities + 1);
+        read_array(c.num_entities + 1, &(c.offsets[0]));
       }
     }
   }
@@ -180,16 +180,16 @@ void BinaryFile::operator<< (const Mesh& mesh)
       // If store all connectivity or if storing cell connectivity
       if (_store_connectivity || (i == D && j == 0))
       {
-	write_uint(c._size);
-     	if (c._size > 0)
-	{
-	  write_uint(c.num_entities);
-	  write_array(c._size, c.connections);
-	  write_array(c.num_entities + 1, c.offsets);
-	}
+        write_uint(c._size);
+        if (c._size > 0)
+        {
+          write_uint(c.num_entities);
+          write_array(c._size, c.connections);
+          write_array(c.num_entities + 1, &(c.offsets[0]));
+        }
       }
       else
-	write_uint(0);
+        write_uint(0);
     }
   }
 

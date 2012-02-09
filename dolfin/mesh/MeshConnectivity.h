@@ -64,7 +64,8 @@ namespace dolfin
     { return (entity < num_entities ? connections + offsets[entity] : 0); }
 
     /// Return contiguous array of connections for all entities
-    const uint* operator() () const { return connections; }
+    const uint* operator() () const
+    { return connections; }
 
     /// Clear all data
     void clear();
@@ -84,8 +85,36 @@ namespace dolfin
     /// Set all connections for given entity
     void set(uint entity, uint* connections);
 
+    /// Set all connections for all entities (T is a container, e.g.
+    /// a std::vector<uint>, std::set<uint>, etc)
+    template <typename T>
+    void set(const std::vector<T>& connections)
+    {
+      // Clear old data if any
+      clear();
+
+      // Initialize offsets and compute total size
+      num_entities = connections.size();
+      offsets.resize(num_entities + 1);
+      _size = 0;
+      for (uint e = 0; e < num_entities; e++)
+      {
+        offsets[e] = _size;
+        _size += connections[e].size();
+      }
+      offsets[num_entities] = _size;
+
+      // Initialize connections
+      this->connections = new uint[_size];
+      for (uint e = 0; e < num_entities; e++)
+      {
+        std::copy(connections[e].begin(), connections[e].end(),
+                  this->connections + offsets[e]);
+      }
+    }
+
     /// Set all connections for all entities
-    void set(const std::vector<std::vector<uint> >& connectivity);
+    //void set(const std::vector<std::set<uint> >& connectivity);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -109,7 +138,7 @@ namespace dolfin
     uint* connections;
 
     // Offset for first connection for each entity
-    uint* offsets;
+    std::vector<uint> offsets;
 
   };
 
