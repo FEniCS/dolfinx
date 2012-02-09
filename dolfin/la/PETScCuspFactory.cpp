@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13 
-// Last changed: 2011-09-29
+// Last changed: 2012-02-06
 
 #ifdef HAS_PETSC_CUSP
 

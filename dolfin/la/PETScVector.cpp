@@ -18,10 +18,10 @@
 // Modified by Garth N. Wells 2005-2010.
 // Modified by Martin Sandve Alnes 2008
 // Modified by Johannes Ring, 2011.
-// Modified by Fredrik Valdmanis, 2011
+// Modified by Fredrik Valdmanis, 2011-2012
 //
 // First added:  2004
-// Last changed: 2011-11-11
+// Last changed: 2012-02-09
 
 #ifdef HAS_PETSC
 
@@ -163,6 +163,9 @@ bool PETScVector::distributed() const
   else if (strcmp(petsc_type, VECSEQ) == 0)
     _distributed =  false;
 #ifdef HAS_PETSC_CUSP
+  // TODO: Uncomment these two lines after implementing MPI Cusp vectors
+  //else if (strcmp(petsc_type, VECMPICUSP) == 0)
+  //  _distributed = true;
   else if (strcmp(petsc_type, VECSEQCUSP) == 0)
     _distributed = false;
 #endif
@@ -170,7 +173,7 @@ bool PETScVector::distributed() const
   {
     dolfin_error("PETScVector.cpp",
         "check whether PETSc vector is distributed",
-        "Unknown vector type (\"%d\")", petsc_type);
+        "Unknown vector type (\"%s\")", petsc_type);
   }
 
   return _distributed;
@@ -671,8 +674,15 @@ std::string PETScVector::str(bool verbose) const
 
     if (strcmp(petsc_type, VECSEQ) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_SELF);
-    else
+    else if (strcmp(petsc_type, VECMPI) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+#ifdef HAS_PETSC_CUSP
+    else if (strcmp(petsc_type, VECSEQCUSP) == 0)
+      VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+    // TODO: Uncomment these two lines after implementing MPI Cusp vectors
+    //else if (strcmp(petsc_type, VECMPICUSP) == 0)
+    //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+#endif
   }
   else
     s << "<PETScVector of size " << size() << ">";
@@ -690,12 +700,16 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
+
+#ifndef HAS_PETSC_CUSP
+  // If PETSc is configured without Cusp, check only for one sequential type
   if (strcmp(petsc_type, VECSEQ) != 0)
     dolfin_error("PETScVector.cpp",
         "gather values for PETSc vector",
         "Values can only be gathered into local vectors");
-#ifdef HAS_PETSC_CUSP
-  else if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
+#else
+  // If PETSc is configured with Cusp, check for both sequential types
+  if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
     dolfin_error("PETScVector.cpp",
         "gather values for PETSc vector",
         "Values can only be gathered into local vectors");
@@ -802,7 +816,6 @@ void PETScVector::init(std::pair<uint, uint> range,
   // Initialize vector, either default or MPI vector
   if (!distributed)
   {
-    // FIXME: Make it look better!
     VecCreate(PETSC_COMM_SELF, x.get());
     // Set type to be either standard or Cusp sequential vector
     if (!_use_gpu)
@@ -818,9 +831,9 @@ void PETScVector::init(std::pair<uint, uint> range,
   }
   else
   {
-    // TODO: Implement VECMPICUSP vectors
     if (_use_gpu)
-      not_working_in_parallel("Distributed PETSc Cusp vectors");
+      not_working_in_parallel("Due to limitations in PETSc, "
+          "distributed PETSc Cusp vectors");
 
     // Clear ghost indices map
     ghost_global_to_local.clear();

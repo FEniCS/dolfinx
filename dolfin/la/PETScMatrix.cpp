@@ -19,10 +19,10 @@
 // Modified by Andy R. Terrel 2005.
 // Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
-// Modified by Fredrik Valdmanis 2011
+// Modified by Fredrik Valdmanis 2011-2012
 //
 // First added:  2004
-// Last changed: 2011-09-29
+// Last changed: 2012-02-09
 
 #ifdef HAS_PETSC
 
@@ -240,9 +240,9 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
-    // TODO: Implement distributed GPU vectors
     if (_use_gpu)
-      not_working_in_parallel("Distributed PETSc Cusp matrices");
+      not_working_in_parallel("Due to limitations in PETSc, "
+          "distributed PETSc Cusp matrices");
 
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
