@@ -22,6 +22,7 @@
 #define __UTILS_H
 
 #include <string>
+#include <cstring>
 #include <limits>
 #include <vector>
 #include "types.h"
@@ -41,14 +42,14 @@ namespace dolfin
   /// Return simple hash for given signature string
   dolfin::uint hash(std::string signature);
 
-  /// Fast zero-fill of numeric vectors / blocks
+  /// Fast zero-fill of numeric vectors / blocks.
   template <class T> inline void zerofill(T* arr, uint n)
   {
     if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
-      memset(arr, 0, n*sizeof(T));
+      std::memset(arr, 0, n*sizeof(T));
     else
       // should never happen in practice
-      std::fill(arr, arr+n, T(0));
+      std::fill_n(arr, n, T(0));
   }
 
   template <class T> inline void zerofill(std::vector<T> &vec)

@@ -64,7 +64,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         def boundary(x):
             return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant((1.0, 2.0, 3.0))
-        bc = DirichletBC(V, u0, boundary)
+        bc = DirichletBC(V, u0, boundary, method="pointwise")
 
         self._check_against_reference(a, L, bc)
 
@@ -84,7 +84,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         # Define normal component, mesh size and right-hand side
         n = V.cell().n
         h = CellSize(mesh)
-        h_avg = (h('+') + h('-'))/2
+        h_avg = (h('+')+h('-'))/2
         f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
         # Define bilinear form
@@ -103,7 +103,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         def boundary(x):
             return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant(1.0)
-        bc = DirichletBC(V, u0, boundary)
+        bc = DirichletBC(V, u0, boundary, method="pointwise")
 
         self._check_against_reference(a, L, bc)
 
@@ -168,7 +168,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         def boundary(x):
             return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant(1.0)
-        bc = DirichletBC(V, u0, boundary)
+        bc = DirichletBC(V, u0, boundary, method="pointwise")
 
         self._check_against_reference(a0, L0, bc)
         self._check_against_reference(a1, L1, bc)

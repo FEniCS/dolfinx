@@ -50,63 +50,66 @@ class SymmetricAssembler::PImpl
 public:
   // User-provided parameters
   GenericMatrix& A;
-  GenericMatrix& A_nonsymm;
+  GenericMatrix& A_asymm;
   const Form& a;
   const std::vector<const DirichletBC*>& row_bcs;
   const std::vector<const DirichletBC*>& col_bcs;
   const MeshFunction<uint>* cell_domains;
   const MeshFunction<uint>* exterior_facet_domains;
   const MeshFunction<uint>* interior_facet_domains;
-  bool reset_sparsity, add_values;
+  bool reset_sparsity, add_values, finalize_tensor;
 
-  PImpl(GenericMatrix& _A, GenericMatrix& _A_nonsymm,
+  PImpl(GenericMatrix& _A, GenericMatrix& _A_asymm,
         const Form& _a,
         const std::vector<const DirichletBC*>& _row_bcs,
         const std::vector<const DirichletBC*>& _col_bcs,
         const MeshFunction<uint>* _cell_domains,
         const MeshFunction<uint>* _exterior_facet_domains,
         const MeshFunction<uint>* _interior_facet_domains,
-        bool _reset_sparsity, bool _add_values)
-    : A(_A), A_nonsymm(_A_nonsymm), a(_a),
+        bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
+    : A(_A), A_asymm(_A_asymm), a(_a),
       row_bcs(_row_bcs), col_bcs(_col_bcs),
       cell_domains(_cell_domains),
       exterior_facet_domains(_exterior_facet_domains),
       interior_facet_domains(_interior_facet_domains),
       reset_sparsity(_reset_sparsity),
       add_values(_add_values),
-      ufc(_a), ufc_nonsymm(_a), mesh(_a.mesh())
+      finalize_tensor(_finalize_tensor),
+      ufc(_a), ufc_asymm(_a), mesh(_a.mesh())
   {
-    init();
   }
 
   void assemble();
 
 private:
-  void init();
   void assemble_cells();
   void assemble_exterior_facets();
   void assemble_interior_facets();
 
   // Adjust the columns of the local element tensor so that it becomes
   // symmetric once BCs have been applied to the rows. Returns true if any
-  // columns have been moved to _nonsymm.
-  bool make_bc_symmetric(std::vector<double>& elm_A, std::vector<double>& elm_A_nonsymm,
+  // columns have been moved to _asymm.
+  bool make_bc_symmetric(std::vector<double>& elm_A, std::vector<double>& elm_A_asymm,
                          const std::vector<const std::vector<uint>*>& dofs);
 
   // These are derived from the variables above:
   const Mesh& mesh;     // = Mesh(a)
   UFC ufc;              // = UFC(a)
-  UFC ufc_nonsymm;      // = UFC(a), used for scratch local tensors
+  UFC ufc_asymm;        // = UFC(a), used for scratch local tensors
   bool matching_bcs;    // true if row_bcs==col_bcs
   DirichletBC::Map row_bc_values; // derived from row_bcs
   DirichletBC::Map col_bc_values; // derived from col_bcs, but empty if matching_bcs
+
+  // These are used to keep track of which diagonals have been set:
+  std::pair<uint,uint> processor_dof_range;
+  std::set<uint> inserted_diagonals;
 
   // Scratch variables
   std::vector<bool> local_row_is_bc;
 };
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::assemble(GenericMatrix& A,
-                                  GenericMatrix& A_nonsymm,
+                                  GenericMatrix& A_asymm,
                                   const Form& a,
                                   const std::vector<const DirichletBC*>& row_bcs,
                                   const std::vector<const DirichletBC*>& col_bcs,
@@ -114,51 +117,13 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
                                   const MeshFunction<uint>* exterior_facet_domains,
                                   const MeshFunction<uint>* interior_facet_domains,
                                   bool reset_sparsity,
-                                  bool add_values)
+                                  bool add_values,
+                                  bool finalize_tensor)
 {
-  PImpl pImpl(A, A_nonsymm, a, row_bcs, col_bcs,
+  PImpl pImpl(A, A_asymm, a, row_bcs, col_bcs,
             cell_domains, exterior_facet_domains, interior_facet_domains,
-            reset_sparsity, add_values);
+            reset_sparsity, add_values, finalize_tensor);
   pImpl.assemble();
-}
-//-----------------------------------------------------------------------------
-void SymmetricAssembler::PImpl::init()
-{
-  // If the bcs match (which is the usual case), we are assembling a normal
-  // square matrix which contains the diagonal (and the dofmaps should match,
-  // too).
-  matching_bcs = (row_bcs == col_bcs);
-
-  // Get Dirichlet dofs rows and values for local mesh
-  for (uint i = 0; i < row_bcs.size(); ++i)
-  {
-    // Methods other than 'pointwise' are not robust in parallel since a vertex
-    // can have a bc applied, but the partition might not have a facet on the
-    // boundary.
-    if (row_bcs[i]->method() != "pointwise"
-        && dolfin::MPI::num_processes() > 1
-        && dolfin::MPI::process_number() == 0)
-      warning("Dirichlet boundary condition method '%s' is not robust in parallel"
-              " with symmetric assembly.", row_bcs[i]->method().c_str());
-
-    row_bcs[i]->get_boundary_values(row_bc_values);
-  }
-  if (!matching_bcs)
-  {
-    // Get Dirichlet dofs columns and values for local mesh
-    for (uint i = 0; i < col_bcs.size(); ++i)
-    {
-      if (col_bcs[i]->method() != "pointwise"
-          && dolfin::MPI::num_processes() > 1
-          && dolfin::MPI::process_number() == 0)
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel"
-                " with symmetric assembly.", col_bcs[i]->method().c_str());
-
-      col_bcs[i]->get_boundary_values(col_bc_values);
-    }
-  }
-
-  dolfin_assert(a.rank() == 2);
 }
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::PImpl::assemble()
@@ -175,6 +140,40 @@ void SymmetricAssembler::PImpl::assemble()
   // 2. Note that subdomains given as input to this function override
   // subdomains attached to forms, which in turn override subdomains
   // stored as part of the mesh.
+
+  // If the bcs match (which is the usual case), we are assembling a normal
+  // square matrix which contains the diagonal (and the dofmaps should match,
+  // too).
+  matching_bcs = (row_bcs == col_bcs);
+
+  // Methods other than 'pointwise' are not robust in parallel; see
+  // DirichletBC::get_boundary_values(). We warn about the use of these methods
+  // in parallel.
+  const bool do_warn = (MPI::num_processes() > 1 && MPI::process_number() == 0);
+
+  // Get Dirichlet dofs rows and values for local mesh
+  for (uint i = 0; i < row_bcs.size(); ++i)
+  {
+    if (do_warn && row_bcs[i]->method() != "pointwise")
+      warning("Dirichlet boundary condition method '%s' is not robust in parallel"
+              " with symmetric assembly. Use 'pointwise'.", row_bcs[i]->method().c_str());
+
+    row_bcs[i]->get_boundary_values(row_bc_values);
+  }
+  if (!matching_bcs)
+  {
+    // Get Dirichlet dofs columns and values for local mesh
+    for (uint i = 0; i < col_bcs.size(); ++i)
+    {
+      if (do_warn && col_bcs[i]->method() != "pointwise")
+        warning("Dirichlet boundary condition method '%s' is not robust in parallel"
+                " with symmetric assembly. Use 'pointwise'.", col_bcs[i]->method().c_str());
+
+      col_bcs[i]->get_boundary_values(col_bc_values);
+    }
+  }
+
+  dolfin_assert(a.rank() == 2);
 
   // Get cell domains
   if (!cell_domains || cell_domains->size() == 0)
@@ -211,7 +210,10 @@ void SymmetricAssembler::PImpl::assemble()
 
   // Initialize global tensors
   AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(A_nonsymm, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A_asymm, a, 0, reset_sparsity, add_values);
+
+  // Get dofs that are local to this processor
+  processor_dof_range = A.local_range(0);
 
   // Assemble over cells
   assemble_cells();
@@ -222,21 +224,12 @@ void SymmetricAssembler::PImpl::assemble()
   // Assemble over interior facets
   assemble_interior_facets();
 
-  // Finalize assembly of global tensor (including BC columns, but not rows)
-  A.apply("add");
-  A_nonsymm.apply("add");
-
-  // Tabulate the row dofs that have BCs
-  const uint num_bc_rows = row_bc_values.size();
-  std::vector<uint> dofs(num_bc_rows);
-  DirichletBC::Map::const_iterator bv;
-  uint i = 0;
-  for (bv = row_bc_values.begin(); bv != row_bc_values.end(); ++bv)
-    dofs[i++] = bv->first;
-
-  // Set BC row dofs to identity in global tensor, and finalize again
-  A.ident(num_bc_rows, &dofs[0]);
-  A.apply("add");
+  // Finalize assembly of global tensor
+  if (finalize_tensor)
+  {
+    A.apply("add");
+    A_asymm.apply("add");
+  }
 }
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::PImpl::assemble_cells()
@@ -292,12 +285,12 @@ void SymmetricAssembler::PImpl::assemble_cells()
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
     // Apply boundary conditions
-    const bool changed = make_bc_symmetric(ufc.A, ufc_nonsymm.A, dofs);
+    const bool asymm_changed = make_bc_symmetric(ufc.A, ufc_asymm.A, dofs);
 
     // Add entries to global tensor.
     A.add(&ufc.A[0], dofs);
-    if (changed)
-      A_nonsymm.add(&ufc_nonsymm.A[0], dofs);
+    if (asymm_changed)
+      A_asymm.add(&ufc_asymm.A[0], dofs);
 
     p++;
   }
@@ -379,12 +372,12 @@ void SymmetricAssembler::PImpl::assemble_exterior_facets()
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
 
     // Apply boundary conditions
-    const bool changed = make_bc_symmetric(ufc.A, ufc_nonsymm.A, dofs);
+    const bool asymm_changed = make_bc_symmetric(ufc.A, ufc_asymm.A, dofs);
 
     // Add entries to global tensor
     A.add(&ufc.A[0], dofs);
-    if (changed)
-      A_nonsymm.add(&ufc_nonsymm.A[0], dofs);
+    if (asymm_changed)
+      A_asymm.add(&ufc_asymm.A[0], dofs);
 
     p++;
   }
@@ -500,19 +493,19 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
                               local_facet0, local_facet1);
 
     // Apply boundary conditions
-    const bool changed = make_bc_symmetric(ufc.macro_A, ufc_nonsymm.macro_A, macro_dof_ptrs);
+    const bool asymm_changed = make_bc_symmetric(ufc.macro_A, ufc_asymm.macro_A, macro_dof_ptrs);
 
     // Add entries to global tensor
     A.add(&ufc.macro_A[0], macro_dofs);
-    if (changed)
-      A_nonsymm.add(&ufc_nonsymm.macro_A[0], macro_dofs);
+    if (asymm_changed)
+      A_asymm.add(&ufc_asymm.macro_A[0], macro_dofs);
 
     p++;
   }
 }
 //-----------------------------------------------------------------------------
 bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
-                                                  std::vector<double>& local_A_nonsymm,
+                                                  std::vector<double>& local_A_asymm,
                                                   const std::vector<const std::vector<uint>*>& dofs)
 {
   // Get local dimensions
@@ -520,8 +513,8 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
   const uint num_local_cols = dofs[1]->size();
   const uint num_entries = num_local_rows*num_local_cols;
 
-  // Return value, true if columns have been moved to _nonsymm
-  bool changed = false;
+  // Return value, true if columns have been moved to _asymm
+  bool columns_moved = false;
 
   // Convenience aliases
   const std::vector<uint>& row_dofs = *dofs[0];
@@ -532,8 +525,8 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
                  "make_bc_symmetric",
                  "Same BCs are used for rows and columns, but dofmaps don't match");
 
-  // Store the local boundary conditions, to avoid having to search for them
-  // twice in the (common) case of matching_bcs.
+  // Store the local boundary conditions, to avoid multiple searches in the
+  // (common) case of matching_bcs
   local_row_is_bc.resize(num_local_rows);
   for (uint row = 0; row < num_local_rows; ++row)
   {
@@ -541,6 +534,34 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
     local_row_is_bc[row] = (bc_item != row_bc_values.end());
   }
 
+  // Clear matrix rows belonging to BCs. These modifications destroy symmetry.
+  for (uint row = 0; row < num_local_rows; ++row)
+  {
+    // Do nothing if row is not affected by BCs
+    if (!local_row_is_bc[row])
+      continue;
+
+    // Zero out the row
+    zerofill(&local_A[row*num_local_cols], num_local_cols);
+
+    // Set the diagonal if we're in a diagonal block
+    if (matching_bcs)
+    {
+      // ...but only set it on the owning processor
+      const uint dof = row_dofs[row];
+      if (dof >= processor_dof_range.first && dof < processor_dof_range.second)
+      {
+        // ...and only once.
+        const bool already_inserted = !inserted_diagonals.insert(dof).second;
+        if (!already_inserted)
+          local_A[row + row*num_local_cols] = 1.0;
+      }
+    }
+  }
+
+  // Modify matrix columns belonging to BCs. These modifications restore
+  // symmetry, but the entries must be moved to the asymm matrix instead of
+  // just cleared.
   for (uint col = 0; col < num_local_cols; ++col)
   {
     // Do nothing if column is not affected by BCs
@@ -555,21 +576,22 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
         continue;
     }
 
-    if (!changed)
+    // Zero the asymmetric part before use
+    if (!columns_moved)
     {
-      zerofill(local_A_nonsymm);
-      changed = true;
+      zerofill(local_A_asymm);
+      columns_moved = true;
     }
 
-    // The column is affected by BCs, so move it to A_nonsymm and zero it in A
+    // Move the column to A_asymm, zero it in A
     for (uint row = 0; row < num_local_rows; ++row)
       if (!local_row_is_bc[row])
       {
         const uint entry = col + row*num_local_cols;
-        local_A_nonsymm[entry] = local_A[entry];
+        local_A_asymm[entry] = local_A[entry];
         local_A[entry] = 0.0;
       }
   }
 
-  return changed;
+  return columns_moved;
 }
