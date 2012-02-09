@@ -26,6 +26,7 @@
 #include <utility>
 #include <boost/assign/list_of.hpp>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
@@ -65,6 +66,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
     g(reference_to_no_delete_pointer(g)),
     _method(method), _user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_sub_domain(_user_sub_domain);
@@ -78,6 +81,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method), _user_sub_domain(sub_domain)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_sub_domain(_user_sub_domain);
@@ -91,6 +96,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
     g(reference_to_no_delete_pointer(g)),
     _method(method)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
@@ -105,6 +112,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_mesh_function(*sub_domains, sub_domain);
@@ -116,6 +125,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
     Hierarchical<DirichletBC>(*this),
     g(reference_to_no_delete_pointer(g)), _method(method)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_mesh(sub_domain);
@@ -128,6 +139,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
   init_from_mesh(sub_domain);
@@ -141,6 +154,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method), facets(markers)
 {
+  Timer timer("DirichletBC init");
+
   check();
   parameters = default_parameters();
 }
@@ -149,6 +164,8 @@ DirichletBC::DirichletBC(const DirichletBC& bc)
   : BoundaryCondition(bc._function_space),
     Hierarchical<DirichletBC>(*this)
 {
+  Timer timer("DirichletBC init");
+
   // Set default parameters
   parameters = default_parameters();
 
@@ -441,6 +458,8 @@ void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
+  Timer timer("DirichletBC apply");
+
   // Check arguments
   check_arguments(A, b, x);
 
@@ -653,6 +672,8 @@ void DirichletBC::compute_bc(Map& boundary_values,
                              BoundaryCondition::LocalData& data,
                              std::string method) const
 {
+  Timer timer("DirichletBC compute");
+
   // Set method if dafault
   if (method == "default")
     method = _method;
