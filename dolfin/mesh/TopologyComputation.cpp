@@ -158,8 +158,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
 
   log(TRACE, "Requesting connectivity %d - %d.", d0, d1);
 
-  cout << "aaa Start of of function" << endl;
-
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
