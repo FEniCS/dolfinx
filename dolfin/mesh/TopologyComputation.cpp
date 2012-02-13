@@ -36,12 +36,6 @@
 
 using namespace dolfin;
 
-// Set typedefs
-//typedef std::set<dolfin::uint> set;
-//typedef std::set<dolfin::uint>::const_iterator set_iterator;
-typedef boost::unordered_set<dolfin::uint> set;
-typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
-
 //-----------------------------------------------------------------------------
 dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
 {
@@ -186,7 +180,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
         for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
         {
           // FIXME: Comparison relies on order of other_entity->second
-          //        and *entity. We sort the entities to get this.
+          //        and *entity. We sort *entity to get this.
           //        Can we rely on the order and avoid sorting?
           if (other_entity->second == *entity)
           {
