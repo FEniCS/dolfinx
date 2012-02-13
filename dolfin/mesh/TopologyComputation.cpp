@@ -148,8 +148,15 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   std::vector<std::vector<std::pair<uint, std::vector<uint> > > > ce_list(mesh.num_cells());
 
   current_entity = 0;
+  std::size_t max_ce_connections = 1;
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
+    const uint c_index = c->index();
+
+    // Reserve space to reduce dynamic allocations
+    connectivity_ce[c_index].reserve(max_ce_connections);
+    ce_list[c_index].reserve(max_ce_connections);
+
     // Get vertices from cell
     const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
@@ -158,7 +165,6 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
     cell_type.create_entities(entities, dim, vertices);
 
     // Iterate over the given list of entities
-    //std::vector<std::vector<uint> >::const_iterator entity;
     std::vector<std::vector<uint> >::iterator entity;
     for (entity = entities.begin(); entity != entities.end(); ++entity)
     {
@@ -168,23 +174,23 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
       // Iterate over connected cells and look for entity
       for (MeshEntityIterator c0(*c, mesh.topology().dim()); !c0.end(); ++c0)
       {
+        const uint c0_index = c0->index();
+
         // Check only previously visited cells
-        if (c0->index() >= c->index())
+        if (c0_index >= c_index)
           continue;
 
         // Entities connected to c0
-        const std::vector<std::pair<uint, std::vector<uint> > >& c0_list = ce_list[c0->index()];
+        const std::vector<std::pair<uint, std::vector<uint> > >& c0_list = ce_list[c0_index];
 
         std::vector<std::pair<uint, std::vector<uint> > >::const_iterator other_entity;
         for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
         {
-          // FIXME: Comparison relies on order of other_entity->second
-          //        and *entity. We sort *entity to get this.
-          //        Can we rely on the order and avoid sorting?
+          // Note: Comparison relies on container being ordered
           if (other_entity->second == *entity)
           {
             // Entity already exists, so pick the index
-            connectivity_ce[c->index()].push_back(other_entity->first);
+            connectivity_ce[c_index].push_back(other_entity->first);
 
             goto found;
           }
@@ -192,13 +198,16 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
       }
 
       // Add (index, list of vertices) pair to ce_list for cell
-      ce_list[c->index()].push_back(std::make_pair(current_entity, *entity));
+      ce_list[c_index].push_back(std::make_pair(current_entity, *entity));
 
       // Add new entity index to cell - e connectivity
-      connectivity_ce[c->index()].push_back(current_entity);
+      connectivity_ce[c_index].push_back(current_entity);
 
-      // Add lst of new entity vertices
+      // Add list of new entity vertices
       connectivity_ev.push_back(*entity);
+
+      // Update max vector size (used to reserve space for performance);
+      max_ce_connections = std::max(max_ce_connections, connectivity_ce[c_index].size());
 
       // Increase counter
       current_entity++;
@@ -355,6 +364,10 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
     // Reserve space
     entities.reserve(max_size);
 
+    // Sorted list of e0 vertex indices
+    std::vector<uint> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
+    std::sort(_e0.begin(), _e0.end());
+
     // Iterate over all connected entities of dimension d
     for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
     {
@@ -369,8 +382,12 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
         }
         else
         {
+          // Sorted list of e1 vertex indices
+          std::vector<uint> _e1(e1->entities(0), e1->entities(0) + e1->num_entities(0));
+          std::sort(_e1.begin(), _e1.end());
+
           // Entity e1 must be completely contained in e0 (duplicate index entries removed at end)
-          if (contains(*e0, *e1))
+          if (std::includes(_e0.begin(), _e0.end(), _e1.begin(), _e1.end()))
             entities.push_back(e1->index());
         }
       }
@@ -480,13 +497,6 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
   }
 }
 //----------------------------------------------------------------------------
-bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
-{
-  // Check vertices
-  return contains(e0.entities(0), e0.num_entities(0),
-                  e1.entities(0), e1.num_entities(0));
-}
-//----------------------------------------------------------------------------
 bool TopologyComputation::contains(const uint* v0, uint n0,
                                    const uint* v1, uint n1)
 {
@@ -497,27 +507,6 @@ bool TopologyComputation::contains(const uint* v0, uint n0,
   {
     bool found = false;
     for (uint i0 = 0; i0 < n0; i0++)
-    {
-      if (v0[i0] == v1[i1])
-      {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
-      return false;
-  }
-
-  return true;
-}
-//----------------------------------------------------------------------------
-bool TopologyComputation::contains(const std::vector<uint>& v0,
-                                   const std::vector<uint>& v1)
-{
-  for (uint i1 = 0; i1 < v1.size(); i1++)
-  {
-    bool found = false;
-    for (uint i0 = 0; i0 < v0.size(); i0++)
     {
       if (v0[i0] == v1[i1])
       {
