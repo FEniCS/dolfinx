@@ -18,9 +18,8 @@
 // First added:  2006-06-02
 // Last changed: 2011-11-15
 
-#include <set>
+#include <algorithm>
 #include <vector>
-#include <boost/unordered_set.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Timer.h>
@@ -364,14 +363,14 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
       {
         if (d0 == d1)
         {
-          // An entity is not a neighbor to itself
-          if (e0->index() != e1->index() && std::find(entities.begin(), entities.end(), e1->index()) == entities.end())
+          // An entity is not a neighbor to itself (duplicate index entries removed at end)
+          if (e0->index() != e1->index())
             entities.push_back(e1->index());
         }
         else
         {
-          // Entity e1 must be completely contained in e0
-          if (contains(*e0, *e1) && std::find(entities.begin(), entities.end(), e1->index()) == entities.end())
+          // Entity e1 must be completely contained in e0 (duplicate index entries removed at end)
+          if (contains(*e0, *e1))
             entities.push_back(e1->index());
         }
       }
@@ -379,6 +378,37 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
 
     // Store maximum size
     max_size = std::max(entities.size(), max_size);
+  }
+
+  // Remove duplicates from connectivity lists (STL version)
+  /*
+  std::vector<std::vector<uint> >::iterator c_list;
+  for (c_list = connectivity.begin(); c_list != connectivity.end(); ++c_list)
+  {
+    std::sort(c_list->begin(), c_list->end());
+    c_list->erase(std::unique(c_list->begin(), c_list->end()), c_list->end());
+  }
+  */
+
+  // From Joachim Haga - seems faster than the above STL version.
+  std::vector<std::vector<uint> >::iterator c_list;
+  for (c_list = connectivity.begin(); c_list != connectivity.end(); ++c_list)
+  {
+    if (c_list->empty())
+      continue;
+    std::sort(c_list->begin(), c_list->end());
+    uint c = 1;
+    uint prev = (*c_list)[0];
+    for (uint j = 1; j < c_list->size(); j++)
+    {
+      uint e = (*c_list)[j];
+      if (e != prev)
+      {
+        (*c_list)[c++] = e;
+        prev = e;
+      }
+      c_list->resize(c);
+    }
   }
 
   // Copy to static storage
