@@ -381,34 +381,11 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   }
 
   // Remove duplicates from connectivity lists (STL version)
-  /*
   std::vector<std::vector<uint> >::iterator c_list;
   for (c_list = connectivity.begin(); c_list != connectivity.end(); ++c_list)
   {
     std::sort(c_list->begin(), c_list->end());
     c_list->erase(std::unique(c_list->begin(), c_list->end()), c_list->end());
-  }
-  */
-
-  // From Joachim Haga - seems faster than the above STL version.
-  std::vector<std::vector<uint> >::iterator c_list;
-  for (c_list = connectivity.begin(); c_list != connectivity.end(); ++c_list)
-  {
-    if (c_list->empty())
-      continue;
-    std::sort(c_list->begin(), c_list->end());
-    uint c = 1;
-    uint prev = (*c_list)[0];
-    for (uint j = 1; j < c_list->size(); j++)
-    {
-      uint e = (*c_list)[j];
-      if (e != prev)
-      {
-        (*c_list)[c++] = e;
-        prev = e;
-      }
-      c_list->resize(c);
-    }
   }
 
   // Copy to static storage
