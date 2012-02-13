@@ -113,9 +113,6 @@ namespace dolfin
       }
     }
 
-    /// Set all connections for all entities
-    //void set(const std::vector<std::set<uint> >& connectivity);
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 

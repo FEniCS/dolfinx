@@ -68,6 +68,8 @@ namespace dolfin
     /// Check if array v0 contains array v1
     static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
 
+    /// Check if array v0 contains array v1
+    static bool contains(const std::vector<uint>& v0, const std::vector<uint>& v1);
   };
 
 }

@@ -65,6 +65,8 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   MeshConnectivity& ce = topology(topology.dim(), dim);
   MeshConnectivity& ev = topology(dim, 0);
 
+  uint current_entity = 0;
+
   // Check if entities have already been computed
   if (topology.size(dim) > 0)
   {
@@ -103,6 +105,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   std::vector<std::vector<uint> > entities(m, std::vector<uint>(n, 0));
 
   // Count the number of entities
+  /*
   uint num_entities = 0;
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
@@ -123,7 +126,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   ev.init(num_entities, n);
 
   // Add new entities
-  uint current_entity = 0;
+  current_entity = 0;
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
     // Get vertices from cell
@@ -137,9 +140,90 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
     add_entities(mesh, *c, entities, dim, ce, ev, current_entity);
   }
 
-  //info("Created %d new entities.", num_entities);
-
   return num_entities;
+  */
+
+  // New code
+
+  // List of entity e indices connected to cell
+  std::vector<std::vector<uint> > connectivity_ce(mesh.num_cells());
+
+  // List of vertces indices connected to entity e
+  std::vector<std::vector<uint> > connectivity_ev;
+
+  // List entities e (uint index, std::vector<uint> vertex_list) connected to each cell
+  std::vector<std::vector<std::pair<uint, std::vector<uint> > > > ce_list(mesh.num_cells());
+
+  current_entity = 0;
+  for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
+  {
+    // Get vertices from cell
+    const uint* vertices = c->entities(0);
+    dolfin_assert(vertices);
+
+    // Create entities
+    cell_type.create_entities(entities, dim, vertices);
+
+    // Iterate over the given list of entities
+    //std::vector<std::vector<uint> >::const_iterator entity;
+    std::vector<std::vector<uint> >::iterator entity;
+    for (entity = entities.begin(); entity != entities.end(); ++entity)
+    {
+      // Sort entities (so that we can use equality testing later)
+      std::sort(entity->begin(), entity->end());
+
+      // Iterate over connected cells and look for entity
+      for (MeshEntityIterator c0(*c, mesh.topology().dim()); !c0.end(); ++c0)
+      {
+        // Check only previously visited cells
+        if (c0->index() >= c->index())
+          continue;
+
+        // Entities connected to c0
+        const std::vector<std::pair<uint, std::vector<uint> > >& c0_list = ce_list[c0->index()];
+
+        std::vector<std::pair<uint, std::vector<uint> > >::const_iterator other_entity;
+        for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
+        {
+          // FIXME: Comparison relies on order of other_entity->second
+          //        and *entity. We sort the entities to get this.
+          //        Can we rely on the order and avoid sorting?
+          if (other_entity->second == *entity)
+          {
+            // Entity already exists, so pick the index
+            connectivity_ce[c->index()].push_back(other_entity->first);
+
+            goto found;
+          }
+        }
+      }
+
+      // Add (index, list of vertices) pair to ce_list for cell
+      ce_list[c->index()].push_back(std::make_pair(current_entity, *entity));
+
+      // Add new entity index to cell - e connectivity
+      connectivity_ce[c->index()].push_back(current_entity);
+
+      // Add lst of new entity vertices
+      connectivity_ev.push_back(*entity);
+
+      // Increase counter
+      current_entity++;
+
+      // Entity found, don't need to create
+      found:
+      ;
+    }
+  }
+
+  // Initialise connectivity data structure
+  topology.init(dim, connectivity_ev.size());
+
+  // Copy connectivity data into static MeshTopology data structures
+  ce.set(connectivity_ce);
+  ev.set(connectivity_ev);
+
+  return connectivity_ev.size();
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
@@ -399,10 +483,11 @@ bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
 {
   // Check vertices
   return contains(e0.entities(0), e0.num_entities(0),
-		  e1.entities(0), e1.num_entities(0));
+                  e1.entities(0), e1.num_entities(0));
 }
 //----------------------------------------------------------------------------
-bool TopologyComputation::contains(const uint* v0, uint n0, const uint* v1, uint n1)
+bool TopologyComputation::contains(const uint* v0, uint n0,
+                                   const uint* v1, uint n1)
 {
   dolfin_assert(v0);
   dolfin_assert(v1);
@@ -411,6 +496,27 @@ bool TopologyComputation::contains(const uint* v0, uint n0, const uint* v1, uint
   {
     bool found = false;
     for (uint i0 = 0; i0 < n0; i0++)
+    {
+      if (v0[i0] == v1[i1])
+      {
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+      return false;
+  }
+
+  return true;
+}
+//----------------------------------------------------------------------------
+bool TopologyComputation::contains(const std::vector<uint>& v0,
+                                   const std::vector<uint>& v1)
+{
+  for (uint i1 = 0; i1 < v1.size(); i1++)
+  {
+    bool found = false;
+    for (uint i0 = 0; i0 < v0.size(); i0++)
     {
       if (v0[i0] == v1[i1])
       {
