@@ -95,23 +95,20 @@ namespace dolfin
       clear();
 
       // Initialize offsets and compute total size
-      const uint num_entities = connections.size();
-      offsets.resize(num_entities + 1);
+      offsets.resize(connections.size() + 1);
       uint size = 0;
-      for (uint e = 0; e < num_entities; e++)
+      for (uint e = 0; e < connections.size(); e++)
       {
         offsets[e] = size;
         size += connections[e].size();
       }
-      offsets[num_entities] = size;
+      offsets[connections.size()] = size;
 
       // Initialize connections
-      this->connections = std::vector<uint>(size);
-      for (uint e = 0; e < num_entities; e++)
-      {
-        std::copy(connections[e].begin(), connections[e].end(),
-                  this->connections.begin() + offsets[e]);
-      }
+      this->connections.reserve(size);
+      typename std::vector<T>::const_iterator e;
+      for (e = connections.begin(); e != connections.end(); ++e)
+        this->connections.insert(this->connections.end(), e->begin(), e->end());
     }
 
     /// Return informal string representation (pretty-print)
