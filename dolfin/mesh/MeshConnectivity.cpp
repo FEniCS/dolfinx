@@ -25,20 +25,20 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(uint d0, uint d1)
-  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0), offsets(0)
+  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0), offsets(0)
+  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0)
 {
   *this = connectivity;
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::~MeshConnectivity()
 {
-  clear();
+  delete [] connections;
 }
 //-----------------------------------------------------------------------------
 const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& connectivity)
@@ -50,18 +50,13 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   _size = connectivity._size;
   num_entities = connectivity.num_entities;
   connections = new uint[_size];
-  offsets = new uint[num_entities + 1];
 
   // Copy data
   d0 = connectivity.d0;
   d1 = connectivity.d1;
   for (uint i = 0; i < _size; i++)
     connections[i] = connectivity.connections[i];
-  if (num_entities > 0)
-  {
-    for (uint e = 0; e <= num_entities; e++)
-      offsets[e] = connectivity.offsets[e];
-  }
+  offsets = connectivity.offsets;
 
   return *this;
 }
@@ -74,8 +69,7 @@ void MeshConnectivity::clear()
   delete [] connections;
   connections = 0;
 
-  delete [] offsets;
-  offsets = 0;
+  offsets.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(uint num_entities, uint num_connections)
@@ -89,7 +83,7 @@ void MeshConnectivity::init(uint num_entities, uint num_connections)
 
   // Allocate data
   connections = new uint[_size];
-  offsets = new uint[num_entities + 1];
+  offsets.resize(num_entities + 1);
 
   // Initialize data
   for (uint i = 0; i < _size; i++)
@@ -105,7 +99,7 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
 
   // Initialize offsets and compute total size
   num_entities = num_connections.size();
-  offsets = new uint[num_entities + 1];
+  offsets.resize(num_entities + 1);
   _size = 0;
   for (uint e = 0; e < num_entities; e++)
   {
@@ -147,29 +141,6 @@ void MeshConnectivity::set(uint entity, uint* connections)
   const uint num_connections = offsets[entity + 1] - offsets[entity];
   for (uint i = 0; i < num_connections; i++)
     this->connections[offsets[entity] + i] = connections[i];
-}
-//-----------------------------------------------------------------------------
-void MeshConnectivity::set(const std::vector<std::vector<uint> >& connections)
-{
-  // Clear old data if any
-  clear();
-
-  // Initialize offsets and compute total size
-  num_entities = connections.size();
-  offsets = new uint[num_entities + 1];
-  _size = 0;
-  for (uint e = 0; e < num_entities; e++)
-  {
-    offsets[e] = _size;
-    _size += connections[e].size();
-  }
-  offsets[num_entities] = _size;
-
-  // Initialize connections
-  this->connections = new uint[_size];
-  for (uint e = 0; e < num_entities; e++)
-    for (uint i = 0; i < connections[e].size(); i++)
-      this->connections[offsets[e] + i] = connections[e][i];
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const

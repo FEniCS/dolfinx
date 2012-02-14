@@ -22,6 +22,8 @@
 // First added:  2006-06-21
 // Last changed: 2011-03-17
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
@@ -76,7 +78,6 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
-  //const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
   // Determine boundary facet, count boundary vertices and facets,
@@ -232,7 +233,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
       const Point p2 = mesh.geometry().point(facet.entities(0)[2]);
       const Point v1 = p1 - p0;
       const Point v2 = p2 - p0;
-      const Point n = v1.cross(v2);
+      const Point n  = v1.cross(v2);
 
       if (n.dot(p0 - p) < 0.0)
       {
@@ -243,10 +244,12 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     }
     break;
   default:
-    dolfin_error("BoundaryComputation.cpp",
-                 "reorder cell for extraction of mesh boundary",
-                 "Unknown cell type (%d)",
-                 mesh.type().cell_type());
+    {
+      dolfin_error("BoundaryComputation.cpp",
+                   "reorder cell for extraction of mesh boundary",
+                   "Unknown cell type (%d)",
+                   mesh.type().cell_type());
+    }
   }
 }
 //-----------------------------------------------------------------------------

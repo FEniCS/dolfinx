@@ -51,7 +51,8 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(uint** e, uint dim, const uint* v) const;
+    void create_entities(std::vector<std::vector<uint> >& e, uint dim,
+                         const uint* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
     void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;

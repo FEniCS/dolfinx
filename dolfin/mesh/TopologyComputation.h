@@ -21,6 +21,7 @@
 #ifndef __TOPOLOGY_COMPUTATION_H
 #define __TOPOLOGY_COMPUTATION_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -53,11 +54,11 @@ namespace dolfin
 
     /// Count how many of the given entities that are new
     static uint count_entities(Mesh& mesh, MeshEntity& cell,
-			      uint** vertices, uint m, uint n, uint dim);
+			      const std::vector<std::vector<uint> >& vertices, uint dim);
 
     /// Add entities that are new
     static void add_entities(Mesh& mesh, MeshEntity& cell,
-			    uint** vertices, uint m, uint n, uint dim,
+			    std::vector<std::vector<uint> >& vertices, uint dim,
 			    MeshConnectivity& ce, MeshConnectivity& ev,
 			    uint& current_entity);
 

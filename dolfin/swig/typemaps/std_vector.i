@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2011-10-09
+// Last changed: 2012-02-08
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -369,6 +369,7 @@ const std::vector<TYPE>&  ARG_NAME
 
     if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
     {
+      Py_DECREF(item);
       SWIG_exception(SWIG_TypeError, "expected items of sequence to be of type "\
 		     "\"TYPE_NAME\" in argument $argnum");
     }
@@ -382,6 +383,26 @@ const std::vector<TYPE>&  ARG_NAME
 //-----------------------------------------------------------------------------
 // Macro for out typemaps of primitives of const std::vector<TYPE>& It returns
 // readonly NumPy array
+//
+// TYPE       : The primitive type
+// NUMPY_TYPE : The corresponding NumPy type
+//-----------------------------------------------------------------------------
+%define OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+
+%typemap(out) std::vector<TYPE> {
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+  npy_intp adims = $1.size();
+  
+  $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  std::copy($1.begin(), $1.end(), data);
+}
+
+%enddef
+
+//-----------------------------------------------------------------------------
+// Macro for out typemaps of primitives of std::vector<TYPE> It returns a copied
+// NumPy array
 //
 // TYPE      : The primitive type
 // TYPE_NAME : The name of the pointer type, 'double' for 'double', 'uint' for
@@ -398,8 +419,8 @@ const std::vector<TYPE>&  ARG_NAME
 
 %define IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(TYPE)
 //-----------------------------------------------------------------------------
-// Typemap for const std::vector<dolfin::TYPE>& used in IntersectionOperator
-// Expects a list of Points
+// Typemap for const std::vector<dolfin::TYPE>& used for example in 
+// IntersectionOperator. Expects a list of Points
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) const std::vector<dolfin::TYPE>&
 {
@@ -436,6 +457,76 @@ const std::vector<TYPE>&  ARG_NAME
 %enddef
 
 //-----------------------------------------------------------------------------
+// Macro for defining an in typemap for const std::vector<std::vector<TYPE> >& 
+// where TYPE is a primitive
+//
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
+//-----------------------------------------------------------------------------
+%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
+							  TYPE_NAME)
+
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) const std::vector<std::vector<TYPE> >& ARG_NAME 
+{
+  $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+%typemap (in, fragment=Py_convert_frag(TYPE_NAME)) const std::vector<std::vector<TYPE> >& ARG_NAME (std::vector<std::vector<TYPE> > tmp_vec, std::vector<TYPE> inner_vec, PyObject* inner_list, PyObject* item, TYPE value, dolfin::uint i, dolfin::uint j)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
+  //                                    ARG_NAME, TYPE_NAME)
+
+  // A first sequence test
+  if (!PySequence_Check($input))
+    SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
+
+  // Get outer sequence length
+  Py_ssize_t pyseq_length_0 = PySequence_Size($input);
+
+  tmp_vec.reserve(pyseq_length_0);
+  for (i = 0; i < pyseq_length_0; i++)
+  {
+    inner_list = PySequence_GetItem($input, i);
+
+    // Check type of inner list
+    if (!PySequence_Check(inner_list))
+    {
+      Py_DECREF(inner_list);
+      SWIG_exception(SWIG_TypeError, "expected a sequence of sequences for argument $argnum");
+    }
+    
+    // Get inner sequence length
+    Py_ssize_t pyseq_length_1 = PySequence_Size(inner_list);
+
+    inner_vec.reserve(pyseq_length_1);
+    for (j = 0; j < pyseq_length_1; j++)
+    {
+      item = PySequence_GetItem(inner_list, j);
+
+      if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
+      {
+	Py_DECREF(item);
+	SWIG_exception(SWIG_TypeError, "expected items of inner sequence to be of type " \
+		       "\"TYPE_NAME\" in argument $argnum");
+      }
+      inner_vec.push_back(value);
+      Py_DECREF(item);
+    }
+    
+    // Store and clear inner vec
+    tmp_vec.push_back(inner_vec);
+    inner_vec.clear();
+    Py_DECREF(inner_list);
+  }
+  $1 = &tmp_vec;
+}
+%enddef
+
+//-----------------------------------------------------------------------------
 // Out typemap for std::vector<std::pair<std:string, std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::pair< std::string, std::string > >
@@ -464,14 +555,19 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE, double, float_)
-IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_UINT, uint, uintc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint, uintc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
+
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, NPY_UINT)
 
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
@@ -480,3 +576,5 @@ READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
+
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, facets, uint)

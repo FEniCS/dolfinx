@@ -23,20 +23,11 @@
 #include <vector>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Triangulation_2.h>
-#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
-#include <CGAL/Triangulation_3.h>
-#include <CGAL/Delaunay_triangulation_3.h>
-#include <CGAL/Triangulation_vertex_base_with_info_3.h>
-#include <CGAL/Triangulation_cell_base_with_info_3.h>
-
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -72,8 +63,8 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
   std::vector<Point>::const_iterator p;
   for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
   {
-    CDT::Vertex_handle v0 = cdt.insert(CDT::Point(p->x(), p->y()));
-    CDT::Vertex_handle v1 = cdt.insert(CDT::Point((p + 1)->x(), (p + 1)->y()));
+    CDT::Vertex_handle v0 = cdt.insert(CGAL_Point(p->x(), p->y()));
+    CDT::Vertex_handle v1 = cdt.insert(CGAL_Point((p + 1)->x(), (p + 1)->y()));
     cdt.insert_constraint(v0, v1);
   }
 

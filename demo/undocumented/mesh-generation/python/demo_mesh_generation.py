@@ -55,11 +55,9 @@ face2 = [0, 2, 3]
 face3 = [0, 1, 2]
 faces = [face0, face1, face2, face3]
 
-# FIXME: Need SWIG typemap for std::vector<std::vector<unisgned int> >
-
 # Generate 3D mesh and plot
-#PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
-#plot(mesh, interactive=True)
+PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
+plot(mesh, interactive=True)
 
 # Generate 3D mesh from OFF file input (distorted cube)
 PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.21)

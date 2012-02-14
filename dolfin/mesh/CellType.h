@@ -25,6 +25,7 @@
 #define __CELL_TYPE_H
 
 #include <string>
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -84,7 +85,8 @@ namespace dolfin
     virtual uint orientation(const Cell& cell) const = 0;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void create_entities(uint** e, uint dim, const uint* v) const = 0;
+    virtual void create_entities(std::vector<std::vector<uint> >& e,
+                                 uint dim, const uint* v) const = 0;
 
     /// Refine cell uniformly
     virtual void refine_cell(Cell& cell, MeshEditor& editor,

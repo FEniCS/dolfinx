@@ -80,7 +80,7 @@ namespace dolfin
       typename CGAL::Triangulation_2<X, Y>::Face_iterator cgal_cell;
       for (cgal_cell = t.faces_begin(); cgal_cell != t.faces_end(); ++cgal_cell)
       {
-        //CGAL_assertion(!t.is_infinite(cgal_cell));
+        dolfin_assert(!t.is_infinite(cgal_cell));
         mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
                                            cgal_cell->vertex(1)->info(),
                                            cgal_cell->vertex(2)->info());
@@ -210,9 +210,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
 
-
 }
 
 #endif
-
 #endif

@@ -42,22 +42,22 @@ def get_time(output):
     return timing
 
 # Serial assembly
-output = commands.getoutput("./assemble-poisson %d" % SIZE)
+output = commands.getoutput("./bench_assemble-poisson %d" % SIZE)
 assembly_t1 = get_time(output)
 print "Serial assembly:", assembly_t1
 
 # Parallel assembly
-output = commands.getoutput("mpirun -n %d ./assemble-poisson %d" % (NUM_PROCS, SIZE))
+output = commands.getoutput("mpirun -n %d ./bench_assemble-poisson %d" % (NUM_PROCS, SIZE))
 assembly_t2 = get_time(output)
 print "Parallel assembly:", assembly_t2
 
 # Serial solve
-output = commands.getoutput("./solve-poisson %d" % SIZE)
+output = commands.getoutput("./bench_solve-poisson %d" % SIZE)
 solve_t1 = get_time(output)
 print "Serial solve:", solve_t1
 
 # Parallel solve
-output = commands.getoutput("mpirun -n %d ./solve-poisson %d" % (NUM_PROCS, SIZE))
+output = commands.getoutput("mpirun -n %d ./bench_solve-poisson %d" % (NUM_PROCS, SIZE))
 solve_t2 = get_time(output)
 print "Parallel solve:", solve_t2
 

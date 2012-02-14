@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-02-02
-// Last changed:
+// Last changed: 2012-02-09
 
 #ifdef HAS_CGAL
 
@@ -29,14 +29,6 @@
 #include <CGAL/Triangulation_3.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
-#include <CGAL/Triangulation_cell_base_with_info_3.h>
-
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Delaunay_mesher_2.h>
-#include <CGAL/Delaunay_mesh_face_base_2.h>
-#include <CGAL/Delaunay_mesh_size_criteria_2.h>
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
