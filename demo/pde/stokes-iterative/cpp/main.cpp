@@ -83,7 +83,7 @@ int main()
   {
     info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
 	 "preconditioner, Hypre or ML.");
-    return 0; 
+    return 0;
   }
 
   // Create mesh

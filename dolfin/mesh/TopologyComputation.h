@@ -30,8 +30,6 @@ namespace dolfin
 {
 
   class Mesh;
-  class MeshEntity;
-  class MeshConnectivity;
 
   /// This class implements a set of basic algorithms that automate
   /// the computation of mesh entities and connectivity.
@@ -54,19 +52,6 @@ namespace dolfin
     /// Compute connectivity from intersection
     static void compute_from_intersection(Mesh& mesh, uint d0, uint d1, uint d);
 
-    /// Count how many of the given entities that are new
-    static uint count_entities(Mesh& mesh, MeshEntity& cell,
-			      const std::vector<std::vector<uint> >& vertices, uint dim);
-
-    /// Add entities that are new
-    static void add_entities(Mesh& mesh, MeshEntity& cell,
-                             std::vector<std::vector<uint> >& vertices,
-                             uint dim,
-                             MeshConnectivity& ce, MeshConnectivity& ev,
-                             uint& current_entity);
-
-    /// Check if array v0 contains array v1
-    static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
   };
 
 }

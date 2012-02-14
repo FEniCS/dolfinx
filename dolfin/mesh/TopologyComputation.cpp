@@ -25,11 +25,10 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
-#include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshTopology.h"
 #include "TopologyComputation.h"
@@ -95,47 +94,6 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   const uint m = cell_type.num_entities(dim);
   const uint n = cell_type.num_vertices(dim);
   std::vector<std::vector<uint> > entities(m, std::vector<uint>(n, 0));
-
-  // Count the number of entities
-  /*
-  uint num_entities = 0;
-  for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
-  {
-    // Get vertices from cell
-    const uint* vertices = c->entities(0);
-    dolfin_assert(vertices);
-
-    // Create entities
-    cell_type.create_entities(entities, dim, vertices);
-
-    // Count new entities
-    num_entities += count_entities(mesh, *c, entities, dim);
-  }
-
-  // Initialize the number of entities and connections
-  topology.init(dim, num_entities);
-  ce.init(mesh.num_cells(), m);
-  ev.init(num_entities, n);
-
-  // Add new entities
-  current_entity = 0;
-  for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
-  {
-    // Get vertices from cell
-    const uint* vertices = c->entities(0);
-    dolfin_assert(vertices);
-
-    // Create entities
-    cell_type.create_entities(entities, dim, vertices);
-
-    // Add new entities to the mesh
-    add_entities(mesh, *c, entities, dim, ce, ev, current_entity);
-  }
-
-  return num_entities;
-  */
-
-  // New code
 
   // List of entity e indices connected to cell
   std::vector<std::vector<uint> > connectivity_ce(mesh.num_cells());
@@ -416,114 +374,3 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   topology(d0, d1).set(connectivity);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
-                              const std::vector<std::vector<uint> >& entities,
-                              uint dim)
-{
-  // For each entity, we iterate over connected and previously visited
-  // cells to see if the entity has already been counted.
-
-  // Needs to be a cell
-  dolfin_assert(cell.dim() == mesh.topology().dim());
-
-  // Iterate over the given list of entities
-  uint num_entities = 0;
-  for (uint i = 0; i < entities.size(); i++)
-  {
-    // Iterate over connected cells and look for entity
-    for (MeshEntityIterator c(cell, mesh.topology().dim()); !c.end(); ++c)
-    {
-      // Check only previously visited cells
-      if (c->index() >= cell.index())
-        continue;
-
-      // Check for vertices
-      if (contains(c->entities(0), c->num_entities(0), &entities[i][0], entities[i].size()))
-        goto found;
-    }
-
-    // Increase counter
-    num_entities++;
-
-    // Entity found, don't need to count
-    found:
-    ;
-  }
-
-  return num_entities;
-}
-//----------------------------------------------------------------------------
-void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
-                          std::vector<std::vector<uint> >& entities, uint dim,
-                          MeshConnectivity& ce, MeshConnectivity& ev,
-                          uint& current_entity)
-{
-  // We repeat the same algorithm as in count_entities() but this time
-  // we add any entities that are new.
-
-  // Needs to be a cell
-  dolfin_assert(cell.dim() == mesh.topology().dim());
-
-  // Iterate over the given list of entities
-  for (uint i = 0; i < entities.size(); i++)
-  {
-    // Iterate over connected cells and look for entity
-    for (MeshEntityIterator c(cell, mesh.topology().dim()); !c.end(); ++c)
-    {
-      // Check only previously visited cells
-      if (c->index() >= cell.index())
-        continue;
-
-      // Check all entities of dimension dim in connected cell
-      uint num_other_entities = c->num_entities(dim);
-      const uint* other_entities = c->entities(dim);
-      for (uint j = 0; j < num_other_entities; j++)
-      {
-        // Can't use iterators since connectivity has not been computed
-        MeshEntity e(mesh, dim, other_entities[j]);
-        if (contains(e.entities(0), e.num_entities(0), &entities[i][0], entities[i].size()))
-        {
-          // Entity already exists, so pick the index
-          ce.set(cell.index(), e.index(), i);
-          goto found;
-        }
-      }
-    }
-
-    // Entity does not exist, so create it
-    ce.set(cell.index(), current_entity, i);
-    ev.set(current_entity, entities[i]);
-
-    // Increase counter
-    current_entity++;
-
-    // Entity found, don't need to create
-    found:
-    ;
-  }
-}
-//----------------------------------------------------------------------------
-bool TopologyComputation::contains(const uint* v0, uint n0,
-                                   const uint* v1, uint n1)
-{
-  dolfin_assert(v0);
-  dolfin_assert(v1);
-
-  for (uint i1 = 0; i1 < n1; i1++)
-  {
-    bool found = false;
-    for (uint i0 = 0; i0 < n0; i0++)
-    {
-      if (v0[i0] == v1[i1])
-      {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
-      return false;
-  }
-
-  return true;
-}
-//----------------------------------------------------------------------------
