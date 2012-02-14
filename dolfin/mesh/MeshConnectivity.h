@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
 
 namespace dolfin
 {
@@ -53,19 +54,19 @@ namespace dolfin
     const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
     /// Return total number of connections
-    uint size() const { return _size; }
+    uint size() const { return connections.size(); }
 
     /// Return number of connections for given entity
     uint size(uint entity) const
-    { return (entity < num_entities ? offsets[entity + 1] - offsets[entity] : 0); }
+    { return ( (entity + 1) < offsets.size() ? offsets[entity + 1] - offsets[entity] : 0); }
 
     /// Return array of connections for given entity
     const uint* operator() (uint entity) const
-    { return (entity < num_entities ? connections + offsets[entity] : 0); }
+    { return ((entity + 1) < offsets.size() ? &connections[offsets[entity]] : 0); }
 
     /// Return contiguous array of connections for all entities
     const uint* operator() () const
-    { return connections; }
+    { return &connections[0]; }
 
     /// Clear all data
     void clear();
@@ -94,22 +95,22 @@ namespace dolfin
       clear();
 
       // Initialize offsets and compute total size
-      num_entities = connections.size();
+      const uint num_entities = connections.size();
       offsets.resize(num_entities + 1);
-      _size = 0;
+      uint size = 0;
       for (uint e = 0; e < num_entities; e++)
       {
-        offsets[e] = _size;
-        _size += connections[e].size();
+        offsets[e] = size;
+        size += connections[e].size();
       }
-      offsets[num_entities] = _size;
+      offsets[num_entities] = size;
 
       // Initialize connections
-      this->connections = new uint[_size];
+      this->connections = std::vector<uint>(size);
       for (uint e = 0; e < num_entities; e++)
       {
         std::copy(connections[e].begin(), connections[e].end(),
-                  this->connections + offsets[e]);
+                  this->connections.begin() + offsets[e]);
       }
     }
 
@@ -125,14 +126,8 @@ namespace dolfin
     // Dimensions (only used for pretty-printing)
     uint d0, d1;
 
-    // Total number of connections
-    uint _size;
-
-    // Number of entities
-    uint num_entities;
-
     // Connections for all entities stored as a contiguous array
-    uint* connections;
+    std::vector<uint> connections;
 
     // Offset for first connection for each entity
     std::vector<uint> offsets;

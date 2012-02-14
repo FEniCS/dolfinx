@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells 2012.
+//
 // First added:  2006-06-02
-// Last changed: 2011-11-15
+// Last changed: 2012-02-14
 
 #include <algorithm>
 #include <vector>
 
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/dolfin_log.h>
@@ -57,8 +58,6 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& ce = topology(topology.dim(), dim);
   MeshConnectivity& ev = topology(dim, 0);
-
-  uint current_entity = 0;
 
   // Check if entities have already been computed
   if (topology.size(dim) > 0)
@@ -147,10 +146,11 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   // List entities e (uint index, std::vector<uint> vertex_list) connected to each cell
   std::vector<std::vector<std::pair<uint, std::vector<uint> > > > ce_list(mesh.num_cells());
 
-  current_entity = 0;
+  uint current_entity = 0;
   std::size_t max_ce_connections = 1;
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
+    // Cell index
     const uint c_index = c->index();
 
     // Reserve space to reduce dynamic allocations

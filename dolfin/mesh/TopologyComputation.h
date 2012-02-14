@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells 2012.
+//
 // First added:  2006-06-02
-// Last changed: 2011-01-03
+// Last changed: 2012-02-14
 
 #ifndef __TOPOLOGY_COMPUTATION_H
 #define __TOPOLOGY_COMPUTATION_H
@@ -58,9 +60,10 @@ namespace dolfin
 
     /// Add entities that are new
     static void add_entities(Mesh& mesh, MeshEntity& cell,
-			    std::vector<std::vector<uint> >& vertices, uint dim,
-			    MeshConnectivity& ce, MeshConnectivity& ev,
-			    uint& current_entity);
+                             std::vector<std::vector<uint> >& vertices,
+                             uint dim,
+                             MeshConnectivity& ce, MeshConnectivity& ev,
+                             uint& current_entity);
 
     /// Check if array v0 contains array v1
     static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
