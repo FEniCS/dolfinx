@@ -354,6 +354,9 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   // Temporary dynamic storage, later copied into static storage
   std::vector<std::vector<uint> > connectivity(topology.size(d0));
 
+  // A bitmap used to ensure we do not store duplicates
+  std::vector<bool> e1_visited(topology.size(d1));
+
   // Iterate over all entities of dimension d0
   std::size_t max_size = 1;
   for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
@@ -364,9 +367,16 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
     // Reserve space
     entities.reserve(max_size);
 
-    // Sorted list of e0 vertex indices
+    // Sorted list of e0 vertex indices (necessary to test for presence
+    // of one list in another)
     std::vector<uint> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
     std::sort(_e0.begin(), _e0.end());
+
+    // Initialise e1_visited to false for all neighbours of e0. The loop
+    // structure mirrors the one below.
+    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
+      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
+        e1_visited[e1->index()] = false;
 
     // Iterate over all connected entities of dimension d
     for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
@@ -374,6 +384,11 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
+        // Skip already visited connected entities (to avoid duplicates)
+        if (e1_visited[e1->index()])
+          continue;
+        e1_visited[e1->index()] = true;
+
         if (d0 == d1)
         {
           // An entity is not a neighbor to itself (duplicate index entries removed at end)
@@ -386,7 +401,7 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
           std::vector<uint> _e1(e1->entities(0), e1->entities(0) + e1->num_entities(0));
           std::sort(_e1.begin(), _e1.end());
 
-          // Entity e1 must be completely contained in e0 (duplicate index entries removed at end)
+          // Entity e1 must be completely contained in e0
           if (std::includes(_e0.begin(), _e0.end(), _e1.begin(), _e1.end()))
             entities.push_back(e1->index());
         }
@@ -397,21 +412,13 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
     max_size = std::max(entities.size(), max_size);
   }
 
-  // Remove duplicates from connectivity lists (STL version)
-  std::vector<std::vector<uint> >::iterator c_list;
-  for (c_list = connectivity.begin(); c_list != connectivity.end(); ++c_list)
-  {
-    std::sort(c_list->begin(), c_list->end());
-    c_list->erase(std::unique(c_list->begin(), c_list->end()), c_list->end());
-  }
-
   // Copy to static storage
   topology(d0, d1).set(connectivity);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
-                                     const std::vector<std::vector<uint> >& entities,
-                                     uint dim)
+                              const std::vector<std::vector<uint> >& entities,
+                              uint dim)
 {
   // For each entity, we iterate over connected and previously visited
   // cells to see if the entity has already been counted.
@@ -447,10 +454,9 @@ dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
-				 std::vector<std::vector<uint> >& entities, uint dim,
-				 MeshConnectivity& ce,
-				 MeshConnectivity& ev,
-				 uint& current_entity)
+                          std::vector<std::vector<uint> >& entities, uint dim,
+                          MeshConnectivity& ce, MeshConnectivity& ev,
+                          uint& current_entity)
 {
   // We repeat the same algorithm as in count_entities() but this time
   // we add any entities that are new.
