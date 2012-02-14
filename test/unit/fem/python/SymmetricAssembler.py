@@ -1,6 +1,7 @@
 """Unit tests for class SymmetricAssembler"""
 
 # Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2012 Joachim B. Haga
 #
 # This file is part of DOLFIN.
 #

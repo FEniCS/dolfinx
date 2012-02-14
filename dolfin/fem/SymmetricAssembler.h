@@ -1,3 +1,5 @@
+// Copyright (C) 2012 Joachim B. Haga
+//
 // This file is part of DOLFIN.
 //
 // DOLFIN is free software: you can redistribute it and/or modify

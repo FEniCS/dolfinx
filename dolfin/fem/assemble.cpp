@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells, 2008.
 // Modified by Johan Hake, 2009.
+// Modified by Joachim B. Haga, 2012.
 //
 // First added:  2007-01-17
-// Last changed: 2011-11-13
+// Last changed: 2012-02-01
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"

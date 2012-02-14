@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B. Haga, 2012.
+//
 // First added:  2009-08-09
-// Last changed: 2010-11-18
+// Last changed: 2012-02-01
 
 #ifndef __UTILS_H
 #define __UTILS_H

@@ -1,4 +1,5 @@
 // Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2012 Joachim B. Haga
 //
 // This file is part of DOLFIN.
 //

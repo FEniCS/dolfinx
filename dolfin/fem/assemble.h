@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells, 2008, 2009.
 // Modified by Johan Hake, 2009.
+// Modified by Joachim B. Haga, 2012.
 //
 // First added:  2007-01-17
-// Last changed: 2011-09-29
+// Last changed: 2012-02-01
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
