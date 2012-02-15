@@ -62,12 +62,8 @@ namespace dolfin
 			    MeshConnectivity& ce, MeshConnectivity& ev,
 			    uint& current_entity);
 
-    /// Check if mesh entity e0 contains mesh entity e1
-    static bool contains(MeshEntity& e0, MeshEntity& e1);
-
     /// Check if array v0 contains array v1
     static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
-
   };
 
 }
