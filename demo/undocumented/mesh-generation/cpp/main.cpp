@@ -56,7 +56,7 @@ int main()
   face_vertices.push_back(Point(0.0, 1.0, 0.0));
   face_vertices.push_back(Point(1.0, 0.0, 0.0));
 
-  // Polyhedron faces (must be triangular) for a tetrahedron
+  // Polyhedron faces (of a tetrahedron)
   std::vector<std::vector<unsigned int> > faces(4, std::vector<unsigned int>(3));
   faces[0][0] = 3;
   faces[0][1] = 2;
@@ -78,8 +78,8 @@ int main()
   PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.05);
   plot(mesh);
 
-  // Generate 3D mesh from OFF file input (distorted cube)
-  PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.21);
+  // Generate 3D mesh from OFF file input (cube)
+  PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
   plot(mesh);
 }
 

@@ -66,26 +66,24 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
   for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
     cgal_points.push_back(CGAL_Point(p->x(), p->y()));
 
-  // Test for convexity
-  /*
-  if (!is_convex(cgal_points))
-  {
-    dolfin_error("PolygonalMeshGenerator.cpp",
-                 "generate mesh of polygonal domain",
-                 "Cannot generate meshes of non-convex polygonal domains. See https://bugs.launchpad.net/dolfin/+bug/933309");
-  }
-  */
+  // Create polygon
+  Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
 
+  // Generate mesh
+  generate(mesh, polygon, cell_size);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void PolygonalMeshGenerator::generate(Mesh& mesh, const T& polygon,
+                                      double cell_size)
+{
   // Create empty CGAL triangulation
   CDT cdt;
 
-  // Add polygon vertices to CGAL triangulation
-  for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
-  {
-    CDT::Vertex_handle v0 = cdt.insert(CGAL_Point(p->x(), p->y()));
-    CDT::Vertex_handle v1 = cdt.insert(CGAL_Point((p + 1)->x(), (p + 1)->y()));
-    cdt.insert_constraint(v0, v1);
-  }
+  // Add polygon edges as triangulation constraints
+  typename Polygon_2::Edge_const_iterator edge;
+  for (edge = polygon.edges_begin(); edge != polygon.edges_end(); ++edge)
+    cdt.insert_constraint(edge->point(0), edge->point(1));
 
   // Create mesher
   CGAL_Mesher mesher(cdt);

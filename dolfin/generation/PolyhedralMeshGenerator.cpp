@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-02-03
-// Last changed:
+// Last changed: 2012-02-16
 
 #ifdef HAS_CGAL
 
@@ -31,6 +31,11 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
+
+// The below two files are from the CGAL demos. Path can be changed
+// once they are included with the CGAL code.
+#include "triangulate_polyhedron.h"
+#include "compute_normal.h"
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -110,14 +115,6 @@ public:
     std::vector<std::vector<unsigned int> >::const_iterator f;
     for (f = facets.begin(); f != facets.end(); ++f)
     {
-      // Check that facets are triangular
-      if (f->size() != 3)
-      {
-        dolfin_error("PolyhedralMeshGenerator.cpp",
-               "build CGAL polyhedron from points and facets",
-               "CGAL can only use polyhedra composed of triangular facets for mesh generation)");
-      }
-
       // Add facet vertices
       B.begin_facet();
       for (unsigned int i = 0; i < f->size(); ++i)
@@ -137,22 +134,31 @@ private:
 };
 //-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
-                                       double cell_size)
+                                       double cell_size,
+                                       bool detect_sharp_features)
 {
-  // Create domain from file
-  Mesh_domain domain(off_file);
+  // Create empty CGAL polyhedron
+  Polyhedron p;
 
-  // Get sharp features
-  domain.detect_features();
+  // Read polyhedron from file
+  std::ifstream p_file(off_file.c_str());
+  if (!p_file)
+  {
+    dolfin_error("PolyhedralMeshGenerator.cpp",
+                 "open .off file to read 3D geometry",
+                 "Failed to openb file");
+
+  }
+  p_file >> p;
 
   // Generate mesh
-  cgal_generate(mesh, domain, cell_size);
+  cgal_generate(mesh, p, cell_size, detect_sharp_features);
 }
 //-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate(Mesh& mesh,
                         const std::vector<Point>& vertices,
                         const std::vector<std::vector<unsigned int> >& facets,
-                        double cell_size)
+                        double cell_size, bool detect_sharp_features)
 {
   // Create empty CGAL polyhedron
   Polyhedron p;
@@ -161,20 +167,36 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
   BuildSurface<HalfedgeDS> poly_builder(vertices, facets);
   p.delegate(poly_builder);
 
+  // Generate mesh
+  cgal_generate(mesh, p, cell_size, detect_sharp_features);
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
+                                            double cell_size,
+                                            bool detect_sharp_features)
+{
+  // Check if any facets are not triangular and triangulate if necessary.
+  // The CGAL mesh generation only supports polyhedra with triangular surface
+  // facets.
+  typename Polyhedron::Facet_iterator facet;
+  for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
+  {
+    // Check if there is a non-triangular facet
+    if (!facet->is_triangle())
+    {
+      CGAL::triangulate_polyhedron(p);
+      continue;
+    }
+  }
+
   // Create domain from polyhedron
   Mesh_domain domain(p);
 
   // Get sharp features
-  domain.detect_features();
+  if (detect_sharp_features)
+    domain.detect_features();
 
-  // Generate mesh
-  cgal_generate(mesh, domain, cell_size);
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, const T& domain,
-                                            double cell_size)
-{
   // Mesh criteria
   /*
   Mesh_criteria criteria(edge_size = 0.125,
