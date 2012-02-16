@@ -28,6 +28,7 @@
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Polygon_2.h>
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -49,6 +50,8 @@ typedef CGAL::Delaunay_mesher_2<CDT, Criteria> CGAL_Mesher;
 typedef CDT::Vertex_handle Vertex_handle;
 typedef CDT::Point CGAL_Point;
 
+typedef CGAL::Polygon_2<K> Polygon_2;
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -56,11 +59,25 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
                                     const std::vector<Point>& polygon_vertices,
                                     double cell_size)
 {
+  std::vector<CGAL_Point> cgal_points;
+
+  // Build list of CGAL points
+  std::vector<Point>::const_iterator p;
+  for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
+    cgal_points.push_back(CGAL_Point(p->x(), p->y()));
+
+  // Test for convexity
+  if (!is_convex(cgal_points))
+  {
+    dolfin_error("PolygonalMeshGenerator.cpp",
+                 "generate mesh of polygonal domain",
+                 "Cannot generate meshes of non-convex polygonal domains. See https://bugs.launchpad.net/dolfin/+bug/933309");
+  }
+
   // Create empty CGAL triangulation
   CDT cdt;
 
   // Add polygon vertices to CGAL triangulation
-  std::vector<Point>::const_iterator p;
   for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
   {
     CDT::Vertex_handle v0 = cdt.insert(CGAL_Point(p->x(), p->y()));
@@ -77,6 +94,14 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
 
   // Build DOLFIN mesh from CGAL triangulation
   CGALMeshBuilder::build(mesh, cdt);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+bool PolygonalMeshGenerator::is_convex(const std::vector<T>& vertices)
+{
+  // Create polygon and test for convexity
+  Polygon_2 polygon(vertices.begin(), vertices.end());
+  return polygon.is_convex();
 }
 //-----------------------------------------------------------------------------
 #endif

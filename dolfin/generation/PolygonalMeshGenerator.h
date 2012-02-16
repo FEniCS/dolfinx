@@ -42,6 +42,10 @@ namespace dolfin
 
   private:
 
+    // Check that input polygon is convex
+    template <typename T>
+    static bool is_convex(const std::vector<T>& vertices);
+
   };
 
 }
