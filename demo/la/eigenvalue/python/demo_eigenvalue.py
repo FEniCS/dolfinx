@@ -41,7 +41,6 @@ if not has_slepc():
 
 # Define mesh, function space
 mesh = Mesh("box_with_dent.xml.gz")
-mesh = refine(mesh)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define basis and bilinear form
@@ -67,7 +66,7 @@ print "Largest eigenvalue: ", r
 
 # Initialize function and assign eigenvector
 u = Function(V)
-u.vector()[:] = rx
+u.vector()[:] = rx 
 
 # Plot eigenfunction
 plot(u)
