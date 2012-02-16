@@ -35,15 +35,18 @@ int main()
 
   // Polygonal domain vertices
   std::vector<Point> domain_vertices;
-  domain_vertices.push_back(Point(0.0, 0.0));
-  domain_vertices.push_back(Point(1.0, 0.0));
-  domain_vertices.push_back(Point(1.5, 1.5));
-  domain_vertices.push_back(Point(1.0, 2.0));
-  domain_vertices.push_back(Point(0.0, 1.0));
-  domain_vertices.push_back(domain_vertices[0]);
+  domain_vertices.push_back(Point(0.0,  0.0));
+  domain_vertices.push_back(Point(10.0, 0.0));
+  domain_vertices.push_back(Point(10.0, 2.0));
+  domain_vertices.push_back(Point(8.0,  2.0));
+  domain_vertices.push_back(Point(7.5,  1.0));
+  domain_vertices.push_back(Point(2.5,  1.0));
+  domain_vertices.push_back(Point(2.0,  4.0));
+  domain_vertices.push_back(Point(0.0,  4.0));
+  domain_vertices.push_back(Point(0.0,  0.0));
 
   // Generate 2D mesh and plot
-  PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.025);
+  PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.25);
   plot(mesh);
 
   // Polyhedron face vertices

@@ -25,6 +25,7 @@
 
 #include <vector>
 
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/Triangulation_3.h>
 
@@ -72,21 +73,41 @@ namespace dolfin
                    "Cannot find suitable specialized template funtion");
     }
 
+    // Add cells (from 2D CGAL triangulation)
     template<typename X, typename Y>
     static void add_cells(MeshEditor& mesh_editor,
                           const CGAL::Triangulation_2<X, Y>& t)
     {
       unsigned int cell_index = 0;
-      typename CGAL::Triangulation_2<X, Y>::Face_iterator cgal_cell;
-      for (cgal_cell = t.faces_begin(); cgal_cell != t.faces_end(); ++cgal_cell)
+      typename CGAL::Triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
+      for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
-        dolfin_assert(!t.is_infinite(cgal_cell));
         mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
                                            cgal_cell->vertex(1)->info(),
                                            cgal_cell->vertex(2)->info());
       }
     }
 
+    // Add cells (from 2D CGAL constrained Delaunay triangulation)
+    template<typename X, typename Y>
+    static void add_cells(MeshEditor& mesh_editor,
+                          const CGAL::Constrained_Delaunay_triangulation_2<X, Y>& t)
+    {
+      unsigned int cell_index = 0;
+      typename CGAL::Constrained_Delaunay_triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
+      for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
+      {
+        // Add cell if it is in the domain
+        if(cgal_cell->is_in_domain())
+        {
+          mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
+                                             cgal_cell->vertex(1)->info(),
+                                             cgal_cell->vertex(2)->info());
+        }
+      }
+    }
+
+    // Add cells (from 3D CGAL triangulation)
     template<typename X, typename Y>
     static void add_cells(MeshEditor& mesh_editor,
                           const CGAL::Triangulation_3<X, Y>& t)

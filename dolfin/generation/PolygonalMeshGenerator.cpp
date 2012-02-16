@@ -67,12 +67,14 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
     cgal_points.push_back(CGAL_Point(p->x(), p->y()));
 
   // Test for convexity
+  /*
   if (!is_convex(cgal_points))
   {
     dolfin_error("PolygonalMeshGenerator.cpp",
                  "generate mesh of polygonal domain",
                  "Cannot generate meshes of non-convex polygonal domains. See https://bugs.launchpad.net/dolfin/+bug/933309");
   }
+  */
 
   // Create empty CGAL triangulation
   CDT cdt;
@@ -88,7 +90,7 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
   // Create mesher
   CGAL_Mesher mesher(cdt);
 
-  // Refine mesh
+  // Refine CGAL mesh/triangulation
   mesher.set_criteria(Criteria(0.125, cell_size));
   mesher.refine_mesh();
 
