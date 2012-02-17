@@ -47,12 +47,21 @@ namespace dolfin
                          const std::vector<std::vector<unsigned int> >& facets,
                          double cell_size, bool detect_sharp_features=true);
 
+    /// Create a surface mesh from Object File Format (.off) file
+    static void generate_surface_mesh(Mesh& mesh, const std::string off_file,
+                         double cell_size, bool detect_sharp_features=true);
+
   private:
 
-    /// Create mesh from a CGAL mesh domain
+    /// Create mesh from a CGAL polyhedron
     template<typename T>
     static void cgal_generate(Mesh& mesh, T& p, double cell_size,
                               bool detect_sharp_features);
+
+    /// Create surface mesh from a CGAL polyhedron
+    template<typename T>
+    static void cgal_generate_surface_mesh(Mesh& mesh, T& p, double cell_size,
+                                           bool detect_sharp_features);
   };
 
 }

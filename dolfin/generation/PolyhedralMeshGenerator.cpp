@@ -32,6 +32,15 @@
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
 
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
+#include <CGAL/Complex_2_in_triangulation_3.h>
+#include <CGAL/make_surface_mesh.h>
+#include <CGAL/Implicit_surface_3.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Surface_mesh_cell_base_3.h>
+
+#include "AABB_polyhedral_oracle.h"
+
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
 #include "triangulate_polyhedron.h"
@@ -53,14 +62,17 @@ typedef CGAL::Polyhedral_mesh_domain_with_features_3<K> Mesh_domain;
 
 typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K> Geom_traits;
 
-// CGAL 3D triangulation typedefs
+// CGAL 3D triangulation vertex typedefs
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits> Tvb3test_base;
-typedef CGAL::Triangulation_vertex_base_with_info_3<int, K, Tvb3test_base> Tvb3test;
-
-typedef CGAL::Triangulation_cell_base_3<Geom_traits> Tcb3test_base;
-typedef CGAL::Triangulation_cell_base_with_info_3<int, K, Tcb3test_base> Tcb3test;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits, Tvb3test_base> Tvb3test;
 typedef CGAL::Mesh_vertex_base_3<Geom_traits, Mesh_domain, Tvb3test> Vertex_base;
+
+// CGAL 3D triangulation cell typedefs
+typedef CGAL::Triangulation_cell_base_3<Geom_traits> Tcb3test_base;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits, Tcb3test_base> Tcb3test;
 typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain, Tcb3test> Cell_base;
+
+// CGAL 3D triangulation typedefs
 typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base> Tds_mesh;
 typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh>             Tr;
 
@@ -76,6 +88,121 @@ typedef CGAL::Mesh_polyhedron_3<K>::Type Polyhedron;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
+
+// Surface meshes
+// default triangulation for Surface_mesher
+//typedef CGAL::Triangulation_vertex_base_3<K> Vbase;
+//typedef CGAL::Triangulation_vertex_base_with_info_3<unsigned int, K, Vbase> Vb;
+//typedef CGAL::Triangulation_face_base_3<K> Fb;
+//typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+
+//typedef CGAL::Surface_mesh_vertex_base_3<Geom_traits> Vb_surface;
+
+typedef CGAL::Complex_2_in_triangulation_vertex_base_3<Geom_traits, Tvb3test> Vb_surface;
+
+typedef CGAL::Surface_mesh_cell_base_3<Geom_traits> Cb_surface;
+typedef CGAL::Triangulation_cell_base_with_circumcenter_3<Geom_traits, Cb_surface> Cb_with_circumcenter;
+typedef CGAL::Triangulation_data_structure_3<Vb_surface, Cb_with_circumcenter> Tds_surface;
+typedef CGAL::Delaunay_triangulation_3<Geom_traits, Tds_surface> Tr_surface;
+
+//typedef CGAL::Delaunay_triangulation_3<K, Tds_mesh> Tr_surface;
+
+
+//typedef CGAL::Surface_mesh_default_triangulation_3 Tr_surface;
+
+// c2t3
+//typedef CGAL::Complex_2_in_triangulation_3<Tr_surface> C2t3;
+typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr_surface> C2t3;
+
+typedef Tr_surface::Geom_traits GT;
+typedef GT::Sphere_3 Sphere_3;
+typedef GT::Point_3 Point_3;
+typedef GT::FT FT;
+
+typedef FT (*Function)(Point_3);
+
+typedef CGAL::Implicit_surface_3<GT, Function> Surface_3;
+
+FT sphere_function (Point_3 p) {
+  const FT x2=p.x()*p.x(), y2=p.y()*p.y(), z2=p.z()*p.z();
+  return x2+y2+z2-1;
+}
+
+
+/*
+// Class template, refines Mesher_base
+// That allows to create meshers with different criteria or manifold tag,
+// and thread them with the API of Mesher_base (mesh/one_step/stop).
+template <typename Criteria, typename Manifold_tag>
+class Mesher : public Mesher_base
+{
+  typedef typename CGAL::Surface_mesher_generator<
+    C2t3,
+    Input_surface,
+    Criteria,
+    Manifold_tag,
+    CGAL_SURFACE_MESHER_VERBOSITY >::type MyMesher;
+
+  MyMesher mesher;
+  const C2t3& c2t3;
+  const Input_surface& surface;
+  CGAL::Null_mesh_visitor visitor;
+public:
+  Mesher(C2t3& c2t3,
+         const Input_surface& surface,
+         const Criteria& criteria)
+    : //Mesher_base(parent),
+      mesher(c2t3, surface, surface, criteria),
+      c2t3(c2t3),
+      surface(surface)
+  {
+    typename Input_surface::Construct_initial_points get_initial_points =
+      surface.construct_initial_points_object();
+
+    get_initial_points(surface,
+                       CGAL::inserter(c2t3.triangulation()),
+                       20);
+    mesher.init();
+  }
+
+  void mesh()
+  {
+    int global_nbsteps = 0;
+    int nbsteps = 0;
+    CGAL::Timer timer;
+    timer.start();
+    is_stopped = false;
+
+    std::cerr << "Legende of the following line: "
+              << "(#vertices,#steps," << mesher.debug_info_header()
+              << ")\n";
+
+    while(!is_stopped && !mesher.is_algorithm_done())
+    {
+      one_step();
+      ++nbsteps;
+      ++global_nbsteps;
+      if(timer.time() > 1)
+      {
+        std::cerr
+	  << boost::format("\r             \r"
+			   "(%1%,%2%,%3%) (%|4$.1f| vertices/s)")
+	  % c2t3.triangulation().number_of_vertices()
+	  % global_nbsteps % mesher.debug_info()
+	  % (nbsteps / timer.time());
+        qApp->processEvents();
+        nbsteps = 0;
+        timer.reset();
+      }
+    }
+  }
+
+  void one_step()
+  {
+    mesher.one_step(visitor);
+  }
+};
+*/
 
 using namespace dolfin;
 
@@ -146,8 +273,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
   {
     dolfin_error("PolyhedralMeshGenerator.cpp",
                  "open .off file to read 3D geometry",
-                 "Failed to openb file");
-
+                 "Failed to open file");
   }
   p_file >> p;
 
@@ -169,6 +295,28 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
 
   // Generate mesh
   cgal_generate(mesh, p, cell_size, detect_sharp_features);
+}
+//-----------------------------------------------------------------------------
+void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
+                                                    const std::string off_file,
+                                                    double cell_size,
+                                                    bool detect_sharp_features)
+{
+  // Create empty CGAL polyhedron
+  Polyhedron p;
+
+  // Read polyhedron from file
+  std::ifstream p_file(off_file.c_str());
+  if (!p_file)
+  {
+    dolfin_error("PolyhedralMeshGenerator.cpp",
+                 "open .off file to read 3D geometry",
+                 "Failed to open file");
+  }
+  p_file >> p;
+
+  // Generate mesh
+  cgal_generate_surface_mesh(mesh, p, cell_size, detect_sharp_features);
 }
 //-----------------------------------------------------------------------------
 template<typename T>
@@ -227,6 +375,63 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
 
   // Build DOLFIN mesh from CGAL mesh/triangulation
   CGALMeshBuilder::build_from_mesh(mesh, c3t3);
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
+                                                    double cell_size,
+                                                    bool detect_sharp_features)
+{
+  // Check if any facets are not triangular and triangulate if necessary.
+  // The CGAL mesh generation only supports polyhedra with triangular surface
+  // facets.
+  typename Polyhedron::Facet_iterator facet;
+  for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
+  {
+    // Check if there is a non-triangular facet
+    if (!facet->is_triangle())
+    {
+      CGAL::triangulate_polyhedron(p);
+      continue;
+    }
+  }
+
+  // Create domain from polyhedron
+  Mesh_domain domain(p);
+
+  // Get sharp features
+  if (detect_sharp_features)
+    domain.detect_features();
+
+  // Mesh criteria (produces no interior vertices)
+  const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
+                               CGAL::parameters::facet_size = 0.1,
+                               CGAL::parameters::cell_radius_edge = 0,
+                               CGAL::parameters::edge_size=0.1,
+                               CGAL::parameters::cell_size=0);
+
+  // Generate CGAL mesh
+  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
+
+  // Build DOLFIN mesh from CGAL mesh/triangulation
+  CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
+
+  /*
+  Tr_surface tr;
+  C2t3 c2t3(tr);
+
+  // Implicit sphere
+  Surface_3 surface(sphere_function, Sphere_3(CGAL::ORIGIN, 2.0));
+
+  // Meshing criteria
+  CGAL::Surface_mesh_default_criteria_3<Tr_surface> criteria(30.0, 0.1, 0.1);
+
+  // Build CGAL mesh
+  CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
+
+  // Build DOLFIN mesh from CGAL mesh/triangulation
+  CGALMeshBuilder::build_surface_mesh_c2t3(mesh, c2t3);
+  */
 }
 //-----------------------------------------------------------------------------
 

@@ -33,6 +33,7 @@ int main()
   // Create empty mesh
   Mesh mesh;
 
+  /*
   // Polygonal domain vertices
   std::vector<Point> domain_vertices;
   domain_vertices.push_back(Point(0.0,  0.0));
@@ -81,6 +82,12 @@ int main()
   // Generate 3D mesh from OFF file input (cube)
   PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
   plot(mesh);
+  */
+
+  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //plot(mesh);
+  File file("mesh.pvd");
+  file << mesh;
 }
 
 #else

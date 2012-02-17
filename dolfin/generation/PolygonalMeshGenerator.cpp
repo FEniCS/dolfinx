@@ -63,7 +63,7 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
 
   // Build list of CGAL points
   std::vector<Point>::const_iterator p;
-  for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
+  for (p = polygon_vertices.begin(); p != polygon_vertices.end(); ++p)
     cgal_points.push_back(CGAL_Point(p->x(), p->y()));
 
   // Create polygon
