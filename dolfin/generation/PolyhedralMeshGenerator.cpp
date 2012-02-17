@@ -39,8 +39,6 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Surface_mesh_cell_base_3.h>
 
-#include "AABB_polyhedral_oracle.h"
-
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
 #include "triangulate_polyhedron.h"
@@ -129,80 +127,6 @@ FT sphere_function (Point_3 p) {
 }
 
 
-/*
-// Class template, refines Mesher_base
-// That allows to create meshers with different criteria or manifold tag,
-// and thread them with the API of Mesher_base (mesh/one_step/stop).
-template <typename Criteria, typename Manifold_tag>
-class Mesher : public Mesher_base
-{
-  typedef typename CGAL::Surface_mesher_generator<
-    C2t3,
-    Input_surface,
-    Criteria,
-    Manifold_tag,
-    CGAL_SURFACE_MESHER_VERBOSITY >::type MyMesher;
-
-  MyMesher mesher;
-  const C2t3& c2t3;
-  const Input_surface& surface;
-  CGAL::Null_mesh_visitor visitor;
-public:
-  Mesher(C2t3& c2t3,
-         const Input_surface& surface,
-         const Criteria& criteria)
-    : //Mesher_base(parent),
-      mesher(c2t3, surface, surface, criteria),
-      c2t3(c2t3),
-      surface(surface)
-  {
-    typename Input_surface::Construct_initial_points get_initial_points =
-      surface.construct_initial_points_object();
-
-    get_initial_points(surface,
-                       CGAL::inserter(c2t3.triangulation()),
-                       20);
-    mesher.init();
-  }
-
-  void mesh()
-  {
-    int global_nbsteps = 0;
-    int nbsteps = 0;
-    CGAL::Timer timer;
-    timer.start();
-    is_stopped = false;
-
-    std::cerr << "Legende of the following line: "
-              << "(#vertices,#steps," << mesher.debug_info_header()
-              << ")\n";
-
-    while(!is_stopped && !mesher.is_algorithm_done())
-    {
-      one_step();
-      ++nbsteps;
-      ++global_nbsteps;
-      if(timer.time() > 1)
-      {
-        std::cerr
-	  << boost::format("\r             \r"
-			   "(%1%,%2%,%3%) (%|4$.1f| vertices/s)")
-	  % c2t3.triangulation().number_of_vertices()
-	  % global_nbsteps % mesher.debug_info()
-	  % (nbsteps / timer.time());
-        qApp->processEvents();
-        nbsteps = 0;
-        timer.reset();
-      }
-    }
-  }
-
-  void one_step()
-  {
-    mesher.one_step(visitor);
-  }
-};
-*/
 
 using namespace dolfin;
 
