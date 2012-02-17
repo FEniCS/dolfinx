@@ -96,17 +96,13 @@ typedef Polyhedron::HalfedgeDS HalfedgeDS;
 
 //typedef CGAL::Surface_mesh_vertex_base_3<Geom_traits> Vb_surface;
 
+/*
 typedef CGAL::Complex_2_in_triangulation_vertex_base_3<Geom_traits, Tvb3test> Vb_surface;
 
 typedef CGAL::Surface_mesh_cell_base_3<Geom_traits> Cb_surface;
 typedef CGAL::Triangulation_cell_base_with_circumcenter_3<Geom_traits, Cb_surface> Cb_with_circumcenter;
 typedef CGAL::Triangulation_data_structure_3<Vb_surface, Cb_with_circumcenter> Tds_surface;
 typedef CGAL::Delaunay_triangulation_3<Geom_traits, Tds_surface> Tr_surface;
-
-//typedef CGAL::Delaunay_triangulation_3<K, Tds_mesh> Tr_surface;
-
-
-//typedef CGAL::Surface_mesh_default_triangulation_3 Tr_surface;
 
 // c2t3
 //typedef CGAL::Complex_2_in_triangulation_3<Tr_surface> C2t3;
@@ -125,7 +121,7 @@ FT sphere_function (Point_3 p) {
   const FT x2=p.x()*p.x(), y2=p.y()*p.y(), z2=p.z()*p.z();
   return x2+y2+z2-1;
 }
-
+*/
 
 
 using namespace dolfin;
@@ -338,7 +334,7 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
 
   // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
+  //CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
 
   /*
   Tr_surface tr;

@@ -237,7 +237,6 @@ namespace dolfin
 
     // Iterate over all cell in triangulation
     unsigned int cell_index = 0;
-    /*
     typename T::Triangulation::Finite_cells_iterator c;
     for (c = t.finite_cells_begin(); c != t.finite_cells_end(); ++c)
     {
@@ -250,7 +249,8 @@ namespace dolfin
                                            c->vertex(3)->info());
       }
     }
-    */
+
+    /*
     typename T::Cells_in_complex_iterator c;
     for (c = cgal_mesh.cells_in_complex_begin(); c != cgal_mesh.cells_in_complex_end(); ++c)
     {
@@ -260,6 +260,7 @@ namespace dolfin
                                          c->vertex(2)->info(),
                                          c->vertex(3)->info());
     }
+    */
 
     // Close mesh editor
     mesh_editor.close();
