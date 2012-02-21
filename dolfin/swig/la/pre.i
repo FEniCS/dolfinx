@@ -248,7 +248,6 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector
 //-----------------------------------------------------------------------------
-/*
 %typemap(directorin) dolfin::PETScVector& {
   // Director in dolfin::PETScVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
@@ -260,4 +259,3 @@
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
-*/
