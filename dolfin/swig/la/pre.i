@@ -169,15 +169,21 @@
 %ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
 %ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
 
-
+//-----------------------------------------------------------------------------
+// PETSc backend
+//-----------------------------------------------------------------------------
+#ifdef HAS_PETSC
+%ignore dolfin::PETScVector::vec;
+%ignore dolfin::PETScBaseMatrix::mat;
+#endif
+ 
 //-----------------------------------------------------------------------------
 // Trilinos backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
-%rename(_mat) dolfin::EpetraMatrix::mat;
-%rename(_vec) dolfin::EpetraVector::vec;
 %ignore dolfin::EpetraMatrix::mat;
 %ignore dolfin::EpetraVector::vec;
+%ignore dolfin::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
 
 //-----------------------------------------------------------------------------
 // Typemaps for Teuchos::RCP (Trilinos backend)
