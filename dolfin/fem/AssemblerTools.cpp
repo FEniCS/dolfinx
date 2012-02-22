@@ -138,7 +138,6 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
-                                        uint primary_dim,
                                         bool reset_sparsity, bool add_values)
 {
   dolfin_assert(a.ufc_form());
@@ -181,6 +180,11 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       A.init(*sparsity_pattern);
     else
     {
+      dolfin_error("AssemblerTools.cpp",
+                   "initialise tensor",
+                   "Cannot have null sparsity pattern");
+
+      /*
       // Build data structures for initialising light-weight sparsity pattern
       std::vector<uint> global_dimensions(a.rank());
       std::vector<std::pair<uint, uint> > local_range(a.rank());
@@ -198,6 +202,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
                                               local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
+      */
     }
     t1.stop();
 
