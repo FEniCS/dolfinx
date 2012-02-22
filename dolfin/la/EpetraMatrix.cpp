@@ -42,6 +42,7 @@
 #include <EpetraExt_MatrixMatrix.h>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"
@@ -62,6 +63,11 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
     this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
+}
+//-----------------------------------------------------------------------------
+EpetraMatrix::EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A) : A(reference_to_no_delete_pointer(*A.get())), ref_keeper(A)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)

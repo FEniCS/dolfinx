@@ -28,6 +28,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "GenericMatrix.h"
+#include <Teuchos_RCP.hpp>
 
 class Epetra_FECrsMatrix;
 class Epetra_CrsGraph;
@@ -56,6 +57,9 @@ namespace dolfin
 
     /// Copy constuctor
     EpetraMatrix(const EpetraMatrix& A);
+
+    /// Create matrix from given Epetra_FECrsMatrix pointer
+    explicit EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
     explicit EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
@@ -166,6 +170,9 @@ namespace dolfin
     // Epetra_FECrsMatrix pointer
     boost::shared_ptr<Epetra_FECrsMatrix> A;
 
+    // Epetra_FECrsMatrix pointer, used when initialized with a Teuchos::RCP 
+    // shared_ptr
+    Teuchos::RCP<Epetra_FECrsMatrix> ref_keeper;
   };
 
 }
