@@ -57,7 +57,7 @@ if has_linear_algebra_backend("PETSc"):
             x_petsc = down_cast(x)
 
             for prec, descr in krylov_solver_preconditioners():
-                if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi"]:
+                if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi", "amg"]:
                     print "FIXME: Preconditioner '%s' does not work in paralell,"\
                           " skipping" % prec
                     continue
@@ -83,12 +83,16 @@ if has_linear_algebra_backend("PETSc"):
             class KrylovMatrix(PETScKrylovMatrix):
                 def __init__(self, A):
                     self.A = A
+
+                    # Use tmp vector as A.mult will resize the vector
+                    self.y_tmp = PETScVector()
                     PETScKrylovMatrix.__init__(self, A.size(0), A.size(1))
             
                 def mult(self, x, y):
             
                     # Make ordinary matrix vector product
-                    self.A.mult(x, y)
+                    self.A.mult(x, self.y_tmp)
+                    y[:] = self.y_tmp
             
             
             class MatrixFreeKrylovMatrix(PETScKrylovMatrix) :

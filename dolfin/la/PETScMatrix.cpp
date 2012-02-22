@@ -388,9 +388,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
   }
 
   // Resize if dimensions does not match
-  if (size(0) != yy.size())
-    resize(yy, 0);
-
+  resize(yy, 0);
   MatMult(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
