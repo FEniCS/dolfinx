@@ -44,9 +44,9 @@ boost::shared_ptr<GenericVector> DefaultFactory::create_local_vector() const
   return factory().create_local_vector();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> DefaultFactory::create_pattern(uint primary_dim) const
+boost::shared_ptr<GenericSparsityPattern> DefaultFactory::create_pattern() const
 {
-  return factory().create_pattern(primary_dim);
+  return factory().create_pattern();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver>

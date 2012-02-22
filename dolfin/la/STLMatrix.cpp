@@ -31,6 +31,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "STLFactory.h"
+#include "STLFactoryCSC.h"
 #include "STLMatrix.h"
 
 using namespace dolfin;
@@ -358,7 +359,10 @@ std::string STLMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& STLMatrix::factory() const
 {
-  return STLFactory::instance();
+  if (primary_dim == 0)
+    return STLFactory::instance();
+  else
+    return STLFactoryCSC::instance();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint STLMatrix::nnz() const

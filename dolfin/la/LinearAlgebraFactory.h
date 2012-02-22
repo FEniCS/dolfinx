@@ -58,7 +58,7 @@ namespace dolfin
 
     /// Create empty sparsity pattern (returning zero if not used/needed)
     virtual boost::shared_ptr<GenericSparsityPattern>
-      create_pattern(uint primary_dim) const = 0;
+      create_pattern() const = 0;
 
     /// Create LU solver
     virtual boost::shared_ptr<GenericLUSolver>

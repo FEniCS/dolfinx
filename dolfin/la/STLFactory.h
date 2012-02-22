@@ -62,7 +62,7 @@ namespace dolfin
     }
 
     /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    virtual boost::shared_ptr<GenericSparsityPattern> create_pattern() const
     {
       boost::shared_ptr<GenericSparsityPattern> pattern;
       return pattern;
@@ -93,7 +93,7 @@ namespace dolfin
     static STLFactory& instance()
     { return factory; }
 
-  private:
+  protected:
 
     /// Private Constructor
     STLFactory() {}

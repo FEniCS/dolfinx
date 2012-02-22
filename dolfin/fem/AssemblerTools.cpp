@@ -161,10 +161,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern
     Timer t0("Build sparsity");
     boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-        = A.factory().create_pattern(primary_dim);
+        = A.factory().create_pattern();
+    dolfin_assert(sparsity_pattern);
     if (sparsity_pattern)
     {
-
       // Build sparsity pattern
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
                                     a.ufc_form()->num_cell_domains(),
@@ -174,11 +174,13 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
     // Initialize tensor
     Timer t1("Init tensor");
+    A.init(*sparsity_pattern);
+    /*
     if (sparsity_pattern)
       A.init(*sparsity_pattern);
     else
     {
-      // Build data structure for intialising sparsity pattern
+      // Build data structures for initialising light-weight sparsity pattern
       std::vector<uint> global_dimensions(a.rank());
       std::vector<std::pair<uint, uint> > local_range(a.rank());
       std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
@@ -190,12 +192,13 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
         off_process_owner[i] = &(dofmaps[i]->off_process_owner());
       }
 
-      // Create and build sparsity pattern
+      // Create and build light-weight sparsity pattern (parallel layout info only)
       const SparsityPattern _sparsity_pattern(global_dimensions, primary_dim,
                                               local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
     }
+    */
     t1.stop();
 
     // Delete sparsity pattern

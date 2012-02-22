@@ -31,7 +31,7 @@
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
-#include "GenericSparsityPattern.h"
+#include "SparsityPattern.h"
 #include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
@@ -67,9 +67,9 @@ namespace dolfin
     }
 
     /// Dummy sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern;
+      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0));
       return pattern;
     }
 
