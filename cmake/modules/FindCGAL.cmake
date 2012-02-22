@@ -8,12 +8,30 @@
 
 message(STATUS "Checking for package 'CGAL'")
 
+# Blank out CGAL_FIND_VERSION temporarily or else find_package(CGAL ...)
+# (below) will fail.
+set(CGAL_FIND_VERSION_TMP ${CGAL_FIND_VERSION})
+set(CGAL_FIND_VERSION "")
+
 # Call CGAL supplied CMake script
 find_package(CGAL
   HINTS
   ${CGAL_DIR}
   $ENV{CGAL_DIR}
   PATH_SUFFIXES lib cmake/modules lib/cmake)
+
+# Restore CGAL_FIND_VERSION
+set(CGAL_FIND_VERSION ${CGAL_FIND_VERSION_TMP})
+
+if (CGAL_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${CGAL_VERSION}" VERSION_LESS "${CGAL_FIND_VERSION}")
+    set(CGAL_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version of CGAL is requested
+  set(CGAL_VERSION_OK TRUE)
+endif()
 
 # Set variables
 set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${CGAL_3RD_PARTY_INCLUDE_DIRS})
@@ -115,4 +133,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(CGAL
   "CGAL could not be found. Be sure to set CGAL_DIR"
-  CGAL_LIBRARIES CGAL_INCLUDE_DIRS CGAL_TEST_RUNS)
+  CGAL_LIBRARIES CGAL_INCLUDE_DIRS CGAL_TEST_RUNS CGAL_VERSION_OK)

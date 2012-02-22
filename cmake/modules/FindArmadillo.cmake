@@ -1,4 +1,4 @@
-# - Try to find PETSc
+# - Try to find Armadillo
 # Once done this will define
 
 #  ARMADILLO_FOUND        - system has Armadillo
@@ -11,10 +11,14 @@
 #
 #  ARMADILLO_DIR - directory in which Armadillo resides
 
+
 message(STATUS "Checking for package 'Armadillo'")
 
 # FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
-#find_package(LAPACK REQUIRED)
+set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib ${CMAKE_LIBRARY_PATH})
+find_package(BLAS)
+find_package(LAPACK)
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
@@ -28,7 +32,9 @@ find_library(ARMADILLO_LIBRARIES
   HINTS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
-mark_as_advanced(ARMADILLO_LIBRARIES)
+mark_as_advanced(ARMA
+
+DILLO_LIBRARIES)
 
 set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES}")
 
@@ -150,6 +156,14 @@ int main()
       endif()
     endif()
   endforeach()
+
+  # Add Lapack and BLAS
+  if (LAPACK_FOUND)
+    list(APPEND ARMADILLO_LIBRARIES ${LAPACK_LIBRARIES})
+  endif()
+  if (BLAS_FOUND)
+    list(APPEND ARMADILLO_LIBRARIES ${BLAS_LIBRARIES})
+  endif()
 
   # If program still does not run, try adding GFortran library
   if(NOT ARMADILLO_TEST_RUNS)
