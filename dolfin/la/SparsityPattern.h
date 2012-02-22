@@ -68,10 +68,6 @@ namespace dolfin
     /// Return rank
     uint rank() const;
 
-    /// Return primary dimension (e.g., 0=row parition, 1=column partition)
-    uint primary_dim() const
-    { return _primary_dim; }
-
     /// Return global size for dimension i
     uint size(uint i) const;
 
@@ -113,9 +109,6 @@ namespace dolfin
 
     // Shape of tensor
     std::vector<uint> shape;
-
-    // Primary dimension (0=row major, 1=col major, etc)
-    const uint _primary_dim;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;

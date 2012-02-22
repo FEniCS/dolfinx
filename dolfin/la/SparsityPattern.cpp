@@ -32,7 +32,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(uint primary_dim) : _primary_dim(primary_dim)
+SparsityPattern::SparsityPattern(uint primary_dim)
+    : GenericSparsityPattern(primary_dim)
 {
   // Do nothing
 }
@@ -41,7 +42,7 @@ SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
   uint primary_dim,
   const std::vector<std::pair<uint, uint> >& ownership_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
-  : _primary_dim(primary_dim)
+  : GenericSparsityPattern(primary_dim)
 {
   init(dims, ownership_range, off_process_owner);
 }
@@ -105,10 +106,6 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
   dolfin_assert(entries[1]);
-
-  // Get local rows and columns to insert
-  //const std::vector<uint>& map_i = *entries[0];
-  //const std::vector<uint>& map_j = *entries[1];
 
   const std::vector<uint>* map_i;
   const std::vector<uint>* map_j;

@@ -69,9 +69,9 @@ namespace dolfin
     }
 
     /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
+      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0));
       return pattern;
     }
 

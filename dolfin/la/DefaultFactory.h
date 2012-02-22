@@ -52,8 +52,7 @@ namespace dolfin
     virtual boost::shared_ptr<dolfin::GenericVector> create_local_vector() const;
 
     /// Create empty sparsity pattern
-    virtual boost::shared_ptr<dolfin::GenericSparsityPattern>
-        create_pattern(uint primary_dim) const;
+    virtual boost::shared_ptr<dolfin::GenericSparsityPattern> create_pattern() const;
 
     /// Create LU solver
     virtual boost::shared_ptr<dolfin::GenericLUSolver>

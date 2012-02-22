@@ -52,9 +52,9 @@ boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern(uint primary_dim) const
+boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern() const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
+  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0));
   return pattern;
 }
 //-----------------------------------------------------------------------------
