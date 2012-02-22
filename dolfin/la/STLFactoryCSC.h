@@ -46,6 +46,10 @@ namespace dolfin
       return pattern;
     }
 
+    /// Return singleton instance
+    static STLFactoryCSC& instance()
+    { return factory; }
+
   private:
 
     /// Private Constructor

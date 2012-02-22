@@ -162,6 +162,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t0("Build sparsity");
     boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
         = A.factory().create_pattern();
+
+    // Temp assert while code is re-structured
     dolfin_assert(sparsity_pattern);
     if (sparsity_pattern)
     {
@@ -175,7 +177,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Initialize tensor
     Timer t1("Init tensor");
     A.init(*sparsity_pattern);
-    /*
     if (sparsity_pattern)
       A.init(*sparsity_pattern);
     else
@@ -198,7 +199,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       A.init(_sparsity_pattern);
       A.zero();
     }
-    */
     t1.stop();
 
     // Delete sparsity pattern

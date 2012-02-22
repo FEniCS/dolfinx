@@ -39,7 +39,15 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void STLMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  primary_dim = sparsity_pattern.primary_dim();
+  // Check that sparsity pattern has correct storage (row vs column storage)
+  if (primary_dim != sparsity_pattern.primary_dim())
+  {
+    dolfin_error("STLMatrix.cpp",
+                 "initialization of STL matrix",
+                 "Primary storage dim of matrix and sparsity pattern must be the same");
+  }
+
+  //primary_dim = sparsity_pattern.primary_dim();
   uint primary_codim = 1;
   if (primary_dim == 1)
     primary_codim = 0;

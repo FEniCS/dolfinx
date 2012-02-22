@@ -55,10 +55,11 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix() : primary_dim(0), _local_range(0, 0), num_codim_entities(0) {}
+    STLMatrix(uint primary_dim=0) : primary_dim(primary_dim),
+      _local_range(0, 0), num_codim_entities(0) {}
 
     /// Copy constructor
-    STLMatrix(const STLMatrix& A)
+    STLMatrix(const STLMatrix& A) : primary_dim(0)
     { dolfin_not_implemented(); }
 
     /// Destructor
@@ -196,7 +197,7 @@ namespace dolfin
                             bool base_one) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
-    uint primary_dim;
+    const uint primary_dim;
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)
