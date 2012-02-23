@@ -65,7 +65,7 @@ void BinaryFile::operator>> (GenericVector& vector)
 
   const uint n = read_uint();
   Array<double> values(n);
-  read_array(n, values.data().get());
+  read_array(n, values.data());
 
   vector.resize(n);
   vector.set_local(values);
@@ -148,7 +148,7 @@ void BinaryFile::operator<< (const GenericVector& vector)
   Array<double> values(n);
   vector.get_local(values);
   write_uint(n);
-  write_array(n, values.data().get());
+  write_array(n, values.data());
 
   close_write();
 }

@@ -227,7 +227,7 @@ void PETScVector::get_local(Array<double>& values) const
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecGetValues(*x, local_size, &rows[0], values.data().get());
+  VecGetValues(*x, local_size, &rows[0], values.data());
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const Array<double>& values)
@@ -250,7 +250,7 @@ void PETScVector::set_local(const Array<double>& values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values.data().get(), INSERT_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data(), INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
@@ -273,7 +273,7 @@ void PETScVector::add_local(const Array<double>& values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values.data().get(), ADD_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, uint m, const uint* rows) const
@@ -675,7 +675,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   }
 
   // Prepare data for index sets (global indices)
-  const int* global_indices = reinterpret_cast<const int*>(indices.data().get());
+  const int* global_indices = reinterpret_cast<const int*>(indices.data());
 
   // Prepare data for index sets (local indices)
   const int n = indices.size();

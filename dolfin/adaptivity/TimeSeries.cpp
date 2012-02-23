@@ -209,18 +209,18 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
 //-----------------------------------------------------------------------------
 Array<double> TimeSeries::vector_times() const
 {
-  Array<double> times(_vector_times.size());
+  double* times = new double[_vector_times.size()];
   for (uint i = 0; i < _vector_times.size(); i++)
     times[i] = _vector_times[i];
-  return times;
+  return Array<double>(_vector_times.size(), times, true);
 }
 //-----------------------------------------------------------------------------
 Array<double> TimeSeries::mesh_times() const
 {
-  Array<double> times(_mesh_times.size());
+  double* times = new double[_mesh_times.size()];
   for (uint i = 0; i < _mesh_times.size(); i++)
     times[i] = _mesh_times[i];
-  return times;
+  return Array<double>(_mesh_times.size(), times, true);
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::clear()

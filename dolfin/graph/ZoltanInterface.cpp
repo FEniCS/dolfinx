@@ -72,7 +72,7 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   // Call Zoltan function to compute coloring
   int num_id = 1;
   int rc = zoltan.Color(num_id, graph.size(), &global_ids[0],
-                        reinterpret_cast<int*>(colors.data().get()));
+                        reinterpret_cast<int*>(colors.data()));
   if (rc != ZOLTAN_OK)
   {
     dolfin_error("ZoltanInterface.cpp",

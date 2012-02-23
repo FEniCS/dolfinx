@@ -161,9 +161,6 @@ void SubDomain::apply_markers(S& sub_domains,
   // Extract exterior (non shared) facets markers
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
-  // Array for vertex coordinate
-  Array<double> x;
-
   // Compute sub domain markers
   Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
@@ -183,7 +180,7 @@ void SubDomain::apply_markers(S& sub_domains,
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        x.update(_geometric_dimension, const_cast<double*>(vertex->x()));
+        Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
         if (!inside(x, on_boundary))
         {
           all_points_inside = false;
@@ -195,8 +192,8 @@ void SubDomain::apply_markers(S& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside)
     {
-      x.update(_geometric_dimension,
-               const_cast<double*>(entity->midpoint().coordinates()));
+      Array<double> x(_geometric_dimension,
+                      const_cast<double*>(entity->midpoint().coordinates()));
       if (!inside(x, on_boundary))
         all_points_inside = false;
     }

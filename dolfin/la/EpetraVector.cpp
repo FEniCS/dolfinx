@@ -321,7 +321,7 @@ void EpetraVector::get_local(Array<double>& values) const
 
   values.resize(x->MyLength());
 
-  const int err = x->ExtractCopy(values.data().get(), 0);
+  const int err = x->ExtractCopy(values.data(), 0);
   if (err!= 0)
   {
     dolfin_error("EpetraVector.cpp",
@@ -465,7 +465,7 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
-  const int* _indices = reinterpret_cast<const int*>(indices.data().get());
+  const int* _indices = reinterpret_cast<const int*>(indices.data());
   Epetra_BlockMap target_map(indices.size(), indices.size(), _indices, 1, 0, serial_comm);
 
   // Reset vector y

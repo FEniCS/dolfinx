@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2010-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-12-06
-// Last changed: 2011-11-13
+// Last changed: 2012-02-23
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -26,8 +27,6 @@
 #include <sstream>
 #include <string>
 #include <utility>
-#include <boost/shared_array.hpp>
-
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
@@ -45,54 +44,47 @@ namespace dolfin
   template <typename T> class Array
   {
   public:
+    /// Create an empty array. Must be resized or assigned to to be of any use.
+    explicit Array() : _size(0), _x(NULL), _owner(true) {}
 
-    /// Create empty array
-    Array() : _size(0), x(0) {}
+    /// Create array of size N. Array has ownership.
+    explicit Array(uint N) : _size(N), _x(new T[N]), _owner(true) {}
 
-    /// Create array of size N
-    explicit Array(uint N) : _size(N), x(new T[N]) {}
-
-    /// Copy constructor (arg name need to have a different name that 'x')
-    Array(const Array& other) : _size(0), x(0)
-    { *this = other; }
-
-    /// Construct array from a shared pointer
-    Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
-
-    /// Construct array from a pointer. Array will not take ownership.
-    Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter())) {}
-
-    /// Assignment operator
-    const Array& operator= (const Array& x)
+    /// Copy constructor. The constructed Array has ownership of its copy of
+    /// the data.
+    Array(const Array& other) : _size(0), _x(NULL), _owner(true)
     {
-      // Resize if necessary
-      if (x.size() == 0 && !x.x)
-      {
-        this->x.reset();
-        this->_size = 0;
-      }
-      else if (this->_size != x.size())
-      {
-        this->x.reset(new T[x.size()]);
-        this->_size = x.size();
-      }
-
-      // Copy data
-      if (_size > 0)
-      {
-        dolfin_assert(this->x);
-        dolfin_assert(x.x);
-        std::copy(&x.x[0], &x.x[_size], &this->x[0]);
-      }
-
-      return *this;
+      *this = other;
     }
 
-    /// Construct array from a pointer. Array will not take ownership.
-    void update(uint N, T* _x)
+    /// Construct array from a pointer. Array may optionally take ownership of
+    /// the data (default false).
+    Array(uint N, T* x, bool owner=false) : _size(N), _x(x), _owner(owner) {}
+
+    /// Destructor.
+    ~Array()
     {
+      if (_owner && _x)
+        delete[] _x;
+    }
+
+    /// Resize the array. The operation is only valid for an Array with
+    /// ownership of its data. The old contents of the Array are lost.
+    void resize(uint N)
+    {
+      dolfin_assert(_owner);
+      if (_size == N)
+        return;
+      if (_x)
+        delete[] _x;
+      _x = (N == 0 ? NULL : new T[N]);
       _size = N;
-      x.reset(_x, NoDeleter());
+    }
+
+    /// Clear the array (resize to 0).
+    void clear()
+    {
+      resize(0);
     }
 
     /// Return informal string representation (pretty-print).
@@ -116,97 +108,59 @@ namespace dolfin
       return s.str();
     }
 
-    /// Clear array
-    void clear()
-    {
-      this->x.reset();
-      this->_size = 0;
-    }
-
-    /// Resize array to size N. If size changes, contents will be destroyed.
-    void resize(uint N)
-    {
-      // Special case
-      if (N == _size)
-        return;
-
-      // Special case
-      if (N == 0)
-      {
-        clear();
-        return;
-      }
-
-      // FIXME: Do we want to allow resizing of shared data?
-      if (x.unique())
-      {
-        _size = N;
-        x.reset(new T[N]);
-      }
-      else
-      {
-        dolfin_error("Array.h",
-                     "resize Array",
-                     "Data is shared");
-      }
-    }
-
     /// Return size of array
     uint size() const
     { return _size; }
 
     /// Zero array
     void zero()
-    { dolfin_assert(x); std::fill(&x[0], &x[_size], 0.0); }
+    { dolfin_assert(_x); std::fill(&_x[0], &_x[_size], 0.0); }
 
     /// Set entries which meet (abs(x[i]) < eps) to zero
     void zero_eps(double eps=DOLFIN_EPS);
 
     /// Return minimum value of array
     T min() const
-    { dolfin_assert(x); return *std::min_element(&x[0], &x[_size]); }
+    { dolfin_assert(_x); return *std::min_element(&_x[0], &_x[_size]); }
 
     /// Return maximum value of array
     T max() const
-    { dolfin_assert(x); return *std::max_element(&x[0], &x[_size]); }
+    { dolfin_assert(_x); return *std::max_element(&_x[0], &_x[_size]); }
 
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
-    { dolfin_assert(x); dolfin_assert(i < _size); return x[i]; }
+    { dolfin_assert(i < _size); return _x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    {
-      dolfin_assert(x);
-      dolfin_assert(i < _size);
-      return x[i];
-    }
+    { dolfin_assert(i < _size); return _x[i]; }
 
-    /// Assign value to all entries
-    const Array<T>& operator= (T& x)
+    /// Assignment operator
+    const Array& operator= (const Array& other)
     {
-      dolfin_assert(this->x);
-      for (uint i = 0; i < _size; ++i)
-        this->x[i] = x;
-      return *this;
+      if (_size != other._size)
+        resize(other._size);
+      if (_size > 0)
+        std::copy(&other._x[0], &other._x[_size], &_x[0]);
     }
 
     /// Return pointer to data (const version)
-    const boost::shared_array<T> data() const
-    { return x; }
+    const T* data() const
+    { return _x; }
 
     /// Return pointer to data (non-const version)
-    boost::shared_array<T> data()
-    { return x; }
+    T* data()
+    { return _x; }
 
   private:
+    /// True if instance is owner of data
+    bool _owner;
 
-    // Length of array
+    /// Length of array
     uint _size;
 
-    // Array data
-    boost::shared_array<T> x;
-
+    /// Array data
+    T* _x;
   };
 
   template <typename T>
@@ -220,11 +174,10 @@ namespace dolfin
   template <>
   inline void Array<double>::zero_eps(double eps)
   {
-    dolfin_assert(x);
     for (uint i = 0; i < _size; ++i)
     {
-      if (std::abs(x[i]) < eps)
-        x[i] = 0.0;
+      if (std::abs(_x[i]) < eps)
+        _x[i] = 0.0;
     }
   }
 

@@ -108,7 +108,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     solve(A, x, b, "gmres", prec);
 
     // Get new coordinates
-    Array<double> _new_coordinates(N, new_coordinates.data().get() + dim*N);
+    Array<double> _new_coordinates(N, new_coordinates.data() + dim*N);
     x.get_local(_new_coordinates);
   }
 
