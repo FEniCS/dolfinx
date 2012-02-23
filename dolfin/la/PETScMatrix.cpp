@@ -387,6 +387,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
+  // Resize if dimensions does not match
   resize(yy, 0);
   MatMult(*A, *xx.vec(), *yy.vec());
 }
