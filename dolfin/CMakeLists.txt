@@ -268,7 +268,7 @@ foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
 
   # Only add libraries that matches the form -L<libdir> -l<lib>
   if ("${_linkflags}" MATCHES "-L.+ -l.+")
-    set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+    set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflags}")
   endif()
 endforeach()
 
