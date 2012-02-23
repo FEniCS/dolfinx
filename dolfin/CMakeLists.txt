@@ -265,7 +265,7 @@ install(TARGETS dolfin
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
-set(PKG_REQUIRES "ufc-1 libxml-2.0")
+set(PKG_REQUIRES "")
 
 # Convert include dirs to -I<incdir> form
 foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
@@ -286,7 +286,7 @@ foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
 
   # Only add libraries that matches the form -L<libdir> -l<lib>
   if ("${_linkflags}" MATCHES "-L.+ -l.+")
-    set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+    set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflags}")
   endif()
 endforeach()
 
