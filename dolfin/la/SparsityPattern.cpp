@@ -33,7 +33,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(uint primary_dim, bool full_sparsity)
-    : GenericSparsityPattern(primary_dim), full_sparsity(full_sparsity)
+    : GenericSparsityPattern(primary_dim, full_sparsity)
 {
   // Do nothing
 }
@@ -42,7 +42,7 @@ SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
   uint primary_dim, bool full_sparsity,
   const std::vector<std::pair<uint, uint> >& ownership_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
-  : GenericSparsityPattern(primary_dim), full_sparsity(full_sparsity)
+  : GenericSparsityPattern(primary_dim, full_sparsity)
 {
   init(dims, ownership_range, off_process_owner);
 }
@@ -56,7 +56,8 @@ void SparsityPattern::init(const std::vector<uint>& dims,
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
-  dolfin_assert(dims.size() == off_process_owner.size());
+  if (full_sparsity)
+    dolfin_assert(dims.size() == off_process_owner.size());
 
   // Clear sparsity pattern data
   diagonal.clear();
@@ -72,8 +73,8 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   // Set ownership range
   this->ownership_range = ownership_range;
 
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
+  // Check rank, return if not a matrix or basic pattern only
+  if (shape.size() != 2 || !full_sparsity)
     return;
 
   // -- Details required for full sparsity pattern backends
@@ -269,8 +270,8 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
+  // Check rank, return if not a matrix or basic pattern only
+  if (shape.size() != 2 || !full_sparsity)
     return;
 
   uint primary_codim;
@@ -356,11 +357,11 @@ void SparsityPattern::apply()
 std::string SparsityPattern::str() const
 {
   // Check rank
-  if (shape.size() != 2)
+  if (shape.size() != 2 || !full_sparsity)
   {
     dolfin_error("SparsityPattern.cpp",
                  "return string representation of sparsity pattern",
-                 "Only available for matrices");
+                 "Only available for matrices with full sparsity patterns");
   }
 
   // Print each row
@@ -383,6 +384,9 @@ std::string SparsityPattern::str() const
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::uint> > SparsityPattern::diagonal_pattern(Type type) const
 {
+  // Check that we have a full sparsity pattern
+  check_full_sparsity("get diagonal sparsity pattern");
+
   std::vector<std::vector<uint> > v(diagonal.size());
   for (uint i = 0; i < diagonal.size(); ++i)
     v[i].insert(v[i].begin(), diagonal[i].begin(), diagonal[i].end());
@@ -398,6 +402,9 @@ std::vector<std::vector<dolfin::uint> > SparsityPattern::diagonal_pattern(Type t
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::uint> > SparsityPattern::off_diagonal_pattern(Type type) const
 {
+  // Check that we have a full sparsity pattern
+  check_full_sparsity("get off-diagonal sparsity pattern");
+
   std::vector<std::vector<uint> > v(off_diagonal.size());
   for (uint i = 0; i < off_diagonal.size(); ++i)
     v[i].insert(v[i].begin(), off_diagonal[i].begin(), off_diagonal[i].end());
@@ -413,6 +420,9 @@ std::vector<std::vector<dolfin::uint> > SparsityPattern::off_diagonal_pattern(Ty
 //-----------------------------------------------------------------------------
 void SparsityPattern::info_statistics() const
 {
+  // Check that we have a full sparsity pattern
+  check_full_sparsity("sparsity pattern statistics");
+
   // Count nonzeros in diagonal block
   uint num_nonzeros_diagonal = 0;
   for (uint i = 0; i < diagonal.size(); ++i)
@@ -452,7 +462,9 @@ void SparsityPattern::info_statistics() const
 void SparsityPattern::check_full_sparsity(std::string operation) const
 {
   if (!full_sparsity)
+  {
     dolfin_error("SparsityPattern.cpp", operation,
                  "Operation can be peformed for full sparsity patterns only");
+  }
 }
 //-----------------------------------------------------------------------------

@@ -112,9 +112,6 @@ namespace dolfin
 
     // -- Data required by all sparsity patterns
 
-    // Flag indicating full or reduced (size/parallel layout only) pattern
-    const bool full_sparsity;
-
     // Shape of tensor
     std::vector<uint> shape;
 

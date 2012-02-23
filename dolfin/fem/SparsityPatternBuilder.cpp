@@ -43,26 +43,33 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   std::vector<uint> global_dimensions(rank);
   std::vector<std::pair<uint, uint> > local_range(rank);
-  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(rank);
+  //std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(rank);
+  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner;
 
   for (uint i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();
     local_range[i]       = dofmaps[i]->ownership_range();
-    off_process_owner[i] = &(dofmaps[i]->off_process_owner());
+    //off_process_owner[i] = &(dofmaps[i]->off_process_owner());
+  }
+
+  if (sparsity_pattern.full_sparsity)
+  {
+    off_process_owner.resize(rank);
+    for (uint i = 0; i < rank; ++i)
+      off_process_owner[i] = &(dofmaps[i]->off_process_owner());
   }
 
   // Initialise sparsity pattern
   sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
-  // Only build for rank >= 2 (matrices and higher order tensors)
-  if (rank < 2)
+  // Only build for rank >= 2 (matrices and higher order tensors) that require
+  // sparsity details
+  if (rank < 2 || !sparsity_pattern.full_sparsity)
     return;
 
   // Create vector to point to dofs
   std::vector<const std::vector<uint>* > dofs(rank);
-
-  std::vector<std::vector<uint> > _dofs(rank);
 
   // Build sparsity pattern for cell integrals
   if (cells)

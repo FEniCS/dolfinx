@@ -88,9 +88,10 @@ void GenericMatrix::compress()
   // Create new sparsity pattern
   boost::shared_ptr<GenericSparsityPattern>
     new_sparsity_pattern = factory().create_pattern();
+  dolfin_assert(new_sparsity_pattern);
 
-  // Check that we get a sparsity pattern (not available for all backends)
-  if (!new_sparsity_pattern)
+  // Check that we get a full sparsity pattern
+  if (!new_sparsity_pattern->full_sparsity)
   {
     warning("Current linear algebra backend does not supply a sparsity pattern, "
             "ignoring call to compress().");
@@ -125,7 +126,7 @@ void GenericMatrix::compress()
   std::vector<double> values;
   std::vector<double> allvalues; // Hold all values of local matrix
   std::vector<uint> allcolumns;  // Hold column id for all values of local matrix
-  std::vector<uint> offset(m+1); // Hold accumulated number of cols on local matrix
+  std::vector<uint> offset(m + 1); // Hold accumulated number of cols on local matrix
   offset[0] = 0;
   std::vector<uint> thisrow(1);
   std::vector<uint> thiscolumn;
@@ -154,7 +155,7 @@ void GenericMatrix::compress()
     }
 
     thisrow[0] = global_row;
-    offset[i+1] = offset[i] + count;
+    offset[i + 1] = offset[i] + count;
 
     // Build new compressed sparsity pattern
     new_sparsity_pattern->insert(dofs);

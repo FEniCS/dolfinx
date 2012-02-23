@@ -157,58 +157,21 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
   if (reset_sparsity)
   {
-    // Build sparsity pattern
     Timer t0("Build sparsity");
     boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
         = A.factory().create_pattern();
-
-    // Temp assert while code is re-structured
     dolfin_assert(sparsity_pattern);
-    if (sparsity_pattern)
-    {
-      // Build sparsity pattern
-      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
-                                    a.ufc_form()->num_cell_domains(),
-                                    a.ufc_form()->num_interior_facet_domains());
-    }
+
+    // Build sparsity pattern
+    SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
+                                  a.ufc_form()->num_cell_domains(),
+                                  a.ufc_form()->num_interior_facet_domains());
     t0.stop();
 
     // Initialize tensor
     Timer t1("Init tensor");
     A.init(*sparsity_pattern);
-    if (sparsity_pattern)
-      A.init(*sparsity_pattern);
-    else
-    {
-      dolfin_error("AssemblerTools.cpp",
-                   "initialise tensor",
-                   "Cannot have null sparsity pattern");
-
-      /*
-      // Build data structures for initialising light-weight sparsity pattern
-      std::vector<uint> global_dimensions(a.rank());
-      std::vector<std::pair<uint, uint> > local_range(a.rank());
-      std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
-      for (uint i = 0; i < a.rank(); i++)
-      {
-        dolfin_assert(dofmaps[i]);
-        global_dimensions[i] = dofmaps[i]->global_dimension();
-        local_range[i]       = dofmaps[i]->ownership_range();
-        off_process_owner[i] = &(dofmaps[i]->off_process_owner());
-      }
-
-      // Create and build light-weight sparsity pattern (parallel layout info only)
-      const SparsityPattern _sparsity_pattern(global_dimensions, primary_dim,
-                                              local_range, off_process_owner);
-      A.init(_sparsity_pattern);
-      A.zero();
-      */
-    }
     t1.stop();
-
-    // Delete sparsity pattern
-    Timer t2("Delete sparsity");
-    t2.stop();
   }
   else
   {

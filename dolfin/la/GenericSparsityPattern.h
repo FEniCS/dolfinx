@@ -45,7 +45,8 @@ namespace dolfin
     enum Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    GenericSparsityPattern(uint primary_dim) : _primary_dim(primary_dim) {}
+    GenericSparsityPattern(uint primary_dim, bool full_sparsity)
+      : _primary_dim(primary_dim), full_sparsity(full_sparsity) {}
 
     /// Destructor
     virtual ~GenericSparsityPattern() {};
@@ -97,11 +98,12 @@ namespace dolfin
     /// Finalize sparsity pattern
     virtual void apply() = 0;
 
-  protected:
-
-    // Return primary sparsity pattern storage dimension
+    // Primary sparsity pattern storage dimension
     // (e.g., 0=row partition, 1=column partition)
     const uint _primary_dim;
+
+    // Flag indicating full or reduced (size/parallel layout only) pattern
+    const bool full_sparsity;
 
   };
 
