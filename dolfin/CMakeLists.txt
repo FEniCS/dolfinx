@@ -247,7 +247,7 @@ install(TARGETS dolfin
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
-set(PKG_REQUIRES "ufc-1 libxml-2.0")
+set(PKG_REQUIRES "")
 
 # Convert include dirs to -I<incdir> form
 foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
