@@ -24,6 +24,7 @@
 #define __SPARSITY_PATTERN_H
 
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 #include <boost/unordered_map.hpp>
@@ -49,11 +50,11 @@ namespace dolfin
   public:
 
     /// Create empty sparsity pattern
-    SparsityPattern(uint primary_dim);
+    SparsityPattern(uint primary_dim, bool full_sparsity);
 
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<uint>& dims,
-                    uint primary_dim,
+                    uint primary_dim, bool full_sparsity,
                     const std::vector<std::pair<uint, uint> >& ownership_range,
                     const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
@@ -68,7 +69,7 @@ namespace dolfin
     /// Return rank
     uint rank() const;
 
-    /// Return global size for dimension i
+    /// Return global size for dimension i (size of tensor, includes non-zeroes)
     uint size(uint i) const;
 
     /// Return local range for dimension dim
@@ -107,8 +108,20 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
+    void check_full_sparsity(std::string operation) const;
+
+    // -- Data required by all sparsity patterns
+
+    // Flag indicating full or reduced (size/parallel layout only) pattern
+    const bool full_sparsity;
+
     // Shape of tensor
     std::vector<uint> shape;
+
+    // Ownership range for each dimension
+    std::vector<std::pair<uint, uint> > ownership_range;
+
+    // -- Data required by full sparsity patterns only
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
@@ -116,9 +129,6 @@ namespace dolfin
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<uint> non_local;
-
-    // Ownership range for each dimension
-    std::vector<std::pair<uint, uint> > ownership_range;
 
     // Map from non-local vertex to owning process index
     std::vector<boost::unordered_map<uint, uint> > off_process_owner;
