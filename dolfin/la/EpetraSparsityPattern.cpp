@@ -41,7 +41,7 @@ using dolfin::uint;
 
 //-----------------------------------------------------------------------------
 EpetraSparsityPattern::EpetraSparsityPattern(uint primary_dim)
-  : GenericSparsityPattern(primary_dim, true), _rank(0)
+  : GenericSparsityPattern(primary_dim), _rank(0)
 {
   if (primary_dim != 0)
   {

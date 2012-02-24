@@ -31,7 +31,7 @@ TensorLayout::TensorLayout(uint primary_dim, bool sparsity_pattern)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern)
-    _sparsity_pattern.reset(new SparsityPattern(primary_dim, true));
+    _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(const std::vector<uint>& dims, uint primary_dim,
@@ -39,22 +39,22 @@ TensorLayout::TensorLayout(const std::vector<uint>& dims, uint primary_dim,
   bool sparsity_pattern)
   : primary_dim(primary_dim), shape(dims), ownership_range(ownership_range)
 {
-  // Only rank 1 and 2 sparsity patterns are supported
-  dolfin_assert(dims.size() < 3);
+  // Only rank 2 sparsity patterns are supported
+  dolfin_assert(sparsity_pattern && dims.size() != 2);
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
 
   // Create empty sparsity pattern
   if (sparsity_pattern)
-    _sparsity_pattern.reset(new SparsityPattern(primary_dim, true));
+    _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
 void TensorLayout::init(const std::vector<uint>& dims,
   const std::vector<std::pair<uint, uint> >& ownership_range)
 {
-  // Only rank 1 and 2 sparsity patterns are supported
-  dolfin_assert(dims.size() < 3);
+  // Only rank 2 sparsity patterns are supported
+  dolfin_assert(_sparsity_pattern && dims.size() != 2);
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
@@ -89,7 +89,8 @@ std::string TensorLayout::str() const
   s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;
   for (uint i = 0; i < rank(); i++)
   {
-    s << " Local range for dim " << i << ": [" << ownership_range[i].first << ", " << ownership_range[i].second << ")" << std::endl;
+    s << " Local range for dim " << i << ": [" << ownership_range[i].first
+        << ", " << ownership_range[i].second << ")" << std::endl;
   }
   return s.str();
 }

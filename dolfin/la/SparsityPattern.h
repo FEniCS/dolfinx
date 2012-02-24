@@ -50,11 +50,11 @@ namespace dolfin
   public:
 
     /// Create empty sparsity pattern
-    SparsityPattern(uint primary_dim, bool full_sparsity);
+    SparsityPattern(uint primary_dim);
 
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<uint>& dims,
-                    uint primary_dim, bool full_sparsity,
+                    uint primary_dim,
                     const std::vector<std::pair<uint, uint> >& ownership_range,
                     const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
@@ -107,8 +107,6 @@ namespace dolfin
 
     // Print some useful information
     void info_statistics() const;
-
-    void check_full_sparsity(std::string operation) const;
 
     // -- Data required by all sparsity patterns
 
