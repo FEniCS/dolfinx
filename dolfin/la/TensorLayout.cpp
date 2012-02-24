@@ -40,13 +40,13 @@ TensorLayout::TensorLayout(const std::vector<uint>& dims, uint primary_dim,
   : primary_dim(primary_dim), shape(dims), ownership_range(ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(sparsity_pattern && dims.size() != 2);
+  dolfin_assert(!(sparsity_pattern && dims.size() != 2));
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
 
   // Create empty sparsity pattern
-  if (sparsity_pattern)
+  if (_sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ void TensorLayout::init(const std::vector<uint>& dims,
   const std::vector<std::pair<uint, uint> >& ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(_sparsity_pattern && dims.size() != 2);
+  dolfin_assert(!(_sparsity_pattern && dims.size() != 2));
 
   // Check that dimensions match
   dolfin_assert(dims.size() == ownership_range.size());
