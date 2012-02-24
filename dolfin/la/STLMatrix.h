@@ -32,7 +32,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-#include "GenericSparsityPattern.h"
+#include "TensorLayout.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
@@ -72,7 +72,7 @@ namespace dolfin
     { dolfin_not_implemented(); return false; }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern);
+    virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;

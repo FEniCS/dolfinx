@@ -23,9 +23,10 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include "GenericMatrix.h"
+#include "GenericSparsityPattern.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "SingularSolver.h"
 
 using namespace dolfin;
@@ -132,51 +133,59 @@ void SingularSolver::init(const GenericMatrix& A)
     local_range[i] = MPI::local_range(dims[i]);
     off_process_owner[i] = &empty_off_process_owner;
   }
-  SparsityPattern s(dims, 0, true, local_range, off_process_owner);
+  boost::shared_ptr<TensorLayout> layout = A.factory().create_layout(2);
+  layout->init(dims, local_range);
 
-  // Copy sparsity pattern for A and last column
-  std::vector<uint> columns;
-  std::vector<double> dummy;
-  std::vector<const std::vector<uint>* > _rows(2);
-  std::vector<std::vector<uint> > rows(2);
-  rows[0].resize(1);
-  for (uint i = 0; i < N; i++)
+  // Build sparsity pattern, if required
+  if (layout->sparsity_pattern())
   {
-    // FIXME: Add function to get row sparsity pattern
-    // Get row
-    A.getrow(i, columns, dummy);
+    GenericSparsityPattern& s = *layout->sparsity_pattern();
+    s.init(dims, local_range, off_process_owner);
 
-    // Copy columns to vector
-    const uint num_cols = columns.size() + 1;
+    // Copy sparsity pattern for A and last column
+    std::vector<uint> columns;
+    std::vector<double> dummy;
+    std::vector<const std::vector<uint>* > _rows(2);
+    std::vector<std::vector<uint> > rows(2);
+    rows[0].resize(1);
+    for (uint i = 0; i < N; i++)
+    {
+      // FIXME: Add function to get row sparsity pattern
+      // Get row
+      A.getrow(i, columns, dummy);
+
+      // Copy columns to vector
+      const uint num_cols = columns.size() + 1;
+      rows[1].resize(num_cols);
+      std::copy(columns.begin(), columns.end(), rows[1].begin());
+
+      // Add last entry
+      rows[1][num_cols - 1] = N;
+
+      // Set row index
+      rows[0][0] = i;
+
+      // Insert into sparsity pattern
+      _rows[0] = &rows[0];
+      _rows[1] = &rows[1];
+      s.insert(_rows);
+    }
+
+    // Add last row
+    const uint num_cols = N;
     rows[1].resize(num_cols);
     std::copy(columns.begin(), columns.end(), rows[1].begin());
-
-    // Add last entry
-    rows[1][num_cols - 1] = N;
-
-    // Set row index
-    rows[0][0] = i;
-
-    // Insert into sparsity pattern
+    rows[0][0] = N;
     _rows[0] = &rows[0];
     _rows[1] = &rows[1];
     s.insert(_rows);
   }
 
-  // Add last row
-  const uint num_cols = N;
-  rows[1].resize(num_cols);
-  std::copy(columns.begin(), columns.end(), rows[1].begin());
-  rows[0][0] = N;
-  _rows[0] = &rows[0];
-  _rows[1] = &rows[1];
-  s.insert(_rows);
-
   // Create matrix and vector
   B = A.factory().create_matrix();
   y = A.factory().create_vector();
   c = A.factory().create_vector();
-  B->init(s);
+  B->init(*layout);
   y->resize(N + 1);
   c->resize(N + 1);
 

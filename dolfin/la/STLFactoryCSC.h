@@ -23,9 +23,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
-#include "SparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 #include "STLMatrix.h"
+#include "TensorLayout.h"
 #include "Vector.h"
 #include "STLFactory.h"
 
@@ -39,10 +39,10 @@ namespace dolfin
     /// Destructor
     virtual ~STLFactoryCSC() {}
 
-    /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
+    /// Create empty tensor layout
+    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(1, false));
+      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(1, false));
       return pattern;
     }
 

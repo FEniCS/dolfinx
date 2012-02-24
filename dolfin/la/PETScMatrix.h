@@ -39,6 +39,7 @@ namespace dolfin
 {
 
   class PETScVector;
+  class TensorLayout;
 
   /// This class provides a simple matrix class based on PETSc.
   /// It is a wrapper for a PETSc matrix pointer (Mat)
@@ -70,7 +71,7 @@ namespace dolfin
     bool distributed() const;
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern);
+    virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     uint size(uint dim) const { return PETScBaseMatrix::size(dim); }

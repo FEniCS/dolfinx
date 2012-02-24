@@ -33,6 +33,7 @@
 
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "ublas.h"
 #include "uBLASFactory.h"
 #include "uBLASVector.h"
@@ -85,8 +86,8 @@ namespace dolfin
     virtual bool distributed() const
     { return false; }
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern);
+    /// Initialize zero tensor using tenor layout
+    virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;
@@ -549,22 +550,23 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <>
-  inline void uBLASMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
+  inline void uBLASMatrix<ublas_sparse_matrix>::init(const TensorLayout& tensor_layout)
   {
-    resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    resize(tensor_layout.size(0), tensor_layout.size(1));
     A.clear();
 
-    // Reserve space for non-zeroes
-    A.reserve(sparsity_pattern.num_nonzeros());
-
-    // Get underlying pattern
-    const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
+    // Get sparsity pattern
+    dolfin_assert(tensor_layout.sparsity_pattern());
+    const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(tensor_layout.sparsity_pattern().get());
     if (!pattern_pointer)
     {
       dolfin_error("uBLASMatrix.h",
                    "initialize uBLAS matrix",
                    "Cannot convert GenericSparsityPattern to concrete SparsityPattern type");
     }
+
+    // Reserve space for non-zeroes and get non-zero pattern
+    A.reserve(pattern_pointer->num_nonzeros());
     const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
     // Add entries
@@ -576,9 +578,9 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  inline void uBLASMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
+  inline void uBLASMatrix<Mat>::init(const TensorLayout& tensor_layout)
   {
-    resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    resize(tensor_layout.size(0), tensor_layout.size(1));
     A.clear();
   }
   //---------------------------------------------------------------------------
@@ -596,7 +598,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+  inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A,
+                                     bool same_nonzero_pattern)
   {
     // Check for same size
     if (size(0) != A.size(0) or size(1) != A.size(1))

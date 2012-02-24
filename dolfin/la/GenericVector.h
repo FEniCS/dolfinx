@@ -32,7 +32,7 @@
 #include <vector>
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
-#include "GenericSparsityPattern.h"
+#include "TensorLayout.h"
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -55,8 +55,8 @@ namespace dolfin
     { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { resize(sparsity_pattern.local_range(0)); zero(); }
+    virtual void init(const TensorLayout& tensor_layout)
+    { resize(tensor_layout.local_range(0)); zero(); }
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const

@@ -34,8 +34,8 @@ namespace dolfin
   class GenericLinearSolver;
   class GenericLUSolver;
   class GenericMatrix;
-  class GenericSparsityPattern;
   class GenericVector;
+  class TensorLayout;
 
   class LinearAlgebraFactory
   {
@@ -56,9 +56,8 @@ namespace dolfin
     /// Create empty vector (local)
     virtual boost::shared_ptr<GenericVector> create_local_vector() const = 0;
 
-    /// Create empty sparsity pattern (returning zero if not used/needed)
-    virtual boost::shared_ptr<GenericSparsityPattern>
-      create_pattern() const = 0;
+    /// Create empty tensor layout
+    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
 
     /// Create LU solver
     virtual boost::shared_ptr<GenericLUSolver>

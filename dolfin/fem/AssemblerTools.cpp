@@ -40,6 +40,8 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerTools.h"
 
+#include <dolfin/la/TensorLayout.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -158,19 +160,40 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   if (reset_sparsity)
   {
     Timer t0("Build sparsity");
-    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-        = A.factory().create_pattern();
-    dolfin_assert(sparsity_pattern);
+    //boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
+    //    = A.factory().create_pattern();
+    //dolfin_assert(sparsity_pattern);
 
-    // Build sparsity pattern
-    SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
-                                  a.ufc_form()->num_cell_domains(),
-                                  a.ufc_form()->num_interior_facet_domains());
+    cout << "Create layout" << endl;
+    // Create layout for intialising tensor
+    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
+    dolfin_assert(tensor_layout);
+    cout << "End Create layout" << endl;
+
+    std::vector<uint> global_dimensions(a.rank());
+    std::vector<std::pair<uint, uint> > local_range(a.rank());
+    for (uint i = 0; i < a.rank(); i++)
+    {
+      dolfin_assert(dofmaps[i]);
+      global_dimensions[i] = dofmaps[i]->global_dimension();
+      local_range[i]       = dofmaps[i]->ownership_range();
+    }
+    tensor_layout->init(global_dimensions, local_range);
+
+    // Build sparsity pattern if required
+    if (tensor_layout->sparsity_pattern())
+    {
+      cout << "Build sparsity pattern" << endl;
+      SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
+                                    a.mesh(), dofmaps,
+                                    a.ufc_form()->num_cell_domains(),
+                                    a.ufc_form()->num_interior_facet_domains());
+    }
     t0.stop();
 
     // Initialize tensor
     Timer t1("Init tensor");
-    A.init(*sparsity_pattern);
+    A.init(*tensor_layout);
     t1.stop();
   }
   else

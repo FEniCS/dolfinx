@@ -70,9 +70,12 @@ boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> EpetraFactory::create_pattern() const
+boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(uint rank) const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0, true));
+  bool sparsity = false;
+  if (rank > 1)
+    sparsity = true;
+  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------
