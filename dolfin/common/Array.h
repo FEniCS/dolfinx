@@ -153,14 +153,14 @@ namespace dolfin
     { return _x; }
 
   private:
-    /// True if instance is owner of data
-    bool _owner;
-
     /// Length of array
     uint _size;
 
     /// Array data
     T* _x;
+
+    /// True if instance is owner of data
+    bool _owner;
   };
 
   template <typename T>
