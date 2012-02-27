@@ -76,7 +76,7 @@ public:
       reset_sparsity(_reset_sparsity),
       add_values(_add_values),
       finalize_tensor(_finalize_tensor),
-      ufc(_a), ufc_asymm(_a), mesh(_a.mesh())
+      mesh(_a.mesh()), ufc(_a), ufc_asymm(_a)
   {
   }
 
@@ -512,7 +512,6 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
   // Get local dimensions
   const uint num_local_rows = dofs[0]->size();
   const uint num_local_cols = dofs[1]->size();
-  const uint num_entries = num_local_rows*num_local_cols;
 
   // Return value, true if columns have been moved to _asymm
   bool columns_moved = false;
