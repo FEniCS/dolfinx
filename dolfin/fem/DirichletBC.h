@@ -94,8 +94,6 @@ namespace dolfin
   /// three possibilties are "topological", "geometric" and
   /// "pointwise".
 
-  /// This class specifies the interface for setting (strong)
-
   class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
   {
 
@@ -290,6 +288,18 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
 
+    /// Gather off-process facets, necessary to ensure that all
+    /// local boundary vertices are returned by get_boundary_values().
+    /// This method is not needed (and does nothing) if the pointwise
+    /// method is used, nor is it needed for the correct operation of
+    /// apply(), zero() or other global methods.
+    ///
+    /// *Arguments*
+    ///     method (std::string)
+    ///         Optional argument: A string specifying which
+    ///         method to use.
+    void gather(std::string method="default");
+
     /// Get Dirichlet dofs and values
     ///
     /// *Arguments*
@@ -401,15 +411,18 @@ namespace dolfin
     // Check input data to constructor
     void check() const;
 
+    // Initialize facets (from sub domain, mesh, etc)
+    void init_facets() const;
+
     // Initialize sub domain markers from sub domain
-    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain);
+    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
 
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<uint>& sub_domains,
-                                 uint sub_domain);
+                                 uint sub_domain) const;
 
     // Initialize sub domain markers from mesh
-    void init_from_mesh(uint sub_domain);
+    void init_from_mesh(uint sub_domain) const;
 
     // Compute dofs and values for application of boundary conditions using
     // given method
@@ -444,8 +457,13 @@ namespace dolfin
     boost::shared_ptr<const SubDomain> _user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
-    std::vector<std::pair<uint, uint> > facets;
+    mutable std::vector<std::pair<uint, uint> > facets;
 
+    // User defined mesh function
+    boost::shared_ptr<const MeshFunction<uint> > _user_mesh_function;
+
+    // User defined sub domain marker for mesh or mesh function
+    uint _user_sub_domain_marker;
   };
 
 }
