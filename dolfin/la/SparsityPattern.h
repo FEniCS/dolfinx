@@ -45,12 +45,17 @@ namespace dolfin
 
     // Set type used for the rows of the sparsity pattern
     typedef dolfin::Set<uint> set_type;
-    //typedef boost::unordered_set<dolfin::uint> set_type;
 
   public:
 
     /// Create empty sparsity pattern
     SparsityPattern(uint primary_dim);
+
+    /// Create sparsity pattern for a generic tensor
+    SparsityPattern(const std::vector<uint>& dims,
+                    uint primary_dim,
+                    const std::vector<std::pair<uint, uint> >& ownership_range,
+                    const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<uint>& dims,
@@ -62,6 +67,9 @@ namespace dolfin
 
     /// Return rank
     uint rank() const;
+
+    /// Return global size for dimension i (size of tensor, includes non-zeroes)
+    uint size(uint i) const;
 
     /// Return local range for dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
@@ -99,11 +107,15 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
-    // Flag to indicate if sparsity pattern is distributed
-    bool distributed;
+    // -- Data required by all sparsity patterns
+
+    // Shape of tensor
+    std::vector<uint> shape;
 
     // Ownership range for each dimension
-    std::vector<std::pair<uint, uint> > _local_range;
+    std::vector<std::pair<uint, uint> > ownership_range;
+
+    // -- Data required by full sparsity patterns only
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
@@ -112,7 +124,7 @@ namespace dolfin
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<uint> non_local;
 
-    // Map from non-local graph vertex to owning process index
+    // Map from non-local vertex to owning process index
     std::vector<boost::unordered_map<uint, uint> > off_process_owner;
 
   };
