@@ -55,7 +55,11 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   non_local.clear();
   this->off_process_owner.clear();
 
+  // Store local ownership range
+  _local_range = local_range;
+
   // Check if sparsity pattern is distributed
+  dolfin_assert(_primary_dim < local_range.size());
   dolfin_assert(local_range[_primary_dim].second > local_range[_primary_dim].first);
   const uint range0 = _local_range[_primary_dim].first;
   const uint range1 = _local_range[_primary_dim].second;
@@ -63,9 +67,6 @@ void SparsityPattern::init(const std::vector<uint>& dims,
     distributed = false;
   else
     distributed = true;
-
-  // Store local ownership range
-  _local_range = local_range;
 
   // Store copy of nonlocal index to owning process map
   this->off_process_owner.reserve(off_process_owner.size());
