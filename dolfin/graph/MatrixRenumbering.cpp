@@ -27,23 +27,31 @@
 
 #include "dolfin/log/log.h"
 #include "dolfin/common/MPI.h"
-#include "dolfin/la/SparsityPattern.h"
+#include "dolfin/la/GenericSparsityPattern.h"
+#include "dolfin/la/TensorLayout.h"
 #include "MatrixRenumbering.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MatrixRenumbering::MatrixRenumbering(const SparsityPattern& sparsity_pattern)
-      : sparsity_pattern(sparsity_pattern)
+MatrixRenumbering::MatrixRenumbering(const TensorLayout& tensor_layout)
+      : tensor_layout(tensor_layout)
 {
-  if (sparsity_pattern.rank() != 2)
+  if (tensor_layout.rank() != 2)
   {
     dolfin_error("MatrixRenumbering.cpp",
                  "create matrix renumbering",
                  "Zoltan object for sparsity pattern renumbering can only be used for rank 2 tensors");
   }
 
-  if (sparsity_pattern.size(0) != sparsity_pattern.size(1))
+  if (!tensor_layout.sparsity_pattern())
+  {
+    dolfin_error("MatrixRenumbering.cpp",
+                 "create matrix renumbering",
+                 "TensorLayout object must a have sparsity pattern");
+  }
+
+  if (tensor_layout.size(0) != tensor_layout.size(1))
   {
     dolfin_error("MatrixRenumbering.cpp",
                  "create matrix renumbering",
@@ -103,22 +111,24 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
 //-----------------------------------------------------------------------------
 int MatrixRenumbering::num_global_objects() const
 {
-  return sparsity_pattern.size(0);
+  return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
 int MatrixRenumbering::num_local_objects() const
 {
-  return sparsity_pattern.size(0);
+  return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
 void MatrixRenumbering::num_edges_per_vertex(std::vector<uint>& num_edges) const
 {
-  sparsity_pattern.num_nonzeros_diagonal(num_edges);
+  dolfin_assert(tensor_layout.sparsity_pattern());
+  tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<dolfin::uint> > MatrixRenumbering::edges() const
 {
-  return sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
+  dolfin_assert(tensor_layout.sparsity_pattern());
+  return tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

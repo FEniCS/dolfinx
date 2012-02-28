@@ -22,10 +22,11 @@
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
-#include "GenericMatrix.h"
-#include "GenericSparsityPattern.h"
 #include <dolfin/common/Timer.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include "GenericSparsityPattern.h"
+#include "LinearAlgebraFactory.h"
+#include "TensorLayout.h"
+#include "GenericMatrix.h"
 
 using namespace dolfin;
 
@@ -85,17 +86,21 @@ void GenericMatrix::compress()
 {
   Timer timer("Compress matrix");
 
-  // Create new sparsity pattern
-  boost::shared_ptr<GenericSparsityPattern>
-    new_sparsity_pattern = factory().create_pattern(0);
+  // Create new layout
+  boost::shared_ptr<TensorLayout>
+    new_layout = factory().create_layout(2);
+  dolfin_assert(new_layout);
 
-  // Check that we get a sparsity pattern (not available for all backends)
-  if (!new_sparsity_pattern)
+  // Check that we get a full sparsity pattern
+  if (!new_layout->sparsity_pattern())
   {
-    warning("Current linear algebra backend does not supply a sparsity pattern, "
+    warning("Linear algebra backend does not supply a sparsity pattern, "
             "ignoring call to compress().");
     return;
   }
+
+  // Access sparsity pattern
+  GenericSparsityPattern& new_sparsity_pattern = *(new_layout->sparsity_pattern());
 
   dolfin_debug("check");
 
@@ -103,10 +108,10 @@ void GenericMatrix::compress()
   std::vector<uint> global_dimensions(2);
   global_dimensions[0] = size(0);
   global_dimensions[1] = size(1);
-  std::vector<std::pair<uint, uint> > loc_range(2);
-  loc_range[0] = local_range(0);
-  loc_range[1].first = 0;  // Column range not provided by all backends
-  loc_range[1].second = size(1);
+  std::vector<std::pair<uint, uint> > local_range(2);
+  local_range[0] = this->local_range(0);
+  local_range[1].first = 0;  // Column range not provided by all backends
+  local_range[1].second = size(1);
 
   // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner
@@ -114,18 +119,21 @@ void GenericMatrix::compress()
   const boost::unordered_map<uint, uint> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
-  const std::pair<uint, uint> row_range = loc_range[0];
+  const std::pair<uint, uint> row_range = local_range[0];
   const uint m = row_range.second - row_range.first;
 
+  // Initialize layout
+  new_layout->init(global_dimensions, local_range);
+
   // Initialize sparsity pattern
-  new_sparsity_pattern->init(global_dimensions, loc_range, off_process_owner);
+  new_sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
   // Declare some variables used to extract matrix information
   std::vector<uint> columns;
   std::vector<double> values;
   std::vector<double> allvalues; // Hold all values of local matrix
   std::vector<uint> allcolumns;  // Hold column id for all values of local matrix
-  std::vector<uint> offset(m+1); // Hold accumulated number of cols on local matrix
+  std::vector<uint> offset(m + 1); // Hold accumulated number of cols on local matrix
   offset[0] = 0;
   std::vector<uint> thisrow(1);
   std::vector<uint> thiscolumn;
@@ -154,24 +162,24 @@ void GenericMatrix::compress()
     }
 
     thisrow[0] = global_row;
-    offset[i+1] = offset[i] + count;
+    offset[i + 1] = offset[i] + count;
 
     // Build new compressed sparsity pattern
-    new_sparsity_pattern->insert(dofs);
+    new_sparsity_pattern.insert(dofs);
   }
 
   // Finalize sparsity pattern
-  new_sparsity_pattern->apply();
+  new_sparsity_pattern.apply();
 
-  // Recreate matrix with the new sparsity pattern
-  init(*new_sparsity_pattern);
+  // Recreate matrix with the new layout
+  init(*new_layout);
 
   // Put the old values back in the newly compressed matrix
   for (uint i = 0; i < m; i++)
   {
     const uint global_row = i + row_range.first;
     set(&allvalues[offset[i]], 1, &global_row,
-        offset[i+1]-offset[i], &allcolumns[offset[i]]);
+        offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }
 
   apply("insert");

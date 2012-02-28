@@ -1,3 +1,7 @@
+ - Major speed-up of mesh topology computation
+ - Add simple 2D and 3D mesh generation (via CGAL)
+ - Add creation of mesh from triangulations of points (via CGAL)
+ - Split the SWIG interface into six combined modules instead of one
  - Add has_foo to easy check what solver and precondictioners are available
  - Add convinient functions for listing available linear_algebra_backends
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp

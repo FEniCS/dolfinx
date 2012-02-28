@@ -40,6 +40,8 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerTools.h"
 
+#include <dolfin/la/TensorLayout.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -138,7 +140,6 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
-                                        uint primary_dim,
                                         bool reset_sparsity, bool add_values)
 {
   dolfin_assert(a.ufc_form());
@@ -158,15 +159,33 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
   if (reset_sparsity)
   {
-    // Build sparsity pattern
     Timer t0("Build sparsity");
-    boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-        = A.factory().create_pattern(primary_dim);
-    if (sparsity_pattern)
-    {
+    //boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
+    //    = A.factory().create_pattern();
+    //dolfin_assert(sparsity_pattern);
 
-      // Build sparsity pattern
-      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dofmaps,
+    cout << "Create layout" << endl;
+    // Create layout for intialising tensor
+    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
+    dolfin_assert(tensor_layout);
+    cout << "End Create layout" << endl;
+
+    std::vector<uint> global_dimensions(a.rank());
+    std::vector<std::pair<uint, uint> > local_range(a.rank());
+    for (uint i = 0; i < a.rank(); i++)
+    {
+      dolfin_assert(dofmaps[i]);
+      global_dimensions[i] = dofmaps[i]->global_dimension();
+      local_range[i]       = dofmaps[i]->ownership_range();
+    }
+    tensor_layout->init(global_dimensions, local_range);
+
+    // Build sparsity pattern if required
+    if (tensor_layout->sparsity_pattern())
+    {
+      cout << "Build sparsity pattern" << endl;
+      SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
+                                    a.mesh(), dofmaps,
                                     a.ufc_form()->num_cell_domains(),
                                     a.ufc_form()->num_interior_facet_domains());
     }
@@ -174,33 +193,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
     // Initialize tensor
     Timer t1("Init tensor");
-    if (sparsity_pattern)
-      A.init(*sparsity_pattern);
-    else
-    {
-      // Build data structure for intialising sparsity pattern
-      std::vector<uint> global_dimensions(a.rank());
-      std::vector<std::pair<uint, uint> > local_range(a.rank());
-      std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
-      for (uint i = 0; i < a.rank(); i++)
-      {
-        dolfin_assert(dofmaps[i]);
-        global_dimensions[i] = dofmaps[i]->global_dimension();
-        local_range[i]       = dofmaps[i]->ownership_range();
-        off_process_owner[i] = &(dofmaps[i]->off_process_owner());
-      }
-
-      // Create and build sparsity pattern
-      const SparsityPattern _sparsity_pattern(global_dimensions, primary_dim,
-                                              local_range, off_process_owner);
-      A.init(_sparsity_pattern);
-      A.zero();
-    }
+    A.init(*tensor_layout);
     t1.stop();
-
-    // Delete sparsity pattern
-    Timer t2("Delete sparsity");
-    t2.stop();
   }
   else
   {

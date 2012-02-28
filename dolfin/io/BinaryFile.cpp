@@ -95,14 +95,14 @@ void BinaryFile::operator>> (Mesh& mesh)
     {
       t.connectivity[i][j] = new MeshConnectivity(i, j);
       MeshConnectivity& c = *t.connectivity[i][j];
-      c._size = read_uint();
-      if (c._size > 0)
+      const uint size = read_uint();
+      if (size > 0)
       {
-        c.num_entities = read_uint();
-        c.connections = new uint[c._size];
-        read_array(c._size, c.connections);
-        c.offsets = new uint[c.num_entities + 1];
-        read_array(c.num_entities + 1, c.offsets);
+        const uint num_entities = read_uint();
+        c.connections = std::vector<uint>(size);
+        read_array(size, &(c.connections)[0]);
+        c.offsets.resize(num_entities + 1);
+        read_array(c.offsets.size(), &(c.offsets[0]));
       }
     }
   }
@@ -165,12 +165,15 @@ void BinaryFile::operator<< (const Mesh& mesh)
   if (_store_connectivity)
     write_array(D + 1, t.num_entities);
   else
+  {
     for (uint i = 0; i <= D; i++)
+    {
       if (i==0 || i == D)
-	write_uint(t.size(i));
+        write_uint(t.size(i));
       else
-	write_uint(0);
-
+        write_uint(0);
+    }
+  }
   for (uint i = 0; i <= D; i++)
   {
     for (uint j = 0; j <= D; j++)
@@ -180,16 +183,16 @@ void BinaryFile::operator<< (const Mesh& mesh)
       // If store all connectivity or if storing cell connectivity
       if (_store_connectivity || (i == D && j == 0))
       {
-	write_uint(c._size);
-     	if (c._size > 0)
-	{
-	  write_uint(c.num_entities);
-	  write_array(c._size, c.connections);
-	  write_array(c.num_entities + 1, c.offsets);
-	}
+        write_uint(c.size());
+        if (c.size() > 0)
+        {
+          write_uint(c.offsets.size() - 1);
+          write_array(c.size(), &(c.connections)[0]);
+          write_array(c.offsets.size(), &(c.offsets[0]));
+        }
       }
       else
-	write_uint(0);
+        write_uint(0);
     }
   }
 

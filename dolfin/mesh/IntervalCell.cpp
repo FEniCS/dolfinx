@@ -79,7 +79,8 @@ dolfin::uint IntervalCell::orientation(const Cell& cell) const
   return (n.dot(v01) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(uint** e, uint dim, const uint* v) const
+void IntervalCell::create_entities(std::vector<std::vector<uint> >& e,
+                                   uint dim, const uint* v) const
 {
   // We don't need to create any entities
   dolfin_error("IntervalCell.cpp",

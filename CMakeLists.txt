@@ -587,6 +587,7 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
         PATTERN "*.h"
         PATTERN "*.py"
         PATTERN "*.xml*"
+        PATTERN "*.off"
         PATTERN "CMakeFiles" EXCLUDE)
 
 # Install meshes (data directory)
@@ -646,6 +647,7 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.cpp"
     PATTERN "*.ufl"
     PATTERN "*.xml*"
+    PATTERN "*.off"
     PATTERN "*.inp"
     PATTERN "*.msh"
     PATTERN "*.supp"

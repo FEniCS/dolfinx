@@ -42,12 +42,14 @@
 #include <EpetraExt_MatrixMatrix.h>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
+#include "TensorLayout.h"
 #include "EpetraMatrix.h"
 
 using namespace dolfin;
@@ -62,6 +64,12 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
     this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
+}
+//-----------------------------------------------------------------------------
+EpetraMatrix::EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A)
+  : A(reference_to_no_delete_pointer(*A.get())), ref_keeper(A)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
@@ -86,7 +94,7 @@ bool EpetraMatrix::distributed() const
   return A->Graph().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
+void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
   if (A && !A.unique())
   {
@@ -96,30 +104,31 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
 
   // Get local range
-  const std::pair<uint, uint> range = sparsity_pattern.local_range(0);
+  const std::pair<uint, uint> range = tensor_layout.local_range(0);
   const uint num_local_rows = range.second - range.first;
   const uint n0 = range.first;
 
-  const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
+  dolfin_assert(tensor_layout.sparsity_pattern());
+  const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(*tensor_layout.sparsity_pattern());
   const std::vector<std::vector<dolfin::uint> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
   const std::vector<std::vector<dolfin::uint> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
 
   // Get number of non-zeroes per row
   std::vector<uint> num_nonzeros;
-  sparsity_pattern.num_local_nonzeros(num_nonzeros);
+  _pattern.num_local_nonzeros(num_nonzeros);
 
   // Create row map
   EpetraFactory& f = EpetraFactory::instance();
   Epetra_MpiComm comm = f.get_mpi_comm();
-  Epetra_Map row_map(sparsity_pattern.size(0), num_local_rows, 0, comm);
+  Epetra_Map row_map(tensor_layout.size(0), num_local_rows, 0, comm);
 
   // For rectangular matrices with more columns than rows, the columns which are
   // larger than those in row_map are marked as nonlocal (and assembly fails).
   // The domain_map fixes that problem, at least in the serial case.
   // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
-  const std::pair<uint, uint> colrange = sparsity_pattern.local_range(1);
+  const std::pair<uint, uint> colrange = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
-  Epetra_Map domain_map(sparsity_pattern.size(1), num_local_cols, 0, comm);
+  Epetra_Map domain_map(tensor_layout.size(1), num_local_cols, 0, comm);
 
   // Create Epetra_FECrsGraph
   Epetra_CrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0]));

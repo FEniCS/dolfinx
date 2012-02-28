@@ -35,7 +35,7 @@
 namespace dolfin
 {
 
-  class GenericSparsityPattern;
+  class TensorLayout;
   class LinearAlgebraFactory;
 
   /// This class defines a common interface for arbitrary rank tensors.
@@ -52,8 +52,8 @@ namespace dolfin
     /// Return true if tensor is distributed
     virtual bool distributed() const = 0;
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
+    /// Initialize zero tensor using tensor layout
+    virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const = 0;

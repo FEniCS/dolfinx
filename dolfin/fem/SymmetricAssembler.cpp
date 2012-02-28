@@ -210,8 +210,8 @@ void SymmetricAssembler::PImpl::assemble()
     coefficients[i]->gather();
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(A_asymm, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A_asymm, a, reset_sparsity, add_values);
 
   // Get dofs that are local to this processor
   processor_dof_range = A.local_range(0);

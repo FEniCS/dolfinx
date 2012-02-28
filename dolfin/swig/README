@@ -1,0 +1,47 @@
+
+Automatic regeneration of SWIG interface
+========================================
+
+The SWIG interface of DOLFIN is partly generated automatically.
+
+  * Run generateswigcode.py to regenerate the SWIG interface
+
+The SWIG interface should be regenerated whenever new header files are
+included in DOLFIN or new documentation is added in a header file.
+
+generateswigcode.py, is not run, yet, by the build system so all
+generated files need to be committed to the bazaar repository.
+
+  * Commit changed or added files to launchpad whenever
+    generateswigcode.py has been run.
+
+Modularized interface
+=====================
+
+Submodules
+----------
+
+The SWIG interface is divided into several submodules, each corresponding
+to the directory structure of DOLFIN. SWIG specialization files resides
+in a subdirectory with the same name as the submodule. Most common are
+pre.i and post.i files, which are include before and after the header
+files of the corresponding module.
+
+  * When ever a dolfin/foo subdirectory is added to DOLFIN a
+    corresponding dolfin/swig/foo subdirectory need to be added
+
+Combined modules
+----------------
+
+A combined module consist of the interface of one or several modules,
+mention above. What modules are included in a combined modules is defined
+in generateswigcode.py. All interface files declaring these files are
+automatically generated when generateswigcode.py is run.
+
+  * If a combined module is added/removed, the corresponding
+    subdirectory needs to be added/removed too, and it should
+    added/removed in generateswigcode.py.
+
+  * If a combined module is added a CMakeList.txt need to be added to
+    that directory. These are all module independent so just copy one
+    from another directory.

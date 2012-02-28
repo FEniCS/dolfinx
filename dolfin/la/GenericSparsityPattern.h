@@ -45,14 +45,14 @@ namespace dolfin
     enum Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    GenericSparsityPattern() {}
+    GenericSparsityPattern(uint primary_dim) : _primary_dim(primary_dim) {}
 
     /// Destructor
     virtual ~GenericSparsityPattern() {};
 
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(const std::vector<uint>& dims,
-                      const std::vector<std::pair<uint, uint> >& ownership_range,
+                      const std::vector<std::pair<uint, uint> >& local_range,
                       const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner) = 0;
 
     /// Insert non-zero entries
@@ -61,11 +61,9 @@ namespace dolfin
     /// Return rank
     virtual uint rank() const = 0;
 
-    /// Return primary dimension (e.g., 0=row parition, 1=column partition)
-    virtual uint primary_dim() const = 0;
-
-    /// Return global size for dimension i
-    virtual uint size(uint i) const = 0;
+    /// Return primary dimension (e.g., 0=row partition, 1=column partition)
+    uint primary_dim() const
+    { return _primary_dim; }
 
     /// Return local range for dimension dim
     virtual std::pair<uint, uint> local_range(uint dim) const = 0;
@@ -95,6 +93,10 @@ namespace dolfin
 
     /// Finalize sparsity pattern
     virtual void apply() = 0;
+
+    // Primary sparsity pattern storage dimension
+    // (e.g., 0=row partition, 1=column partition)
+    const uint _primary_dim;
 
   };
 

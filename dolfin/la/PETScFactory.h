@@ -27,11 +27,12 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "PETScKrylovSolver.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -53,8 +54,8 @@ namespace dolfin
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const;
 
-    /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const;
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;

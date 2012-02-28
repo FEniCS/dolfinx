@@ -74,7 +74,8 @@ dolfin::uint PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(uint** e, uint dim, const uint* v) const
+void PointCell::create_entities(std::vector<std::vector<uint> >& e, uint dim,
+                                const uint* v) const
 {
   dolfin_error("PointCell.cpp",
                "create entities",

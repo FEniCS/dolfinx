@@ -20,13 +20,13 @@
 //
 // First added:  2010-04-01
 // Last changed: 2010-04-09
-// 
-//Author:  Andre Massing (am), massing@simula.no
-//Company:  Simula Research Laboratory, Fornebu, Norway
 //
-//Description: Unittest for BaryCenterQuadrature. =====================================================================================
+// Author:  Andre Massing (am), massing@simula.no
+// Company:  Simula Research Laboratory, Fornebu, Norway
+//
+// Description: Unittest for BaryCenterQuadrature.
 
-#include<vector>
+#include <vector>
 #include <iostream>
 
 #include <dolfin.h>
@@ -36,7 +36,6 @@
 
 #include <CGAL/Nef_polyhedron_3.h>
 #include <CGAL/Polyhedron_3.h>
-
 
 using namespace dolfin;
 
@@ -75,23 +74,21 @@ class BaryCenter : public CppUnit::TestFixture
 
   //Helper function to create reference polyhedrons.
   void add_test_polyhedron(const Point_3 & p1,
-			   const Point_3 & p2, 
-			   const Point_3 & p3, 
-			   const Point_3 & p4,
-			   PolyhedronList & polyhedrons
-			  )
+                           const Point_3 & p2,
+                           const Point_3 & p3,
+                           const Point_3 & p4,
+                           PolyhedronList & polyhedrons)
   {
     Polyhedron_3 P;
-    P.make_tetrahedron(p1,p2,p3,p4);
+    P.make_tetrahedron(p1, p2, p3, p4);
     Nef_polyhedron_3 N(P);
     polyhedrons.push_back(N);
   }
 
-  void add_test_polyhedron(const Point_3 & p1,
-			   const Point_3 & p2, 
-			   const Point_3 & p3, 
-			   PolyhedronList & polyhedrons
-			  )
+  void add_test_polyhedron(const Point_3& p1,
+                           const Point_3& p2,
+                           const Point_3& p3,
+                           PolyhedronList& polyhedrons)
   {
     Polyhedron_3 P;
     P.make_triangle(p1,p2,p3);
@@ -102,10 +99,10 @@ class BaryCenter : public CppUnit::TestFixture
   //Helper function to union disjoint polyhedrons and to compute the volume and barycenter.
   //Indices indicate which polyhedrons should be unioned. No checks at all (index, disjointness etc)
   //Computed polyhedrons, volumes and barycenters will be append to the given list.
-  void add_disjoint_polyhedrons(const IntList indices, 
-				PolyhedronList & polyhedrons, 
-				DoubleList & volumes,
-				PointList & points)
+  void add_disjoint_polyhedrons(const IntList indices,
+                                PolyhedronList & polyhedrons,
+                                DoubleList & volumes,
+                                PointList & points)
   {
     double volume = 0;
     Point point(0,0,0);
@@ -180,48 +177,48 @@ class BaryCenter : public CppUnit::TestFixture
     add_indices.push_back(0);
 
     add_indices.push_back(1);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(2);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(3);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(4);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(5);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(6);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(7);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
-    //Add translated version 
+    //Add translated version
     //Upper halfspace
     Nef_polyhedron_3 polyhedron = reference_polyhedrons[0];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(1, 1, 1)));
@@ -276,45 +273,45 @@ class BaryCenter : public CppUnit::TestFixture
     add_indices.push_back(15);
 
     add_indices.push_back(16);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(17);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(18);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(19);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(20);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(21);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(22);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
 
@@ -324,7 +321,7 @@ class BaryCenter : public CppUnit::TestFixture
       BarycenterQuadrature quadrature_rule(reference_polyhedrons[i]);
       CPPUNIT_ASSERT_DOUBLES_EQUAL(reference_volumes[i],
 				   quadrature_rule.weights()[0], 1.0e-12);
-      almost_equal_points(reference_bary_centers[i], 
+      almost_equal_points(reference_bary_centers[i],
 			  quadrature_rule.points()[0], 1.0e-12);
     }
   }
@@ -446,143 +443,143 @@ class BaryCenter : public CppUnit::TestFixture
 
 
     add_indices.push_back(1);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(2);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(3);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(4);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(5);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(6);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(7);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(8);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(9);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
 
     add_indices.push_back(10);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(11);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(12);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(13);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(14);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     add_indices.push_back(15);
-    add_disjoint_polyhedrons(add_indices, 
-			     reference_polyhedrons, 
-			     reference_volumes, 
+    add_disjoint_polyhedrons(add_indices,
+			     reference_polyhedrons,
+			     reference_volumes,
 			     reference_bary_centers);
 
     Nef_polyhedron_3 polyhedron = reference_polyhedrons[0];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(1, 1, 1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[0]); 
-    reference_bary_centers.push_back(reference_bary_centers[0] + Point(1,1,1));  
+    reference_volumes.push_back(reference_volumes[0]);
+    reference_bary_centers.push_back(reference_bary_centers[0] + Point(1,1,1));
 
     polyhedron = reference_polyhedrons[1];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(-1, 1, 1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[1]); 
-    reference_bary_centers.push_back(reference_bary_centers[1] + Point(-1,1,1));  
+    reference_volumes.push_back(reference_volumes[1]);
+    reference_bary_centers.push_back(reference_bary_centers[1] + Point(-1,1,1));
 
     polyhedron = reference_polyhedrons[2];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(1, -1, 1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[2]); 
-    reference_bary_centers.push_back(reference_bary_centers[2] + Point(1,-1,1));  
+    reference_volumes.push_back(reference_volumes[2]);
+    reference_bary_centers.push_back(reference_bary_centers[2] + Point(1,-1,1));
 
     polyhedron = reference_polyhedrons[3];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(-1, -1, 1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[3]); 
-    reference_bary_centers.push_back(reference_bary_centers[3] + Point(-1,-1,1));  
+    reference_volumes.push_back(reference_volumes[3]);
+    reference_bary_centers.push_back(reference_bary_centers[3] + Point(-1,-1,1));
 
     polyhedron = reference_polyhedrons[4];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(1, 1, -1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[4]); 
-    reference_bary_centers.push_back(reference_bary_centers[4] + Point(1,1,-1));  
+    reference_volumes.push_back(reference_volumes[4]);
+    reference_bary_centers.push_back(reference_bary_centers[4] + Point(1,1,-1));
 
     polyhedron = reference_polyhedrons[5];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(-1, 1, -1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[5]); 
-    reference_bary_centers.push_back(reference_bary_centers[5] + Point(-1,1,-1));  
+    reference_volumes.push_back(reference_volumes[5]);
+    reference_bary_centers.push_back(reference_bary_centers[5] + Point(-1,1,-1));
 
     polyhedron = reference_polyhedrons[6];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(1, -1, -1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[6]); 
-    reference_bary_centers.push_back(reference_bary_centers[6] + Point(1,-1,-1));  
+    reference_volumes.push_back(reference_volumes[6]);
+    reference_bary_centers.push_back(reference_bary_centers[6] + Point(1,-1,-1));
 
     polyhedron = reference_polyhedrons[7];
     polyhedron.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(-1, -1, -1)));
     reference_polyhedrons.push_back(polyhedron);
-    reference_volumes.push_back(reference_volumes[7]); 
-    reference_bary_centers.push_back(reference_bary_centers[7] + Point(-1,-1,-1));  
+    reference_volumes.push_back(reference_volumes[7]);
+    reference_bary_centers.push_back(reference_bary_centers[7] + Point(-1,-1,-1));
 
     //Instantiate quadrature rule
 
@@ -592,7 +589,7 @@ class BaryCenter : public CppUnit::TestFixture
       BarycenterQuadrature quadrature_rule(reference_polyhedrons[i]);
       CPPUNIT_ASSERT_DOUBLES_EQUAL(reference_volumes[i],
 				   quadrature_rule.weights()[0], 1.0e-5);
-      almost_equal_points(reference_bary_centers[i], 
+      almost_equal_points(reference_bary_centers[i],
 			  quadrature_rule.points()[0], 1.0e-5);
     }
   }
