@@ -288,18 +288,6 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
 
-    /// Gather off-process facets, necessary to ensure that all
-    /// local boundary vertices are returned by get_boundary_values().
-    /// This method is not needed (and does nothing) if the pointwise
-    /// method is used, nor is it needed for the correct operation of
-    /// apply(), zero() or other global methods.
-    ///
-    /// *Arguments*
-    ///     method (std::string)
-    ///         Optional argument: A string specifying which
-    ///         method to use.
-    void gather(std::string method="default");
-
     /// Get Dirichlet dofs and values
     ///
     /// *Arguments*
@@ -310,6 +298,16 @@ namespace dolfin
     ///         method to use.
     void get_boundary_values(Map& boundary_values,
                              std::string method="default") const;
+
+
+    /// Get boundary values from neighbour processes. If a method other than
+    /// "pointwise" is used, this is necessary to ensure all boundary dofs are
+    /// marked on all processes.
+    ///
+    /// *Arguments*
+    ///     boundary_values (boost::unordered_map<uint, double>)
+    ///         Map from dof to boundary value.
+    void gather(Map& boundary_values) const;
 
     /// Make rows of matrix associated with boundary condition zero,
     /// useful for non-diagonal matrices in a block matrix.

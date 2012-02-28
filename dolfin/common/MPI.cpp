@@ -33,9 +33,9 @@
 using MPI::COMM_WORLD;
 
 //-----------------------------------------------------------------------------
-dolfin::MPICommunicator::MPICommunicator()
+dolfin::MPICommunicator::MPICommunicator(MPI_Comm communicator)
 {
-  MPI_Comm_dup(MPI_COMM_WORLD, &communicator);
+  MPI_Comm_dup(communicator, &this->communicator);
 }
 //-----------------------------------------------------------------------------
 dolfin::MPICommunicator::~MPICommunicator()

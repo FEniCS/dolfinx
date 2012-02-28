@@ -178,6 +178,21 @@ namespace dolfin
     ///         The map from non-local dofs.
     const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
 
+    /// Return map from all shared dofs to the processes (not including the current
+    /// process) that share it.
+    ///
+    /// *Returns*
+    ///     boost::unordered_map<uint, std::vector<uint> >
+    ///         The map from dofs to list of processes
+    const boost::unordered_map<uint, std::vector<uint> >& shared_dofs() const;
+
+    /// Return set of all neighbouring processes.
+    ///
+    /// *Returns*
+    ///     boost::unordered_set<uint>
+    ///         The set of processes
+    const boost::unordered_set<uint>& neighbours() const;
+
     /// Local-to-global mapping of dofs on a cell
     ///
     /// *Arguments*
@@ -345,6 +360,12 @@ namespace dolfin
     // Owner (process) of dofs in local dof map that do not belong to
     // this process
     boost::unordered_map<uint, uint> _off_process_owner;
+
+    // List of processes that share a given dof
+    boost::unordered_map<uint, std::vector<uint> > _shared_dofs;
+
+    // Neighbours (processes that we share dofs with)
+    boost::unordered_set<uint> _neighbours;
 
     // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;

@@ -45,7 +45,7 @@ namespace dolfin
   public:
 
     /// Create communicator (copy of MPI_COMM_WORLD)
-    MPICommunicator();
+    MPICommunicator(MPI_Comm communicator=MPI_COMM_WORLD);
 
     /// Destructor
     ~MPICommunicator();
@@ -106,7 +106,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
       boost::mpi::broadcast(comm, value, broadcaster);
       #endif
     }
@@ -118,7 +118,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
       boost::mpi::scatter(comm, in_values, out_value, sending_process);
       #else
       dolfin_assert(sending_process == 0);
@@ -134,7 +134,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
       boost::mpi::gather(comm, in_value, out_values, receiving_process);
       #else
       out_values.clear();
@@ -148,7 +148,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
       boost::mpi::all_gather(comm, in_value, out_values);
       #else
       out_values.clear();
@@ -191,7 +191,7 @@ namespace dolfin
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
       T out;
       boost::mpi::all_reduce(comm, value, out, op);
       return out;
@@ -207,14 +207,31 @@ namespace dolfin
     /// reduction op)
     static uint global_offset(uint range, bool exclusive);
 
-    /// Send-receive and data
+    /// Send-receive data. Note that if the number of posted send-receives may
+    /// differ between processes, a communicator MUST be supplied. (Duplicating
+    /// the communicator requires participation of all processes.)
     template<typename T>
     static void send_recv(const T& send_value, uint dest,
                           T& recv_value, uint source)
     {
       #ifdef HAS_MPI
       MPICommunicator mpi_comm;
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      send_recv(mpi_comm, send_value, dest, recv_value, source);
+      #else
+      dolfin_error("MPI.h",
+                   "call MPI::send_recv",
+                   "DOLFIN has been configured without MPI support");
+      #endif
+    }
+
+    /// Send-receive data.
+    template<typename T>
+    static void send_recv(MPICommunicator& mpi_comm,
+                          const T& send_value, uint dest,
+                          T& recv_value, uint source)
+    {
+      #ifdef HAS_MPI
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
 
       // Non-blocking send-receive
       boost::mpi::request reqs[2];

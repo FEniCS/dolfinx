@@ -87,18 +87,20 @@ void DofMapBuilder::build_distributed(DofMap& dofmap,
 {
   // Create data structures
   DofMapBuilder::set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
+  DofMapBuilder::vec_map shared_dof_processes;
 
   // Computed owned and shared dofs (and owned and un-owned)
   compute_ownership(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
-                    dofmap, global_dofs, mesh);
+                    shared_dof_processes, dofmap, global_dofs, mesh);
 
   // Renumber dofs owned dofs and received new numbering for unowned shared dofs
   parallel_renumber(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
-                    dofmap, mesh);
+                    shared_dof_processes, dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                       set& shared_unowned_dofs,
+                                      vec_map& shared_dof_processes,
                                       const DofMap& dofmap,
                                       const DofMapBuilder::set& global_dofs,
                                       const Mesh& mesh)
@@ -174,6 +176,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
     {
       const uint received_dof  = recv_buffer[i];
       const uint received_vote = recv_buffer[i + 1];
+
       if (shared_owned_dofs.find(received_dof) != shared_owned_dofs.end())
       {
         // Move dofs with higher ownership votes from shared to shared but not owned
@@ -191,6 +194,14 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                        "compute mapping of degrees of freedom",
                        "Cannot decide on dof ownership; votes are equal");
         }
+
+        // Remember the sharing of the dof
+        shared_dof_processes[received_dof].push_back(src);
+      }
+      else if (shared_unowned_dofs.find(received_dof) != shared_unowned_dofs.end())
+      {
+        // Remember the sharing of the dof
+        shared_dof_processes[received_dof].push_back(src);
       }
     }
   }
@@ -240,6 +251,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 void DofMapBuilder::parallel_renumber(const set& owned_dofs,
                              const set& shared_owned_dofs,
                              const set& shared_unowned_dofs,
+                             const vec_map& shared_dof_processes,
                              DofMap& dofmap, const Mesh& mesh)
 {
   log(TRACE, "Renumber dofs for parallel dof map");
@@ -315,6 +327,17 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
         dofmap.ufc_map_to_dofmap[received_old_dof_index] = received_new_dof_index;
       }
     }
+  }
+
+  // Insert the shared-dof-to-process mapping into the dofmap, renumbering as necessary
+  for (vec_map::const_iterator it = shared_dof_processes.begin(); it != shared_dof_processes.end(); ++it)
+  {
+    boost::unordered_map<uint, uint>::const_iterator new_index = old_to_new_dof_index.find(it->first);
+    if (new_index == old_to_new_dof_index.end())
+      dofmap._shared_dofs.insert(*it);
+    else
+      dofmap._shared_dofs.insert(std::make_pair(new_index->second, it->second));
+    dofmap._neighbours.insert(it->second.begin(), it->second.end());
   }
 
   // Build new dof map

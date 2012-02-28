@@ -309,6 +309,16 @@ const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owne
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
+const boost::unordered_map<uint, std::vector<uint> >& DofMap::shared_dofs() const
+{
+  return _shared_dofs;
+}
+//-----------------------------------------------------------------------------
+const boost::unordered_set<uint>& DofMap::neighbours() const
+{
+  return _neighbours;
+}
+//-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
   dolfin_assert(_ufc_dofmap);
