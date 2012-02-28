@@ -23,12 +23,9 @@
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
 
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
@@ -68,21 +65,20 @@ namespace dolfin
     /// Return rank
     uint rank() const;
 
-    /// Return global size for dimension i (size of tensor, includes non-zeroes)
-    uint size(uint i) const;
-
     /// Return local range for dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
 
     /// Return number of local nonzeros
     uint num_nonzeros() const;
 
-    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
-    /// For matrices, fill array with number of nonzeros per local row for diagonal block
+    /// Fill array with number of nonzeros for diagonal block in
+    /// local_range for dimension 0. For matrices, fill array with number
+    /// of nonzeros per local row for diagonal block
     void num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const;
 
-    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0
-    /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
+    /// Fill array with number of nonzeros for off-diagonal block in
+    /// local_range for dimension 0. For matrices, fill array with number
+    /// of nonzeros per local row for off-diagonal block
     void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
 
     /// Fill vector with number of nonzeros in local_range for dimension 0
@@ -107,15 +103,11 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
-    // -- Data required by all sparsity patterns
-
     // Shape of tensor
     std::vector<uint> shape;
 
     // Ownership range for each dimension
-    std::vector<std::pair<uint, uint> > ownership_range;
-
-    // -- Data required by full sparsity patterns only
+    std::vector<std::pair<uint, uint> > _local_range;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
