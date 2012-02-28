@@ -55,7 +55,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ;
 
 // Mapping from preconditioner string to description string
-const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_methods_descr 
+const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_methods_descr
   = boost::assign::pair_list_of
     ("default",          "default preconditioner")
     ("none",             "No preconditioner")
@@ -154,6 +154,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     else if (type == "hypre_euclid")
     {
       PCHYPRESetType(pc, "euclid");
+      const uint ilu_level = parameters("ilu")["fill_level"];
+      PetscOptionsSetValue("-pc_hypre_euclid_levels", boost::lexical_cast<std::string>(ilu_level).c_str());
     }
     else
     {
