@@ -81,7 +81,7 @@ void GenericMatrix::ident_zeros()
   apply("insert");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::compress(bool keep_diagonal)
+void GenericMatrix::compress()
 {
   Timer timer("Compress matrix");
 
@@ -133,8 +133,6 @@ void GenericMatrix::compress(bool keep_diagonal)
   dofs[0] = &thisrow;
   dofs[1] = &thiscolumn;
 
-  uint nnz_before=0;
-
   // Iterate over rows
   for (uint i = 0; i < m; i++)
   {
@@ -145,9 +143,8 @@ void GenericMatrix::compress(bool keep_diagonal)
     thiscolumn.clear();
     for (uint j = 0; j < columns.size(); j++)
     {
-      nnz_before++;
       // Store if non-zero or diagonal entry. PETSc solvers require this
-      if (std::abs(values[j]) > DOLFIN_EPS || (columns[j] == global_row && keep_diagonal))
+      if (std::abs(values[j]) > DOLFIN_EPS || columns[j] == global_row)
       {
         thiscolumn.push_back(columns[j]);
         allvalues.push_back(values[j]);
@@ -177,7 +174,6 @@ void GenericMatrix::compress(bool keep_diagonal)
         offset[i+1]-offset[i], &allcolumns[offset[i]]);
   }
 
-  std::cerr << "Before " << nnz_before << " after " << new_sparsity_pattern->num_nonzeros() << std::endl;
   apply("insert");
 }
 //-----------------------------------------------------------------------------
