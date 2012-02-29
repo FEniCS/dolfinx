@@ -32,9 +32,3 @@ GoalFunctional::GoalFunctional(uint rank, uint num_coefficients)
   dolfin_assert(rank == 0);
 }
 //-----------------------------------------------------------------------------
-// boost::scoped_ptr<ErrorControl> GoalFunctional::ec()
-// {
-//   dolfin_assert(_ec);
-//   return _ec;
-// }
-//-----------------------------------------------------------------------------
