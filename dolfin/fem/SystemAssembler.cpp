@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-06-22
-// Last changed: 2011-11-14
+// Last changed: 2012-02-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -168,20 +169,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   DirichletBC::Map boundary_values;
   for (uint i = 0; i < bcs.size(); ++i)
   {
-    // Methods other than 'pointwise' are not robust in parallel since a vertex
-    // can have a bc applied, but the partition might not have a facet on the boundary.
+    bcs[i]->get_boundary_values(boundary_values);
     if (MPI::num_processes() > 1 && bcs[i]->method() != "pointwise")
-    {
-      if (MPI::process_number() == 0)
-      {
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly.", bcs[i]->method().c_str());
-        //warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
-      }
-      bcs[i]->get_boundary_values(boundary_values);
-      //bcs[i]->get_boundary_values(boundary_values, "pointwise");
-    }
-    else
-      bcs[i]->get_boundary_values(boundary_values);
+      bcs[i]->gather(boundary_values);
   }
 
   // Modify boundary values for incremental (typically nonlinear) problems

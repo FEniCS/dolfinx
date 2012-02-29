@@ -19,9 +19,10 @@
 // Modified by Anders Logg 2007-2011
 // Modified by Ola Skavhaug 2008-2009
 // Modified by Niclas Jansson 2009
+// Modified by Joachim B Haga 2012
 //
 // First added:  2007-11-30
-// Last changed: 2011-08-25
+// Last changed: 2012-02-29
 
 #include <numeric>
 #include <dolfin/log/dolfin_log.h>
@@ -145,6 +146,23 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
+dolfin::MPINonblocking::MPINonblocking()
+{}
+//-----------------------------------------------------------------------------
+dolfin::MPINonblocking::~MPINonblocking()
+{
+  wait_all();
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  if (!reqs.empty())
+  {
+    boost::mpi::wait_all(reqs.begin(), reqs.end());
+    reqs.clear();
+  }
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
@@ -217,4 +235,15 @@ dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::MPINonblocking::Nonblocking()
+{}
+//-----------------------------------------------------------------------------
+dolfin::MPINonblocking::~Nonblocking()
+{}
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  error_no_mpi("call MPINonblocking::wait_all");
+}
+
 #endif
