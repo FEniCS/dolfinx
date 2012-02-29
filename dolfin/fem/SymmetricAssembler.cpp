@@ -147,30 +147,21 @@ void SymmetricAssembler::PImpl::assemble()
   // too).
   matching_bcs = (row_bcs == col_bcs);
 
-  // Methods other than 'pointwise' are not robust in parallel; see
-  // DirichletBC::get_boundary_values(). We warn about the use of these methods
-  // in parallel.
-  const bool do_warn = (MPI::num_processes() > 1 && MPI::process_number() == 0);
-
   // Get Dirichlet dofs rows and values for local mesh
   for (uint i = 0; i < row_bcs.size(); ++i)
   {
-    if (do_warn && row_bcs[i]->method() != "pointwise")
-      warning("Dirichlet boundary condition method '%s' is not robust in parallel"
-              " with symmetric assembly. Use 'pointwise'.", row_bcs[i]->method().c_str());
-
     row_bcs[i]->get_boundary_values(row_bc_values);
+    if (MPI::num_processes() > 1 && row_bcs[i]->method() != "pointwise")
+      row_bcs[i]->gather(row_bc_values);
   }
   if (!matching_bcs)
   {
     // Get Dirichlet dofs columns and values for local mesh
     for (uint i = 0; i < col_bcs.size(); ++i)
     {
-      if (do_warn && col_bcs[i]->method() != "pointwise")
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel"
-                " with symmetric assembly. Use 'pointwise'.", col_bcs[i]->method().c_str());
-
       col_bcs[i]->get_boundary_values(col_bc_values);
+      if (MPI::num_processes() > 1 && col_bcs[i]->method() != "pointwise")
+        col_bcs[i]->gather(col_bc_values);
     }
   }
 

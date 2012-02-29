@@ -712,7 +712,7 @@ void DirichletBC::compute_bc(Map& boundary_values,
                              BoundaryCondition::LocalData& data,
                              std::string method) const
 {
-  Timer timer("DirichletBC compute_bc");
+  Timer timer("DirichletBC compute bc");
 
   // Set method if dafault
   if (method == "default")
