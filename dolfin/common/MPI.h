@@ -31,6 +31,7 @@
 #include <dolfin/log/dolfin_log.h>
 
 #ifdef HAS_MPI
+#include <boost/serialization/utility.hpp>
 #include <boost/mpi.hpp>
 #include <mpi.h>
 #endif
@@ -45,7 +46,7 @@ namespace dolfin
   public:
 
     /// Create communicator (copy of MPI_COMM_WORLD)
-    MPICommunicator(MPI_Comm communicator=MPI_COMM_WORLD);
+    MPICommunicator();
 
     /// Destructor
     ~MPICommunicator();
@@ -57,6 +58,32 @@ namespace dolfin
     MPI_Comm communicator;
   };
   #endif
+
+  /// This class provides stateful (single communicator) non-blocking MPI functionality.
+
+  class MPINonblocking
+  {
+  public:
+    /// Create instance with associated MPI_WORLD communicator
+    MPINonblocking();
+
+    /// Destroy instance (waits for outstanding requests)
+    ~MPINonblocking();
+
+    /// Non-blocking send and receive
+    template<typename T>
+    void send_recv(const T& send_value, uint dest,
+                   T& recv_value, uint source);
+
+    /// Wait for all requests to finish
+    void wait_all();
+
+  #ifdef HAS_MPI
+  private:
+    MPICommunicator mpi_comm;
+    std::vector<boost::mpi::request> reqs;
+  #endif
+  };
 
   /// This class provides utility functions for easy communcation with MPI.
 
@@ -99,6 +126,15 @@ namespace dolfin
       std::vector<uint> sources;
       distribute(in_values, destinations, out_values, sources);
     }
+
+    /// Distribute local arrays on a group of processes (typically neighbours
+    /// from GenericDofMap::neighbours()). It is important that each process'
+    /// group includes exactly the processes that has it in their groups,
+    /// otherwise it will deadlock.
+    template<typename T>
+    static void distribute(const std::set<uint> group,
+                           const std::map<uint,T>& in_values_per_dest,
+                           std::map<uint,T>& out_values_per_src);
 
     // Broadcast value from broadcaster process to all processes
     template<typename T>
@@ -208,36 +244,16 @@ namespace dolfin
     static uint global_offset(uint range, bool exclusive);
 
     /// Send-receive data. Note that if the number of posted send-receives may
-    /// differ between processes, a communicator MUST be supplied. (Duplicating
-    /// the communicator requires participation of all processes.)
+    /// differ between processes, another interface (such as MPINonblocking::send_recv)
+    /// must be used since duplicating the communicator requires participation
+    /// from all processes.
     template<typename T>
     static void send_recv(const T& send_value, uint dest,
                           T& recv_value, uint source)
     {
       #ifdef HAS_MPI
-      MPICommunicator mpi_comm;
-      send_recv(mpi_comm, send_value, dest, recv_value, source);
-      #else
-      dolfin_error("MPI.h",
-                   "call MPI::send_recv",
-                   "DOLFIN has been configured without MPI support");
-      #endif
-    }
-
-    /// Send-receive data.
-    template<typename T>
-    static void send_recv(MPICommunicator& mpi_comm,
-                          const T& send_value, uint dest,
-                          T& recv_value, uint source)
-    {
-      #ifdef HAS_MPI
-      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
-
-      // Non-blocking send-receive
-      boost::mpi::request reqs[2];
-      reqs[0] = comm.isend(dest, 0, send_value);
-      reqs[1] = comm.irecv(source, 0, recv_value);
-      boost::mpi::wait_all(reqs, reqs + 2);
+      MPINonblocking mpi;
+      mpi.send_recv(send_value, dest, recv_value, source);
       #else
       dolfin_error("MPI.h",
                    "call MPI::send_recv",
@@ -263,6 +279,13 @@ namespace dolfin
 
   private:
 
+    #ifndef HAS_MPI
+    static void error_no_mpi(const char *where)
+    {
+      dolfin_error("MPI.h", msg, "DOLFIN has been configured without MPI support");
+    }
+    #endif
+
     #ifdef HAS_MPI
     // Return MPI data type
     template<typename T> static MPI_Datatype mpi_type()
@@ -275,6 +298,7 @@ namespace dolfin
     #endif
 
   };
+
 
   #ifdef HAS_MPI
   // Specialisations for MPI_Datatypes
@@ -354,7 +378,63 @@ namespace dolfin
                  "DOLFIN has been configured without MPI support");
   }
   #endif
-  //---------------------------------------------------------------------------
+
+  //-----------------------------------------------------------------------------
+  template<typename T>
+  void dolfin::MPI::distribute(const std::set<uint> group,
+                               const std::map<uint,T>& in_values_per_dest,
+                               std::map<uint,T>& out_values_per_src)
+  {
+  #ifdef HAS_MPI
+    typedef typename std::map<uint,T>::const_iterator map_const_iterator;
+    typedef typename std::map<uint,T>::iterator map_iterator;
+    dolfin::MPINonblocking mpi;
+    const T no_data;
+
+    // Send and receive values to all processes in groups (non-blocking). If a
+    // given process is not found in in_values_per_dest, send empty data.
+
+    out_values_per_src.clear();
+    for (std::set<uint>::const_iterator dest = group.begin(); dest != group.end(); ++dest)
+    {
+      map_const_iterator values = in_values_per_dest.find(*dest);
+      if (values != in_values_per_dest.end())
+        mpi.send_recv(values->second, *dest, out_values_per_src[*dest], *dest);
+      else
+        mpi.send_recv(no_data, *dest, out_values_per_src[*dest], *dest);
+    }
+
+    // Wait for all MPI calls before modifying out_values_per_src
+
+    mpi.wait_all();
+
+    // Remove received no_data entries.
+
+    map_iterator it = out_values_per_src.begin();
+    while (it != out_values_per_src.end())
+    {
+      map_iterator tmp = it++;
+      if (tmp->second.empty())
+        out_values_per_src.erase(tmp); // map::erase only invalidates current iterator
+    }
+  #else
+    error_no_mpi("call MPI::distribute");
+  #endif
+  }
+
+  //-----------------------------------------------------------------------------
+  template<typename T>
+  void dolfin::MPINonblocking::send_recv(const T& send_value, uint dest,
+                                         T& recv_value, uint source)
+  {
+  #ifdef HAS_MPI
+    boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+    reqs.push_back(comm.isend(dest, 0, send_value));
+    reqs.push_back(comm.irecv(source, 0, recv_value));
+  #else
+    error_no_mpi("call MPINonblocking::send_recv");
+  #endif
+  }
 
 }
 

@@ -191,7 +191,7 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_set<uint>
     ///         The set of processes
-    const boost::unordered_set<uint>& neighbours() const;
+    const std::set<uint>& neighbours() const;
 
     /// Local-to-global mapping of dofs on a cell
     ///
@@ -365,7 +365,7 @@ namespace dolfin
     boost::unordered_map<uint, std::vector<uint> > _shared_dofs;
 
     // Neighbours (processes that we share dofs with)
-    boost::unordered_set<uint> _neighbours;
+    std::set<uint> _neighbours;
 
     // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;

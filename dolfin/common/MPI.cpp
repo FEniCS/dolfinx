@@ -33,9 +33,9 @@
 using MPI::COMM_WORLD;
 
 //-----------------------------------------------------------------------------
-dolfin::MPICommunicator::MPICommunicator(MPI_Comm communicator)
+dolfin::MPICommunicator::MPICommunicator()
 {
-  MPI_Comm_dup(communicator, &this->communicator);
+  MPI_Comm_dup(MPI_COMM_WORLD, &communicator);
 }
 //-----------------------------------------------------------------------------
 dolfin::MPICommunicator::~MPICommunicator()
@@ -145,6 +145,23 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
+dolfin::MPINonblocking::MPINonblocking()
+{}
+//-----------------------------------------------------------------------------
+dolfin::MPINonblocking::~MPINonblocking()
+{
+  wait_all();
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  if (!reqs.empty())
+  {
+    boost::mpi::wait_all(reqs.begin(), reqs.end());
+    reqs.clear();
+  }
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
@@ -217,4 +234,15 @@ dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::MPINonblocking::Nonblocking()
+{}
+//-----------------------------------------------------------------------------
+dolfin::MPINonblocking::~Nonblocking()
+{}
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  error_no_mpi("call MPINonblocking::wait_all");
+}
+
 #endif

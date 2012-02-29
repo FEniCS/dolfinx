@@ -173,6 +173,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
   _off_process_owner.clear();
+  _shared_dofs.clear();
+  _neighbours.clear();
   if (parent_dofmap.ufc_map_to_dofmap.size() > 0)
   {
     boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
@@ -196,6 +198,14 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         boost::unordered_map<uint, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
+
+        // Add to shared-dof process map, and update the set of neighbours
+        boost::unordered_map<uint, std::vector<uint> >::const_iterator parent_shared = parent_dofmap._shared_dofs.find(*dof);
+        if (parent_shared != parent_dofmap._shared_dofs.end())
+        {
+          _shared_dofs.insert(*parent_shared);
+          _neighbours.insert(parent_shared->second.begin(), parent_shared->second.end());
+        }
       }
     }
   }
@@ -314,7 +324,7 @@ const boost::unordered_map<uint, std::vector<uint> >& DofMap::shared_dofs() cons
   return _shared_dofs;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_set<uint>& DofMap::neighbours() const
+const std::set<uint>& DofMap::neighbours() const
 {
   return _neighbours;
 }

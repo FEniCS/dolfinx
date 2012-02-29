@@ -207,43 +207,36 @@ void DirichletBC::gather(Map& boundary_values) const
   typedef std::vector<std::pair<uint, double> > bv_vec_type;
   typedef std::map<uint, bv_vec_type> map_type;
 
+  typedef boost::unordered_map<uint, std::vector<uint> > shared_dof_type;
+  typedef shared_dof_type::const_iterator shared_dof_iterator;
+  typedef std::vector<uint>::const_iterator proc_iterator;
+
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
+  const shared_dof_type& shared_dofs = dofmap.shared_dofs();
+
+  // Create list of boundary values to send to each processor
 
   map_type proc_map;
-
-  for (boost::unordered_set<uint>::const_iterator it=dofmap.neighbours().begin();
-       it != dofmap.neighbours().end();
-       ++it)
-    proc_map[*it];
-
-  const boost::unordered_map<uint, std::vector<uint> >& shared_dofs = dofmap.shared_dofs();
-
   for (Map::const_iterator bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
   {
-    boost::unordered_map<uint, std::vector<uint> >::const_iterator neighbours = shared_dofs.find(bv->first);
-    if (neighbours != shared_dofs.end())
-    {
-      for (std::vector<uint>::const_iterator proc = neighbours->second.begin();
-           proc != neighbours->second.end(); ++proc)
-      {
+    // If the boundary value is attached to a shared dof, add it to the list of
+    // boundary values for each of the processors that share it
+    shared_dof_iterator shared_dof = shared_dofs.find(bv->first);
+    if (shared_dof != shared_dofs.end())
+      for (proc_iterator proc = shared_dof->second.begin(); proc != shared_dof->second.end(); ++proc)
         proc_map[*proc].push_back(*bv);
-      }
-    }
   }
 
-  MPICommunicator mpi_comm;
-  std::vector<uint> neighbours(dofmap.neighbours().begin(), dofmap.neighbours().end());
+  // Distribute the lists between neighbours
 
-  // Must be sorted, to avoid deadlock.
-  std::sort(neighbours.begin(), neighbours.end());
+  map_type received_bvs;
+  MPI::distribute(dofmap.neighbours(), proc_map, received_bvs);
 
-  for (std::vector<uint>::const_iterator it = neighbours.begin(); it != neighbours.end(); ++it)
-  {
-    bv_vec_type received_bvs;
-    MPI::send_recv(mpi_comm, proc_map[*it], *it, received_bvs, *it);
-    boundary_values.insert(received_bvs.begin(), received_bvs.end());
-  }
+  // Add the received boundary values to the local boundary values
+
+  for (map_type::const_iterator it = received_bvs.begin(); it != received_bvs.end(); ++it)
+    boundary_values.insert(it->second.begin(), it->second.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values,
