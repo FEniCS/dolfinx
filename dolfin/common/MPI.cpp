@@ -49,6 +49,17 @@ MPI_Comm& dolfin::MPICommunicator::operator*()
   return communicator;
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  if (!reqs.empty())
+  {
+    boost::mpi::wait_all(reqs.begin(), reqs.end());
+    reqs.clear();
+  }
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()
 {
   SubSystemsManager::init_mpi();
@@ -146,25 +157,14 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPINonblocking::MPINonblocking()
-{}
 //-----------------------------------------------------------------------------
-dolfin::MPINonblocking::~MPINonblocking()
-{
-  wait_all();
-}
+#else
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()
 {
-  if (!reqs.empty())
-  {
-    boost::mpi::wait_all(reqs.begin(), reqs.end());
-    reqs.clear();
-  }
+  error_no_mpi("call MPINonblocking::wait_all");
 }
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#else
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()
@@ -235,15 +235,5 @@ dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPINonblocking::Nonblocking()
-{}
-//-----------------------------------------------------------------------------
-dolfin::MPINonblocking::~Nonblocking()
-{}
-//-----------------------------------------------------------------------------
-void dolfin::MPINonblocking::wait_all()
-{
-  error_no_mpi("call MPINonblocking::wait_all");
-}
 
 #endif

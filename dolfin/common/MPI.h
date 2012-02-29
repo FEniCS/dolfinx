@@ -65,25 +65,31 @@ namespace dolfin
   class MPINonblocking
   {
   public:
+
     /// Create instance with associated MPI_WORLD communicator
-    MPINonblocking();
+    MPINonblocking() {};
 
     /// Destroy instance (waits for outstanding requests)
-    ~MPINonblocking();
+    ~MPINonblocking()
+    {
+      #ifdef HAS_MPI
+      wait_all();
+      #endif
+    }
 
     /// Non-blocking send and receive
     template<typename T>
-    void send_recv(const T& send_value, uint dest,
-                   T& recv_value, uint source);
+    void send_recv(const T& send_value, uint dest, T& recv_value, uint source);
 
     /// Wait for all requests to finish
     void wait_all();
 
-  #ifdef HAS_MPI
   private:
+
+    #ifdef HAS_MPI
     MPICommunicator mpi_comm;
     std::vector<boost::mpi::request> reqs;
-  #endif
+    #endif
   };
 
   /// This class provides utility functions for easy communcation with MPI.
@@ -134,8 +140,8 @@ namespace dolfin
     /// otherwise it will deadlock.
     template<typename T>
     static void distribute(const std::set<uint> group,
-                           const std::map<uint,T>& in_values_per_dest,
-                           std::map<uint,T>& out_values_per_src);
+                           const std::map<uint, T>& in_values_per_dest,
+                           std::map<uint, T>& out_values_per_src);
 
     // Broadcast value from broadcaster process to all processes
     template<typename T>
