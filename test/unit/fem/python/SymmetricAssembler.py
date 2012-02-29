@@ -65,7 +65,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         def boundary(x):
             return near(x[0], 0.0) or near(x[0], 1.0)
         u0 = Constant((1.0, 2.0, 3.0))
-        bc = DirichletBC(V, u0, boundary, method="pointwise")
+        bc = DirichletBC(V, u0, boundary)
 
         self._check_against_reference(a, L, bc)
 
