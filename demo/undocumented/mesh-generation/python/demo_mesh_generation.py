@@ -27,19 +27,21 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-# Create list of polygonal domain vertices
-domain_vertices = [Point(0.0, 0.0),
-                   Point(1.0, 0.0),
-                   Point(1.5, 1.5),
-                   Point(1.0, 2.0),
-                   Point(0.0, 1.0),
-                   Point(0.0, 0.0)]
-
 # Create empty Mesh
 mesh = Mesh()
+# Create list of polygonal domain vertices
+domain_vertices = [Point(0.0, 0.0),
+                   Point(10.0, 0.0),
+                   Point(10.0, 2.0),
+                   Point(8.0, 2.0),
+                   Point(7.5, 1.0),
+                   Point(2.5, 1.0),
+                   Point(2.0, 4.0),
+                   Point(0.0, 4.0),
+                   Point(0.0, 0.0)]
 
 # Generate mesh and plot
-PolygonalMeshGenerator.generate(mesh, domain_vertices, 0.025);
+PolygonalMeshGenerator.generate(mesh, domain_vertices, 0.25);
 plot(mesh, interactive=True)
 
 # Polyhedron face vertices
@@ -48,7 +50,7 @@ face_vertices = [Point(0.0, 0.0, 0.0),
                  Point(0.0, 1.0, 0.0),
                  Point(1.0, 0.0, 0.0)]
 
-# Polyhedron faces (must be triangular) for a tetrahedron
+# Polyhedron faces (of a tetrahedron)
 face0 = [3, 2, 1]
 face1 = [0, 3, 1]
 face2 = [0, 2, 3]
@@ -59,6 +61,6 @@ faces = [face0, face1, face2, face3]
 PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
 plot(mesh, interactive=True)
 
-# Generate 3D mesh from OFF file input (distorted cube)
-PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.21)
+# Generate 3D mesh from OFF file input (cube)
+PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.05)
 plot(mesh, interactive=True)

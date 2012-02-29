@@ -41,7 +41,7 @@ tests = {
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
                        "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData"],
     "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
     "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",

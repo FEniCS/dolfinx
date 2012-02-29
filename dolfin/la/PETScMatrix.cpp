@@ -38,7 +38,7 @@
 #include "PETScVector.h"
 #include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 
@@ -168,17 +168,22 @@ boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
   }
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const TensorLayout& tensor_layout)
 {
   // Get global dimensions and local range
-  dolfin_assert(sparsity_pattern.rank() == 2);
-  const uint M = sparsity_pattern.size(0);
-  const uint N = sparsity_pattern.size(1);
-  const std::pair<uint, uint> row_range = sparsity_pattern.local_range(0);
-  const std::pair<uint, uint> col_range = sparsity_pattern.local_range(1);
+  dolfin_assert(tensor_layout.rank() == 2);
+  const uint M = tensor_layout.size(0);
+  const uint N = tensor_layout.size(1);
+  const std::pair<uint, uint> row_range = tensor_layout.local_range(0);
+  const std::pair<uint, uint> col_range = tensor_layout.local_range(1);
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
   dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
+
+  // Get sparsity payttern
+  dolfin_assert(tensor_layout.sparsity_pattern());
+  const GenericSparsityPattern& sparsity_pattern = *tensor_layout.sparsity_pattern();
+
 
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
@@ -193,6 +198,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   if (row_range.first == 0 && row_range.second == M)
   {
     // Get number of nonzeros for each row from sparsity pattern
+    dolfin_assert(tensor_layout.sparsity_pattern());
     std::vector<uint> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
@@ -426,6 +432,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
+  // Resize if dimensions does not match
   resize(yy, 0);
   MatMult(*A, *xx.vec(), *yy.vec());
 }

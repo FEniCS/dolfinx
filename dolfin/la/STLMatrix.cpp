@@ -31,20 +31,29 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "STLFactory.h"
+#include "STLFactoryCSC.h"
 #include "STLMatrix.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void STLMatrix::init(const GenericSparsityPattern& sparsity_pattern)
+void STLMatrix::init(const TensorLayout& tensor_layout)
 {
-  primary_dim = sparsity_pattern.primary_dim();
+  // Check that sparsity pattern has correct storage (row vs column storage)
+  if (primary_dim != tensor_layout.primary_dim)
+  {
+    dolfin_error("STLMatrix.cpp",
+                 "initialization of STL matrix",
+                 "Primary storage dim of matrix and tensot layout must be the same");
+  }
+
+  //primary_dim = sparsity_pattern.primary_dim();
   uint primary_codim = 1;
   if (primary_dim == 1)
     primary_codim = 0;
 
-  _local_range = sparsity_pattern.local_range(primary_dim);
-  num_codim_entities = sparsity_pattern.size(primary_codim);
+  _local_range = tensor_layout.local_range(primary_dim);
+  num_codim_entities = tensor_layout.size(primary_codim);
 
   const uint num_primary_entiries = _local_range.second - _local_range.first;
   codim_indices.resize(num_primary_entiries);
@@ -52,6 +61,10 @@ void STLMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
   // FIXME: Add function to sparsity pattern to get nnz per row to
   //        to reserve space for vectors
+  //if (tensor_layout.sparsity_pattern()
+  //{
+  //  Reserve space here
+  //}
 }
 //-----------------------------------------------------------------------------
 dolfin::uint STLMatrix::size(uint dim) const
@@ -358,7 +371,10 @@ std::string STLMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& STLMatrix::factory() const
 {
-  return STLFactory::instance();
+  if (primary_dim == 0)
+    return STLFactory::instance();
+  else
+    return STLFactoryCSC::instance();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint STLMatrix::nnz() const

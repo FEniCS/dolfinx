@@ -297,9 +297,9 @@ class AbstractBaseTest(object):
             print "local range", local_range0[0], local_range0[1]
 
             # Shift parallel partitiong but preserve global size
-            if MPI.process_number() == 0: 
+            if MPI.process_number() == 0:
                 local_range1 = (local_range0[0], local_range0[1] + 1)
-            elif MPI.process_number() == MPI.num_processes() - 1: 
+            elif MPI.process_number() == MPI.num_processes() - 1:
                 local_range1 = (local_range0[0] + 1, local_range0[1])
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)

@@ -40,7 +40,15 @@ namespace dolfin
     static void generate(Mesh& mesh, const std::vector<Point>& vertices,
                          double cell_size);
 
+    /// Generate mesh of a domain described by a CGAL polygon
+    template <typename T>
+    static void generate(Mesh& mesh, const T& polygon, double cell_size);
+
   private:
+
+    // Check that input polygon is convex
+    template <typename T>
+    static bool is_convex(const std::vector<T>& vertices);
 
   };
 

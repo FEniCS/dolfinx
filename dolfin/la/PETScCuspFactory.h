@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13
-// Last changed:  2011-09-29
+// Last changed: 2012-02-29
 
 #ifdef HAS_PETSC_CUSP
 
@@ -27,7 +27,7 @@
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -49,8 +49,8 @@ namespace dolfin
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const;
 
-    /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const;
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
@@ -61,7 +61,7 @@ namespace dolfin
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const;
+      lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >

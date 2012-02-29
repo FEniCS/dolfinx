@@ -32,7 +32,7 @@ namespace dolfin
 {
 
 
-  class SparsityPattern;
+  class TensorLayout;
 
   /// This class computes re-ordering based on a SparsityPattern graph
   /// representation of a sparse matrix. It uses Zoltan, which is part of
@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MatrixRenumbering(const SparsityPattern& sparsity_pattern);
+    MatrixRenumbering(const TensorLayout& tensor_layout);
 
     /// Compute renumbering for process (map[old] -> new)
     std::vector<uint> compute_local_renumbering_map();
@@ -88,8 +88,8 @@ namespace dolfin
                               float* ewgts, int* ierr);
 
 
-    // Sparsity pattern
-    const SparsityPattern& sparsity_pattern;
+    // Tensor layout
+    const TensorLayout& tensor_layout;
 
   };
 

@@ -786,6 +786,14 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %pythoncode %{
     def mat(self):
         "Return the Epetra_FECrsMatrix"
+        # Try importing PyTrilinos
+        try:
+            import PyTrilinos
+        except:
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "import PyTrilinos before accessing underlying Matrix",
+                                "PyTrilinos is not installed")
+        
         A = self._mat()
 
         # Store the tensor to avoid garbage collection
@@ -810,6 +818,12 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %pythoncode %{
     def vec(self):
         "Return the Epetra_FEVector"
+        try:
+            import PyTrilinos
+        except:
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "import PyTrilinos before accessing underlying Vector",
+                                "PyTrilinos is not installed")
         v = self._vec()
 
         # Store the tensor to avoid garbage collection

@@ -28,6 +28,7 @@
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Polygon_2.h>
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -49,6 +50,8 @@ typedef CGAL::Delaunay_mesher_2<CDT, Criteria> CGAL_Mesher;
 typedef CDT::Vertex_handle Vertex_handle;
 typedef CDT::Point CGAL_Point;
 
+typedef CGAL::Polygon_2<K> Polygon_2;
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -56,27 +59,49 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
                                     const std::vector<Point>& polygon_vertices,
                                     double cell_size)
 {
+  std::vector<CGAL_Point> cgal_points;
+
+  // Build list of CGAL points
+  std::vector<Point>::const_iterator p;
+  for (p = polygon_vertices.begin(); p != polygon_vertices.end(); ++p)
+    cgal_points.push_back(CGAL_Point(p->x(), p->y()));
+
+  // Create polygon
+  Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
+
+  // Generate mesh
+  generate(mesh, polygon, cell_size);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void PolygonalMeshGenerator::generate(Mesh& mesh, const T& polygon,
+                                      double cell_size)
+{
   // Create empty CGAL triangulation
   CDT cdt;
 
-  // Add polygon vertices to CGAL triangulation
-  std::vector<Point>::const_iterator p;
-  for (p = polygon_vertices.begin(); p != polygon_vertices.end() - 1; ++p)
-  {
-    CDT::Vertex_handle v0 = cdt.insert(CGAL_Point(p->x(), p->y()));
-    CDT::Vertex_handle v1 = cdt.insert(CGAL_Point((p + 1)->x(), (p + 1)->y()));
-    cdt.insert_constraint(v0, v1);
-  }
+  // Add polygon edges as triangulation constraints
+  typename Polygon_2::Edge_const_iterator edge;
+  for (edge = polygon.edges_begin(); edge != polygon.edges_end(); ++edge)
+    cdt.insert_constraint(edge->point(0), edge->point(1));
 
   // Create mesher
   CGAL_Mesher mesher(cdt);
 
-  // Refine mesh
+  // Refine CGAL mesh/triangulation
   mesher.set_criteria(Criteria(0.125, cell_size));
   mesher.refine_mesh();
 
   // Build DOLFIN mesh from CGAL triangulation
   CGALMeshBuilder::build(mesh, cdt);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+bool PolygonalMeshGenerator::is_convex(const std::vector<T>& vertices)
+{
+  // Create polygon and test for convexity
+  Polygon_2 polygon(vertices.begin(), vertices.end());
+  return polygon.is_convex();
 }
 //-----------------------------------------------------------------------------
 #endif

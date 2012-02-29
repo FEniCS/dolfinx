@@ -23,11 +23,9 @@
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
-#include <set>
+#include <string>
 #include <utility>
 #include <vector>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
 
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
@@ -44,7 +42,6 @@ namespace dolfin
 
     // Set type used for the rows of the sparsity pattern
     typedef dolfin::Set<uint> set_type;
-    //typedef boost::unordered_set<dolfin::uint> set_type;
 
   public:
 
@@ -68,25 +65,20 @@ namespace dolfin
     /// Return rank
     uint rank() const;
 
-    /// Return primary dimension (e.g., 0=row parition, 1=column partition)
-    uint primary_dim() const
-    { return _primary_dim; }
-
-    /// Return global size for dimension i
-    uint size(uint i) const;
-
     /// Return local range for dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
 
     /// Return number of local nonzeros
     uint num_nonzeros() const;
 
-    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
-    /// For matrices, fill array with number of nonzeros per local row for diagonal block
+    /// Fill array with number of nonzeros for diagonal block in
+    /// local_range for dimension 0. For matrices, fill array with number
+    /// of nonzeros per local row for diagonal block
     void num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const;
 
-    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0
-    /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
+    /// Fill array with number of nonzeros for off-diagonal block in
+    /// local_range for dimension 0. For matrices, fill array with number
+    /// of nonzeros per local row for off-diagonal block
     void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
 
     /// Fill vector with number of nonzeros in local_range for dimension 0
@@ -114,8 +106,8 @@ namespace dolfin
     // Shape of tensor
     std::vector<uint> shape;
 
-    // Primary dimension (0=row major, 1=col major, etc)
-    const uint _primary_dim;
+    // Ownership range for each dimension
+    std::vector<std::pair<uint, uint> > _local_range;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
@@ -123,9 +115,6 @@ namespace dolfin
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<uint> non_local;
-
-    // Ownership range for each dimension
-    std::vector<std::pair<uint, uint> > ownership_range;
 
     // Map from non-local vertex to owning process index
     std::vector<boost::unordered_map<uint, uint> > off_process_owner;

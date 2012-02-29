@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13 
-// Last changed: 2012-02-06
+// Last changed: 2012-02-29
 
 #ifdef HAS_PETSC_CUSP
 
@@ -50,9 +50,12 @@ boost::shared_ptr<GenericVector> PETScCuspFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> PETScCuspFactory::create_pattern(uint primary_dim) const
+boost::shared_ptr<TensorLayout> PETScCuspFactory::create_layout(uint rank) const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(primary_dim));
+  bool sparsity = false;
+  if (rank > 1)
+    sparsity = true;
+  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------

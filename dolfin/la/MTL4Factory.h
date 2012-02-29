@@ -31,7 +31,7 @@
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
-#include "GenericSparsityPattern.h"
+#include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
@@ -66,10 +66,10 @@ namespace dolfin
       return x;
     }
 
-    /// Dummy sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern(uint primary_dim) const
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern;
+      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
     }
 
