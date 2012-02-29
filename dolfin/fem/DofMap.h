@@ -18,9 +18,10 @@
 // Modified by Martin Alnes, 2008
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2011-10-31
+// Last changed: 2012-02-29
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H

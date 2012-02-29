@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-06-22
-// Last changed: 2011-11-14
+// Last changed: 2012-02-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>

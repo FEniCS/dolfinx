@@ -17,9 +17,10 @@
 //
 // Modified by Kristian Oelgaard, 2007
 // Modified by Johan Hake, 2009
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2007-04-10
-// Last changed: 2011-04-13
+// Last changed: 2012-02-29
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common

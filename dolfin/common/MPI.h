@@ -18,9 +18,10 @@
 // Modified by Ola Skavhaug 2008-2009
 // Modified by Anders Logg 2008-2011
 // Modified by Niclas Jansson 2009
+// Modified by Joachim B Haga 2012
 //
 // First added:  2007-11-30
-// Last changed: 2011-09-28
+// Last changed: 2012-02-29
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H

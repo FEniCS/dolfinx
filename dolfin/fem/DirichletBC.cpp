@@ -18,9 +18,10 @@
 // Modified by Kristian Oelgaard, 2008
 // Modified by Martin Sandve Alnes, 2008
 // Modified by Johan Hake, 2009
+// Modified by Joachim B Haga, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2011-09-19
+// Last changed: 2012-02-29
 
 #include <map>
 #include <utility>
