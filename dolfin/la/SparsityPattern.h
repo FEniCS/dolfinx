@@ -103,6 +103,9 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
+    // Indicate is sparsity pattern is distributed
+    bool distributed;
+
     // Shape of tensor
     std::vector<uint> shape;
 

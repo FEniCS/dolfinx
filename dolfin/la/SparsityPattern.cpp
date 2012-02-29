@@ -64,8 +64,6 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   non_local.clear();
   this->off_process_owner.clear();
 
-  // -- Basic size data for all backends
-
   // Store dimensions
   shape = dims;
 
@@ -88,22 +86,21 @@ void SparsityPattern::init(const std::vector<uint>& dims,
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
+  // Check if sparsity pattern is distributed
+  if (_local_range[_primary_dim].first != 0 || _local_range[_primary_dim].second != dims[_primary_dim])
+    distributed = true;
+
   // Resize diagonal block
   dolfin_assert(_local_range[_primary_dim].second > _local_range[_primary_dim].first);
   diagonal.resize(_local_range[_primary_dim].second - _local_range[_primary_dim].first);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  const uint primary_global_size = MPI::max(_local_range[_primary_dim].second);
-  if (_local_range[_primary_dim].first != 0 || _local_range[_primary_dim].second != primary_global_size)
+  if (distributed)
     off_diagonal.resize(_local_range[_primary_dim].second - _local_range[_primary_dim].first);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entries)
 {
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
-    return;
-
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
   dolfin_assert(entries[1]);
@@ -126,7 +123,7 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   }
 
   // Check local range
-  if (_local_range[_primary_dim].first == 0 && _local_range[_primary_dim].second == shape[_primary_dim])
+  if (!distributed)
   {
     // Sequential mode, do simple insertion
     std::vector<uint>::const_iterator i_index;
@@ -177,16 +174,7 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
 dolfin::uint SparsityPattern::rank() const
 {
   return 2;
-//  return shape.size();
 }
-//-----------------------------------------------------------------------------
-/*
-dolfin::uint SparsityPattern::size(uint i) const
-{
-  dolfin_assert(i < shape.size());
-  return shape[i];
-}
-*/
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) const
 {
@@ -242,10 +230,6 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  // Check rank, return if not a matrix or basic pattern only
-  if (shape.size() != 2)
-    return;
-
   uint primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
@@ -261,7 +245,7 @@ void SparsityPattern::apply()
     info_statistics();
 
   // Communicate non-local blocks if any
-  if (_local_range[_primary_dim].first != 0 || _local_range[_primary_dim].second != shape[_primary_dim])
+  if (distributed)
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
@@ -328,14 +312,6 @@ void SparsityPattern::apply()
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
 {
-  // Check rank
-  if (shape.size() != 2)
-  {
-    dolfin_error("SparsityPattern.cpp",
-                 "return string representation of sparsity pattern",
-                 "Only available for matrices with full sparsity patterns");
-  }
-
   // Print each row
   std::stringstream s;
   typedef set_type::const_iterator entry_it;
@@ -403,9 +379,17 @@ void SparsityPattern::info_statistics() const
   const uint num_nonzeros_total
     = num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
+  uint size0 = _local_range[0].second;
+  uint size1 = _local_range[1].second;
+  if (distributed)
+  {
+    size0 = MPI::max(size0);
+    size1 = MPI::max(size1);
+  }
+
   // Return number of entries
-  cout << "Matrix of size " << shape[0] << " x " << shape[1] << " has "
-       << num_nonzeros_total << " (" << 100.0*num_nonzeros_total/(shape[0]*shape[1])
+  cout << "Matrix of size " << size0 << " x " << size1 << " has "
+       << num_nonzeros_total << " (" << 100.0*num_nonzeros_total/(size0*size1)
         << "%)" << " nonzero entries." << endl;
   if (num_nonzeros_total != num_nonzeros_diagonal)
   {
