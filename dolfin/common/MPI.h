@@ -283,7 +283,7 @@ namespace dolfin
     #ifndef HAS_MPI
     static void error_no_mpi(const char *where)
     {
-      dolfin_error("MPI.h", msg, "DOLFIN has been configured without MPI support");
+      dolfin_error("MPI.h", where, "DOLFIN has been configured without MPI support");
     }
     #endif
 
@@ -433,7 +433,7 @@ namespace dolfin
     reqs.push_back(comm.isend(dest, 0, send_value));
     reqs.push_back(comm.irecv(source, 0, recv_value));
   #else
-    error_no_mpi("call MPINonblocking::send_recv");
+    MPI::error_no_mpi("call MPINonblocking::send_recv");
   #endif
   }
 

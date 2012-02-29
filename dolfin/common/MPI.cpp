@@ -235,15 +235,15 @@ dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPINonblocking::Nonblocking()
+dolfin::MPINonblocking::MPINonblocking()
 {}
 //-----------------------------------------------------------------------------
-dolfin::MPINonblocking::~Nonblocking()
+dolfin::MPINonblocking::~MPINonblocking()
 {}
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()
 {
-  error_no_mpi("call MPINonblocking::wait_all");
+  MPI::error_no_mpi("call MPINonblocking::wait_all");
 }
 
 #endif
