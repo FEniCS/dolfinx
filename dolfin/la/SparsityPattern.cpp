@@ -39,9 +39,9 @@ SparsityPattern::SparsityPattern(uint primary_dim)
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
-  uint primary_dim,
   const std::vector<std::pair<uint, uint> >& local_range,
-  const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
+  const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner,
+    uint primary_dim)
   : GenericSparsityPattern(primary_dim)
 {
   init(dims, local_range, off_process_owner);
@@ -63,9 +63,6 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   off_diagonal.clear();
   non_local.clear();
   this->off_process_owner.clear();
-
-  // Store dimensions
-  shape = dims;
 
   // Set ownership range
   _local_range = local_range;
