@@ -225,12 +225,15 @@ void DirichletBC::gather(Map& boundary_values) const
     // boundary values for each of the processors that share it
     shared_dof_iterator shared_dof = shared_dofs.find(bv->first);
     if (shared_dof != shared_dofs.end())
+    {
       for (proc_iterator proc = shared_dof->second.begin(); proc != shared_dof->second.end(); ++proc)
         proc_map[*proc].push_back(*bv);
+    }
   }
 
   // Distribute the lists between neighbours
-
+  if (MPI::num_processes() > 1)
+  {
   map_type received_bvs;
   MPI::distribute(dofmap.neighbours(), proc_map, received_bvs);
 
@@ -238,6 +241,7 @@ void DirichletBC::gather(Map& boundary_values) const
 
   for (map_type::const_iterator it = received_bvs.begin(); it != received_bvs.end(); ++it)
     boundary_values.insert(it->second.begin(), it->second.end());
+  }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values,

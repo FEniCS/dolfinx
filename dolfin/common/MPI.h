@@ -56,7 +56,9 @@ namespace dolfin
     MPI_Comm& operator*();
 
   private:
+
     MPI_Comm communicator;
+
   };
   #endif
 
@@ -90,6 +92,7 @@ namespace dolfin
     MPICommunicator mpi_comm;
     std::vector<boost::mpi::request> reqs;
     #endif
+
   };
 
   /// This class provides utility functions for easy communcation with MPI.
@@ -306,7 +309,6 @@ namespace dolfin
 
   };
 
-
   #ifdef HAS_MPI
   // Specialisations for MPI_Datatypes
   template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
@@ -315,8 +317,6 @@ namespace dolfin
   template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
   template<> inline MPI_Datatype MPI::mpi_type<unsigned long>() { return MPI_UNSIGNED_LONG; }
   #endif
-
-  //#include "mpiutils.h"
 
   //---------------------------------------------------------------------------
   #ifdef HAS_MPI

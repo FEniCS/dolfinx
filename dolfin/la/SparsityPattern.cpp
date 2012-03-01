@@ -33,7 +33,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(uint primary_dim)
-    : GenericSparsityPattern(primary_dim)
+    : GenericSparsityPattern(primary_dim), distributed(false)
 {
   // Do nothing
 }
@@ -42,7 +42,7 @@ SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
   const std::vector<std::pair<uint, uint> >& local_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner,
     uint primary_dim)
-  : GenericSparsityPattern(primary_dim)
+  : GenericSparsityPattern(primary_dim), distributed(false)
 {
   init(dims, local_range, off_process_owner);
 }
