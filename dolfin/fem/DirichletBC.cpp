@@ -891,10 +891,11 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
+  // FIXME: This is broken because sub-dofmaps do not return a range.
+  //        An error is thrown.
   // Speeder-upper
-  std::pair<uint,uint> local_range = dofmap.ownership_range();
-  std::vector<bool> already_visited(local_range.second - local_range.first);
-  std::fill(already_visited.begin(), already_visited.end(), false);
+  //std::pair<uint,uint> local_range = dofmap.ownership_range();
+  //std::vector<bool> already_visited(local_range.second - local_range.first, false);
 
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
@@ -916,6 +917,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       const uint global_dof = cell_dofs[i];
+      /*
       if (global_dof >= local_range.first && global_dof < local_range.second)
       {
         const uint dof_index = global_dof - local_range.first;
@@ -923,8 +925,10 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
           continue;
         already_visited[dof_index] = true;
       }
+      */
 
-      // Check if the coordinates are part of the sub domain (calls user-defined 'inside' function)
+      // Check if the coordinates are part of the sub domain (calls
+      // user-defined 'inside' function)
       Array<double> x(gdim, &data.coordinates[i][0]);
       if (!_user_sub_domain->inside(x, false))
         continue;
@@ -963,7 +967,7 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
 
     // Check if the length of the sum of the two line segments vp0 and vp1 is
     // equal to the total length of the facet
-    if ( std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS )
+    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS)
       return true;
     else
       return false;
