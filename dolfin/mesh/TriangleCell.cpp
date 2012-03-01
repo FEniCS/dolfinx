@@ -298,9 +298,9 @@ void TriangleCell::order(Cell& cell,
   const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if (topology(1, 0).size() > 0)
+  if (!topology(1, 0).empty())
   {
-    dolfin_assert(topology(2, 1).size() > 0);
+    dolfin_assert(!topology(2, 1).empty());
 
     // Get edges
     const uint* cell_edges = cell.entities(1);
@@ -314,16 +314,16 @@ void TriangleCell::order(Cell& cell,
   }
 
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
-  if (topology(2, 0).size() > 0)
+  if (!topology(2, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(3, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
-  if (topology(2, 1).size() > 0)
+  if (!topology(2, 1).empty())
   {
-    dolfin_assert(topology(2, 1).size() > 0);
+    dolfin_assert(!topology(2, 1).empty());
 
     // Get cell vertices and edges
     const uint* cell_vertices = cell.entities(0);

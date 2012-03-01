@@ -201,7 +201,7 @@ void Mesh::init(uint d0, uint d1) const
   }
 
   // Skip if already computed
-  if (_topology(d0, d1).size() > 0)
+  if (!_topology(d0, d1).empty())
     return;
 
   // Check that mesh is ordered

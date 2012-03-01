@@ -145,6 +145,13 @@ namespace dolfin
     ///         The dimension.
     uint dim() const;
 
+    /// Return true if empty
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if empty.
+    bool empty() const;
+
     /// Return size (number of entities)
     ///
     /// *Returns*
@@ -404,7 +411,7 @@ namespace dolfin
     // Generate connectivity if it does not excist
     _mesh->init(D, d);
     const MeshConnectivity& connectivity = _mesh->topology()(D, d);
-    dolfin_assert(connectivity.size() > 0);
+    dolfin_assert(!connectivity.empty());
 
     // Iterate over all values
     boost::unordered_set<uint> entities_values_set;
@@ -459,6 +466,12 @@ namespace dolfin
   uint MeshFunction<T>::dim() const
   {
     return _dim;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  bool MeshFunction<T>::empty() const
+  {
+    return _size == 0;
   }
   //---------------------------------------------------------------------------
   template <typename T>

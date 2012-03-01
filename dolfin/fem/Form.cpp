@@ -147,7 +147,7 @@ const Mesh& Form::mesh() const
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
   // with existing meshes (if coefficient is defined on another mesh).
-  if (meshes.size() == 0)
+  if (meshes.empty())
   {
     for (uint i = 0; i < _coefficients.size(); i++)
     {
@@ -158,7 +158,7 @@ const Mesh& Form::mesh() const
   }
 
   // Check that we have at least one mesh
-  if (meshes.size() == 0)
+  if (meshes.empty())
   {
     dolfin_error("Form.cpp",
                  "extract mesh from form",

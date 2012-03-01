@@ -80,7 +80,7 @@ namespace dolfin
 
       // Use number of global entities if available (when running in parallel)
       const std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
-      if (num_global_entities.size() > 0)
+      if (!num_global_entities.empty())
         std::copy(num_global_entities.begin(), num_global_entities.end(), num_entities);
       else
       {

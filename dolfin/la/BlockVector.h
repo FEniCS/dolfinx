@@ -91,6 +91,9 @@ namespace dolfin
     /// Assignment operator
     const BlockVector& operator= (double a);
 
+    /// Return true if empty
+    virtual bool empty() const;
+
     /// Number of vectors
     uint size() const;
 

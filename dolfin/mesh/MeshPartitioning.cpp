@@ -320,7 +320,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   // Local domain data
   const std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > > domain_data
       = local_data.domain_data;
-  if (domain_data.size() == 0)
+  if (domain_data.empty())
     return;
 
   // Initialse mesh domains
@@ -412,7 +412,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::
     }
 
     // Check cases
-    if (entity_processes.size() == 0)
+    if (entity_processes.empty())
       owned_entity_indices[entity] = local_entity_index;
     else if (ignore)
     {
@@ -546,7 +546,7 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
     if (entity_processes.find(entity) != entity_processes.end())
     {
       std::vector<uint> common_processes = entity_processes[entity];
-      dolfin_assert(common_processes.size() > 0);
+      dolfin_assert(!common_processes.empty());
       const uint min_proc = *(std::min_element(common_processes.begin(), common_processes.end()));
 
       if (process_number < min_proc)
@@ -618,7 +618,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   const uint num_local_cells = mesh_data.cell_vertices.size();
   dolfin_assert(global_cell_indices.size() == num_local_cells);
   const uint num_cell_vertices = mesh_data.num_vertices_per_cell;
-  if (mesh_data.cell_vertices.size() > 0)
+  if (!mesh_data.cell_vertices.empty())
   {
     if (mesh_data.cell_vertices[0].size() != num_cell_vertices)
       dolfin_error("MeshPartitioning.cpp",
@@ -798,7 +798,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct local to global mapping for cells
   MeshFunction<unsigned int>& global_cell_indices = mesh.parallel_data().global_entity_indices(mesh_data.tdim);
   const std::vector<uint>& gci = mesh_data.global_cell_indices;
-  dolfin_assert(global_cell_indices.size() > 0);
+  dolfin_assert(!global_cell_indices.empty());
   dolfin_assert(global_cell_indices.size() == gci.size());
   for(uint i = 0; i < gci.size(); ++i)
     global_cell_indices[i] = gci[i];

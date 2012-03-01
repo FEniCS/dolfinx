@@ -66,7 +66,7 @@ namespace dolfin
     const Array& operator= (const Array& x)
     {
       // Resize if necessary
-      if (x.size() == 0 && !x.x)
+      if (x.empty() && !x.x)
       {
         this->x.reset();
         this->_size = 0;
@@ -150,6 +150,10 @@ namespace dolfin
                      "Data is shared");
       }
     }
+
+    /// Return true if empty
+    bool empty() const
+    { return _size == 0; }
 
     /// Return size of array
     uint size() const

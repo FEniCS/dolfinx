@@ -131,7 +131,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Build set of dofs on process boundary (assume all are owned by this process)
   const MeshFunction<unsigned int>& cell_map = interior_boundary.cell_map();
-  if (cell_map.size() > 0)
+  if (!cell_map.empty())
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
     {
@@ -258,7 +258,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   log(TRACE, "Renumber dofs for parallel dof map");
 
   // FIXME: Handle double-renumbered dof map
-  if (dofmap.ufc_map_to_dofmap.size() > 0)
+  if (!dofmap.ufc_map_to_dofmap.empty())
   {
     dolfin_error("DofMapBuilder.cpp",
                  "compute parallel renumbering of degrees of freedom",

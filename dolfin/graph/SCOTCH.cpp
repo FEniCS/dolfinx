@@ -106,7 +106,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   }
 
   // Handle case that local graph size is zero
-  if (edgeloctab.size() == 0)
+  if (edgeloctab.empty())
     edgeloctab.resize(1);
 
   // Global data ---------------------------------

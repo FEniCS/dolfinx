@@ -172,7 +172,7 @@ void SubDomain::apply_markers(S& sub_domains,
     if (dim == D - 1)
     {
       on_boundary = entity->num_entities(D) == 1 &&
-        (exterior.size() == 0 || exterior[*entity]);
+        (exterior.empty() || exterior[*entity]);
     }
 
     // Start by assuming all points are inside
