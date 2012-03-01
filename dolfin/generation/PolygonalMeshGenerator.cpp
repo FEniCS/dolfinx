@@ -30,9 +30,11 @@
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Polygon_2.h>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/Point.h>
 #include "CGALMeshBuilder.h"
 #include "PolygonalMeshGenerator.h"
@@ -59,18 +61,24 @@ void PolygonalMeshGenerator::generate(Mesh& mesh,
                                     const std::vector<Point>& polygon_vertices,
                                     double cell_size)
 {
-  std::vector<CGAL_Point> cgal_points;
+  // Generate CGAL mesh on root process
+  if (MPI::process_number() == 0)
+  {
+    // Build list of CGAL points
+    std::vector<CGAL_Point> cgal_points;
+    std::vector<Point>::const_iterator p;
+    for (p = polygon_vertices.begin(); p != polygon_vertices.end(); ++p)
+      cgal_points.push_back(CGAL_Point(p->x(), p->y()));
 
-  // Build list of CGAL points
-  std::vector<Point>::const_iterator p;
-  for (p = polygon_vertices.begin(); p != polygon_vertices.end(); ++p)
-    cgal_points.push_back(CGAL_Point(p->x(), p->y()));
+    // Create polygon
+    Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
 
-  // Create polygon
-  Polygon_2 polygon(cgal_points.begin(), cgal_points.end());
+    // Generate mesh
+    generate(mesh, polygon, cell_size);
+  }
 
-  // Generate mesh
-  generate(mesh, polygon, cell_size);
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
 template <typename T>

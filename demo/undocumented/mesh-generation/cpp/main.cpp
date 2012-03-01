@@ -33,6 +33,7 @@ int main()
   // Create empty mesh
   Mesh mesh;
 
+  /*
   // Polygonal domain vertices
   std::vector<Point> domain_vertices;
   domain_vertices.push_back(Point(0.0,  0.0));
@@ -46,9 +47,11 @@ int main()
   domain_vertices.push_back(Point(0.0,  0.0));
 
   // Generate 2D mesh and plot
-  PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.25);
+  PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.025);
   plot(mesh);
+  */
 
+  /*
   // Polyhedron face vertices
   std::vector<Point> face_vertices;
   face_vertices.push_back(Point(0.0, 0.0, 0.0));
@@ -75,8 +78,9 @@ int main()
   faces[3][2] = 2;
 
   // Generate 3D mesh and plot
-  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.05);
-  plot(mesh);
+  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.02);
+  //plot(mesh);
+  */
 
   // Generate 3D mesh from OFF file input (cube)
   PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);

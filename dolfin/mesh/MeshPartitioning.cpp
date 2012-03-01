@@ -73,13 +73,16 @@ template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
-  // Create and distribute local mesh data
-  dolfin_debug("creating local mesh data");
-  LocalMeshData local_mesh_data(mesh);
-  dolfin_debug("created local mesh data");
+  if (MPI::num_processes() > 1)
+  {
+    // Create and distribute local mesh data
+    dolfin_debug("creating local mesh data");
+    LocalMeshData local_mesh_data(mesh);
+    dolfin_debug("created local mesh data");
 
-  // Partition mesh based on local mesh data
-  partition(mesh, local_mesh_data);
+    // Partition mesh based on local mesh data
+    partition(mesh, local_mesh_data);
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
