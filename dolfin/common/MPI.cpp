@@ -163,7 +163,9 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
 //-----------------------------------------------------------------------------
 void dolfin::MPINonblocking::wait_all()
 {
-  error_no_mpi("call MPINonblocking::wait_all");
+  dolfin_error("MPI.h",
+               "call MPINonblocking::wait_all",
+               "DOLFIN has been configured without MPI support");
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
