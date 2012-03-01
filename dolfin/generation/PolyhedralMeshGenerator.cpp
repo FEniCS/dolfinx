@@ -203,10 +203,9 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
     p_file >> p;
 
     // Generate mesh
-    cout << "Start Generate cgal mesh" << endl;
     cgal_generate(mesh, p, cell_size, detect_sharp_features);
-    cout << "End Generate cgal mesh" << endl;
   }
+  MPI::barrier();
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(mesh);
@@ -272,6 +271,7 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
   // Check if any facets are not triangular and triangulate if necessary.
   // The CGAL mesh generation only supports polyhedra with triangular surface
   // facets.
+
   typename Polyhedron::Facet_iterator facet;
   for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
   {
@@ -279,7 +279,7 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
     if (!facet->is_triangle())
     {
       CGAL::triangulate_polyhedron(p);
-      continue;
+      break;
     }
   }
 
