@@ -23,6 +23,7 @@
 #include <sstream>
 #include <boost/scoped_ptr.hpp>
 
+#include <dolfin/common/constants.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/BinaryFile.h>
 #include <dolfin/la/GenericVector.h>
@@ -207,20 +208,14 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
   file >> mesh;
 }
 //-----------------------------------------------------------------------------
-Array<double> TimeSeries::vector_times() const
+std::vector<double> TimeSeries::vector_times() const
 {
-  double* times = new double[_vector_times.size()];
-  for (uint i = 0; i < _vector_times.size(); i++)
-    times[i] = _vector_times[i];
-  return Array<double>(_vector_times.size(), times, true);
+  return _vector_times;
 }
 //-----------------------------------------------------------------------------
-Array<double> TimeSeries::mesh_times() const
+std::vector<double> TimeSeries::mesh_times() const
 {
-  double* times = new double[_mesh_times.size()];
-  for (uint i = 0; i < _mesh_times.size(); i++)
-    times[i] = _mesh_times[i];
-  return Array<double>(_mesh_times.size(), times, true);
+  return _mesh_times;
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::clear()

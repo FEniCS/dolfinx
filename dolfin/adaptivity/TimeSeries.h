@@ -22,7 +22,7 @@
 #define __TIME_SERIES_H
 
 #include <string>
-#include <dolfin/common/Array.h>
+#include <vector>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -104,16 +104,16 @@ namespace dolfin
     /// Return array of sample times for vectors
     ///
     /// *Returns*
-    ///     _Array_ <double>
+    ///     std::vector<double>
     ///         The times.
-    Array<double> vector_times() const;
+    std::vector<double> vector_times() const;
 
     /// Return array of sample times for meshes
     ///
     /// *Returns*
-    ///     _Array_ <double>
+    ///     std::vector<double>
     ///         The times.
-    Array<double> mesh_times() const;
+    std::vector<double> mesh_times() const;
 
     /// Clear time series
     void clear();
