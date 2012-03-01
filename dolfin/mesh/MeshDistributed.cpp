@@ -92,8 +92,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     }
   }
 
-  // FIXME: handle case when my_entities.size() == 0
-  //dolfin_assert(my_entities.size() > 0);
+  // FIXME: handle case when my_entities.empty()
+  //dolfin_assert(!my_entities.empty());
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();

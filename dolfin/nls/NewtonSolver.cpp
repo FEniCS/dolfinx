@@ -114,7 +114,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     solver->set_operator(A);
 
     // Perform linear solve and update total number of Krylov iterations
-    if (dx->size() > 0)
+    if (!dx->empty())
       dx->zero();
     krylov_iterations += solver->solve(*dx, *b);
 

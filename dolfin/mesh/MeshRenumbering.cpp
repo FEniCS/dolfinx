@@ -111,11 +111,11 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   const std::vector<std::vector<uint> >&
     entities_of_color = mesh_coloring->second.second;
   dolfin_assert(colors.size() == num_cells);
-  dolfin_assert(entities_of_color.size() > 0);
+  dolfin_assert(!entities_of_color.empty());
   const uint num_colors = entities_of_color.size();
 
   // New coloring data
-  dolfin_assert(new_mesh.parallel_data().coloring.size() == 0);
+  dolfin_assert(new_mesh.parallel_data().coloring.empty());
   MeshFunction<uint> new_colors(mesh, tdim);
   std::vector<std::vector<uint> > new_entities_of_color(num_colors);
 
@@ -189,7 +189,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const std::vector<std::vector<uint> >&
     entities_of_color_old = mesh_coloring->second.second;
   dolfin_assert(colors_old.size() == num_cells);
-  dolfin_assert(entities_of_color_old.size() > 0);
+  dolfin_assert(!entities_of_color_old.empty());
 
   // Get coordinates
   const double* coordinates = mesh.geometry().coordinates;

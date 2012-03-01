@@ -189,7 +189,7 @@ double dolfin::residual(const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
-  if (x.size() == 0)
+  if (x.empty())
   {
     dolfin_error("solve.cpp",
                  "normalize vector",

@@ -53,6 +53,9 @@ namespace dolfin
     /// Assignment
     const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
+    /// Return true if the total number of connections is equal to zero
+    bool empty() const { return connections.empty(); }
+
     /// Return total number of connections
     uint size() const { return connections.size(); }
 

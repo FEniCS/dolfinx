@@ -53,7 +53,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Check that a sub system has been specified
-  if (component.size() == 0)
+  if (component.empty())
   {
     dolfin_error("FiniteElement.cpp",
                  "extract subsystem of finite element",

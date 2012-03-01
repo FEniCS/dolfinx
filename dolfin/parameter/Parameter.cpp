@@ -515,7 +515,7 @@ void StringParameter::get_range(std::set<std::string>& range) const
 const StringParameter& StringParameter::operator= (std::string value)
 {
   // Check value
-  if (_range.size() > 0 && _range.find(value) == _range.end())
+  if (!_range.empty() && _range.find(value) == _range.end())
   {
     std::stringstream s;
     s << "Illegal value for parameter. Allowed values are: " << range_str();
@@ -537,7 +537,7 @@ const StringParameter& StringParameter::operator= (const char* value)
   std::string s(value);
 
   // Check value
-  if (_range.size() > 0 && _range.find(s) == _range.end())
+  if (!_range.empty() && _range.find(s) == _range.end())
   {
     std::stringstream s;
     s << "Illegal value for parameter. Allowed values are: " << range_str();

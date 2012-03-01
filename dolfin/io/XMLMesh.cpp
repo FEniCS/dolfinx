@@ -388,7 +388,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 {
   // Check if there is any data to write
-  if (data.mesh_functions.size() + data.arrays.size() == 0)
+  if (data.mesh_functions.size() + data.arrays.empty())
     return;
 
   // Add mesh data node
@@ -461,7 +461,7 @@ void XMLMesh::write_domains(const MeshDomains& domains,
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
   {
-    if (domains.markers(d).size() > 0)
+    if (!domains.markers(d).empty())
       XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node);
   }
 }
