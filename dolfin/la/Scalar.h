@@ -33,7 +33,7 @@
 namespace dolfin
 {
 
-  class GenericSparsityPattern;
+  class TensorLayout;
 
   /// This class represents a real-valued scalar quantity and
   /// implements the GenericTensor interface for scalars.
@@ -64,7 +64,7 @@ namespace dolfin
     { dolfin_assert(rank == 0); value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern)
+    void init(const TensorLayout& tensor_layout)
     { value = 0.0; }
 
     /// Return tensor rank (number of dimensions)

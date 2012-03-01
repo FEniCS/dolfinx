@@ -33,6 +33,8 @@
 namespace dolfin
 {
 
+  class TensorLayout;
+
   /// This class provides the default DOLFIN matrix class,
   /// based on the default DOLFIN linear algebra backend.
 
@@ -42,9 +44,9 @@ namespace dolfin
 
     /// Create empty matrix
     Matrix()
-    { 
-      DefaultFactory factory; 
-      matrix = factory.create_matrix(); 
+    {
+      DefaultFactory factory;
+      matrix = factory.create_matrix();
     }
 
     /// Copy constructor
@@ -62,9 +64,9 @@ namespace dolfin
     virtual bool distributed() const
     { return matrix->distributed(); }
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { matrix->init(sparsity_pattern); }
+    /// Initialize zero tensor using tensor layout
+    virtual void init(const TensorLayout& tensor_layout)
+    { matrix->init(tensor_layout); }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const

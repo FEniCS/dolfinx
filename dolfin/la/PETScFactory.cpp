@@ -52,9 +52,12 @@ boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericSparsityPattern> PETScFactory::create_pattern() const
+boost::shared_ptr<TensorLayout> PETScFactory::create_layout(uint rank) const
 {
-  boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0));
+  bool sparsity = false;
+  if (rank > 1)
+    sparsity = true;
+  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }
 //-----------------------------------------------------------------------------

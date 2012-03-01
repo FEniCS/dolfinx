@@ -16,18 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Garth N. Wells 2012
 //
 // First added:  2008-05-21
-// Last changed: 2011-11-11
+// Last changed: 2012-02-22
 
 #ifndef __DOLFIN_STL_FACTORY_H
 #define __DOLFIN_STL_FACTORY_H
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
-#include "GenericSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 #include "STLMatrix.h"
+#include "TensorLayout.h"
 #include "Vector.h"
 
 namespace dolfin
@@ -61,10 +62,10 @@ namespace dolfin
       return x;
     }
 
-    /// Create empty sparsity pattern
-    virtual boost::shared_ptr<GenericSparsityPattern> create_pattern() const
+    /// Create empty tensor layout
+    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern;
+      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
     }
 

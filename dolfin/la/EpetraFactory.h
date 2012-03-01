@@ -32,7 +32,7 @@
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "LinearAlgebraFactory.h"
 
 // Forwad declarations
@@ -62,8 +62,8 @@ namespace dolfin
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const;
 
-    /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern() const;
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;

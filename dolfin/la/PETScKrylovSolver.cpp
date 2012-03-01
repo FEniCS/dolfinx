@@ -262,10 +262,18 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   set_petsc_operators();
 
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
+  // FIXME: Solve using matrix free matrices fails if no user provided Prec is provided
   // Set preconditioner if necessary
   if (preconditioner && !preconditioner_set)
   {
     preconditioner->set(*this);
+    preconditioner_set = true;
+  }
+
+  // User defined preconditioner
+  else if (pc_dolfin && !preconditioner_set)
+  {
+    PETScUserPreconditioner::setup(*_ksp, *pc_dolfin);
     preconditioner_set = true;
   }
 

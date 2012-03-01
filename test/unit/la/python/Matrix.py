@@ -79,7 +79,7 @@ class AbstractBaseTest(object):
         # Tests bailout for this choice
         if self.backend == "uBLAS" and not use_backend:
             return
-        
+
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
 

@@ -98,7 +98,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, 0, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
   // FIXME: The below selections should be made robust
 

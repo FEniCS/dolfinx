@@ -25,7 +25,7 @@
 
 #include "MTL4Vector.h"
 #include <dolfin/log/dolfin_log.h>
-#include "GenericSparsityPattern.h"
+#include "TensorLayout.h"
 #include "MTL4Matrix.h"
 #include "MTL4Factory.h"
 
@@ -70,9 +70,9 @@ void MTL4Matrix::resize(uint M, uint N)
   A.change_dim(M, N);
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
+void MTL4Matrix::init(const TensorLayout& tensor_layout)
 {
-  resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+  resize(tensor_layout.size(0), tensor_layout.size(1));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Matrix::size(uint dim) const

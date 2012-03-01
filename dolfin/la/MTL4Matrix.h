@@ -42,6 +42,8 @@
 namespace dolfin
 {
 
+  class TensorLayout;
+
   class MTL4Matrix: public GenericMatrix
   {
   public:
@@ -61,8 +63,8 @@ namespace dolfin
     virtual bool distributed() const
     { return false; }
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern);
+    /// Initialize zero tensor using tensor layout
+    virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;

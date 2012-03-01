@@ -36,6 +36,7 @@ namespace dolfin
 {
 
   class GenericVector;
+  class TensorLayout;
 
   /// This class defines a common interface for matrices.
 
@@ -48,8 +49,8 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
+    /// Initialize zero tensor tensor layout
+    virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const

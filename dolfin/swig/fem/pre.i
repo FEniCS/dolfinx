@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth Wells, 2007-2011.
+// Modified by Garth Wells, 2007-2012.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2011-03-10
+// Last changed: 2012-02-29
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -68,39 +68,39 @@
                                                                    Function&);
 
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                                   const Form&,
-                                                                   Function&,
-                                                                   const BoundaryCondition&);
+                                                     const Form&,
+                                                     Function&,
+                                                     const BoundaryCondition&);
 
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                                   const Form&,
+                                       const Form&,
+                                       Function&,
+                                       std::vector<const BoundaryCondition*>);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
+                                                                     Function&);
+
+%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                                    Function&,
-                                                                   std::vector<const BoundaryCondition*>);
+                                                                   const Form&);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&);
+                                                     Function&,
+                                                     const BoundaryCondition&);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&,
-                                                                         const Form&);
+                                                     Function&,
+                                                     const BoundaryCondition&,
+                                                     const Form&);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&,
-                                                                         const BoundaryCondition&);
+                                       Function&,
+                                       std::vector<const BoundaryCondition*>);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&,
-                                                                         const BoundaryCondition&,
-                                                                         const Form&);
-
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&,
-                                                                         std::vector<const BoundaryCondition*>);
-
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                         Function&,
-                                                                         std::vector<const BoundaryCondition*>,
-                                                                         const Form&);
+                                         Function&,
+                                         std::vector<const BoundaryCondition*>,
+                                         const Form&);
 
 %ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
 
@@ -110,11 +110,6 @@
 // Ignore operator= for DirichletBC to avoid warning
 //-----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::operator=;
-
-//-----------------------------------------------------------------------------
-// Ignore one of the constructors for DofMap to avoid warning
-//-----------------------------------------------------------------------------
-%ignore dolfin::DofMap::DofMap(boost::shared_ptr<const ufc::dofmap>, const Mesh&);
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
@@ -139,9 +134,9 @@
 // a typemap
 //-----------------------------------------------------------------------------
 %ignore dolfin::FiniteElement::evaluate_basis(uint i,
-                                             double* values,
-                                             const double* x,
-                                             const Cell& cell) const;
+                                              double* values,
+                                              const double* x,
+                                              const Cell& cell) const;
 
 %ignore dolfin::FiniteElement::evaluate_basis_all(double* values,
                                                   const double* coordinates,
@@ -156,12 +151,12 @@
                                     const Cell& cell) const;
 
 %ignore dolfin::DofMap::tabulate_coordinates(
-			      boost::multi_array<double, 2>& coordinates,
-			      const ufc::cell& cell) const;
+			                              boost::multi_array<double, 2>& coordinates,
+			                              const ufc::cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
-                              boost::multi_array<double, 2>& coordinates,
-                              const ufc::cell& cell) const;
+                                    boost::multi_array<double, 2>& coordinates,
+                                    const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
@@ -176,7 +171,7 @@
     dolfin_cell = true;
     $1 = new dolfin::UFCCell(*reinterpret_cast<dolfin::Cell *>(argp));
   }
-  
+
   else
   {
     dolfin_cell = false;
@@ -195,7 +190,8 @@
     delete $1;
 }
 
-%typecheck(SWIG_TYPECHECK_POINTER) const ufc::cell& {
+%typecheck(SWIG_TYPECHECK_POINTER) const ufc::cell&
+{
   // TYPECHECK const ufc::cell&
   int res = SWIG_ConvertPtr($input, 0, $descriptor(dolfin::Cell*), 0);
   $1 = SWIG_CheckState(res);

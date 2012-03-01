@@ -30,7 +30,7 @@
 #include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
@@ -68,10 +68,13 @@ namespace dolfin
       return x;
     }
 
-    /// Create empty sparsity pattern
-    boost::shared_ptr<GenericSparsityPattern> create_pattern() const
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const
     {
-      boost::shared_ptr<GenericSparsityPattern> pattern(new SparsityPattern(0));
+      bool sparsity = false;
+      if (rank > 1)
+        sparsity = true;
+      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
       return pattern;
     }
 

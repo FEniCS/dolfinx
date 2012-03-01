@@ -17,9 +17,10 @@
 //
 // Modified by Kristian Oelgaard, 2007
 // Modified by Johan Hake, 2009
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2007-04-10
-// Last changed: 2011-04-13
+// Last changed: 2012-02-29
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -93,8 +94,6 @@ namespace dolfin
   /// which in turn is the slowest of the three possible methods.  The
   /// three possibilties are "topological", "geometric" and
   /// "pointwise".
-
-  /// This class specifies the interface for setting (strong)
 
   class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
   {
@@ -301,6 +300,16 @@ namespace dolfin
     void get_boundary_values(Map& boundary_values,
                              std::string method="default") const;
 
+
+    /// Get boundary values from neighbour processes. If a method other than
+    /// "pointwise" is used, this is necessary to ensure all boundary dofs are
+    /// marked on all processes.
+    ///
+    /// *Arguments*
+    ///     boundary_values (boost::unordered_map<uint, double>)
+    ///         Map from dof to boundary value.
+    void gather(Map& boundary_values) const;
+
     /// Make rows of matrix associated with boundary condition zero,
     /// useful for non-diagonal matrices in a block matrix.
     ///
@@ -401,15 +410,18 @@ namespace dolfin
     // Check input data to constructor
     void check() const;
 
+    // Initialize facets (from sub domain, mesh, etc)
+    void init_facets() const;
+
     // Initialize sub domain markers from sub domain
-    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain);
+    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
 
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<uint>& sub_domains,
-                                 uint sub_domain);
+                                 uint sub_domain) const;
 
     // Initialize sub domain markers from mesh
-    void init_from_mesh(uint sub_domain);
+    void init_from_mesh(uint sub_domain) const;
 
     // Compute dofs and values for application of boundary conditions using
     // given method
@@ -444,8 +456,13 @@ namespace dolfin
     boost::shared_ptr<const SubDomain> _user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
-    std::vector<std::pair<uint, uint> > facets;
+    mutable std::vector<std::pair<uint, uint> > facets;
 
+    // User defined mesh function
+    boost::shared_ptr<const MeshFunction<uint> > _user_mesh_function;
+
+    // User defined sub domain marker for mesh or mesh function
+    uint _user_sub_domain_marker;
   };
 
 }
