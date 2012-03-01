@@ -160,15 +160,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   if (reset_sparsity)
   {
     Timer t0("Build sparsity");
-    //boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-    //    = A.factory().create_pattern();
-    //dolfin_assert(sparsity_pattern);
 
-    cout << "Create layout" << endl;
     // Create layout for intialising tensor
     boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
-    cout << "End Create layout" << endl;
 
     std::vector<uint> global_dimensions(a.rank());
     std::vector<std::pair<uint, uint> > local_range(a.rank());
@@ -183,7 +178,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      cout << "Build sparsity pattern" << endl;
       SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
                                     a.mesh(), dofmaps,
                                     a.ufc_form()->num_cell_domains(),
