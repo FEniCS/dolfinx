@@ -41,7 +41,7 @@ MeshDomains::~MeshDomains()
 //-----------------------------------------------------------------------------
 dolfin::uint MeshDomains::dim() const
 {
-  if (_markers.size() > 0)
+  if (!_markers.empty())
     return _markers.size() - 1;
   else
     return 0;
@@ -105,7 +105,7 @@ MeshDomains::cell_domains(const Mesh& mesh) const
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
   dolfin_assert(_markers.size() == D + 1);
-  if (_markers[D]->size() == 0)
+  if (_markers[D]->empty())
     return _cell_domains;
 
   // Compute cell domains
@@ -126,7 +126,7 @@ MeshDomains::facet_domains(const Mesh& mesh) const
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
   dolfin_assert(_markers.size() == D + 1);
-  if (_markers[D - 1]->size() == 0)
+  if (_markers[D - 1]->empty())
     return _facet_domains;
 
   // Compute facet domains
@@ -166,7 +166,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   // Get mesh connectivity D --> d
   dolfin_assert(d <= D);
   const MeshConnectivity& connectivity = mesh.topology()(D, d);
-  dolfin_assert(D == d || connectivity.size() > 0);
+  dolfin_assert(D == d || !connectivity.empty());
 
   // Set all values of mesh function to maximum uint value
   mesh_function.set_all(std::numeric_limits<unsigned int>::max());

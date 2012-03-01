@@ -317,7 +317,7 @@ TimeSeries::find_closest_pair(double t,
   //for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
 
   // Must have at least one value stored
-  if (times.size() == 0)
+  if (times.empty())
   {
     dolfin_error("TimeSeries.cpp",
                  "to retrieve data from time seris",

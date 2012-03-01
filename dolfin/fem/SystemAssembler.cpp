@@ -97,7 +97,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  if (!cell_domains || cell_domains->size() == 0)
+  if (!cell_domains || cell_domains->empty())
   {
     if (a.cell_domains_shared_ptr().get() ||
         L.cell_domains_shared_ptr().get())
@@ -108,7 +108,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
     if (a.exterior_facet_domains_shared_ptr().get() ||
         L.exterior_facet_domains_shared_ptr().get())
@@ -119,7 +119,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  if (!interior_facet_domains || interior_facet_domains->empty())
   {
     if (a.interior_facet_domains_shared_ptr().get() ||
         L.interior_facet_domains_shared_ptr().get())
@@ -307,7 +307,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     std::fill(data.be.begin(), data.be.end(), 0.0);
 
     // Get cell integrals for sub domain (if any)
-    if (cell_domains && cell_domains->size() > 0)
+    if (cell_domains && !cell_domains->empty())
     {
       const uint domain = (*cell_domains)[*cell];
       if (domain < A_ufc.form.num_cell_domains())
@@ -355,7 +355,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           continue;
 
         // Get exterior facet integrals for sub domain (if any)
-        if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+        if (exterior_facet_domains && !exterior_facet_domains->empty())
         {
           const uint domain = (*exterior_facet_domains)[*facet];
           if (domain < A_ufc.form.num_exterior_facet_domains())
@@ -521,7 +521,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (interior_facet_domains && interior_facet_domains->size() > 0)
+  if (interior_facet_domains && !interior_facet_domains->empty())
   {
     const uint domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())

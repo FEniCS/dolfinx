@@ -62,7 +62,7 @@ Point Facet::normal() const
 //-----------------------------------------------------------------------------
 bool Facet::exterior() const
 {
-  if (_mesh->parallel_data().exterior_facet().size() > 0)
+  if (!_mesh->parallel_data().exterior_facet().empty())
     return _mesh->parallel_data().exterior_facet()[this->index()];
   else
     return num_entities(dim() + 1) == 1;

@@ -605,7 +605,7 @@ void DirichletBC::check() const
 //-----------------------------------------------------------------------------
 void DirichletBC::init_facets() const
 {
-  if (facets.size() > 0)
+  if (!facets.empty())
     return;
 
   if (_user_sub_domain)
@@ -618,7 +618,7 @@ void DirichletBC::init_facets() const
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(facets.empty());
 
   // FIXME: This can be made more efficient, we should be able to
   // FIXME: extract the facets without first creating a MeshFunction on
@@ -649,7 +649,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
 void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
                                           uint sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(facets.empty());
 
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
@@ -678,7 +678,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh(uint sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(facets.empty());
 
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
@@ -733,7 +733,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   init_facets();
 
   // Special case
-  if (facets.size() == 0)
+  if (facets.empty())
   {
     if (MPI::num_processes() == 1)
       warning("Found no facets matching domain for boundary condition.");
@@ -792,7 +792,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   init_facets();
 
   // Special case
-  if (facets.size() == 0)
+  if (facets.empty())
   {
     if (MPI::num_processes() == 1)
       warning("Found no facets matching domain for boundary condition.");

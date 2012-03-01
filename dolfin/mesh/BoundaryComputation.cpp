@@ -91,7 +91,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (f->num_entities(D) == 1)
     {
       // Determine if we have a boundary facet
-      if (exterior.size() == 0)
+      if (exterior.empty())
         boundary_facet[*f] = true;
       else
       {
@@ -139,7 +139,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (vertex_index != mesh.num_vertices())
     {
       // Create mapping from boundary vertex to mesh vertex if requested
-      if (vertex_map.size() > 0)
+      if (!vertex_map.empty())
         vertex_map[vertex_index] = v->index();
 
       // Add vertex
@@ -163,7 +163,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       reorder(cell, *f);
 
       // Create mapping from boundary cell to mesh facet if requested
-      if (cell_map.size() > 0)
+      if (!cell_map.empty())
         cell_map[current_cell] = f->index();
 
       // Add cell

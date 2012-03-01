@@ -116,7 +116,7 @@ void Assembler::assemble(GenericTensor& A,
   // stored as part of the mesh.
 
   // Get cell domains
-  if (!cell_domains || cell_domains->size() == 0)
+  if (!cell_domains || cell_domains->empty())
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
@@ -124,7 +124,7 @@ void Assembler::assemble(GenericTensor& A,
   }
 
   // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
@@ -132,7 +132,7 @@ void Assembler::assemble(GenericTensor& A,
   }
 
   // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  if (!interior_facet_domains || interior_facet_domains->empty())
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
@@ -210,7 +210,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Cell integral
-  dolfin_assert(ufc.cell_integrals.size() > 0);
+  dolfin_assert(!ufc.cell_integrals.empty());
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
@@ -218,7 +218,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
+    if (domains && !domains->empty())
     {
       const uint domain = (*domains)[*cell];
       if (domain < ufc.form.num_cell_domains())
@@ -278,7 +278,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Exterior facet integral
-  dolfin_assert(ufc.exterior_facet_integrals.size() > 0);
+  dolfin_assert(!ufc.exterior_facet_integrals.empty());
   const ufc::exterior_facet_integral*
     integral = ufc.exterior_facet_integrals[0].get();
 
@@ -301,7 +301,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     }
 
     // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
+    if (domains && !domains->empty())
     {
       const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_exterior_facet_domains())
@@ -367,7 +367,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   std::vector<std::vector<uint> > macro_dofs(form_rank);
 
   // Interior facet integral
-  dolfin_assert(ufc.interior_facet_integrals.size() > 0);
+  dolfin_assert(!ufc.interior_facet_integrals.empty());
   const ufc::interior_facet_integral*
     integral = ufc.interior_facet_integrals[0].get();
 
@@ -401,7 +401,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
+    if (domains && !domains->empty())
     {
       const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_interior_facet_domains())

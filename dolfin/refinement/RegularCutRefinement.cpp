@@ -87,7 +87,7 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
   // Iterate until no more cells are marked
   cells.fill();
-  while (cells.size() > 0)
+  while (!cells.empty())
   {
     // Iterate over all cells in list
     for (uint _i = 0; _i < cells.size(); _i++)

@@ -411,7 +411,7 @@ std::string Parameters::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    if (_parameters.size() == 0 && _parameter_sets.size() == 0)
+    if (_parameters.empty() && _parameter_sets.empty())
     {
       s << name() << indent("(empty)");
       return s.str();

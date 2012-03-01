@@ -507,7 +507,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   }
 
   // Check dimensions of A vs x
-  if (x.size() > 0 && x.size() != A.size(1))
+  if (!x.empty() && x.size() != A.size(1))
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",

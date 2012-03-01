@@ -161,7 +161,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   // Create vector
   if (type == "local")
   {
-    if (ghost_indices.size() != 0)
+    if (!ghost_indices.empty())
     {
       dolfin_error("EpetraVector.cpp",
                    "resize Epetra vector",
@@ -191,6 +191,11 @@ void EpetraVector::resize(std::pair<uint, uint> range,
   Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
                             ghost_entries, 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
+}
+//-----------------------------------------------------------------------------
+bool EpetraVector::empty() const
+{
+  return x ? x->GlobalLength() == 0: true;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const
@@ -393,7 +398,7 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
-  if (off_process_set_values.size() > 0)
+  if (!off_process_set_values.empty())
   {
     dolfin_error("EpetraVector.cpp",
                  "add block of values to Epetra vector",
@@ -420,7 +425,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
   const uint n0 = map.MinMyGID();
 
   // Get values
-  if (ghost_global_to_local.size() == 0)
+  if (ghost_global_to_local.empty())
   {
     for (uint i = 0; i < m; ++i)
       block[i] = (*x)[0][rows[i] - n0];

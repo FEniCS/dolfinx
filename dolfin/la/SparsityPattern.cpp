@@ -215,7 +215,7 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros)
 void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
 {
   num_nonzeros_diagonal(num_nonzeros);
-  if (off_diagonal.size() > 0)
+  if (!off_diagonal.empty())
   {
     std::vector<uint> tmp;
     num_nonzeros_off_diagonal(tmp);

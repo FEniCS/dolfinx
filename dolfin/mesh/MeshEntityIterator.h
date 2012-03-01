@@ -92,11 +92,11 @@ namespace dolfin
       const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
 
       // Compute connectivity if empty
-      if (c.size() == 0)
+      if (c.empty())
         entity.mesh().init(entity.dim(), dim);
 
       // Get size and index map
-      if (c.size() == 0)
+      if (c.empty())
       {
         pos_end = 0;
         index = 0;

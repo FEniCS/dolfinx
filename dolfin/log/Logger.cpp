@@ -60,7 +60,7 @@ void Logger::log(std::string msg, int log_level) const
 //-----------------------------------------------------------------------------
 void Logger::log_underline(std::string msg, int log_level) const
 {
-  if (msg.size() == 0)
+  if (msg.empty())
     log(msg, log_level);
 
   std::stringstream s;
@@ -198,7 +198,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::summary(bool reset)
 {
-  if (timings.size() == 0)
+  if (timings.empty())
   {
     log("Timings: no timings to report.");
     return;

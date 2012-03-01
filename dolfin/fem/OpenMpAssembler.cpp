@@ -196,7 +196,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       const Cell cell(mesh, index);
 
       // Get integral for sub domain (if any)
-      if (domains && domains->size() > 0)
+      if (domains && !domains->empty())
       {
         const uint domain = (*domains)[cell];
         if (domain < ufc.form.num_cell_domains())
@@ -265,7 +265,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get connectivity
   const MeshConnectivity& connectivity = mesh.topology()(D, D - 1);
-  dolfin_assert(connectivity.size() > 0);
+  dolfin_assert(!connectivity.empty());
 
   // Dummy UFC object since each thread needs to created its own UFC object
   UFC ufc(_ufc);
@@ -275,7 +275,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Cell and facet integrals
   ufc::cell_integral* cell_integral = 0;
-  if (ufc.cell_integrals.size() > 0)
+  if (!ufc.cell_integrals.empty())
     cell_integral = ufc.cell_integrals[0].get();
   ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
 
@@ -331,7 +331,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       const Cell cell(mesh, cell_index);
 
       // Get integral for sub domain (if any)
-      if (cell_domains && cell_domains->size() > 0)
+      if (cell_domains && !cell_domains->empty())
       {
         const uint cell_domain = (*cell_domains)[cell_index];
         if (cell_domain < ufc.form.num_cell_domains())
@@ -378,7 +378,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         const uint local_facet = cell.index(*facet);
 
 	// Get integral for sub domain (if any)
-	if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+	if (exterior_facet_domains && !exterior_facet_domains->empty())
 	{
 
 	  // Get global facet index
@@ -448,7 +448,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   omp_set_num_threads(parameters["num_threads"]);
 
   // Get integral for sub domain (if any)
-  if (domains && domains->size() > 0)
+  if (domains && !domains->empty())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -539,7 +539,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       }
 
       // Get integral for sub domain (if any)
-      if (domains && domains->size() > 0)
+      if (domains && !domains->empty())
       {
         const uint domain = (*domains)[facet];
         if (domain < ufc.form.num_interior_facet_domains())

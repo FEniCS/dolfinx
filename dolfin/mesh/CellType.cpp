@@ -155,7 +155,7 @@ bool CellType::ordered(const Cell& cell,
   {
     // Check if entities exist, otherwise skip
     const MeshConnectivity& connectivity = topology(d, 0);
-    if (connectivity.size() == 0) continue;
+    if (connectivity.empty()) continue;
 
     // Get entities
     const uint num_entities = topology(dim, d).size(c);
