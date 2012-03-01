@@ -235,5 +235,4 @@ dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
   return 0;
 }
 //-----------------------------------------------------------------------------
-
 #endif
