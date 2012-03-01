@@ -142,6 +142,7 @@ namespace dolfin
         resize(other._size);
       if (_size > 0)
         std::copy(&other._x[0], &other._x[_size], &_x[0]);
+      return *this;
     }
 
     /// Return pointer to data (const version)
