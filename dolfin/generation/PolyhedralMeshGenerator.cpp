@@ -205,7 +205,6 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
     // Generate mesh
     cgal_generate(mesh, p, cell_size, detect_sharp_features);
   }
-  MPI::barrier();
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(mesh);
