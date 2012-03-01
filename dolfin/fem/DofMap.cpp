@@ -291,12 +291,12 @@ const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owne
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<uint, std::vector<uint> >& DofMap::shared_dofs() const
+const boost::unordered_map<dolfin::uint, std::vector<uint> >& DofMap::shared_dofs() const
 {
   return _shared_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::set<uint>& DofMap::neighbours() const
+const std::set<dolfin::uint>& DofMap::neighbours() const
 {
   return _neighbours;
 }
