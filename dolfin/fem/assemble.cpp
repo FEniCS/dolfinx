@@ -17,14 +17,16 @@
 //
 // Modified by Garth N. Wells, 2008.
 // Modified by Johan Hake, 2009.
+// Modified by Joachim B. Haga, 2012.
 //
 // First added:  2007-01-17
-// Last changed: 2011-11-13
+// Last changed: 2012-02-01
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
+#include "SymmetricAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -120,6 +122,39 @@ void dolfin::assemble_system(GenericMatrix& A,
                             cell_domains, exterior_facet_domains,
                             interior_facet_domains, x0,
                             reset_sparsity, add_values, finalize_tensor);
+}
+//-----------------------------------------------------------------------------
+void dolfin::symmetric_assemble(GenericMatrix& As,
+                                GenericMatrix& An,
+                                const Form& a,
+                                const std::vector<const DirichletBC*>& bcs,
+                                const MeshFunction<unsigned int>* cell_domains,
+                                const MeshFunction<unsigned int>* exterior_facet_domains,
+                                const MeshFunction<unsigned int>* interior_facet_domains,
+                                bool reset_sparsity,
+                                bool add_values,
+                                bool finalize_tensor)
+{
+  SymmetricAssembler::assemble(As, An, a, bcs, bcs,
+                               cell_domains, exterior_facet_domains, interior_facet_domains,
+                               reset_sparsity, add_values, finalize_tensor);
+}
+//-----------------------------------------------------------------------------
+void dolfin::symmetric_assemble(GenericMatrix& As,
+                                GenericMatrix& An,
+                                const Form& a,
+                                const std::vector<const DirichletBC*>& row_bcs,
+                                const std::vector<const DirichletBC*>& col_bcs,
+                                const MeshFunction<unsigned int>* cell_domains,
+                                const MeshFunction<unsigned int>* exterior_facet_domains,
+                                const MeshFunction<unsigned int>* interior_facet_domains,
+                                bool reset_sparsity,
+                                bool add_values,
+                                bool finalize_tensor)
+{
+  SymmetricAssembler::assemble(As, An, a, row_bcs, col_bcs,
+                               cell_domains, exterior_facet_domains, interior_facet_domains,
+                               reset_sparsity, add_values, finalize_tensor);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
