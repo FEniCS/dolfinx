@@ -242,6 +242,7 @@ void Mesh::clear()
   _cell_type = 0;
   _intersection_operator.clear();
   _ordered = false;
+  _parallel_data.reset(new ParallelData(*this));
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()
