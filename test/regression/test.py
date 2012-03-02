@@ -120,6 +120,8 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'simple'      ,                'python'), \
+   os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'triangulate'      ,           'python'), \
    os.path.join(demodir, 'undocumented', 'periodic',                    'cpp'),    \
    os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
    os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
