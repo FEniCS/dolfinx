@@ -21,7 +21,7 @@
 #ifndef __RECTANGLE_H
 #define __RECTANGLE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {

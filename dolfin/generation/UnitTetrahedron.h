@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Nuno Lopes
+// Copyright (C) 2010 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,36 +15,32 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-07-15
-// Last changed: 2008-07-15
+// First added:  2010-10-19
+// Last changed: 2010-10-19
 
-#ifndef __UNIT_SPHERE_H
-#define __UNIT_SPHERE_H
+#ifndef __UNIT_TETRAHEDRON_H
+#define __UNIT_TETRAHEDRON_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// Triangular mesh of the 3D unit sphere.
+  /// A mesh consisting of a single tetrahedron with vertices at
   ///
-  /// Given the number of cells (nx, ny, nz) in each direction,
-  /// the total number of tetrahedra will be 6*nx*ny*nz and the
-  /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
+  ///   (0, 0, 0)
+  ///   (1, 0, 0)
+  ///   (0, 1, 0)
+  ///   (0, 0, 1)
+  ///
+  /// This class is useful for testing.
 
-
-  class UnitSphere : public Mesh
+  class UnitTetrahedron : public Mesh
   {
   public:
 
-    UnitSphere(uint nx);
-
-  private:
-
-    double transformx(double x,double y,double z);
-    double transformy(double x,double y,double z);
-    double transformz(double x,double y,double z);
-    double max(double x,double y,double z);
+    /// Create mesh of unit tetrahedron
+    UnitTetrahedron();
 
   };
 

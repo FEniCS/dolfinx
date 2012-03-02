@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kristian B. Oelgaard
+// Copyright (C) 2010 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,50 +15,36 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2007-11-23
-// Last changed: 2011-11-22
+// First added:  2010-10-19
+// Last changed: 2010-10-19
 
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
-#include "UnitInterval.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include "UnitTetrahedron.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitInterval::UnitInterval(uint nx) : Mesh()
+UnitTetrahedron::UnitTetrahedron() : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
-  if ( nx < 1 )
-    dolfin_error("UnitInterval.cpp",
-                 "create unit interval",
-                 "Size of unit interval must be at least 1");
-
-  rename("mesh", "Mesh of the unit interval (0,1)");
-
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::interval, 1, 1);
+  editor.open(*this, CellType::tetrahedron, 3, 3);
 
-  // Create vertices and cells:
-  editor.init_vertices((nx+1));
-  editor.init_cells(nx);
+  // Create vertices
+  editor.init_vertices(4);
+  editor.add_vertex(0, 0, 0, 0);
+  editor.add_vertex(1, 1, 0, 0);
+  editor.add_vertex(2, 0, 1, 0);
+  editor.add_vertex(3, 0, 0, 1);
 
-  // Create main vertices:
-  for (uint ix = 0; ix <= nx; ix++)
-  {
-    const double x = static_cast<double>(ix) / static_cast<double>(nx);
-    editor.add_vertex(ix, x);
-  }
-
-  // Create intervals
-  for (uint ix = 0; ix < nx; ix++) {
-    const uint v0 = ix;
-    const uint v1 = v0 + 1;
-    editor.add_cell(ix, v0, v1);
-  }
+  // Create cells
+  editor.init_cells(1);
+  editor.add_cell(0, 0, 1, 2, 3);
 
   // Close mesh editor
   editor.close();

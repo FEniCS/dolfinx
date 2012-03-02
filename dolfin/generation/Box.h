@@ -23,7 +23,7 @@
 #ifndef __BOX_H
 #define __BOX_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {

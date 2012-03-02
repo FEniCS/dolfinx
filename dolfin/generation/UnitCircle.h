@@ -23,7 +23,7 @@
 #ifndef __UNIT_CIRCLE_H
 #define __UNIT_CIRCLE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
@@ -33,7 +33,7 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
 
-  /// std::string diagonal ("left", "right" or "crossed") indicates the 
+  /// std::string diagonal ("left", "right" or "crossed") indicates the
   /// direction of the diagonals.
 
   /// std:string transformation ("maxn", "sumn" or "rotsumn")

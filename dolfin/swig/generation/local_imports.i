@@ -18,10 +18,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-29
+// Last changed: 2012-03-02
 
 // Auto generated local_import statements for the module: generation
 
 %import(module="mesh") "dolfin/generation/PolygonalMeshGenerator.h"
 %import(module="mesh") "dolfin/generation/PolyhedralMeshGenerator.h"
 %import(module="mesh") "dolfin/generation/Triangulate.h"
+%import(module="mesh") "dolfin/generation/UnitTetrahedron.h"
+%import(module="mesh") "dolfin/generation/UnitCube.h"
+%import(module="mesh") "dolfin/generation/UnitInterval.h"
+%import(module="mesh") "dolfin/generation/UnitTriangle.h"
+%import(module="mesh") "dolfin/generation/UnitSquare.h"
+%import(module="mesh") "dolfin/generation/UnitCircle.h"
+%import(module="mesh") "dolfin/generation/Box.h"
+%import(module="mesh") "dolfin/generation/Rectangle.h"
+%import(module="mesh") "dolfin/generation/UnitSphere.h"
