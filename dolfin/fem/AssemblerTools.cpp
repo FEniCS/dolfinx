@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells, 2007-2010
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
+// Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2011-10-03
+// Last changed: 2012-03-02
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -189,6 +190,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t1("Init tensor");
     A.init(*tensor_layout);
     t1.stop();
+
+    // Delete sparsity pattern
+    Timer t2("Delete sparsity");
+    t2.stop();
   }
   else
   {
