@@ -238,11 +238,11 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
+  _parallel_data.reset(new ParallelData(*this));
   delete _cell_type;
   _cell_type = 0;
   _intersection_operator.clear();
   _ordered = false;
-  _parallel_data.reset(new ParallelData(*this));
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()
