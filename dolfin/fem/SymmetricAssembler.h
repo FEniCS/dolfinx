@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-26 (jobh@simula.no)
+// Last changed: 2012-03-03
 
 #ifndef __SYMMETRIC_ASSEMBLER_H
 #define __SYMMETRIC_ASSEMBLER_H
@@ -29,6 +30,7 @@
 
 namespace dolfin
 {
+
   /// This class provides implements an assembler for systems
   /// of the form Ax = b. Its assembly algorithms are similar to SystemAssember's,
   /// but it saves the matrix modifications into a separate tensor so that it
@@ -75,8 +77,11 @@ namespace dolfin
                          bool finalize_tensor=true);
 
   private:
+
     class PImpl;
+
   };
+
 }
 
 #endif

@@ -16,7 +16,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added: 2012-02-01 (modified from Assembler.cpp by jobh@simula.no)
+// First added:  2012-02-01 (modified from Assembler.cpp by jobh@simula.no)
+// Last changed: 2012-03-03
 
 #include <boost/scoped_ptr.hpp>
 
@@ -49,6 +50,7 @@ using namespace dolfin;
 class SymmetricAssembler::PImpl
 {
 public:
+
   // User-provided parameters
   GenericMatrix& A;
   GenericMatrix& A_asymm;
@@ -83,6 +85,7 @@ public:
   void assemble();
 
 private:
+
   void assemble_cells();
   void assemble_exterior_facets();
   void assemble_interior_facets();
@@ -107,7 +110,9 @@ private:
 
   // Scratch variables
   std::vector<bool> local_row_is_bc;
+
 };
+
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::assemble(GenericMatrix& A,
                                   GenericMatrix& A_asymm,
@@ -381,9 +386,9 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
   if (ufc.form.num_interior_facet_domains() == 0)
     return;
 
- not_working_in_parallel("Assembly over interior facets");
+  not_working_in_parallel("Assembly over interior facets");
 
- Timer timer("Assemble interior facets");
+  Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
@@ -576,13 +581,16 @@ bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
 
     // Move the column to A_asymm, zero it in A
     for (uint row = 0; row < num_local_rows; ++row)
+    {
       if (!local_row_is_bc[row])
       {
         const uint entry = col + row*num_local_cols;
         local_A_asymm[entry] = local_A[entry];
         local_A[entry] = 0.0;
       }
+    }
   }
 
   return columns_moved;
 }
+//-----------------------------------------------------------------------------
