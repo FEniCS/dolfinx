@@ -233,6 +233,9 @@ namespace dolfin
       v->info() = vertex_index++;
     }
 
+    // Sanity check on number of vertices
+    dolfin_assert(vertex_index == num_vertices);
+
     // Iterate over all cell in triangulation
     unsigned int cell_index = 0;
     typename T::Triangulation::Finite_cells_iterator c;
@@ -247,6 +250,9 @@ namespace dolfin
                                            c->vertex(3)->info());
       }
     }
+
+    // Sanity check on number of cells
+    dolfin_assert(cell_index == num_cells);
 
     // Close mesh editor
     mesh_editor.close();
