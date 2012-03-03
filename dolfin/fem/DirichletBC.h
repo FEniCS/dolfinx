@@ -289,7 +289,11 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
 
-    /// Get Dirichlet dofs and values
+    /// Get Dirichlet dofs and values. If a method other than 'pointwise' is
+    /// used in parallel, the map may not be complete for local vertices since
+    /// a vertex can have a bc applied, but the partition might not have a
+    /// facet on the boundary. To ensure all local boundary dofs are marked,
+    /// it is necessary to call gather() on the returned boundary values.
     ///
     /// *Arguments*
     ///     boundary_values (boost::unordered_map<uint, double>)
