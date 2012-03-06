@@ -877,7 +877,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
           // Set boundary value
           const double value = data.w[i];
-          boundary_values[cell_dofs[i]] = value;
+          boundary_values[global_dof] = value;
         }
       }
     }
@@ -953,7 +953,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
       // Set boundary value
       const double value = data.w[i];
-      boundary_values[cell_dofs[i]] = value;
+      boundary_values[global_dof] = value;
     }
 
     p++;
