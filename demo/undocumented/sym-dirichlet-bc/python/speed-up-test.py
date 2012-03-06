@@ -22,8 +22,8 @@
 # First added:  2008-08-13
 # Last changed: 2008-08-13
 
-import time
 from dolfin import *
+import time
 
 
 # Sub domain for Dirichlet boundary condition
@@ -31,14 +31,14 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return bool(on_boundary and x[0] < DOLFIN_EPS)
 
-mesh = UnitSquare(500,500)
+mesh = UnitCube(32,32,32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
 
-f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 
 a = dot(grad(v), grad(u))*dx
@@ -71,5 +71,10 @@ for backend in backends:
     t1 = time.time()
     print "time for new assembly      ", t1-t0, " using ", backend
 
+    t0 = time.time()
+    A, Aa = symmetric_assemble(a, bcs=bc)
+    b = assemble(L, bcs=bc)
+    t1 = time.time()
+    print "time for symm assembly     ", t1-t0, " using ", backend
 
 #summary()
