@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-07
+// Last changed: 2012-03-06
 
 #ifndef __UNIT_CUBE_H
 #define __UNIT_CUBE_H
@@ -35,7 +35,7 @@ namespace dolfin
   {
   public:
 
-    /// Define a uniform finite element _Mesh_ over the unit cube
+    /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].
     ///
     /// *Arguments*
