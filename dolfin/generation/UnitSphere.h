@@ -34,6 +34,11 @@ namespace dolfin
   {
   public:
 
+    /// WARNING:
+    ///
+    /// The UnitSphere class is broken and should not be used for computations.
+    /// It generates meshes of very bad quality (very thin tetrahedra).
+    ///
     /// Create a uniform finite element _Mesh_ over the unit sphere.
     ///
     /// *Arguments*

@@ -31,6 +31,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitSphere::UnitSphere(uint n) : Mesh()
 {
+  warning("The UnitSphere class is broken and should not be used for computations. "
+          "It generates meshes of very bad quality (very thin tetrahedra).");
+
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
