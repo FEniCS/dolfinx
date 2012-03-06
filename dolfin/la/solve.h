@@ -59,21 +59,21 @@ namespace dolfin
   // Return true if a specific linear algebra backend is supported
   bool has_linear_algebra_backend(std::string backend);
 
-  /// Return true if LU method for the current linear algebra backend is 
+  /// Return true if LU method for the current linear algebra backend is
   /// available
   bool has_lu_solver_method(std::string method);
 
-  /// Return true if Krylov method for the current linear algebra backend is 
+  /// Return true if Krylov method for the current linear algebra backend is
   /// available
   bool has_krylov_solver_method(std::string method);
 
-  /// Return true if Preconditioner for the current linear algebra backend is 
+  /// Return true if Preconditioner for the current linear algebra backend is
   /// available
   bool has_krylov_solver_preconditioner(std::string preconditioner);
 
   /// Return available linear algebra backends
   std::vector<std::pair<std::string, std::string> > linear_algebra_backends();
-  
+
   /// Return a list of available solver methods for current linear algebra backend
   std::vector<std::pair<std::string, std::string> > linear_solver_methods();
 
@@ -89,6 +89,9 @@ namespace dolfin
   /// Compute residual ||Ax - b||
   double residual(const GenericMatrix& A, const GenericVector& x,
                   const GenericVector& b);
+
+  /// Compute norm of vector. Valid norm types are "l2", "l1" and "linf".
+  double norm(const GenericVector& x, std::string norm_type="l2");
 
   /// Normalize vector according to given normalization type
   double normalize(GenericVector& x,
