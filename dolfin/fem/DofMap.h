@@ -18,9 +18,10 @@
 // Modified by Martin Alnes, 2008
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2011-10-31
+// Last changed: 2012-02-29
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -61,17 +62,17 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, Mesh& mesh);
-
-    /// Create dof map on mesh ((data is not shared), const mesh
-    /// version)
-    ///
-    /// *Arguments*
-    ///     ufc_dofmap (ufc::dofmap)
-    ///         The ufc::dofmap.
-    ///     mesh (_Mesh_)
-    ///         The mesh.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
+
+  private:
+
+    // Create a sub-dofmap (a view) from parent_dofmap
+    DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+           const Mesh& mesh, bool distributed);
+
+    // Create a collapsed dofmap from parent_dofmap
+    DofMap(boost::unordered_map<uint, uint>& collapsed_map,
+           const DofMap& dofmap_view, const Mesh& mesh, bool distributed);
 
     /// Copy constructor
     ///
@@ -79,16 +80,6 @@ namespace dolfin
     ///     dofmap (_DofMap_)
     ///         The object to be copied.
     DofMap(const DofMap& dofmap);
-
-  private:
-
-    /// Create a sub-dofmap (a view) from parent_dofmap
-    DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
-           const Mesh& mesh, bool distributed);
-
-    /// Create a collapsed dofmap from parent_dofmap
-    DofMap(boost::unordered_map<uint, uint>& collapsed_map,
-           const DofMap& dofmap_view, const Mesh& mesh, bool distributed);
 
   public:
 
@@ -177,6 +168,21 @@ namespace dolfin
     ///     boost::unordered_map<unsigned int, unsigned int>
     ///         The map from non-local dofs.
     const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
+
+    /// Return map from all shared dofs to the processes (not including the current
+    /// process) that share it.
+    ///
+    /// *Returns*
+    ///     boost::unordered_map<uint, std::vector<uint> >
+    ///         The map from dofs to list of processes
+    const boost::unordered_map<uint, std::vector<uint> >& shared_dofs() const;
+
+    /// Return set of all neighbouring processes.
+    ///
+    /// *Returns*
+    ///     boost::unordered_set<uint>
+    ///         The set of processes
+    const std::set<uint>& neighbours() const;
 
     /// Local-to-global mapping of dofs on a cell
     ///
@@ -345,6 +351,12 @@ namespace dolfin
     // Owner (process) of dofs in local dof map that do not belong to
     // this process
     boost::unordered_map<uint, uint> _off_process_owner;
+
+    // List of processes that share a given dof
+    boost::unordered_map<uint, std::vector<uint> > _shared_dofs;
+
+    // Neighbours (processes that we share dofs with)
+    std::set<uint> _neighbours;
 
     // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;

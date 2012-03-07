@@ -201,7 +201,7 @@ void Mesh::init(uint d0, uint d1) const
   }
 
   // Skip if already computed
-  if (_topology(d0, d1).size() > 0)
+  if (!_topology(d0, d1).empty())
     return;
 
   // Check that mesh is ordered
@@ -238,6 +238,7 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
+  _parallel_data.reset(new ParallelData(*this));
   delete _cell_type;
   _cell_type = 0;
   _intersection_operator.clear();

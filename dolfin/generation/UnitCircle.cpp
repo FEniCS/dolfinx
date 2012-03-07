@@ -1,4 +1,5 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2012 Anders Logg
+// AL: I don't think I wrote this file, who did?
 //
 // This file is part of DOLFIN.
 //
@@ -15,44 +16,52 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007.
+// Modified by Garth N. Wells 2007
 // Modified by Nuno Lopes 2008
+// Modified by Anders Logg 2012
 //
 // First added:  2005-12-02
-// Last changed: 2011-08-23
+// Last changed: 2012-03-06
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "UnitCircle.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircle::UnitCircle(uint nx, std::string diagonal,
+UnitCircle::UnitCircle(uint n, std::string diagonal,
                        std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+  {
     dolfin_error("UnitCircle.cpp",
                  "create unit circle",
                  "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
+  }
 
   if (transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
+  {
     dolfin_error("UnitCircle.cpp",
                  "create unit circle",
                  "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
                  transformation.c_str());
+  }
 
-  if ( nx < 1 )
+  if (n < 1)
+  {
     dolfin_error("UnitCircle.cpp",
                  "create unit circle",
                  "Size of unit square must be at least 1");
+  }
 
-  const uint ny = nx;
+  const uint nx = n;
+  const uint ny = n;
 
   rename("mesh", "Mesh of the unit circle");
 
@@ -77,10 +86,10 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   double x_trans[2];
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
+    const double y = -1.0 + static_cast<double>(iy)*2.0 / static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
+      const double x = -1.0 + static_cast<double>(ix)*2.0 / static_cast<double>(nx);
       transform(x_trans, x, y, transformation);
       editor.add_vertex(vertex++, x_trans[0], x_trans[1]);
     }
@@ -170,8 +179,8 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
 
   if(transformation == "maxn")
   {
-    trans[0] = x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
-    trans[1] = y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
+    trans[0] = x*max(std::abs(x),std::abs(y)) / sqrt(x*x+y*y);
+    trans[1] = y*max(std::abs(x),std::abs(y)) / sqrt(x*x+y*y);
   }
   else if (transformation == "sumn")
   {
@@ -179,15 +188,15 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
     dolfin_error("UnitCircle.cpp",
                  "transform to unit circle",
                  "'sumn' mapping for a UnitCircle is broken");
-    trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-    trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    trans[0] = x*(std::abs(x)+std::abs(y)) / sqrt(x*x+y*y);
+    trans[1] = y*(std::abs(x)+std::abs(y)) / sqrt(x*x+y*y);
   }
   else if (transformation == "rotsumn")
   {
     double xx = 0.5*(x+y);
     double yy = 0.5*(-x+y);
-    trans[0] = xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
-    trans[1] = yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
+    trans[0] = xx*(std::abs(xx)+std::abs(yy)) / sqrt(xx*xx+yy*yy);
+    trans[1] = yy*(std::abs(xx)+std::abs(yy)) / sqrt(xx*xx+yy*yy);
   }
   else
     dolfin_error("UnitCircle.cpp",

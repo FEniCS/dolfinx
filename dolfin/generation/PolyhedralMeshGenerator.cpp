@@ -44,9 +44,11 @@
 #include "triangulate_polyhedron.h"
 #include "compute_normal.h"
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/Point.h>
 #include "PolyhedralMeshGenerator.h"
 
@@ -184,21 +186,28 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
                                        double cell_size,
                                        bool detect_sharp_features)
 {
-  // Create empty CGAL polyhedron
-  Polyhedron p;
-
-  // Read polyhedron from file
-  std::ifstream p_file(off_file.c_str());
-  if (!p_file)
+  // Generate CGAL mesh on root process
+  if (MPI::process_number() == 0)
   {
-    dolfin_error("PolyhedralMeshGenerator.cpp",
-                 "open .off file to read 3D geometry",
-                 "Failed to open file");
-  }
-  p_file >> p;
+    // Create empty CGAL polyhedron
+    Polyhedron p;
 
-  // Generate mesh
-  cgal_generate(mesh, p, cell_size, detect_sharp_features);
+    // Read polyhedron from file
+    std::ifstream p_file(off_file.c_str());
+    if (!p_file)
+    {
+      dolfin_error("PolyhedralMeshGenerator.cpp",
+                   "open .off file to read 3D geometry",
+                   "Failed to open file");
+    }
+    p_file >> p;
+
+    // Generate mesh
+    cgal_generate(mesh, p, cell_size, detect_sharp_features);
+  }
+
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate(Mesh& mesh,
@@ -206,15 +215,22 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
                         const std::vector<std::vector<unsigned int> >& facets,
                         double cell_size, bool detect_sharp_features)
 {
-  // Create empty CGAL polyhedron
-  Polyhedron p;
+  // Generate CGAL mesh on root process
+  if (MPI::process_number() == 0)
+  {
+    // Create empty CGAL polyhedron
+    Polyhedron p;
 
-  // Build CGAL polyhedron
-  BuildSurface<HalfedgeDS> poly_builder(vertices, facets);
-  p.delegate(poly_builder);
+    // Build CGAL polyhedron
+    BuildSurface<HalfedgeDS> poly_builder(vertices, facets);
+    p.delegate(poly_builder);
 
-  // Generate mesh
-  cgal_generate(mesh, p, cell_size, detect_sharp_features);
+    // Generate mesh
+    cgal_generate(mesh, p, cell_size, detect_sharp_features);
+  }
+
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
@@ -222,6 +238,13 @@ void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                                                     double cell_size,
                                                     bool detect_sharp_features)
 {
+  if (MPI::num_processes() > 1)
+  {
+    dolfin_error("PolyhedralMeshGenerator.cpp",
+                 "generate surface mesh",
+                 "Cannot build surface meshes in parallel");
+  }
+
   // Create empty CGAL polyhedron
   Polyhedron p;
 
@@ -247,6 +270,7 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
   // Check if any facets are not triangular and triangulate if necessary.
   // The CGAL mesh generation only supports polyhedra with triangular surface
   // facets.
+
   typename Polyhedron::Facet_iterator facet;
   for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
   {
@@ -254,7 +278,7 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
     if (!facet->is_triangle())
     {
       CGAL::triangulate_polyhedron(p);
-      continue;
+      break;
     }
   }
 
@@ -287,8 +311,8 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
 
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
                                CGAL::parameters::facet_size = cell_size,
-                               CGAL::parameters::cell_radius_edge_ratio = 3,
-                               CGAL::parameters::edge_size=cell_size);
+                               CGAL::parameters::cell_radius_edge_ratio = 3.0,
+                               CGAL::parameters::edge_size = cell_size);
 
   // Generate CGAL mesh
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);

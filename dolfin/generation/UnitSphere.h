@@ -15,35 +15,45 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2008-07-15
-// Last changed: 2008-07-15
+// Last changed: 2012-03-06
 
 #ifndef __UNIT_SPHERE_H
 #define __UNIT_SPHERE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// Triangular mesh of the 3D unit sphere.
-  ///
-  /// Given the number of cells (nx, ny, nz) in each direction,
-  /// the total number of tetrahedra will be 6*nx*ny*nz and the
-  /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
-
+  /// Tetrahedral mesh of the unit sphere.
 
   class UnitSphere : public Mesh
   {
   public:
 
-    UnitSphere(uint nx);
+    /// WARNING:
+    ///
+    /// The UnitSphere class is broken and should not be used for computations.
+    /// It generates meshes of very bad quality (very thin tetrahedra).
+    ///
+    /// Create a uniform finite element _Mesh_ over the unit sphere.
+    ///
+    /// *Arguments*
+    ///     n (uint)
+    ///         Resolution of the mesh.
+    UnitSphere(uint n);
 
   private:
 
     double transformx(double x,double y,double z);
+
     double transformy(double x,double y,double z);
+
     double transformz(double x,double y,double z);
+
     double max(double x,double y,double z);
 
   };

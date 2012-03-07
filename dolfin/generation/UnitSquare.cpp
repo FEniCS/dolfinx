@@ -22,8 +22,8 @@
 // Last changed: 2009-09-29
 
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "UnitSquare.h"
 
 using namespace dolfin;

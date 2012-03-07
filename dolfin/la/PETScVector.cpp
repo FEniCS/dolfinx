@@ -140,7 +140,7 @@ PETScVector::PETScVector(const PETScVector& v)
 
   // Create ghost view
   this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-  if (ghost_global_to_local.size() > 0)
+  if (!ghost_global_to_local.empty())
     VecGhostGetLocalForm(*x, x_ghosted.get());
 }
 //-----------------------------------------------------------------------------
@@ -319,7 +319,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
   }
 
   // Use VecGetValues if no ghost points, otherwise check for ghost values
-  if (ghost_global_to_local.size() == 0 || m == 0)
+  if (ghost_global_to_local.empty() || m == 0)
   {
     VecGetValues(*x, _m, _rows, block);
   }
@@ -383,6 +383,11 @@ void PETScVector::zero()
   dolfin_assert(x);
   double a = 0.0;
   VecSet(*x, a);
+}
+//-----------------------------------------------------------------------------
+bool PETScVector::empty() const
+{
+    return size() == 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScVector::size() const
@@ -840,7 +845,7 @@ void PETScVector::init(std::pair<uint, uint> range,
     ghost_global_to_local.clear();
 
     const int* _ghost_indices = 0;
-    if (ghost_indices.size() > 0)
+    if (!ghost_indices.empty())
       _ghost_indices = reinterpret_cast<const int*>(&ghost_indices[0]);
 
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,

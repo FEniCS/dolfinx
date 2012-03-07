@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-14
+// Last changed: 2012-03-06
 
 // Auto generated include statements for the module: fem
 
@@ -37,6 +37,7 @@
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"
 %include "dolfin/fem/SparsityPatternBuilder.h"
+%include "dolfin/fem/SymmetricAssembler.h"
 %include "dolfin/fem/SystemAssembler.h"
 %include "dolfin/fem/LinearVariationalProblem.h"
 %include "dolfin/fem/LinearVariationalSolver.h"

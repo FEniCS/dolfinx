@@ -1,4 +1,5 @@
 // Copyright (C) 2005-2006 Anders Logg
+// AL: I don't think I wrote this file, who did?
 //
 // This file is part of DOLFIN.
 //
@@ -16,6 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Nuno Lopes 2008
+// Modified by Anders Logg 2012
 //
 // First added:  2005-12-02
 // Last changed: 2006-08-19
@@ -23,27 +25,31 @@
 #ifndef __UNIT_CIRCLE_H
 #define __UNIT_CIRCLE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// Triangular mesh of the 2D unit circle.
-  /// Given the number of cells (nx, ny) in each direction,
-  /// the total number of triangles will be 2*nx*ny and the
-  /// total number of vertices will be (nx + 1)*(ny + 1).
-
-  /// std::string diagonal ("left", "right" or "crossed") indicates the 
-  /// direction of the diagonals.
-
-  /// std:string transformation ("maxn", "sumn" or "rotsumn")
+  /// Tetrahedral mesh of the unit circle.
 
   class UnitCircle : public Mesh
   {
   public:
 
-    UnitCircle(uint nx, std::string diagonal = "crossed",
-               std::string transformation = "rotsumn");
+    /// Create a uniform finite element _Mesh_ over the unit circle.
+    ///
+    /// *Arguments*
+    ///     n (uint)
+    ///         Resolution of the mesh.
+    ///     diagonal (std::string)
+    ///         Optional argument: A std::string indicating
+    ///         the direction of the diagonals.
+    ///     transformation (std::string)
+    ///         Optional argument: A std::string indicating
+    ///         the type of transformation used.
+    UnitCircle(uint n,
+               std::string diagonal="crossed",
+               std::string transformation="rotsumn");
 
   private:
 

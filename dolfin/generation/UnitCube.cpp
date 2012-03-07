@@ -16,45 +16,37 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2007.
-// Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2010-10-19
 
-#include <dolfin/common/constants.h>
+#include <dolfin/common/timing.h>
+
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
-#include "Box.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include "UnitCube.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Box::Box(double x0, double y0, double z0,
-         double x1, double y1, double z1,
-         uint nx, uint ny, uint nz) : Mesh()
+UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
-  const double a = x0;
-  const double b = x1;
-  const double c = y0;
-  const double d = y1;
-  const double e = z0;
-  const double f = z1;
-
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
-    dolfin_error("Box.cpp",
-                 "create box",
-                 "Box seems to have zero width, height or depth. Consider checking your dimensions");
-
+  // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
-    dolfin_error("Box.cpp",
-                 "create box",
-                 "Box has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+    dolfin_error("UnitCube.cpp",
+                 "create unit cube",
+                 "Cube has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
 
-  rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
+  // Set name
+  rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 
   // Open mesh for editing
   MeshEditor editor;
@@ -65,13 +57,13 @@ Box::Box(double x0, double y0, double z0,
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
+    const double z = static_cast<double>(iz) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
+      const double y = static_cast<double>(iy) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
+        const double x = static_cast<double>(ix) / static_cast<double>(nx);
         editor.add_vertex(vertex++, x, y, z);
       }
     }
@@ -109,6 +101,7 @@ Box::Box(double x0, double y0, double z0,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_broadcaster())
+    MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------

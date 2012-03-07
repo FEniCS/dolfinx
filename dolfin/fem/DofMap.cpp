@@ -19,9 +19,10 @@
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2011-10-31
+// Last changed: 2012-02-29
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -39,7 +40,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
+               const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
                ufc_offset(0), _is_view(false),
                _distributed(MPI::num_processes() > 1)
 {
@@ -79,42 +80,6 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& dofmap)
-{
-  dolfin_error("DofMap.cpp",
-               "create mapping of degrees of freedom",
-               "Degree of freedom mappings cannot be copied");
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
-               ufc_offset(0), _is_view(false),
-               _distributed(MPI::num_processes() > 1)
-{
-  dolfin_assert(_ufc_dofmap);
-
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
-
-  // Check that mesh has been ordered
-  if (!dolfin_mesh.ordered())
-  {
-     dolfin_error("DofMap.cpp",
-                  "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. "
-                  "Consider calling mesh.order()");
-  }
-
-  // Create the UFC mesh
-  const UFCMesh ufc_mesh(dolfin_mesh);
-
-  // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
-
-  // Build dof map
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _distributed);
-}
-//-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                const Mesh& mesh, bool distributed) : ufc_offset(0),
                _ownership_range(0, 0), _is_view(true),
@@ -122,7 +87,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 {
   // Ownership range is set to zero since dofmap is a view
 
-  dolfin_assert(component.size() > 0);
+  dolfin_assert(!component.empty());
 
   // Create UFC mesh
   const UFCMesh ufc_mesh(mesh);
@@ -173,7 +138,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
   _off_process_owner.clear();
-  if (parent_dofmap.ufc_map_to_dofmap.size() > 0)
+  _shared_dofs.clear();
+  _neighbours.clear();
+  if (!parent_dofmap.ufc_map_to_dofmap.empty())
   {
     boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
     std::vector<std::vector<uint> >::iterator cell_map;
@@ -196,6 +163,14 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         boost::unordered_map<uint, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
+
+        // Add to shared-dof process map, and update the set of neighbours
+        boost::unordered_map<uint, std::vector<uint> >::const_iterator parent_shared = parent_dofmap._shared_dofs.find(*dof);
+        if (parent_shared != parent_dofmap._shared_dofs.end())
+        {
+          _shared_dofs.insert(*parent_shared);
+          _neighbours.insert(parent_shared->second.begin(), parent_shared->second.end());
+        }
       }
     }
   }
@@ -248,6 +223,13 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
     for (uint j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(const DofMap& dofmap)
+{
+  dolfin_error("DofMap.cpp",
+               "create mapping of degrees of freedom",
+               "Degree of freedom mappings cannot be copied");
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -307,6 +289,16 @@ std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
+}
+//-----------------------------------------------------------------------------
+const boost::unordered_map<dolfin::uint, std::vector<dolfin::uint> >& DofMap::shared_dofs() const
+{
+  return _shared_dofs;
+}
+//-----------------------------------------------------------------------------
+const std::set<dolfin::uint>& DofMap::neighbours() const
+{
+  return _neighbours;
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
@@ -379,7 +371,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   }
 
   // Check that a sub system has been specified
-  if (component.size() == 0)
+  if (component.empty())
   {
     dolfin_error("DofMap.cpp",
                  "extract subsystem of degree of freedom mapping",
@@ -474,7 +466,7 @@ void DofMap::renumber(const std::vector<uint>& renumbering_map)
   dolfin_assert(global_dimension() == renumbering_map.size());
 
   // Update or build ufc-to-dofmap
-  if (ufc_map_to_dofmap.size() == 0)
+  if (ufc_map_to_dofmap.empty())
   {
     for (uint i = 0; i < _dofmap.size(); ++i)
       ufc_map_to_dofmap[i] = renumbering_map[i];

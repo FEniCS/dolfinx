@@ -450,7 +450,7 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     // be defined and handled in many different ways -- hence the
     // level of logic.)
     boost::scoped_ptr<DirichletBC> e_bc;
-    if (component.size() == 0)
+    if (component.empty())
     {
       if (sub_domain)
         e_bc.reset(new DirichletBC(_E, bc->value(), sub_domain, bc->method()));

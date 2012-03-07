@@ -65,7 +65,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (domains && domains->size() > 0)
+  if (domains && !domains->empty())
   {
     const uint domain = (*domains)[cell];
     if (domain < ufc.form.num_cell_domains())
@@ -108,7 +108,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (domains && domains->size() > 0)
+  if (domains && !domains->empty())
   {
     const uint domain = (*domains)[facet];
     if (domain < ufc.form.num_exterior_facet_domains())
@@ -150,7 +150,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (domains && domains->size() > 0)
+  if (domains && !domains->empty())
   {
     const uint domain = (*domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())

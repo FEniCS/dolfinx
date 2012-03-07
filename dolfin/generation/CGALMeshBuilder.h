@@ -209,8 +209,6 @@ namespace dolfin
     const uint num_vertices = t.number_of_vertices();
     const uint num_cells = cgal_mesh.number_of_cells();
 
-    cout << "Build mesh (M): " << num_cells << endl;
-
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
@@ -235,6 +233,9 @@ namespace dolfin
       v->info() = vertex_index++;
     }
 
+    // Sanity check on number of vertices
+    dolfin_assert(vertex_index == num_vertices);
+
     // Iterate over all cell in triangulation
     unsigned int cell_index = 0;
     typename T::Triangulation::Finite_cells_iterator c;
@@ -250,17 +251,8 @@ namespace dolfin
       }
     }
 
-    /*
-    typename T::Cells_in_complex_iterator c;
-    for (c = cgal_mesh.cells_in_complex_begin(); c != cgal_mesh.cells_in_complex_end(); ++c)
-    {
-      // Add cell and increment index
-      mesh_editor.add_cell(cell_index++, c->vertex(0)->info(),
-                                         c->vertex(1)->info(),
-                                         c->vertex(2)->info(),
-                                         c->vertex(3)->info());
-    }
-    */
+    // Sanity check on number of cells
+    dolfin_assert(cell_index == num_cells);
 
     // Close mesh editor
     mesh_editor.close();

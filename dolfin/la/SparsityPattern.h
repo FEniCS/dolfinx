@@ -50,9 +50,9 @@ namespace dolfin
 
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<uint>& dims,
-                    uint primary_dim,
                     const std::vector<std::pair<uint, uint> >& ownership_range,
-                    const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
+                    const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner,
+                    uint primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<uint>& dims,
@@ -103,8 +103,8 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
-    // Shape of tensor
-    std::vector<uint> shape;
+    // Indicate if sparsity pattern is distributed
+    bool distributed;
 
     // Ownership range for each dimension
     std::vector<std::pair<uint, uint> > _local_range;

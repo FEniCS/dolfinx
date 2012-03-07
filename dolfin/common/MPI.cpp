@@ -19,9 +19,10 @@
 // Modified by Anders Logg 2007-2011
 // Modified by Ola Skavhaug 2008-2009
 // Modified by Niclas Jansson 2009
+// Modified by Joachim B Haga 2012
 //
 // First added:  2007-11-30
-// Last changed: 2011-08-25
+// Last changed: 2012-02-29
 
 #include <numeric>
 #include <dolfin/log/dolfin_log.h>
@@ -47,6 +48,17 @@ MPI_Comm& dolfin::MPICommunicator::operator*()
 {
   return communicator;
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  if (!reqs.empty())
+  {
+    boost::mpi::wait_all(reqs.begin(), reqs.end());
+    reqs.clear();
+  }
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()
 {
@@ -147,6 +159,14 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void dolfin::MPINonblocking::wait_all()
+{
+  dolfin_error("MPI.h",
+               "call MPINonblocking::wait_all",
+               "DOLFIN has been configured without MPI support");
+}
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()

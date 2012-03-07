@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-06-22
-// Last changed: 2011-11-14
+// Last changed: 2012-02-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -96,7 +97,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  if (!cell_domains || cell_domains->size() == 0)
+  if (!cell_domains || cell_domains->empty())
   {
     if (a.cell_domains_shared_ptr().get() ||
         L.cell_domains_shared_ptr().get())
@@ -107,7 +108,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
     if (a.exterior_facet_domains_shared_ptr().get() ||
         L.exterior_facet_domains_shared_ptr().get())
@@ -118,7 +119,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  if (!interior_facet_domains || interior_facet_domains->empty())
   {
     if (a.interior_facet_domains_shared_ptr().get() ||
         L.interior_facet_domains_shared_ptr().get())
@@ -168,20 +169,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   DirichletBC::Map boundary_values;
   for (uint i = 0; i < bcs.size(); ++i)
   {
-    // Methods other than 'pointwise' are not robust in parallel since a vertex
-    // can have a bc applied, but the partition might not have a facet on the boundary.
+    bcs[i]->get_boundary_values(boundary_values);
     if (MPI::num_processes() > 1 && bcs[i]->method() != "pointwise")
-    {
-      if (MPI::process_number() == 0)
-      {
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly.", bcs[i]->method().c_str());
-        //warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
-      }
-      bcs[i]->get_boundary_values(boundary_values);
-      //bcs[i]->get_boundary_values(boundary_values, "pointwise");
-    }
-    else
-      bcs[i]->get_boundary_values(boundary_values);
+      bcs[i]->gather(boundary_values);
   }
 
   // Modify boundary values for incremental (typically nonlinear) problems
@@ -317,7 +307,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     std::fill(data.be.begin(), data.be.end(), 0.0);
 
     // Get cell integrals for sub domain (if any)
-    if (cell_domains && cell_domains->size() > 0)
+    if (cell_domains && !cell_domains->empty())
     {
       const uint domain = (*cell_domains)[*cell];
       if (domain < A_ufc.form.num_cell_domains())
@@ -365,7 +355,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           continue;
 
         // Get exterior facet integrals for sub domain (if any)
-        if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+        if (exterior_facet_domains && !exterior_facet_domains->empty())
         {
           const uint domain = (*exterior_facet_domains)[*facet];
           if (domain < A_ufc.form.num_exterior_facet_domains())
@@ -531,7 +521,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (interior_facet_domains && interior_facet_domains->size() > 0)
+  if (interior_facet_domains && !interior_facet_domains->empty())
   {
     const uint domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())
@@ -683,7 +673,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 
   // Resize dof vector
   a_macro_dofs[0].resize(a0_dofs0.size() + a0_dofs1.size());
-  a_macro_dofs[1].resize(a0_dofs1.size() + a1_dofs1.size());
+  a_macro_dofs[1].resize(a1_dofs0.size() + a1_dofs1.size());
   L_macro_dofs[0].resize(L_dofs0.size() + L_dofs1.size());
 
   // Tabulate dofs for each dimension on macro element

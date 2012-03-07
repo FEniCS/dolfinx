@@ -80,7 +80,7 @@ void MTL4Vector::resize(std::pair<uint, uint> range)
 void MTL4Vector::resize(std::pair<uint, uint> range,
                         const std::vector<uint>& ghost_indices)
 {
-  if (ghost_indices.size() != 0)
+  if (!ghost_indices.empty())
   {
     dolfin_error("MTL4Vector.cpp",
                  "resize MTL4 vector",
@@ -88,6 +88,11 @@ void MTL4Vector::resize(std::pair<uint, uint> range,
   }
 
   resize(range);
+}
+//-----------------------------------------------------------------------------
+bool MTL4Vector::empty() const
+{
+  return size() == 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Vector::size() const
@@ -343,13 +348,13 @@ double MTL4Vector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double MTL4Vector::min() const
 {
-  dolfin_assert(size() > 0);
+  dolfin_assert(!empty());
   return mtl::min(x);
 }
 //-----------------------------------------------------------------------------
 double MTL4Vector::max() const
 {
-  dolfin_assert(size() > 0);
+  dolfin_assert(!empty());
   return mtl::max(x);
 }
 //-----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-14
+// Last changed: 2012-03-06
 
 // Auto generated include statements for the module: mesh
 
@@ -55,14 +55,5 @@
 %include "dolfin/mesh/SubMesh.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
-%include "dolfin/mesh/UnitTetrahedron.h"
-%include "dolfin/mesh/UnitCube.h"
-%include "dolfin/mesh/UnitInterval.h"
 %include "dolfin/mesh/Interval.h"
-%include "dolfin/mesh/UnitTriangle.h"
-%include "dolfin/mesh/UnitSquare.h"
-%include "dolfin/mesh/UnitCircle.h"
-%include "dolfin/mesh/Box.h"
-%include "dolfin/mesh/Rectangle.h"
-%include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/swig/mesh/post.i"

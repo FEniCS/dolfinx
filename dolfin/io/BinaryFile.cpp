@@ -184,7 +184,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
       if (_store_connectivity || (i == D && j == 0))
       {
         write_uint(c.size());
-        if (c.size() > 0)
+        if (!c.empty())
         {
           write_uint(c.offsets.size() - 1);
           write_array(c.size(), &(c.connections)[0]);

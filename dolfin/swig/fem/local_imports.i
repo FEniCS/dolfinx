@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-14
+// Last changed: 2012-03-06
 
 // Auto generated local_import statements for the module: fem
 
@@ -37,6 +37,7 @@
 %import(module="fem") "dolfin/fem/Form.h"
 %import(module="fem") "dolfin/fem/Assembler.h"
 %import(module="fem") "dolfin/fem/SparsityPatternBuilder.h"
+%import(module="fem") "dolfin/fem/SymmetricAssembler.h"
 %import(module="fem") "dolfin/fem/SystemAssembler.h"
 %import(module="fem") "dolfin/fem/LinearVariationalProblem.h"
 %import(module="fem") "dolfin/fem/LinearVariationalSolver.h"

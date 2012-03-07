@@ -53,7 +53,7 @@ tol = 1.e-5
 # than tol
 solver_parameters = {"error_control":
                      {"dual_variational_solver":
-                      {"linear_solver": "cg"}}}
+                      {"linear_solver": "gmres"}}}
 solve(a == L, u, bc, tol=tol, M=M, solver_parameters=solver_parameters)
 
 ## Alternative, more verbose version (+ illustrating how to set parameters)

@@ -149,7 +149,7 @@ dolfin::krylov_solver_preconditioners()
 //-----------------------------------------------------------------------------
 bool dolfin::has_lu_solver_method(std::string method)
 {
-  std::vector<std::pair<std::string, std::string> > methods = 
+  std::vector<std::pair<std::string, std::string> > methods =
     DefaultFactory::factory().lu_solver_methods();
   for (dolfin::uint i = 0; i < methods.size(); i++)
     if (methods[i].first == method)
@@ -159,7 +159,7 @@ bool dolfin::has_lu_solver_method(std::string method)
 //-----------------------------------------------------------------------------
 bool dolfin::has_krylov_solver_method(std::string method)
 {
-  std::vector<std::pair<std::string, std::string> > methods = 
+  std::vector<std::pair<std::string, std::string> > methods =
     DefaultFactory::factory().krylov_solver_methods();
   for (dolfin::uint i = 0; i < methods.size(); i++)
     if (methods[i].first == method)
@@ -169,7 +169,7 @@ bool dolfin::has_krylov_solver_method(std::string method)
 //-----------------------------------------------------------------------------
 bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
 {
-  std::vector<std::pair<std::string, std::string> > preconditioners = 
+  std::vector<std::pair<std::string, std::string> > preconditioners =
     DefaultFactory::factory().krylov_solver_preconditioners();
   for (dolfin::uint i = 0; i < preconditioners.size(); i++)
     if (preconditioners[i].first == preconditioner)
@@ -187,9 +187,14 @@ double dolfin::residual(const GenericMatrix& A,
   return y->norm("l2");
 }
 //-----------------------------------------------------------------------------
+double dolfin::norm(const GenericVector& x, std::string norm_type)
+{
+  return x.norm(norm_type);
+}
+//-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
-  if (x.size() == 0)
+  if (x.empty())
   {
     dolfin_error("solve.cpp",
                  "normalize vector",
@@ -265,22 +270,22 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
 //-------------------------------------------------------------------------
 void dolfin::list_linear_algebra_backends()
 {
-  std::vector<std::pair<std::string, std::string> > backends = 
+  std::vector<std::pair<std::string, std::string> > backends =
     linear_algebra_backends();
 
   // Pretty-print list of available linear algebra backends
   Table t("Linear algebra backends", false);
   for (uint i = 0; i < backends.size(); i++)
     t(backends[i].first, "Description") = backends[i].second;
-  
+
   cout << t.str(true) << endl;
 }
 //-------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backends()
 {
   std::vector<std::pair<std::string, std::string> > backends;
-  
-  std::map<std::string, std::string> default_backend 
+
+  std::map<std::string, std::string> default_backend
     = boost::assign::map_list_of("uBLAS",  " (default)")
                                 ("Epetra", "")
                                 ("PETSc", "");
@@ -314,7 +319,7 @@ std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backend
   backends.push_back(std::make_pair("MTL4", "Template based basic linear algebra"
 				   " backend"));
   #endif
-  
+
   return backends;
 }
 //-------------------------------------------------------------------------

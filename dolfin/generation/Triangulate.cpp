@@ -30,6 +30,7 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Point.h>
@@ -58,6 +59,14 @@ using namespace dolfin;
 void Triangulate::triangulate(Mesh& mesh, const std::vector<Point>& vertices,
                               unsigned int gdim)
 {
+  // Check that we are not running in parallel
+  if (MPI::num_processes() > 1)
+  {
+    dolfin_error("Triangulate.cpp",
+                 "triangulate points using CGAL",
+                 "Cannot create triangulated meshes in parallel");
+  }
+
   // Check that we have enough points (vertices) to create a triangulation
   dolfin_assert(vertices.size() > gdim);
 

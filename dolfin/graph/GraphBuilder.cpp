@@ -69,8 +69,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
 
     // Add edges to graph
     const uint vertex_entity_index = vertex_entity->index();
-    //graph[vertex_entity_index] = entity_list0;
-    //for (boost::unordered_set<uint>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
     graph[vertex_entity_index].insert(entity_list0.begin(), entity_list0.end());
   }
 

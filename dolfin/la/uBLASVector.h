@@ -99,7 +99,10 @@ namespace dolfin
     virtual void resize(std::pair<uint, uint> range,
                         const std::vector<uint>& ghost_indices);
 
-    /// Return size of vector
+    /// Return true if vector is empty
+    virtual bool empty() const;
+
+    /// Return true if vector is empty
     virtual uint size() const;
 
     /// Return local size of vector

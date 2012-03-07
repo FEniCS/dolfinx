@@ -21,7 +21,7 @@
 #ifndef __UNIT_TETRAHEDRON_H
 #define __UNIT_TETRAHEDRON_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {

@@ -71,6 +71,11 @@ boost::shared_ptr<GenericVector> BlockVector::get_block(uint i)
   return vectors[i];
 }
 //-----------------------------------------------------------------------------
+bool BlockVector::empty() const
+{
+  return vectors.empty();
+}
+//-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const
 {
   return vectors.size();

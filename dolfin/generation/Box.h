@@ -23,7 +23,7 @@
 #ifndef __BOX_H
 #define __BOX_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
@@ -37,7 +37,7 @@ namespace dolfin
   {
   public:
 
-    /// Define a uniform finite element _Mesh_ over the rectangular prism
+    /// Create a uniform finite element _Mesh_ over the rectangular prism
     /// [x0, x1] x [y0, y1] x [z0, z1].
     ///
     /// *Arguments*

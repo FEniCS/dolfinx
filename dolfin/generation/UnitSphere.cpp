@@ -22,25 +22,29 @@
 // Last changed: 2011-08-23
 
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "UnitSphere.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitSphere::UnitSphere(uint nx) : Mesh()
+UnitSphere::UnitSphere(uint n) : Mesh()
 {
+  warning("The UnitSphere class is broken and should not be used for computations. "
+          "It generates meshes of very bad quality (very thin tetrahedra).");
+
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
-  if (nx < 1)
+  if (n < 1)
     dolfin_error("UnitSphere.cpp",
                  "create unit sphere",
                  "Size of unit sphere must be at least 1");
 
-  const uint ny = nx;
-  const uint nz = nx;
+  const uint nx = n;
+  const uint ny = n;
+  const uint nz = n;
 
   rename("mesh", "Mesh of the unit sphere");
 
@@ -49,7 +53,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
   // Create vertices
-  editor.init_vertices((nx+1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx + 1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
@@ -60,9 +64,9 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
       for (uint ix = 0; ix <= nx; ix++)
       {
         const double x = -1.0+static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-        double trns_x = transformx(x,y,z);
-        double trns_y = transformy(x,y,z);
-        double trns_z = transformz(x,y,z);
+        double trns_x = transformx(x, y, z);
+        double trns_y = transformy(x, y, z);
+        double trns_z = transformz(x, y, z);
         editor.add_vertex(vertex++, trns_x, trns_y, trns_z);
       }
     }
@@ -103,31 +107,31 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); }
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformx(double x,double y,double z)
+double UnitSphere::transformx(double x, double y, double z)
 {
   if (x || y || z)
-    return x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+    return x*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
   else
     return x;
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformy(double x,double y,double z)
+double UnitSphere::transformy(double x, double y, double z)
 {
   if (x || y || z)
-    return y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+    return y*max(std::abs(x),std::abs(y),std::abs(z)) / sqrt(x*x+y*y+z*z);
   else
     return y;
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformz(double x,double y,double z)
+double UnitSphere::transformz(double x, double y, double z)
 {
   if (x || y || z)
-    return z*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
+    return z*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
   else
     return z;
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::max(double x,double y, double z)
+double UnitSphere::max(double x, double y, double z)
 {
   if ((x >= y)*(x >= z))
     return x;
