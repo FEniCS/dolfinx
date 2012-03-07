@@ -43,11 +43,6 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("bjacobi",          PCBJACOBI)
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
-                              #if HAS_PETSC_CUSP
-                              ("smoothed_aggregation",      PCSACUSP)
-                              ("smoothed_aggregation_poly", PCSACUSPPOLY)
-                              ("approximate_inverse",       PCAINVCUSP)
-                              #endif
                               #if PETSC_HAVE_HYPRE
                               ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
@@ -68,13 +63,9 @@ const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_me
     ("icc",              "Incomplete Cholesky factorization")
     ("sor",              "Successive over-relaxation")
     #if HAS_PETSC_CUSP
-    ("jacobi",                    "Jacobi iteration (GPU enabled)")
-    ("bjacobi",                   "Block Jacobi iteration (GPU enabled)")
-    ("additive_schwarz",          "Additive Schwarz (GPU enabled)")
-    ("smoothed_aggregation",      "Smoothed Aggregation (GPU Enabled)")
-    ("smoothed_aggregation_poly", "Smoothed Aggregation with Chebyshev " 
-          "polynomial smoothing (GPU Enabled)")
-    ("approximate_inverse",       "Approximate Inverse (GPU Enabled)")
+    ("jacobi",           "Jacobi iteration (GPU enabled)")
+    ("bjacobi",          "Block Jacobi iteration (GPU enabled)")
+    ("additive_schwarz", "Additive Schwarz (GPU enabled)")
     #else
     ("jacobi",           "Jacobi iteration")
     ("bjacobi",          "Block Jacobi iteration")
