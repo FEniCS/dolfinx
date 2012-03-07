@@ -87,7 +87,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 {
   // Ownership range is set to zero since dofmap is a view
 
-  dolfin_assert(component.size() > 0);
+  dolfin_assert(!component.empty());
 
   // Create UFC mesh
   const UFCMesh ufc_mesh(mesh);
@@ -140,7 +140,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   _off_process_owner.clear();
   _shared_dofs.clear();
   _neighbours.clear();
-  if (parent_dofmap.ufc_map_to_dofmap.size() > 0)
+  if (!parent_dofmap.ufc_map_to_dofmap.empty())
   {
     boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
     std::vector<std::vector<uint> >::iterator cell_map;
@@ -371,7 +371,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   }
 
   // Check that a sub system has been specified
-  if (component.size() == 0)
+  if (component.empty())
   {
     dolfin_error("DofMap.cpp",
                  "extract subsystem of degree of freedom mapping",
@@ -466,7 +466,7 @@ void DofMap::renumber(const std::vector<uint>& renumbering_map)
   dolfin_assert(global_dimension() == renumbering_map.size());
 
   // Update or build ufc-to-dofmap
-  if (ufc_map_to_dofmap.size() == 0)
+  if (ufc_map_to_dofmap.empty())
   {
     for (uint i = 0; i < _dofmap.size(); ++i)
       ufc_map_to_dofmap[i] = renumbering_map[i];

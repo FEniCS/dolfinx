@@ -275,7 +275,7 @@ std::string Table::str(bool verbose) const
 //-----------------------------------------------------------------------------
 std::string Table::str_latex() const
 {
-  if (rows.size() == 0 || cols.size() == 0)
+  if (rows.empty() || cols.empty())
     return "Empty table";
 
   std::stringstream s;

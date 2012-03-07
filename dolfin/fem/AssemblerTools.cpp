@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells, 2007-2010
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
+// Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2011-10-03
+// Last changed: 2012-03-02
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -160,15 +161,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   if (reset_sparsity)
   {
     Timer t0("Build sparsity");
-    //boost::shared_ptr<GenericSparsityPattern> sparsity_pattern
-    //    = A.factory().create_pattern();
-    //dolfin_assert(sparsity_pattern);
 
-    cout << "Create layout" << endl;
     // Create layout for intialising tensor
     boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
-    cout << "End Create layout" << endl;
 
     std::vector<uint> global_dimensions(a.rank());
     std::vector<std::pair<uint, uint> > local_range(a.rank());
@@ -183,7 +179,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      cout << "Build sparsity pattern" << endl;
       SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
                                     a.mesh(), dofmaps,
                                     a.ufc_form()->num_cell_domains(),
@@ -195,6 +190,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t1("Init tensor");
     A.init(*tensor_layout);
     t1.stop();
+
+    // Delete sparsity pattern
+    Timer t2("Delete sparsity");
+    t2.stop();
   }
   else
   {

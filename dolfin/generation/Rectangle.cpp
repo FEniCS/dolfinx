@@ -24,8 +24,8 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include "MeshPartitioning.h"
-#include "MeshEditor.h"
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "Rectangle.h"
 
 using namespace dolfin;

@@ -21,6 +21,7 @@
 // Last changed: 2011-08-31
 
 #include <dolfin/common/Array.h>
+#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshData.h"
@@ -161,6 +162,13 @@ void SubDomain::apply_markers(S& sub_domains,
   // Extract exterior (non shared) facets markers
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
+  // Speed up the computation by only checking each vertex once (or twice if it
+  // is on the boundary for some but not all facets).
+  RangedIndexSet boundary_visited(mesh.num_vertices());
+  RangedIndexSet interior_visited(mesh.num_vertices());
+  std::vector<bool> boundary_inside(mesh.num_vertices());
+  std::vector<bool> interior_inside(mesh.num_vertices());
+
   // Compute sub domain markers
   Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
@@ -169,8 +177,12 @@ void SubDomain::apply_markers(S& sub_domains,
     if (dim == D - 1)
     {
       on_boundary = entity->num_entities(D) == 1 &&
-        (exterior.size() == 0 || exterior[*entity]);
+        (exterior.empty() || exterior[*entity]);
     }
+
+    // Select the visited-cache to use for this facet (or entity)
+    RangedIndexSet&    is_visited = (on_boundary ? boundary_visited : interior_visited);
+    std::vector<bool>& is_inside  = (on_boundary ? boundary_inside  : interior_inside);
 
     // Start by assuming all points are inside
     bool all_points_inside = true;
@@ -180,8 +192,13 @@ void SubDomain::apply_markers(S& sub_domains,
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
-        if (!inside(x, on_boundary))
+        if (is_visited.insert(vertex->index()))
+        {
+          Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
+          is_inside[vertex->index()] = inside(x, on_boundary);
+        }
+
+        if (!is_inside[vertex->index()])
         {
           all_points_inside = false;
           break;

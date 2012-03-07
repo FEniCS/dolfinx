@@ -437,9 +437,9 @@ void TetrahedronCell::order(Cell& cell,
   const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if (topology(1, 0).size() > 0)
+  if (!topology(1, 0).empty())
   {
-    dolfin_assert(topology(3, 1).size() > 0);
+    dolfin_assert(!topology(3, 1).empty());
 
     // Get edges
     const uint* cell_edges = cell.entities(1);
@@ -453,9 +453,9 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local vertices on facets in ascending order, connectivity 2 - 0
-  if (topology(2, 0).size() > 0)
+  if (!topology(2, 0).empty())
   {
-    dolfin_assert(topology(3, 2).size() > 0);
+    dolfin_assert(!topology(3, 2).empty());
 
     // Get facets
     const uint* cell_facets = cell.entities(2);
@@ -469,11 +469,11 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local edges on local facets after non-incident vertex, connectivity 2 - 1
-  if (topology(2, 1).size() > 0)
+  if (!topology(2, 1).empty())
   {
-    dolfin_assert(topology(3, 2).size() > 0);
-    dolfin_assert(topology(2, 0).size() > 0);
-    dolfin_assert(topology(1, 0).size() > 0);
+    dolfin_assert(!topology(3, 2).empty());
+    dolfin_assert(!topology(2, 0).empty());
+    dolfin_assert(!topology(1, 0).empty());
 
     // Get facet numbers
     const uint* cell_facets = cell.entities(2);
@@ -513,16 +513,16 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
-  if (topology(3, 0).size() > 0)
+  if (!topology(3, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(4, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
-  if (topology(3, 1).size() > 0)
+  if (!topology(3, 1).empty())
   {
-    dolfin_assert(topology(1, 0).size() > 0);
+    dolfin_assert(!topology(1, 0).empty());
 
     // Get cell vertices and edge numbers
     const uint* cell_vertices = cell.entities(0);
@@ -558,9 +558,9 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local facets on cell after non-incident vertex, connectivity 3 - 2
-  if (topology(3, 2).size() > 0)
+  if (!topology(3, 2).empty())
   {
-    dolfin_assert(topology(2, 0).size() > 0);
+    dolfin_assert(!topology(2, 0).empty());
 
     // Get cell vertices and facet numbers
     const uint* cell_vertices = cell.entities(0);

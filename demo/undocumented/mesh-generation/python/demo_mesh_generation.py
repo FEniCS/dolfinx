@@ -29,6 +29,7 @@ if not has_cgal():
 
 # Create empty Mesh
 mesh = Mesh()
+
 # Create list of polygonal domain vertices
 domain_vertices = [Point(0.0, 0.0),
                    Point(10.0, 0.0),

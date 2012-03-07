@@ -146,7 +146,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   UFCCell c1(*V.mesh());
   for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
   {
-    if (cell2dof2row[cell1->index()].size() == 0)
+    if (cell2dof2row[cell1->index()].empty())
       continue;
 
     c1.update(*cell1);

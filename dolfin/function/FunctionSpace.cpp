@@ -243,7 +243,7 @@ FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 
-  if (_component.size() == 0)
+  if (_component.empty())
   {
     dolfin_error("FunctionSpace.cpp",
                  "collapse function space",

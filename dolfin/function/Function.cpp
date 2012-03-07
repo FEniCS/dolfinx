@@ -59,7 +59,7 @@ Function::Function(const FunctionSpace& V)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V.component().size() > 0)
+  if (!V.component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -75,7 +75,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V->component().size() > 0)
+  if (!V->component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -105,7 +105,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V.component().size() > 0)
+  if (!V.component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -135,7 +135,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V->component().size() > 0)
+  if (!V->component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",

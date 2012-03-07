@@ -66,13 +66,14 @@ namespace dolfin
         delete[] _x;
     }
 
-    /// Resize the array. The operation is only valid for an Array with
-    /// ownership of its data. The old contents of the Array are lost.
+    /// Resize the array. If the new size if different from the old size, the
+    /// Array must be owner; the old contents are then lost.
     void resize(uint N)
     {
-      dolfin_assert(_owner);
       if (_size == N)
         return;
+      if (!_owner)
+        dolfin_error("Array.h", "resize", "Only owned arrays can be resized");
       if (_x)
         delete[] _x;
       _x = (N == 0 ? NULL : new T[N]);
@@ -124,8 +125,7 @@ namespace dolfin
     /// Assignment operator. If resize is required, the Array must be owner.
     Array& operator= (const Array& other)
     {
-      if (_size != other._size)
-        resize(other._size);
+      resize(other._size);
       if (_size > 0)
         std::copy(&other._x[0], &other._x[_size], &_x[0]);
       return *this;
@@ -134,8 +134,7 @@ namespace dolfin
     /// Assignment operator from std::vector. If resize is required, the Array must be owner.
     Array& operator= (const std::vector<T>& other)
     {
-      if (_size != other.size())
-        resize(other.size());
+      resize(other.size());
       if (_size > 0)
         std::copy(&other[0], &other[_size], &_x[0]);
       return *this;

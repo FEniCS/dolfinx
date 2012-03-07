@@ -21,7 +21,7 @@
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {

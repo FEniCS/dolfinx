@@ -45,6 +45,10 @@ namespace dolfin
     /// Destructor
     ~IndexSet() {}
 
+    /// Return true if set is empty
+    bool empty() const
+    { return _indices.empty(); }
+
     /// Return size of set
     uint size() const
     { return _indices.size(); }

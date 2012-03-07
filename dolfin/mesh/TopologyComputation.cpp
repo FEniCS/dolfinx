@@ -62,7 +62,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
-    if ((ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0))
+    if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
       dolfin_error("TopologyComputation.cpp",
                    "compute topological entities",
                    "Entities of topological dimension %d exist but connectivity is missing", dim);
@@ -71,7 +71,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   }
 
   // Make sure connectivity does not already exist
-  if (ce.size() > 0 || ev.size() > 0)
+  if (!ce.empty() || !ev.empty())
   {
       dolfin_error("TopologyComputation.cpp",
                    "compute topological entities",
@@ -207,7 +207,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Check if connectivity has already been computed
-  if (connectivity.size() > 0)
+  if (!connectivity.empty())
     return;
 
   //info("Computing mesh connectivity %d - %d.", d0, d1);
@@ -223,7 +223,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     return;
 
   // Check if connectivity still needs to be computed
-  if (connectivity.size() > 0)
+  if (!connectivity.empty())
     return;
 
   // Start timer
@@ -273,7 +273,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Need connectivity d1 - d0
-  dolfin_assert(topology(d1, d0).size() > 0);
+  dolfin_assert(!topology(d1, d0).empty());
 
   // Temporary array
   std::vector<uint> tmp(topology.size(d0), 0);
@@ -306,8 +306,8 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
 
   // Check preconditions
   dolfin_assert(d0 >= d1);
-  dolfin_assert(topology(d0, d).size() > 0);
-  dolfin_assert(topology(d, d1).size() > 0);
+  dolfin_assert(!topology(d0, d).empty());
+  dolfin_assert(!topology(d, d1).empty());
 
   // Temporary dynamic storage, later copied into static storage
   std::vector<std::vector<uint> > connectivity(topology.size(d0));

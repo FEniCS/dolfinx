@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Kristian B. Oelgaard
+// Copyright (C) 2010 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,29 +15,31 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
-//
-// First added:  2007-11-23
+// First added:  2010-10-19
 // Last changed: 2010-10-19
 
-#ifndef __UNIT_INTERVAL_H
-#define __UNIT_INTERVAL_H
+#ifndef __UNIT_TRIANGLE_H
+#define __UNIT_TRIANGLE_H
 
-#include "Mesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// A mesh of the unit interval (0, 1) with a given number of cells
-  /// (nx) in the axial direction. The total number of intervals will
-  /// be nx and the total number of vertices will be (nx + 1).
+  /// A mesh consisting of a single triangle with vertices at
+  ///
+  ///   (0, 0)
+  ///   (1, 0)
+  ///   (0, 1)
+  ///
+  /// This class is useful for testing.
 
-  class UnitInterval : public Mesh
+  class UnitTriangle : public Mesh
   {
   public:
 
-    /// Create mesh of unit interval
-    UnitInterval(uint nx=1);
+    /// Create mesh of unit triangle
+    UnitTriangle();
 
   };
 

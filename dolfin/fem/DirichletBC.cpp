@@ -18,7 +18,7 @@
 // Modified by Kristian Oelgaard, 2008
 // Modified by Martin Sandve Alnes, 2008
 // Modified by Johan Hake, 2009
-// Modified by Joachim B Haga, 2009
+// Modified by Joachim B. Haga, 2012
 //
 // First added:  2007-04-10
 // Last changed: 2012-02-29
@@ -28,9 +28,11 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/serialization/utility.hpp>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Constant.h>
@@ -205,6 +207,8 @@ void DirichletBC::apply(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
 {
+  Timer timer("DirichletBC gather");
+
   typedef std::vector<std::pair<uint, double> > bv_vec_type;
   typedef std::map<uint, bv_vec_type> map_type;
 
@@ -480,6 +484,8 @@ void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
+  Timer timer("DirichletBC apply");
+
   // Check arguments
   check_arguments(A, b, x);
 
@@ -605,6 +611,8 @@ void DirichletBC::check() const
 //-----------------------------------------------------------------------------
 void DirichletBC::init_facets() const
 {
+  Timer timer("DirichletBC init facets");
+
   if (facets.size() > 0)
     return;
 
@@ -705,6 +713,8 @@ void DirichletBC::compute_bc(Map& boundary_values,
                              BoundaryCondition::LocalData& data,
                              std::string method) const
 {
+  Timer timer("DirichletBC compute bc");
+
   // Set method if dafault
   if (method == "default")
     method = _method;
@@ -809,6 +819,11 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   log(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
+  // Speed up the computations by only visiting (most) dofs once
+  RangedIndexSet already_visited(dofmap.is_view()
+                                 ? std::pair<uint, uint>(0,0)
+                                 : dofmap.ownership_range());
+
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search", facets.size());
   for (uint f = 0; f < facets.size(); ++f)
@@ -832,17 +847,28 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       {
         ufc_cell.update(*c, facet_number);
 
+        bool tabulated = false;
         bool interpolated = false;
-
-        // Tabulate coordinates of dofs on cell
-        dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
         // Tabulate dofs on cell
         const std::vector<uint>& cell_dofs = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
-        for (uint i = 0; i < dofmap.cell_dimension(c->index()); ++i)
+        for (uint i = 0; i < cell_dofs.size(); ++i)
         {
+          const uint global_dof = cell_dofs[i];
+
+          // Skip already checked dofs
+          if (already_visited.in_range(global_dof) && !already_visited.insert(global_dof))
+            continue;
+
+          if (!tabulated)
+          {
+            // Tabulate coordinates of dofs on cell
+            dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
+            tabulated = true;
+          }
+
           // Check if the coordinates are on current facet and thus on boundary
           if (!on_facet(&(data.coordinates[i][0]), facet))
             continue;
@@ -851,10 +877,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           {
             // Restrict coefficient to cell
             g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
+            interpolated = true;
           }
 
           // Set boundary value
-          const uint global_dof = cell_dofs[i];
           const double value = data.w[i];
           boundary_values[global_dof] = value;
         }
@@ -887,10 +913,10 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
-  // Speeder-upper
-  std::pair<uint,uint> local_range = dofmap.ownership_range();
-  std::vector<bool> already_visited(local_range.second - local_range.first);
-  std::fill(already_visited.begin(), already_visited.end(), false);
+  // Speed up the computations by only visiting (most) dofs once
+  RangedIndexSet already_visited(dofmap.is_view()
+                                 ? std::pair<uint, uint>(0,0)
+                                 : dofmap.ownership_range());
 
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
@@ -912,13 +938,10 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       const uint global_dof = cell_dofs[i];
-      if (global_dof >= local_range.first && global_dof < local_range.second)
-      {
-        const uint dof_index = global_dof - local_range.first;
-        if (already_visited[dof_index])
-          continue;
-        already_visited[dof_index] = true;
-      }
+
+      // Skip already checked dofs
+      if (already_visited.in_range(global_dof) && !already_visited.insert(global_dof))
+        continue;
 
       // Check if the coordinates are part of the sub domain (calls user-defined 'inside' function)
       Array<double> x(gdim, &data.coordinates[i][0]);

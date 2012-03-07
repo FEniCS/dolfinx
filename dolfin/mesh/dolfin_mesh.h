@@ -35,15 +35,6 @@
 #include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/UnitTetrahedron.h>
-#include <dolfin/mesh/UnitCube.h>
-#include <dolfin/mesh/UnitInterval.h>
 #include <dolfin/mesh/Interval.h>
-#include <dolfin/mesh/UnitTriangle.h>
-#include <dolfin/mesh/UnitSquare.h>
-#include <dolfin/mesh/UnitCircle.h>
-#include <dolfin/mesh/Box.h>
-#include <dolfin/mesh/Rectangle.h>
-#include <dolfin/mesh/UnitSphere.h>
 
 #endif

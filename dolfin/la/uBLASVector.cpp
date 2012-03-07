@@ -108,7 +108,7 @@ void uBLASVector::resize(std::pair<uint, uint> range,
                  "Distributed vectors not supported by uBLAS backend");
   }
 
-  if (ghost_indices.size() != 0)
+  if (!ghost_indices.empty())
   {
     dolfin_error("uBLASVector.cpp",
                  "resize uBLAS vector",
@@ -116,6 +116,11 @@ void uBLASVector::resize(std::pair<uint, uint> range,
   }
 
   resize(range.second - range.first);
+}
+//-----------------------------------------------------------------------------
+bool uBLASVector::empty() const
+{
+  return x->empty();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASVector::size() const

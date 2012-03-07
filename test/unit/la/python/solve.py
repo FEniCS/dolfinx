@@ -40,8 +40,8 @@ class solveTest(unittest.TestCase):
         x = Vector(size)
         x[:] = value
         factor = normalize(x, "l2")
-        self.assertEqual(factor, sqrt(size*value*value))
-        self.assertEqual(x.norm("l2"), 1.0)
+        self.assertAlmostEqual(factor, sqrt(size*value*value))
+        self.assertAlmostEqual(x.norm("l2"), 1.0)
 
 if __name__ == "__main__":
     # Turn of DOLFIN output

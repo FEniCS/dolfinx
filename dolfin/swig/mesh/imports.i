@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-02-29
+// Last changed: 2012-03-02
 
 // Auto generated import statements for the module: mesh
 
@@ -55,13 +55,4 @@
 %import(module="dolfin.cpp.mesh") "dolfin/mesh/SubMesh.h"
 %import(module="dolfin.cpp.mesh") "dolfin/mesh/DomainBoundary.h"
 %import(module="dolfin.cpp.mesh") "dolfin/mesh/BoundaryMesh.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitTetrahedron.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitCube.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitInterval.h"
 %import(module="dolfin.cpp.mesh") "dolfin/mesh/Interval.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitTriangle.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitSquare.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitCircle.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/Box.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/Rectangle.h"
-%import(module="dolfin.cpp.mesh") "dolfin/mesh/UnitSphere.h"
