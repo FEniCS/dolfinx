@@ -17,8 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+# Modified by Mikael Mortensen 2011
+#
 # First added:  2011-03-03
-# Last changed: 2011-03-03
+# Last changed: 2011-11-25
 
 import unittest
 from dolfin import *
@@ -51,9 +54,9 @@ class AbstractBaseTest(object):
 
         if use_backend:
             if self.backend == "uBLAS":
-                backend = globals()[self.backend + self.sub_backend + 'Factory_instance']()
+                backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             else:
-                backend = globals()[self.backend + 'Factory_instance']()
+                backend = globals()[self.backend + 'Factory'].instance()
             return assemble(a, backend=backend), assemble(b, backend=backend)
         else:
             return assemble(a), assemble(b)
@@ -72,6 +75,11 @@ class AbstractBaseTest(object):
 
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
+
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and not use_backend:
+            return
+
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
 
@@ -158,6 +166,8 @@ class AbstractBaseTest(object):
         A = Matrix()
         self.assertEqual(A.size(0), 0)
         self.assertEqual(A.size(1), 0)
+        info(A)
+        info(A, True)
 
     def test_copy_empty_matrix(self):
         A = Matrix()
@@ -178,6 +188,14 @@ class AbstractBaseTest(object):
         self.assertEqual(B0.size(1), B1.size(1))
         self.assertEqual(B0.norm("frobenius"), B1.norm("frobenius"))
 
+    def test_compress_matrix(self):
+
+        A0, B0 = self.assemble_matrices()
+        A0_norm_0 = A0.norm('frobenius')
+        A0.compress()
+        A0_norm_1 = A0.norm('frobenius')
+        self.assertAlmostEqual(A0_norm_0, A0_norm_1)
+
     #def test_create_from_sparsity_pattern(self):
 
     #def test_size(self):
@@ -196,9 +214,14 @@ class AbstractBaseTest(object):
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester:
-    def test_matrix_data(self):
+    def test_matrix_data(self, use_backend=False):
         """ Test for ordinary Matrix"""
-        A, B = self.assemble_matrices()
+        # Tests bailout for this choice
+        if self.backend == "uBLAS" and \
+               (not use_backend or self.sub_backend =="Dense"):
+            return
+
+        A, B = self.assemble_matrices(use_backend)
         array = A.array()
         rows, cols, values = A.data()
         i = 0
@@ -221,6 +244,9 @@ class DataTester:
         for row in xrange(A.size(0)):
             for k in xrange(rows[row], rows[row+1]):
                 self.assertEqual(array[row,cols[k]], values[k])
+
+    def test_matrix_data_use_backend(self):
+        self.test_matrix_data(True)
 
 class DataNotWorkingTester:
     def test_matrix_data(self):

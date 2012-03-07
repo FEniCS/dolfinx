@@ -42,22 +42,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, std::string encoding)
 {
+  // Create parent path for file if file has a parent path
+  create_parent_path(filename);
+
   // Get file path and extension
   const boost::filesystem::path path(filename);
   const std::string extension = boost::filesystem::extension(path);
-
-  // Create directory if we have a parent path (does nothing if directory exists)
-  if (path.has_parent_path())
-  {
-    boost::filesystem::create_directories(path.parent_path());
-    if (!boost::filesystem::is_directory(path.parent_path()))
-    {
-      dolfin_error("File.cpp",
-                   "open file",
-                   "Could not create directory \"%s\"",
-                   path.parent_path().string().c_str());
-    }
-  }
 
   // Choose format based on extension
   if (extension == ".gz")
@@ -149,6 +139,23 @@ bool File::exists(std::string filename)
   {
     file.close();
     return true;
+  }
+}
+//-----------------------------------------------------------------------------
+void File::create_parent_path(std::string filename)
+{
+  const boost::filesystem::path path(filename);
+
+  if (path.has_parent_path() && !boost::filesystem::is_directory(path.parent_path()))
+  {
+    boost::filesystem::create_directories(path.parent_path());
+    if (!boost::filesystem::is_directory(path.parent_path()))
+    {
+      dolfin_error("File.cpp",
+                   "open file",
+                   "Could not create directory \"%s\"",
+                   path.parent_path().string().c_str());
+    }
   }
 }
 //-----------------------------------------------------------------------------

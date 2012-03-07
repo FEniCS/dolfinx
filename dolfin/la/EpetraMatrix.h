@@ -28,6 +28,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "GenericMatrix.h"
+#include <Teuchos_RCP.hpp>
 
 class Epetra_FECrsMatrix;
 class Epetra_CrsGraph;
@@ -37,7 +38,7 @@ namespace dolfin
 
   /// Forward declarations
   class EpetraSparsityPattern;
-  class GenericSparsityPattern;
+  class TensorLayout;
 
   /// This class provides a simple matrix class based on Epetra.
   /// It is a simple wrapper for an Epetra matrix object (Epetra_FECrsMatrix)
@@ -58,6 +59,9 @@ namespace dolfin
     EpetraMatrix(const EpetraMatrix& A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
+    explicit EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A);
+
+    /// Create matrix from given Epetra_FECrsMatrix pointer
     explicit EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
 
     /// Create matrix from given Epetra_CrsGraph
@@ -71,11 +75,8 @@ namespace dolfin
     /// Return true if matrix is distributed
     virtual bool distributed() const;
 
-    /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern);
-
-    /// Return copy of tensor
-    virtual EpetraMatrix* copy() const;
+    /// Initialize zero tensor using tensor layout
+    virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;
@@ -97,6 +98,9 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
+
+    /// Return copy of matrix
+    virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
@@ -166,6 +170,9 @@ namespace dolfin
     // Epetra_FECrsMatrix pointer
     boost::shared_ptr<Epetra_FECrsMatrix> A;
 
+    // Epetra_FECrsMatrix pointer, used when initialized with a Teuchos::RCP
+    // shared_ptr
+    Teuchos::RCP<Epetra_FECrsMatrix> ref_keeper;
   };
 
 }

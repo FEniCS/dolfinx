@@ -78,7 +78,13 @@ int main()
 
   };
 
-  cout << "This demo is unlikely to converge if PETSc is not configured with the AMG preconditioners Hypre or ML." << endl;
+  // Check for available preconditioners
+  if (!has_krylov_solver_preconditioner("amg"))
+  {
+    info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
+	 "preconditioner, Hypre or ML.");
+    return 0;
+  }
 
   // Create mesh
   UnitCube mesh(16, 16, 16);

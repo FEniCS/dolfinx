@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2011
+#
 # First added:  2011-03-01
-# Last changed: 2011-03-01
+# Last changed: 2011-11-17
 
 import unittest
 from dolfin import *
@@ -34,7 +36,6 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
 
-
     def assemble_vectors(self):
         mesh = UnitSquare(7, 4)
 
@@ -46,7 +47,6 @@ class AbstractBaseTest(object):
 
         return assemble(v*dx), assemble(t*dx)
 
-
     def test_distributed(self):
         a, b = self.assemble_vectors()
         if self.backend == "PETSc" or self.backend == "Epetra":
@@ -57,9 +57,10 @@ class AbstractBaseTest(object):
         else:
            self.assertFalse(a.distributed())
 
-
     def test_create_empty_vector(self):
         v0 = Vector()
+        info(v0)
+        info(v0, True)
         self.assertEqual(v0.size(), 0)
 
     def test_create_vector(self):
@@ -278,6 +279,41 @@ class AbstractBaseTest(object):
         v1[:] =  2.0
         v0 = v1
         self.assertEqual(v0.sum(), 2.0*n)
+
+    def test_vector_assignment_length(self):
+        # Test that assigning vectors of different lengths fails
+        m, n = 301, 345
+        v0 = Vector(m)
+        v1 = Vector(n)
+        def wrong_assignment(v0, v1):
+            v0[:] = v1
+        self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
+
+    def test_vector_assignment_length(self):
+        # Test that assigning with diffrent parallel layouts fails
+        if MPI.num_processes() > 1:
+            m = 301
+            local_range0 = MPI.local_range(m)
+            print "local range", local_range0[0], local_range0[1]
+
+            # Shift parallel partitiong but preserve global size
+            if MPI.process_number() == 0:
+                local_range1 = (local_range0[0], local_range0[1] + 1)
+            elif MPI.process_number() == MPI.num_processes() - 1:
+                local_range1 = (local_range0[0] + 1, local_range0[1])
+            else:
+                local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
+
+            v0 = Vector()
+            v0.resize(local_range0)
+            v1 = Vector()
+            v1.resize(local_range1)
+            self.assertEqual(v0.size(), v1.size())
+
+            def wrong_assignment(v0, v1):
+                v0[:] = v1
+            self.assertRaises(RuntimeError, wrong_assignment, v0, v1)
+
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends

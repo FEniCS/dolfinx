@@ -23,7 +23,7 @@
 #ifndef __FUNCTION_PLOT_DATA_H
 #define __FUNCTION_PLOT_DATA_H
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
@@ -67,7 +67,7 @@ namespace dolfin
   private:
 
     // The vertex values
-    boost::scoped_ptr<GenericVector> _vertex_values;
+    boost::shared_ptr<GenericVector> _vertex_values;
 
   };
 

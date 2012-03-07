@@ -40,6 +40,7 @@
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
 #include "MeshSmoothing.h"
+#include "MeshTransformation.h"
 #include "ParallelData.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -134,13 +135,13 @@ const MeshData& Mesh::data() const
 //-----------------------------------------------------------------------------
 ParallelData& Mesh::parallel_data()
 {
-  assert(_parallel_data);
+  dolfin_assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 const ParallelData& Mesh::parallel_data() const
 {
-  assert(_parallel_data);
+  dolfin_assert(_parallel_data);
   return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
@@ -200,7 +201,7 @@ void Mesh::init(uint d0, uint d1) const
   }
 
   // Skip if already computed
-  if (_topology(d0, d1).size() > 0)
+  if (!_topology(d0, d1).empty())
     return;
 
   // Check that mesh is ordered
@@ -237,6 +238,7 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
+  _parallel_data.reset(new ParallelData(*this));
   delete _cell_type;
   _cell_type = 0;
   _intersection_operator.clear();
@@ -281,6 +283,16 @@ dolfin::Mesh Mesh::renumber_by_color() const
   const uint D = topology().dim();
   coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
+}
+//-----------------------------------------------------------------------------
+void Mesh::rotate(double angle, uint axis)
+{
+  MeshTransformation::rotate(*this, angle, axis);
+}
+//-----------------------------------------------------------------------------
+void Mesh::rotate(double angle, uint axis, const Point& p)
+{
+  MeshTransformation::rotate(*this, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary)
@@ -447,9 +459,12 @@ std::string Mesh::str(bool verbose) const
   }
   else
   {
+    std::string cell_type("undefined cell type");
+    if (_cell_type)
+      cell_type = _cell_type->description(true);
     s << "<Mesh of topological dimension "
       << topology().dim() << " ("
-      << _cell_type->description(true) << ") with "
+      << cell_type << ") with "
       << num_vertices() << " vertices and "
       << num_cells() << " cells, "
       << (_ordered ? "ordered" : "unordered") << ">";

@@ -111,9 +111,6 @@ namespace dolfin
       #ifdef HAS_MTL4
       allowed_backends.insert("MTL4");
       #endif
-      #ifdef HAS_TRILINOS
-      allowed_backends.insert("Epetra");
-      #endif
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

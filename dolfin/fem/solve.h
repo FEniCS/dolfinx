@@ -48,7 +48,7 @@ namespace dolfin
   void solve(const Equation& equation,
              Function& u,
              const BoundaryCondition& bc,
-	     Parameters params=empty_parameters);
+             Parameters params=empty_parameters);
 
   /// Solve linear variational problem a(u, v) == L(v) or nonlinear
   /// variational problem F(u; v) = 0 with a list of boundary conditions

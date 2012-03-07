@@ -25,11 +25,14 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
+#include <string>
+#include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "PETScKrylovSolver.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -43,35 +46,35 @@ namespace dolfin
     virtual ~PETScFactory() {}
 
     /// Create empty matrix
-    PETScMatrix* create_matrix() const;
+    boost::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector (global)
-    PETScVector* create_vector() const;
+    boost::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty vector (local)
-    PETScVector* create_local_vector() const;
+    boost::shared_ptr<GenericVector> create_local_vector() const;
 
-    /// Create empty sparsity pattern
-    SparsityPattern* create_pattern() const;
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create LU solver
-    PETScLUSolver* create_lu_solver(std::string method) const;
+    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    PETScKrylovSolver* create_krylov_solver(std::string method,
+    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
                                             std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const;
+      lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const;
+      krylov_solver_methods() const;
 
     /// Return a list of available preconditioners
     std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const;
+      krylov_solver_preconditioners() const;
 
     /// Return singleton instance
     static PETScFactory& instance()

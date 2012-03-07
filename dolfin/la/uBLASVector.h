@@ -26,7 +26,11 @@
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
+#include <string>
+#include <utility>
+#include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericVector.h"
 
@@ -71,9 +75,6 @@ namespace dolfin
     virtual bool distributed() const
     { return false; }
 
-    /// Create copy of tensor
-    virtual uBLASVector* copy() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -85,6 +86,9 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
+    /// Create copy of tensor
+    virtual boost::shared_ptr<GenericVector> copy() const;
+
     /// Resize vector to size N
     virtual void resize(uint N);
 
@@ -95,7 +99,10 @@ namespace dolfin
     virtual void resize(std::pair<uint, uint> range,
                         const std::vector<uint>& ghost_indices);
 
-    /// Return size of vector
+    /// Return true if vector is empty
+    virtual bool empty() const;
+
+    /// Return true if vector is empty
     virtual uint size() const;
 
     /// Return local size of vector
@@ -171,8 +178,14 @@ namespace dolfin
     /// Add given vector
     virtual const uBLASVector& operator+= (const GenericVector& x);
 
+    /// Add number to all components of a vector
+    virtual const uBLASVector& operator+= (double a);
+
     /// Subtract given vector
     virtual const uBLASVector& operator-= (const GenericVector& x);
+
+    /// Subtract number from all components of a vector
+    virtual const uBLASVector& operator-= (double a);
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);

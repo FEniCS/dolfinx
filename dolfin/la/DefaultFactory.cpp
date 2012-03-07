@@ -32,52 +32,53 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericMatrix* DefaultFactory::create_matrix() const
+boost::shared_ptr<GenericMatrix> DefaultFactory::create_matrix() const
 {
   return factory().create_matrix();
 }
 //-----------------------------------------------------------------------------
-GenericVector* DefaultFactory::create_vector() const
+boost::shared_ptr<GenericVector> DefaultFactory::create_vector() const
 {
   return factory().create_vector();
 }
 //-----------------------------------------------------------------------------
-GenericVector* DefaultFactory::create_local_vector() const
+boost::shared_ptr<GenericVector> DefaultFactory::create_local_vector() const
 {
   return factory().create_local_vector();
 }
 //-----------------------------------------------------------------------------
-GenericSparsityPattern* DefaultFactory::create_pattern() const
+boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
 {
-  return factory().create_pattern();
+  return factory().create_layout(rank);
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* DefaultFactory::create_lu_solver(std::string method) const
+boost::shared_ptr<GenericLUSolver>
+  DefaultFactory::create_lu_solver(std::string method) const
 {
   return factory().create_lu_solver(method);
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver*
-DefaultFactory::create_krylov_solver(std::string method,
+boost::shared_ptr<GenericLinearSolver>
+  DefaultFactory::create_krylov_solver(std::string method,
                                      std::string preconditioner) const
 {
   return factory().create_krylov_solver(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::lu_solver_methods() const
+  DefaultFactory::lu_solver_methods() const
 {
   return factory().lu_solver_methods();
 }
  //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::krylov_solver_methods() const
+  DefaultFactory::krylov_solver_methods() const
 {
   return factory().krylov_solver_methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-DefaultFactory::krylov_solver_preconditioners() const
+  DefaultFactory::krylov_solver_preconditioners() const
 {
   return factory().krylov_solver_preconditioners();
 }
@@ -98,13 +99,13 @@ LinearAlgebraFactory& DefaultFactory::factory()
   }
   else if (backend == "PETSc")
   {
-#ifdef HAS_PETSC
+    #ifdef HAS_PETSC
     return PETScFactory::instance();
-#else
+    #else
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "PETSc linear algebra backend is not available");
-#endif
+    #endif
   }
   else if (backend == "PETScCusp")
   {
@@ -118,23 +119,23 @@ LinearAlgebraFactory& DefaultFactory::factory()
   }
   else if (backend == "Epetra")
   {
-#ifdef HAS_TRILINOS
+    #ifdef HAS_TRILINOS
     return EpetraFactory::instance();
-#else
+    #else
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "Trilinos linear algebra backend is not available");
-#endif
+    #endif
   }
   else if (backend == "MTL4")
   {
-#ifdef HAS_MTL4
+    #ifdef HAS_MTL4
     return MTL4Factory::instance();
-#else
+    #else
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "MTL4 linear algebra backend is not available");
-#endif
+    #endif
   }
   else if (backend == "STL")
   {

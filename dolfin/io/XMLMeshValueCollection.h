@@ -56,7 +56,7 @@ namespace dolfin
     // Get node
     boost::shared_ptr<const pugi::xml_node>
       mvc_node = get_node(xml_node, "mesh_value_collection");
-    assert(mvc_node);
+    dolfin_assert(mvc_node);
 
     // Get attributes
     const std::string type_file = mvc_node->attribute("type").value();

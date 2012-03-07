@@ -25,6 +25,7 @@
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
 
+#include <vector>
 #include "CellType.h"
 
 namespace dolfin
@@ -54,7 +55,8 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(uint** e, uint dim, const uint* v) const;
+    void create_entities(std::vector<std::vector<uint> >& e, uint dim,
+                         const uint* v) const;
 
     /// Regular refinement of cell
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;

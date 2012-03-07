@@ -141,7 +141,7 @@ bool CellType::ordered(const Cell& cell,
   // Get vertices
   const uint num_vertices = topology(dim, 0).size(c);
   const uint* vertices = topology(dim, 0)(c);
-  assert(vertices);
+  dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
   if (!increasing(num_vertices, vertices, global_vertex_indices))
@@ -155,7 +155,7 @@ bool CellType::ordered(const Cell& cell,
   {
     // Check if entities exist, otherwise skip
     const MeshConnectivity& connectivity = topology(d, 0);
-    if (connectivity.size() == 0) continue;
+    if (connectivity.empty()) continue;
 
     // Get entities
     const uint num_entities = topology(dim, d).size(c);
@@ -230,8 +230,8 @@ bool CellType::increasing(uint n0, const uint* v0,
                           uint num_vertices, const uint* vertices,
                           const MeshFunction<uint>* global_vertex_indices)
 {
-  assert(n0 == n1);
-  assert(num_vertices > n0);
+  dolfin_assert(n0 == n1);
+  dolfin_assert(num_vertices > n0);
   const uint num_non_incident = num_vertices - n0;
 
   // Compute non-incident vertices for first entity
@@ -252,7 +252,7 @@ bool CellType::increasing(uint n0, const uint* v0,
     if (!incident)
       w0[k++] = v;
   }
-  assert(k == num_non_incident);
+  dolfin_assert(k == num_non_incident);
 
   // Compute non-incident vertices for second entity
   std::vector<uint> w1(num_non_incident);
@@ -273,7 +273,7 @@ bool CellType::increasing(uint n0, const uint* v0,
     if (!incident)
       w1[k++] = v;
   }
-  assert(k == num_non_incident);
+  dolfin_assert(k == num_non_incident);
 
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)

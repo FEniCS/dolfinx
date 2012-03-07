@@ -1,6 +1,6 @@
 """Run all unit tests."""
 
-# Copyright (C) 2006-2007 Anders Logg
+# Copyright (C) 2006-2011 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-08-31
+# Last changed: 2011-11-21
 
 import sys, os, re
 import platform
@@ -31,24 +31,27 @@ from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = {
+    "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
-                       "FiniteElement", "SystemAssembler"],
-    "function":       ["Constant", "Expression", "Function", "FunctionSpace"],
-    "io":             ["test", "vtk", "XMLMeshFunction", "XMLMesh",
-                       "XMLMeshValueCollection", "XMLVector"],
+                       "FiniteElement", "SystemAssembler", "Form", "SymmetricAssembler"],
+    "function":       ["Constant", "Expression", "Function", "FunctionSpace",
+                       "SpecialFunctions"],
+    "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
+                       "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData"],
     "jit":            ["test"],
-    "la":             ["test", "Matrix", "Scalar", "Vector"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["test", "Edge", "Face", "MeshData", "MeshEditor",
+    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
                        "MeshFunction", "MeshIterator", "MeshMarkers",
-                       "MeshValueCollection"],
-    "parameter":      ["test"],
+                       "MeshValueCollection", "Mesh"],
+    "parameter":      ["Parameters"],
     "python-extras":  ["test"],
-    "quadrature":     ["test"],
+    "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
+    "intersection":   ["IntersectionOperator"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
@@ -79,11 +82,15 @@ for prefix in prefixes:
             print "Running unit tests for %s (%s) with prefix '%s'" % (test,  subtest, prefix)
             print "----------------------------------------------------------------------"
 
-            cpptest_executable = subtest + "_" + test
+            cpptest_executable = "test_" + subtest
             if platform.system() == 'Windows':
                 cpptest_executable += '.exe'
             print "C++:   ",
-            if not only_python and os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+            if only_python:
+                print "Skipping tests as requested (--only-python)"
+            elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
+                print "This test set does not have a C++ version"
+            else:
                 status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
                                    (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
                 if status == 0 and "OK" in output:
@@ -92,8 +99,6 @@ for prefix in prefixes:
                 else:
                     print "*** Failed"
                     failed += [(test, subtest, "C++", output)]
-            else:
-                print "Skipping"
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):

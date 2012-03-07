@@ -20,15 +20,41 @@ find_package(dolfin REQUIRED)
 if (dolfin_FOUND)
 
   # Build list of all cpp directories
-  file(GLOB_RECURSE list "test.cpp")
-  list(SORT list)
-  string(REGEX REPLACE "/test.cpp" "" list "${list}")
+  file(GLOB_RECURSE initial_list "*/*.cpp")
 
-  # Add each C++ demo directory
-  foreach (cpp_dir ${list})
-    #message(STATUS "Add C++ test: ${cpp_dir}")
-    add_subdirectory(${cpp_dir})
+  set(added_dirs "")
+
+  # Add each C++ demo directory only once
+  foreach (cpp_test ${initial_list})
+
+    # Get directory name
+    get_filename_component(cpp_dir ${cpp_test} PATH)
+    
+    # Get last dir name
+    get_filename_component(last_component ${cpp_dir} NAME)
+
+    # Only process if last dirname is cpp
+    if ((${last_component} STREQUAL "cpp"))
+
+      # Check if the director is already added
+      set(already_in "")
+      foreach (dir ${added_dirs})
+	if (${dir} STREQUAL ${cpp_dir})
+	  set(already_in TRUE)
+	endif()
+      endforeach()
+      
+      # Schedule directory for compilation
+      if (NOT already_in)
+	list(APPEND added_dirs ${cpp_dir})
+	add_subdirectory(${cpp_dir})
+      endif()
+    endif()
   endforeach()
+
+
+
+  #list(SORT list)
 
 else()
 

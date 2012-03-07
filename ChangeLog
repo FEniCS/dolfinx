@@ -1,3 +1,33 @@
+ - Major speed-up of mesh topology computation
+ - Add simple 2D and 3D mesh generation (via CGAL)
+ - Add creation of mesh from triangulations of points (via CGAL)
+ - Split the SWIG interface into six combined modules instead of one
+ - Add has_foo to easy check what solver and precondictioners are available
+ - Add convinient functions for listing available linear_algebra_backends
+ - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
+ - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
+ - Add functionality for rotating meshes
+ - Add mesh generation based on NETGEN constructive solid geometry
+ - Generalise SparsityPattern and STLMatrix to support column-wise storage
+ - Add interfaces to wrap PaStiX and MUMPS direct solvers
+ - Add CoordinateMatrix class
+ - Make STLMatrix work in parallel
+ - Remove all tr1::tuple and use boost::tuple
+ - Fix wrong link in Python quick reference.
+1.0.0 [2011-12-07]
+ - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
+ - Recompile all forms with FFC 1.0.0
+ - Fix for CGAL 3.9 on OS X
+ - Improve docstrings for Box and Rectangle
+ - Check number of dofs on local patch in extrapolation
+1.0-rc2 [2011-11-28]
+ - Fix bug in 1D mesh refinement
+ - Fix bug in handling of subdirectories for TimeSeries
+ - Fix logic behind vector assignment, especially in parallel
+1.0-rc1 [2011-11-21]
+ - 33 bugs fixed
+ - Implement traversal of bounding box trees for all codimensions
+ - Edit and improve all error messages
  - Added [un]equality operator to FunctionSpace
  - Remove batch compilation of Expression (Expressions) from Python interface
  - Added get_value to MeshValueCollection

@@ -10,5 +10,6 @@
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFunctions.h>
+#include <dolfin/function/SpecialFacetFunction.h>
 
 #endif

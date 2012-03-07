@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2002-12-06
-// Last changed: 2011-11-14
+// Last changed: 2011-11-17
 
 #include <iomanip>
 #include <iostream>
@@ -69,7 +69,15 @@ void XMLVector::read(Array<double>& x, Array<uint>& indices,
   }
 
   const unsigned int size = array.attribute("size").as_uint();
-  const std::string type  = array.attribute("type").value();
+  const std::string type = array.attribute("type").value();
+
+  // Check if size is zero
+  if (size == 0)
+  {
+    dolfin_error("XMLVector.cpp",
+                 "read vector from XML file",
+                 "size is zero");
+  }
 
   // Iterate over array entries
   x.resize(size);
@@ -78,7 +86,7 @@ void XMLVector::read(Array<double>& x, Array<uint>& indices,
   {
     const unsigned int index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_double();
-    assert(index < size);
+    dolfin_assert(index < size);
     indices[index] = index;
     x[index] = value;
   }
@@ -115,9 +123,17 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
 
   const uint size = vector.size();
 
+  // Check if size is zero
+  if (size == 0)
+  {
+    dolfin_error("XMLVector.cpp",
+                 "write vector to XML file",
+                 "size is zero");
+  }
+
   if (write_to_stream)
   {
-    assert(size == x.size());
+    dolfin_assert(size == x.size());
 
     // Add vector node
     pugi::xml_node vector_node = xml_node.append_child("vector");

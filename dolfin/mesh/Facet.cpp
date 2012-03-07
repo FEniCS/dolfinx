@@ -33,7 +33,7 @@ double Facet::normal(uint i) const
   const uint D = _mesh->topology().dim();
   _mesh->init(D - 1);
   _mesh->init(D - 1, D);
-  assert(_mesh->ordered());
+  dolfin_assert(_mesh->ordered());
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(D)[0]);
@@ -49,7 +49,7 @@ Point Facet::normal() const
   const uint D = _mesh->topology().dim();
   _mesh->init(D - 1);
   _mesh->init(D - 1, D);
-  assert(_mesh->ordered());
+  dolfin_assert(_mesh->ordered());
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(D)[0]);
@@ -62,7 +62,7 @@ Point Facet::normal() const
 //-----------------------------------------------------------------------------
 bool Facet::exterior() const
 {
-  if (_mesh->parallel_data().exterior_facet().size() > 0)
+  if (!_mesh->parallel_data().exterior_facet().empty())
     return _mesh->parallel_data().exterior_facet()[this->index()];
   else
     return num_entities(dim() + 1) == 1;
@@ -71,7 +71,7 @@ bool Facet::exterior() const
 std::pair<const Cell, const Cell>
 Facet::adjacent_cells(const MeshFunction<uint>* facet_orientation) const
 {
-  assert(num_entities(dim() + 1) == 2);
+  dolfin_assert(num_entities(dim() + 1) == 2);
 
   // Get cell indices
   const uint D = dim() + 1;

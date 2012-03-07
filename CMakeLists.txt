@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
 set(DOLFIN_VERSION_MINOR "0")
-set(DOLFIN_VERSION_MICRO "beta2")
+set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
 #------------------------------------------------------------------------------
@@ -71,21 +71,15 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "GMP")
 list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
-list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
-  if (${OPTION_NAME} MATCHES "GMP")
-    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." OFF)
-  else()
-    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
-  endif()
+  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
 endforeach()
 
 #------------------------------------------------------------------------------
@@ -269,9 +263,56 @@ if (DOLFIN_ENABLE_PASTIX)
   find_package(PaStiX)
 endif()
 
-# Check for Trilinos
+# Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos)
+  message(STATUS "Checking for Trilinos")
+  find_package(Trilinos 10.8.1 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  # Check for required packages
+  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+  if (Trilinos_FOUND)
+    message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
+
+    # Check for packages
+    set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
+    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+      find_package(${package} PATHS $ENV{TRILINOS_DIR} QUIET)
+      if (NOT ${package}_FOUND)
+        set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+      endif()
+    endforeach()
+
+    if (DOLFIN_TRILINOS_PACKAGES_FOUND)
+      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
+      set(DOLFIN_TRILINOS_DEFINITIONS)
+
+      # Loop over each package
+      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+        # Loop over libs and get full path
+        foreach (lib ${${package}_LIBRARIES})
+          find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
+          if (TRILINOS_LIB_${lib})
+            list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
+          endif()
+        endforeach()
+      endforeach()
+
+      # Remove duplicates
+      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+      list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
+      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
+
+    else()
+      message(STATUS "Trilinos found, but some required components are missing.")
+      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+        message(STATUS "  ${package}: ${${package}_FOUND}")
+      endforeach()
+    endif()
+
+  else()
+    message(STATUS "Trilinos could not be found")
+  endif()
 endif()
 
 # Check for MTL4
@@ -287,29 +328,14 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 endif()
 
-# FIXME: Check for GMPXX (C++ bindings) too? CGAL seems to need it
-# Check for GMP
-if (DOLFIN_ENABLE_GMP)
-  find_package(GMP)
-endif()
-
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL)
+  find_package(CGAL 3.8)
 endif()
 
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
-endif()
-
-# Check for HDF5
-if (DOLFIN_ENABLE_HDF5)
-  find_package(HDF5)
-  if (NOT HDF5_IS_PARALLEL)
-    message(WARNING "HDF5 found, but is not configured to run in parallel.")
-    set(HDF5_FOUND FALSE)
-  endif()
 endif()
 
 # Check for cppunit
@@ -561,6 +587,7 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
         PATTERN "*.h"
         PATTERN "*.py"
         PATTERN "*.xml*"
+        PATTERN "*.off"
         PATTERN "CMakeFiles" EXCLUDE)
 
 # Install meshes (data directory)
@@ -620,6 +647,7 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.cpp"
     PATTERN "*.ufl"
     PATTERN "*.xml*"
+    PATTERN "*.off"
     PATTERN "*.inp"
     PATTERN "*.msh"
     PATTERN "*.supp"

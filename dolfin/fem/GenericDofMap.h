@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga, 2012
+//
 // First added:  2010-05-26
-// Last changed: 2011-02-23
+// Last changed: 2012-02-29
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -107,6 +109,13 @@ namespace dolfin
 
     /// Return the set of dof indices
     virtual boost::unordered_set<uint> dofs() const = 0;
+
+    /// Return map from shared dofs to the processes (not including the current
+    /// process) that share it.
+    virtual const boost::unordered_map<uint, std::vector<uint> >& shared_dofs() const = 0;
+
+    /// Return set of all processes that share dofs with the current process.
+    virtual const std::set<uint>& neighbours() const = 0;
 
     /// Re-number based on provided re-numbering map
     virtual void renumber(const std::vector<uint>& renumbering_map) = 0;

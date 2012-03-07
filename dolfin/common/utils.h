@@ -15,13 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B. Haga, 2012.
+//
 // First added:  2009-08-09
-// Last changed: 2010-11-18
+// Last changed: 2012-02-01
 
 #ifndef __UTILS_H
 #define __UTILS_H
 
 #include <string>
+#include <cstring>
+#include <limits>
+#include <vector>
 #include "types.h"
 
 namespace dolfin
@@ -39,6 +44,20 @@ namespace dolfin
   /// Return simple hash for given signature string
   dolfin::uint hash(std::string signature);
 
+  /// Fast zero-fill of numeric vectors / blocks.
+  template <class T> inline void zerofill(T* arr, uint n)
+  {
+    if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
+      std::memset(arr, 0, n*sizeof(T));
+    else
+      // should never happen in practice
+      std::fill_n(arr, n, T(0));
+  }
+
+  template <class T> inline void zerofill(std::vector<T> &vec)
+  {
+    zerofill(&vec[0], vec.size());
+  }
 }
 
 #endif

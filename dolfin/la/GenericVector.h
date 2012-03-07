@@ -31,7 +31,8 @@
 #include <utility>
 #include <vector>
 #include <dolfin/log/log.h>
-#include "GenericSparsityPattern.h"
+#include <dolfin/common/types.h>
+#include "TensorLayout.h"
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -51,14 +52,11 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { assert(rank == 1); resize(dims[0]); }
+    { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { resize(sparsity_pattern.local_range(0)); zero(); }
-
-    /// Return copy of tensor
-    virtual GenericVector* copy() const = 0;
+    virtual void init(const TensorLayout& tensor_layout)
+    { resize(tensor_layout.local_range(0)); zero(); }
 
     /// Return tensor rank (number of dimensions)
     virtual uint rank() const
@@ -66,11 +64,11 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { assert(dim == 0); return size(); }
+    { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
     virtual std::pair<uint, uint> local_range(uint dim) const
-    { assert(dim == 0); return local_range(); }
+    { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
@@ -106,6 +104,9 @@ namespace dolfin
 
     //--- Vector interface ---
 
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const = 0;
+
     /// Resize vector to global size N
     virtual void resize(uint N) = 0;
 
@@ -115,6 +116,9 @@ namespace dolfin
     /// Resize vector with given ownership range and with ghost values
     virtual void resize(std::pair<uint, uint> range,
                         const std::vector<uint>& ghost_indices) = 0;
+
+    /// Return true if empty
+    virtual bool empty() const = 0;
 
     /// Return global size of vector
     virtual uint size() const = 0;
@@ -198,8 +202,14 @@ namespace dolfin
     /// Add given vector
     virtual const GenericVector& operator+= (const GenericVector& x) = 0;
 
+    /// Add number to all components of a vector
+    virtual const GenericVector& operator+= (double a) = 0;
+
     /// Subtract given vector
     virtual const GenericVector& operator-= (const GenericVector& x) = 0;
+
+    /// Subtract number from all components of a vector
+    virtual const GenericVector& operator-= (double a) = 0;
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;

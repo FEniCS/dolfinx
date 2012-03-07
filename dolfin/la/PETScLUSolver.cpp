@@ -72,30 +72,53 @@ namespace dolfin
 // List of available LU solvers
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
   = boost::assign::map_list_of("default", "")
+                              #if PETSC_HAVE_UMFPACK
                               ("umfpack",      MAT_SOLVER_UMFPACK)
+                              #endif
+                              #if PETSC_HAVE_MUMPS
                               ("mumps",        MAT_SOLVER_MUMPS)
+                              #endif
+                              #if PETSC_HAVE_PASTIX
                               ("pastix",       MAT_SOLVER_PASTIX)
+                              #endif
+                              #if PETSC_HAVE_SPOOLES
                               ("spooles",      MAT_SOLVER_SPOOLES)
+                              #endif
+                              #if PETSC_HAVE_SUPERLU
                               ("superlu",      MAT_SOLVER_SUPERLU)
+                              #endif
+                              #if PETSC_HAVE_SUPERLU_DIST
                               ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
+                              #endif
                               ("petsc",        MAT_SOLVER_PETSC);
+//-----------------------------------------------------------------------------
+const std::vector<std::pair<std::string, std::string> > PETScLUSolver::_methods_descr
+  = boost::assign::pair_list_of("default", "default LU solver")
+                               #if PETSC_HAVE_UMFPACK
+                               ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
+                               #endif
+                               #if PETSC_HAVE_MUMPS
+                               ("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)")
+                               #endif
+                               #if PETSC_HAVE_PASTIX
+                               ("pastix", "PaStiX (Parallel Sparse matriX package)")
+                               #endif
+                               #if PETSC_HAVE_SPOOLES
+                               ("spooles", "SPOOLES (SParse Object Oriented Linear Equations Solver)")
+                               #endif
+                               #if PETSC_HAVE_SUPERLU
+                               ("superlu", "SuperLU")
+                               #endif
+                               #if PETSC_HAVE_SUPERLU_DIST
+                               ("superlu_dist", "Parallel SuperLU")
+                               #endif
+                               ("petsc", "PETSc builtin LU solver");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScLUSolver::methods()
 {
-  static std::vector<std::pair<std::string, std::string> > m;
-
-  m.push_back(std::make_pair("default",      "default LU solver"));
-  m.push_back(std::make_pair("umfpack",      "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)"));
-  m.push_back(std::make_pair("mumps",        "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)"));
-  m.push_back(std::make_pair("pastix",       "PaStiX (Parallel Sparse matriX package)"));
-  m.push_back(std::make_pair("spooles",      "SPOOLES (SParse Object Oriented Linear Equations Solver)"));
-  m.push_back(std::make_pair("superlu",      "SuperLU"));
-  m.push_back(std::make_pair("superlu_dist", "Parallel SuperLU"));
-  m.push_back(std::make_pair("petsc",        "PETSc builtin LU solver"));
-
-  return m;
+  return PETScLUSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
@@ -144,13 +167,13 @@ PETScLUSolver::~PETScLUSolver()
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
 {
   this->A = GenericTensor::down_cast<const PETScMatrix>(A);
-  assert(this->A);
+  dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
 {
   this->A = A;
-  assert(this->A);
+  dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& PETScLUSolver::get_operator() const
@@ -166,8 +189,8 @@ const GenericMatrix& PETScLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(_ksp);
-  assert(A);
+  dolfin_assert(_ksp);
+  dolfin_assert(A);
 
   // Downcast matrix and vectors
   const PETScVector& _b = b.down_cast<PETScVector>();
@@ -343,7 +366,7 @@ void PETScLUSolver::init_solver(std::string& method)
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()
 {
-  assert(A->mat());
+  dolfin_assert(A->mat());
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -375,5 +398,4 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
   }
 }
 //-----------------------------------------------------------------------------
-
 #endif

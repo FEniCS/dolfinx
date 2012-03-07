@@ -22,6 +22,8 @@
 // First added:  2006-06-21
 // Last changed: 2011-03-17
 
+#include <dolfin/common/timing.h>
+
 #include <dolfin/log/dolfin_log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
@@ -76,7 +78,6 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Extract exterior (non shared) facets markers
-  //const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
   // Determine boundary facet, count boundary vertices and facets,
@@ -90,7 +91,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (f->num_entities(D) == 1)
     {
       // Determine if we have a boundary facet
-      if (exterior.size() == 0)
+      if (exterior.empty())
         boundary_facet[*f] = true;
       else
       {
@@ -138,7 +139,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (vertex_index != mesh.num_vertices())
     {
       // Create mapping from boundary vertex to mesh vertex if requested
-      if (vertex_map.size() > 0)
+      if (!vertex_map.empty())
         vertex_map[vertex_index] = v->index();
 
       // Add vertex
@@ -162,7 +163,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       reorder(cell, *f);
 
       // Create mapping from boundary cell to mesh facet if requested
-      if (cell_map.size() > 0)
+      if (!cell_map.empty())
         cell_map[current_cell] = f->index();
 
       // Add cell
@@ -208,7 +209,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     break;
   case CellType::triangle:
     {
-      assert(facet.num_entities(0) == 2);
+      dolfin_assert(facet.num_entities(0) == 2);
 
       const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
@@ -225,14 +226,14 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     break;
   case CellType::tetrahedron:
     {
-      assert(facet.num_entities(0) == 3);
+      dolfin_assert(facet.num_entities(0) == 3);
 
       const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
       const Point p2 = mesh.geometry().point(facet.entities(0)[2]);
       const Point v1 = p1 - p0;
       const Point v2 = p2 - p0;
-      const Point n = v1.cross(v2);
+      const Point n  = v1.cross(v2);
 
       if (n.dot(p0 - p) < 0.0)
       {
@@ -243,10 +244,12 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     }
     break;
   default:
-    dolfin_error("BoundaryComputation.cpp",
-                 "reorder cell for extraction of mesh boundary",
-                 "Unknown cell type (%d)",
-                 mesh.type().cell_type());
+    {
+      dolfin_error("BoundaryComputation.cpp",
+                   "reorder cell for extraction of mesh boundary",
+                   "Unknown cell type (%d)",
+                   mesh.type().cell_type());
+    }
   }
 }
 //-----------------------------------------------------------------------------

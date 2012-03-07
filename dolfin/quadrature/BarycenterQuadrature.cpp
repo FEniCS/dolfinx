@@ -27,7 +27,6 @@
 #ifdef HAS_CGAL
 
 #include "BarycenterQuadrature.h"
-#include <math.h>
 
 const int X = 0;
 const int Y = 1;
@@ -36,7 +35,6 @@ const int Z = 2;
 #define SQR(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 
-using std::sqrt;
 using namespace dolfin;
 
 typedef Nef_polyhedron_3::Plane_3 Plane_3;
@@ -92,7 +90,7 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
       ny = CGAL::to_double(face_plane.b());
       nz = CGAL::to_double(face_plane.c());
 
-      const double normal_length = sqrt(nx*nx + ny*ny + nz*nz);
+      const double normal_length = std::sqrt(nx*nx + ny*ny + nz*nz);
       normal[0] = nx/normal_length;
       normal[1] = ny/normal_length;
       normal[2] = nz/normal_length;
@@ -126,7 +124,7 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
       Nef_polyhedron_3::Halffacet_cycle_const_iterator fc;
       for(fc = f->facet_cycles_begin(); fc != f->facet_cycles_end(); ++fc)
       {
-	      // exclude a SHalfloops  (whatever this is)
+	      // Exclude a SHalfloops  (whatever this is)
 	      if (fc.is_shalfedge())
 	      {
 	        Nef_polyhedron_3::SHalfedge_const_handle h = fc;
@@ -161,37 +159,37 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
 	          b0_2 = b0*b0;
 	          b0_3 = b0_2*b0;
 
-	          C1 = a1 + a0;
-	          Ca = a1*C1 + a0_2;
+	          C1  = a1 + a0;
+	          Ca  = a1*C1 + a0_2;
 	          Caa = a1*Ca + a0_3;
-	          Cb = b1*(b1 + b0) + b0_2;
+	          Cb  = b1*(b1 + b0) + b0_2;
 	          Cbb = b1*Cb + b0_3;
 	          Cab = 3*a1_2 + 2*a1*a0 + a0_2;
 	          Kab = a1_2 + 2*a1*a0 + 3*a0_2;
 
-	          P1 += db*C1;
-	          Pa += db*Ca;
+	          P1  += db*C1;
+	          Pa  += db*Ca;
 	          Paa += db*Caa;
-	          Pb += da*Cb;
+	          Pb  += da*Cb;
 	          Pbb += da*Cbb;
 	          Pab += db*(b1*Cab + b0*Kab);
 	        }
 	      }
       }
 
-      P1 /= 2.0;
-      Pa /= 6.0;
+      P1  /= 2.0;
+      Pa  /= 6.0;
       Paa /= 12.0;
-      Pb /= -6.0;
+      Pb  /= -6.0;
       Pbb /= -12.0;
       Pab /= 24.0;
 
-      //end compute the projection integrals
+      // end compute the projection integrals
 
       const double k1 = 1.0/normal[C];
       const double k2 = k1*k1;
       const double k3 = k2*k1;
-      const double w = CGAL::to_double(face_plane.d())/normal_length ;
+      const double w  = CGAL::to_double(face_plane.d())/normal_length ;
 
       Fa = k1*Pa;
       Fb = k1*Pb;
@@ -199,10 +197,10 @@ void BarycenterQuadrature::compute_quadrature(const Nef_polyhedron_3& polyhedron
 
       Faa = k1*Paa;
       Fbb = k1*Pbb;
-      Fcc = k3*(SQR(normal[A])*Paa + 2*normal[A]*normal[B]*Pab + SQR(normal[B])*Pbb
-		    + w*(2*(normal[A]*Pa + normal[B]*Pb) + w*P1));
+      Fcc = k3*(SQR(normal[A])*Paa + 2*normal[A]*normal[B]*Pab
+            + SQR(normal[B])*Pbb + w*(2*(normal[A]*Pa + normal[B]*Pb) + w*P1));
 
-      //end computation face integrals
+      // end computation face integrals
 
       if (has_volume)
       {

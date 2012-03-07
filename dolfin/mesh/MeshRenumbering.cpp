@@ -73,7 +73,7 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   editor.init_vertices(num_vertices);
 
   // Add vertices
-  assert(new_coordinates.size() == num_vertices*gdim);
+  dolfin_assert(new_coordinates.size() == num_vertices*gdim);
   for (uint i = 0; i < num_vertices; ++i)
   {
     const Point p(gdim, &new_coordinates[i*gdim]);
@@ -81,7 +81,7 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   }
 
   // Add cells
-  assert(new_coordinates.size() == num_vertices*gdim);
+  dolfin_assert(new_coordinates.size() == num_vertices*gdim);
   const uint vertices_per_cell = mesh.type().num_entities(0);
   for (uint i = 0; i < num_cells; ++i)
   {
@@ -110,12 +110,12 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   const MeshFunction<uint>& colors = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color = mesh_coloring->second.second;
-  assert(colors.size() == num_cells);
-  assert(entities_of_color.size() > 0);
+  dolfin_assert(colors.size() == num_cells);
+  dolfin_assert(!entities_of_color.empty());
   const uint num_colors = entities_of_color.size();
 
   // New coloring data
-  assert(new_mesh.parallel_data().coloring.size() == 0);
+  dolfin_assert(new_mesh.parallel_data().coloring.empty());
   MeshFunction<uint> new_colors(mesh, tdim);
   std::vector<std::vector<uint> > new_entities_of_color(num_colors);
 
@@ -139,7 +139,7 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   std::pair<ConstMeshColoringData, bool> insert
     = new_mesh.parallel_data().coloring.insert(std::make_pair(coloring_type,
                           std::make_pair(new_colors, new_entities_of_color)));
-  assert(insert.second);
+  dolfin_assert(insert.second);
 
   return new_mesh;
 }
@@ -188,8 +188,8 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color_old = mesh_coloring->second.second;
-  assert(colors_old.size() == num_cells);
-  assert(entities_of_color_old.size() > 0);
+  dolfin_assert(colors_old.size() == num_cells);
+  dolfin_assert(!entities_of_color_old.empty());
 
   // Get coordinates
   const double* coordinates = mesh.geometry().coordinates;
@@ -233,7 +233,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
         // Renumber and copy connectivity data (must be done after vertex renumbering)
         const uint new_vertex_index = new_vertex_indices[vertex_index];
-        assert(new_vertex_index >= 0);
+        dolfin_assert(new_vertex_index >= 0);
         new_connections[connections_offset++] = new_vertex_index;
       }
     }

@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-06-22
-// Last changed: 2011-11-14
+// Last changed: 2012-02-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -93,10 +94,10 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Get mesh
   const Mesh& mesh = a.mesh();
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  if (!cell_domains || cell_domains->size() == 0)
+  if (!cell_domains || cell_domains->empty())
   {
     if (a.cell_domains_shared_ptr().get() ||
         L.cell_domains_shared_ptr().get())
@@ -107,7 +108,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->size() == 0)
+  if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
     if (a.exterior_facet_domains_shared_ptr().get() ||
         L.exterior_facet_domains_shared_ptr().get())
@@ -118,7 +119,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->size() == 0)
+  if (!interior_facet_domains || interior_facet_domains->empty())
   {
     if (a.interior_facet_domains_shared_ptr().get() ||
         L.interior_facet_domains_shared_ptr().get())
@@ -133,8 +134,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   AssemblerTools::check(L);
 
   // Check that we have a bilinear and a linear form
-  assert(a.rank() == 2);
-  assert(L.rank() == 1);
+  dolfin_assert(a.rank() == 2);
+  dolfin_assert(L.rank() == 1);
 
   // Check that forms share a function space
   if (*a.function_space(1) != *L.function_space(0))
@@ -168,20 +169,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   DirichletBC::Map boundary_values;
   for (uint i = 0; i < bcs.size(); ++i)
   {
-    // Methods other than 'pointwise' are not robust in parallel since a vertex
-    // can have a bc applied, but the partition might not have a facet on the boundary.
+    bcs[i]->get_boundary_values(boundary_values);
     if (MPI::num_processes() > 1 && bcs[i]->method() != "pointwise")
-    {
-      if (MPI::process_number() == 0)
-      {
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly.", bcs[i]->method().c_str());
-        //warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
-      }
-      bcs[i]->get_boundary_values(boundary_values);
-      //bcs[i]->get_boundary_values(boundary_values, "pointwise");
-    }
-    else
-      bcs[i]->get_boundary_values(boundary_values);
+      bcs[i]->gather(boundary_values);
   }
 
   // Modify boundary values for incremental (typically nonlinear) problems
@@ -190,7 +180,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (MPI::num_processes() > 1)
       warning("Parallel symmetric assembly over interior facets for nonlinear problems is untested");
 
-    assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
+    dolfin_assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
 
     const uint num_bc_dofs = boundary_values.size();
     std::vector<uint> bc_indices;
@@ -271,7 +261,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
-  assert(mesh.ordered());
+  dolfin_assert(mesh.ordered());
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -317,7 +307,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     std::fill(data.be.begin(), data.be.end(), 0.0);
 
     // Get cell integrals for sub domain (if any)
-    if (cell_domains && cell_domains->size() > 0)
+    if (cell_domains && !cell_domains->empty())
     {
       const uint domain = (*cell_domains)[*cell];
       if (domain < A_ufc.form.num_cell_domains())
@@ -365,7 +355,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           continue;
 
         // Get exterior facet integrals for sub domain (if any)
-        if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+        if (exterior_facet_domains && !exterior_facet_domains->empty())
         {
           const uint domain = (*exterior_facet_domains)[*facet];
           if (domain < A_ufc.form.num_exterior_facet_domains())
@@ -397,7 +387,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                                      A_ufc.cell,
                                                      local_facet);
           for (uint i = 0; i < data.Ae.size(); i++)
-              data.Ae[i] += A_ufc.A[i];
+            data.Ae[i] += A_ufc.A[i];
         }
 
         // Add exterior facet tensor for b
@@ -422,7 +412,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
     L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
 
-    assert(L_dofs[0] == a_dofs[1]);
+    dolfin_assert(L_dofs[0] == a_dofs[1]);
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
@@ -531,7 +521,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
-  if (interior_facet_domains && interior_facet_domains->size() > 0)
+  if (interior_facet_domains && !interior_facet_domains->empty())
   {
     const uint domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())
@@ -566,13 +556,21 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
     if (bc_value != boundary_values.end())
     {
       b[i] = bc_value->second;
+
+      // Zero row (i th)
       for (uint k = 0; k < n; ++k)
-        A[k + i*n] = 0.0;
+        A[i*n + k] = 0.0;
+
       for (uint j = 0; j < m; ++j)
       {
+        // Modify RHS
         b[j] -= A[i + j*n]*bc_value->second;
+
+        // Zero column (i th)
         A[i + j*n] = 0.0;
       }
+
+      // Place one on diagonal (i th)
       A[i + i*n] = 1.0;
     }
   }
@@ -675,7 +673,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 
   // Resize dof vector
   a_macro_dofs[0].resize(a0_dofs0.size() + a0_dofs1.size());
-  a_macro_dofs[1].resize(a0_dofs1.size() + a1_dofs1.size());
+  a_macro_dofs[1].resize(a1_dofs0.size() + a1_dofs1.size());
   L_macro_dofs[0].resize(L_dofs0.size() + L_dofs1.size());
 
   // Tabulate dofs for each dimension on macro element

@@ -25,8 +25,10 @@
 #ifndef __BLOCKVECTOR_H
 #define __BLOCKVECTOR_H
 
+#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -88,6 +90,9 @@ namespace dolfin
 
     /// Assignment operator
     const BlockVector& operator= (double a);
+
+    /// Return true if empty
+    virtual bool empty() const;
 
     /// Number of vectors
     uint size() const;

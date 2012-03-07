@@ -119,21 +119,21 @@ LinearVariationalProblem::bcs() const
 boost::shared_ptr<const FunctionSpace>
 LinearVariationalProblem::trial_space() const
 {
-  assert(_u);
+  dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace>
 LinearVariationalProblem::test_space() const
 {
-  assert(_a);
+  dolfin_assert(_a);
   return _a->function_space(0);
 }
 //-----------------------------------------------------------------------------
 void LinearVariationalProblem::check_forms() const
 {
   // Check rank of bilinear form a
-  assert(_a);
+  dolfin_assert(_a);
   if (_a->rank() != 2)
   {
     dolfin_error("LinearVariationalProblem.cpp",
@@ -143,7 +143,7 @@ void LinearVariationalProblem::check_forms() const
   }
 
   // Check rank of linear form L
-  assert(_L);
+  dolfin_assert(_L);
   if (_L->rank() != 1)
   {
     dolfin_error("LinearVariationalProblem.cpp",
@@ -153,8 +153,8 @@ void LinearVariationalProblem::check_forms() const
   }
 
   // Check that function space of solution variable matches trial space
-  assert(_a);
-  assert(_u);
+  dolfin_assert(_a);
+  dolfin_assert(_u);
   if (!_u->in(*_a->function_space(1)))
   {
     dolfin_error("LinearVariationalProblem.cpp",

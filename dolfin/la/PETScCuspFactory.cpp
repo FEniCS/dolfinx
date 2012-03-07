@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13 
-// Last changed: 2011-09-29
+// Last changed: 2012-02-29
 
 #ifdef HAS_PETSC_CUSP
 
@@ -32,52 +32,62 @@ using namespace dolfin;
 PETScCuspFactory PETScCuspFactory::factory;
 
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScCuspFactory::create_matrix() const
+boost::shared_ptr<GenericMatrix> PETScCuspFactory::create_matrix() const
 {
-  return new PETScMatrix(true);
+  boost::shared_ptr<GenericMatrix> A(new PETScMatrix(true));
+  return A;
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScCuspFactory:: create_vector() const
+boost::shared_ptr<GenericVector> PETScCuspFactory:: create_vector() const
 {
-  return new PETScVector("global", true);
+  boost::shared_ptr<GenericVector> x(new PETScVector("global", true));
+  return x;
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScCuspFactory:: create_local_vector() const
+boost::shared_ptr<GenericVector> PETScCuspFactory:: create_local_vector() const
 {
-  return new PETScVector("local", true);
+  boost::shared_ptr<GenericVector> x(new PETScVector("local", true));
+  return x;
 }
 //-----------------------------------------------------------------------------
-SparsityPattern* PETScCuspFactory::create_pattern() const
+boost::shared_ptr<TensorLayout> PETScCuspFactory::create_layout(uint rank) const
 {
-  return new SparsityPattern;
+  bool sparsity = false;
+  if (rank > 1)
+    sparsity = true;
+  boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
+  return pattern;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver* PETScCuspFactory::create_lu_solver(std::string method) const
+boost::shared_ptr<GenericLUSolver> PETScCuspFactory::create_lu_solver(std::string method) const
 {
-  return new PETScLUSolver(method);
+  boost::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
+  return solver;
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver*
+boost::shared_ptr<GenericLinearSolver>
 PETScCuspFactory::create_krylov_solver(std::string method,
                                        std::string preconditioner) const
 {
-  return new PETScKrylovSolver(method, preconditioner);
+  boost::shared_ptr<GenericLinearSolver>
+    solver(new PETScKrylovSolver(method, preconditioner));
+  return solver;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScCuspFactory::lu_solver_methods() const
+  PETScCuspFactory::lu_solver_methods() const
 {
   return PETScLUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScCuspFactory::krylov_solver_methods() const
+  PETScCuspFactory::krylov_solver_methods() const
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScCuspFactory::krylov_solver_preconditioners() const
+  PETScCuspFactory::krylov_solver_preconditioners() const
 {
   return PETScKrylovSolver::preconditioners();
 }

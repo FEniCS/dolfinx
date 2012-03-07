@@ -120,7 +120,7 @@ int main() {
   plot(solution[1], "Pressure on finest mesh");
 
   // Show timings
-  summary();
+  list_timings();
 
   return 0;
 }

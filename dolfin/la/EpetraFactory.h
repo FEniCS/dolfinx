@@ -27,11 +27,12 @@
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "SparsityPattern.h"
+#include "TensorLayout.h"
 #include "LinearAlgebraFactory.h"
 
 // Forwad declarations
@@ -53,23 +54,24 @@ namespace dolfin
     /// --- LinearAlgebraFactory interface
 
     /// Create empty matrix
-    EpetraMatrix* create_matrix() const;
+    boost::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector (global)
-    EpetraVector* create_vector() const;
+    boost::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty vector (local)
-    EpetraVector* create_local_vector() const;
+    boost::shared_ptr<GenericVector> create_local_vector() const;
 
-    /// Create empty sparsity pattern
-    SparsityPattern* create_pattern() const;
+    /// Create empty tensor layout
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create LU solver
-    EpetraLUSolver* create_lu_solver(std::string method) const;
+    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;
 
     /// Create Krylov solver
-    EpetraKrylovSolver* create_krylov_solver(std::string method,
-                                             std::string preconditioner) const;
+    boost::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method,
+                           std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::vector<std::pair<std::string, std::string> >

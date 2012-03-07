@@ -28,11 +28,13 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <dolfin/common/types.h>
 #include "GenericVector.h"
 
 class Epetra_FEVector;
@@ -81,9 +83,6 @@ namespace dolfin
     /// Return true if tensor is distributed
     virtual bool distributed() const;
 
-    /// Return copy of tensor
-    virtual EpetraVector* copy() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -95,6 +94,9 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const;
+
     /// Resize vector to size N
     virtual void resize(uint N);
 
@@ -104,6 +106,9 @@ namespace dolfin
     /// Resize vector with given ownership range and with ghost values
     virtual void resize(std::pair<uint, uint> range,
                         const std::vector<uint>& ghost_indices);
+
+    /// Return true if vector is empty
+    virtual bool empty() const;
 
     /// Return size of vector
     virtual uint size() const;
@@ -179,8 +184,14 @@ namespace dolfin
     /// Add given vector
     virtual const EpetraVector& operator+= (const GenericVector& x);
 
+    /// Add number to all components of a vector
+    virtual const EpetraVector& operator+= (double a);
+
     /// Subtract given vector
     virtual const EpetraVector& operator-= (const GenericVector& x);
+
+    /// Subtract number from all components of a vector
+    virtual const EpetraVector& operator-= (double a);
 
     /// Assignment operator
     virtual const EpetraVector& operator= (const GenericVector& x);

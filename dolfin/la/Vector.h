@@ -23,10 +23,13 @@
 // First added:  2007-07-03
 // Last changed: 2011-01-14
 
-#ifndef __VECTOR_H
-#define __VECTOR_H
+#ifndef __DOLFIN_VECTOR_H
+#define __DOLFIN_VECTOR_H
 
+#include <string>
+#include <utility>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -44,13 +47,16 @@ namespace dolfin
 
     /// Create empty vector
     Vector()
-    { DefaultFactory factory; vector.reset(factory.create_vector()); }
+    {
+      DefaultFactory factory;
+      vector = factory.create_vector();
+    }
 
     /// Create vector of size N
     explicit Vector(uint N)
     {
       DefaultFactory factory;
-      vector.reset(factory.create_vector());
+      vector = factory.create_vector();
       vector->resize(N);
     }
 
@@ -58,8 +64,7 @@ namespace dolfin
     Vector(const Vector& x) : vector(x.vector->copy()) {}
 
     /// Create a Vector from a GenericVetor
-    Vector(const GenericVector& x)
-    { vector.reset(x.copy()); }
+    Vector(const GenericVector& x) : vector(x.copy()) {}
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -67,11 +72,10 @@ namespace dolfin
     virtual bool distributed() const
     { return vector->distributed(); }
 
-    /// Return copy of tensor
-    virtual Vector* copy() const
+    /// Return copy of vector
+    virtual boost::shared_ptr<GenericVector> copy() const
     {
-      Vector* x = new Vector();
-      x->vector.reset(vector->copy());
+      boost::shared_ptr<Vector> x(new Vector(*this));
       return x;
     }
 
@@ -100,6 +104,10 @@ namespace dolfin
     /// Resize vector with given ownership range and with ghost values
     virtual void resize(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices)
     { vector->resize(range, ghost_indices); }
+
+    /// Return true if vector is empty
+    virtual bool empty() const
+    { return vector->empty(); }
 
     /// Return size of vector
     virtual uint size() const
@@ -200,9 +208,17 @@ namespace dolfin
     virtual const Vector& operator+= (const GenericVector& x)
     { axpy(1.0, x); return *this; }
 
+    /// Add number to all components of a vector
+    virtual const GenericVector& operator+= (double a)
+    { *vector += a; return *this; }
+
     /// Subtract given vector
     virtual const Vector& operator-= (const GenericVector& x)
     { axpy(-1.0, x); return *this; }
+
+    /// Subtract number from all components of a vector
+    virtual const GenericVector& operator-= (double a)
+    { *vector -= a; return *this; }
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x)

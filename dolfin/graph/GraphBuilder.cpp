@@ -40,8 +40,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
                                 const std::vector<uint>& coloring_type)
 {
   // Check coloring type
-  assert(coloring_type.size() >= 2);
-  assert(coloring_type.front() == coloring_type.back());
+  dolfin_assert(coloring_type.size() >= 2);
+  dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
   const uint num_verticies = mesh.num_entities(coloring_type[0]);
@@ -69,8 +69,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
 
     // Add edges to graph
     const uint vertex_entity_index = vertex_entity->index();
-    //graph[vertex_entity_index] = entity_list0;
-    //for (boost::unordered_set<uint>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
     graph[vertex_entity_index].insert(entity_list0.begin(), entity_list0.end());
   }
 
@@ -101,8 +99,8 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
                                         const std::vector<uint>& coloring_type)
 {
   // Check coloring type
-  assert(coloring_type.size() >= 2);
-  assert(coloring_type.front() == coloring_type.back());
+  dolfin_assert(coloring_type.size() >= 2);
+  dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
   const uint num_verticies = mesh.num_entities(coloring_type[0]);
@@ -200,7 +198,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   std::vector<uint> local_boundary_cells;
   for (uint i = 0; i < num_local_cells; ++i)
   {
-    assert(i < local_graph.size());
+    dolfin_assert(i < local_graph.size());
     if (local_graph[i].size() != num_cell_facets)
       local_boundary_cells.push_back(i);
   }
@@ -259,7 +257,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       break;
 
     const uint p = sources[_offset];
-    assert(p < boundary_cells_per_process.size());
+    dolfin_assert(p < boundary_cells_per_process.size());
     const uint data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
     std::vector<uint>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];
@@ -268,7 +266,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Loop over data for each cell
     for (uint j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
     {
-      assert(sources[j] == p);
+      dolfin_assert(sources[j] == p);
 
       // Get cell global index
       _global_cell_indices.push_back(received_data[j]);

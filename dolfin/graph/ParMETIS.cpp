@@ -20,6 +20,8 @@
 // First added:  2010-02-10
 // Last changed: 2011-11-14
 
+#include <dolfin/log/dolfin_log.h>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -35,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
-                                            const LocalMeshData& mesh_data)
+                                 const LocalMeshData& mesh_data)
 {
   // This function prepares data for ParMETIS (which is a pain
   // since ParMETIS has the worst possible interface), calls
@@ -68,11 +70,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
     elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
   // Build eptr and eind arrays storing cell-vertex connectivity
-  std::vector<int> eptr(num_local_cells + 1, 0);
+  std::vector<int> eptr(num_local_cells + 1);
   std::vector<int> eind(num_local_cells*num_cell_vertices, 0);
   for (uint i = 0; i < num_local_cells; i++)
   {
-    assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
+    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i*num_cell_vertices;
     for (uint j = 0; j < num_cell_vertices; j++)
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
@@ -109,6 +111,12 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   MPICommunicator comm;
 
   // Call ParMETIS to partition mesh
+  dolfin_assert(!elmdist.empty());
+  dolfin_assert(!eptr.empty());
+  dolfin_assert(!eind.empty());
+  dolfin_assert(!tpwgts.empty());
+  dolfin_assert(!ubvec.empty());
+  dolfin_assert(!part.empty());
   ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,

@@ -74,6 +74,10 @@ namespace dolfin
 
     // Available names preconditioners
     static const std::map<std::string, const PCType> _methods;
+
+    // Available preconditioner descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+
   };
 
 }

@@ -39,7 +39,7 @@ using namespace dolfin;
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
       : A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
 {
-  assert(A.size(0) == A.size(1));
+  dolfin_assert(A.size(0) == A.size(1));
 
   // Set default parameter values
   parameters = default_parameters();
@@ -56,9 +56,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
      B(reference_to_no_delete_pointer(B))
 
 {
-  assert(A.size(0) == A.size(1));
-  assert(B.size(0) == A.size(0));
-  assert(B.size(1) == A.size(1));
+  dolfin_assert(A.size(0) == A.size(1));
+  dolfin_assert(B.size(0) == A.size(0));
+  dolfin_assert(B.size(1) == A.size(1));
 
   // Set default parameter values
   parameters = default_parameters();
@@ -72,7 +72,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : A(A)
 {
-  assert(A->size(0) == A->size(1));
+  dolfin_assert(A->size(0) == A->size(1));
 
   // Set default parameter values
   parameters = default_parameters();
@@ -88,9 +88,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
                            boost::shared_ptr<const PETScMatrix> B) : A(A), B(B)
 
 {
-  assert(A->size(0) == A->size(1));
-  assert(B->size(0) == A->size(0));
-  assert(B->size(1) == A->size(1));
+  dolfin_assert(A->size(0) == A->size(1));
+  dolfin_assert(B->size(0) == A->size(0));
+  dolfin_assert(B->size(1) == A->size(1));
 
   // Set default parameter values
   parameters = default_parameters();
@@ -122,20 +122,20 @@ void SLEPcEigenSolver::solve()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(uint n)
 {
-  assert(A);
+  dolfin_assert(A);
 
   // Associate matrix (matrices) with eigenvalue solver
-  assert(A->size(0) == A->size(1));
+  dolfin_assert(A->size(0) == A->size(1));
   if (B)
   {
-    assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
+    dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
     EPSSetOperators(eps, *A->mat(), *B->mat());
   }
   else
     EPSSetOperators(eps, *A->mat(), PETSC_NULL);
 
   // Set number of eigenpairs to compute
-  assert(n <= A->size(0));
+  dolfin_assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
 
@@ -170,6 +170,14 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
+                                     GenericVector& r, GenericVector& c) const
+{
+  PETScVector& _r = r.down_cast<PETScVector>();
+  PETScVector& _c = c.down_cast<PETScVector>();
+  get_eigenpair(lr, lc, _r, _c, 0);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c) const
 {
   get_eigenpair(lr, lc, r, c, 0);
@@ -182,8 +190,6 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
   // Get number of computed values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
-
-
 
   if (ii < num_computed_eigenvalues)
   {
@@ -202,8 +208,17 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                    PETScVector& r, PETScVector& c,
-                                    uint i) const
+                                     GenericVector& r, GenericVector& c,
+                                     uint i) const
+{
+  PETScVector& _r = r.down_cast<PETScVector>();
+  PETScVector& _c = c.down_cast<PETScVector>();
+  get_eigenpair(lr, lc, _r, _c, i);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
+                                     PETScVector& r, PETScVector& c,
+                                     uint i) const
 {
   const int ii = static_cast<int>(i);
 
@@ -213,12 +228,12 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    assert(A);
+    dolfin_assert(A);
     A->resize(r, 0);
     A->resize(c, 0);
 
-    assert(r.vec());
-    assert(c.vec());
+    dolfin_assert(r.vec());
+    dolfin_assert(c.vec());
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   }
   else
@@ -326,7 +341,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
 
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(eps, EPS_TARGET_MAGNITUDE);
@@ -387,7 +402,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
 {
-  assert(tolerance > 0.0);
+  dolfin_assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
 }
 //-----------------------------------------------------------------------------

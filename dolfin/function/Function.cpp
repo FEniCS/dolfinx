@@ -59,7 +59,7 @@ Function::Function(const FunctionSpace& V)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V.component().size() > 0)
+  if (!V.component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -75,7 +75,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V->component().size() > 0)
+  if (!V->component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -84,25 +84,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 
   // Initialize vector
   init_vector();
-}
-//-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, GenericVector& x)
-  : Hierarchical<Function>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    _vector(reference_to_no_delete_pointer(x)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (V.component().size() > 0)
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Assertion uses '<=' to deal with sub-functions
-  assert(V.dofmap());
-  assert(V.dofmap()->global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -114,8 +95,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap());
-  assert(V->dofmap()->global_dimension() <= x->size());
+  dolfin_assert(V->dofmap());
+  dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -124,7 +105,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V.component().size() > 0)
+  if (!V.component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
@@ -154,16 +135,12 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
-  if (V->component().size() > 0)
+  if (!V->component().empty())
   {
     dolfin_error("Function.cpp",
                  "create function",
                  "Cannot be created from subspace. Consider collapsing the function space");
   }
-
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
 
   // Initialize vector
   init_vector();
@@ -208,7 +185,7 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
-  assert(v._vector);
+  dolfin_assert(v._vector);
 
   // Make a copy of all the data, or if v is a sub-function, then we collapse
   // the dof map and copy only the relevant entries from the vector of v.
@@ -218,20 +195,20 @@ const Function& Function::operator= (const Function& v)
     _function_space = v._function_space;
 
     // Copy vector
-    _vector.reset(v._vector->copy());
+    _vector = v._vector->copy();
 
     // Clear subfunction cache
     sub_functions.clear();
   }
   else
   {
-    // Create new collapase FunctionsSpapce
+    // Create new collapsed FunctionSpace
     boost::unordered_map<uint, uint> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
-    // FIXME: This assertion doesn't work in parallel
-    //assert(collapsed_map.size() == _function_space->dofmap()->global_dimension());
-    //assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
+    // FIXME: This dolfin_assertion doesn't work in parallel
+    //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->global_dimension());
+    //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
 
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;
@@ -246,13 +223,13 @@ const Function& Function::operator= (const Function& v)
 
     // Gather values into an Array
     Array<double> gathered_values;
-    assert(v.vector());
+    dolfin_assert(v.vector());
     v.vector()->gather(gathered_values, old_rows);
 
     // Initial new vector (global)
     init_vector();
-    assert(_function_space->dofmap());
-    assert(_vector->size() == _function_space->dofmap()->global_dimension());
+    dolfin_assert(_function_space->dofmap());
+    dolfin_assert(_vector->size() == _function_space->dofmap()->global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
@@ -291,14 +268,14 @@ Function& Function::operator[] (uint i) const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space() const
 {
-  assert(_function_space);
+  dolfin_assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> Function::vector()
 {
-  assert(_vector);
-  assert(_function_space->dofmap());
+  dolfin_assert(_vector);
+  dolfin_assert(_function_space->dofmap());
 
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
@@ -314,27 +291,27 @@ boost::shared_ptr<GenericVector> Function::vector()
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericVector> Function::vector() const
 {
-  assert(_vector);
+  dolfin_assert(_vector);
   return _vector;
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
 {
-  assert(_function_space);
+  dolfin_assert(_function_space);
   return *_function_space == V;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::geometric_dimension() const
 {
-  assert(_function_space);
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
   return _function_space->mesh()->geometry().dim();
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x) const
 {
-  assert(_function_space);
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
@@ -375,18 +352,13 @@ void Function::eval(Array<double>& values,
   // Developer note: work arrays/vectors are re-created each time this function
   //                 is called for thread-safety
 
-  assert(_function_space->element());
+  dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
-  // FIXME: Rather than computing num_tensor_entries, we could just use
-  //        values.size()
-
   // Compute in tensor (one for scalar function, . . .)
-  uint num_tensor_entries = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    num_tensor_entries *= element.value_dimension(i);
+  const uint value_size_loc = value_size();
 
-  assert(values.size() == num_tensor_entries);
+  dolfin_assert(values.size() == value_size_loc);
 
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -395,17 +367,17 @@ void Function::eval(Array<double>& values,
   restrict(&coefficients[0], element, dolfin_cell, ufc_cell);
 
   // Create work vector for basis
-  std::vector<double> basis(num_tensor_entries);
+  std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (uint j = 0; j < num_tensor_entries; ++j)
+  for (uint j = 0; j < value_size_loc; ++j)
     values[j] = 0.0;
 
   // Compute linear combination
   for (uint i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
-    for (uint j = 0; j < num_tensor_entries; ++j)
+    for (uint j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
 }
@@ -419,7 +391,7 @@ void Function::interpolate(const GenericFunction& v)
   init_vector();
 
   // Interpolate
-  assert(_function_space);
+  dolfin_assert(_function_space);
   _function_space->interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
@@ -430,23 +402,23 @@ void Function::extrapolate(const Function& v)
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const
 {
-  assert(_function_space);
-  assert(_function_space->element());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_dimension(uint i) const
 {
-  assert(_function_space);
-  assert(_function_space->element());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
-  assert(_function_space);
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Check if UFC cell comes from mesh, otherwise redirect to
@@ -464,8 +436,8 @@ void Function::non_matching_eval(Array<double>& values,
                                  const Array<double>& x,
                                  const ufc::cell& ufc_cell) const
 {
-  assert(_function_space);
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   const double* _x = x.data().get();
@@ -525,9 +497,9 @@ void Function::restrict(double* w,
                         const Cell& dolfin_cell,
                         const ufc::cell& ufc_cell) const
 {
-  assert(w);
-  assert(_function_space);
-  assert(_function_space->dofmap());
+  dolfin_assert(w);
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->dofmap());
 
   // Check if we are restricting to an element of this function space
   if (_function_space->has_element(element)
@@ -550,30 +522,35 @@ void Function::restrict(double* w,
 void Function::compute_vertex_values(Array<double>& vertex_values,
                                      const Mesh& mesh) const
 {
-  assert(_function_space);
-  assert(_function_space->mesh());
-  assert(&mesh == _function_space->mesh().get());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
+
+  // Check that the mesh matches
+  if (&mesh != _function_space->mesh().get())
+  {
+    dolfin_error("Function.cpp",
+                 "interpolate function values at vertices",
+                 "Non-matching mesh");
+  }
 
   // Gather ghosts dofs
   gather();
 
   // Get finite element
-  assert(_function_space->element());
+  dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
-  uint num_tensor_entries = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    num_tensor_entries *= element.value_dimension(i);
+  const uint value_size_loc = value_size();
 
   // Resize Array for holding vertex values
-  vertex_values.resize(num_tensor_entries*(_function_space->mesh()->num_vertices()));
+  vertex_values.resize(value_size_loc*(mesh.num_vertices()));
 
   // Create vector to hold cell vertex values
-  std::vector<double> cell_vertex_values(num_tensor_entries*num_cell_vertices);
+  std::vector<double> cell_vertex_values(value_size_loc*num_cell_vertices);
 
   // Create vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -596,9 +573,9 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < num_tensor_entries; ++i)
+      for (uint i = 0; i < value_size_loc; ++i)
       {
-        const uint local_index  = vertex.pos()*num_tensor_entries + i;
+        const uint local_index  = vertex.pos()*value_size_loc + i;
         const uint global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }
@@ -615,7 +592,7 @@ void Function::gather() const
 void Function::init_vector()
 {
   // Check that function space is not a subspace (view)
-  assert(_function_space);
+  dolfin_assert(_function_space);
   if (_function_space->dofmap()->is_view())
   {
     dolfin_error("Function.cpp",
@@ -639,9 +616,9 @@ void Function::init_vector()
   if (!_vector)
   {
     DefaultFactory factory;
-    _vector.reset(factory.create_vector());
+    _vector = factory.create_vector();
   }
-  assert(_vector);
+  dolfin_assert(_vector);
 
   // Initialize vector of dofs
   _vector->resize(range, ghost_indices);
@@ -655,16 +632,16 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
   ghost_indices.clear();
 
   // Get mesh
-  assert(_function_space);
-  assert(_function_space->mesh());
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Get dof map
-  assert(_function_space->dofmap());
+  dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Dofs per cell
-  assert(_function_space->element());
+  dolfin_assert(_function_space->element());
   const uint num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range

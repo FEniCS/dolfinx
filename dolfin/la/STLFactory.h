@@ -16,17 +16,20 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
+// Modified by Garth N. Wells 2012
 //
 // First added:  2008-05-21
-// Last changed: 2011-11-11
+// Last changed: 2012-02-22
 
-#ifndef __STL_FACTORY_H
-#define __STL_FACTORY_H
+#ifndef __DOLFIN_STL_FACTORY_H
+#define __DOLFIN_STL_FACTORY_H
 
-#include "STLMatrix.h"
-#include "uBLASVector.h"
-#include "GenericSparsityPattern.h"
+#include <boost/shared_ptr.hpp>
+#include <dolfin/log/log.h>
 #include "LinearAlgebraFactory.h"
+#include "STLMatrix.h"
+#include "TensorLayout.h"
+#include "Vector.h"
 
 namespace dolfin
 {
@@ -39,45 +42,59 @@ namespace dolfin
     virtual ~STLFactory() {}
 
     /// Create empty matrix
-    STLMatrix* create_matrix() const
-    { return new STLMatrix(); }
+    boost::shared_ptr<GenericMatrix> create_matrix() const
+    {
+      boost::shared_ptr<GenericMatrix> A(new STLMatrix);
+      return A;
+    }
 
     /// Create empty vector (global)
-    uBLASVector* create_vector() const
-    { return new uBLASVector(); }
+    boost::shared_ptr<GenericVector> create_vector() const
+    {
+      boost::shared_ptr<GenericVector> x(new Vector);
+      return x;
+    }
 
     /// Create empty vector (local)
-    uBLASVector* create_local_vector() const
-    { return new uBLASVector(); }
+    boost::shared_ptr<GenericVector> create_local_vector() const
+    {
+      boost::shared_ptr<GenericVector> x(new Vector);
+      return x;
+    }
 
-    /// Create empty sparsity pattern
-    GenericSparsityPattern* create_pattern() const
-    { return 0; }
+    /// Create empty tensor layout
+    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
+    {
+      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
+      return pattern;
+    }
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver(std::string method) const
+    boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
     {
       dolfin_error("STLFactory",
                    "create LU solver",
                    "LU solver not available for the STL backend");
-      return 0;
+      boost::shared_ptr<GenericLUSolver> solver;
+      return solver;
     }
 
     /// Create Krylov solver
-    GenericLinearSolver* create_krylov_solver(std::string method,
+    boost::shared_ptr<GenericLinearSolver> create_krylov_solver(std::string method,
                                               std::string preconditioner) const
     {
       dolfin_error("STLFactory",
                    "create Krylov solver",
                    "Krylov solver not available for the STL backend");
-      return 0;
+      boost::shared_ptr<GenericLinearSolver> solver;
+      return solver;
     }
 
     /// Return singleton instance
     static STLFactory& instance()
     { return factory; }
 
-  private:
+  protected:
 
     /// Private Constructor
     STLFactory() {}

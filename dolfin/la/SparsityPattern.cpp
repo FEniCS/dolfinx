@@ -24,124 +24,144 @@
 
 #include <algorithm>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/common/MPI.h>
 #include "SparsityPattern.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
-                                     col_range_min(0), col_range_max(0)
+SparsityPattern::SparsityPattern(uint primary_dim)
+    : GenericSparsityPattern(primary_dim), distributed(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+SparsityPattern::SparsityPattern(const std::vector<uint>& dims,
+  const std::vector<std::pair<uint, uint> >& local_range,
+  const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner,
+    uint primary_dim)
+  : GenericSparsityPattern(primary_dim), distributed(false)
+{
+  init(dims, local_range, off_process_owner);
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::init(const std::vector<uint>& dims,
-  const std::vector<std::pair<uint, uint> >& ownership_range,
+  const std::vector<std::pair<uint, uint> >& local_range,
   const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
 {
-  // Only rank 1 and 2 sparsity patterns are supported
-  assert(dims.size() < 3);
+  // Only rank 2 sparsity patterns are supported
+  dolfin_assert(dims.size() == 2);
 
   // Check that dimensions match
-  assert(dims.size() == ownership_range.size());
-  assert(dims.size() == off_process_owner.size());
-
-  // Store dimensions
-  shape = dims;
-
-  // Set ownership range
-  this->ownership_range = ownership_range;
-
-  // Store copy of nonlocal index to owning process map
-  for (uint i = 0; i < off_process_owner.size(); ++i)
-  {
-    assert(off_process_owner[i]);
-    this->off_process_owner.push_back(*off_process_owner[i]);
-  }
+  dolfin_assert(dims.size() == local_range.size());
+  dolfin_assert(dims.size() == off_process_owner.size());
 
   // Clear sparsity pattern data
   diagonal.clear();
   off_diagonal.clear();
   non_local.clear();
-
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
-    return;
+  this->off_process_owner.clear();
 
   // Set ownership range
-  this->ownership_range = ownership_range;
+  _local_range = local_range;
 
-  // Get local range
-  row_range_min = this->ownership_range[0].first;
-  row_range_max = this->ownership_range[0].second;
-  col_range_min = this->ownership_range[1].first;
-  col_range_max = this->ownership_range[1].second;
+  // Store copy of nonlocal index to owning process map
+  this->off_process_owner.reserve(off_process_owner.size());
+  for (uint i = 0; i < off_process_owner.size(); ++i)
+  {
+    dolfin_assert(off_process_owner[i]);
+    this->off_process_owner.push_back(*off_process_owner[i]);
+  }
+
+  // Check that primary dimension is valid
+  if (_primary_dim > 1)
+   {
+    dolfin_error("SparsityPattern.cpp",
+                 "primary dimension for sparsity pattern storage",
+                 "Primary dimension must be less than 2 (0=row major, 1=column major");
+  }
+
+  // Check if sparsity pattern is distributed
+  if (_local_range[_primary_dim].first != 0 || _local_range[_primary_dim].second != dims[_primary_dim])
+    distributed = true;
 
   // Resize diagonal block
-  assert(row_range_max > row_range_min);
-  diagonal.resize(row_range_max - row_range_min);
+  dolfin_assert(_local_range[_primary_dim].second > _local_range[_primary_dim].first);
+  diagonal.resize(_local_range[_primary_dim].second - _local_range[_primary_dim].first);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  if (row_range_min != 0 || row_range_max != shape[0])
-    off_diagonal.resize(row_range_max - row_range_min);
+  if (distributed)
+    off_diagonal.resize(_local_range[_primary_dim].second - _local_range[_primary_dim].first);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entries)
 {
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
-    return;
+  dolfin_assert(entries.size() == 2);
+  dolfin_assert(entries[0]);
+  dolfin_assert(entries[1]);
 
-  assert(entries.size() == 2);
-  assert(entries[0]);
-  assert(entries[1]);
-
-  // Get local rows and columns to insert
-  const std::vector<uint>& map_i = *entries[0];
-  const std::vector<uint>& map_j = *entries[1];
+  const std::vector<uint>* map_i;
+  const std::vector<uint>* map_j;
+  uint primary_codim;
+  dolfin_assert(_primary_dim < 2);
+  if (_primary_dim == 0)
+  {
+    primary_codim = 1;
+    map_i = entries[0];
+    map_j = entries[1];
+  }
+  else
+  {
+    primary_codim = 0;
+    map_i = entries[1];
+    map_j = entries[0];
+  }
 
   // Check local range
-  if (row_range_min == 0 && row_range_max == shape[0])
+  if (!distributed)
   {
     // Sequential mode, do simple insertion
-    for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
-      diagonal[*row].insert(map_j.begin(), map_j.end());
+    std::vector<uint>::const_iterator i_index;
+    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
+      diagonal[*i_index].insert(map_j->begin(), map_j->end());
   }
   else
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
-    for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
+    std::vector<uint>::const_iterator i_index;
+    for (i_index = map_i->begin(); i_index != map_i->end(); ++i_index)
     {
-      if (row_range_min <= *row && *row < row_range_max)
+      if (_local_range[_primary_dim].first <= *i_index && *i_index < _local_range[_primary_dim].second)
       {
         // Subtract offset
-        const uint I = *row - row_range_min;
+        const uint I = *i_index - _local_range[_primary_dim].first;
 
         // Store local entry in diagonal or off-diagonal block
-        for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
+        std::vector<uint>::const_iterator j_index;
+        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
         {
-          if (col_range_min <= *col && *col < col_range_max)
+          if (_local_range[primary_codim].first <= *j_index && *j_index < _local_range[primary_codim].second)
           {
-            assert(I < diagonal.size());
-            diagonal[I].insert(*col);
+            dolfin_assert(I < diagonal.size());
+            diagonal[I].insert(*j_index);
           }
           else
           {
-            assert(I < off_diagonal.size());
-            off_diagonal[I].insert(*col);
+            dolfin_assert(I < off_diagonal.size());
+            off_diagonal[I].insert(*j_index);
           }
         }
       }
       else
       {
         // Store non-local entry (communicated later during apply())
-        for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
+        std::vector<uint>::const_iterator j_index;
+        for (j_index = map_j->begin(); j_index != map_j->end(); ++j_index)
         {
-          non_local.push_back(*row);
-          non_local.push_back(*col);
+          non_local.push_back(*i_index);
+          non_local.push_back(*j_index);
         }
       }
     }
@@ -150,75 +170,69 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
 {
-  return shape.size();
-}
-//-----------------------------------------------------------------------------
-dolfin::uint SparsityPattern::size(uint i) const
-{
-  assert(i < shape.size());
-  return shape[i];
+  return 2;
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) const
 {
-  assert(dim < 2);
-  return ownership_range[dim];
+  dolfin_assert(dim < 2);
+  return _local_range[dim];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
 {
   uint nz = 0;
-  typedef std::vector<set_type>::const_iterator row_it;
-  for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
-    nz += row->size();
-  for (row_it row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
-    nz += row->size();
+  typedef std::vector<set_type>::const_iterator slice_it;
+  for (slice_it slice = diagonal.begin(); slice != diagonal.end(); ++slice)
+    nz += slice->size();
+  for (slice_it slice = off_diagonal.begin(); slice != off_diagonal.end(); ++slice)
+    nz += slice->size();
   return nz;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const
 {
-  // Check rank
-  if (shape.size() != 2)
-  {
-    dolfin_error("SparsityPattern.cpp",
-                 "access number of nonzero diagonal entries",
-                 "Non-zero entries per row can be computed for matrices only");
-  }
-
   // Resize vector
   num_nonzeros.resize(diagonal.size());
 
-  // Get number of nonzeros per row
-  typedef std::vector<set_type>::const_iterator row_it;
-  for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
-    num_nonzeros[row - diagonal.begin()] = row->size();
+  // Get number of nonzeros per generalised row
+  typedef std::vector<set_type>::const_iterator slice_it;
+  for (slice_it slice = diagonal.begin(); slice != diagonal.end(); ++slice)
+    num_nonzeros[slice - diagonal.begin()] = slice->size();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const
 {
-  // Check rank
-  if (shape.size() != 2)
-  {
-    dolfin_error("SparsityPattern.cpp",
-                 "access number of nonzero off-diagonal entries",
-                 "Non-zero entries per row can be computed for matrices only");
-  }
-
   // Resize vector
   num_nonzeros.resize(off_diagonal.size());
 
-  // Compute number of nonzeros per row
-  typedef std::vector<set_type>::const_iterator row_it;
-  for (row_it row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
-    num_nonzeros[row - off_diagonal.begin()] = row->size();
+  // Compute number of nonzeros per generalised row
+  typedef std::vector<set_type>::const_iterator slice_it;
+  for (slice_it slice = off_diagonal.begin(); slice != off_diagonal.end(); ++slice)
+    num_nonzeros[slice - off_diagonal.begin()] = slice->size();
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
+{
+  num_nonzeros_diagonal(num_nonzeros);
+  if (!off_diagonal.empty())
+  {
+    std::vector<uint> tmp;
+    num_nonzeros_off_diagonal(tmp);
+    dolfin_assert(num_nonzeros.size() == tmp.size());
+    std::transform(num_nonzeros.begin(), num_nonzeros.end(), tmp.begin(),
+                   num_nonzeros.begin(), std::plus<uint>());
+  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  // Check rank, ignore if not a matrix
-  if (shape.size() != 2)
-    return;
+  uint primary_codim;
+  dolfin_assert(_primary_dim < 2);
+  if (_primary_dim == 0)
+    primary_codim = 1;
+  else
+    primary_codim = 0;
 
   const uint num_processes = MPI::num_processes();
   const uint proc_number = MPI::process_number();
@@ -228,24 +242,24 @@ void SparsityPattern::apply()
     info_statistics();
 
   // Communicate non-local blocks if any
-  if (row_range_min != 0 || row_range_max != shape[0])
+  if (distributed)
   {
     // Figure out correct process for each non-local entry
-    assert(non_local.size() % 2 == 0);
+    dolfin_assert(non_local.size() % 2 == 0);
     std::vector<uint> destinations(non_local.size());
     for (uint i = 0; i < non_local.size(); i += 2)
     {
-      // Get row for non-local entry
+      // Get generalised row for non-local entry
       const uint I = non_local[i];
 
       // Figure out which process owns the row
       boost::unordered_map<uint, uint>::const_iterator non_local_index
-          = off_process_owner[0].find(I);
-      assert(non_local_index != off_process_owner[0].end());
+          = off_process_owner[_primary_dim].find(I);
+      dolfin_assert(non_local_index != off_process_owner[_primary_dim].end());
       const uint p = non_local_index->second;
 
-      assert(p < num_processes);
-      assert(p != proc_number);
+      dolfin_assert(p < num_processes);
+      dolfin_assert(p != proc_number);
 
       destinations[i] = p;
       destinations[i + 1] = p;
@@ -256,34 +270,34 @@ void SparsityPattern::apply()
     MPI::distribute(non_local, destinations, non_local_received);
 
     // Insert non-local entries received from other processes
-    assert(non_local_received.size() % 2 == 0);
-    for (uint i = 0; i < non_local_received.size(); i+= 2)
+    dolfin_assert(non_local_received.size() % 2 == 0);
+    for (uint i = 0; i < non_local_received.size(); i += 2)
     {
-      // Get row and column
+      // Get generalised row and column
       uint I = non_local_received[i];
       const uint J = non_local_received[i + 1];
 
       // Sanity check
-      if (I < row_range_min || I >= row_range_max)
+      if (I < _local_range[_primary_dim].first || I >= _local_range[_primary_dim].second)
       {
         dolfin_error("SparsityPattern.cpp",
                      "apply changes to sparsity pattern",
-                     "Received illegal sparsity pattern entry for row %d, not in range [%d, %d]",
-                     I, row_range_min, row_range_max);
+                     "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
+                     I, _local_range[_primary_dim].first, _local_range[_primary_dim].second);
       }
 
       // Subtract offset
-      I -= row_range_min;
+      I -= _local_range[_primary_dim].first;
 
       // Insert in diagonal or off-diagonal block
-      if (col_range_min <= J && J < col_range_max)
+      if (_local_range[primary_codim].first <= J && J < _local_range[primary_codim].second)
       {
-        assert(I < diagonal.size());
+        dolfin_assert(I < diagonal.size());
         diagonal[I].insert(J);
       }
       else
       {
-        assert(I < off_diagonal.size());
+        dolfin_assert(I < off_diagonal.size());
         off_diagonal[I].insert(J);
       }
     }
@@ -295,20 +309,16 @@ void SparsityPattern::apply()
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
 {
-  // Check rank
-  if (shape.size() != 2)
-  {
-    dolfin_error("SparsityPattern.cpp",
-                 "return string representation of sparsity pattern",
-                 "Only available for matrices");
-  }
-
   // Print each row
   std::stringstream s;
   typedef set_type::const_iterator entry_it;
   for (uint i = 0; i < diagonal.size(); i++)
   {
-    s << "Row " << i << ":";
+    if (_primary_dim == 0)
+      s << "Row " << i << ":";
+    else
+      s << "Col " << i << ":";
+
     for (entry_it entry = diagonal[i].begin(); entry != diagonal[i].end(); ++entry)
       s << " " << *entry;
     s << std::endl;
@@ -366,9 +376,17 @@ void SparsityPattern::info_statistics() const
   const uint num_nonzeros_total
     = num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
+  uint size0 = _local_range[0].second;
+  uint size1 = _local_range[1].second;
+  if (distributed)
+  {
+    size0 = MPI::max(size0);
+    size1 = MPI::max(size1);
+  }
+
   // Return number of entries
-  cout << "Matrix of size " << shape[0] << " x " << shape[1] << " has "
-       << num_nonzeros_total << " (" << 100.0*num_nonzeros_total/(shape[0]*shape[1])
+  cout << "Matrix of size " << size0 << " x " << size1 << " has "
+       << num_nonzeros_total << " (" << 100.0*num_nonzeros_total/(size0*size1)
         << "%)" << " nonzero entries." << endl;
   if (num_nonzeros_total != num_nonzeros_diagonal)
   {

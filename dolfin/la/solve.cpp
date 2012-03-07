@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug 2008.
-// Modified by Garth N. Wells 2011.
+// Modified by Ola Skavhaug 2008
+// Modified by Garth N. Wells 2011
+// Modified by Mikael Mortensen 2011
 //
 // First added:  2007-04-30
-// Last changed: 2011-10-07
+// Last changed: 2011-12-21
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
@@ -121,7 +123,7 @@ dolfin::linear_solver_methods()
     krylov_methods = DefaultFactory::factory().krylov_solver_methods();
   for (uint i = 0; i < krylov_methods.size(); i++)
   {
-    if (lu_methods[i].first != "default")
+    if (krylov_methods[i].first != "default")
       methods.push_back(krylov_methods[i]);
   }
 
@@ -145,18 +147,60 @@ dolfin::krylov_solver_preconditioners()
   return DefaultFactory::factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
+bool dolfin::has_lu_solver_method(std::string method)
+{
+  std::vector<std::pair<std::string, std::string> > methods =
+    DefaultFactory::factory().lu_solver_methods();
+  for (dolfin::uint i = 0; i < methods.size(); i++)
+    if (methods[i].first == method)
+      return true;
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::has_krylov_solver_method(std::string method)
+{
+  std::vector<std::pair<std::string, std::string> > methods =
+    DefaultFactory::factory().krylov_solver_methods();
+  for (dolfin::uint i = 0; i < methods.size(); i++)
+    if (methods[i].first == method)
+      return true;
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
+{
+  std::vector<std::pair<std::string, std::string> > preconditioners =
+    DefaultFactory::factory().krylov_solver_preconditioners();
+  for (dolfin::uint i = 0; i < preconditioners.size(); i++)
+    if (preconditioners[i].first == preconditioner)
+      return true;
+  return false;
+}
+//-----------------------------------------------------------------------------
 double dolfin::residual(const GenericMatrix& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::scoped_ptr<GenericVector> y(A.factory().create_vector());
+  boost::shared_ptr<GenericVector> y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");
 }
 //-----------------------------------------------------------------------------
+double dolfin::norm(const GenericVector& x, std::string norm_type)
+{
+  return x.norm(norm_type);
+}
+//-----------------------------------------------------------------------------
 double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
+  if (x.empty())
+  {
+    dolfin_error("solve.cpp",
+                 "normalize vector",
+                 "Cannot normalize vector of zero length");
+  }
+
   double c = 0.0;
   if (normalization_type == "l2")
   {
@@ -165,12 +209,8 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   }
   else if (normalization_type == "average")
   {
-    boost::scoped_ptr<GenericVector> y(x.factory().create_vector());
-    y->resize(x.size());
-    (*y) = 1.0 / static_cast<double>(x.size());
-    c = x.inner(*y);
-    (*y) = c;
-    x -= (*y);
+    c = x.sum()/static_cast<double>(x.size());
+    x -= c;
   }
   else
   {
@@ -183,4 +223,103 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
   return c;
 }
 //-----------------------------------------------------------------------------
+bool dolfin::has_linear_algebra_backend(std::string backend)
+{
+  if (backend == "uBLAS")
+  {
+    return true;
+  }
+  else if (backend == "PETSc")
+  {
+#ifdef HAS_PETSC
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (backend == "PETScCusp")
+  {
+#ifdef HAS_PETSC_CUSP
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (backend == "Epetra")
+  {
+#ifdef HAS_TRILINOS
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (backend == "MTL4")
+  {
+#ifdef HAS_MTL4
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (backend == "STL")
+  {
+    return true;
+  }
+  return false;
+}
+//-------------------------------------------------------------------------
+void dolfin::list_linear_algebra_backends()
+{
+  std::vector<std::pair<std::string, std::string> > backends =
+    linear_algebra_backends();
 
+  // Pretty-print list of available linear algebra backends
+  Table t("Linear algebra backends", false);
+  for (uint i = 0; i < backends.size(); i++)
+    t(backends[i].first, "Description") = backends[i].second;
+
+  cout << t.str(true) << endl;
+}
+//-------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backends()
+{
+  std::vector<std::pair<std::string, std::string> > backends;
+
+  std::map<std::string, std::string> default_backend
+    = boost::assign::map_list_of("uBLAS",  " (default)")
+                                ("Epetra", "")
+                                ("PETSc", "");
+  #ifdef HAS_PETSC
+  default_backend["uBLAS"] = "";
+  default_backend["PETSc"] = " (default)";
+  #else
+    #ifdef HAS_TRILINOS
+    default_backend["uBLAS"] = "";
+    default_backend["Epetra"] = " (default)";
+    #endif
+  #endif
+
+  // Add available backends
+  backends.push_back(std::make_pair("uBLAS", "Template based basic linear algebra "
+				    "from boost" + default_backend["uBLAS"]));
+  backends.push_back(std::make_pair("STL", "Light weight storage backend for Tensors"));
+
+  #ifdef HAS_PETSC
+  backends.push_back(std::make_pair("PETSc", "Powerful MPI parallel linear algebra"
+				    " library" + default_backend["PETSc"]));
+  #endif
+  #ifdef HAS_PETSC_CUSP
+  backends.push_back(std::make_pair("PETScCusp", "GPU-accelerated build of PETSc"));
+  #endif
+  #ifdef HAS_TRILINOS
+  backends.push_back(std::make_pair("Epetra", "Powerful MPI parallel linear algebra"
+				    " library" + default_backend["Epetra"]));
+  #endif
+  #ifdef HAS_MTL4
+  backends.push_back(std::make_pair("MTL4", "Template based basic linear algebra"
+				   " backend"));
+  #endif
+
+  return backends;
+}
+//-------------------------------------------------------------------------

@@ -236,6 +236,14 @@ class GmshTest(_ConverterTest):
         self.assert_(ended)
         self.assert_(handler.closed)
     
+    def test_1D_facet_markings_2 (self):
+        """
+        Test to see if the 1D facet markings behave as expected.
+        2 vertices marked
+        """
+        marked_facets = [0,2]
+        self._facet_marker_driver(1, 2, marked_facets, 11)
+    
     def test_2D_facet_markings_1 (self):
         """
         Test to see if the 2D facet markings behave as expected.
@@ -279,7 +287,9 @@ class GmshTest(_ConverterTest):
         self._facet_marker_driver(3, 1, marked_facets, 60)
     
     def _facet_marker_driver (self, dim, id, marked_facets, size ):
-        if dim == 2:
+        if dim == 1:
+            cell_type = DataHandler.CellType_Interval
+        elif dim == 2:
             cell_type = DataHandler.CellType_Triangle
         elif dim == 3:
             cell_type = DataHandler.CellType_Tetrahedron
@@ -293,9 +303,9 @@ class GmshTest(_ConverterTest):
         
         function_dim, sz, entries, ended = handler.functions["facet_region"]
         
-        # the dimension of the meshfunction should be 1
+        # the dimension of the meshfunction should be dim-1
         self.assertEqual(function_dim, dim-1)
-        # There should be 8 edges in the mesh function
+        # There should be size facets in the mesh function
         self.assertEqual(len(entries), size)
         self.assertEqual(sz, size)
         # marked

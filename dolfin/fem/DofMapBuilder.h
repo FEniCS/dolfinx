@@ -25,6 +25,7 @@
 
 #include <set>
 #include <boost/unordered_set.hpp>
+#include <boost/unordered_map.hpp>
 #include <dolfin/common/Set.h>
 
 namespace ufc
@@ -50,12 +51,12 @@ namespace dolfin
     //typedef std::set<dolfin::uint>::const_iterator set_iterator;
     //typedef Set<dolfin::uint> set;
     //typedef Set<dolfin::uint>::const_iterator set_iterator;
-    //typedef std::tr1::unordered_set<dolfin::uint> set;
-    //typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
     typedef boost::unordered_set<dolfin::uint> set;
     typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
     typedef std::vector<dolfin::uint>::const_iterator vector_it;
+
+    typedef boost::unordered_map<uint, std::vector<uint> > vec_map;
 
   public:
 
@@ -72,6 +73,7 @@ namespace dolfin
 
     static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                   set& shared_unowned_dofs,
+                                  vec_map& shared_dof_processes,
                                   const DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
                                   const Mesh& mesh);
@@ -79,6 +81,7 @@ namespace dolfin
     static void parallel_renumber(const set& owned_dofs,
                                   const set& shared_owned_dofs,
                                   const set& shared_unowned_dofs,
+                                  const vec_map& shared_dof_processes,
                                   DofMap& dofmap, const Mesh& mesh);
 
     /// Compute set of global dofs (e.g. Reals associated with global

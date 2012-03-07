@@ -82,7 +82,17 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
 void dolfin::plot(const Function& v,
                   std::string title, std::string mode)
 {
-  assert(v.function_space()->mesh());
+  // Duplicate test here since FunctionPlotData may fail in parallel
+  // as it does for the eigenvalue demo when vector is not initialized
+  // correctly.
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Plotting disabled when running in parallel; see \
+https://bugs.launchpad.net/dolfin/+bug/427534");
+    return;
+  }
+
+  dolfin_assert(v.function_space()->mesh());
   FunctionPlotData w(v, *v.function_space()->mesh());
   plot_object(w, title, mode);
 }

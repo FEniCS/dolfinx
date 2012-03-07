@@ -69,7 +69,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   const std::vector<uint> global_entity_indices
       = mesh.parallel_data().global_entity_indices_as_vector(dim);
 
-  assert(global_entity_indices.size() == mesh.num_cells());
+  dolfin_assert(global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
   std::map<uint, std::set<std::pair<uint, uint> > > processes;
@@ -92,25 +92,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     }
   }
 
-  /*
-  std::vector<uint> my_entities;
-  if (dim == D)
-  {
-    for (uint i = 0; i < entity_indices.size(); ++i)
-    {
-      const uint global_index = entity_indices[i];
-      std::vector<uint>::const_iterator it;
-      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_index);
-      if (it == global_entity_indices.end())
-        my_entities.push_back(global_index);
-    }
-  }
-  else
-    my_entities = entity_indices;
-  */
-
-  // FIXME: handle case when my_entities.size() == 0
-  //assert(my_entities.size() > 0);
+  // FIXME: handle case when my_entities.empty()
+  //dolfin_assert(!my_entities.empty());
 
   // Prepare data structures for send/receive
   const uint num_proc = MPI::num_processes();
@@ -124,20 +107,14 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     const uint src  = (proc_num - k + num_proc) % num_proc;
     const uint dest = (proc_num + k) % num_proc;
 
-    // Send/receive list of non-owned entities (global indices)
-    //const uint recv_enitity_count = MPI::send_recv(&my_entities[0],
-    //                                    my_entities.size(), dest,
-    //                                    &off_process_entities[0],
-    //                                    off_process_entities.size(), src);
-
     MPI::send_recv(my_entities, dest, off_process_entities, src);
 
-    const uint recv_enitity_count = off_process_entities.size();
+    const uint recv_entity_count = off_process_entities.size();
 
     // Check if this process owns received entities, and if so
     // store local index
     std::vector<uint> my_hosted_entities;
-    for (uint j = 0; j < recv_enitity_count; ++j)
+    for (uint j = 0; j < recv_entity_count; ++j)
     {
       // Check if this process hosts 'received_entity'
       const uint received_entity = off_process_entities[j];
@@ -157,13 +134,6 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     MPI::send_recv(my_hosted_entities, src, host_processes, dest);
 
     const uint recv_hostproc_count = host_processes.size();
-    /*
-    const uint recv_hostproc_count = MPI::send_recv(&my_hosted_entities[0],
-                                            my_hosted_entities.size(), src,
-                                            &host_processes[0],
-                                            host_processes.size(), dest);
-    */
-
     for (uint j = 0; j < recv_hostproc_count; j += 2)
     {
       const uint global_index = host_processes[j];

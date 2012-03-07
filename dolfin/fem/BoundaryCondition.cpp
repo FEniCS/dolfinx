@@ -59,7 +59,7 @@ boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space() const
 void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
                                         const GenericVector* x) const
 {
-  assert(_function_space);
+  dolfin_assert(_function_space);
 
   // Check matrix and vector dimensions
   if (A && x && A->size(0) != x->size())
@@ -115,11 +115,9 @@ void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(V.dofmap()->max_cell_dimension()),
-    w(n, 0.0),
-    cell_dofs(n, 0),
+  : w(V.dofmap()->max_cell_dimension(), 0.0),
     facet_dofs(V.dofmap()->num_facet_dofs(), 0),
-    coordinates(boost::extents[n][V.mesh()->geometry().dim()])
+    coordinates(boost::extents[V.dofmap()->max_cell_dimension()][V.mesh()->geometry().dim()])
 {
   // Do nothing
 }

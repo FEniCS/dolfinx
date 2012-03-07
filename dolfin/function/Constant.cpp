@@ -93,7 +93,7 @@ const Constant& Constant::operator= (const Constant& constant)
 const Constant& Constant::operator= (double constant)
 {
   // Check value shape
-  if (value_shape.size() != 0)
+  if (!value_shape.empty())
   {
     dolfin_error("Constant.cpp",
                  "assigne scalar value to constant",
@@ -101,7 +101,7 @@ const Constant& Constant::operator= (double constant)
   }
 
   // Assign value
-  assert(_values.size() == 1);
+  dolfin_assert(_values.size() == 1);
   _values[0] = constant;
 
   return *this;
@@ -110,7 +110,7 @@ const Constant& Constant::operator= (double constant)
 Constant::operator double() const
 {
   // Check value shape
-  if (value_shape.size() != 0)
+  if (!value_shape.empty())
   {
     dolfin_error("Constant.cpp",
                  "convert constant to double",
@@ -118,7 +118,7 @@ Constant::operator double() const
   }
 
   // Return value
-  assert(_values.size() == 1);
+  dolfin_assert(_values.size() == 1);
   return _values[0];
 }
 //-----------------------------------------------------------------------------

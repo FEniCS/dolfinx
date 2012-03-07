@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Nuno Lopes 2008.
+// Modified by Nuno Lopes 2008
+// Modified by Anders Logg 2011
 //
 // First added:  2008-07-02
+// Last changed: 2011-11-21
 
 #ifndef __XYZ_FILE_H
 #define __XYZ_FILE_H
@@ -46,7 +48,7 @@ namespace dolfin
   private:
 
     void results_write(const Function& u) const;
-    void xyz_name_update(int counter);
+    void xyz_name_update();
 
     template<typename T>
     void mesh_function_write(T& meshfunction);

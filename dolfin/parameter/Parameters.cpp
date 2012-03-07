@@ -108,7 +108,7 @@ void Parameters::add(std::string key, int value,
 
   // Set range
   Parameter* p = find_parameter(key);
-  assert(p);
+  dolfin_assert(p);
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ void Parameters::add(std::string key, double value,
 
   // Set range
   Parameter* p = find_parameter(key);
-  assert(p);
+  dolfin_assert(p);
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -173,7 +173,7 @@ void Parameters::add(std::string key, std::string value, std::set<std::string> r
 
   // Set range
   Parameter* p = find_parameter(key);
-  assert(p);
+  dolfin_assert(p);
   p->set_range(range);
 }
 //-----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void Parameters::add(std::string key, const char* value, std::set<std::string> r
 
   // Set range
   Parameter* p = find_parameter(key);
-  assert(p);
+  dolfin_assert(p);
   p->set_range(range);
 }
 //-----------------------------------------------------------------------------
@@ -236,7 +236,7 @@ void Parameters::remove(std::string key)
   uint num_removed = 0;
   num_removed += _parameters.erase(key);
   num_removed += _parameter_sets.erase(key);
-  assert(num_removed == 1);
+  dolfin_assert(num_removed == 1);
 }
 //-----------------------------------------------------------------------------
 void Parameters::parse(int argc, char* argv[])
@@ -411,7 +411,7 @@ std::string Parameters::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    if (_parameters.size() == 0 && _parameter_sets.size() == 0)
+    if (_parameters.empty() && _parameter_sets.empty())
     {
       s << name() << indent("(empty)");
       return s.str();

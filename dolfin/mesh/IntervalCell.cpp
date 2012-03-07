@@ -17,6 +17,7 @@
 //
 // Modified by Kristian Oelgaard, 2007.
 // Modified by Kristoffer Selim, 2008.
+// Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-06-05
 // Last changed: 2011-11-14
@@ -78,7 +79,8 @@ dolfin::uint IntervalCell::orientation(const Cell& cell) const
   return (n.dot(v01) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(uint** e, uint dim, const uint* v) const
+void IntervalCell::create_entities(std::vector<std::vector<uint> >& e,
+                                   uint dim, const uint* v) const
 {
   // We don't need to create any entities
   dolfin_error("IntervalCell.cpp",
@@ -89,11 +91,9 @@ void IntervalCell::create_entities(uint** e, uint dim, const uint* v) const
 void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
                               uint& current_cell) const
 {
-  // Get vertices and edges
+  // Get vertices
   const uint* v = cell.entities(0);
-  const uint* e = cell.entities(1);
-  assert(v);
-  assert(e);
+  dolfin_assert(v);
 
   // Get offset for new vertex indices
   const uint offset = cell.mesh().num_vertices();
@@ -101,7 +101,7 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Compute indices for the three new vertices
   const uint v0 = v[0];
   const uint v1 = v[1];
-  const uint e0 = offset + e[0];
+  const uint e0 = offset + cell.index();
 
   // Add the two new cells
   editor.add_cell(current_cell++, v0, e0);
@@ -179,7 +179,7 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
 //-----------------------------------------------------------------------------
 double IntervalCell::facet_area(const Cell& cell, uint facet) const
 {
-  return 0.0;
+  return 1.0;
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
@@ -191,7 +191,7 @@ void IntervalCell::order(Cell& cell,
   MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
 
   // Sort local vertices in ascending order, connectivity 1 - 0
-  if (topology(1, 0).size() > 0)
+  if (!topology(1, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(2, cell_vertices, global_vertex_indices);

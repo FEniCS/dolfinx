@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2011 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2010-02-11
+// Last changed: 2011-11-15
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -30,14 +30,24 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
-  : _mesh(&mesh), _dim(dim), _index(index)
+  : _mesh(0), _dim(0), _index(0)
 {
+  init(mesh, dim, index);
+}
+//-----------------------------------------------------------------------------
+void MeshEntity::init(const Mesh& mesh, uint dim, uint index)
+{
+  // Store variables
+  _mesh = &mesh; // Yes, we should probably use a shared pointer here...
+  _dim = dim;
+  _index = index;
+
   // Check index range
   if (index < _mesh->num_entities(dim))
     return;
 
   // Initialize mesh entities
-  mesh.init(dim);
+  _mesh->init(dim);
 
   // Check index range again
   if (index < _mesh->num_entities(dim))

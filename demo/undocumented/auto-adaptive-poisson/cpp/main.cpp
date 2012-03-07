@@ -88,7 +88,7 @@ int main()
   // Alternative, more verbose version:
   LinearVariationalProblem problem(a, L, u, bc);
   AdaptiveLinearVariationalSolver solver(problem);
-  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
+  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "gmres";
   solver.solve(tol, M);
 
   // Plot final solution

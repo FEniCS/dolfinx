@@ -24,6 +24,7 @@
 #define __INTERVAL_CELL_H
 
 #include <string>
+#include <vector>
 #include <dolfin/common/types.h>
 #include "CellType.h"
 
@@ -57,7 +58,7 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(uint** e, uint dim, const uint* v) const;
+    void create_entities(std::vector<std::vector<uint> >& e, uint dim, const uint* v) const;
 
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;

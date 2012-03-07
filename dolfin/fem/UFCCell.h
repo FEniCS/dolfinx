@@ -167,7 +167,7 @@ namespace dolfin
     // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
     void update(const MeshEntity& cell, int local_facet=-1)
     {
-      assert(cell.dim() == topological_dimension);
+      dolfin_assert(cell.dim() == topological_dimension);
 
       // Note handling of local and global mesh entity indices.
       // If mappings from local to global entities are available in

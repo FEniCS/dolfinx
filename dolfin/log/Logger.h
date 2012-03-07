@@ -17,10 +17,10 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007, 2009.
+// Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-15
+// Last changed: 2011-11-17
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -98,6 +98,10 @@ namespace dolfin
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
+
+    /// Helper function for dolfin_dolfin_assert macro
+    void __dolfin_assert(std::string file, unsigned long line,
+                  std::string function, std::string check) const;
 
   private:
 

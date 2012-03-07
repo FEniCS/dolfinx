@@ -23,16 +23,19 @@
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
 
-#include <vector>
 #include <string>
+#include <vector>
+#include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
   class GenericLinearSolver;
+  class GenericLUSolver;
   class GenericMatrix;
-  class GenericSparsityPattern;
   class GenericVector;
+  class TensorLayout;
 
   class LinearAlgebraFactory
   {
@@ -45,28 +48,29 @@ namespace dolfin
     virtual ~LinearAlgebraFactory() {}
 
     /// Create empty matrix
-    virtual GenericMatrix* create_matrix() const = 0;
+    virtual boost::shared_ptr<GenericMatrix> create_matrix() const = 0;
 
     /// Create empty vector (global)
-    virtual GenericVector* create_vector() const = 0;
+    virtual boost::shared_ptr<GenericVector> create_vector() const = 0;
 
     /// Create empty vector (local)
-    virtual GenericVector* create_local_vector() const = 0;
+    virtual boost::shared_ptr<GenericVector> create_local_vector() const = 0;
 
-    /// Create empty sparsity pattern (returning zero if not used/needed)
-    virtual GenericSparsityPattern* create_pattern() const = 0;
+    /// Create empty tensor layout
+    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
 
     /// Create LU solver
-    virtual GenericLinearSolver* create_lu_solver(std::string method) const = 0;
+    virtual boost::shared_ptr<GenericLUSolver>
+      create_lu_solver(std::string method) const = 0;
 
     /// Create Krylov solver
-    virtual GenericLinearSolver* create_krylov_solver(std::string method,
-                                                      std::string preconditioner) const = 0;
+    virtual boost::shared_ptr<GenericLinearSolver>
+      create_krylov_solver(std::string method, std::string preconditioner) const = 0;
 
     /// Return a list of available LU solver methods.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const
+      lu_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
@@ -75,7 +79,7 @@ namespace dolfin
     /// Return a list of available Krylov solver methods.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
+      krylov_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
@@ -84,7 +88,7 @@ namespace dolfin
     /// Return a list of available preconditioners.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-    krylov_solver_preconditioners() const
+      krylov_solver_preconditioners() const
     {
       std::vector<std::pair<std::string, std::string> > preconditioners;
       return preconditioners;

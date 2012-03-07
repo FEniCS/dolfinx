@@ -43,30 +43,49 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("bjacobi",          PCBJACOBI)
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
+                              #if PETSC_HAVE_HYPRE
                               ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
-                              ("ml_amg",           PCML);
+                              #endif
+                              #if PETSC_HAVE_ML
+                              ("ml_amg",           PCML)
+                              #endif
+                              ;
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-PETScPreconditioner::preconditioners()
-{
-  return boost::assign::pair_list_of
+// Mapping from preconditioner string to description string
+const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_methods_descr
+  = boost::assign::pair_list_of
     ("default",          "default preconditioner")
     ("none",             "No preconditioner")
     ("ilu",              "Incomplete LU factorization")
     ("icc",              "Incomplete Cholesky factorization")
+    ("sor",              "Successive over-relaxation")
+    #if HAS_PETSC_CUSP
     ("jacobi",           "Jacobi iteration (GPU enabled)")
     ("bjacobi",          "Block Jacobi iteration (GPU enabled)")
-    ("sor",              "Successive over-relaxation")
     ("additive_schwarz", "Additive Schwarz (GPU enabled)")
+    #else
+    ("jacobi",           "Jacobi iteration")
+    ("bjacobi",          "Block Jacobi iteration")
+    ("additive_schwarz", "Additive Schwarz")
+    #endif
+    #if PETSC_HAVE_HYPRE
     ("amg",              "Algebraic multigrid")
     ("hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)")
     ("hypre_euclid",     "Hypre parallel incomplete LU factorization")
     ("hypre_parasails",  "Hypre parallel sparse approximate inverse")
-    ("ml_amg",           "ML algebraic multigrid");
+    #endif
+    #if PETSC_HAVE_ML
+    ("ml_amg",           "ML algebraic multigrid")
+    #endif
+    ;
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScPreconditioner::preconditioners()
+{
+  return PETScPreconditioner::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()
@@ -108,7 +127,7 @@ PETScPreconditioner::~PETScPreconditioner()
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 {
-  assert(solver.ksp());
+  dolfin_assert(solver.ksp());
 
   // Get PETSc PC pointer
   PC pc;
@@ -141,6 +160,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     else if (type == "hypre_euclid")
     {
       PCHYPRESetType(pc, "euclid");
+      const uint ilu_level = parameters("ilu")["fill_level"];
+      PetscOptionsSetValue("-pc_hypre_euclid_levels", boost::lexical_cast<std::string>(ilu_level).c_str());
     }
     else
     {

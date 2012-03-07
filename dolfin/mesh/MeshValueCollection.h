@@ -114,6 +114,13 @@ namespace dolfin
     ///         The dimension.
     uint dim() const;
 
+    /// Return true if the subset is empty
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if the subset is empty.
+    bool empty() const;
+
     /// Return size (number of entities in subset)
     ///
     /// *Returns*
@@ -245,11 +252,11 @@ namespace dolfin
     {
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
-      assert(connectivity.size() > 0);
+      dolfin_assert(!connectivity.empty());
       for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
-        assert(connectivity.size(entity_index) > 0);
+        dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
         for (uint i = 0; i < entity.num_entities(D) ; ++i)
         {
@@ -319,11 +326,11 @@ namespace dolfin
     {
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
-      assert(connectivity.size() > 0);
+      dolfin_assert(!connectivity.empty());
       for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
-        assert(connectivity.size(entity_index) > 0);
+        dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
         for (uint i = 0; i < entity.num_entities(D) ; ++i)
         {
@@ -365,6 +372,12 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
+  bool MeshValueCollection<T>::empty() const
+  {
+    return _values.empty();
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
   uint MeshValueCollection<T>::size() const
   {
     return _values.size();
@@ -402,8 +415,8 @@ namespace dolfin
     const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
 
     // Find the cell
-    assert(connectivity.size() > 0);
-    assert(connectivity.size(entity_index) > 0);
+    dolfin_assert(!connectivity.empty());
+    dolfin_assert(connectivity.size(entity_index) > 0);
     const MeshEntity entity(mesh, _dim, entity_index);
     const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
 

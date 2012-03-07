@@ -16,11 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-11-12
-
-#include <iostream>
+// Last changed: 2011-11-23
 
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <boost/scoped_ptr.hpp>
 
@@ -67,29 +66,37 @@ TimeSeries::TimeSeries(std::string name, bool compressed,
   // Set default parameters
   parameters = default_parameters();
 
-  // Read vector times
-  std::string filename = TimeSeries::filename_times(_name, "vector", _compressed);
-  if (File::exists(filename))
+  // Read vector times if any
+  std::string filename_vector = TimeSeries::filename_times(_name,
+                                                           "vector",
+                                                           _compressed);
+  if (File::exists(filename_vector))
   {
     // Read from file
-    File file(filename);
+    File file(filename_vector);
     file >> _vector_times;
     log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
   }
   else
     log(PROGRESS, "No vector samples found in time series.");
 
-  // Read mesh times
-  filename = TimeSeries::filename_times(_name, "mesh", _compressed);
-  if (File::exists(filename))
+  // Read mesh times if any
+  std::string filename_mesh = TimeSeries::filename_times(_name,
+                                                         "mesh",
+                                                         _compressed);
+  if (File::exists(filename_mesh))
   {
     // Read from file
-    File file(filename);
+    File file(filename_mesh);
     file >> _mesh_times;
     log(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
   }
   else
     log(PROGRESS, "No mesh samples found in time series.");
+
+  // Create subdirectories (should really be enough with just one call)
+  File::create_parent_path(filename_vector);
+  File::create_parent_path(filename_mesh);
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
@@ -144,7 +151,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 
     // Read vectors
     GenericVector& x0(vector);
-    boost::scoped_ptr<GenericVector> x1(x0.factory().create_vector());
+    boost::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
     File f0(filename_data(_name, "vector", i0, _compressed));
     File f1(filename_data(_name, "vector", i1, _compressed));
     f0 >> x0;
@@ -161,7 +168,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 
     // Compute weights for linear interpolation
     const double dt = _vector_times[i1] - _vector_times[i0];
-    assert(std::abs(dt) > DOLFIN_EPS);
+    dolfin_assert(std::abs(dt) > DOLFIN_EPS);
     const double w0 = (_vector_times[i1] - t) / dt;
     const double w1 = 1.0 - w0;
 
@@ -194,8 +201,8 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: " << filename_data(_name, "mesh", index,
-						   _compressed) << std::endl;
+  std::cout << "Mesh file name: " 
+      << filename_data(_name, "mesh", index, _compressed) << std::endl;
   File file(filename_data(_name, "mesh", index, _compressed));
   file >> mesh;
 }
@@ -310,7 +317,7 @@ TimeSeries::find_closest_pair(double t,
   //for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
 
   // Must have at least one value stored
-  if (times.size() == 0)
+  if (times.empty())
   {
     dolfin_error("TimeSeries.cpp",
                  "to retrieve data from time seris",

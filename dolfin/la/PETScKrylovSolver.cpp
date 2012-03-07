@@ -69,11 +69,9 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
                               ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
-PETScKrylovSolver::methods()
-{
-  return boost::assign::pair_list_of
+// Mapping from method string to description
+const std::vector<std::pair<std::string, std::string> > 
+  PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
     ("gmres",      "Generalized minimal residual method")
@@ -81,6 +79,11 @@ PETScKrylovSolver::methods()
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("richardson", "Richardson method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+PETScKrylovSolver::methods()
+{
+  return PETScKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -131,8 +134,30 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
+                                     boost::shared_ptr<PETScPreconditioner> preconditioner)
+  : preconditioner(preconditioner),
+    preconditioner_set(false)
+
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScUserPreconditioner& preconditioner)
   : pc_dolfin(&preconditioner), preconditioner_set(false)
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
+                                     boost::shared_ptr<PETScUserPreconditioner> preconditioner)
+  : pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -175,8 +200,8 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 {
   this->A = A;
   this->P = P;
-  assert(this->A);
-  assert(this->P);
+  dolfin_assert(this->A);
+  dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -206,8 +231,8 @@ dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
-  assert(A);
-  assert(_ksp);
+  dolfin_assert(A);
+  dolfin_assert(_ksp);
 
   // Check dimensions
   const uint N = A->size(1);
@@ -237,10 +262,18 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   set_petsc_operators();
 
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
+  // FIXME: Solve using matrix free matrices fails if no user provided Prec is provided
   // Set preconditioner if necessary
   if (preconditioner && !preconditioner_set)
   {
     preconditioner->set(*this);
+    preconditioner_set = true;
+  }
+
+  // User defined preconditioner
+  else if (pc_dolfin && !preconditioner_set)
+  {
+    PETScUserPreconditioner::setup(*_ksp, *pc_dolfin);
     preconditioner_set = true;
   }
 
@@ -350,8 +383,8 @@ void PETScKrylovSolver::init(const std::string& method)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_operators()
 {
-  assert(A);
-  assert(P);
+  dolfin_assert(A);
+  dolfin_assert(P);
 
   // Get some parameters
   const bool reuse_precon = parameters("preconditioner")["reuse"];
@@ -474,7 +507,7 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   }
 
   // Check dimensions of A vs x
-  if (x.size() > 0 && x.size() != A.size(1))
+  if (!x.empty() && x.size() != A.size(1))
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",

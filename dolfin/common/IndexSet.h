@@ -45,6 +45,10 @@ namespace dolfin
     /// Destructor
     ~IndexSet() {}
 
+    /// Return true if set is empty
+    bool empty() const
+    { return _indices.empty(); }
+
     /// Return size of set
     uint size() const
     { return _indices.size(); }
@@ -52,14 +56,14 @@ namespace dolfin
     /// Check whether index is in set
     bool has_index(uint index) const
     {
-      assert(index < _size);
+      dolfin_assert(index < _size);
       return _has_index[index];
     }
 
     /// Return position (if any) for given index
     uint find(uint index) const
     {
-      assert(index < _size);
+      dolfin_assert(index < _size);
       if (!_has_index[index])
         dolfin_error("IndexSet.h",
                      "locate position of index",
@@ -70,21 +74,21 @@ namespace dolfin
     /// Return given index
     uint& operator[] (uint i)
     {
-      assert(i < _indices.size());
+      dolfin_assert(i < _indices.size());
       return _indices[i];
     }
 
     /// Return given index (const version)
     const uint& operator[] (uint i) const
     {
-      assert(i < _indices.size());
+      dolfin_assert(i < _indices.size());
       return _indices[i];
     }
 
     /// Insert index into set
     void insert(uint index)
     {
-      assert(index < _size);
+      dolfin_assert(index < _size);
       if (_has_index[index])
         return;
       _indices.push_back(index);

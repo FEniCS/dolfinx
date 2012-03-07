@@ -150,6 +150,9 @@ may therefore assemble these before the time-stepping begins:
     A2 = assemble(a2)
     A3 = assemble(a3)
 
+    # Use amg preconditioner if available
+    prec = "amg" if has_krylov_solver_preconditioner("amg") else "default"
+
 During time-stepping, we will store the solution in VTK format
 (readable by MayaVi and Paraview). We therefore create a pair of files
 that can be used to store the solution. Specifying the ``.pvd`` suffix
@@ -180,7 +183,7 @@ right-hand side, apply boundary conditions and solve a linear
 system. Note the different use of preconditioners. Incomplete LU
 factorization is used for the computation of the tentative velocity
 and the velocity update, while algebraic multigrid is used for the
-pressure equation:
+pressure equation if available:
 
 .. code-block:: python
 
@@ -195,7 +198,7 @@ pressure equation:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, "gmres", "ml_amg")
+    solve(A2, p1.vector(), b2, "gmres", prec)
     end()
 
     # Velocity correction

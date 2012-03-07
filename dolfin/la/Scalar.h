@@ -33,7 +33,7 @@
 namespace dolfin
 {
 
-  class GenericSparsityPattern;
+  class TensorLayout;
 
   /// This class represents a real-valued scalar quantity and
   /// implements the GenericTensor interface for scalars.
@@ -61,15 +61,11 @@ namespace dolfin
 
     /// Resize tensor to given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { assert(rank == 0); value = 0.0; }
+    { dolfin_assert(rank == 0); value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern)
+    void init(const TensorLayout& tensor_layout)
     { value = 0.0; }
-
-    /// Return copy of tensor
-    virtual Scalar* copy() const
-    { Scalar* s = new Scalar(); s->value = value; return s; }
 
     /// Return tensor rank (number of dimensions)
     uint rank() const
@@ -104,21 +100,21 @@ namespace dolfin
     /// Add block of values
     void add(const double* block, const uint* num_rows, const uint * const * rows)
     {
-      assert(block);
+      dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
     void add(const double* block, const std::vector<const std::vector<uint>* >& rows)
     {
-      assert(block);
+      dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
     void add(const double* block, const std::vector<std::vector<uint> >& rows)
     {
-      assert(block);
+      dolfin_assert(block);
       value += block[0];
     }
 
@@ -139,6 +135,14 @@ namespace dolfin
     }
 
     //--- Scalar interface ---
+
+    /// Return copy of scalar
+    virtual boost::shared_ptr<Scalar> copy() const
+    {
+      boost::shared_ptr<Scalar> s(new Scalar);
+      s->value = value;
+      return s;
+    }
 
     /// Cast to double
     operator double() const

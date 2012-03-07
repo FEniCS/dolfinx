@@ -114,5 +114,12 @@ class XMLMesh(unittest.TestCase):
             self.assertEqual(input_mesh.domains().markers(3).size(),
                              output_mesh.domains().markers(3).size());
 
+class LocalMeshDataXML_IO(unittest.TestCase):
+
+    def testRead(self):
+        file = File("../../../../data/meshes/snake.xml.gz")
+        localdata = cpp.LocalMeshData()
+        file >> localdata
+
 if __name__ == "__main__":
     unittest.main()

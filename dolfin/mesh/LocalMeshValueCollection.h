@@ -112,7 +112,7 @@ namespace dolfin
     std::vector<T> v;
     MPI::scatter(send_indices, indices);
     MPI::scatter(send_v, v);
-    assert(2*v.size() == indices.size());
+    dolfin_assert(2*v.size() == indices.size());
 
     // Unpack
     for (uint i = 0; i < v.size(); ++i)

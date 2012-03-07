@@ -148,7 +148,7 @@ namespace dolfin
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
           const unsigned int index = it->attribute("index").as_uint();
-          assert(index < size);
+          dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_uint();
         }
       }
@@ -157,7 +157,7 @@ namespace dolfin
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
           const unsigned int index = it->attribute("index").as_uint();
-          assert(index < size);
+          dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_int();
         }
       }
@@ -166,7 +166,7 @@ namespace dolfin
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
           const unsigned int index = it->attribute("index").as_uint();
-          assert(index < size);
+          dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_double();
         }
       }
@@ -175,7 +175,7 @@ namespace dolfin
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
           const unsigned int index = it->attribute("index").as_uint();
-          assert(index < size);
+          dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_bool();
         }
       }

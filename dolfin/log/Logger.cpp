@@ -60,7 +60,7 @@ void Logger::log(std::string msg, int log_level) const
 //-----------------------------------------------------------------------------
 void Logger::log_underline(std::string msg, int log_level) const
 {
-  if (msg.size() == 0)
+  if (msg.empty())
     log(msg, log_level);
 
   std::stringstream s;
@@ -198,7 +198,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::summary(bool reset)
 {
-  if (timings.size() == 0)
+  if (timings.empty())
   {
     log("Timings: no timings to report.");
     return;
@@ -252,6 +252,18 @@ void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("Debug: ") + msg;
   write(DBG, s);
+}
+//-----------------------------------------------------------------------------
+void Logger::__dolfin_assert(std::string file, unsigned long line,
+                      std::string function, std::string check) const
+{
+  std::stringstream location;
+  location << file << " (line " << line << ")";
+  std::stringstream task;
+  task << "complete call to function " << function << "()";
+  std::stringstream reason;
+  reason << "Assertion " << check << " failed";
+  dolfin_error(location.str(), task.str(), reason.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const

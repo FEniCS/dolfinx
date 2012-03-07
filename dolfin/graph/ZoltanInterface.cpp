@@ -112,7 +112,7 @@ ZoltanInterface::ZoltanGraphInterface::ZoltanGraphInterface(const Graph& graph)
 //-----------------------------------------------------------------------------
 void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(uint* num_edges) const
 {
-  assert(num_edges);
+  dolfin_assert(num_edges);
 
   // Compute nunber of edges from each graph node
   for (uint i = 0; i < graph.size(); ++i)
@@ -172,7 +172,7 @@ void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
   uint entry = 0;
   for (uint i = 0; i < graph.size(); ++i)
   {
-    assert(graph[i].size() == (uint) num_edges[i]);
+    dolfin_assert(graph[i].size() == (uint) num_edges[i]);
     BOOST_FOREACH(boost::unordered_set<uint>::value_type edge, graph[i])
     {
       nbor_global_id[entry++] = edge;

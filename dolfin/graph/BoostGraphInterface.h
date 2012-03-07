@@ -50,7 +50,7 @@ namespace dolfin
     {
       // Number of vertices in graph
       const uint num_vertices = boost::num_vertices(graph);
-      assert(num_vertices == colors.size());
+      dolfin_assert(num_vertices == colors.size());
 
       typedef typename boost::graph_traits<T>::vertex_descriptor vert_descriptor;
       typedef typename boost::graph_traits<T>::vertex_iterator vert_iterator;
@@ -67,7 +67,7 @@ namespace dolfin
       std::cout << "Boost coloring finished." <<  std::endl;
 
       // Copy result into Array
-      assert(colors.size() == color_vec.size());
+      dolfin_assert(colors.size() == color_vec.size());
       for (uint i = 0; i < num_vertices; ++i)
         colors[i] = color_vec[i];
 

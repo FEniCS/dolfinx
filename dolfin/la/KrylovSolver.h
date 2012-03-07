@@ -25,7 +25,7 @@
 #define __KRYLOV_SOLVER_H
 
 #include <string>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -75,7 +75,7 @@ namespace dolfin
     void init(std::string method, std::string preconditioner);
 
     // Solver
-    boost::scoped_ptr<GenericLinearSolver> solver;
+    boost::shared_ptr<GenericLinearSolver> solver;
 
   };
 }

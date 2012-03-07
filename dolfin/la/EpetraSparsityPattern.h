@@ -27,6 +27,7 @@
 #ifdef HAS_TRILINOS
 
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 
@@ -48,7 +49,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    EpetraSparsityPattern();
+    EpetraSparsityPattern(uint primary_dim);
 
     /// Destructor
     virtual ~EpetraSparsityPattern();
@@ -61,6 +62,10 @@ namespace dolfin
 
     /// Return rank
     uint rank() const;
+
+    /// Return primary dimension (e.g., 0=row parition, 1=column partition)
+    uint primary_dim() const
+    { return 0; }
 
     /// Return global size for dimension i
     uint size(uint i) const;
@@ -102,7 +107,7 @@ namespace dolfin
     uint dims[2];
 
     // Epetra representation of sparsity pattern
-    Epetra_FECrsGraph* epetra_graph;
+    boost::scoped_ptr<Epetra_FECrsGraph> epetra_graph;
 
   };
 
