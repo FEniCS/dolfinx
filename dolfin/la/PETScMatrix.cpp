@@ -393,8 +393,19 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
-  // Resize if dimensions does not match
-  resize(yy, 0);
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 0);
+  }
+
+  if (size(0) != yy.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute matrix-vector product with PETSc matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
+
   MatMult(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
@@ -412,7 +423,19 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for transpose matrix-vector product");
   }
 
-  resize(yy, 1);
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 1);
+  }
+
+  if (size(1) != yy.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute transpose matrix-vector product with PETSc matrix",
+                 "Vector for transpose matrix-vector result has wrong size");
+  }
+
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------

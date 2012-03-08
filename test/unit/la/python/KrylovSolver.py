@@ -84,15 +84,12 @@ if has_linear_algebra_backend("PETSc"):
                 def __init__(self, A):
                     self.A = A
 
-                    # Use tmp vector as A.mult will resize the vector
-                    self.y_tmp = PETScVector()
                     PETScKrylovMatrix.__init__(self, A.size(0), A.size(1))
 
                 def mult(self, x, y):
 
                     # Make ordinary matrix vector product
-                    self.A.mult(x, self.y_tmp)
-                    y[:] = self.y_tmp
+                    self.A.mult(x, y)
 
 
             class MatrixFreeKrylovMatrix(PETScKrylovMatrix) :

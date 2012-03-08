@@ -1,3 +1,4 @@
+ - Avoid unnessesary resize of result vector for A*b
  - Major speed-up of mesh topology computation
  - Add simple 2D and 3D mesh generation (via CGAL)
  - Add creation of mesh from triangulations of points (via CGAL)

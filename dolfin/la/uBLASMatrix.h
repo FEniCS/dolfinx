@@ -461,7 +461,31 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y) const
   {
-    ublas::axpy_prod(A, x.down_cast<uBLASVector>().vec(), y.down_cast<uBLASVector>().vec(), true);
+
+    const uBLASVector& xx = x.down_cast<uBLASVector>();
+    uBLASVector& yy = y.down_cast<uBLASVector>();
+
+    if (size(1) != xx.size())
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "compute matrix-vector product with uBLAS matrix",
+                   "Non-matching dimensions for matrix-vector product");
+    }
+
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 0);
+  }
+
+  if (size(0) != yy.size())
+  {
+    dolfin_error("uBLASMatrix.cpp",
+                 "compute matrix-vector product with uBLAS matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
+
+    ublas::axpy_prod(A, xx.vec(), yy.vec(), true);
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
