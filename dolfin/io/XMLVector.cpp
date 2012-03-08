@@ -44,7 +44,7 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
   read(data, indices, xml_dolfin);
 
   // Set data (GenericVector::apply will be called by calling function)
-  x.set(data.data().get(), data.size(), indices.data().get());
+  x.set(data.data(), data.size(), indices.data());
 }
 //-----------------------------------------------------------------------------
 void XMLVector::read(Array<double>& x, Array<uint>& indices,

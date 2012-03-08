@@ -51,8 +51,8 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   const FunctionSpace& V = *u.function_space();
 
   std::vector<std::pair<uint, uint> > global_to_cell_dof;
-  Array<double> x;
-  Array<uint> indices;
+  std::vector<double> x;
+  std::vector<uint> indices;
 
   const uint num_dofs = V.dim();
 
@@ -115,7 +115,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
       indices[i] = new_index;
     }
 
-    vector.set(x.data().get(), x.size(), indices.data().get());
+    vector.set(&x[0], x.size(), &indices[0]);
   }
 
   // Finalise vector

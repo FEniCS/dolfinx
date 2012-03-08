@@ -315,7 +315,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
-  const double* _x = x.data().get();
+  const double* _x = x.data();
   const Point point(mesh.geometry().dim(), _x);
   int id = mesh.intersected_cell(point);
 
@@ -440,7 +440,7 @@ void Function::non_matching_eval(Array<double>& values,
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
-  const double* _x = x.data().get();
+  const double* _x = x.data();
   const uint dim = mesh.geometry().dim();
   const Point point(dim, _x);
 

@@ -413,10 +413,10 @@ boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector( dolfin::Generic
   dolfin::Array<double>* values = new dolfin::Array<double>(inds->size());
   if (row)
     // If returning a single row
-    self->get(values->data().get(), 1, &single, inds->size(), indices);
+    self->get(values->data(), 1, &single, inds->size(), indices);
   else
     // If returning a single column
-    self->get(values->data().get(), inds->size(), indices, 1, &single);
+    self->get(values->data(), inds->size(), indices, 1, &single);
 
   // Create the return vector and set the values
   boost::shared_ptr<dolfin::GenericVector> return_vec = self->factory().create_vector();

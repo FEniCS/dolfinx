@@ -157,13 +157,12 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   BoundaryMesh boundary(mesh);
 
   const uint dim = mesh.geometry().dim();
-  Array<double> x;
 
   // Smooth boundary
   MeshGeometry& geometry = boundary.geometry();
   for (uint i = 0; i < boundary.num_vertices(); i++)
   {
-    x.update(dim, geometry.x(i));
+    Array<double> x(dim, geometry.x(i));
     sub_domain.snap(x);
   }
 
