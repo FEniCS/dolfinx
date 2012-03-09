@@ -568,7 +568,17 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   }
 
   // Resize RHS
-  this->resize(Ax, 0);
+  if (Ax.size() == 0)
+  {
+    this->resize(Ax, 0);
+  }
+
+  if (Ax.size() != size(0))
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute matrix-vector product with Epetra matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
 
   dolfin_assert(x.vec());
   dolfin_assert(Ax.vec());
@@ -595,7 +605,17 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   }
 
   // Resize RHS
-  this->resize(Ax, 1);
+  if (Ax.size() == 0)
+  {
+    this->resize(Ax, 1);
+  }
+
+  if (Ax.size() != size(1))
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute transpose matrix-vector product with Epetra matrix",
+                 "Vector for transpose matrix-vector result has wrong size");
+  }
 
   const int err = A->Multiply(true, *(x.vec()), *(Ax.vec()));
   if (err != 0)

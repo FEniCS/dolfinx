@@ -556,9 +556,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
                 raise TypeError, "Provide a Vector which can be down_casted to ''"%vector_type.__name__
             if type(other) == Vector:
-                ret = Vector(self.size(0))
+                ret = Vector()
             else:
-                ret = vector_type(self.size(0))
+                ret = vector_type()
             self.mult(other, ret)
             return ret
         elif isinstance(other, ndarray):

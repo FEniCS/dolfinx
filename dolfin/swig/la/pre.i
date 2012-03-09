@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2007-2009.
-// Modified by Garth Wells, 2008-2011.
-// Modified by Ola Skavhaug, 2008-2009
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Martin Sandve Alnaes, 2008.
-// Modified by Johan Hake, 2008-2009.
+// Modified by Anders Logg 2007-2012
+// Modified by Garth Wells 2008-2011
+// Modified by Ola Skavhaug 2008-2009
+// Modified by Kent-Andre Mardal 2008
+// Modified by Martin Sandve Alnaes 2008
+// Modified by Johan Hake 2008-2009
 //
 // First added:  2007-01-21
 // Last changed: 2011-04-20
@@ -61,6 +61,11 @@
 %ignore dolfin::SubVector::operator=;
 %ignore dolfin::SubMatrix::operator=;
 %ignore dolfin::SubMatrix::operator=;
+
+//-----------------------------------------------------------------------------
+// Ignore free function norm(), reimplemented in Python
+//-----------------------------------------------------------------------------
+%ignore dolfin::norm;
 
 //-----------------------------------------------------------------------------
 // Rename set and get from BlockFoo
@@ -176,7 +181,7 @@
 %ignore dolfin::PETScVector::vec;
 %ignore dolfin::PETScBaseMatrix::mat;
 #endif
- 
+
 //-----------------------------------------------------------------------------
 // Trilinos backend
 //-----------------------------------------------------------------------------

@@ -137,10 +137,12 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
-    /// Matrix-vector product, y = Ax
+    /// Matrix-vector product, y = Ax. The y vector must either be zero-sized
+    /// or have correct size and parallel layout.
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
 
-    /// Matrix-vector product, y = A^T x
+    /// Matrix-vector product, y = A^T x. The y vector must either be
+    /// zero-sized or have correct size and parallel layout.
     virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
 
     /// Multiply matrix by given number

@@ -125,7 +125,7 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  u.first->gather();
+  u.first->update();
   file->write();
   *file << u;
 }

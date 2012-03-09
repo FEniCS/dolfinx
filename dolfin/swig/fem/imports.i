@@ -18,7 +18,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-18
-// Last changed: 2012-03-02
+// Last changed: 2012-03-09
 
 // Auto generated import statements for the module: fem
 
@@ -37,6 +37,7 @@
 %import(module="dolfin.cpp.fem") "dolfin/fem/Form.h"
 %import(module="dolfin.cpp.fem") "dolfin/fem/Assembler.h"
 %import(module="dolfin.cpp.fem") "dolfin/fem/SparsityPatternBuilder.h"
+%import(module="dolfin.cpp.fem") "dolfin/fem/SymmetricAssembler.h"
 %import(module="dolfin.cpp.fem") "dolfin/fem/SystemAssembler.h"
 %import(module="dolfin.cpp.fem") "dolfin/fem/LinearVariationalProblem.h"
 %import(module="dolfin.cpp.fem") "dolfin/fem/LinearVariationalSolver.h"

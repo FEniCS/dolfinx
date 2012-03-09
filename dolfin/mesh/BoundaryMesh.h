@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -39,7 +39,7 @@ namespace dolfin
     /// Create an empty boundary mesh
     BoundaryMesh();
 
-    /// Create (interior) boundary mesh from given mesh
+    /// Create boundary mesh from given mesh
     BoundaryMesh(const Mesh& mesh);
 
     /// Destructor
