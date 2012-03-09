@@ -179,9 +179,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     _loc2glob[i]--;
 
   // Get RHS data for this process
-  Array<double> _b(ncol2);
+  std::vector<double> _b(ncol2);
   b.gather(_b, solver_local_to_global);
-  double* b_ptr = _b.data();
+  double* b_ptr = &_b[0];
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;

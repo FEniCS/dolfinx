@@ -222,7 +222,7 @@ const Function& Function::operator= (const Function& v)
     }
 
     // Gather values into an Array
-    Array<double> gathered_values;
+    std::vector<double> gathered_values;
     dolfin_assert(v.vector());
     v.vector()->gather(gathered_values, old_rows);
 
@@ -519,7 +519,7 @@ void Function::restrict(double* w,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(Array<double>& vertex_values,
+void Function::compute_vertex_values(std::vector<double>& vertex_values,
                                      const Mesh& mesh) const
 {
   dolfin_assert(_function_space);

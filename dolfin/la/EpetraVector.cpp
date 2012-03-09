@@ -316,7 +316,7 @@ std::string EpetraVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get_local(Array<double>& values) const
+void EpetraVector::get_local(std::vector<double>& values) const
 {
   if (!x)
   {
@@ -335,7 +335,7 @@ void EpetraVector::get_local(Array<double>& values) const
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set_local(const Array<double>& values)
+void EpetraVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(x);
   const uint local_size = x->MyLength();
@@ -484,7 +484,7 @@ void EpetraVector::gather(GenericVector& y,
   _y.vec()->Import(*x, importer, Insert);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
+void EpetraVector::gather(std::vector<double>& x, const Array<uint>& indices) const
 {
   const uint _size = indices.size();
   x.resize(_size);
@@ -502,7 +502,7 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (_y)[0][i];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather_on_zero(Array<double>& x) const
+void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
@@ -789,7 +789,7 @@ double EpetraVector::sum() const
   const uint local_size = x->MyLength();
 
   // Get local values
-  Array<double> x_local(local_size);
+  std::vector<double> x_local;
   get_local(x_local);
 
   // Compute local sum

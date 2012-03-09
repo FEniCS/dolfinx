@@ -24,6 +24,14 @@ enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, d
 
 // Returns the values from a Vector.
 // copied_values are true if the returned values are copied and need clean up.
+std::vector<double> _get_vector_values( dolfin::GenericVector* self)
+{
+  std::vector<double> values;
+  self->get_local(values);
+  return values;
+}
+
+/*
 dolfin::Array<double>& _get_vector_values( dolfin::GenericVector* self)
 {
   dolfin::Array<double>* values;
@@ -41,8 +49,27 @@ dolfin::Array<double>& _get_vector_values( dolfin::GenericVector* self)
   }
   return *values;
 }
+*/
 
 // A contains function for Vectors
+bool _contains(dolfin::GenericVector* self, double value)
+{
+  bool contains = false;
+  dolfin::uint i;
+  std::vector<double> values = _get_vector_values(self);
+
+  // Check if value is in values
+  for (i = 0; i < self->size(); i++)
+  {
+    if (fabs(values[i]-value) < DOLFIN_EPS)
+    {
+      contains = true;
+      break;
+    }
+  }
+  return contains;
+}
+/*
 bool _contains(dolfin::GenericVector* self, double value)
 {
   bool contains = false;
@@ -63,6 +90,7 @@ bool _contains(dolfin::GenericVector* self, double value)
   delete &values;
   return contains;
 }
+*/
 
 // A general compare function for Vector vs scalar comparison
 // The function returns a boolean numpy array
@@ -78,7 +106,8 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  dolfin::Array<double>& values = _get_vector_values(self);
+  //dolfin::Array<double>& values = _get_vector_values(self);
+  std::vector<double> values = _get_vector_values(self);
 
   switch (cmp_type)
   {
@@ -134,8 +163,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  dolfin::Array<double>& self_values = _get_vector_values(self);
-  dolfin::Array<double>& other_values = _get_vector_values(other);
+  std::vector<double> self_values = _get_vector_values(self);
+  std::vector<double> other_values = _get_vector_values(other);
 
   switch (cmp_type)
   {
@@ -421,7 +450,9 @@ boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector( dolfin::Generic
   // Create the return vector and set the values
   boost::shared_ptr<dolfin::GenericVector> return_vec = self->factory().create_vector();
   self->resize(*return_vec, 1);
-  return_vec->set_local(*values);
+
+  std::vector<double> _values(values->data(), values->data() + inds->size());
+  return_vec->set_local(_values);
   return_vec->apply("insert");
 
   // Clean up

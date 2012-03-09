@@ -51,7 +51,7 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
   _vertex_values->resize(N);
 
   // Compute vertex values
-  Array<double> values(N);
+  std::vector<double> values;
   v.compute_vertex_values(values, mesh);
   _vertex_values->set_local(values);
 }

@@ -268,12 +268,18 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Allocate memory for function values at vertices
   const uint size = num_vertices*dim;
-  Array<double> values(size);
+  std::vector<double> values(size);
 
   // Get function values at vertices and zero any small values
   u.compute_vertex_values(values, mesh);
   dolfin_assert(values.size() == size);
-  values.zero_eps(DOLFIN_EPS);
+  std::vector<double>::iterator it;
+  for (it = values.begin(); it != values.end(); ++it)
+  {
+    if (std::abs(*it) < DOLFIN_EPS)
+      *it = 0.0;
+  }
+
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;

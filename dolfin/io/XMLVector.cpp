@@ -115,7 +115,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
                       bool write_to_stream)
 {
   // Gather entries from process i on process 0
-  Array<double> x;
+  std::vector<double> x;
   if (MPI::num_processes() > 1)
     vector.gather_on_zero(x);
   else
@@ -143,4 +143,3 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   }
 }
 //-----------------------------------------------------------------------------
-

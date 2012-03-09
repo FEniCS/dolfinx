@@ -264,13 +264,14 @@ void Extrapolation::average_coefficients(Function& w,
                                std::vector<std::vector<double> >& coefficients)
 {
   const FunctionSpace& W = *w.function_space();
-  Array<double> dof_values(W.dim());
+  std::vector<double> dof_values(W.dim());
 
   for (uint i = 0; i < W.dim(); i++)
   {
     double s = 0.0;
     for (uint j = 0; j < coefficients[i].size(); ++j)
       s += coefficients[i][j];
+
     s /= static_cast<double>(coefficients[i].size());
     dof_values[i] = s;
   }

@@ -93,8 +93,8 @@ void XYZFile::results_write(const Function& u) const
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Allocate memory for function values at vertices
-  const uint size = mesh.num_vertices()*dim;
-  Array<double> values(size);
+  //const uint size = mesh.num_vertices()*dim;
+  std::vector<double> values;
 
   // Get function values at vertices
   u.compute_vertex_values(values, mesh);

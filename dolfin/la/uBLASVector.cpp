@@ -147,14 +147,14 @@ void uBLASVector::get_local(double* block, uint m, const uint* rows) const
     block[i] = (*x)(rows[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(Array<double>& values) const
+void uBLASVector::get_local(std::vector<double>& values) const
 {
   values.resize(size());
   for (uint i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set_local(const Array<double>& values)
+void uBLASVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
@@ -181,7 +181,7 @@ void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
     _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(Array<double>& x, const Array<uint>& indices) const
+void uBLASVector::gather(std::vector<double>& x, const Array<uint>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -192,7 +192,7 @@ void uBLASVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather_on_zero(Array<double>& x) const
+void uBLASVector::gather_on_zero(std::vector<double>& x) const
 {
   not_working_in_parallel("uBLASVector::gather_on_zero)");
 

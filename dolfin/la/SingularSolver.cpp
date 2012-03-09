@@ -64,7 +64,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  Array<double> vals(y->size());
+  std::vector<double> vals(y->size());
   y->get_local(vals);
   x.set_local(vals);
 
@@ -92,7 +92,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  Array<double> vals(y->size());
+  std::vector<double> vals;
   y->get_local(vals);
   x.set_local(vals);
 
@@ -251,8 +251,9 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     B->set(&values[i], 1, &i, 1, &N);
 
   // Copy values from b into c
-  Array<double> vals(N + 1);
+  std::vector<double> vals;
   b.get_local(vals);
+  dolfin_assert(vals.size() == N + 1);
   vals[N] = 0.0;
   c->set_local(vals);
 

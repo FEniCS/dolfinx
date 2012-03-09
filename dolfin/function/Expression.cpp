@@ -106,12 +106,15 @@ void Expression::restrict(double* w,
   restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Expression::compute_vertex_values(Array<double>& vertex_values,
+void Expression::compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const
 {
   // Local data for vertex values
   const uint size = value_size();
   Array<double> local_vertex_values(size);
+
+  // Resize vertex_values
+  vertex_values.resize(size*mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   UFCCell ufc_cell(mesh, false);

@@ -214,7 +214,7 @@ void PETScVector::resize(std::pair<uint, uint> range,
   init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(Array<double>& values) const
+void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(x);
   const uint n0 = local_range().first;
@@ -231,7 +231,7 @@ void PETScVector::get_local(Array<double>& values) const
   VecGetValues(*x, local_size, &rows[0], values.data());
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const Array<double>& values)
+void PETScVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(x);
   const uint n0 = local_range().first;
@@ -721,7 +721,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 #endif
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
+void PETScVector::gather(std::vector<double>& x, const Array<uint>& indices) const
 {
   x.resize(indices.size());
   PETScVector y("local");
@@ -729,13 +729,9 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   dolfin_assert(y.local_size() == x.size());
 
   y.get_local(x);
-
-  double sum = 0.0;
-  for (uint i = 0; i < x.size(); ++i)
-    sum += x[i]*x[i];
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather_on_zero(Array<double>& x) const
+void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   if (MPI::process_number() == 0)
     x.resize(size());

@@ -138,11 +138,11 @@ namespace dolfin
     { vector->add(block, m, rows); }
 
     /// Get all values on local process
-    virtual void get_local(Array<double>& values) const
+    virtual void get_local(std::vector<double>& values) const
     { vector->get_local(values); }
 
     /// Set all values on local process
-    virtual void set_local(const Array<double>& values)
+    virtual void set_local(const std::vector<double>& values)
     { vector->set_local(values); }
 
     /// Add values to each entry on local process
@@ -154,11 +154,11 @@ namespace dolfin
     { vector->gather(x, indices); }
 
     /// Gather entries into Array x
-    virtual void gather(Array<double>& x, const Array<uint>& indices) const
+    virtual void gather(std::vector<double>& x, const Array<uint>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather all entries into Array x on process 0
-    virtual void gather_on_zero(Array<double>& x) const
+    virtual void gather_on_zero(std::vector<double>& x) const
     { vector->gather_on_zero(x); }
 
     /// Add multiple of given vector (AXPY operation)

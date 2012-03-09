@@ -78,7 +78,7 @@ namespace dolfin
                           const ufc::cell& ufc_cell) const = 0;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(Array<double>& vertex_values,
+    virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const = 0;
 
     //--- Optional functions to be implemented by sub-classes ---

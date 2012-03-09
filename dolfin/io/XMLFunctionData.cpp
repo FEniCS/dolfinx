@@ -124,7 +124,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 //-----------------------------------------------------------------------------
 void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 {
-  Array<double> x;
+  std::vector<double> x;
   dolfin_assert(u.vector());
   if (MPI::num_processes() > 1)
     u.vector()->gather_on_zero(x);
@@ -143,7 +143,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
   {
     // Add vector node
     pugi::xml_node function_node = xml_node.append_child("function_data");
-    function_node.append_attribute("size") = x.size();
+    function_node.append_attribute("size") = (uint) x.size();
 
     // Add data
     for (uint i = 0; i < x.size(); ++i)

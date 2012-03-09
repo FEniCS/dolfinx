@@ -154,14 +154,14 @@ void MTL4Vector::get_local(double* block, uint m, const uint* rows) const
     block[i] = x[ rows[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get_local(Array<double>& values) const
+void MTL4Vector::get_local(std::vector<double>& values) const
 {
   values.resize(size());
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set_local(const Array<double>& values)
+void MTL4Vector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
@@ -200,7 +200,7 @@ void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
     _x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
+void MTL4Vector::gather(std::vector<double>& x, const Array<uint>& indices) const
 {
   not_working_in_parallel("MTL4Vector::gather)");
 
@@ -211,7 +211,7 @@ void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather_on_zero(Array<double>& x) const
+void MTL4Vector::gather_on_zero(std::vector<double>& x) const
 {
   not_working_in_parallel("MTL4Vector::gather_on_zero)");
   get_local(x);

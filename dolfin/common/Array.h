@@ -48,13 +48,13 @@ namespace dolfin
   public:
 
     /// Create an empty array, with ownership. Must be resized or assigned to to be of any use.
-    explicit Array() : _size(0), _x(NULL), _owner(true) {}
+    Array() : _size(0), _x(NULL), _owner(true) {}
 
     /// Create array of size N. Array has ownership.
     explicit Array(uint N) : _size(N), _x(new T[N]), _owner(true) {}
 
     /// Create an array wrapping a std::vector. Array does not take ownership.
-    explicit Array(std::vector<T>& vec) : _size(vec.size()), _x(&vec[0]), _owner(false) {}
+    //explicit Array(std::vector<T>& vec) : _size(vec.size()), _x(&vec[0]), _owner(false) {}
 
     /// Construct array from a pointer. Array does not take ownership.
     Array(uint N, T* x) : _size(N), _x(x), _owner(false) {}
