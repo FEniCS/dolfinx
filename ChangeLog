@@ -11,7 +11,7 @@
  - Add creation of mesh from triangulations of points (via CGAL)
  - Split the SWIG interface into six combined modules instead of one
  - Add has_foo to easy check what solver and precondictioners are available
- - Add convinient functions for listing available linear_algebra_backends
+ - Add convenient functions for listing available linear_algebra_backends
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes
@@ -21,11 +21,6 @@
  - Add CoordinateMatrix class
  - Make STLMatrix work in parallel
  - Remove all tr1::tuple and use boost::tuple
- - Fix wrong link in Python quick reference.
-1.0.1 [not yet released]
- - FIXME: Should we list stuff fixed in 1.0.x here?
- - Add has_foo to easy check what solver and precondictioners are available
- - Add convinient functions for listing available linear_algebra_backends
  - Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]
  - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
