@@ -1,3 +1,10 @@
+1.1.0 [not yet released]
+ - MPI functionality for distributing values between neighbours
+ - SystemAssembler now works in parallel with topological/geometric boundary search
+ - New symmetric assembler with ability for stand-alone RHS assemble
+ - Major speed-up of DirichletBC computation and mesh marking
+ - Major speed-up of assembly of functions and expressions
+ - Major speed-up of mesh topology computation
  - Major speed-up of mesh topology computation
  - Add simple 2D and 3D mesh generation (via CGAL)
  - Add creation of mesh from triangulations of points (via CGAL)
@@ -13,6 +20,11 @@
  - Add CoordinateMatrix class
  - Make STLMatrix work in parallel
  - Remove all tr1::tuple and use boost::tuple
+ - Fix wrong link in Python quick reference.
+1.0.1 [not yet released]
+ - FIXME: Should we list stuff fixed in 1.0.x here?
+ - Add has_foo to easy check what solver and precondictioners are available
+ - Add convinient functions for listing available linear_algebra_backends
  - Fix wrong link in Python quick reference.
 1.0.0 [2011-12-07]
  - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
