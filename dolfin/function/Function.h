@@ -311,8 +311,8 @@ namespace dolfin
     virtual void compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const;
 
-    /// Collect off-process coefficients to prepare for interpolation
-    virtual void gather() const;
+    /// U[date off-process ghost coefficients
+    virtual void update() const;
 
   private:
 

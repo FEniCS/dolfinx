@@ -385,7 +385,7 @@ void Function::eval(Array<double>& values,
 void Function::interpolate(const GenericFunction& v)
 {
   // Gather off-process dofs
-  v.gather();
+  v.update();
 
   // Initialise vector
   init_vector();
@@ -533,8 +533,8 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
                  "Non-matching mesh");
   }
 
-  // Gather ghosts dofs
-  gather();
+  // Update ghosts dofs
+  update();
 
   // Get finite element
   dolfin_assert(_function_space->element());
@@ -583,7 +583,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::gather() const
+void Function::update() const
 {
   if (MPI::num_processes() > 1)
     _vector->update_ghost_values();

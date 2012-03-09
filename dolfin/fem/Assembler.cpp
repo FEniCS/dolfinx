@@ -159,11 +159,11 @@ void Assembler::assemble(GenericTensor& A,
   // Create data structure for local assembly data
   UFC ufc(a);
 
-  // Gather off-process coefficients
+  // Update off-process coefficients
   const std::vector<boost::shared_ptr<const GenericFunction> >
     coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->gather();
+    coefficients[i]->update();
 
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
