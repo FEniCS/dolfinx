@@ -62,8 +62,8 @@ namespace dolfin
     /// Destructor.
     ~Array()
     {
-      if (_owner && _x)
-        delete[] _x;
+      if (_owner)
+        delete [] _x;
     }
 
     /// Resize the array. If the new size if different from the old size, the
