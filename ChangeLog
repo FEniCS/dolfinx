@@ -11,7 +11,7 @@
  - Add creation of mesh from triangulations of points (via CGAL)
  - Split the SWIG interface into six combined modules instead of one
  - Add has_foo to easy check what solver and precondictioners are available
- - Add convenient functions for listing available linear_algebra_backends
+ - Add convenience functions for listing available linear_algebra_backends
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes
