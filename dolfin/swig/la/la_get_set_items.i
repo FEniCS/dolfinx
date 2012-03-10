@@ -140,7 +140,7 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   }
 
   // Clean up Array
-  delete &values;
+  //delete &values;
 
   return PyArray_Return(return_array);
 }
