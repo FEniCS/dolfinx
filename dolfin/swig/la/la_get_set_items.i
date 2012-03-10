@@ -197,8 +197,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   }
 
   // If we have created temporary values, delete them
-  delete &self_values;
-  delete &other_values;
+  //delete &self_values;
+  //delete &other_values;
 
   return PyArray_Return(return_array);
 }
@@ -217,7 +217,6 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 {
 
   Indices* inds;
-  double* values;
   dolfin::uint* range;
   dolfin::uint* indices;
   boost::shared_ptr<dolfin::GenericVector> return_vec;
@@ -228,7 +227,8 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   // Fill the return vector
-  try {
+  try
+  {
     indices = inds->indices();
   }
 
@@ -249,14 +249,13 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 
   range  = inds->range();
 
-  values = new double[m];
+  std::vector<double> values(m);
 
-  self->get_local(values, m, indices);
-  return_vec->set(values, m, range);
+  self->get_local(&values[0], m, indices);
+  return_vec->set(&values[0], m, range);
   return_vec->apply("insert");
 
   delete inds;
-  delete [] values;
   return return_vec;
 }
 

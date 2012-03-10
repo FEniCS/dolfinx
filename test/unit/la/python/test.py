@@ -103,34 +103,33 @@ class AbstractBaseTest(object):
         A += B
         if A.owns_index(5): self.assertAlmostEqual(A[5], val1+val2)
 
-        #A -= B
-        #if A.owns_index(5): self.assertAlmostEqual(A[5], val1)
+        A -= B
+        if A.owns_index(5): self.assertAlmostEqual(A[5], val1)
 
-        #C = 16*B
-        #if A.owns_index(5): self.assertAlmostEqual(A[5],C[5])
+        C = 16*B
+        if A.owns_index(5): self.assertAlmostEqual(A[5],C[5])
 
-        #D = (C + B)*5
-        #if A.owns_index(5): self.assertAlmostEqual(D[5], (val1+val2)*5)
+        D = (C + B)*5
+        if A.owns_index(5): self.assertAlmostEqual(D[5], (val1+val2)*5)
 
-        #F = (A-B)/4
-        #if A.owns_index(5): self.assertAlmostEqual(F[5], (val1-val2)/4)
+        F = (A-B)/4
+        if A.owns_index(5): self.assertAlmostEqual(F[5], (val1-val2)/4)
 
-        #A.axpy(100,B)
-        #if A.owns_index(5): self.assertAlmostEqual(A[5], val1+val2*100)
+        A.axpy(100,B)
+        if A.owns_index(5): self.assertAlmostEqual(A[5], val1+val2*100)
 
-        #A2 = A.array()
-        #self.assertTrue(isinstance(A2,ndarray))
-        #self.assertEqual(A2.shape, (n1-n0,))
-        #if A.owns_index(5): self.assertAlmostEqual(A2[5], A[5])
-        #if not distributed: self.assertAlmostEqual(A2.sum(),A.sum())
+        A2 = A.array()
+        self.assertTrue(isinstance(A2,ndarray))
+        self.assertEqual(A2.shape, (n1-n0,))
+        if A.owns_index(5): self.assertAlmostEqual(A2[5], A[5])
+        if not distributed: self.assertAlmostEqual(A2.sum(),A.sum())
 
-        #if not distributed:
-        #    B2 = B.array()
-        #    A[1:16:2] = B[1:16:2]
-        #    A2[1:16:2] = B2[1:16:2]
-        #    self.assertAlmostEqual(A2[1], A[1])
+        if not distributed:
+            B2 = B.array()
+            A[1:16:2] = B[1:16:2]
+            A2[1:16:2] = B2[1:16:2]
+            self.assertAlmostEqual(A2[1], A[1])
 
-        """
         if not distributed:
             ind = [1,3,6,9,15]
             ind1 = array([1,3,6,9,15])
@@ -211,7 +210,6 @@ class AbstractBaseTest(object):
             I2 = A2*B2
             self.assertAlmostEqual(A.sum(),A2.sum())
             self.assertAlmostEqual(I.sum(),I2.sum())
-        """
 
     def test_matrix_vector(self, use_backend=False):
         from numpy import dot, absolute
