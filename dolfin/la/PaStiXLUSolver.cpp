@@ -23,7 +23,6 @@
 #include <string>
 #include <vector>
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
@@ -146,8 +145,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_GRAPHDIST] = API_NO;
 
-  Array<int> perm(local_to_global_cols.size());
-  Array<int> invp(local_to_global_cols.size());
+  dolfin_assert(local_to_global_cols.size() > 0);
+  std::vector<int> perm(local_to_global_cols.size());
+  std::vector<int> invp(local_to_global_cols.size());
 
   // Number of RHS vectors
   const int nrhs = 1;
@@ -157,7 +157,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            perm.data(), invp.data(),
+            &perm[0], &invp[0],
             NULL, nrhs, iparm, dparm);
 
   // Factorise
@@ -165,7 +165,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            perm.data(), invp.data(),
+            &perm[0], &invp[0],
             NULL, nrhs, iparm, dparm);
 
   // Get local (to process) dofs

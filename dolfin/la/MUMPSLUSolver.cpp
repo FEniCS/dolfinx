@@ -21,7 +21,6 @@
 
 #include <vector>
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/log/log.h"
