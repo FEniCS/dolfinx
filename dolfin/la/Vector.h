@@ -153,11 +153,11 @@ namespace dolfin
     virtual void gather(GenericVector& x, const Array<uint>& indices) const
     { vector->gather(x, indices); }
 
-    /// Gather entries into Array x
+    /// Gather entries into x
     virtual void gather(std::vector<double>& x, const Array<uint>& indices) const
     { vector->gather(x, indices); }
 
-    /// Gather all entries into Array x on process 0
+    /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const
     { vector->gather_on_zero(x); }
 

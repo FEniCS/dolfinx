@@ -41,7 +41,7 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of GenericFunction
 //-----------------------------------------------------------------------------
-%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
+//%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function

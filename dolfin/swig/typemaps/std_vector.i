@@ -163,13 +163,13 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
-	if (itemp)
-	{
-	  tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
-	  tmp_vec.push_back(tempshared);
-	}
-	if (newmem & SWIG_CAST_NEW_MEMORY)
-	  delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
+	      if (itemp)
+	      {
+	        tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+	        tmp_vec.push_back(tempshared);
+	      }
+	      if (newmem & SWIG_CAST_NEW_MEMORY)
+	        delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
       }
       else
       {
@@ -444,13 +444,9 @@ const std::vector<TYPE>&  ARG_NAME
     py_item = PyList_GetItem($input,i);
     res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE*), 0);
     if (SWIG_IsOK(res))
-    {
       tmp_vec.push_back(*reinterpret_cast<dolfin::TYPE *>(itemp));
-    }
     else
-    {
       SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum, (Bad conversion)");
-    }
   }
   $1 = &tmp_vec;
 }
@@ -509,9 +505,9 @@ const std::vector<TYPE>&  ARG_NAME
 
       if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
       {
-	Py_DECREF(item);
-	SWIG_exception(SWIG_TypeError, "expected items of inner sequence to be of type " \
-		       "\"TYPE_NAME\" in argument $argnum");
+        Py_DECREF(item);
+        SWIG_exception(SWIG_TypeError, "expected items of inner sequence to be of type " \
+                 "\"TYPE_NAME\" in argument $argnum");
       }
       inner_vec.push_back(value);
       Py_DECREF(item);
@@ -536,7 +532,8 @@ const std::vector<TYPE>&  ARG_NAME
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
   ind = 0;
-  for (it=(&$1)->begin(); it!=(&$1)->end(); ++it){
+  for (it=(&$1)->begin(); it!=(&$1)->end(); ++it)
+  {
     tuple = Py_BuildValue("ss", it->first.c_str(), it->second.c_str());
     PyList_SetItem($result, ind++, tuple);
   }
@@ -553,7 +550,6 @@ TYPEMAPS_STD_VECTOR_OF_POINTERS(Parameters)
 
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
-//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
@@ -565,8 +561,7 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_typ
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
-//PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, , double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)

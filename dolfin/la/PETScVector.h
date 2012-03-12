@@ -161,10 +161,10 @@ namespace dolfin
     /// Gather vector entries into a local vector
     virtual void gather(GenericVector& y, const Array<uint>& indices) const;
 
-    /// Gather entries into Array x
+    /// Gather entries into x
     virtual void gather(std::vector<double>& x, const Array<uint>& indices) const;
 
-    /// Gather all entries into Array x on process 0
+    /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)

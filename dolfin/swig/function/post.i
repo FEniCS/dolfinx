@@ -34,6 +34,7 @@ def __contains__(self,u):
 //-----------------------------------------------------------------------------
 // Extend GenericFunction interace
 //-----------------------------------------------------------------------------
+/*
 %extend dolfin::GenericFunction {
 %pythoncode %{
 def compute_vertex_values(self, mesh):
@@ -65,6 +66,7 @@ def compute_vertex_values(self, mesh):
     return self._compute_vertex_values(mesh)
 %}
 }
+*/
 
 //-----------------------------------------------------------------------------
 // Extend Function interace
