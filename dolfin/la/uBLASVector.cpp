@@ -168,7 +168,7 @@ void uBLASVector::add_local(const Array<double>& values)
     (*x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
+void uBLASVector::gather(GenericVector& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -181,7 +181,7 @@ void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
     _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(std::vector<double>& x, const Array<uint>& indices) const
+void uBLASVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 

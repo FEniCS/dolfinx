@@ -26,6 +26,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include "GenericFile.h"
 
@@ -69,7 +70,7 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
-    void read_vector(Array<double>& input, Array<uint>& indices);
+    void read_vector(std::vector<double>& input, std::vector<uint>& indices);
     void operator<< (const GenericVector& output);
 
     // Parameters

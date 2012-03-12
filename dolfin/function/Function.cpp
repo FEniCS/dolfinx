@@ -213,7 +213,7 @@ const Function& Function::operator= (const Function& v)
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;
     std::vector<uint> new_rows(collapsed_map.size());
-    Array<uint> old_rows(collapsed_map.size());
+    std::vector<uint> old_rows(collapsed_map.size());
     uint i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {

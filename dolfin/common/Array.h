@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Garth N. Wells
+// Copyright (C) 2009-2012 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,71 +19,41 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2009-12-06
-// Last changed: 2012-02-23
+// Last changed: 2012-03-12
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
 
 #include <sstream>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
-#include "NoDeleter.h"
-
 namespace dolfin
 {
 
-  /// This class provides a simple wrapper for a pointer to an array. A purpose
-  /// of this class is to enable the simple and safe exchange of data between
-  /// C++ and Python.
+  /// This class provides a simple wrapper for a pointer to an array. A
+  /// purpose of this class is to enable the simple and safe exchange
+  /// of data between C++ and Python.
 
   template <typename T> class Array
   {
 
   public:
 
-    /// Create an empty array, with ownership. Must be resized or assigned to to be of any use.
-    Array() : _size(0), _x(NULL), _owner(true) {}
-
     /// Create array of size N. Array has ownership.
     explicit Array(uint N) : _size(N), _x(new T[N]), _owner(true) {}
-
-    /// Create an array wrapping a std::vector. Array does not take ownership.
-    //explicit Array(std::vector<T>& vec) : _size(vec.size()), _x(&vec[0]), _owner(false) {}
 
     /// Construct array from a pointer. Array does not take ownership.
     Array(uint N, T* x) : _size(N), _x(x), _owner(false) {}
 
-    /// Destructor.
+    /// Destructor
     ~Array()
     {
       if (_owner)
         delete [] _x;
-    }
-
-    /// Resize the array. If the new size if different from the old size, the
-    /// Array must be owner; the old contents are then lost.
-    void resize(uint N)
-    {
-      if (_size == N)
-        return;
-      if (!_owner)
-        dolfin_error("Array.h", "resize", "Only owned arrays can be resized");
-      if (_x)
-        delete[] _x;
-      _x = (N == 0 ? NULL : new T[N]);
-      _size = N;
-    }
-
-    /// Clear the array (resize to 0).
-    void clear()
-    {
-      resize(0);
     }
 
     /// Return informal string representation (pretty-print).
@@ -111,9 +81,6 @@ namespace dolfin
     uint size() const
     { return _size; }
 
-    /// Set entries which meet (abs(x[i]) < eps) to zero
-    void zero_eps(double eps=DOLFIN_EPS);
-
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
     { dolfin_assert(i < _size); return _x[i]; }
@@ -121,24 +88,6 @@ namespace dolfin
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
     { dolfin_assert(i < _size); return _x[i]; }
-
-    /// Assignment operator. If resize is required, the Array must be owner.
-    Array& operator= (const Array& other)
-    {
-      resize(other._size);
-      if (_size > 0)
-        std::copy(&other._x[0], &other._x[_size], &_x[0]);
-      return *this;
-    }
-
-    /// Assignment operator from std::vector. If resize is required, the Array must be owner.
-    Array& operator= (const std::vector<T>& other)
-    {
-      resize(other.size());
-      if (_size > 0)
-        std::copy(&other[0], &other[_size], &_x[0]);
-      return *this;
-    }
 
     /// Return pointer to data (const version)
     const T* data() const
@@ -158,32 +107,15 @@ namespace dolfin
   private:
 
     /// Length of array
-    uint _size;
+    const uint _size;
 
     /// Array data
     T* _x;
 
     /// True if instance is owner of data
     bool _owner;
+
   };
-
-  template <typename T>
-  inline void Array<T>::zero_eps(double eps)
-  {
-    dolfin_error("Array.h",
-                 "zero small entries in array",
-                 "Only available when data type is <double>");
-  }
-
-  template <>
-  inline void Array<double>::zero_eps(double eps)
-  {
-    for (uint i = 0; i < _size; ++i)
-    {
-      if (std::abs(_x[i]) < eps)
-        _x[i] = 0.0;
-    }
-  }
 
 }
 

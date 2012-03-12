@@ -187,7 +187,7 @@ void MTL4Vector::add(const double* block, uint m, const uint* rows)
     x[ rows[i] ] += block[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
+void MTL4Vector::gather(GenericVector& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("MTL4Vector::gather)");
 
@@ -200,7 +200,7 @@ void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
     _x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather(std::vector<double>& x, const Array<uint>& indices) const
+void MTL4Vector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("MTL4Vector::gather)");
 

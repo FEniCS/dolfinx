@@ -458,7 +458,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
-                          const Array<dolfin::uint>& indices) const
+                          const std::vector<dolfin::uint>& indices) const
 {
   dolfin_assert(x);
 
@@ -470,7 +470,7 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
-  const int* _indices = reinterpret_cast<const int*>(indices.data());
+  const int* _indices = reinterpret_cast<const int*>(&indices[0]);
   Epetra_BlockMap target_map(indices.size(), indices.size(), _indices, 1, 0, serial_comm);
 
   // Reset vector y
@@ -484,7 +484,7 @@ void EpetraVector::gather(GenericVector& y,
   _y.vec()->Import(*x, importer, Insert);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather(std::vector<double>& x, const Array<uint>& indices) const
+void EpetraVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   const uint _size = indices.size();
   x.resize(_size);
@@ -506,7 +506,7 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
-  Array<uint> indices(0);
+  std::vector<uint> indices(0);
   if (MPI::process_number() == 0)
   {
     indices.resize(size());

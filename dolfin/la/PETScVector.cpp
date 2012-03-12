@@ -663,7 +663,7 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
+void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) const
 {
   dolfin_assert(x);
 
@@ -721,7 +721,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 #endif
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<double>& x, const Array<uint>& indices) const
+void PETScVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   x.resize(indices.size());
   PETScVector y("local");

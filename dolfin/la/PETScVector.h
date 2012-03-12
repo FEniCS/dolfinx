@@ -159,10 +159,10 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather vector entries into a local vector
-    virtual void gather(GenericVector& y, const Array<uint>& indices) const;
+    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const Array<uint>& indices) const;
+    virtual void gather(std::vector<double>& x, const std::vector<uint>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;

@@ -170,8 +170,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get local (to process) dofs
   const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
-  Array<uint> solver_local_to_global(ncol2);
-  int* _loc2glob = reinterpret_cast<int*>(solver_local_to_global.data());
+  std::vector<uint> solver_local_to_global(ncol2);
+  int* _loc2glob = reinterpret_cast<int*>(&solver_local_to_global[0]);
   pastix_getLocalNodeLst(&pastix_data, _loc2glob) ;
 
   // Perform shift
