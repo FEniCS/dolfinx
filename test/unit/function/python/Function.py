@@ -49,12 +49,6 @@ class Interface(unittest.TestCase):
         v_values = v.compute_vertex_values(mesh)
 
         self.assertTrue(all(u_values==1))
-        self.assertTrue(all(v_values==1))
-        #self.assertRaises(RuntimeError, u.compute_vertex_values, v_values, mesh)
-        #self.assertRaises(RuntimeError, v.compute_vertex_values, u_values, mesh)
-
-        #self.assertRaises(RuntimeError, u.compute_vertex_values, 1, mesh)
-        #self.assertRaises(RuntimeError, u.compute_vertex_values, array(1, dtype='d'), mesh)
 
 class Interpolate(unittest.TestCase):
 

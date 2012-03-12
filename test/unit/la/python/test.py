@@ -278,14 +278,14 @@ class AbstractBaseTest(object):
         self.test_matrix_vector(True)
 
 class DataNotWorkingTester:
-    def xtest_matrix_data(self):
+    def test_matrix_data(self):
         A,B = self.assemble_matrices()
         self.assertRaises(RuntimeError,A.data)
 
         A = down_cast(A)
         self.assertRaises(RuntimeError,A.data)
 
-    def xtest_vector_data(self):
+    def test_vector_data(self):
         v,w = self.assemble_vectors()
         self.assertRaises(RuntimeError,v.data)
 
