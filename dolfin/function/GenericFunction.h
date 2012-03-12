@@ -43,7 +43,7 @@ namespace dolfin
   /// DOLFIN provides two implementations of the GenericFunction
   /// interface in the form of the classes Function and Expression.
   ///
-  /// Sub-classes may optionally implement the gather() function that
+  /// Sub-classes may optionally implement the update() function that
   /// will be called prior to restriction when running in parallel.
 
   class GenericFunction : public ufc::function, public Variable
@@ -83,8 +83,8 @@ namespace dolfin
 
     //--- Optional functions to be implemented by sub-classes ---
 
-    /// Collect off-process coefficients to prepare for interpolation
-    virtual void gather() const {}
+    /// Update off-process ghost coefficients
+    virtual void update() const {}
 
     //--- Convenience functions ---
 

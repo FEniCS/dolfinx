@@ -106,6 +106,12 @@ namespace dolfin
     // The nonlinear problem
     boost::shared_ptr<NonlinearVariationalProblem> problem;
 
+    // The nonlinear discrete problem
+    boost::shared_ptr<NonlinearDiscreteProblem> nonlinear_problem;
+
+    // The Newton solver
+    boost::shared_ptr<NewtonSolver> newton_solver;
+
   };
 
 }

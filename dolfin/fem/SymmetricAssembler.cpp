@@ -199,11 +199,11 @@ void SymmetricAssembler::PImpl::assemble()
   // Check form
   AssemblerTools::check(a);
 
-  // Gather off-process coefficients
+  // Update off-process coefficients
   const std::vector<boost::shared_ptr<const GenericFunction> >
     coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->gather();
+    coefficients[i]->update();
 
   // Initialize global tensors
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
