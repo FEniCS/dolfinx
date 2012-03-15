@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2008-2010
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008-04-21
-// Last changed: 2011-11-11
+// Last changed: 2012-03-15
 
 #ifdef HAS_TRILINOS
 
@@ -39,6 +39,7 @@
 #include <Epetra_Vector.h>
 #include <Epetra_DataAccess.h>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/MPI.h>
@@ -223,6 +224,7 @@ bool EpetraVector::owns_index(uint i) const
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
+  Timer("Apply (vector)");
   dolfin_assert(x);
   const int err = x->PutScalar(0.0);
   //apply("add");

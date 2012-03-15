@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 // Modified by Garth N. Wells 2008-2010
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-11-25
+// Last changed: 2012-03-15
 
 #ifdef HAS_TRILINOS
 
@@ -41,6 +41,7 @@
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -396,6 +397,7 @@ void EpetraMatrix::zero()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
   dolfin_assert(A);
   int err = 0;
   if (mode == "add")

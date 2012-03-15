@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008
+// Modified by Anders Logg 2008-2012
 // Modified by Garth N. Wells 2011
 //
 // First added:  2008-08-25
-// Last changed: 2011-11-11
+// Last changed: 2012-03-15
 
 #include <iostream>
 #include <boost/shared_ptr.hpp>
-
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/NoDeleter.h>
 #include "dolfin/common/utils.h"
 #include "BlockVector.h"
@@ -83,8 +83,9 @@ void BlockMatrix::zero()
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
-  for(uint i = 0; i < matrices.shape()[0]; i++)
-    for(uint j = 0; j < matrices.shape()[1]; j++)
+  Timer("Apply (matrix)");
+  for (uint i = 0; i < matrices.shape()[0]; i++)
+    for (uint j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->apply(mode);
 }
 //-----------------------------------------------------------------------------

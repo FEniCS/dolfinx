@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2010.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Martin Sandve Alnes 2008.
+// Modified by Anders Logg 2006-2012
+// Modified by Kent-Andre Mardal 2008
+// Modified by Martin Sandve Alnes 2008
 //
 // First added:  2006-04-04
-// Last changed: 2011-01-14
+// Last changed: 2012-03-15
 
 #include <algorithm>
 #include <iomanip>
@@ -31,6 +31,7 @@
 #include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
@@ -213,6 +214,8 @@ void uBLASVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void uBLASVector::apply(std::string mode)
 {
+  Timer("Apply (vector)");
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------

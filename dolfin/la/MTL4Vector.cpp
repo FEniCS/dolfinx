@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2009.
-// Modified by Anders Logg, 2010.
+// Modified by Garth N. Wells 2008-2009
+// Modified by Anders Logg 2010-2012
 //
 // First added:  2008-07-06
 // Last changed: 2011-01-14
@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <boost/unordered_set.hpp>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include "MTL4Factory.h"
@@ -120,6 +121,8 @@ void MTL4Vector::zero()
 //-----------------------------------------------------------------------------
 void MTL4Vector::apply(std::string mode)
 {
+  Timer("Apply (vector)");
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
