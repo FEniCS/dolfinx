@@ -35,6 +35,7 @@
 
 #include <libxml/parser.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
 
@@ -162,6 +163,10 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 #endif
 
+  // Avoid using default PETSc signal handler
+  if (!parameters["use_petsc_signal_handler"])
+    PetscPopSignalHandler();
+    
   singleton().petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)

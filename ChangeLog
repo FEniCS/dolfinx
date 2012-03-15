@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - Add parameter: "use_petsc_signal_handler", which enables/disable PETSc system signals
  - Avoid unnessesary resize of result vector for A*b
  - MPI functionality for distributing values between neighbours
  - SystemAssembler now works in parallel with topological/geometric boundary search

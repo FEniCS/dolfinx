@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-07-02
-// Last changed: 2011-10-21
+// Last changed: 2012-03-12
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -96,6 +96,8 @@ namespace dolfin
       #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
+      p.add("use_petsc_signal_handler", false);
+      
       #endif
       #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");
