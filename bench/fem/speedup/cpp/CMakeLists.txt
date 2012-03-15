@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(bench_speedup)
+project(bench_fem_speedup_cpp)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -33,9 +33,9 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(bench_assemble-poisson assemble-poisson.cpp)
 add_executable(bench_solve-poisson solve-poisson.cpp)
+add_executable(bench_assemble-poisson assemble-poisson.cpp)
 
 # Target libraries
-target_link_libraries(bench_assemble-poisson ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
 target_link_libraries(bench_solve-poisson ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(bench_assemble-poisson ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

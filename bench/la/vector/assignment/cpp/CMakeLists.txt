@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(bench_assignment)
+project(bench_la_vector_assignment_cpp)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -33,7 +33,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(bench_assignment main.cpp)
+add_executable(bench_la_vector_assignment_cpp main.cpp)
 
 # Target libraries
-target_link_libraries(bench_assignment ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(bench_la_vector_assignment_cpp ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
