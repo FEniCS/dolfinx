@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,19 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005-2010.
+// Modified by Garth N. Wells 2005-2010
 // Modified by Martin Sandve Alnes 2008
-// Modified by Johannes Ring, 2011.
-// Modified by Fredrik Valdmanis, 2011
+// Modified by Johannes Ring 2011
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004
-// Last changed: 2011-11-11
+// Last changed: 2012-03-15
 
 #ifdef HAS_PETSC
 
 #include <cmath>
 #include <numeric>
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -347,6 +348,7 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
 {
+  Timer("Apply (vector)");
   dolfin_assert(x);
   VecAssemblyBegin(*x);
   VecAssemblyEnd(*x);

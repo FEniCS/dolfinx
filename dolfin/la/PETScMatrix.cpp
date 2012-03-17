@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005-2009.
-// Modified by Andy R. Terrel 2005.
-// Modified by Ola Skavhaug 2007-2009.
-// Modified by Magnus Vikstrøm 2007-2008.
+// Modified by Garth N. Wells 2005-2009
+// Modified by Andy R. Terrel 2005
+// Modified by Ola Skavhaug 2007-2009
+// Modified by Magnus Vikstrøm 2007-2008
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004
-// Last changed: 2011-09-07
+// Last changed: 2012-03-15
 
 #ifdef HAS_PETSC
 
@@ -31,9 +31,8 @@
 #include <iomanip>
 #include <boost/assign/list_of.hpp>
 
-#include <dolfin/common/timing.h>
-
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
 #include "PETScMatrix.h"
@@ -458,6 +457,8 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
+
   dolfin_assert(A);
   if (mode == "add")
   {

@@ -16,14 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2008-2010
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008-07-06
-// Last changed: 2011-11-15
+// Last changed: 2012-03-15
 
 #ifdef HAS_MTL4
 
 #include "MTL4Vector.h"
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
 #include "TensorLayout.h"
 #include "MTL4Matrix.h"
@@ -174,6 +175,7 @@ void MTL4Matrix::zero()
 //-----------------------------------------------------------------------------
 void MTL4Matrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
   if (ins)
     delete ins;
   ins = 0;
