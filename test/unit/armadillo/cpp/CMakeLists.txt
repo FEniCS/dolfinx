@@ -33,7 +33,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(test_temporarily_disabled test_temporarily_disabled.cpp)
+add_executable(test_armadillo test_temporarily_disabled.cpp)
 
 # Target libraries
-target_link_libraries(test_temporarily_disabled ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_armadillo ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
