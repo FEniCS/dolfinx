@@ -17,10 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Johannes Ring, 2011
+# Modified by Johannes Ring, 2011, 2012
 #
 # First added:  2010-03-26
-# Last changed: 2011-04-05
+# Last changed: 2012-03-15
 
 import os, sys, time
 
@@ -29,12 +29,7 @@ failed = []
 def run_bench(arg, directory, files):
 
     # Skip directories not containing a benchmark
-    bench_exec = "bench"
-    if directory.endswith("cpp") and \
-           "bench_" + directory.split(os.path.sep)[-2] in files:
-        bench_exec = "bench_" + directory.split(os.path.sep)[-2]
-
-
+    bench_exec = "bench_" + "_".join(directory.split(os.path.sep)[1:])
     if not bench_exec in files:
         return
 

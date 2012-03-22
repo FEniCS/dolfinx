@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   // Solve linear system
   dolfin::MPI::barrier();
   double t = time();
-  solver.solve(A, u.vector(), b);
+  solver.solve(A, *u.vector(), b);
   dolfin::MPI::barrier();
   t = time() - t;
   if (dolfin::MPI::process_number() == 0)
@@ -86,10 +86,10 @@ int main(int argc, char* argv[])
 
   // Solve linear system (preconditioner assuming same non-zero pattern)
   solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
-  u.vector().zero();
+  u.vector()->zero();
   dolfin::MPI::barrier();
   t = time();
-  solver.solve(A, u.vector(), b);
+  solver.solve(A, *u.vector(), b);
   dolfin::MPI::barrier();
   t = time() - t;
   if (dolfin::MPI::process_number() == 0)
@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
 
   // Solve linear system (re-use preconditioner)
   solver.parameters("preconditioner")["reuse"] = true;
-  u.vector().zero();
+  u.vector()->zero();
   dolfin::MPI::barrier();
   t = time();
-  solver.solve(A, u.vector(), b);
+  solver.solve(A, *u.vector(), b);
   dolfin::MPI::barrier();
   t = time() - t;
   if (dolfin::MPI::process_number() == 0)
