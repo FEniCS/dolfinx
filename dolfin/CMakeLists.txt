@@ -272,6 +272,10 @@ foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
 
+foreach(_inc_dir ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+  set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
+endforeach()
+
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
