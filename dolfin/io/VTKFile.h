@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2006.
-// Modified by NIclas Jansson 2009.
+// Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
 // Last changed: 2009-08-13
@@ -55,7 +55,7 @@ namespace dolfin
 
   protected:
 
-    void write(const Function& u, double time);
+    void write_function(const Function& u, double time);
 
     std::string init(const Mesh& mesh, uint dim) const;
 

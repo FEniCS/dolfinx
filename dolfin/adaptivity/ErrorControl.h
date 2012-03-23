@@ -27,6 +27,7 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
+#include "adapt.h"
 
 namespace dolfin
 {

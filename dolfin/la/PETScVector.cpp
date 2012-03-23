@@ -62,9 +62,9 @@ PETScVector::PETScVector(std::string type)
   const std::pair<uint, uint> range(0, 0);
 
   if (type == "global" && dolfin::MPI::num_processes() > 1)
-    init(range, ghost_indices, true);
+    _init(range, ghost_indices, true);
   else
-    init(range, ghost_indices, false);
+    _init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
@@ -78,14 +78,14 @@ PETScVector::PETScVector(uint N, std::string type)
     const std::pair<uint, uint> range = MPI::local_range(N);
 
     if (range.first == 0 && range.second == N)
-      init(range, ghost_indices, false);
+      _init(range, ghost_indices, false);
     else
-      init(range, ghost_indices, true);
+      _init(range, ghost_indices, true);
   }
   else if (type == "local")
   {
     const std::pair<uint, uint> range(0, N);
-    init(range, ghost_indices, false);
+    _init(range, ghost_indices, false);
   }
   else
   {
@@ -212,7 +212,7 @@ void PETScVector::resize(std::pair<uint, uint> range,
   const bool _distributed = distributed();
 
   // Re-initialise vector
-  init(range, ghost_indices, _distributed);
+  _init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
@@ -761,7 +761,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::pair<uint, uint> range,
+void PETScVector::_init(std::pair<uint, uint> range,
                        const std::vector<uint>& ghost_indices, bool distributed)
 {
   // Create vector

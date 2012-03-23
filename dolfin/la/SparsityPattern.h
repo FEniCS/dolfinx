@@ -88,7 +88,7 @@ namespace dolfin
     void apply();
 
     /// Return informal string representation (pretty-print)
-    std::string str() const;
+    std::string str(bool verbose) const;
 
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.

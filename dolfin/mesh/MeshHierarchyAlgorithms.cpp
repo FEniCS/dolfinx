@@ -39,13 +39,13 @@ void MeshHierarchyAlgorithms::refineTetMesh(MeshHierarchy& mesh_hierarchy)
 
   uint num_meshes = uint(mesh_hierarchy.size());
 
+  /*
   for (uint k = num_meshes-1; k >= 0; k--)
   {
-    /*
     evaluate_marks(mesh_hierarchy(k));
     close_mesh(mesh_hierarchy(k));
-    */
   }
+  */
 
   for (uint k = 0; k < num_meshes; k++)
   {
