@@ -30,7 +30,7 @@ MeshConnectivity::MeshConnectivity(uint d0, uint d1) : d0(d0), d1(d1)
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : d0(d0), d1(d1)
+  : d0(0), d1(0)
 {
   *this = connectivity;
 }

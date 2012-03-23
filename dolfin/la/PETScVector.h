@@ -242,8 +242,8 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void init(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices,
-              bool distributed);
+    void _init(std::pair<uint, uint> range, 
+                  const std::vector<uint>& ghost_indices, bool distributed);
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
