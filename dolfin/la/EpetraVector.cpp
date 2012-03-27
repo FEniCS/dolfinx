@@ -90,12 +90,6 @@ EpetraVector::~EpetraVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool EpetraVector::distributed() const
-{
-  dolfin_assert(x);
-  return x->Map().DistributedGlobal();
-}
-//-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> EpetraVector::copy() const
 {
   dolfin_assert(x);
