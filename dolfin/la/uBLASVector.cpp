@@ -44,12 +44,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(): x(new ublas_vector(0))
+uBLASVector::uBLASVector(std::string type): x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(uint N): x(new ublas_vector(N))
+uBLASVector::uBLASVector(uint N, std::string type): x(new ublas_vector(N))
 {
   // Set all entries to zero
   x->clear();

@@ -55,10 +55,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    uBLASVector();
+    explicit uBLASVector(std::string type="global");
 
     /// Create vector of size N
-    explicit uBLASVector(uint N);
+    uBLASVector(uint N, std::string type="global");
 
     /// Copy constructor
     uBLASVector(const uBLASVector& x);
