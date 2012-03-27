@@ -62,17 +62,6 @@ class AbstractBaseTest(object):
             return assemble(a), assemble(b)
 
 
-    def test_distributed(self):
-        A, B = self.assemble_matrices()
-        if self.backend == "PETSc" or self.backend == "Epetra":
-          if MPI.num_processes() > 1:
-               self.assertTrue(A.distributed())
-          else:
-               self.assertFalse(A.distributed())
-        else:
-           self.assertFalse(A.distributed())
-
-
     def test_basic_la_operations(self, use_backend=False):
         from numpy import ndarray, array, ones, sum
 
@@ -276,6 +265,9 @@ if has_linear_algebra_backend("PETSc"):
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
+
+#class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+#    backend    = "STL"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output

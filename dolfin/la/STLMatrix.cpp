@@ -333,6 +333,23 @@ void STLMatrix::ident(uint m, const uint* rows)
   }
 }
 //-----------------------------------------------------------------------------
+const STLMatrix& STLMatrix::operator*= (double a)
+{
+  std::vector<std::vector<double> >::iterator row;
+  for (row = _vals.begin(); row != _vals.end(); ++row)
+  {
+    std::transform(row->begin(), row->end(), row->begin(),
+                   std::bind1st(std::multiplies<double>(), a));
+  }
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const STLMatrix& STLMatrix::operator/= (double a)
+{
+  return (*this) *= 1.0/a;
+}
+//-----------------------------------------------------------------------------
 std::string STLMatrix::str(bool verbose) const
 {
   std::stringstream s;

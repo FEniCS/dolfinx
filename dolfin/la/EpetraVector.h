@@ -80,9 +80,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 

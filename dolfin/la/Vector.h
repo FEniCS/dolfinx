@@ -68,10 +68,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const
-    { return vector->distributed(); }
-
     /// Return copy of vector
     virtual boost::shared_ptr<GenericVector> copy() const
     {

@@ -98,9 +98,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -242,8 +239,11 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void _init(std::pair<uint, uint> range, 
+    void _init(std::pair<uint, uint> range,
                   const std::vector<uint>& ghost_indices, bool distributed);
+
+    // Return true if vector is distributed
+    bool distributed() const;
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;

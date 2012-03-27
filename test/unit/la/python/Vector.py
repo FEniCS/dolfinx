@@ -47,16 +47,6 @@ class AbstractBaseTest(object):
 
         return assemble(v*dx), assemble(t*dx)
 
-    def test_distributed(self):
-        a, b = self.assemble_vectors()
-        if self.backend == "PETSc" or self.backend == "Epetra":
-          if MPI.num_processes() > 1:
-               self.assertTrue(a.distributed())
-          else:
-               self.assertFalse(a.distributed())
-        else:
-           self.assertFalse(a.distributed())
-
     def test_create_empty_vector(self):
         v0 = Vector()
         info(v0)
@@ -363,6 +353,9 @@ if has_linear_algebra_backend("PETSc"):
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
+
+class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    backend    = "STL"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output

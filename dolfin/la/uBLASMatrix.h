@@ -83,10 +83,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const
-    { return false; }
-
     /// Initialize zero tensor using tenor layout
     virtual void init(const TensorLayout& tensor_layout);
 

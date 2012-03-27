@@ -89,12 +89,6 @@ EpetraMatrix::~EpetraMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool EpetraMatrix::distributed() const
-{
-  dolfin_assert(A);
-  return A->Graph().DistributedGlobal();
-}
-//-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
   if (A && !A.unique())

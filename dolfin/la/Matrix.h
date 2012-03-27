@@ -60,10 +60,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if matrix is distributed
-    virtual bool distributed() const
-    { return matrix->distributed(); }
-
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout)
     { matrix->init(tensor_layout); }
