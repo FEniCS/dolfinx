@@ -15,46 +15,29 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-02-21
+// First added:  2012-03-27
 // Last changed:
 
-#ifndef __DOLFIN_STL_FACTORY_CSC_H
-#define __DOLFIN_STL_FACTORY_CSC_H
+#ifndef __DOLFIN_STLVECTOR_H
+#define __DOLFIN_STLVECTOR_H
 
-#include <boost/shared_ptr.hpp>
-#include "TensorLayout.h"
-#include "STLFactory.h"
+#include "EpetraVector.h"
+#include "PETScVector.h"
+#include "uBLASVector.h"
 
 namespace dolfin
 {
 
-  class STLFactoryCSC : public STLFactory
-  {
-  public:
+  #ifdef HAS_PETSC
+    typedef PETScVector STLVector;
+  #else
+   #ifdef HAS_TRILINOS
+    typedef EpetraVector STLVector;
+   #else
+    typedef uBLASVector STLVector;
+   #endif 
+  #endif	
 
-    /// Destructor
-    virtual ~STLFactoryCSC() {}
-
-    /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
-    {
-      boost::shared_ptr<TensorLayout> pattern(new TensorLayout(1, false));
-      return pattern;
-    }
-
-    /// Return singleton instance
-    static STLFactoryCSC& instance()
-    { return factory; }
-
-  private:
-
-    /// Private Constructor
-    STLFactoryCSC() {}
-
-    // Singleton instance
-    static STLFactoryCSC factory;
-
-  };
 }
 
 #endif
