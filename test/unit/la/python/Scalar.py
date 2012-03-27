@@ -25,13 +25,6 @@ from dolfin import *
 
 class ScalarTest(unittest.TestCase):
 
-    def test_distributed(self):
-        a = Scalar()
-        if MPI.num_processes() > 1:
-             self.assertTrue(a.distributed())
-        else:
-             self.assertFalse(a.distributed())
-
     def test_parallel_sum(self):
         a = Scalar()
         b = 1.0
