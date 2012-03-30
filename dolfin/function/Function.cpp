@@ -283,9 +283,10 @@ boost::shared_ptr<GenericVector> Function::vector()
     cout << "Size of vector: " << _vector->size() << endl;
     cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
     dolfin_error("Function.cpp",
-                 "access vector of degrees of freedom fro function",
+                 "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
   }
+
   return _vector;
 }
 //-----------------------------------------------------------------------------
