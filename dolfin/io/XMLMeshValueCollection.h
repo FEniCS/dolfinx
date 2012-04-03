@@ -59,8 +59,12 @@ namespace dolfin
     dolfin_assert(mvc_node);
 
     // Get attributes
+    const std::string name = mvc_node->attribute("name").value();
     const std::string type_file = mvc_node->attribute("type").value();
     const uint dim = mvc_node->attribute("dim").as_uint();
+
+    // Attach name to mesh value collection object
+    mesh_value_collection.rename(name, "a mesh value collection");
 
     // Set dim
     mesh_value_collection.set_dim(dim);
@@ -148,6 +152,7 @@ namespace dolfin
 
     // Add mesh function node and attributes
     pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");
+    mf_node.append_attribute("name") = mesh_value_collection.name().c_str();
     mf_node.append_attribute("type") = type.c_str();
     mf_node.append_attribute("dim") = mesh_value_collection.dim();
     mf_node.append_attribute("size") = mesh_value_collection.size();
