@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2011-09-27
-// Last changed: 2011-11-14
+// Last changed: 2012-04-04
 
 #include <algorithm>
 #include <iomanip>
@@ -67,9 +69,17 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
                    "Not a DOLFIN Function XML file");
     }
 
+    // Check size
     const uint size = xml_function_data_node.attribute("size").as_uint();
-    dolfin_assert(vector.size() == size);
-    dolfin_assert(vector.size() == num_dofs);
+    if (size != num_dofs)
+    {
+      dolfin_error("XMLFunctionData.cpp",
+                   "read function from XML file",
+                   "The number of degrees of freedom (%d) does not match the "
+                   "dimension of the function space (%d)",
+                   size, num_dofs);
+    }
+    dolfin_assert(size == vector.size());
 
     global_to_cell_dof.resize(num_dofs);
     x.resize(num_dofs);
