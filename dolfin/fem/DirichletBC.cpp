@@ -699,8 +699,9 @@ void DirichletBC::init_from_mesh(uint sub_domain) const
 
   // Assign domain numbers for each facet
   const uint D = mesh.topology().dim();
+  dolfin_assert(mesh.domains().markers(D - 1));
   const std::map<std::pair<uint, uint>, uint>&
-    markers = mesh.domains().markers(D - 1).values();
+    markers = mesh.domains().markers(D - 1)->values();
   std::map<std::pair<uint, uint>, uint>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {

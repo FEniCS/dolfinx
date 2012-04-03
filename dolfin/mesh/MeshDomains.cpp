@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2012
+//
 // First added:  2011-08-29
-// Last changed: 2011-10-05
+// Last changed: 2011-04-03
 
 #include <limits>
 
@@ -65,33 +67,17 @@ bool MeshDomains::is_empty() const
   return size == 0;
 }
 //-----------------------------------------------------------------------------
-MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim)
-{
-  dolfin_assert(dim < _markers.size());
-  dolfin_assert(_markers[dim]);
-  return *_markers[dim];
-}
-//-----------------------------------------------------------------------------
-const MeshValueCollection<unsigned int>& MeshDomains::markers(uint dim) const
-{
-  dolfin_assert(dim < _markers.size());
-  dolfin_assert(_markers[dim]);
-  return *_markers[dim];
-}
-//-----------------------------------------------------------------------------
 boost::shared_ptr<MeshValueCollection<unsigned int> >
-MeshDomains::markers_shared_ptr(uint dim)
+MeshDomains::markers(uint dim)
 {
   dolfin_assert(dim < _markers.size());
-  dolfin_assert(_markers[dim]);
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshValueCollection<unsigned int> >
-MeshDomains::markers_shared_ptr(uint dim) const
+MeshDomains::markers(uint dim) const
 {
   dolfin_assert(dim < _markers.size());
-  dolfin_assert(_markers[dim]);
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------

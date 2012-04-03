@@ -73,7 +73,8 @@ void SubDomain::mark_facets(Mesh& mesh, unsigned int sub_domain) const
 //-----------------------------------------------------------------------------
 void SubDomain::mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const
 {
-  mark(mesh.domains().markers(dim), sub_domain, mesh);
+  dolfin_assert(mesh.domains().markers(dim));
+  mark(*(mesh.domains().markers(dim)), sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const

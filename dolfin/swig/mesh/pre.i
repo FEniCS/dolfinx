@@ -182,9 +182,3 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
-
-//-----------------------------------------------------------------------------
-// Use shared_ptr version of MeshDomains::marker()
-//-----------------------------------------------------------------------------
-%ignore dolfin::MeshDomains::markers;
-%rename(markers) dolfin::MeshDomains::markers_shared_ptr;
