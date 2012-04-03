@@ -78,7 +78,7 @@ def main(argv):
     meshconvert.convert2xml(ifilename, ofilename, iformat=iformat)
 
     # Order mesh
-    os.system("dolfin-order %s" % ofilename)
+    #os.system("dolfin-order %s" % ofilename)
 
 def usage():
     "Display usage"
