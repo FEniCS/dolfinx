@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 //
 // First added:  2008-01-07
-// Last changed: 2011-11-12
+// Last changed: 2012-04-04
 
 #ifdef HAS_MPI
 #include <mpi.h>
@@ -164,9 +164,11 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 #endif
 
   // Avoid using default PETSc signal handler
-  if (!parameters["use_petsc_signal_handler"])
+  const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
+  if (!use_petsc_signal_handler)
     PetscPopSignalHandler();
-    
+
+  // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
