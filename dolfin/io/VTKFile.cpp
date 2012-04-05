@@ -667,12 +667,16 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write mesh
   VTKWriter::write_mesh(mesh, cell_dim, vtu_filename, binary, compress);
 
-  // Open file
+  // Open file to write data
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
   fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">";
+
+  // Write data
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << " ";
+
+  // Write footers
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
 
