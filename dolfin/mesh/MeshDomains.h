@@ -24,8 +24,10 @@
 #define __MESH_DOMAINS_H
 
 #include <limits>
+#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -72,6 +74,9 @@ namespace dolfin
     boost::shared_ptr<const MeshValueCollection<unsigned int> >
       markers(uint dim) const;
 
+    /// Return names of markers of a given dimension
+    std::vector<std::string> marker_names(uint dim) const;
+
     /// Get cell domains. This function computes the mesh function
     /// corresponding to markers of dimension D. The mesh function is
     /// cached for later access and will be computed on the first call
@@ -99,8 +104,11 @@ namespace dolfin
     // Initialize mesh function corresponding to markers
     void init_domains(MeshFunction<uint>& mesh_function, uint unset_value) const;
 
-    // Subdomain markers
+    // Subdomain markers for each geometric dim
     std::vector<boost::shared_ptr<MeshValueCollection<uint> > > _markers;
+
+    // Named subdomain markers for each geometric dim
+    std::vector<boost::unordered_map<std::string, boost::shared_ptr<MeshValueCollection<uint> > > > _named_markers;
 
     // Mesh function for cell domains
     mutable boost::shared_ptr<MeshFunction<uint> > _cell_domains;

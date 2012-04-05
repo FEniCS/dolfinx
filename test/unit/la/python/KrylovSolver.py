@@ -144,5 +144,5 @@ if __name__ == "__main__":
 
     print ""
     print "Testing DOLFIN la/KrylovSolver interface"
-    print "------------------------------------------------"
+    print "----------------------------------------"
     unittest.main()

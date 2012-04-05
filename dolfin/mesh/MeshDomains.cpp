@@ -79,6 +79,16 @@ MeshDomains::markers(uint dim) const
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
+std::vector<std::string> MeshDomains::marker_names(uint dim) const
+{
+  dolfin_assert(dim < _named_markers.size());
+  std::vector<std::string> names;
+  boost::unordered_map<std::string, boost::shared_ptr<MeshValueCollection<uint> > >::const_iterator m;
+  for (m = _named_markers[dim].begin(); m != _named_markers[dim].end(); ++m)
+    names.push_back(m->first);
+  return names;
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
 MeshDomains::cell_domains(const Mesh& mesh, uint unset_value) const
 {
@@ -138,6 +148,9 @@ void MeshDomains::init(uint dim)
 void MeshDomains::clear()
 {
   _markers.clear();
+  _named_markers.clear();
+  _cell_domains.reset();
+  _facet_domains.reset();
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::init_domains(MeshFunction<uint>& mesh_function,
