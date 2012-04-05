@@ -23,6 +23,7 @@
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
 
+#include <limits>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
@@ -76,14 +77,16 @@ namespace dolfin
     /// cached for later access and will be computed on the first call
     /// to this function.
     boost::shared_ptr<const MeshFunction<unsigned int> >
-      cell_domains(const Mesh& mesh) const;
+      cell_domains(const Mesh& mesh,
+            uint unset_value=std::numeric_limits<unsigned int>::max()) const;
 
     /// Get facet domains. This function computes the mesh function
     /// corresponding to markers of dimension D-1. The mesh function
     /// is cached for later access and will be computed on the first
     /// call to this function.
     boost::shared_ptr<const MeshFunction<unsigned int> >
-      facet_domains(const Mesh& mesh) const;
+      facet_domains(const Mesh& mesh,
+          uint unset_value=std::numeric_limits<unsigned int>::max()) const;
 
     /// Initialize mesh domains for given topological dimension
     void init(uint dim);
@@ -94,7 +97,7 @@ namespace dolfin
   private:
 
     // Initialize mesh function corresponding to markers
-    void init_domains(MeshFunction<uint>& mesh_function) const;
+    void init_domains(MeshFunction<uint>& mesh_function, uint unset_value) const;
 
     // Subdomain markers
     std::vector<boost::shared_ptr<MeshValueCollection<uint> > > _markers;

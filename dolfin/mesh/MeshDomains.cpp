@@ -20,8 +20,6 @@
 // First added:  2011-08-29
 // Last changed: 2011-04-03
 
-#include <limits>
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
@@ -82,7 +80,7 @@ MeshDomains::markers(uint dim) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-MeshDomains::cell_domains(const Mesh& mesh) const
+MeshDomains::cell_domains(const Mesh& mesh, uint unset_value) const
 {
   // Check if data already exists
   if (_cell_domains)
@@ -90,20 +88,20 @@ MeshDomains::cell_domains(const Mesh& mesh) const
 
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
-  dolfin_assert(_markers.size() == D + 1);
+  dolfin_assert(D < _markers.size());
   if (_markers[D]->empty())
     return _cell_domains;
 
   // Compute cell domains
   _cell_domains = boost::shared_ptr<MeshFunction<uint> >(new MeshFunction<uint>());
   _cell_domains->init(mesh, D);
-  init_domains(*_cell_domains);
+  init_domains(*_cell_domains, unset_value);
 
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<dolfin::uint> >
-MeshDomains::facet_domains(const Mesh& mesh) const
+MeshDomains::facet_domains(const Mesh& mesh, uint unset_value) const
 {
   // Check if data already exists
   if (_facet_domains)
@@ -111,14 +109,14 @@ MeshDomains::facet_domains(const Mesh& mesh) const
 
   // Check if any markers have been set
   const uint D = mesh.topology().dim();
-  dolfin_assert(_markers.size() == D + 1);
+  dolfin_assert((D-1) < _markers.size());
   if (_markers[D - 1]->empty())
     return _facet_domains;
 
   // Compute facet domains
   _facet_domains = boost::shared_ptr<MeshFunction<uint> >(new MeshFunction<uint>());
   _facet_domains->init(mesh, D - 1);
-  init_domains(*_facet_domains);
+  init_domains(*_facet_domains, unset_value);
 
   return _facet_domains;
 }
@@ -142,7 +140,8 @@ void MeshDomains::clear()
   _markers.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
+void MeshDomains::init_domains(MeshFunction<uint>& mesh_function,
+                               uint unset_value) const
 {
   // Get mesh
   const Mesh& mesh = mesh_function.mesh();
@@ -155,7 +154,7 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
   dolfin_assert(D == d || !connectivity.empty());
 
   // Set all values of mesh function to maximum uint value
-  mesh_function.set_all(std::numeric_limits<unsigned int>::max());
+  mesh_function.set_all(unset_value);
 
   // Iterate over all values
   const std::map<std::pair<uint, uint>, uint> values = _markers[d]->values();
@@ -174,6 +173,10 @@ void MeshDomains::init_domains(MeshFunction<uint>& mesh_function) const
       entity_index = cell_index;
     else
       entity_index = connectivity(cell_index)[local_entity];
+
+    // Check that value is not equal to the 'unset' value
+    if (value == unset_value)
+      warning("MeshValueCollection value entry is equal to %d, which is used to indicate an \"unset\" value.", value);
 
     // Set value for entity
     mesh_function[entity_index] = value;
