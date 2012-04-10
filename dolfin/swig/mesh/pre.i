@@ -35,13 +35,13 @@
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
-  PyObject* coordinates() {
+  PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->num_vertices(),
 					self->geometry().dim(),
 					self->coordinates(), true);
   }
 
-  PyObject* cells() {
+  PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
 				      self->cells(), false);
@@ -53,7 +53,7 @@
 //-----------------------------------------------------------------------------
 %define ALL_VALUES(name, TYPE_NAME)
 %extend name {
-PyObject* array()
+PyObject* _array()
 {
   return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);
 }
