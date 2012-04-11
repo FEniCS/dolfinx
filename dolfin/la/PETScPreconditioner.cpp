@@ -44,13 +44,15 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
                               #if PETSC_HAVE_HYPRE
-                              ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
                               #endif
                               #if PETSC_HAVE_ML
+                              ("amg",              PCML)
                               ("ml_amg",           PCML)
+                              #elif PETSC_HAVE_HYPRE
+                              ("amg",              PHYPRE)
                               #endif
                               ;
 
