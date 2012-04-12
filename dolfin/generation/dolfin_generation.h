@@ -15,5 +15,9 @@
 #include <dolfin/generation/Box.h>
 #include <dolfin/generation/Rectangle.h>
 #include <dolfin/generation/UnitSphere.h>
+#include <dolfin/generation/CSGGeometry.h>
+#include <dolfin/generation/CSGPrimitive.h>
+#include <dolfin/generation/CSGPrimitives2D.h>
+#include <dolfin/generation/CSGPrimitives3D.h>
 
 #endif
