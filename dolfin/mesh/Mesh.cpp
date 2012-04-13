@@ -30,6 +30,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "LocalMeshData.h"
@@ -84,15 +85,40 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(LocalMeshData& local_mesh_data)
-                                 : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this),
-                                   _data(*this),
-                                   _parallel_data(new ParallelData(*this)),
-                                   _cell_type(0),
-                                   _intersection_operator(*this),
-                                   _ordered(false)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _parallel_data(new ParallelData(*this)),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(const CSGGeometry& geometry)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _parallel_data(new ParallelData(*this)),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  CSGMeshGenerator::generate(*this, geometry);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _parallel_data(new ParallelData(*this)),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  assert(geometry);
+  CSGMeshGenerator::generate(*this, *geometry);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

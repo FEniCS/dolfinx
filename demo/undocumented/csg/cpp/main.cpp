@@ -25,7 +25,7 @@ using namespace dolfin;
 int main()
 {
 
-  // Test some 2D geometries
+  // Define 2D geometry
   csg::Rectangle r(0, 0, 1, 1);
   csg::Circle c(0.5, 0.5, 1);
   boost::shared_ptr<CSGGeometry> g2d = c*(r + c)*(c + c) + r;
@@ -37,7 +37,10 @@ int main()
   info("\nVerbose output of 2D geometry:");
   info(*g2d, true);
 
-  // Test some 3D geometries
+  // Generate mesh
+  Mesh mesh2d(g2d);
+
+  // Define 3D geometry
   csg::Box b(0, 0, 0, 1, 1, 1);
   csg::Sphere s(0, 0, 0, 1);
   boost::shared_ptr<const CSGGeometry> g3d = (b + s)*b*(s + s) + b;
@@ -47,6 +50,13 @@ int main()
   info(*g3d);
   info("\nVerbose output of 3D geometry:");
   info(*g3d, true);
+
+  // Generate mesh
+  Mesh mesh3d(g3d);
+
+  // Plot meshes
+  plot(mesh2d, "2D mesh");
+  plot(mesh3d, "3D mesh");
 
   return 0;
 }
