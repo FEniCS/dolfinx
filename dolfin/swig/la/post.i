@@ -423,11 +423,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return A
 
     def sparray(self):
-      "Return a scipy.sparse representation of Matrix"
-      from scipy.sparse import csr_matrix
-      data = self.data()
-      C = csr_matrix((data[2], data[1], data[0]))
-      return C
+        "Return a scipy.sparse representation of Matrix"
+        from scipy.sparse import csr_matrix
+        data = self.data()
+        C = csr_matrix((data[2], data[1], data[0]))
+        return C
 
     def data(self, deepcopy=True):
         """
