@@ -7,14 +7,17 @@
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
 
+#include <boost/shared_ptr.hpp>
+
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
   /// Geometry described by Constructive Solid Geometry (CSG)
 
-  class CSGGeometry
+  class CSGGeometry : public Variable
   {
   public:
 
@@ -22,10 +25,13 @@ namespace dolfin
     CSGGeometry();
 
     /// Destructor
-    ~CSGGeometry();
+    virtual ~CSGGeometry();
 
     /// Return dimension of geometry
     virtual uint dim() const = 0;
+
+    /// Informal string representation
+    virtual std::string str(bool verbose) const = 0;
 
   };
 

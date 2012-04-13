@@ -47,6 +47,9 @@ namespace dolfin
       ///         radius.
       Circle(double x0, double x1, double r);
 
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
     private:
 
       double _x0, _x1, _r;
@@ -72,6 +75,9 @@ namespace dolfin
       ///     y1 (double)
       ///         y1-coordinate of second corner.
       Rectangle(double x0, double x1, double y0, double y1);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
 
     private:
 

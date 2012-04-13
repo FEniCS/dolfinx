@@ -64,7 +64,6 @@ namespace dolfin
     ///         The unique integer identifier associated with the object.
     uint id() const { return unique_id; }
 
-
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 

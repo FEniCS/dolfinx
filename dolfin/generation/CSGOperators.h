@@ -23,16 +23,19 @@ namespace dolfin
   public:
 
     /// Create union of two geometries
-    CSGUnion(boost::shared_ptr<const CSGGeometry> g0,
-             boost::shared_ptr<const CSGGeometry> g1);
+    CSGUnion(boost::shared_ptr<CSGGeometry> g0,
+             boost::shared_ptr<CSGGeometry> g1);
 
     /// Return dimension of geometry
     uint dim() const;
 
+    /// Informal string representation
+    std::string str(bool verbose) const;
+
   private:
 
-    boost::shared_ptr<const CSGGeometry> _g0;
-    boost::shared_ptr<const CSGGeometry> _g1;
+    boost::shared_ptr<CSGGeometry> _g0;
+    boost::shared_ptr<CSGGeometry> _g1;
 
   };
 
@@ -42,45 +45,48 @@ namespace dolfin
   public:
 
     /// Create intersection of two geometries
-    CSGIntersection(boost::shared_ptr<const CSGGeometry> g0,
-                    boost::shared_ptr<const CSGGeometry> g1);
+    CSGIntersection(boost::shared_ptr<CSGGeometry> g0,
+                    boost::shared_ptr<CSGGeometry> g1);
 
     /// Return dimension of geometry
     uint dim() const;
 
+    /// Informal string representation
+    std::string str(bool verbose) const;
+
   private:
 
-    boost::shared_ptr<const CSGGeometry> _g0;
-    boost::shared_ptr<const CSGGeometry> _g1;
+    boost::shared_ptr<CSGGeometry> _g0;
+    boost::shared_ptr<CSGGeometry> _g1;
 
   };
 
   //--- Union operators ---
 
   /// Create union of two geometries
-  boost::shared_ptr<const CSGUnion> operator+(boost::shared_ptr<const CSGGeometry> g0,
-                                              boost::shared_ptr<const CSGGeometry> g1)
+  boost::shared_ptr<CSGUnion> operator+(boost::shared_ptr<CSGGeometry> g0,
+                                        boost::shared_ptr<CSGGeometry> g1)
   {
     return boost::shared_ptr<CSGUnion>(new CSGUnion(g0, g1));
   }
 
   /// Create union of two geometries
-  boost::shared_ptr<const CSGUnion> operator+(const CSGGeometry& g0,
-                                              boost::shared_ptr<const CSGGeometry> g1)
+  boost::shared_ptr<CSGUnion> operator+(CSGGeometry& g0,
+                                        boost::shared_ptr<CSGGeometry> g1)
   {
     return reference_to_no_delete_pointer(g0) + g1;
   }
 
   /// Create union of two geometries
-  boost::shared_ptr<const CSGUnion> operator+(boost::shared_ptr<const CSGGeometry> g0,
-                                              const CSGGeometry& g1)
+  boost::shared_ptr<CSGUnion> operator+(boost::shared_ptr<CSGGeometry> g0,
+                                        CSGGeometry& g1)
   {
     return g0 + reference_to_no_delete_pointer(g1);
   }
 
   /// Create union of two geometries
-  boost::shared_ptr<const CSGUnion> operator+(const CSGGeometry& g0,
-                                              const CSGGeometry& g1)
+  boost::shared_ptr<CSGUnion> operator+(CSGGeometry& g0,
+                                        CSGGeometry& g1)
   {
     return reference_to_no_delete_pointer(g0) + reference_to_no_delete_pointer(g1);
   }
@@ -88,33 +94,29 @@ namespace dolfin
   //--- Intersection operators ---
 
   /// Create intersection of two geometries
-  boost::shared_ptr<const CSGIntersection>
-  operator*(boost::shared_ptr<const CSGGeometry> g0,
-            boost::shared_ptr<const CSGGeometry> g1)
+  boost::shared_ptr<CSGIntersection> operator*(boost::shared_ptr<CSGGeometry> g0,
+                                               boost::shared_ptr<CSGGeometry> g1)
   {
     return boost::shared_ptr<CSGIntersection>(new CSGIntersection(g0, g1));
   }
 
   /// Create intersection of two geometries
-  boost::shared_ptr<const CSGIntersection>
-  operator*(const CSGGeometry& g0,
-            boost::shared_ptr<const CSGGeometry> g1)
+  boost::shared_ptr<CSGIntersection> operator*(CSGGeometry& g0,
+                                               boost::shared_ptr<CSGGeometry> g1)
   {
     return reference_to_no_delete_pointer(g0) * g1;
   }
 
   /// Create intersection of two geometries
-  boost::shared_ptr<const CSGIntersection>
-  operator*(boost::shared_ptr<const CSGGeometry> g0,
-            const CSGGeometry& g1)
+  boost::shared_ptr<CSGIntersection> operator*(boost::shared_ptr<CSGGeometry> g0,
+                                               CSGGeometry& g1)
   {
     return g0 * reference_to_no_delete_pointer(g1);
   }
 
   /// Create intersection of two geometries
-  boost::shared_ptr<const CSGIntersection>
-  operator*(const CSGGeometry& g0,
-            const CSGGeometry& g1)
+  boost::shared_ptr<CSGIntersection> operator*(CSGGeometry& g0,
+                                               CSGGeometry& g1)
   {
     return reference_to_no_delete_pointer(g0) * reference_to_no_delete_pointer(g1);
   }

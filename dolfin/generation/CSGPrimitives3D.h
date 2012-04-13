@@ -49,6 +49,9 @@ namespace dolfin
       ///         radius.
       Sphere(double x0, double x1, double x2, double r);
 
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
     private:
 
       double _x0, _x1, _x2, _r;
@@ -79,6 +82,9 @@ namespace dolfin
       ///         y2-coordinate of second corner.
       Box(double x0, double x1, double x2,
           double y0, double y1, double y2);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
 
     private:
 
