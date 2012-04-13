@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2012-04-11
-// Last changed: 2012-04-11
+// Last changed: 2012-04-13
 
 #include "CSGGeometry.h"
 

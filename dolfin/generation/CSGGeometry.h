@@ -2,10 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2012-04-11
-// Last changed: 2012-04-11
+// Last changed: 2012-04-13
 
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
+
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -22,7 +24,8 @@ namespace dolfin
     /// Destructor
     ~CSGGeometry();
 
-  private:
+    /// Return dimension of geometry
+    virtual uint dim() const = 0;
 
   };
 

@@ -20,9 +20,19 @@ namespace dolfin
   namespace csg
   {
 
+    /// Base class for 3D primitives
+    class CSGPrimitive3D : public CSGPrimitive
+    {
+    public:
+
+      /// Return dimension of geometry
+      uint dim() const { return 3; }
+
+    };
+
     /// This class describes a 3D sphere which can be used to build
     /// geometries using Constructive Solid Geometry (CSG).
-    class Sphere : public CSGPrimitive
+    class Sphere : public CSGPrimitive3D
     {
     public:
 
@@ -47,7 +57,7 @@ namespace dolfin
 
     /// This class describes a 3D box which can be used to build
     /// geometries using Constructive Solid Geometry (CSG).
-    class Box : public CSGPrimitive
+    class Box : public CSGPrimitive3D
     {
     public:
 

@@ -20,9 +20,19 @@ namespace dolfin
   namespace csg
   {
 
+    /// Base class for 2D primitives
+    class CSGPrimitive2D : public CSGPrimitive
+    {
+    public:
+
+      /// Return dimension of geometry
+      uint dim() const { return 2; }
+
+    };
+
     /// This class describes a 2D circle which can be used to build
     /// geometries using Constructive Solid Geometry (CSG).
-    class Circle : public CSGPrimitive
+    class Circle : public CSGPrimitive2D
     {
     public:
 
@@ -45,7 +55,7 @@ namespace dolfin
 
     /// This class describes a 2D rectangle which can be used to build
     /// geometries using Constructive Solid Geometry (CSG).
-    class Rectangle : public CSGPrimitive
+    class Rectangle : public CSGPrimitive2D
     {
     public:
 
