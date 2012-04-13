@@ -25,6 +25,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 #include <boost/lexical_cast.hpp>
 #include "dolfin/common/Array.h"
 #include "dolfin/log/log.h"
@@ -44,18 +45,18 @@ namespace dolfin
 
     // Read XML vector. Vector must have correct size.
     template<typename T>
-    static void read(Array<T>& x, const pugi::xml_node xml_dolfin);
+    static void read(std::vector<T>& x, const pugi::xml_node xml_dolfin);
 
     /// Write the XML file
     template<typename T>
-    static void write(const Array<T>& x, const std::string type,
+    static void write(const std::vector<T>& x, const std::string type,
                       pugi::xml_node xml_node);
 
   };
 
   //-----------------------------------------------------------------------------
   template<typename T>
-  void XMLArray::read(Array<T>& x, const pugi::xml_node xml_node)
+  void XMLArray::read(std::vector<T>& x, const pugi::xml_node xml_node)
   {
     // Check that we have a XML Array
     const pugi::xml_node array = xml_node.child("array");
@@ -90,7 +91,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename T>
-  void XMLArray::write(const Array<T>& x, const std::string type,
+  void XMLArray::write(const std::vector<T>& x, const std::string type,
                        pugi::xml_node xml_node)
   {
     // Add array node

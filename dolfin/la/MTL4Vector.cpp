@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2009.
-// Modified by Anders Logg, 2010.
+// Modified by Garth N. Wells 2008-2009
+// Modified by Anders Logg 2010-2012
 //
 // First added:  2008-07-06
 // Last changed: 2011-01-14
@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <boost/unordered_set.hpp>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include "MTL4Factory.h"
@@ -120,6 +121,8 @@ void MTL4Vector::zero()
 //-----------------------------------------------------------------------------
 void MTL4Vector::apply(std::string mode)
 {
+  Timer("Apply (vector)");
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -154,14 +157,14 @@ void MTL4Vector::get_local(double* block, uint m, const uint* rows) const
     block[i] = x[ rows[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get_local(Array<double>& values) const
+void MTL4Vector::get_local(std::vector<double>& values) const
 {
   values.resize(size());
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set_local(const Array<double>& values)
+void MTL4Vector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
@@ -187,7 +190,7 @@ void MTL4Vector::add(const double* block, uint m, const uint* rows)
     x[ rows[i] ] += block[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
+void MTL4Vector::gather(GenericVector& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("MTL4Vector::gather)");
 
@@ -200,7 +203,7 @@ void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
     _x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
+void MTL4Vector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   not_working_in_parallel("MTL4Vector::gather)");
 
@@ -211,7 +214,7 @@ void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::gather_on_zero(Array<double>& x) const
+void MTL4Vector::gather_on_zero(std::vector<double>& x) const
 {
   not_working_in_parallel("MTL4Vector::gather_on_zero)");
   get_local(x);

@@ -47,16 +47,6 @@ class AbstractBaseTest(object):
 
         return assemble(v*dx), assemble(t*dx)
 
-    def test_distributed(self):
-        a, b = self.assemble_vectors()
-        if self.backend == "PETSc" or self.backend == "Epetra":
-          if MPI.num_processes() > 1:
-               self.assertTrue(a.distributed())
-          else:
-               self.assertFalse(a.distributed())
-        else:
-           self.assertFalse(a.distributed())
-
     def test_create_empty_vector(self):
         v0 = Vector()
         info(v0)
@@ -144,10 +134,7 @@ class AbstractBaseTest(object):
         from numpy import empty
         n = 301
         v0 = Vector(n)
-        data = empty((v0.local_size()), dtype='d')
-        v0.get_local(data)
-        data = empty((v0.local_size()*2), dtype='d')
-        self.assertRaises(TypeError, v0.get_local, data[::2])
+        data = v0.get_local()
 
     def test_set_local(self):
         from numpy import zeros
@@ -156,7 +143,6 @@ class AbstractBaseTest(object):
         data = zeros((v0.local_size()), dtype='d')
         v0.set_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
-        self.assertRaises(TypeError, v0.get_local, data[::2])
 
     def test_add_local(self):
         from numpy import zeros
@@ -165,7 +151,7 @@ class AbstractBaseTest(object):
         data = zeros((v0.local_size()), dtype='d')
         v0.add_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
-        self.assertRaises(TypeError, v0.get_local, data[::2])
+        self.assertRaises(TypeError, v0.add_local, data[::2])
 
     #def test_gather(self):
 
@@ -371,6 +357,9 @@ if has_linear_algebra_backend("PETSc"):
 if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
+
+class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+    backend    = "STL"
 
 if __name__ == "__main__":
     # Turn of DOLFIN output

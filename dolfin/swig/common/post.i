@@ -55,8 +55,6 @@
 // in any typemaps
 %feature("valuewrapper") dolfin::Array<TYPE>;
 
-%ignore dolfin::Array<TYPE>::Array(uint N, boost::shared_array<TYPE> x);
-
 // Cannot construct an Array from another Array.
 // Use NumPy Array instead
 %ignore dolfin::Array<TYPE>::Array(const Array& other);
@@ -72,7 +70,7 @@
   void __setitem__(unsigned int i, const TYPE& val) { (*self)[i] = val; }
 
   PyObject * array(){
-    return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data().get(), true);
+    return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data(), true);
   }
 
 }
@@ -83,7 +81,7 @@
 //-----------------------------------------------------------------------------
 CONST_ARRAY_IGNORES(double)
 ARRAY_EXTENSIONS(double, Double, double)
-ARRAY_EXTENSIONS(const double, ConstDouble, double)
+//ARRAY_EXTENSIONS(const double, ConstDouble, double)
 ARRAY_EXTENSIONS(unsigned int, UInt, uint)
 ARRAY_EXTENSIONS(int, Int, int)
 

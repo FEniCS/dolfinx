@@ -23,7 +23,6 @@
 #include <string>
 #include <vector>
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
@@ -146,8 +145,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_GRAPHDIST] = API_NO;
 
-  Array<int> perm(local_to_global_cols.size());
-  Array<int> invp(local_to_global_cols.size());
+  dolfin_assert(local_to_global_cols.size() > 0);
+  std::vector<int> perm(local_to_global_cols.size());
+  std::vector<int> invp(local_to_global_cols.size());
 
   // Number of RHS vectors
   const int nrhs = 1;
@@ -157,7 +157,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            perm.data().get(), invp.data().get(),
+            &perm[0], &invp[0],
             NULL, nrhs, iparm, dparm);
 
   // Factorise
@@ -165,13 +165,13 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            perm.data().get(), invp.data().get(),
+            &perm[0], &invp[0],
             NULL, nrhs, iparm, dparm);
 
   // Get local (to process) dofs
   const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
-  Array<uint> solver_local_to_global(ncol2);
-  int* _loc2glob = reinterpret_cast<int*>(solver_local_to_global.data().get());
+  std::vector<uint> solver_local_to_global(ncol2);
+  int* _loc2glob = reinterpret_cast<int*>(&solver_local_to_global[0]);
   pastix_getLocalNodeLst(&pastix_data, _loc2glob) ;
 
   // Perform shift
@@ -179,30 +179,30 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     _loc2glob[i]--;
 
   // Get RHS data for this process
-  Array<double> _b(ncol2);
+  std::vector<double> _b(ncol2);
   b.gather(_b, solver_local_to_global);
-  double* b_ptr = _b.data().get();
+  double* b_ptr = &_b[0];
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
             _local_to_global_cols,
-            perm.data().get(), invp.data().get(),
+            perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
 
   // FIXME: Use pastix getLocalUnknownNbr?
 
   // Distribute solution
   assert(b.size() == x.size());
-  x.set(_b.data().get(), ncol2, solver_local_to_global.data().get());
+  x.set(_b.data(), ncol2, solver_local_to_global.data());
   x.apply("insert");
 
   // Clean up
   iparm[IPARM_START_TASK] = API_TASK_CLEAN;
   iparm[IPARM_END_TASK] = API_TASK_CLEAN;
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL, NULL,
-            perm.data().get(), invp.data().get(),
+            perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
 
   return 1;

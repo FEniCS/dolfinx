@@ -135,18 +135,18 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
-  u.gather();
-  write(u, counter);
+  u.update();
+  write_function(u, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
 {
   dolfin_assert(u.first);
-  u.first->gather();
-  write(*(u.first), u.second);
+  u.first->update();
+  write_function(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const Function& u, double time)
+void VTKFile::write_function(const Function& u, double time)
 {
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
@@ -268,12 +268,18 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Allocate memory for function values at vertices
   const uint size = num_vertices*dim;
-  Array<double> values(size);
+  std::vector<double> values(size);
 
   // Get function values at vertices and zero any small values
   u.compute_vertex_values(values, mesh);
   dolfin_assert(values.size() == size);
-  values.zero_eps(DOLFIN_EPS);
+  std::vector<double>::iterator it;
+  for (it = values.begin(); it != values.end(); ++it)
+  {
+    if (std::abs(*it) < DOLFIN_EPS)
+      *it = 0.0;
+  }
+
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
@@ -661,12 +667,16 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write mesh
   VTKWriter::write_mesh(mesh, cell_dim, vtu_filename, binary, compress);
 
-  // Open file
+  // Open file to write data
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
   fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">";
+
+  // Write data
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << " ";
+
+  // Write footers
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
 

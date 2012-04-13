@@ -18,6 +18,7 @@
 // First added:  2008-05-02
 // Last changed: 2011-11-12
 
+#include <vector>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -112,7 +113,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
 
   // Interpolate at vertices
   const uint N = mesh.num_vertices();
-  Array<double> vertex_values(N*gdim);
+  std::vector<double> vertex_values;
   displacement.compute_vertex_values(vertex_values, mesh);
 
   // Move vertex coordinates

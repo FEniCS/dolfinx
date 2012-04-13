@@ -177,16 +177,13 @@ class MeshEvaluation(unittest.TestCase):
 
      def test_compute_vertex_values(self):
           from numpy import zeros, all, array
-          
+
           e0 = Expression("1")
           e1 = Expression(("1", "2", "3"))
-          
-          e0_values = zeros(mesh.num_vertices(),dtype='d')
-          e1_values = zeros(mesh.num_vertices()*3,dtype='d')
-          
-          e0.compute_vertex_values(e0_values, mesh)
-          e1.compute_vertex_values(e1_values, mesh)
-        
+
+          e0_values = e0.compute_vertex_values(mesh)
+          e1_values = e1.compute_vertex_values(mesh)
+
           self.assertTrue(all(e0_values==1))
           self.assertTrue(all(e1_values[:mesh.num_vertices()]==1))
           self.assertTrue(all(e1_values[mesh.num_vertices():mesh.num_vertices()*2]==2))

@@ -39,6 +39,11 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 %(comment)s You should have received a copy of the GNU Lesser General Public License
 %(comment)s along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 %(comment)s
+
+"""
+
+# FIXME: Removed date from copyright form 
+"""
 %(comment)s First added:  2012-01-18
 %(comment)s Last changed: %(year)d-%(month)0.2d-%(day)0.2d
 

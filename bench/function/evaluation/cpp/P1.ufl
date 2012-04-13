@@ -23,5 +23,5 @@
 #
 # Compile this form with FFC: ffc -l dolfin P1.ufl
 
-element = FiniteElement("Lagrange", triangle, 1)
+element = FiniteElement("Lagrange", tetrahedron, 1)
 

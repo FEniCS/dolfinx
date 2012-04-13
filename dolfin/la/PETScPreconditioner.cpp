@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2010-2011
+// Modified by Anders Logg 2010-2012
 //
 // First added:  2010-02-25
-// Last changed: 2011-11-11
+// Last changed: 2012-04-11
 
 #ifdef HAS_PETSC
 
@@ -44,13 +44,15 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
                               #if PETSC_HAVE_HYPRE
-                              ("amg",              PCHYPRE)
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
                               #endif
                               #if PETSC_HAVE_ML
+                              ("amg",              PCML)
                               ("ml_amg",           PCML)
+                              #elif PETSC_HAVE_HYPRE
+                              ("amg",              PCHYPRE)
                               #endif
                               ;
 

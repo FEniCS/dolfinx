@@ -58,18 +58,10 @@ namespace dolfin
     STLMatrix(uint primary_dim=0) : primary_dim(primary_dim),
       _local_range(0, 0), num_codim_entities(0) {}
 
-    /// Copy constructor
-    STLMatrix(const STLMatrix& A) : primary_dim(0)
-    { dolfin_not_implemented(); }
-
     /// Destructor
     virtual ~STLMatrix() {}
 
     ///--- Implementation of the GenericTensor interface ---
-
-    /// Return true if matrix is distributed
-    virtual bool distributed() const
-    { dolfin_not_implemented(); return false; }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout);
@@ -151,12 +143,10 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Multiply matrix by given number
-    virtual const STLMatrix& operator*= (double a)
-    { dolfin_not_implemented(); return *this; }
+    virtual const STLMatrix& operator*= (double a);
 
     /// Divide matrix by given number
-    virtual const STLMatrix& operator/= (double a)
-    { dolfin_not_implemented(); return *this; }
+    virtual const STLMatrix& operator/= (double a);
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A)

@@ -99,9 +99,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const;
-
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
@@ -151,22 +148,22 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values on local process
-    virtual void get_local(Array<double>& values) const;
+    virtual void get_local(std::vector<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const Array<double>& values);
+    virtual void set_local(const std::vector<double>& values);
 
     /// Add values to each entry on local process
     virtual void add_local(const Array<double>& values);
 
     /// Gather vector entries into a local vector
-    virtual void gather(GenericVector& y, const Array<uint>& indices) const;
+    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
 
-    /// Gather entries into Array x
-    virtual void gather(Array<double>& x, const Array<uint>& indices) const;
+    /// Gather entries into x
+    virtual void gather(std::vector<double>& x, const std::vector<uint>& indices) const;
 
-    /// Gather all entries into Array x on process 0
-    virtual void gather_on_zero(Array<double>& x) const;
+    /// Gather all entries into x on process 0
+    virtual void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -243,8 +240,11 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void init(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices,
-              bool distributed);
+    void _init(std::pair<uint, uint> range,
+                  const std::vector<uint>& ghost_indices, bool distributed);
+
+    // Return true if vector is distributed
+    bool distributed() const;
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;

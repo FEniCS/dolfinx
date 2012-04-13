@@ -268,7 +268,8 @@ void XMLMesh::read_domains(MeshDomains& domains,
     }
 
     // Read MeshValueCollection
-    XMLMeshValueCollection::read(domains.markers(dim), type, *it);
+    dolfin_assert(domains.markers(dim));
+    XMLMeshValueCollection::read(*(domains.markers(dim)), type, *it);
   }
 }
 //-----------------------------------------------------------------------------
@@ -461,8 +462,9 @@ void XMLMesh::write_domains(const MeshDomains& domains,
   // Write mesh markers
   for (uint d = 0; d <= domains.dim(); d++)
   {
-    if (!domains.markers(d).empty())
-      XMLMeshValueCollection::write(domains.markers(d), "uint", domains_node);
+    dolfin_assert(domains.markers(d));
+    if (!domains.markers(d)->empty())
+      XMLMeshValueCollection::write(*(domains.markers(d)), "uint", domains_node);
   }
 }
 //-----------------------------------------------------------------------------

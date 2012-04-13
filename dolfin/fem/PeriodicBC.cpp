@@ -275,15 +275,18 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   BoundaryCondition::LocalData data(*_function_space);
 
   // Arrays used for mapping coordinates
-  std::vector<double> xx(gdim);
-  Array<double> y(gdim);
+  std::vector<double> x(gdim);
+  std::vector<double> y(gdim);
+
+  // Wrap x and y (Array view of x and y)
+  Array<double> _x(gdim, &x[0]);
+  Array<double> _y(gdim, &y[0]);
 
   // Mapping from coordinates to dof pairs
   coordinate_map coordinate_dof_pairs;
 
   // Iterate over all facets of the mesh (not only the boundary)
   Progress p("Applying periodic boundary conditions", mesh.size(tdim - 1));
-  Array<double> x(gdim);
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell (there may be two, but pick first) and local facet index
@@ -303,27 +306,21 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = cell_dofs[local_dof];
-      //const Array<double>& x = data.array_coordinates[local_dof];
       for (uint j = 0; j < gdim; ++j)
         x[j] = data.coordinates[local_dof][j];
 
       // Set y = x
-      for (uint j = 0; j < gdim; ++j)
-        y[j] = x[j];
+      y.assign(x.begin(), x.end());
 
       // Map coordinate from H to G
-      sub_domain->map(x, y);
+      sub_domain->map(_x, _y);
 
       // Check if coordinate is inside the domain G or in H
       const bool on_boundary = facet->num_entities(tdim) == 1;
-      if (sub_domain->inside(x, on_boundary))
+      if (sub_domain->inside(_x, on_boundary))
       {
-        // Copy coordinate to std::vector
-        for (uint j = 0; j < gdim; ++j)
-          xx[j] = x[j];
-
         // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(xx);
+        coordinate_iterator it = coordinate_dof_pairs.find(x);
         if (it != coordinate_dof_pairs.end())
         {
           // Exists from before, so set dof associated with x
@@ -333,17 +330,16 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
         {
           // Doesn't exist, so create new pair (with illegal second value)
           std::pair<int, int> dofs(global_dof, -1);
-          coordinate_dof_pairs[xx] = dofs;
+          coordinate_dof_pairs[x] = dofs;
         }
       }
-      else if (sub_domain->inside(y, on_boundary))
+      else if (sub_domain->inside(_y, on_boundary))
       {
         // Copy coordinate to std::vector
-        for (uint j = 0; j < gdim; ++j)
-          xx[j] = y[j];
+        x.assign(y.begin(), y.end());
 
         // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(xx);
+        coordinate_iterator it = coordinate_dof_pairs.find(x);
         if (it != coordinate_dof_pairs.end())
         {
           // Exists from before, so set dof associated with y
@@ -353,7 +349,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
         {
           // Doesn't exist, so create new pair (with illegal first value)
           std::pair<int, int> dofs(-1, global_dof);
-          coordinate_dof_pairs[xx] = dofs;
+          coordinate_dof_pairs[x] = dofs;
         }
       }
     }

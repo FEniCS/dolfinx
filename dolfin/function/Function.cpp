@@ -213,7 +213,7 @@ const Function& Function::operator= (const Function& v)
     // Get row indices of original and new vectors
     boost::unordered_map<uint, uint>::const_iterator entry;
     std::vector<uint> new_rows(collapsed_map.size());
-    Array<uint> old_rows(collapsed_map.size());
+    std::vector<uint> old_rows(collapsed_map.size());
     uint i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
@@ -222,7 +222,7 @@ const Function& Function::operator= (const Function& v)
     }
 
     // Gather values into an Array
-    Array<double> gathered_values;
+    std::vector<double> gathered_values;
     dolfin_assert(v.vector());
     v.vector()->gather(gathered_values, old_rows);
 
@@ -283,9 +283,10 @@ boost::shared_ptr<GenericVector> Function::vector()
     cout << "Size of vector: " << _vector->size() << endl;
     cout << "Size of function space: " << _function_space->dofmap()->global_dimension() << endl;
     dolfin_error("Function.cpp",
-                 "access vector of degrees of freedom fro function",
+                 "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
   }
+
   return _vector;
 }
 //-----------------------------------------------------------------------------
@@ -315,7 +316,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
-  const double* _x = x.data().get();
+  const double* _x = x.data();
   const Point point(mesh.geometry().dim(), _x);
   int id = mesh.intersected_cell(point);
 
@@ -385,7 +386,7 @@ void Function::eval(Array<double>& values,
 void Function::interpolate(const GenericFunction& v)
 {
   // Gather off-process dofs
-  v.gather();
+  v.update();
 
   // Initialise vector
   init_vector();
@@ -440,7 +441,7 @@ void Function::non_matching_eval(Array<double>& values,
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
-  const double* _x = x.data().get();
+  const double* _x = x.data();
   const uint dim = mesh.geometry().dim();
   const Point point(dim, _x);
 
@@ -519,7 +520,7 @@ void Function::restrict(double* w,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(Array<double>& vertex_values,
+void Function::compute_vertex_values(std::vector<double>& vertex_values,
                                      const Mesh& mesh) const
 {
   dolfin_assert(_function_space);
@@ -533,8 +534,8 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
                  "Non-matching mesh");
   }
 
-  // Gather ghosts dofs
-  gather();
+  // Update ghosts dofs
+  update();
 
   // Get finite element
   dolfin_assert(_function_space->element());
@@ -583,7 +584,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::gather() const
+void Function::update() const
 {
   if (MPI::num_processes() > 1)
     _vector->update_ghost_values();

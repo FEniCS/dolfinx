@@ -27,8 +27,6 @@
 
 #include <dolfin/log/log.h>
 
-using dolfin::error;
-
 CGAL_BEGIN_NAMESPACE
 
 #if CGAL_VERSION_NR < 1030601000
@@ -38,11 +36,9 @@ namespace CGALi {
 #endif
 
     template <class K>
-    inline
-    bool
-    do_intersect(const typename K::Tetrahedron_3 &tet,
-                 const typename K::Segment_3 &seg,
-                 const K&)
+    bool do_intersect(const typename K::Tetrahedron_3& tet,
+                      const typename K::Segment_3& seg,
+                      const K&)
     {
       //throw exception!
       dolfin_not_implemented();
@@ -51,11 +47,9 @@ namespace CGALi {
     }
 
     template <class K>
-    inline
-    bool
-    do_intersect(const typename K::Segment_3 &seg,
-                 const typename K::Tetrahedron_3 &tet,
-                 const K&)
+    bool do_intersect(const typename K::Segment_3& seg,
+                      const typename K::Tetrahedron_3& tet,
+                      const K&)
     {
       //throw exception!
       dolfin_not_implemented();
@@ -64,66 +58,58 @@ namespace CGALi {
     }
 
     template <class K>
-    inline
-    Object
-    intersection(const typename K::Tetrahedron_3 &tet,
-                 const typename K::Segment_3 &seg,
-                 const K&)
+    Object intersection(const typename K::Tetrahedron_3& tet,
+                        const typename K::Segment_3& seg,
+                        const K&)
     {
       //throw exception!
       dolfin_not_implemented();
 
-      if (do_intersect(tet,seg)) {
+      if (do_intersect(tet,seg))
         return Object();
-      }
+
       return Object();
     }
 
     template <class K>
-    inline
-    Object
-    intersection( const typename K::Segment_3 &seg,
-                  const typename K::Tetrahedron_3 &tet,
-                  const K&)
+    Object intersection(const typename K::Segment_3& seg,
+                        const typename K::Tetrahedron_3& tet,
+                        const K&)
     {
       //throw exception!
       dolfin_not_implemented();
 
-      if (do_intersect(tet,seg)) {
+      if (do_intersect(tet,seg))
         return Object();
-      }
+
       return Object();
     }
 
   } // namespace CGALi
 
   template <class K>
-  inline bool
-  do_intersect(const Segment_3<K> &seg, const Tetrahedron_3<K> &tet)
+  bool do_intersect(const Segment_3<K>& seg, const Tetrahedron_3<K>& tet)
   {
     typedef typename K::Do_intersect_3 Do_intersect;
     return Do_intersect()(tet, seg);
   }
 
   template <class K>
-  inline bool
-  do_intersect(const Tetrahedron_3<K> &tet, const Segment_3<K> &seg)
+  bool do_intersect(const Tetrahedron_3<K>& tet, const Segment_3<K>& seg)
   {
     typedef typename K::Do_intersect_3 Do_intersect;
     return Do_intersect()(tet, seg);
   }
 
   template <class K>
-  inline Object
-  intersection(const Segment_3<K> &seg, const Tetrahedron_3<K> &tet)
+  Object intersection(const Segment_3<K>& seg, const Tetrahedron_3<K>& tet)
   {
     typedef typename K::Intersect_3 Intersect;
     return Intersect()(tet, seg);
   }
 
   template <class K>
-  inline Object
-  intersection(const Tetrahedron_3<K> &tet, const Segment_3<K> &seg)
+  Object intersection(const Tetrahedron_3<K>& tet, const Segment_3<K>& seg)
   {
     typedef typename K::Intersect_3 Intersect;
     return Intersect()(tet, seg);

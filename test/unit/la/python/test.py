@@ -276,7 +276,7 @@ class AbstractBaseTest(object):
 
     def test_matrix_vector_with_backend(self):
         self.test_matrix_vector(True)
-        
+
 class DataNotWorkingTester:
     def test_matrix_data(self):
         A,B = self.assemble_matrices()

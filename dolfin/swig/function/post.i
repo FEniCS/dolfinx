@@ -34,12 +34,13 @@ def __contains__(self,u):
 //-----------------------------------------------------------------------------
 // Extend GenericFunction interace
 //-----------------------------------------------------------------------------
+/*
 %extend dolfin::GenericFunction {
 %pythoncode %{
-def compute_vertex_values(self, values, mesh):
+def compute_vertex_values(self, mesh):
     """
     Compute values at all mesh vertices
-    
+
     *Arguments*
         vertex_values (_Array_ <double>)
             The values at all vertices.
@@ -47,22 +48,25 @@ def compute_vertex_values(self, values, mesh):
             The mesh.
     """
     # Argument checks
-    from numpy import ndarray
-    if not isinstance(values, ndarray) or len(values.shape) != 1:
-        common.dolfin_error("function/post.i",
-			    "compute values at the vertices",
-			    "Expected a numpy array with dimension 1 as first argument")
-    
-    value_size = self.value_size()*mesh.num_vertices()
-    if len(values) != value_size:
-        common.dolfin_error("function_post.i",
-			    "compute values at the vertices",
-			    "The provided array need to be of size value_size()*mesh.num_vertices()")
+    #from numpy import ndarray, zeros
+    #if not isinstance(values, ndarray) or len(values.shape) != 1:
+    #    common.dolfin_error("function/post.i",
+		#	    "compute values at the vertices",
+		#	    "Expected a numpy array with dimension 1 as first argument")
+
+    #value_size = self.value_size()*mesh.num_vertices()
+    #if len(values) != value_size:
+    #    common.dolfin_error("function_post.i",
+		#	    "compute values at the vertices",
+		#	    "The provided array need to be of size value_size()*mesh.num_vertices()")
 
     # Call the actuall method
-    self._compute_vertex_values(values, mesh)
+    #self._compute_vertex_values(values, mesh)
+
+    return self._compute_vertex_values(mesh)
 %}
 }
+*/
 
 //-----------------------------------------------------------------------------
 // Extend Function interace
@@ -85,7 +89,7 @@ def copy(self, deepcopy=False):
     *Returns*
          _Function_
              The Function
-    
+
     """
     from dolfin.functions.function import Function
     if deepcopy:

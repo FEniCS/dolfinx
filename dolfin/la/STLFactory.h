@@ -28,6 +28,7 @@
 #include <dolfin/log/log.h>
 #include "LinearAlgebraFactory.h"
 #include "STLMatrix.h"
+#include "STLVector.h"
 #include "TensorLayout.h"
 #include "Vector.h"
 
@@ -51,14 +52,14 @@ namespace dolfin
     /// Create empty vector (global)
     boost::shared_ptr<GenericVector> create_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new Vector);
+      boost::shared_ptr<GenericVector> x(new STLVector("global"));
       return x;
     }
 
     /// Create empty vector (local)
     boost::shared_ptr<GenericVector> create_local_vector() const
     {
-      boost::shared_ptr<GenericVector> x(new Vector);
+      boost::shared_ptr<GenericVector> x(new STLVector("local"));
       return x;
     }
 

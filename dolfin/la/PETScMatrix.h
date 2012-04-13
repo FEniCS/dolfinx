@@ -68,9 +68,6 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Return true if matrix is distributed
-    bool distributed() const;
-
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const TensorLayout& tensor_layout);
 

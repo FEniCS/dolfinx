@@ -22,11 +22,7 @@
 #define __DOLFIN_STL_FACTORY_CSC_H
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/log/log.h>
-#include "LinearAlgebraFactory.h"
-#include "STLMatrix.h"
 #include "TensorLayout.h"
-#include "Vector.h"
 #include "STLFactory.h"
 
 namespace dolfin

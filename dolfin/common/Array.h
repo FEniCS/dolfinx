@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Garth N. Wells
+// Copyright (C) 2009-2012 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,83 +16,44 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2010-2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-12-06
-// Last changed: 2011-11-13
+// Last changed: 2012-03-12
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
 
 #include <sstream>
 #include <string>
-#include <utility>
-#include <boost/shared_array.hpp>
-
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
-#include "NoDeleter.h"
-
 namespace dolfin
 {
 
-  /// This class provides a simple wrapper for a pointer to an array. A purpose
-  /// of this class is to enable the simple and safe exchange of data between
-  /// C++ and Python.
+  /// This class provides a simple wrapper for a pointer to an array. A
+  /// purpose of this class is to enable the simple and safe exchange
+  /// of data between C++ and Python.
 
   template <typename T> class Array
   {
+
   public:
 
-    /// Create empty array
-    Array() : _size(0), x(0) {}
+    /// Create array of size N. Array has ownership.
+    explicit Array(uint N) : _size(N), _x(new T[N]), _owner(true) {}
 
-    /// Create array of size N
-    explicit Array(uint N) : _size(N), x(new T[N]) {}
+    /// Construct array from a pointer. Array does not take ownership.
+    Array(uint N, T* x) : _size(N), _x(x), _owner(false) {}
 
-    /// Copy constructor (arg name need to have a different name that 'x')
-    Array(const Array& other) : _size(0), x(0)
-    { *this = other; }
-
-    /// Construct array from a shared pointer
-    Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
-
-    /// Construct array from a pointer. Array will not take ownership.
-    Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter())) {}
-
-    /// Assignment operator
-    const Array& operator= (const Array& x)
+    /// Destructor
+    ~Array()
     {
-      // Resize if necessary
-      if (x.empty() && !x.x)
-      {
-        this->x.reset();
-        this->_size = 0;
-      }
-      else if (this->_size != x.size())
-      {
-        this->x.reset(new T[x.size()]);
-        this->_size = x.size();
-      }
-
-      // Copy data
-      if (_size > 0)
-      {
-        dolfin_assert(this->x);
-        dolfin_assert(x.x);
-        std::copy(&x.x[0], &x.x[_size], &this->x[0]);
-      }
-
-      return *this;
-    }
-
-    /// Construct array from a pointer. Array will not take ownership.
-    void update(uint N, T* _x)
-    {
-      _size = N;
-      x.reset(_x, NoDeleter());
+      if (_owner)
+        delete [] _x;
     }
 
     /// Return informal string representation (pretty-print).
@@ -116,121 +77,45 @@ namespace dolfin
       return s.str();
     }
 
-    /// Clear array
-    void clear()
-    {
-      this->x.reset();
-      this->_size = 0;
-    }
-
-    /// Resize array to size N. If size changes, contents will be destroyed.
-    void resize(uint N)
-    {
-      // Special case
-      if (N == _size)
-        return;
-
-      // Special case
-      if (N == 0)
-      {
-        clear();
-        return;
-      }
-
-      // FIXME: Do we want to allow resizing of shared data?
-      if (x.unique())
-      {
-        _size = N;
-        x.reset(new T[N]);
-      }
-      else
-      {
-        dolfin_error("Array.h",
-                     "resize Array",
-                     "Data is shared");
-      }
-    }
-
-    /// Return true if empty
-    bool empty() const
-    { return _size == 0; }
-
     /// Return size of array
     uint size() const
     { return _size; }
 
-    /// Zero array
-    void zero()
-    { dolfin_assert(x); std::fill(&x[0], &x[_size], 0.0); }
-
-    /// Set entries which meet (abs(x[i]) < eps) to zero
-    void zero_eps(double eps=DOLFIN_EPS);
-
-    /// Return minimum value of array
-    T min() const
-    { dolfin_assert(x); return *std::min_element(&x[0], &x[_size]); }
-
-    /// Return maximum value of array
-    T max() const
-    { dolfin_assert(x); return *std::max_element(&x[0], &x[_size]); }
-
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
-    { dolfin_assert(x); dolfin_assert(i < _size); return x[i]; }
+    { dolfin_assert(i < _size); return _x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    {
-      dolfin_assert(x);
-      dolfin_assert(i < _size);
-      return x[i];
-    }
-
-    /// Assign value to all entries
-    const Array<T>& operator= (T& x)
-    {
-      dolfin_assert(this->x);
-      for (uint i = 0; i < _size; ++i)
-        this->x[i] = x;
-      return *this;
-    }
+    { dolfin_assert(i < _size); return _x[i]; }
 
     /// Return pointer to data (const version)
-    const boost::shared_array<T> data() const
-    { return x; }
+    const T* data() const
+    { return _x; }
 
     /// Return pointer to data (non-const version)
-    boost::shared_array<T> data()
-    { return x; }
+    T* data()
+    { return _x; }
+
+   private:
+
+    /// Disable copy construction, to avoid unanticipated sharing or
+    /// copying of data. This means that an Array must always be passed as
+    /// reference, or as a (possibly shared) pointer.
+    Array(const Array& other) /* leave body undefined */;
 
   private:
 
-    // Length of array
-    uint _size;
+    /// Length of array
+    const uint _size;
 
-    // Array data
-    boost::shared_array<T> x;
+    /// Array data
+    T* _x;
+
+    /// True if instance is owner of data
+    bool _owner;
 
   };
-
-  template <typename T>
-  inline void Array<T>::zero_eps(double eps)
-  {
-    dolfin_error("Array.h",
-                 "zero small entries in array",
-                 "Only available when data type is <double>");
-  }
-
-  template <>
-  inline void Array<double>::zero_eps(double eps)
-  {
-    dolfin_assert(x);
-    for (uint i = 0; i < _size; ++i)
-    {
-      if (std::abs(x[i]) < eps)
-        x[i] = 0.0;
-    }
-  }
 
 }
 

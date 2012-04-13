@@ -22,6 +22,7 @@
 #define __XMLVECTOR_H
 
 #include <ostream>
+#include <vector>
 
 namespace pugi
 {
@@ -42,7 +43,7 @@ namespace dolfin
     static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
     // Read XML vector in Array
-    static void read(Array<double>& x, Array<uint>& indices,
+    static void read(std::vector<double>& x, std::vector<uint>& indices,
                      const pugi::xml_node xml_dolfin);
 
     // Read XML vector size

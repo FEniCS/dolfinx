@@ -156,10 +156,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def array(self):
         "Return a numpy array representation of the local part of a Vector"
-        from numpy import zeros, arange, uint0
-        v = zeros(self.local_size())
-        self.get_local(v)
-        return v
+        #from numpy import zeros, arange, uint0
+        #v = zeros(self.local_size())
+        #self.get_local(v)
+        #return v
+        return self.get_local()
 
     def __contains__(self, value):
         from numpy import isscalar
@@ -556,9 +557,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
                 raise TypeError, "Provide a Vector which can be down_casted to ''"%vector_type.__name__
             if type(other) == Vector:
-                ret = Vector(self.size(0))
+                ret = Vector()
             else:
-                ret = vector_type(self.size(0))
+                ret = vector_type()
             self.mult(other, ret)
             return ret
         elif isinstance(other, ndarray):
@@ -572,9 +573,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             vec.set_local(other)
             result_vec = vec.copy()
             self.mult(vec, result_vec)
-            ret = other.copy()
-            result_vec.get_local(ret)
-            return ret
+            #ret = other.copy()
+            #result_vec.get_local(ret)
+            #return ret
+            return result_vec.get_local()
         return NotImplemented
 
     def __div__(self,other):
@@ -793,7 +795,7 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
             common.dolfin_error("dolfin/swig/la/post.i",
                                 "import PyTrilinos before accessing underlying Matrix",
                                 "PyTrilinos is not installed")
-        
+
         A = self._mat()
 
         # Store the tensor to avoid garbage collection

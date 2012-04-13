@@ -143,17 +143,17 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 		 "assemble system",
 		 "expected forms (a, L) to share a FunctionSpace");
 
-  // FIXME: This may gather coefficients twice. Checked for shared coefficients
+  // FIXME: This may update coefficients twice. Checked for shared coefficients
 
-  // Gather off-process coefficients for a
+  // Update off-process coefficients for a
   std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->gather();
+    coefficients[i]->update();
 
-  // Gather off-process coefficients for L
+  // Update off-process coefficients for L
   coefficients = L.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->gather();
+    coefficients[i]->update();
 
   // Create data structures for local assembly data
   UFC A_ufc(a), b_ufc(L);

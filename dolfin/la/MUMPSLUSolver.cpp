@@ -21,7 +21,6 @@
 
 #include <vector>
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/log/log.h"
@@ -157,22 +156,22 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   cout << "Factorisation finished" << endl;
 
   // Gather RHS on root process and attach
-  Array<double> _b;
+  std::vector<double> _b;
   b.gather_on_zero(_b);
-  data.rhs = _b.data().get();
+  data.rhs = &_b[0];
 
   // Scaling strategy (77 is default)
   data.ICNTL(8) = 77;
 
   // Get size of local solution vector x and create objects to hold solution
   const uint local_x_size = data.INFO(23);
-  Array<uint> x_local_indices(local_x_size);
-  Array<double> x_local_vals(local_x_size);
+  std::vector<uint> x_local_indices(local_x_size);
+  std::vector<double> x_local_vals(local_x_size);
 
   // Attach solution data to MUMPS object
   data.lsol_loc = local_x_size;
-  data.sol_loc  = x_local_vals.data().get();
-  data.isol_loc = reinterpret_cast<int*>(x_local_indices.data().get());
+  data.sol_loc  = &x_local_vals[0];
+  data.isol_loc = reinterpret_cast<int*>(&x_local_indices[0]);
 
   // Solve problem
   data.job = 3;
@@ -185,8 +184,8 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
     x_local_indices[i]--;
 
   // Set x values
-  x.set(x_local_vals.data().get(), x_local_indices.size(),
-        x_local_indices.data().get());
+  x.set(x_local_vals.data(), x_local_indices.size(),
+        x_local_indices.data());
   x.apply("insert");
 
   // Clean up

@@ -73,7 +73,8 @@ void SubDomain::mark_facets(Mesh& mesh, unsigned int sub_domain) const
 //-----------------------------------------------------------------------------
 void SubDomain::mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const
 {
-  mark(mesh.domains().markers(dim), sub_domain, mesh);
+  dolfin_assert(mesh.domains().markers(dim));
+  mark(*(mesh.domains().markers(dim)), sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
@@ -162,9 +163,6 @@ void SubDomain::apply_markers(S& sub_domains,
   // Extract exterior (non shared) facets markers
   const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
 
-  // Array for vertex coordinate
-  Array<double> x;
-
   // Speed up the computation by only checking each vertex once (or twice if it
   // is on the boundary for some but not all facets).
   RangedIndexSet boundary_visited(mesh.num_vertices());
@@ -197,7 +195,7 @@ void SubDomain::apply_markers(S& sub_domains,
       {
         if (is_visited.insert(vertex->index()))
         {
-          x.update(_geometric_dimension, const_cast<double*>(vertex->x()));
+          Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
           is_inside[vertex->index()] = inside(x, on_boundary);
         }
 
@@ -212,8 +210,8 @@ void SubDomain::apply_markers(S& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside)
     {
-      x.update(_geometric_dimension,
-               const_cast<double*>(entity->midpoint().coordinates()));
+      Array<double> x(_geometric_dimension,
+                      const_cast<double*>(entity->midpoint().coordinates()));
       if (!inside(x, on_boundary))
         all_points_inside = false;
     }

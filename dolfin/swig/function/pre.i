@@ -41,7 +41,7 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of GenericFunction
 //-----------------------------------------------------------------------------
-%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
+//%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
@@ -90,7 +90,7 @@
 %feature("director") dolfin::Expression;
 %feature("nodirector") dolfin::Expression::evaluate;
 %feature("nodirector") dolfin::Expression::restrict;
-%feature("nodirector") dolfin::Expression::gather;
+%feature("nodirector") dolfin::Expression::update;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("nodirector") dolfin::Expression::str;

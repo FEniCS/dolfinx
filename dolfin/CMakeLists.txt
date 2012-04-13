@@ -275,6 +275,10 @@ foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
 
+foreach(_inc_dir ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+  set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
+endforeach()
+
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
@@ -282,14 +286,19 @@ string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
-  string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
-    _linkflags
-    "${_lib}"
-    )
+  # Add -Wl,option directives
+  if ("${_lib}" MATCHES "-Wl,[^ ]*")
+     set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
+  else()
+    string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
+      _linkflags
+      "${_lib}"
+      )
 
-  # Only add libraries that matches the form -L<libdir> -l<lib>
-  if ("${_linkflags}" MATCHES "-L.+ -l.+")
-    set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflags}")
+    # Add libraries that matches the form -L<libdir> -l<lib>
+    if ("${_linkflags}" MATCHES "-L.+ -l.+")
+        set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+    endif()
   endif()
 endforeach()
 

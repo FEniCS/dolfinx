@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Fredrik Valdmanis 2011-2012
 //
 // First added:  2004
-// Last changed: 2012-02-09
+// Last changed: 2012-03-15
 
 #ifdef HAS_PETSC
 
@@ -31,9 +31,8 @@
 #include <iomanip>
 #include <boost/assign/list_of.hpp>
 
-#include <dolfin/common/timing.h>
-
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
 #include "PETScMatrix.h"
@@ -87,22 +86,6 @@ PETScMatrix::PETScMatrix(const PETScMatrix& A): _use_gpu(false)
 PETScMatrix::~PETScMatrix()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool PETScMatrix::distributed() const
-{
-  dolfin_assert(A);
-
-  // Get type
-  const MatType petsc_type;
-  MatGetType(*A, &petsc_type);
-
-  // Return type
-  bool _distributed = false;
-  if (strncmp(petsc_type, "seq", 3) != 0)
-    _distributed = true;
-
-  return _distributed;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::resize(uint M, uint N)
@@ -432,8 +415,19 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for matrix-vector product");
   }
 
-  // Resize if dimensions does not match
-  resize(yy, 0);
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 0);
+  }
+
+  if (size(0) != yy.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute matrix-vector product with PETSc matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
+
   MatMult(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
@@ -451,7 +445,19 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Non-matching dimensions for transpose matrix-vector product");
   }
 
-  resize(yy, 1);
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 1);
+  }
+
+  if (size(1) != yy.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "compute transpose matrix-vector product with PETSc matrix",
+                 "Vector for transpose matrix-vector result has wrong size");
+  }
+
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
@@ -474,6 +480,8 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
+
   dolfin_assert(A);
   if (mode == "add")
   {
@@ -514,7 +522,7 @@ const PETScMatrix& PETScMatrix::operator*= (double a)
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
   dolfin_assert(A);
-  MatScale(*A, 1.0 / a);
+  MatScale(*A, 1.0/a);
   return *this;
 }
 //-----------------------------------------------------------------------------

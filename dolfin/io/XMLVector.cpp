@@ -38,16 +38,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
-  // Read data in to Array
-  Array<double> data;
-  Array<uint> indices;
+  // Read data in to vectors
+  std::vector<double> data;
+  std::vector<uint> indices;
   read(data, indices, xml_dolfin);
 
   // Set data (GenericVector::apply will be called by calling function)
-  x.set(data.data().get(), data.size(), indices.data().get());
+  x.set(&data[0], data.size(), &indices[0]);
 }
 //-----------------------------------------------------------------------------
-void XMLVector::read(Array<double>& x, Array<uint>& indices,
+void XMLVector::read(std::vector<double>& x, std::vector<uint>& indices,
                      const pugi::xml_node xml_dolfin)
 {
   // Check that we have a XML Vector
@@ -115,7 +115,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
                       bool write_to_stream)
 {
   // Gather entries from process i on process 0
-  Array<double> x;
+  std::vector<double> x;
   if (MPI::num_processes() > 1)
     vector.gather_on_zero(x);
   else
@@ -143,4 +143,3 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   }
 }
 //-----------------------------------------------------------------------------
-

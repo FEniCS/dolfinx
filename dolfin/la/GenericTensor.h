@@ -49,9 +49,6 @@ namespace dolfin
 
     //--- Basic GenericTensor interface ---
 
-    /// Return true if tensor is distributed
-    virtual bool distributed() const = 0;
-
     /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
 

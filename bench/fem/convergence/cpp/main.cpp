@@ -122,7 +122,7 @@ double solve2D(int q, int n)
 
   // Compute maximum norm of error
   double emax = 0.0;
-  Array<double> U(x.size());
+  std::vector<double> U;
   x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -202,7 +202,7 @@ double solve3D(int q, int n)
 
   // Compute maximum norm of error
   double emax = 0.0;
-  Array<double> U(x.size());
+  std::vector<double> U;
   x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {

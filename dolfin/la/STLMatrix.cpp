@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007.
-// Modified by Ilmar Wilbers, 2008.
+// Modified by Ola Skavhaug 2007
+// Modified by Ilmar Wilbers 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-10-29
-
+// Last changed: 2012-03-15
 
 #include <iomanip>
 #include <sstream>
@@ -28,6 +27,7 @@
 #include <utility>
 #include <boost/serialization/utility.hpp>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "STLFactory.h"
@@ -199,6 +199,8 @@ void STLMatrix::add(const double* block, uint m, const uint* rows, uint n,
 //-----------------------------------------------------------------------------
 void STLMatrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
+
   // Data to send
   std::vector<uint> send_non_local_rows, send_non_local_cols, destinations;
   std::vector<double> send_non_local_vals;
@@ -329,6 +331,23 @@ void STLMatrix::ident(uint m, const uint* rows)
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+const STLMatrix& STLMatrix::operator*= (double a)
+{
+  std::vector<std::vector<double> >::iterator row;
+  for (row = _vals.begin(); row != _vals.end(); ++row)
+  {
+    std::transform(row->begin(), row->end(), row->begin(),
+                   std::bind1st(std::multiplies<double>(), a));
+  }
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const STLMatrix& STLMatrix::operator/= (double a)
+{
+  return (*this) *= 1.0/a;
 }
 //-----------------------------------------------------------------------------
 std::string STLMatrix::str(bool verbose) const

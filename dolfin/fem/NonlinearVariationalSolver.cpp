@@ -63,19 +63,24 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   dolfin_assert(problem);
   boost::shared_ptr<Function> u(problem->solution());
 
+  const bool reset_jacobian = parameters["reset_jacobian"];
   // Create nonlinear problem
-  NonlinearDiscreteProblem nonlinear_problem(problem,
-                                             reference_to_no_delete_pointer(*this));
-
+  if ((!nonlinear_problem.get()) || reset_jacobian) {
+    nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(problem,
+                                             reference_to_no_delete_pointer(*this)));
+  }
   // Create Newton solver and set parameters
-  NewtonSolver newton_solver(parameters["linear_solver"],
-                             parameters["preconditioner"]);
-  newton_solver.parameters.update(parameters("newton_solver"));
+  if ((!newton_solver.get()) || reset_jacobian) {
+    // Create Newton solver and set parameters
+    newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
+                                             parameters["preconditioner"]));
+  }
+  newton_solver->parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
   dolfin_assert(u->vector());
   const std::pair<uint, bool> ret
-    = newton_solver.solve(nonlinear_problem, *u->vector());
+    = newton_solver->solve(*nonlinear_problem, *u->vector());
 
   end();
 
@@ -135,8 +140,8 @@ NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
 
   // Check if Jacobian matrix sparsity pattern should be reset
   dolfin_assert(solver);
-  bool reset_sparsity = !(solver->parameters["reset_jacobian"] &&
-                          jacobian_initialized);
+  const bool reset_jacobian = solver->parameters["reset_jacobian"];
+  bool reset_sparsity = reset_jacobian || !jacobian_initialized;
 
   // Assemble left-hand side
   dolfin_assert(J);

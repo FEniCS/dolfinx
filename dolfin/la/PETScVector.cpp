@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,19 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005-2010.
+// Modified by Garth N. Wells 2005-2010
 // Modified by Martin Sandve Alnes 2008
 // Modified by Johannes Ring, 2011.
 // Modified by Fredrik Valdmanis, 2011-2012
 //
 // First added:  2004
-// Last changed: 2012-02-09
+// Last changed: 2012-03-15
 
 #ifdef HAS_PETSC
 
 #include <cmath>
 #include <numeric>
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -71,9 +72,9 @@ PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
   const std::pair<uint, uint> range(0, 0);
 
   if (type == "global" && dolfin::MPI::num_processes() > 1)
-    init(range, ghost_indices, true);
+    _init(range, ghost_indices, true);
   else
-    init(range, ghost_indices, false);
+    _init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type, bool use_gpu) : _use_gpu(use_gpu)
@@ -96,14 +97,14 @@ PETScVector::PETScVector(uint N, std::string type, bool use_gpu) : _use_gpu(use_
     const std::pair<uint, uint> range = MPI::local_range(N);
 
     if (range.first == 0 && range.second == N)
-      init(range, ghost_indices, false);
+      _init(range, ghost_indices, false);
     else
-      init(range, ghost_indices, true);
+      _init(range, ghost_indices, true);
   }
   else if (type == "local")
   {
     const std::pair<uint, uint> range(0, N);
-    init(range, ghost_indices, false);
+    _init(range, ghost_indices, false);
   }
   else
   {
@@ -237,10 +238,10 @@ void PETScVector::resize(std::pair<uint, uint> range,
   const bool _distributed = distributed();
 
   // Re-initialise vector
-  init(range, ghost_indices, _distributed);
+  _init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(Array<double>& values) const
+void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(x);
   const uint n0 = local_range().first;
@@ -254,10 +255,10 @@ void PETScVector::get_local(Array<double>& values) const
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecGetValues(*x, local_size, &rows[0], values.data().get());
+  VecGetValues(*x, local_size, &rows[0], values.data());
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const Array<double>& values)
+void PETScVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(x);
   const uint n0 = local_range().first;
@@ -277,7 +278,7 @@ void PETScVector::set_local(const Array<double>& values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values.data().get(), INSERT_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data(), INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
@@ -300,7 +301,7 @@ void PETScVector::add_local(const Array<double>& values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values.data().get(), ADD_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, uint m, const uint* rows) const
@@ -373,6 +374,7 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
 {
+  Timer("Apply (vector)");
   dolfin_assert(x);
   VecAssemblyBegin(*x);
   VecAssemblyEnd(*x);
@@ -696,7 +698,7 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
+void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) const
 {
   dolfin_assert(x);
 
@@ -722,7 +724,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 #endif
 
   // Prepare data for index sets (global indices)
-  const int* global_indices = reinterpret_cast<const int*>(indices.data().get());
+  const int* global_indices = reinterpret_cast<const int*>(indices.data());
 
   // Prepare data for index sets (local indices)
   const int n = indices.size();
@@ -762,7 +764,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 #endif
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
+void PETScVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   x.resize(indices.size());
   PETScVector y("local");
@@ -770,13 +772,9 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   dolfin_assert(y.local_size() == x.size());
 
   y.get_local(x);
-
-  double sum = 0.0;
-  for (uint i = 0; i < x.size(); ++i)
-    sum += x[i]*x[i];
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather_on_zero(Array<double>& x) const
+void PETScVector::gather_on_zero(std::vector<double>& x) const
 {
   if (MPI::process_number() == 0)
     x.resize(size());
@@ -804,8 +802,8 @@ void PETScVector::gather_on_zero(Array<double>& x) const
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::pair<uint, uint> range,
-    const std::vector<uint>& ghost_indices, bool distributed)
+void PETScVector::_init(std::pair<uint, uint> range,
+                       const std::vector<uint>& ghost_indices, bool distributed)
 {
   // Create vector
   if (x && !x.unique())

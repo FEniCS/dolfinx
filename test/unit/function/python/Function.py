@@ -41,23 +41,14 @@ class Interface(unittest.TestCase):
         from numpy import zeros, all, array
         u = Function(V)
         v = Function(W)
-        
+
         u.vector()[:] = 1.
         v.vector()[:] = 1.
-        
-        u_values = zeros(mesh.num_vertices(),dtype='d')
-        v_values = zeros(mesh.num_vertices()*3,dtype='d')
-        
-        u.compute_vertex_values(u_values, mesh)
-        v.compute_vertex_values(v_values, mesh)
-        
-        self.assertTrue(all(u_values==1))
-        self.assertTrue(all(v_values==1))
-        self.assertRaises(RuntimeError, u.compute_vertex_values, v_values, mesh)
-        self.assertRaises(RuntimeError, v.compute_vertex_values, u_values, mesh)
 
-        self.assertRaises(RuntimeError, u.compute_vertex_values, 1, mesh)
-        self.assertRaises(RuntimeError, u.compute_vertex_values, array(1, dtype='d'), mesh)
+        u_values = u.compute_vertex_values(mesh)
+        v_values = v.compute_vertex_values(mesh)
+
+        self.assertTrue(all(u_values==1))
 
 class Interpolate(unittest.TestCase):
 

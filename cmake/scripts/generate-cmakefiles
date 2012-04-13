@@ -97,6 +97,8 @@ def generate_cmake_files(subdirectory):
             cpp_files = []
             program_dir = root + "/cpp"
             program_name = os.path.split(root)[-1]
+            if executable_prefix == "bench_":
+                program_name = program_dir[program_dir.find("bench")+6:].replace(os.path.sep, "_")
 
             name_forms = dict(
                 project_name=executable_prefix + program_name,

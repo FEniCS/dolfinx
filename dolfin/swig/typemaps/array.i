@@ -90,11 +90,11 @@
 // Director typemaps for dolfin::Array
 //-----------------------------------------------------------------------------
 %typemap(directorin) const dolfin::Array<double>& {
-  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data().get(), false);
+  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data(), false);
  }
 
 %typemap(directorin) dolfin::Array<double>& {
-  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data().get(), true);
+  $input = %make_numpy_array(1, double)($1_name.size(), $1_name.data(), true);
  }
 
 //-----------------------------------------------------------------------------

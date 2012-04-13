@@ -41,6 +41,9 @@ class XMLMeshValueCollection(unittest.TestCase):
             output_values.set_value(7,  2, 13);
             output_values.set_value(4,  2, 2);
 
+            name = "test_mesh_value_collection"
+            output_values.rename(name, "a MeshValueCollection")
+
             # Write to file
             output_file = File("XMLMeshValueCollection_test_io.xml")
             output_file << output_values
@@ -52,6 +55,7 @@ class XMLMeshValueCollection(unittest.TestCase):
 
             # Get some data and check that it matches
             self.assertEqual(input_values.size(), output_values.size())
+            self.assertEqual(input_values.name(), name)
 
     def test_constructor_input(self):
         "Test input via constructor."

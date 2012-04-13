@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2008-2010
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008-04-21
-// Last changed: 2011-11-11
+// Last changed: 2012-03-15
 
 #ifdef HAS_TRILINOS
 
@@ -39,6 +39,7 @@
 #include <Epetra_Vector.h>
 #include <Epetra_DataAccess.h>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/MPI.h>
@@ -87,12 +88,6 @@ EpetraVector::EpetraVector(const EpetraVector& v) : type(v.type)
 EpetraVector::~EpetraVector()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool EpetraVector::distributed() const
-{
-  dolfin_assert(x);
-  return x->Map().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericVector> EpetraVector::copy() const
@@ -223,6 +218,7 @@ bool EpetraVector::owns_index(uint i) const
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
+  Timer("Apply (vector)");
   dolfin_assert(x);
   const int err = x->PutScalar(0.0);
   //apply("add");
@@ -316,7 +312,7 @@ std::string EpetraVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get_local(Array<double>& values) const
+void EpetraVector::get_local(std::vector<double>& values) const
 {
   if (!x)
   {
@@ -326,7 +322,7 @@ void EpetraVector::get_local(Array<double>& values) const
 
   values.resize(x->MyLength());
 
-  const int err = x->ExtractCopy(values.data().get(), 0);
+  const int err = x->ExtractCopy(values.data(), 0);
   if (err!= 0)
   {
     dolfin_error("EpetraVector.cpp",
@@ -335,7 +331,7 @@ void EpetraVector::get_local(Array<double>& values) const
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set_local(const Array<double>& values)
+void EpetraVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(x);
   const uint local_size = x->MyLength();
@@ -458,7 +454,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
-                          const Array<dolfin::uint>& indices) const
+                          const std::vector<dolfin::uint>& indices) const
 {
   dolfin_assert(x);
 
@@ -470,7 +466,7 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
-  const int* _indices = reinterpret_cast<const int*>(indices.data().get());
+  const int* _indices = reinterpret_cast<const int*>(&indices[0]);
   Epetra_BlockMap target_map(indices.size(), indices.size(), _indices, 1, 0, serial_comm);
 
   // Reset vector y
@@ -484,7 +480,7 @@ void EpetraVector::gather(GenericVector& y,
   _y.vec()->Import(*x, importer, Insert);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
+void EpetraVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
 {
   const uint _size = indices.size();
   x.resize(_size);
@@ -502,11 +498,11 @@ void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
     x[i] = (_y)[0][i];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather_on_zero(Array<double>& x) const
+void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
-  Array<uint> indices(0);
+  std::vector<uint> indices(0);
   if (MPI::process_number() == 0)
   {
     indices.resize(size());
@@ -789,7 +785,7 @@ double EpetraVector::sum() const
   const uint local_size = x->MyLength();
 
   // Get local values
-  Array<double> x_local(local_size);
+  std::vector<double> x_local;
   get_local(x_local);
 
   // Compute local sum

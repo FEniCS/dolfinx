@@ -24,43 +24,28 @@ enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, d
 
 // Returns the values from a Vector.
 // copied_values are true if the returned values are copied and need clean up.
-dolfin::Array<double>& _get_vector_values( dolfin::GenericVector* self)
+std::vector<double> _get_vector_values( dolfin::GenericVector* self)
 {
-  dolfin::Array<double>* values;
-  try
-  {
-    // Try accessing the value pointer directly
-    double* data_values = self->data();
-    values = new dolfin::Array<double>(self->size(), data_values);
-  }
-  catch (std::runtime_error e)
-  {
-    // We couldn't access the values directly
-    values = new dolfin::Array<double>(self->size());
-    self->get_local(*values);
-  }
-  return *values;
+  std::vector<double> values;
+  self->get_local(values);
+  return values;
 }
 
 // A contains function for Vectors
 bool _contains(dolfin::GenericVector* self, double value)
 {
   bool contains = false;
-  dolfin::uint i;
-  dolfin::Array<double>& values = _get_vector_values(self);
+  std::vector<double> values = _get_vector_values(self);
 
   // Check if value is in values
-  for (i = 0; i < self->size(); i++)
+  for (dolfin::uint i = 0; i < self->size(); i++)
   {
-    if (fabs(values[i]-value) < DOLFIN_EPS)
+    if (fabs(values[i] - value) < DOLFIN_EPS)
     {
       contains = true;
       break;
     }
   }
-
-  // Clean up Array
-  delete &values;
   return contains;
 }
 
@@ -78,7 +63,7 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  dolfin::Array<double>& values = _get_vector_values(self);
+  std::vector<double> values = _get_vector_values(self);
 
   switch (cmp_type)
   {
@@ -110,9 +95,6 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
     throw std::runtime_error("invalid compare type");
   }
 
-  // Clean up Array
-  delete &values;
-
   return PyArray_Return(return_array);
 }
 
@@ -134,8 +116,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  dolfin::Array<double>& self_values = _get_vector_values(self);
-  dolfin::Array<double>& other_values = _get_vector_values(other);
+  std::vector<double> self_values = _get_vector_values(self);
+  std::vector<double> other_values = _get_vector_values(other);
 
   switch (cmp_type)
   {
@@ -167,10 +149,6 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
     throw std::runtime_error("invalid compare type");
   }
 
-  // If we have created temporary values, delete them
-  delete &self_values;
-  delete &other_values;
-
   return PyArray_Return(return_array);
 }
 
@@ -188,7 +166,6 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 {
 
   Indices* inds;
-  double* values;
   dolfin::uint* range;
   dolfin::uint* indices;
   boost::shared_ptr<dolfin::GenericVector> return_vec;
@@ -199,7 +176,8 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   // Fill the return vector
-  try {
+  try
+  {
     indices = inds->indices();
   }
 
@@ -220,14 +198,13 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 
   range  = inds->range();
 
-  values = new double[m];
+  std::vector<double> values(m);
 
-  self->get_local(values, m, indices);
-  return_vec->set(values, m, range);
+  self->get_local(&values[0], m, indices);
+  return_vec->set(&values[0], m, range);
   return_vec->apply("insert");
 
   delete inds;
-  delete [] values;
   return return_vec;
 }
 
@@ -236,7 +213,6 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 {
   // Get the correct Indices
   Indices* inds;
-  double* values;
   dolfin::uint* range;
   dolfin::uint* indices;
   dolfin::uint m;
@@ -266,15 +242,14 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 
   m = inds->size();
   range = inds->range();
-  values = new double[m];
+  std::vector<double> values(m);
 
   // Get and set values
-  other.get_local(values, m, range);
-  self->set(values, m, indices);
+  other.get_local(&values[0], m, range);
+  self->set(&values[0], m, indices);
   self->apply("insert");
 
   delete inds;
-  delete[] values;
 }
 
 // Set items using a GenericVector
@@ -351,7 +326,6 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
   // The op is a Indices
   else
   {
-    double* values;
     dolfin::uint* indices;
     dolfin::uint i;
     // Fill the vector using the slice
@@ -366,14 +340,10 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     }
 
     // Fill and array with the value and call set()
-    values = new double[inds->size()];
-    for ( i = 0; i < inds->size(); i++)
-      values[i] = value;
-
-    self->set(values, inds->size(), indices);
+    std::vector<double> values(inds->size(), value);
+    self->set(&values[0], inds->size(), indices);
 
     delete inds;
-    delete[] values;
   }
   self->apply("insert");
 }
@@ -410,22 +380,22 @@ boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector( dolfin::Generic
   }
 
   // Create the value array and get the values from the matrix
-  dolfin::Array<double>* values = new dolfin::Array<double>(inds->size());
+  std::vector<double> values(inds->size());
   if (row)
     // If returning a single row
-    self->get(values->data().get(), 1, &single, inds->size(), indices);
+    self->get(&values[0], 1, &single, inds->size(), indices);
   else
     // If returning a single column
-    self->get(values->data().get(), inds->size(), indices, 1, &single);
+    self->get(&values[0], inds->size(), indices, 1, &single);
 
   // Create the return vector and set the values
   boost::shared_ptr<dolfin::GenericVector> return_vec = self->factory().create_vector();
   self->resize(*return_vec, 1);
-  return_vec->set_local(*values);
+
+  return_vec->set_local(values);
   return_vec->apply("insert");
 
   // Clean up
-  delete values;
   delete inds;
 
   return return_vec;

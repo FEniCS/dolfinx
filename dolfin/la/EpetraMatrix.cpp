@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 // Modified by Garth N. Wells 2008-2010
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2008-04-21
-// Last changed: 2011-11-25
+// Last changed: 2012-03-15
 
 #ifdef HAS_TRILINOS
 
@@ -41,6 +41,7 @@
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -86,12 +87,6 @@ EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
 EpetraMatrix::~EpetraMatrix()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool EpetraMatrix::distributed() const
-{
-  dolfin_assert(A);
-  return A->Graph().DistributedGlobal();
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
@@ -396,6 +391,7 @@ void EpetraMatrix::zero()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply(std::string mode)
 {
+  Timer("Apply (matrix)");
   dolfin_assert(A);
   int err = 0;
   if (mode == "add")
@@ -568,7 +564,17 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   }
 
   // Resize RHS
-  this->resize(Ax, 0);
+  if (Ax.size() == 0)
+  {
+    this->resize(Ax, 0);
+  }
+
+  if (Ax.size() != size(0))
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute matrix-vector product with Epetra matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
 
   dolfin_assert(x.vec());
   dolfin_assert(Ax.vec());
@@ -595,7 +601,17 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   }
 
   // Resize RHS
-  this->resize(Ax, 1);
+  if (Ax.size() == 0)
+  {
+    this->resize(Ax, 1);
+  }
+
+  if (Ax.size() != size(1))
+  {
+    dolfin_error("EpetraMatrix.cpp",
+                 "compute transpose matrix-vector product with Epetra matrix",
+                 "Vector for transpose matrix-vector result has wrong size");
+  }
 
   const int err = A->Multiply(true, *(x.vec()), *(Ax.vec()));
   if (err != 0)

@@ -39,7 +39,9 @@ _date_form = dict(year = _local_time.tm_year,
 
 # Create form for copyright statement to a SWIG interface file
 copyright_form_swig = dict(comment = r"//", holder="Johan Hake")
-copyright_form_swig.update(_date_form)
+
+# FIXME: Removed date from copyright form 
+#copyright_form_swig.update(_date_form)
 
 # Extract original modules from dolfin.h
 # NOTE: We need these, in particular the order

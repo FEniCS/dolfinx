@@ -448,9 +448,11 @@ namespace dolfin
 
     // Check that all values have been set
     if (entities_values_set.size() != _size)
+    {
       dolfin_error("MeshFunction.h",
                    "assign mesh value collection to mesh function",
                    "Mesh value collection does not contain all values for all entities");
+    }
 
     return *this;
   }
@@ -624,8 +626,10 @@ namespace dolfin
       //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
     }
     else
+    {
       s << "<MeshFunction of topological dimension " << dim()
         << " containing " << size() << " values>";
+    }
 
     return s.str();
   }

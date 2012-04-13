@@ -30,15 +30,16 @@ namespace dolfin
 {
 
   // Forward declarations
-  class Mesh;
-  template <typename T> class MeshFunction;
+  class DirichletBC;
+  class ErrorControl;
+  class Form;
+  class Function;
   class FunctionSpace;
   class GenericFunction;
-  class DirichletBC;
-  class Form;
   class LinearVariationalProblem;
+  class Mesh;
+  template <typename T> class MeshFunction;
   class NonlinearVariationalProblem;
-  class ErrorControl;
 
   //--- Refinement of meshes ---
 

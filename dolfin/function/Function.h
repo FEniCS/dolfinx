@@ -308,11 +308,11 @@ namespace dolfin
     ///         The values at all vertices.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    virtual void compute_vertex_values(Array<double>& vertex_values,
+    virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
-    /// Collect off-process coefficients to prepare for interpolation
-    virtual void gather() const;
+    /// U[date off-process ghost coefficients
+    virtual void update() const;
 
   private:
 

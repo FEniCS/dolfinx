@@ -88,7 +88,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 
   // Solve system for each dimension
   std::vector<double> values(num_dofs);
-  Array<double> new_coordinates(d*N);
+  std::vector<double> new_coordinates;
   Vector x;
 
   // Pick amg as preconditioner if available
@@ -108,8 +108,9 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     solve(A, x, b, "gmres", prec);
 
     // Get new coordinates
-    Array<double> _new_coordinates(N, new_coordinates.data().get() + dim*N);
+    std::vector<double> _new_coordinates;
     x.get_local(_new_coordinates);
+    new_coordinates.insert(new_coordinates.end(), _new_coordinates.begin(), _new_coordinates.end());
   }
 
   // Modify mesh coordinates

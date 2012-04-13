@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2011-09-27
-// Last changed: 2011-11-14
+// Last changed: 2012-04-04
 
 #include <algorithm>
 #include <iomanip>
@@ -51,8 +53,8 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
   const FunctionSpace& V = *u.function_space();
 
   std::vector<std::pair<uint, uint> > global_to_cell_dof;
-  Array<double> x;
-  Array<uint> indices;
+  std::vector<double> x;
+  std::vector<uint> indices;
 
   const uint num_dofs = V.dim();
 
@@ -67,9 +69,17 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
                    "Not a DOLFIN Function XML file");
     }
 
+    // Check size
     const uint size = xml_function_data_node.attribute("size").as_uint();
-    dolfin_assert(vector.size() == size);
-    dolfin_assert(vector.size() == num_dofs);
+    if (size != num_dofs)
+    {
+      dolfin_error("XMLFunctionData.cpp",
+                   "read function from XML file",
+                   "The number of degrees of freedom (%d) does not match the "
+                   "dimension of the function space (%d)",
+                   size, num_dofs);
+    }
+    dolfin_assert(size == vector.size());
 
     global_to_cell_dof.resize(num_dofs);
     x.resize(num_dofs);
@@ -115,7 +125,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
       indices[i] = new_index;
     }
 
-    vector.set(x.data().get(), x.size(), indices.data().get());
+    vector.set(&x[0], x.size(), &indices[0]);
   }
 
   // Finalise vector
@@ -124,7 +134,7 @@ void XMLFunctionData::read(Function& u, const pugi::xml_node xml_dolfin)
 //-----------------------------------------------------------------------------
 void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
 {
-  Array<double> x;
+  std::vector<double> x;
   dolfin_assert(u.vector());
   if (MPI::num_processes() > 1)
     u.vector()->gather_on_zero(x);
@@ -143,7 +153,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
   {
     // Add vector node
     pugi::xml_node function_node = xml_node.append_child("function_data");
-    function_node.append_attribute("size") = x.size();
+    function_node.append_attribute("size") = (uint) x.size();
 
     // Add data
     for (uint i = 0; i < x.size(); ++i)

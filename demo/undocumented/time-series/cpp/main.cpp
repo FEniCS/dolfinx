@@ -44,7 +44,7 @@ int main()
     x.resize(mesh.num_vertices());
 
     // Set some vector values
-    Array<double> values(x.local_size());
+    std::vector<double> values(x.local_size());
     const dolfin::uint offset = x.local_range().first;
     for (dolfin::uint i = 0; i < x.local_size(); i++)
       values[i] = (t + 1.0)*static_cast<double>(offset + i);

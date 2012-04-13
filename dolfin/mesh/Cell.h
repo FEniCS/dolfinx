@@ -64,9 +64,9 @@ namespace dolfin
     /// Compute orientation of cell
     ///
     /// *Returns*
-    ///     double
+    ///     uint
     ///         Orientation of the cell (0 is right, 1 is left).
-    double orientation() const
+    uint orientation() const
     { return _mesh->type().orientation(*this); }
 
     /// Compute (generalized) volume of cell

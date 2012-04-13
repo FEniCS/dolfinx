@@ -1,9 +1,18 @@
+1.1.0 [not yet released]
+ - Add parameter: "use_petsc_signal_handler", which enables/disable PETSc system signals
+ - Avoid unnessesary resize of result vector for A*b
+ - MPI functionality for distributing values between neighbours
+ - SystemAssembler now works in parallel with topological/geometric boundary search
+ - New symmetric assembler with ability for stand-alone RHS assemble
+ - Major speed-up of DirichletBC computation and mesh marking
+ - Major speed-up of assembly of functions and expressions
+ - Major speed-up of mesh topology computation
  - Major speed-up of mesh topology computation
  - Add simple 2D and 3D mesh generation (via CGAL)
  - Add creation of mesh from triangulations of points (via CGAL)
  - Split the SWIG interface into six combined modules instead of one
  - Add has_foo to easy check what solver and precondictioners are available
- - Add convinient functions for listing available linear_algebra_backends
+ - Add convenience functions for listing available linear_algebra_backends
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes

@@ -122,8 +122,8 @@ void RAWFile::ResultsWrite(const Function& u) const
   if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    const uint size = mesh.num_cells()*dim;
-    Array<double> values(size);
+    //const uint size = mesh.num_cells()*dim;
+    std::vector<double> values;
 
     // Get function values on cells
     dolfin_assert(u.vector());
@@ -148,8 +148,8 @@ void RAWFile::ResultsWrite(const Function& u) const
   else if (data_type == "point")
   {
     // Allocate memory for function values at vertices
-    const uint size = mesh.num_vertices()*dim;
-    Array<double> values(size);
+    //const uint size = mesh.num_vertices()*dim;
+    std::vector<double> values;
 
     // Get function values at vertices
     u.compute_vertex_values(values, mesh);

@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2011
+// Modified by Anders Logg 2006-2012
 // Modified by Ola Skavhaug 2007-2008
 // Modified by Kent-Andre Mardal 2008
 // Modified by Martin Sandve Alnes 2008
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2011-11-15
+// Last changed: 2012-03-15
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <boost/tuple/tuple.hpp>
 
+#include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
@@ -81,10 +82,6 @@ namespace dolfin
     virtual ~uBLASMatrix();
 
     //--- Implementation of the GenericTensor interface ---
-
-    /// Return true if tensor is distributed
-    virtual bool distributed() const
-    { return false; }
 
     /// Initialize zero tensor using tenor layout
     virtual void init(const TensorLayout& tensor_layout);
@@ -461,7 +458,31 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y) const
   {
-    ublas::axpy_prod(A, x.down_cast<uBLASVector>().vec(), y.down_cast<uBLASVector>().vec(), true);
+
+    const uBLASVector& xx = x.down_cast<uBLASVector>();
+    uBLASVector& yy = y.down_cast<uBLASVector>();
+
+    if (size(1) != xx.size())
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "compute matrix-vector product with uBLAS matrix",
+                   "Non-matching dimensions for matrix-vector product");
+    }
+
+  // Resize RHS if empty
+  if (yy.size() == 0)
+  {
+    resize(yy, 0);
+  }
+
+  if (size(0) != yy.size())
+  {
+    dolfin_error("uBLASMatrix.cpp",
+                 "compute matrix-vector product with uBLAS matrix",
+                 "Vector for matrix-vector result has wrong size");
+  }
+
+    ublas::axpy_prod(A, xx.vec(), yy.vec(), true);
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -587,6 +608,8 @@ namespace dolfin
   template <>
   inline void uBLASMatrix<ublas_sparse_matrix>::apply(std::string mode)
   {
+    Timer timer("Apply (matrix)");
+
     // Make sure matrix assembly is complete
     A.complete_index1_data();
   }
