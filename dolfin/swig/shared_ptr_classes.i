@@ -176,6 +176,10 @@
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif
 
+#ifdef HAS_TAO
+%shared_ptr(dolfin::TAOLinearBoundSolver.h)
+#endif
+
 #ifdef HAS_MTL4
 %shared_ptr(dolfin::ITLKrylovSolver)
 %shared_ptr(dolfin::MTL4Matrix)

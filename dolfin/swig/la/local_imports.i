@@ -80,3 +80,4 @@
 %import(module="la") "dolfin/la/solve.h"
 %import(module="la") "dolfin/la/BlockVector.h"
 %import(module="la") "dolfin/la/BlockMatrix.h"
+%import(module="la") "dolfin/la/TaoLinearBoundSolver.h"

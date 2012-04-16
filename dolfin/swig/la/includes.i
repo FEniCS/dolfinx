@@ -80,4 +80,5 @@
 %include "dolfin/la/solve.h"
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
+%include "dolfin/la/TaoLinearBoundSolver.h"
 %include "dolfin/swig/la/post.i"
