@@ -64,6 +64,7 @@ list(APPEND OPTIONAL_PACKAGES "OpenMP")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "TAO")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "MTL4")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
@@ -320,11 +321,14 @@ if (DOLFIN_ENABLE_MTL4)
   find_package(MTL4)
 endif()
 
-# Check for PETSc and SLEPc
+# Check for PETSc, SLEPc and TAO
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
+  endif()
+  if (PETSC_FOUND AND DOLFIN_ENABLE_TAO)
+    find_package(TAO)
   endif()
 endif()
 
