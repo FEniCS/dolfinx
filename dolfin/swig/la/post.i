@@ -422,6 +422,13 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             A[i, column] = values
         return A
 
+    def sparray(self):
+        "Return a scipy.sparse representation of Matrix"
+        from scipy.sparse import csr_matrix
+        data = self.data(deepcopy=True)
+        C = csr_matrix((data[2], data[1], data[0]))
+        return C
+
     def data(self, deepcopy=True):
         """
         Return arrays to underlaying compresssed row/column storage data
@@ -437,7 +444,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         """
         rows, cols, values = self._data()
         if deepcopy:
-            rows, cols, values = rows.copy(), cols.copy(), values.copy()
+            rows, cols, values = rows.astype(int), cols.astype(int), values.copy()
         else:
             _attach_base_to_numpy_array(rows, self)
             _attach_base_to_numpy_array(cols, self)
