@@ -23,6 +23,35 @@
 // Last changed: 2011-04-29
 
 //-----------------------------------------------------------------------------
+// Function to set the base of an NumPy array object
+//-----------------------------------------------------------------------------
+%inline%{
+PyObject* _attach_base_to_numpy_array(PyObject* obj, PyObject* owner)
+{
+  if (owner == NULL)
+  {
+    PyErr_SetString(PyExc_TypeError, "Expected a Python object as owner argument");
+    return NULL;
+  }
+
+  PyArrayObject* array = reinterpret_cast<PyArrayObject*>(obj);
+  if (array == NULL)
+  {
+    PyErr_SetString(PyExc_TypeError, "NumPy conversion error");
+    return NULL;
+  }
+
+  // Bump the reference of the owner object
+  Py_XINCREF(owner);
+
+  // Assign the base 
+  PyArray_BASE(array) = owner;
+  
+  return Py_None;
+}
+%}
+
+//-----------------------------------------------------------------------------
 // Help defines for using the generated numpy array wrappers
 //-----------------------------------------------------------------------------
 #define %make_numpy_array(dim, type_name) make_ ## dim ## d_numpy_array_ ## type_name
