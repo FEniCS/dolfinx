@@ -177,7 +177,7 @@
 #endif
 
 #ifdef HAS_TAO
-%shared_ptr(dolfin::TAOLinearBoundSolver.h)
+%shared_ptr(dolfin::TAOLinearBoundSolver)
 #endif
 
 #ifdef HAS_MTL4
