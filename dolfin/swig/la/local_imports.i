@@ -55,7 +55,6 @@
 %import(module="la") "dolfin/la/PETScVector.h"
 %import(module="la") "dolfin/la/MTL4Vector.h"
 %import(module="la") "dolfin/la/SparsityPattern.h"
-%import(module="la") "dolfin/la/EpetraSparsityPattern.h"
 %import(module="la") "dolfin/la/LinearAlgebraFactory.h"
 %import(module="la") "dolfin/la/DefaultFactory.h"
 %import(module="la") "dolfin/la/PETScUserPreconditioner.h"
