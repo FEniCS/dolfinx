@@ -15,37 +15,29 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-01-01
-// Last changed: 2012-04-13
+// Last changed: 2012-04-19
 
 #include <dolfin/log/log.h>
 #include "CSGMeshGenerator.h"
 #include "CSGGeometry.h"
 
-// FIXME: Temporary includes
-#include "UnitSquare.h"
-#include "UnitCube.h"
-
 using namespace dolfin;
-
+#ifdef HAS_CGAL
 //-----------------------------------------------------------------------------
 void CSGMeshGenerator::generate(Mesh& mesh,
                                 const CSGGeometry& geometry)
 {
-  info("Generating mesh from CSG... not implemented");
-
-  // Put CGAL implementation here and in private static functions
-
   // Temporary implementation just to generate something
   if (geometry.dim() == 2)
   {
-    UnitSquare unit_square(8, 8);
-    mesh = unit_square;
+    generate_2d(mesh, geometry);
   }
   else if (geometry.dim() == 3)
   {
-    UnitCube unit_cube(8, 8, 8);
-    mesh = unit_cube;
+    generate_3d(mesh, geometry);
   }
   else
   {
@@ -55,3 +47,26 @@ void CSGMeshGenerator::generate(Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
+void CSGMeshGenerator::generate_2d(Mesh& mesh,
+                                const CSGGeometry& geometry)
+{
+
+}
+//-----------------------------------------------------------------------------
+void CSGMeshGenerator::generate_3d(Mesh& mesh,
+                                const CSGGeometry& geometry)
+{
+  Nef_polyhedron_3 cgal_geometry = geometry.get_cgal_type_3D();
+
+  
+}
+//-----------------------------------------------------------------------------
+#else
+void CSGMeshGenerator::generate(Mesh& mesh,
+                                const CSGGeometry& geometry)
+{
+  dolfin_error("CSGMeshGenerator.cpp",
+	       "create mesh from CSG geometry",
+	       "Mesh generation not available. Dolfin has been compiled without CGAL.");
+}
+#endif

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-12
-// Last changed: 2012-04-13
+// Last changed: 2012-04-19
 
 #include <sstream>
 
@@ -52,6 +54,14 @@ std::string Sphere::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+Nef_polyhedron_3 Sphere::get_cgal_type_3D() const
+{
+  //FIXME
+  return Nef_polyhedron_3();
+}
+#endif    
+//-----------------------------------------------------------------------------
 // Box
 //-----------------------------------------------------------------------------
 Box::Box(double x0, double x1, double x2,
@@ -80,3 +90,10 @@ std::string Box::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+Nef_polyhedron_3 Box::get_cgal_type_3D() const
+{
+  // FIXME
+  return Nef_polyhedron_3();
+}
+#endif    

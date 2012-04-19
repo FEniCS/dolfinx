@@ -52,6 +52,11 @@ dolfin::uint CSGUnion::dim() const
   return _g0->dim();
 }
 //-----------------------------------------------------------------------------
+Nef_polyhedron_3 CSGUnion::get_cgal_type_3D() const
+{
+  return _g0->get_cgal_type_3D() + _g1->get_cgal_type_3D();
+}
+//-----------------------------------------------------------------------------
 std::string CSGUnion::str(bool verbose) const
 {
   assert(_g0);
@@ -99,6 +104,11 @@ dolfin::uint CSGIntersection::dim() const
 {
   assert(_g0->dim() == _g1->dim());
   return _g0->dim();
+}
+//-----------------------------------------------------------------------------
+Nef_polyhedron_3 CSGIntersection::get_cgal_type_3D() const
+{
+  return _g0->get_cgal_type_3D() * _g1->get_cgal_type_3D();
 }
 //-----------------------------------------------------------------------------
 std::string CSGIntersection::str(bool verbose) const

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-11
-// Last changed: 2012-04-13
+// Last changed: 2012-04-19
 
 #ifndef __CSG_PRIMITIVES_3D_H
 #define __CSG_PRIMITIVES_3D_H
@@ -66,10 +68,12 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
+#ifdef HAS_CGAL
+      Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
+
     private:
-
       double _x0, _x1, _x2, _r;
-
     };
 
     /// This class describes a 3D box which can be used to build
@@ -100,14 +104,14 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
+#ifdef HAS_CGAL
+      Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
+
     private:
-
       double _x0, _x1, _x2, _y0, _y1, _y2;
-
     };
-
   }
-
 }
 
 #endif

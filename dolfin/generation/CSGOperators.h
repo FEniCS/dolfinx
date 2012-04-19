@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-13
-// Last changed: 2012-04-13
+// Last changed: 2012-04-19
 
 #ifndef __CSG_OPERATORS_H
 #define __CSG_OPERATORS_H
@@ -46,6 +48,10 @@ namespace dolfin
     /// Informal string representation
     std::string str(bool verbose) const;
 
+#ifdef HAS_CGAL
+    Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
+
   private:
 
     boost::shared_ptr<CSGGeometry> _g0;
@@ -67,6 +73,10 @@ namespace dolfin
 
     /// Informal string representation
     std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+    Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
 
   private:
 

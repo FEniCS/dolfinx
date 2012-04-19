@@ -15,29 +15,39 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-13
-// Last changed: 2012-04-13
+// Last changed: 2012-04-19
 
 #ifndef __CSG_MESH_GENERATOR_H
 #define __CSG_MESH_GENERATOR_H
 
 #include <boost/shared_ptr.hpp>
+#include "CSGGeometry.h"
 
 namespace dolfin
 {
 
   // Forward declarations
   class Mesh;
-  class CSGGeometry;
+
 
   /// Mesh generator for Constructive Solid Geometry (CSG)
 
   class CSGMeshGenerator
   {
-  public:
+  public :
 
     /// Generate mesh from CSG geometry
     static void generate(Mesh& mesh, const CSGGeometry& geometry);
+  private :
+    static void generate_2d(Mesh& mesh, const CSGGeometry& geometry);
+    static void generate_3d(Mesh& mesh, const CSGGeometry& geometry);
+
+#ifdef HAS_CGAL
+    static Nef_polyhedron_3 get_cgal_geometry(CSGGeometry& geometry);
+#endif
 
   };
 
