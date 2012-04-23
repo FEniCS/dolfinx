@@ -27,6 +27,7 @@
 
 #include <dolfin/common/NoDeleter.h>
 #include "CSGGeometry.h"
+#include "cgal_csg.h"
 
 namespace dolfin
 {
@@ -49,7 +50,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
 #ifdef HAS_CGAL
-    Nef_polyhedron_3 get_cgal_type_3D() const;
+    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif    
 
   private:
@@ -75,7 +76,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
 #ifdef HAS_CGAL
-    Nef_polyhedron_3 get_cgal_type_3D() const;
+    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif    
 
   private:

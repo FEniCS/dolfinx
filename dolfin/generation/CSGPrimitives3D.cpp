@@ -21,22 +21,23 @@
 // Last changed: 2012-04-19
 
 #include <sstream>
-
+#include <dolfin/math/basic.h>
+#include <dolfin/log/LogStream.h>
 #include "CSGPrimitives3D.h"
 
 using namespace dolfin;
-using namespace dolfin::csg;
+//using namespace dolfin::csg;
 
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-Sphere::Sphere(double x0, double x1, double x2, double r)
+csg::Sphere::Sphere(double x0, double x1, double x2, double r)
   : _x0(x0), _x1(x1), _x2(x2), _r(r)
 {
   // FIXME: Check validity of coordinates here
 }
 //-----------------------------------------------------------------------------
-std::string Sphere::str(bool verbose) const
+std::string csg::Sphere::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -55,7 +56,7 @@ std::string Sphere::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
-Nef_polyhedron_3 Sphere::get_cgal_type_3D() const
+csg::Nef_polyhedron_3 csg::Sphere::get_cgal_type_3D() const
 {
   //FIXME
   return Nef_polyhedron_3();
@@ -64,21 +65,25 @@ Nef_polyhedron_3 Sphere::get_cgal_type_3D() const
 //-----------------------------------------------------------------------------
 // Box
 //-----------------------------------------------------------------------------
-Box::Box(double x0, double x1, double x2,
+csg::Box::Box(double x0, double x1, double x2,
          double y0, double y1, double y2)
   : _x0(x0), _x1(x1), _x2(x2), _y0(y0), _y1(y1), _y2(y2)
 {
   // FIXME: Check validity of coordinates here
+  if (near(x0, y0) || near(x1, y2) || near(x2, y2))
+      dolfin_error("CSGPrimitives3D.cpp",
+		   "Create axis aligned box",
+		   "Box with corner (%f, %f, %f) and (%f, %f, %f) degenerated", x0, x1, x2, y0, y1, y2);
 }
 //-----------------------------------------------------------------------------
-std::string Box::str(bool verbose) const
+std::string csg::Box::str(bool verbose) const
 {
   std::stringstream s;
 
   if (verbose)
   {
     s << "<Box with first corner at (" << _x0 << ", " << _x1 << ", " << _x2 << ") "
-      << "and second corner at (" << _x0 << ", " << _x1 << ", " << _x2 << ")>";
+      << "and second corner at (" << _y0 << ", " << _y1 << ", " << _y2 << ")>";
   }
   else
   {
@@ -91,9 +96,39 @@ std::string Box::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
-Nef_polyhedron_3 Box::get_cgal_type_3D() const
+csg::Nef_polyhedron_3 csg::Box::get_cgal_type_3D() const
 {
-  // FIXME
-  return Nef_polyhedron_3();
+  // // ensure the orientation
+  const double x0 = std::min(_x0, _y0);
+  const double y0 = std::max(_x0, _y0);
+
+  const double x1 = std::min(_x1, _y1);
+  const double y1 = std::max(_x1, _y1);
+
+  const double x2 = std::min(_x2, _y2);
+  const double y2 = std::max(_x2, _y2);
+
+  const csg::Point_3 p0(x0, x1, x2);
+  const csg::Point_3 p1(y0, x1, x2);
+  const csg::Point_3 p2(y0, x1, y2);
+  const csg::Point_3 p3(x0, x1, y2);
+
+  const csg::Point_3 p4(x0, y1, x2);
+  const csg::Point_3 p5(y0, y1, x2);
+  const csg::Point_3 p6(y0, y1, y2);
+  const csg::Point_3 p7(x0, y1, y2);
+
+  std::vector<csg::Point_3> v;
+  v.push_back(p0);
+  v.push_back(p1);
+  v.push_back(p2);
+  v.push_back(p3);
+  v.push_back(p4);
+  v.push_back(p5);
+  v.push_back(p6);
+  v.push_back(p7);
+
+  csg::Nef_polyhedron_3 t(v.begin(), v.end());
+  return t;
 }
 #endif    

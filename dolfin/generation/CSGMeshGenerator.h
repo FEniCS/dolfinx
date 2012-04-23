@@ -25,7 +25,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "CSGGeometry.h"
-
+#include "cgal_csg.h"
 namespace dolfin
 {
 
@@ -46,7 +46,7 @@ namespace dolfin
     static void generate_3d(Mesh& mesh, const CSGGeometry& geometry);
 
 #ifdef HAS_CGAL
-    static Nef_polyhedron_3 get_cgal_geometry(CSGGeometry& geometry);
+    static csg::Nef_polyhedron_3 get_cgal_geometry(CSGGeometry& geometry);
 #endif
 
   };

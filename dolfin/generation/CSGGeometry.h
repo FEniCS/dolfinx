@@ -28,19 +28,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
-#ifdef HAS_CGAL
-#include <CGAL/basic.h>
-#include <CGAL/Gmpz.h>
-#include <CGAL/Homogeneous.h>
-#include <CGAL/Nef_polyhedron_3.h>
-
-typedef CGAL::Homogeneous<CGAL::Gmpz> Kernel;
-typedef CGAL::Nef_polyhedron_3<Kernel> Nef_polyhedron_3;
-#endif
-
+#include "cgal_csg.h"
 
 namespace dolfin
 {
+
 
   /// Geometry described by Constructive Solid Geometry (CSG)
 
@@ -61,7 +53,7 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
 #ifdef HAS_CGAL
-    virtual Nef_polyhedron_3 get_cgal_type_3D() const = 0;
+    virtual csg::Nef_polyhedron_3 get_cgal_type_3D() const = 0;
 #endif
 
   };
