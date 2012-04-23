@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-07-11
-// Last changed: 2011-11-19
+// Last changed: 2012-04-23
 //
 // This demo program solves Poisson's equation,
 //
@@ -66,11 +66,13 @@ int main()
   // Sub domain for Periodic boundary condition
   class PeriodicBoundary : public SubDomain
   {
+    // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && x[0] > -DOLFIN_EPS && on_boundary;
     }
 
+    // Map right boundary (H) to left boundary (G)
     void map(const Array<double>& x, Array<double>& y) const
     {
       y[0] = x[0] - 1.0;
