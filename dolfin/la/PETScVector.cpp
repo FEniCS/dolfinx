@@ -104,7 +104,7 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v) 
+PETScVector::PETScVector(const PETScVector& v)
   : x(new Vec(0), PETScVectorDeleter())
 {
   dolfin_assert(v.x);
@@ -722,7 +722,7 @@ void PETScVector::gather_on_zero(Array<double>& x) const
   else
     x.resize(0);
 
-  boost::shared_ptr<Vec> vout(new Vec);
+  boost::shared_ptr<Vec> vout(new Vec(0), PETScVectorDeleter());
   VecScatter scatter;
   VecScatterCreateToZero(*this->x, &scatter, vout.get());
 
