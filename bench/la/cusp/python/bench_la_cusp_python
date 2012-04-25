@@ -23,8 +23,8 @@
 from dolfin import *
 from time import time
 
-SIZE = 32
-NUM_REPS = 5
+SIZE = 64
+NUM_REPS = 3
 
 print "Solving the linear system for Poisson's equation using PETSc CUSP"
 
@@ -58,12 +58,14 @@ def run_bench(linear_algebra_backend):
     # Create linear solver
     solver = KrylovSolver("cg", "jacobi")
 
+    # Use hack to get around PETSc Cusp bug
+    solver.parameters["use_petsc_cusp_hack"] = True
+
     # Solve linear system
     info("Solving linear system %d times" % NUM_REPS)
     x = Vector()
     cpu_time = time()
     for i in range(NUM_REPS):
-        #bnorm = norm(b)
         x.zero()
         solver.solve(A, x, b)
         print "residual =", residual(A, x, b)
