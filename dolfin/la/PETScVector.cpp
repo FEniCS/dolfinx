@@ -740,18 +740,18 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   else
     x.resize(0);
 
-  boost::shared_ptr<Vec> vout(new Vec);
+  boost::shared_ptr<Vec> vout(new Vec(0), PETScVectorDeleter());
   VecScatter scatter;
   VecScatterCreateToZero(*this->x, &scatter, vout.get());
 
   VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
   VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
 
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   VecScatterDestroy(scatter);
-#else
+  #else
   VecScatterDestroy(&scatter);
-#endif
+  #endif
 
   // Wrap PETSc vector
   if (MPI::process_number() == 0)
