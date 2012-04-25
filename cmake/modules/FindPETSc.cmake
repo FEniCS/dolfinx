@@ -6,6 +6,7 @@
 #  PETSC_LIBRARIES    - libraries for PETSc
 #  PETSC_DIR          - directory where PETSc is built
 #  PETSC_ARCH         - architecture for which PETSc is built
+#  PETSC_CUSP_FOUND   - PETSc has Cusp support 
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -147,7 +148,7 @@ show :
   petsc_get_variable(PETSC_LIB_BASIC PETSC_LIB_BASIC)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
-
+ 
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
 
@@ -212,6 +213,25 @@ int main()
     message(STATUS "PETSc test runs")
   else()
     message(STATUS "PETSc test failed")
+  endif()
+
+  # Run test program to check for PETSc Cusp
+  check_cxx_source_runs("
+#include \"petsc.h\"
+int main()
+{
+#if PETSC_HAVE_CUSP
+  return 0;
+#else
+  return 1;
+#endif
+}
+" PETSC_CUSP_FOUND)
+
+  if (PETSC_CUSP_FOUND)
+    message(STATUS "PETSc configured with Cusp support")
+  else()
+      message(STATUS "PETSc configured without Cusp support")
   endif()
 
 endif()

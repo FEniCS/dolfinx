@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2011
+//
 // First added:  2009-07-02
 // Last changed: 2012-03-12
 
@@ -98,6 +100,9 @@ namespace dolfin
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
       
+      #endif
+      #ifdef HAS_PETSC_CUSP
+      allowed_backends.insert("PETScCusp");
       #endif
       #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");

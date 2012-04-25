@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-17
+// Last changed: 2012-02-09
 
 #include <cstdarg>
 #include <cstdlib>
@@ -216,7 +216,8 @@ void dolfin::not_working_in_parallel(std::string what)
     MPI::barrier();
     dolfin_error("log.cpp",
                  "perform operation in parallel",
-                 "%s is not yet working in parallel. Consider filing a bug report at %s",
+                 "%s is not yet working in parallel.\n"
+                 "***         Consider filing a bug report at %s",
                  what.c_str(), "https://bugs.launchpad.net/dolfin");
   }
 }

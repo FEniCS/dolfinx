@@ -59,6 +59,7 @@
 %import(module="la") "dolfin/la/DefaultFactory.h"
 %import(module="la") "dolfin/la/PETScUserPreconditioner.h"
 %import(module="la") "dolfin/la/PETScFactory.h"
+%import(module="la") "dolfin/la/PETScCuspFactory.h"
 %import(module="la") "dolfin/la/EpetraFactory.h"
 %import(module="la") "dolfin/la/MTL4Factory.h"
 %import(module="la") "dolfin/la/STLFactory.h"

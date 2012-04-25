@@ -17,8 +17,8 @@
 //
 // Modified by Garth N. Wells 2005-2010
 // Modified by Martin Sandve Alnes 2008
-// Modified by Johannes Ring 2011
-// Modified by Fredrik Valdmanis 2011
+// Modified by Johannes Ring, 2011.
+// Modified by Fredrik Valdmanis, 2011-2012
 //
 // First added:  2004
 // Last changed: 2012-03-15
@@ -36,24 +36,34 @@
 #include "PETScVector.h"
 #include "uBLASVector.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 #include <dolfin/common/MPI.h>
 
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScVector::norm_types
-  = boost::assign::map_list_of("l1",   NORM_1)
-                              ("l2",   NORM_2)
-                              ("linf", NORM_INFINITY);
+= boost::assign::map_list_of("l1",   NORM_1)
+("l2",   NORM_2)
+("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type)
+PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
 {
   if (type != "global" && type != "local")
   {
     dolfin_error("PETScVector.cpp",
-                 "create PETSc vector",
-                 "Unknown vector type (\"%s\")", type.c_str());
+        "create PETSc vector",
+        "Unknown vector type (\"%s\")", type.c_str());
   }
+
+#ifndef HAS_PETSC_CUSP
+  if (_use_gpu)
+  {
+    dolfin_error("PETScVector.cpp",
+        "create GPU vector",
+        "PETSc not compiled with Cusp support");
+  }
+#endif
 
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
@@ -67,8 +77,17 @@ PETScVector::PETScVector(std::string type)
     _init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N, std::string type)
+PETScVector::PETScVector(uint N, std::string type, bool use_gpu) : _use_gpu(use_gpu)
 {
+#ifndef HAS_PETSC_CUSP
+  if (_use_gpu)
+  {
+    dolfin_error("PETScVector.cpp",
+        "create GPU vector",
+        "PETSc not compiled with Cusp support");
+  }
+#endif
+
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
 
@@ -90,24 +109,24 @@ PETScVector::PETScVector(uint N, std::string type)
   else
   {
     dolfin_error("PETScVector.cpp",
-                 "create PETSc vector",
-                 "Unknown vector type (\"%s\")", type.c_str());
+        "create PETSc vector",
+        "Unknown vector type (\"%s\")", type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
+PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern): _use_gpu(false)
 {
   std::vector<uint> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
+PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x), _use_gpu(false)
 {
-  // Do nothing
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v)
-  : x(new Vec(0), PETScVectorDeleter())
+  : x(new Vec(0), PETScVectorDeleter()), _use_gpu(false)
 {
   dolfin_assert(v.x);
 
@@ -145,11 +164,18 @@ bool PETScVector::distributed() const
     _distributed = true;
   else if (strcmp(petsc_type, VECSEQ) == 0)
     _distributed =  false;
+#ifdef HAS_PETSC_CUSP
+  // TODO: Uncomment these two lines after implementing MPI Cusp vectors
+  //else if (strcmp(petsc_type, VECMPICUSP) == 0)
+  //  _distributed = true;
+  else if (strcmp(petsc_type, VECSEQCUSP) == 0)
+    _distributed = false;
+#endif
   else
   {
     dolfin_error("PETScVector.cpp",
-                 "check whether PETSc vector is distributed",
-                 "Unknown vector type (\"%d\")", petsc_type);
+        "check whether PETSc vector is distributed",
+        "Unknown vector type (\"%s\")", petsc_type);
   }
 
   return _distributed;
@@ -169,8 +195,8 @@ void PETScVector::resize(uint N)
   if (!x)
   {
     dolfin_error("PETScVector.cpp",
-                 "resize PETSc vector",
-                 "Vector has not been initialized");
+        "resize PETSc vector",
+        "Vector has not been initialized");
   }
 
   // Get vector type
@@ -197,7 +223,7 @@ void PETScVector::resize(std::pair<uint, uint> range)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<uint, uint> range,
-                         const std::vector<uint>& ghost_indices)
+    const std::vector<uint>& ghost_indices)
 {
   // Get local size
   dolfin_assert(range.second - range.first >= 0);
@@ -240,8 +266,8 @@ void PETScVector::set_local(const std::vector<double>& values)
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
-                 "set local values of PETSc vector",
-                 "Size of values array is not equal to local vector size");
+        "set local values of PETSc vector",
+        "Size of values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -263,8 +289,8 @@ void PETScVector::add_local(const Array<double>& values)
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
-                 "add local values to PETSc vector",
-                 "Size of values array is not equal to local vector size");
+        "add local values to PETSc vector",
+        "Size of values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -315,7 +341,8 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
         local_rows[i] = rows[i] - n0;
       else
       {
-        boost::unordered_map<uint, uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
+        boost::unordered_map<uint, uint>::const_iterator local_index
+          = ghost_global_to_local.find(rows[i]);
         dolfin_assert(local_index != ghost_global_to_local.end());
         local_rows[i] = local_index->second + local_size;
       }
@@ -491,8 +518,8 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
   if (size() != v.size())
   {
     dolfin_error("PETScVector.cpp",
-                 "perform point-wise multiplication with PETSc vector",
-                 "Vectors are not of the same size");
+        "perform point-wise multiplication with PETSc vector",
+        "Vectors are not of the same size");
   }
 
   VecPointwiseMult(*x,*x,*v.x);
@@ -531,8 +558,8 @@ void PETScVector::axpy(double a, const GenericVector& y)
   if (size() != _y.size())
   {
     dolfin_error("PETScVector.cpp",
-                 "perform axpy operation with PETSc vector",
-                 "Vectors are not of the same size");
+        "perform axpy operation with PETSc vector",
+        "Vectors are not of the same size");
   }
 
   VecAXPY(*x, a, *(_y.x));
@@ -550,8 +577,8 @@ double PETScVector::norm(std::string norm_type) const
   if (norm_types.count(norm_type) == 0)
   {
     dolfin_error("PETScVector.cpp",
-                 "compute norm of PETSc vector",
-                 "Unknown norm type (\"%s\")", norm_type.c_str());
+        "compute norm of PETSc vector",
+        "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
   double value = 0.0;
@@ -618,7 +645,7 @@ double PETScVector::sum(const Array<uint>& rows) const
     // Send and receive data
     std::vector<uint> received_nonlocal_rows;
     MPI::send_recv(send_nonlocal_rows.set(), dest,
-                   received_nonlocal_rows, source);
+        received_nonlocal_rows, source);
 
     // Add rows which reside on this process
     for (uint j = 0; j < received_nonlocal_rows.size(); ++j)
@@ -656,8 +683,15 @@ std::string PETScVector::str(bool verbose) const
 
     if (strcmp(petsc_type, VECSEQ) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_SELF);
-    else
+    else if (strcmp(petsc_type, VECMPI) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+#ifdef HAS_PETSC_CUSP
+    else if (strcmp(petsc_type, VECSEQCUSP) == 0)
+      VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+    // TODO: Uncomment these two lines after implementing MPI Cusp vectors
+    //else if (strcmp(petsc_type, VECMPICUSP) == 0)
+    //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+#endif
   }
   else
     s << "<PETScVector of size " << size() << ">";
@@ -675,12 +709,20 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
+
+#ifndef HAS_PETSC_CUSP
+  // If PETSc is configured without Cusp, check only for one sequential type
   if (strcmp(petsc_type, VECSEQ) != 0)
-  {
     dolfin_error("PETScVector.cpp",
-                 "gather values for PETSc vector",
-                 "Values can only be gathered into local vectors");
-  }
+        "gather values for PETSc vector",
+        "Values can only be gathered into local vectors");
+#else
+  // If PETSc is configured with Cusp, check for both sequential types
+  if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
+    dolfin_error("PETScVector.cpp",
+        "gather values for PETSc vector",
+        "Values can only be gathered into local vectors");
+#endif
 
   // Prepare data for index sets (global indices)
   const int* global_indices = reinterpret_cast<const int*>(indices.data());
@@ -695,11 +737,11 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
 
   // Create local index sets
   IS from, to;
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, PETSC_COPY_VALUES, &from);
-  #else
+#else
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  #endif
+#endif
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
@@ -768,8 +810,8 @@ void PETScVector::_init(std::pair<uint, uint> range,
   if (x && !x.unique())
   {
     dolfin_error("PETScVector.cpp",
-                 "initialize PETSc vector",
-                 "More than one object points to the underlying PETSc object");
+        "initialize PETSc vector",
+        "More than one object points to the underlying PETSc object");
   }
   x.reset(new Vec(0), PETScVectorDeleter());
 
@@ -779,11 +821,25 @@ void PETScVector::_init(std::pair<uint, uint> range,
   // Initialize vector, either default or MPI vector
   if (!distributed)
   {
-    VecCreateSeq(PETSC_COMM_SELF, local_size, x.get());
+    VecCreate(PETSC_COMM_SELF, x.get());
+    // Set type to be either standard or Cusp sequential vector
+    if (!_use_gpu)
+      VecSetType(*x, VECSEQ);
+#ifdef HAS_PETSC_CUSP
+    else
+      VecSetType(*x, VECSEQCUSP);
+#endif
+
+    VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
+
   }
   else
   {
+    if (_use_gpu)
+      not_working_in_parallel("Due to limitations in PETSc, "
+          "distributed PETSc Cusp vectors");
+
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
@@ -792,7 +848,7 @@ void PETScVector::_init(std::pair<uint, uint> range,
       _ghost_indices = reinterpret_cast<const int*>(&ghost_indices[0]);
 
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
-                   ghost_indices.size(), _ghost_indices, x.get());
+        ghost_indices.size(), _ghost_indices, x.get());
 
     // Build global-to-local map for ghost indices
     for (uint i = 0; i < ghost_indices.size(); ++i)
@@ -818,6 +874,14 @@ void PETScVector::reset()
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const
 {
+  if (!_use_gpu)
+    return PETScFactory::instance();
+#ifdef HAS_PETSC_CUSP
+  else
+    return PETScCuspFactory::instance();
+#endif
+
+  // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

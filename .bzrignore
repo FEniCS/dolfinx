@@ -47,6 +47,8 @@ RE:bench/.*/cpp/bench_.*
 test/regression/demo.log
 demo/pde/navier-stokes/python/results
 demo/undocumented/advection-diffusion/python/results
+RE:test/unit/book/python/.*.(bin|vtu|pvd)
+RE:test/unit/book/python/(vector|parameters).xml
 
 # Generated documentation
 doc/progr_reference/html/**.html
