@@ -52,29 +52,29 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
 PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
-  if (use_gpu) 
+  if (use_gpu)
   {
     dolfin_error("PETScMatrix.cpp",
-        "create GPU matrix",
-        "PETSc not compiled with Cusp support");
+                 "create GPU matrix",
+                 "PETSc not compiled with Cusp support");
   }
 #endif
 
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) : 
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) :
   PETScBaseMatrix(A), _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
-  if (use_gpu) 
+  if (use_gpu)
   {
     dolfin_error("PETScMatrix.cpp",
-        "create GPU matrix",
-        "PETSc not compiled with Cusp support");
+                 "create GPU matrix",
+                 "PETSc not compiled with Cusp support");
   }
 #endif
-  
+
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
