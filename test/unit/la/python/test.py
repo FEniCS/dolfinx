@@ -315,9 +315,13 @@ if MPI.num_processes() == 1:
         class MTL4Tester(AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
 
+    if has_linear_algebra_backend("PETScCusp"):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+            backend    = "PETScCusp"
+
 
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+    # Turn off DOLFIN output
     set_log_active(False);
 
     print ""

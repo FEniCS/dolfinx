@@ -70,7 +70,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
                               ("bicgstab",   KSPBCGS);
 
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> > 
+const std::vector<std::pair<std::string, std::string> >
   PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
@@ -99,7 +99,7 @@ Parameters PETScKrylovSolver::default_parameters()
 
   p.add("preconditioner_side", "left");
 
- return p;
+  return p;
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
@@ -275,6 +275,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   {
     PETScUserPreconditioner::setup(*_ksp, *pc_dolfin);
     preconditioner_set = true;
+  }
+
+  // Check whether we need a work-around for a bug in PETSc-stable.
+  // This has been fixed in PETSc-dev, see
+  // https://bugs.launchpad.net/dolfin/+bug/988494
+  const bool use_petsc_cusp_hack = parameters["use_petsc_cusp_hack"];
+  if (use_petsc_cusp_hack)
+  {
+    info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
   }
 
   // Solve linear system
