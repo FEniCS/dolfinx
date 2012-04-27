@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-04-19
+// Last changed: 2012-04-28
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -26,7 +26,6 @@
 #include "CSGPrimitives3D.h"
 
 using namespace dolfin;
-//using namespace dolfin::csg;
 
 //-----------------------------------------------------------------------------
 // Sphere
@@ -98,7 +97,8 @@ std::string csg::Box::str(bool verbose) const
 #ifdef HAS_CGAL
 csg::Nef_polyhedron_3 csg::Box::get_cgal_type_3D() const
 {
-  // // ensure the orientation
+  typedef typename Exact_Polyhedron_3::Halfedge_handle Halfedge_handle;
+
   const double x0 = std::min(_x0, _y0);
   const double y0 = std::max(_x0, _y0);
 
@@ -108,27 +108,31 @@ csg::Nef_polyhedron_3 csg::Box::get_cgal_type_3D() const
   const double x2 = std::min(_x2, _y2);
   const double y2 = std::max(_x2, _y2);
 
-  const csg::Point_3 p0(x0, x1, x2);
-  const csg::Point_3 p1(y0, x1, x2);
-  const csg::Point_3 p2(y0, x1, y2);
-  const csg::Point_3 p3(x0, x1, y2);
+  Point_3 p0(y0,   x1,  x2);
+  Point_3 p1( x0,  x1,  y2);
+  Point_3 p2( x0,  x1,  x2);
+  Point_3 p3( x0,  y1,  x2);
+  Point_3 p4( y0,  x1,  y2);
+  Point_3 p5( x0,  y1,  y2);
+  Point_3 p6( y0,  y1,  x2);
+  Point_3 p7( y0,  y1,  y2);
+  
+  Exact_Polyhedron_3 P;
+  Halfedge_handle h = P.make_tetrahedron( p0, p1, p2, p3);
 
-  const csg::Point_3 p4(x0, y1, x2);
-  const csg::Point_3 p5(y0, y1, x2);
-  const csg::Point_3 p6(y0, y1, y2);
-  const csg::Point_3 p7(x0, y1, y2);
+  Halfedge_handle g = h->next()->opposite()->next();
+  P.split_edge( h->next());
+  P.split_edge( g->next());
+  P.split_edge( g);
+  h->next()->vertex()->point()     = p4;
+  g->next()->vertex()->point()     = p5;
+  g->opposite()->vertex()->point() = p6;
+  Halfedge_handle f = P.split_facet( g->next(),
+				     g->next()->next()->next());
+  Halfedge_handle e = P.split_edge( f);
+  e->vertex()->point() = p7;
+  P.split_facet( e, f->next()->next());
 
-  std::vector<csg::Point_3> v;
-  v.push_back(p0);
-  v.push_back(p1);
-  v.push_back(p2);
-  v.push_back(p3);
-  v.push_back(p4);
-  v.push_back(p5);
-  v.push_back(p6);
-  v.push_back(p7);
-
-  csg::Nef_polyhedron_3 t(v.begin(), v.end());
-  return t;
+  return  csg::Nef_polyhedron_3(P);;
 }
 #endif    

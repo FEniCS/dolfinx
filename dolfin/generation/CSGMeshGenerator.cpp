@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-01-01
-// Last changed: 2012-04-19
+// Last changed: 2012-04-28
 
 #include "cgal_csg.h"
 
@@ -88,11 +88,19 @@ struct Copy_polyhedron_to
 private:
   const Polyhedron_input& in_poly;
 }; // end Copy_polyhedron_to<>
+
+template <class Poly_A, class Poly_B>
+void copy_to(const Poly_A& poly_a, Poly_B& poly_b)
+{
+  Copy_polyhedron_to<Poly_A, Poly_B> modifier(poly_a);
+  poly_b.delegate(modifier);
+  CGAL_assertion(poly_b.is_valid());
+}
+
 //-----------------------------------------------------------------------------
 void CSGMeshGenerator::generate(Mesh& mesh,
                                 const CSGGeometry& geometry)
 {
-  // Temporary implementation just to generate something
   if (geometry.dim() == 2)
   {
     generate_2d(mesh, geometry);
@@ -119,88 +127,29 @@ void CSGMeshGenerator::generate_3d(Mesh& mesh,
                                 const CSGGeometry& geometry)
 {
   csg::Nef_polyhedron_3 cgal_geometry = geometry.get_cgal_type_3D();
-  
-  csg::Polyhedron_3 p;
-  //cgal_geometry.convert_to_polyhedron(p);
 
-  // Copy_polyhedron_to<csg::Nef_polyhedron_3, csg::Polyhedron_3> converter(cgal_geometry);
-  // converter(p);
+  dolfin_assert(cgal_geometry.is_valid());
+  dolfin_assert(cgal_geometry.is_simple());
 
+  csg::Exact_Polyhedron_3 p;
+  cgal_geometry.convert_to_polyhedron(p);
 
-  // // Create domain
-  csg::Mesh_domain_3 domain(p);
+  csg::Polyhedron_3 p_inexact;
+  copy_to(p, p_inexact);
 
-  csg::Mesh_criteria_3 criteria(CGAL::parameters::facet_angle=25, 
+  // Create domain
+  csg::Mesh_domain domain(p_inexact);
+
+  csg::Mesh_criteria criteria(CGAL::parameters::facet_angle=25, 
   				CGAL::parameters::facet_size=0.15,
   				CGAL::parameters::facet_distance=0.008,
   				CGAL::parameters::cell_radius_edge_ratio=3);
 
-  // // Generate CGAL mesh
+  // Generate CGAL mesh
   csg::C3t3 c3t3 = CGAL::make_mesh_3<csg::C3t3>(domain, criteria);
 
   // Build DOLFIN mesh from CGAL mesh/triangulation
-  //CGALMeshBuilder::build_from_mesh(mesh, c3t3);
-
-  // // Clear mesh
-  // mesh.clear();
-
-  // // CGAL triangulation
-  // typename T::Triangulation t = cgal_mesh.triangulation();
-
-  // // Get various dimensions
-  // const uint gdim = t.finite_vertices_begin()->point().dimension();
-  // const uint tdim = t.dimension();
-  // const uint num_vertices = t.number_of_vertices();
-  // const uint num_cells = cgal_mesh.number_of_cells();
-
-  // // Create a MeshEditor and open
-  // dolfin::MeshEditor mesh_editor;
-  // mesh_editor.open(mesh, tdim, gdim);
-  // mesh_editor.init_vertices(num_vertices);
-  // mesh_editor.init_cells(num_cells);
-
-  // // Add vertices to mesh
-  // unsigned int vertex_index = 0;
-  // typename T::Triangulation::Finite_vertices_iterator v;
-  // for (v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v)
-  // {
-  //   // Get vertex coordinates and add vertex to the mesh
-  //   Point p;
-  //   p[0] = v->point()[0];
-  //   p[1] = v->point()[1];
-  //   p[2] = v->point()[2];
-  
-  //   // Add mesh vertex
-  //   mesh_editor.add_vertex(vertex_index, p);
-  
-  //   // Attach index to vertex and increment
-  //   v->info() = vertex_index++;
-  // }
-
-  // // Sanity check on number of vertices
-  // dolfin_assert(vertex_index == num_vertices);
-  
-  // // Iterate over all cell in triangulation
-  // unsigned int cell_index = 0;
-  // typename T::Triangulation::Finite_cells_iterator c;
-  // for (c = t.finite_cells_begin(); c != t.finite_cells_end(); ++c)
-  // {
-  //   // Add cell if in CGAL mesh, and increment index
-  //   if (cgal_mesh.is_in_complex(c))
-  //   {
-  //     mesh_editor.add_cell(cell_index++, c->vertex(0)->info(),
-  //                                        c->vertex(1)->info(),
-  //                                        c->vertex(2)->info(),
-  //                                        c->vertex(3)->info());
-  //   }
-  // }
-
-  // // Sanity check on number of cells
-  // dolfin_assert(cell_index == num_cells);
-
-  // // Close mesh editor
-  // mesh_editor.close();
-
+  CGALMeshBuilder::build_from_mesh(mesh, c3t3);
 }
 //-----------------------------------------------------------------------------
 #else
