@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-04-19
+// Last changed: 2012-04-29
 
 #ifndef __CSG_OPERATORS_H
 #define __CSG_OPERATORS_H
@@ -59,6 +59,33 @@ namespace dolfin
     boost::shared_ptr<CSGGeometry> _g1;
 
   };
+
+  /// Difference of CSG geometries
+  class CSGDifference : public CSGGeometry
+  {
+  public:
+
+    /// Create union of two geometries
+    CSGDifference(boost::shared_ptr<CSGGeometry> g0,
+             boost::shared_ptr<CSGGeometry> g1);
+
+    /// Return dimension of geometry
+    uint dim() const;
+
+    /// Informal string representation
+    std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
+
+  private:
+
+    boost::shared_ptr<CSGGeometry> _g0;
+    boost::shared_ptr<CSGGeometry> _g1;
+
+  };
+
 
   /// Intersection of CSG geometries
   class CSGIntersection : public CSGGeometry
@@ -115,6 +142,37 @@ namespace dolfin
   {
     return reference_to_no_delete_pointer(g0) + reference_to_no_delete_pointer(g1);
   }
+
+  //--- Difference operators ---
+
+  /// Create union of two geometries
+  boost::shared_ptr<CSGDifference> operator-(boost::shared_ptr<CSGGeometry> g0,
+					     boost::shared_ptr<CSGGeometry> g1)
+  {
+    return boost::shared_ptr<CSGDifference>(new CSGDifference(g0, g1));
+  }
+
+  /// Create union of two geometries
+  boost::shared_ptr<CSGDifference> operator-(CSGGeometry& g0,
+					     boost::shared_ptr<CSGGeometry> g1)
+  {
+    return reference_to_no_delete_pointer(g0) - g1;
+  }
+
+  /// Create union of two geometries
+  boost::shared_ptr<CSGDifference> operator-(boost::shared_ptr<CSGGeometry> g0,
+					     CSGGeometry& g1)
+  {
+    return g0 - reference_to_no_delete_pointer(g1);
+  }
+
+  /// Create union of two geometries
+  boost::shared_ptr<CSGDifference> operator-(CSGGeometry& g0,
+					     CSGGeometry& g1)
+  {
+    return reference_to_no_delete_pointer(g0) - reference_to_no_delete_pointer(g1);
+  }
+
 
   //--- Intersection operators ---
 

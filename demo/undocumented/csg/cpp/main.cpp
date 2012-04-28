@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-04-28
+// Last changed: 2012-04-29
 
 #include <dolfin.h>
 
@@ -44,8 +44,9 @@ int main()
   
   // Define 3D geometry
   csg::Box a(0, 0, 0, 1.0, 1.0, 1.0);
-  csg::Box b(.25, .25, .25, .75, .75, 1.5);
-  const boost::shared_ptr<CSGGeometry> g3d = a+b;
+  csg::Box b(.25, .25, .5, .75, .75, 1.5);
+  csg::Box c(0.4, 0.4, 0, 0.6, 0.6, 1.5);
+  const boost::shared_ptr<CSGGeometry> g3d = a + b - c;
 
   // Test printing
   info("\nCompact output of 3D geometry:");

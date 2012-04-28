@@ -81,6 +81,60 @@ std::string CSGUnion::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+// CSGDifference
+//-----------------------------------------------------------------------------
+CSGDifference::CSGDifference(boost::shared_ptr<CSGGeometry> g0,
+			     boost::shared_ptr<CSGGeometry> g1)
+  : _g0(g0), _g1(g1)
+{
+  assert(g0);
+  assert(g1);
+
+  // Check dimensions
+  if (g0->dim() != g1->dim())
+  {
+    dolfin_error("CSGOperators.cpp",
+                 "create difference of CSG geometries",
+                 "Dimensions of geomestries don't match (%d vs %d)",
+                 g0->dim(), g1->dim());
+  }
+}
+//-----------------------------------------------------------------------------
+dolfin::uint CSGDifference::dim() const
+{
+  assert(_g0->dim() == _g1->dim());
+  return _g0->dim();
+}
+//-----------------------------------------------------------------------------
+csg::Nef_polyhedron_3 CSGDifference::get_cgal_type_3D() const
+{
+  return _g0->get_cgal_type_3D() - _g1->get_cgal_type_3D();
+}
+//-----------------------------------------------------------------------------
+std::string CSGDifference::str(bool verbose) const
+{
+  assert(_g0);
+  assert(_g1);
+
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << "<Difference>\n"
+      << "{\n"
+      << indent(_g0->str(true))
+      << "\n"
+      << indent(_g1->str(true))
+      << "\n}";
+  }
+  else
+  {
+    s << "(" << _g0->str(false) << " - " << _g1->str(false) << ")";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
 // CSGIntersection
 //-----------------------------------------------------------------------------
 CSGIntersection::CSGIntersection(boost::shared_ptr<CSGGeometry> g0,
