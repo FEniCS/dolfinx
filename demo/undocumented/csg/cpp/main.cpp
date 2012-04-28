@@ -41,11 +41,11 @@ int main()
 
   // // Generate mesh
   // Mesh mesh2d(g2d);
-
+  
   // Define 3D geometry
   csg::Box a(0, 0, 0, 1.0, 1.0, 1.0);
   csg::Box b(.25, .25, .25, .75, .75, 1.5);
-  <const CSGGeometry g3d = a+b;
+  const boost::shared_ptr<CSGGeometry> g3d = a+b;
 
   // Test printing
   info("\nCompact output of 3D geometry:");
