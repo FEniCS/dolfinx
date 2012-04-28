@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-13
-// Last changed: 2012-04-13
+// Last changed: 2012-04-28
 
 #include <dolfin.h>
 
@@ -25,25 +27,25 @@ using namespace dolfin;
 int main()
 {
 
-  // Define 2D geometry
-  csg::Rectangle r(0, 0, 1, 1);
-  csg::Circle c(0.5, 0.5, 1);
-  boost::shared_ptr<CSGGeometry> g2d = c*(r + c)*(c + c) + r;
+  // // Define 2D geometry
+  // csg::Rectangle r(0, 0, 1, 1);
+  // csg::Circle c(0.5, 0.5, 1);
+  // boost::shared_ptr<CSGGeometry> g2d = c*(r + c)*(c + c) + r;
 
-  // Test printing
-  info("\nCompact output of 2D geometry:");
-  info(*g2d);
-  info("");
-  info("\nVerbose output of 2D geometry:");
-  info(*g2d, true);
+  // // Test printing
+  // info("\nCompact output of 2D geometry:");
+  // info(*g2d);
+  // info("");
+  // info("\nVerbose output of 2D geometry:");
+  // info(*g2d, true);
 
-  // Generate mesh
-  Mesh mesh2d(g2d);
+  // // Generate mesh
+  // Mesh mesh2d(g2d);
 
   // Define 3D geometry
-  csg::Box b(0, 0, 0, 1, 1, 1);
-  csg::Sphere s(0, 0, 0, 1);
-  boost::shared_ptr<const CSGGeometry> g3d = (b + s)*b*(s + s) + b;
+  csg::Box a(0, 0, 0, 1.0, 1.0, 1.0);
+  csg::Box b(.25, .25, .25, .75, .75, 1.5);
+  <const CSGGeometry g3d = a+b;
 
   // Test printing
   info("\nCompact output of 3D geometry:");
@@ -55,7 +57,7 @@ int main()
   Mesh mesh3d(g3d);
 
   // Plot meshes
-  plot(mesh2d, "2D mesh");
+  //plot(mesh2d, "2D mesh");
   plot(mesh3d, "3D mesh");
 
   return 0;
