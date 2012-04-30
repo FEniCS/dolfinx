@@ -120,7 +120,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
-                           &tpwgts[0], &ubvec[0], options,
+                           reinterpret_cast<real_t*>(&tpwgts[0]), reinterpret_cast<real_t*>(&ubvec[0]), options,
                            &edgecut, &part[0], &(*comm));
   info("Partitioned mesh, edge cut is %d.", edgecut);
 

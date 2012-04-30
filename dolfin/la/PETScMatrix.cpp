@@ -95,13 +95,25 @@ void PETScMatrix::resize(uint M, uint N)
     // and number of off-diagonal non-zeroes (50 in this case).
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
+    #if PETSC_VERSION_RELEASE==1
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
                     50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    #else
+    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
+                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    MatSetUp(*A.get());
+    #endif
   }
   else
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
+    #if PETSC_VERSION_RELEASE==1
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
+    #else
+    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
+                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    MatSetUp(*A.get());
+    #endif
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
     #else
@@ -161,12 +173,24 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   {
     // Get number of nonzeros for each row from sparsity pattern
     dolfin_assert(tensor_layout.sparsity_pattern());
-    std::vector<uint> num_nonzeros(M);
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
+    std::vector<uint> num_nonzeros_diagonal(M);
+    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
 
     // Create matrix
+    #if PETSC_VERSION_RELEASE==1
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 0,
-                    reinterpret_cast<int*>(&num_nonzeros[0]), A.get());
+                    reinterpret_cast<int*>(&num_nonzeros_diagonal[0]), A.get());
+    #else
+    // Get number of nonzeros for each off-diagonal row from sparsity pattern
+    std::vector<uint> num_nonzeros_off_diagonal(M);
+    sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+
+    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
+                    0, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]), 
+                    0, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]), 
+                    A.get());
+    MatSetUp(*A.get());
+    #endif
 
     // Set column indices
     /*
@@ -208,6 +232,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Create matrix
     MatCreate(PETSC_COMM_WORLD, A.get());
+    #if PETSC_VERSION_RELEASE==0
+    MatSetUp(*A.get());
+    #endif
 
     // Set size
     MatSetSizes(*A, m, n, M, N);

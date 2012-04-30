@@ -24,7 +24,11 @@
 #ifdef HAS_PETSC
 
 #include <boost/shared_ptr.hpp>
+#if PETSC_VERSION_RELEASE==1
 #include <private/pcimpl.h>
+#else
+#include <petsc-private/pcimpl.h>
+#endif
 #include <dolfin/common/NoDeleter.h>
 #include "PETScVector.h"
 #include "PETScUserPreconditioner.h"
