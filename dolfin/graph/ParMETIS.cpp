@@ -89,8 +89,13 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Strange weight arrays needed by ParMETIS
   int ncon = 1;
+  #if PARMETIS_MAJOR_VERSION >= 4
   std::vector<double> tpwgts(ncon*nparts, 1.0/static_cast<double>(nparts));
   std::vector<double> ubvec(ncon, 1.05);
+  #else
+  std::vector<float> tpwgts(ncon*nparts, 1.0/static_cast<float>(nparts));
+  std::vector<float> ubvec(ncon, 1.05);
+  #endif
 
   // Options for ParMETIS, use default
   int options[3];
@@ -120,7 +125,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
-                           reinterpret_cast<real_t*>(&tpwgts[0]), reinterpret_cast<real_t*>(&ubvec[0]), options,
+                           &tpwgts[0], &ubvec[0], options,
                            &edgecut, &part[0], &(*comm));
   info("Partitioned mesh, edge cut is %d.", edgecut);
 
