@@ -232,10 +232,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Create matrix
     MatCreate(PETSC_COMM_WORLD, A.get());
-    #if PETSC_VERSION_RELEASE==0
-    MatSetUp(*A.get());
-    #endif
-
     // Set size
     MatSetSizes(*A, m, n, M, N);
 
@@ -255,6 +251,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     #endif
 
     MatSetFromOptions(*A);
+
+    #if PETSC_VERSION_RELEASE==0
+    MatSetUp(*A.get());
+    #endif
   }
 }
 //-----------------------------------------------------------------------------
