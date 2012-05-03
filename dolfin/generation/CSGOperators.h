@@ -50,6 +50,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
 #ifdef HAS_CGAL
+    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
     csg::Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif    
 
@@ -76,6 +77,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
 #ifdef HAS_CGAL
+    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
     csg::Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif    
 
@@ -103,6 +105,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
 #ifdef HAS_CGAL
+    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
     csg::Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif    
 

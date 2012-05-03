@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
+//
 // First added:  2012-04-11
-// Last changed: 2012-04-13
+// Last changed: 2012-05-03
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -42,6 +44,11 @@ namespace dolfin
       /// Return dimension of geometry
       uint dim() const { return 2; }
 
+#ifdef HAS_CGAL
+      Nef_polyhedron_3 get_cgal_type_3D() const
+      { return Nef_polyhedron_3(); }
+#endif
+
     };
 
     /// This class describes a 2D circle which can be used to build
@@ -63,6 +70,10 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+      Nef_polyhedron_2 get_cgal_type_2D() const;
+#endif
 
     private:
 
@@ -92,6 +103,10 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+      Nef_polyhedron_2 get_cgal_type_2D() const;
+#endif
 
     private:
 

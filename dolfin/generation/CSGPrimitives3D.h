@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet, 2012
+// Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-04-19
+// Last changed: 2012-05-03
 
 #ifndef __CSG_PRIMITIVES_3D_H
 #define __CSG_PRIMITIVES_3D_H
@@ -43,6 +44,11 @@ namespace dolfin
 
       /// Return dimension of geometry
       uint dim() const { return 3; }
+
+#ifdef HAS_CGAL
+      Nef_polyhedron_2 get_cgal_type_2D() const
+      { return Nef_polyhedron_2(); }
+#endif
 
     };
 
@@ -70,7 +76,7 @@ namespace dolfin
 
 #ifdef HAS_CGAL
       Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
+#endif
 
     private:
       double _x0, _x1, _x2, _r;
@@ -106,7 +112,7 @@ namespace dolfin
 
 #ifdef HAS_CGAL
       Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
+#endif
 
     private:
       double _x0, _x1, _x2, _y0, _y1, _y2;

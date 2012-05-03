@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet, 2012
+// Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-19
-// Last changed: 2012-04-28
+// Last changed: 2012-05-03
 
 #ifndef __CGAL_CSG_H
 #define __CGAL_CSG_H
@@ -39,6 +40,18 @@
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/make_mesh_3.h>
 
+#include <CGAL/Gmpq.h>
+#include <CGAL/Lazy_exact_nt.h>
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Bounded_kernel.h>
+#include <CGAL/Nef_polyhedron_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
 namespace dolfin
 {
@@ -52,7 +65,6 @@ namespace dolfin
     typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_Polyhedron_3;
     typedef Nef_polyhedron_3::Point_3 Point_3;
     typedef Nef_polyhedron_3::Plane_3 Plane_3;
-
 
     //Meshing
     typedef CGAL::Mesh_polyhedron_3<Inexact_Kernel>::Type Polyhedron_3;
@@ -72,13 +84,44 @@ namespace dolfin
     // CGAL 3D triangulation typedefs
     typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base> Tds_mesh;
     typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh>             Tr;
-    
+
     // CGAL 3D mesh typedef
     typedef CGAL::Mesh_complex_3_in_triangulation_3<
     Tr, Mesh_domain::Corner_index, Mesh_domain::Curve_segment_index> C3t3;
 
     // Mesh criteria
     typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
+
+    // CSG 2D
+    typedef CGAL::Lazy_exact_nt<CGAL::Gmpq> FT;
+    typedef CGAL::Simple_cartesian<FT> EKernel;
+    typedef CGAL::Bounded_kernel<EKernel> Extended_kernel;
+    typedef CGAL::Nef_polyhedron_2<Extended_kernel> Nef_polyhedron_2;
+    typedef Nef_polyhedron_2::Point Nef_point_2;
+
+    // Explorer typedefs for Nef_polyhedron_2
+    typedef Nef_polyhedron_2::Explorer Explorer;
+    typedef Explorer::Face_const_iterator Face_const_iterator;
+    typedef Explorer::Hole_const_iterator Hole_const_iterator;
+    typedef Explorer::Halfedge_around_face_const_circulator Halfedge_around_face_const_circulator;
+    typedef Explorer::Vertex_const_handle Vertex_const_handle;
+
+    // CGAL 2D triangulation vertex typedefs
+    typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
+    typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Inexact_Kernel, Vb> Vbb;
+
+    // CGAL 2D triangulation face typedefs
+    typedef CGAL::Delaunay_mesh_face_base_2<Inexact_Kernel> Fb;
+
+    // CGAL 2D triangulation typedefs
+    typedef CGAL::Triangulation_data_structure_2<Vbb, Fb> TDS;
+    typedef CGAL::Constrained_Delaunay_triangulation_2<Inexact_Kernel, TDS> CDT;
+
+    // 2D Mesh criteria
+    typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Mesh_criteria_2;
+
+    // 2D Meshing
+    typedef CGAL::Delaunay_mesher_2<CDT, Mesh_criteria_2> CGAL_Mesher_2;
   }
 }
 

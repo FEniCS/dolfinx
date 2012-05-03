@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
+//
 // First added:  2012-04-13
-// Last changed: 2012-04-13
+// Last changed: 2012-05-03
 
 #include <sstream>
 
@@ -52,10 +54,17 @@ dolfin::uint CSGUnion::dim() const
   return _g0->dim();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+csg::Nef_polyhedron_2 CSGUnion::get_cgal_type_2D() const
+{
+  return _g0->get_cgal_type_2D() + _g1->get_cgal_type_2D();
+}
+//-----------------------------------------------------------------------------
 csg::Nef_polyhedron_3 CSGUnion::get_cgal_type_3D() const
 {
   return _g0->get_cgal_type_3D() + _g1->get_cgal_type_3D();
 }
+#endif
 //-----------------------------------------------------------------------------
 std::string CSGUnion::str(bool verbose) const
 {
@@ -106,10 +115,17 @@ dolfin::uint CSGDifference::dim() const
   return _g0->dim();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+csg::Nef_polyhedron_2 CSGDifference::get_cgal_type_2D() const
+{
+  return _g0->get_cgal_type_2D() - _g1->get_cgal_type_2D();
+}
+//-----------------------------------------------------------------------------
 csg::Nef_polyhedron_3 CSGDifference::get_cgal_type_3D() const
 {
   return _g0->get_cgal_type_3D() - _g1->get_cgal_type_3D();
 }
+#endif
 //-----------------------------------------------------------------------------
 std::string CSGDifference::str(bool verbose) const
 {
@@ -160,10 +176,17 @@ dolfin::uint CSGIntersection::dim() const
   return _g0->dim();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+csg::Nef_polyhedron_2 CSGIntersection::get_cgal_type_2D() const
+{
+  return _g0->get_cgal_type_2D() * _g1->get_cgal_type_2D();
+}
+//-----------------------------------------------------------------------------
 csg::Nef_polyhedron_3 CSGIntersection::get_cgal_type_3D() const
 {
   return _g0->get_cgal_type_3D() * _g1->get_cgal_type_3D();
 }
+#endif
 //-----------------------------------------------------------------------------
 std::string CSGIntersection::str(bool verbose) const
 {

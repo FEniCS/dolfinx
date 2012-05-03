@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet, 2012
+// Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-04-19
+// Last changed: 2012-05-03
 
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
@@ -53,6 +54,7 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
 #ifdef HAS_CGAL
+    virtual csg::Nef_polyhedron_2 get_cgal_type_2D() const = 0;
     virtual csg::Nef_polyhedron_3 get_cgal_type_3D() const = 0;
 #endif
 
