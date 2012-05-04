@@ -25,6 +25,7 @@
 #define __CSG_PRIMITIVES_3D_H
 
 #include "CSGPrimitive.h"
+#include <dolfin/mesh/Point.h>
 
 namespace dolfin
 {
@@ -117,7 +118,41 @@ namespace dolfin
     private:
       double _x0, _x1, _x2, _y0, _y1, _y2;
     };
+
+    /// This class describes a 3D cone which can be used to build
+    /// geometries using Constructive Solid Geometry (CSG).
+    class Cone : public CSGPrimitive3D
+    {
+    public:
+
+      /// Create cone defined by upper and lower center
+      /// and radius respectively.
+      ///
+      /// *Arguments*
+      ///     top (Point)
+      ///         Center at top of cone.
+      ///      top_radius(double)
+      ///         Radius bottom of cone.
+      ///     bottom(Point)
+      ///         Center at top of cone.
+      ///     bottom_radius (double)
+      ///         radius at top of cone.
+      ///     slices (uint)
+      ///         number of faces on the side when generating a 
+      ///         polyhedral approximation.
+      Cone(Point top, Point bottom, double top_radius, double bottom_radius, uint slices=32);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+      Nef_polyhedron_3 get_cgal_type_3D() const;
+#endif    
+      const Point top, bottom;
+      const double top_radius, bottom_radius;
+      const uint slices;
+    };
+
   }
 }
-
 #endif

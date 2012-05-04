@@ -36,6 +36,7 @@
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Polyhedron_3.h>
+#include <CGAL/Polyhedron_incremental_builder_3.h>
 //#include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/make_mesh_3.h>
@@ -63,6 +64,7 @@ namespace dolfin
     // CSG
     typedef CGAL::Nef_polyhedron_3<Exact_Kernel> Nef_polyhedron_3;
     typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_Polyhedron_3;
+    typedef Exact_Polyhedron_3::HalfedgeDS Exact_HalfedgeDS;
     typedef Nef_polyhedron_3::Point_3 Point_3;
     typedef Nef_polyhedron_3::Plane_3 Plane_3;
 

@@ -135,4 +135,223 @@ csg::Nef_polyhedron_3 csg::Box::get_cgal_type_3D() const
 
   return  csg::Nef_polyhedron_3(P);;
 }
+#endif
+//-----------------------------------------------------------------------------
+// Cone
+//-----------------------------------------------------------------------------
+csg::Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, dolfin::uint slices)
+  : top(top), bottom(bottom), top_radius(top_radius), bottom_radius(bottom_radius), slices(slices)
+{
+  if (near(top_radius, 0.0) && near(bottom_radius, 0.0))
+      dolfin_error("CSGPrimitives3D.cpp",
+		   "Create cone",
+		   "Cone with zero thickness");
+      
+  if (top.distance(bottom) < DOLFIN_EPS)
+    dolfin_error("CSGPrimitives3D.cpp",
+		 "Create cone",
+		 "Cone with zero length");
+
+}
+//-----------------------------------------------------------------------------
+std::string csg::Cone::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << "<Cone with top at " << top << ", top radius " << top_radius
+      << " and bottom at " << bottom << ", bottom radius " << bottom_radius << ", with " << slices << " slices>";
+  }
+  else
+  {
+    s << "Cone( "
+      << top << ", " << bottom << ", " << top_radius << ", " << bottom_radius << " )";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+// Return some vector orthogonal to a
+static Point generate_orthogonal(const Point& a)
+{
+  const Point b(0, 1, 0);
+  const Point c(0, 0, 1);
+  
+  // Find a vector not parallel to a.
+  const Point d = (fabs(a.dot(b)) < fabs(a.dot(c))) ? b : c;
+  return a.cross(d);
+}
+//-----------------------------------------------------------------------------
+// Convenience routine to make debugging easier. Remove before releasing.
+static void add_facet(CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS>& builder, 
+		      std::vector<int>& vertices, bool print=false)
+{
+  if (print)
+  {
+    cout << "Begin facet" << endl;
+    if (!vertices.size())
+    {
+      cout << "No vertices in facet!" << endl;
+      return;
+    }
+
+    // Print vertices
+    for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
+    {
+      cout << "Vertex: " << (*it) << endl;
+    }
+
+    if (builder.test_facet(vertices.begin(), vertices.end()))
+      cout << "Facet ok, size: " << vertices.size() << endl;
+    else
+      cout << "Facet not ok" << endl;
+  }
+
+  builder.begin_facet();
+  for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
+  {
+    builder.add_vertex_to_facet(*it);
+  }
+  builder.end_facet();
+
+  if (print)
+    cout << "End facet" << endl;
+}
+//-----------------------------------------------------------------------------
+class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
+{
+ public:
+  Build_cone(const csg::Cone& cone) : cone(cone){}
+
+  void operator()( csg::Exact_HalfedgeDS& hds )
+  {
+    const dolfin::Point axis = cone.top - cone.bottom;
+    dolfin::Point initial = generate_orthogonal(axis/axis.norm());
+
+    CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder( hds, true);
+
+    const int num_faces = cone.slices;
+    const bool top_degenerate = near(cone.top_radius, 0.0);
+    const bool bottom_degenerate = near(cone.bottom_radius, 0.0);
+
+    const int num_vertices = (top_degenerate || bottom_degenerate) ? num_faces+1 : num_faces*2;
+
+    builder.begin_surface(num_vertices, num_faces + 2);
+
+    if (top_degenerate) 
+    {
+      // A single vertex at the top.
+      const csg::Point_3 p(cone.top.x(), cone.top.y(), cone.top.z());
+      builder.add_vertex(p);
+    }
+
+    if (bottom_degenerate) 
+    {
+      // A single vertex at the bottom.
+      const csg::Point_3 p(cone.bottom.x(), cone.bottom.y(), cone.bottom.z());
+      builder.add_vertex(p);
+    }
+
+    const double delta_theta = 2.0 * DOLFIN_PI / num_faces;
+    for (int i = 0; i < num_faces; ++i) 
+    {
+      const double theta = i*delta_theta;
+      const Point rotated = initial.rotate(axis, theta);
+
+      if (!bottom_degenerate)
+      {
+	const Point p = cone.bottom + rotated*cone.bottom_radius;
+	const csg::Point_3 p_(p.x(), p.y(), p.z());
+	builder.add_vertex(p_);
+      }
+
+      if (!top_degenerate) 
+      {
+	const Point p = cone.top + rotated*cone.top_radius;
+	const csg::Point_3 p_(p.x(), p.y(), p.z());
+        builder.add_vertex(p_);
+      }
+    }
+
+    // Construct the facets on the side. 
+    // Vertices must be sorted counter clockwise seen from inside.
+    for (int i = 0; i < num_faces; ++i) 
+    {
+      if (top_degenerate) 
+      {
+	std::vector<int> f;
+	f.push_back(0);
+	f.push_back(i+1);
+	f.push_back((i+1)%num_faces + 1);
+	add_facet(builder, f);
+      } else if (bottom_degenerate) 
+      {
+	std::vector<int> f;
+	f.push_back(0);
+	f.push_back((i + 1) % num_faces + 1);
+	f.push_back(i+1);
+	add_facet(builder, f);
+      } else 
+      {
+	// NOTE: Had to draw the sides with two triangles,
+	// instead of quads. Couldn't get CGAL to accept
+	// the quads. Don't know if it as a problem here
+	// or on the CGAL side. BK
+
+	const int vertex_to_add = i*2;
+
+	// First triangle
+	std::vector<int> f;
+	f.push_back(vertex_to_add+1);
+	f.push_back(vertex_to_add);
+	f.push_back((vertex_to_add + 2) % num_vertices);
+	add_facet(builder, f);
+
+	// Second triangle
+	std::vector<int> g;
+	g.push_back((vertex_to_add + 2) % num_vertices);
+	g.push_back((vertex_to_add + 3) % num_vertices);
+	g.push_back(vertex_to_add+1);
+	add_facet(builder, g);
+      }
+    }
+
+    // Construct the the top facet
+    if (!top_degenerate) 
+    {
+      std::vector<int> f;      
+      for (int i = 0; i < num_faces; i++)
+      {
+	f.push_back(bottom_degenerate ? i+1 : i*2 +1 );
+      }
+      add_facet(builder, f);
+    }
+
+
+    // Construct the bottom facet.
+    if (!bottom_degenerate) 
+    {
+      std::vector<int> f;
+      for (int i = num_faces-1; i >= 0; i -= 1) 
+      {
+	f.push_back(top_degenerate ? i+1 : i*2);
+      }
+      add_facet(builder, f);
+    }
+
+    builder.end_surface();
+  }
+private:
+  const csg::Cone& cone;
+};
+//-----------------------------------------------------------------------------
+csg::Nef_polyhedron_3 csg::Cone::get_cgal_type_3D() const
+{
+  Exact_Polyhedron_3 P;
+  Build_cone builder(*this);
+  P.delegate(builder);
+  return  csg::Nef_polyhedron_3(P);
+}
 #endif    
