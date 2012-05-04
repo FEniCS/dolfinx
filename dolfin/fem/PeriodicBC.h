@@ -139,6 +139,7 @@ namespace dolfin
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
+
     /// Rebuild mapping between dofs
     void rebuild();
 
@@ -146,6 +147,7 @@ namespace dolfin
 
     // Apply boundary conditions, common method
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
+    void parallel_apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Extract dof pairs for sub space and append to list
     void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<uint, uint> >& dof_pairs);
