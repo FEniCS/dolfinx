@@ -18,10 +18,13 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-03
+// Last changed: 2012-05-04
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
+
+#include <vector>
+#include <dolfin/mesh/Point.h>
 
 #include "CSGPrimitive.h"
 
@@ -111,6 +114,32 @@ namespace dolfin
     private:
 
       double _x0, _x1, _y0, _y1;
+
+    };
+
+    /// This class describes a 2D polygon which can be used to build
+    /// geometries using Constructive Solid Geometry (CSG).
+    class Polygon : public CSGPrimitive2D
+    {
+    public:
+
+      /// Create polygon defined by the given vertices.
+      ///
+      /// *Arguments*
+      ///     vertices (std::vector<_Point_>)
+      ///         A vector of _Point_ objects.
+      Polygon(const std::vector<Point>& vertices);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
+#ifdef HAS_CGAL
+      Nef_polyhedron_2 get_cgal_type_2D() const;
+#endif
+
+    private:
+
+      const std::vector<Point>& _vertices;
 
     };
 

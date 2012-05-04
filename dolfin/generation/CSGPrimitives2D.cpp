@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-03
+// Last changed: 2012-05-04
 
 #include <sstream>
 #include <cmath>
@@ -134,6 +134,64 @@ csg::Nef_polyhedron_2 Rectangle::get_cgal_type_2D() const
   points.push_back(Nef_point_2(y0, x1));
   points.push_back(Nef_point_2(y0, y1));
   points.push_back(Nef_point_2(x0, y1));
+
+  return Nef_polyhedron_2(points.begin(), points.end(),
+			  Nef_polyhedron_2::INCLUDED);
+}
+#endif
+//-----------------------------------------------------------------------------
+// Polygon
+//-----------------------------------------------------------------------------
+Polygon::Polygon(const std::vector<Point>& vertices)
+  : _vertices(vertices)
+{
+  if (vertices.size() < 3)
+  {
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create polygon",
+                 "Polygon should have at least three vertices");
+  }
+}
+//-----------------------------------------------------------------------------
+std::string Polygon::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << "<Polygon with with vertices ";
+    std::vector<Point>::const_iterator p;
+    for (p = _vertices.begin(); p != _vertices.end(); ++p)
+    {
+      s << "(" << p->x() << ", " << p->y() << ")";
+      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
+        s << ", ";
+    }
+    s << ">";
+  }
+  else
+  {
+    s << "Polygon(";
+    std::vector<Point>::const_iterator p;
+    for (p = _vertices.begin(); p != _vertices.end(); ++p)
+    {
+      s << "(" << p->x() << ", " << p->y() << ")";
+      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
+        s << ", ";
+    }
+    s << ")";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+#ifdef HAS_CGAL
+csg::Nef_polyhedron_2 Polygon::get_cgal_type_2D() const
+{
+  std::vector<Nef_point_2> points;
+  std::vector<Point>::const_iterator p;
+  for (p = _vertices.begin(); p != _vertices.end(); ++p)
+    points.push_back(Nef_point_2(p->x(), p->y()));
 
   return Nef_polyhedron_2(points.begin(), points.end(),
 			  Nef_polyhedron_2::INCLUDED);
