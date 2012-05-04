@@ -249,6 +249,23 @@ namespace dolfin
       #endif
     }
 
+    // Reduce to process 0
+    template<typename T, typename X> static T reduce(const T& value, X op)
+    {
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+      T out;
+      boost::mpi::reduce(comm, value, out, op, 0);
+      return out;
+      #else
+      dolfin_error("MPI.h",
+                   "call MPI::reduce",
+                   "DOLFIN has been configured without MPI support");
+      return T(0);
+      #endif
+    }
+
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as
     /// reduction op)
     static uint global_offset(uint range, bool exclusive);

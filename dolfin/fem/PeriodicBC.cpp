@@ -173,27 +173,35 @@ void PeriodicBC::rebuild()
   std::vector<std::pair<uint, uint> > dof_pairs;
   extract_dof_pairs(*_function_space, dof_pairs);
 
-  // Resize arrays
-  num_dof_pairs = dof_pairs.size();
-  master_dofs.resize(num_dof_pairs);
-  slave_dofs.resize(num_dof_pairs);
-  rhs_values_master.resize(num_dof_pairs);
-  rhs_values_slave.resize(num_dof_pairs);
-
-  // Store master and slave dofs
-  for (uint i = 0; i < dof_pairs.size(); ++i)
+  if (MPI::process_number() == 0)
   {
-    master_dofs[i] = dof_pairs[i].first;
-    slave_dofs[i] = dof_pairs[i].second;
+    // Resize arrays
+    num_dof_pairs = dof_pairs.size();
+    master_dofs.resize(num_dof_pairs);
+    slave_dofs.resize(num_dof_pairs);
+    rhs_values_master.resize(num_dof_pairs);
+    rhs_values_slave.resize(num_dof_pairs);
+
+    // Store master and slave dofs
+    for (uint i = 0; i < dof_pairs.size(); ++i)
+    {
+      master_dofs[i] = dof_pairs[i].first;
+      slave_dofs[i] = dof_pairs[i].second;
+    }
+    std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
+    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
   }
-  std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
-  std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix* A,
                        GenericVector* b,
                        const GenericVector* x) const
 {
+  // Only the root process should apply the periodic BC, as that's the only
+  // one with the whole dofmap
+  if (MPI::process_number() != 0)
+    return;
+
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -385,23 +393,28 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     p++;
   }
 
-  // Fill up list of dof pairs
-  for (coordinate_iterator it = coordinate_dof_pairs.begin(); it != coordinate_dof_pairs.end(); ++it)
-  {
-    // Check dofs
-    if (it->second.first == -1 || it->second.second == -1)
-    {
-      cout << "At coordinate: x =";
-      for (uint j = 0; j < gdim; ++j)
-        cout << " " << it->first[j];
-      cout << endl;
-      dolfin_error("PeriodicBC.cpp",
-                   "apply periodic boundary condition",
-                   "Could not find a pair of matching degrees of freedom");
-    }
+  coordinate_map final_coordinate_dof_pairs = MPI::reduce(coordinate_dof_pairs, merge_coordinate_map());
 
-    // Store dofs
-    dof_pairs.push_back(it->second);
+  if (MPI::process_number() == 0)
+  {
+    // Fill up list of dof pairs
+    for (coordinate_iterator it = final_coordinate_dof_pairs.begin(); it != final_coordinate_dof_pairs.end(); ++it)
+    {
+      // Check dofs
+      if (it->second.first == -1 || it->second.second == -1)
+      {
+        cout << "At coordinate: x =";
+        for (uint j = 0; j < gdim; ++j)
+          cout << " " << it->first[j];
+        cout << endl;
+        dolfin_error("PeriodicBC.cpp",
+                     "apply periodic boundary condition",
+                     "Could not find a pair of matching degrees of freedom");
+      }
+
+      // Store dofs
+      dof_pairs.push_back(it->second);
+    }
   }
 }
 //-----------------------------------------------------------------------------
