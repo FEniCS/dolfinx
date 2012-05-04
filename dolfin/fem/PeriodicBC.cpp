@@ -519,12 +519,27 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     A->apply("add"); // effect the adding on of the slave rows
   }
 
-  if (A) // now zero the slave rows
+  if (A) // now set the slave rows
   {
     std::pair<uint, uint> dof_range;
     dof_range = A->local_range(0);
 
     A->zero(num_dof_pairs, &slave_dofs[0]);
+    A->apply("insert");
+
+    // Insert 1 and -1
+    uint cols[2];
+    double vals[2] = {1.0, -1.0};
+    for (uint i = 0; i < num_dof_pairs; ++i)
+    {
+      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      {
+        const uint row = slave_dofs[i];
+        cols[0] = master_dofs[i];
+        cols[1] = slave_dofs[i];
+        A->set(vals, 1, &row, 2, cols);
+      }
+    }
     A->apply("insert");
   }
 
