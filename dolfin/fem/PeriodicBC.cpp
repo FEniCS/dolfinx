@@ -229,7 +229,7 @@ void PeriodicBC::apply(GenericMatrix* A,
     if (b)
     {
       double value;
-      b->get(&value, 1, &slave_dofs[i]);
+      b->get_local(&value, 1, &slave_dofs[i]);
       cout << "b: (" << master_dofs[i] << ", " << value << ")" << endl;
       b->add(&value, 1, &master_dofs[i]);
       b->apply("add");
@@ -259,8 +259,8 @@ void PeriodicBC::apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems
   if (x)
   {
-    x->get(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
-    x->get(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
+    x->get_local(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
+    x->get_local(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
     for (uint i = 0; i < num_dof_pairs; i++)
       rhs_values_slave[i] = rhs_values_master[i] - rhs_values_slave[i];
   }
@@ -270,6 +270,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   // Zero slave rows in right-hand side
   if (b)
   {
+    cout << "slave b: (" << slave_dofs[0] << ", " << rhs_values_slave[0] << ") " << endl;
     b->set(&rhs_values_slave[0], num_dof_pairs, &slave_dofs[0]);
     b->apply("insert");
   }
@@ -545,10 +546,68 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
 
   // Do something similar for b and x here
 
-  // not handling x yet
-  dolfin_assert(!x);
+  // Modify boundary values for nonlinear problems
+  if (x)
+  {
+    typedef std::map<uint, double> x_data; // dof_index, value
+    typedef std::map<uint, x_data> proc_x; // processor to send it to
 
-  std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
+    std::set<uint> communicating_processors;
+    proc_x x_map;
+
+    std::pair<uint, uint> dof_range;
+    dof_range = x->local_range(0);
+
+    for (uint i = 0; i < num_dof_pairs; ++i)
+    {
+      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      {
+        double value;
+        x->get_local(&value, 1, &slave_dofs[i]);
+
+        // FIXME: how do I get the owner of master_dofs[i]?
+        // for now, just check if I own it, and if not assume it's
+        // the other (only works on 2 processors)
+        uint master_owner;
+        if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+          master_owner = MPI::process_number();
+        else
+          master_owner = !MPI::process_number();
+
+        x_data data; data[i] = value;
+        x_map[master_owner] = data;
+        communicating_processors.insert(master_owner);
+      }
+      else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+      {
+        // FIXME: how do I get the owner of slave_dofs[i]?
+        // for now, just check if I own it, and if not assume it's
+        // the other (only works on 2 processors)
+        uint slave_owner;
+        if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+          slave_owner = MPI::process_number();
+        else
+          slave_owner = !MPI::process_number();
+
+        communicating_processors.insert(slave_owner);
+      }
+    }
+
+    proc_x received_x;
+    MPI::distribute(communicating_processors, x_map, received_x);
+
+    for (proc_x::const_iterator it = received_x.begin(); it != received_x.end(); ++it)
+    {
+      x_data data = it->second;
+      uint dof_idx = data.begin()->first;
+      double slave_value = data.begin()->second;
+      double master_value;
+      x->get_local(&master_value, 1, &master_dofs[dof_idx]);
+      rhs_values_slave[dof_idx] = master_value - slave_value;
+    }
+  }
+  else
+    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
   if (b)
   {
@@ -565,7 +624,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
       {
         double value;
-        b->get(&value, 1, &slave_dofs[i]);
+        b->get_local(&value, 1, &slave_dofs[i]);
         vec_data data; data[master_dofs[i]] = value;
 
         // FIXME: how do I get the owner of master_dofs[i]?
@@ -615,7 +674,14 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     std::pair<uint, uint> dof_range;
     dof_range = b->local_range(0);
 
-    b->set(&rhs_values_slave[0], num_dof_pairs, &slave_dofs[0]);
+    for (uint i = 0; i < num_dof_pairs; i++)
+    {
+      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      {
+        cout << "slave b: (" << slave_dofs[i] << ", " << rhs_values_slave[i] << ") " << endl;
+        b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
+      }
+    }
     b->apply("insert");
   }
 
