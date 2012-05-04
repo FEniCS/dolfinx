@@ -28,6 +28,8 @@
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
 
+#include <boost/serialization/map.hpp>
+
 namespace dolfin
 {
 
