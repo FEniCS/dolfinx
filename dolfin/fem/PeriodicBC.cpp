@@ -78,6 +78,38 @@ struct lt_coordinate
 typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
 
+// To apply periodic BCs in parallel, we'll need to reduce the coordinate map onto the root
+// processor, and have that apply the BCs. This function below provides the reduction
+// operator used in the MPI reduce.
+struct merge_coordinate_map
+{
+  coordinate_map operator() (coordinate_map x, coordinate_map y)
+  {
+    coordinate_map z;
+
+    for (coordinate_iterator it = x.begin(); it != x.end(); ++it)
+    {
+      z[it->first] = it->second;
+    }
+
+    for (coordinate_iterator it = y.begin(); it != y.end(); ++it)
+    {
+      coordinate_iterator match = z.find(it->first);
+      if (match != z.end())
+      {
+        match->second.first  = std::max(it->second.first, match->second.first);
+        match->second.second = std::max(it->second.second, match->second.second);
+      }
+      else
+      {
+        z[it->first] = it->second;
+      }
+    }
+
+    return z;
+  }
+};
+
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
@@ -85,8 +117,6 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
     num_dof_pairs(0), master_dofs(0), slave_dofs(0),
     rhs_values_master(0), rhs_values_slave(0)
 {
-  not_working_in_parallel("Periodic boundary conditions");
-
   // Build mapping
   rebuild();
 }
@@ -97,8 +127,6 @@ PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
     num_dof_pairs(0), master_dofs(0), slave_dofs(0),
     rhs_values_master(0), rhs_values_slave(0)
 {
-  not_working_in_parallel("Periodic boundary conditions");
-
   // Build mapping
   rebuild();
 }
