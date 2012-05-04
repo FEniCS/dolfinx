@@ -29,26 +29,23 @@ using namespace dolfin;
 
 int main()
 {
-
-  // Define 2D geometry
-  csg::Rectangle r1(-1.25, -0.6, 1.1, 0);
-  csg::Rectangle r2(0.6, -0.8, 1.1, 0.6);
-  csg::Circle c1(-0.5, -0.3, 0.5);
-  csg::Circle c2(0.6, 0.1, 0.25);
-  boost::shared_ptr<CSGGeometry> g2d = (r1 + c1 + r2) - c2;
+  // Define 3D geometry
+  csg::Box a(0, 0, 0, 1.0, 1.0, 1.0);
+  csg::Box b(.25, .25, .5, .75, .75, 1.5);
+  csg::Box c(0.4, 0.4, 0, 0.6, 0.6, 1.5);
+  const boost::shared_ptr<CSGGeometry> g3d = a + b - c;
 
   // Test printing
-  info("\nCompact output of 2D geometry:");
-  info(*g2d);
-  info("");
-  info("\nVerbose output of 2D geometry:");
-  info(*g2d, true);
+  info("\nCompact output of 3D geometry:");
+  info(*g3d);
+  info("\nVerbose output of 3D geometry:");
+  info(*g3d, true);
 
   // Generate mesh
-  Mesh mesh2d(g2d);
+  Mesh mesh3d(g3d);
 
   // Plot meshes
-  plot(mesh2d, "2D mesh");
+  plot(mesh3d, "3D mesh");
 
   return 0;
 }
