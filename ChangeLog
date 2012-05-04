@@ -1,4 +1,8 @@
 1.1.0 [not yet released]
+ - Add new linear algebra backend "PETScCusp" for GPU-accelerated linear algebra
+ - Add sparray method in the Python interface of GenericMatrix, requires scipy.sparse
+ - Make methods that return a view of contigous c-arrays, via a NumPy array, keep
+	a reference from the object so it wont get out of scope
  - Add parameter: "use_petsc_signal_handler", which enables/disable PETSc system signals
  - Avoid unnessesary resize of result vector for A*b
  - MPI functionality for distributing values between neighbours

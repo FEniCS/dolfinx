@@ -859,13 +859,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         {
           const uint global_dof = cell_dofs[i];
 
-          // Skip already checked dofs
-          if (already_visited.in_range(global_dof) && !already_visited.insert(global_dof))
-            continue;
-
+          // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            // Tabulate coordinates of dofs on cell
             dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
             tabulated = true;
           }
@@ -874,9 +870,13 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!on_facet(&(data.coordinates[i][0]), facet))
             continue;
 
+          // Skip already checked dofs
+          if (already_visited.in_range(global_dof) && !already_visited.insert(global_dof))
+            continue;
+
+          // Restrict if not already done
           if (!interpolated)
           {
-            // Restrict coefficient to cell
             g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
             interpolated = true;
           }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2011-11-15
+// Last changed: 2012-04-17
 
 #include <boost/scoped_array.hpp>
 
@@ -66,12 +66,26 @@ void PointSource::apply(GenericVector& b)
   // functions are continuous but may give unexpected results for DG.
   dolfin_assert(V->mesh());
   const Mesh& mesh = *V->mesh();
-  int cell_index = mesh.intersected_cell(p);
+  const int cell_index = mesh.intersected_cell(p);
+
+  // Check that we found the point on at least one processor
+  int num_found = 0;
   if (cell_index < 0)
+    num_found = MPI::sum(0);
+  else
+    num_found = MPI::sum(1);
+  if (MPI::process_number() == 0 && num_found == 0)
   {
     dolfin_error("PointSource.cpp",
                  "apply point source to vector",
                  "The point is outside of the domain (%s)", p.str().c_str());
+  }
+
+  // Only continue if we found the point
+  if (cell_index < 0)
+  {
+    b.apply("add");
+    return;
   }
 
   // Create cell

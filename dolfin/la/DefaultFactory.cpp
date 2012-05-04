@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2011
+//
 // First added:  2008-05-17
 // Last changed: 2011-11-11
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 #include "EpetraFactory.h"
 #include "MTL4Factory.h"
 #include "STLFactory.h"
@@ -103,6 +106,16 @@ LinearAlgebraFactory& DefaultFactory::factory()
                  "access linear algebra backend",
                  "PETSc linear algebra backend is not available");
     #endif
+  }
+  else if (backend == "PETScCusp")
+  {
+#ifdef HAS_PETSC_CUSP
+    return PETScCuspFactory::instance();
+#else
+    dolfin_error("DefaultFactory.cpp",
+                 "access linear algebra backend",
+                 "PETScCusp linear algebra backend is not available");
+#endif
   }
   else if (backend == "Epetra")
   {

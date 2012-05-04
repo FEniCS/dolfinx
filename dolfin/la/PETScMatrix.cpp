@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005-2009
-// Modified by Andy R. Terrel 2005
-// Modified by Ola Skavhaug 2007-2009
-// Modified by Magnus Vikstrøm 2007-2008
-// Modified by Fredrik Valdmanis 2011
+// Modified by Garth N. Wells 2005-2009.
+// Modified by Andy R. Terrel 2005.
+// Modified by Ola Skavhaug 2007-2009.
+// Modified by Magnus Vikstrøm 2007-2008.
+// Modified by Fredrik Valdmanis 2011-2012
 //
 // First added:  2004
 // Last changed: 2012-03-15
@@ -39,6 +39,7 @@
 #include "GenericSparsityPattern.h"
 #include "TensorLayout.h"
 #include "PETScFactory.h"
+#include "PETScCuspFactory.h"
 
 using namespace dolfin;
 
@@ -48,17 +49,36 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix()
+PETScMatrix::PETScMatrix(bool use_gpu) : _use_gpu(use_gpu)
 {
-  // Do nothing
+#ifndef HAS_PETSC_CUSP
+  if (use_gpu)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "create GPU matrix",
+                 "PETSc not compiled with Cusp support");
+  }
+#endif
+
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : PETScBaseMatrix(A)
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) :
+  PETScBaseMatrix(A), _use_gpu(use_gpu)
 {
-  // Do nothing
+#ifndef HAS_PETSC_CUSP
+  if (use_gpu)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "create GPU matrix",
+                 "PETSc not compiled with Cusp support");
+  }
+#endif
+
+  // Do nothing else
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A)
+PETScMatrix::PETScMatrix(const PETScMatrix& A): _use_gpu(false)
 {
   *this = A;
 }
@@ -88,6 +108,7 @@ void PETScMatrix::resize(uint M, uint N)
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
 
+  // FIXME: Check for arch and branch code here
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::num_processes() > 1)
   {
@@ -106,13 +127,12 @@ void PETScMatrix::resize(uint M, uint N)
   }
   else
   {
-    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
+    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in this case)
     #if PETSC_VERSION_RELEASE==1
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
     #else
     MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
                     50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    MatSetUp(*A.get());
     #endif
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
@@ -120,6 +140,9 @@ void PETScMatrix::resize(uint M, uint N)
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #endif
     MatSetFromOptions(*A);
+    #if PETSC_VERSION_RELEASE==0
+    MatSetUp(*A.get());
+    #endif
   }
 }
 //-----------------------------------------------------------------------------
@@ -158,7 +181,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.sparsity_pattern());
   const GenericSparsityPattern& sparsity_pattern = *tensor_layout.sparsity_pattern();
 
-
   // Create matrix (any old matrix is destroyed automatically)
   if (A && !A.unique())
   {
@@ -173,24 +195,26 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   {
     // Get number of nonzeros for each row from sparsity pattern
     dolfin_assert(tensor_layout.sparsity_pattern());
-    std::vector<uint> num_nonzeros_diagonal(M);
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
+    std::vector<uint> num_nonzeros(M);
+    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
-    #if PETSC_VERSION_RELEASE==1
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 0,
-                    reinterpret_cast<int*>(&num_nonzeros_diagonal[0]), A.get());
-    #else
-    // Get number of nonzeros for each off-diagonal row from sparsity pattern
-    std::vector<uint> num_nonzeros_off_diagonal(M);
-    sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+    MatCreate(PETSC_COMM_SELF, A.get());
 
-    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
-                    0, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]), 
-                    0, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]), 
-                    A.get());
-    MatSetUp(*A.get());
-    #endif
+    // Set size
+    MatSetSizes(*A, M, N, M, N);
+
+    // Set matrix type according to chosen architecture
+    if (!_use_gpu)
+      MatSetType(*A, MATSEQAIJ);
+#ifdef HAS_PETSC_CUSP
+    else
+      MatSetType(*A, MATSEQAIJCUSP);
+#endif
+
+    // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
+    // Allocate space (using data from sparsity pattern)
+    MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 
     // Set column indices
     /*
@@ -215,9 +239,17 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     #endif
 
     MatSetFromOptions(*A);
+
+    #if PETSC_VERSION_RELEASE==0
+    MatSetUp(*A.get());
+    #endif
   }
   else
   {
+    if (_use_gpu)
+      not_working_in_parallel("Due to limitations in PETSc, "
+          "distributed PETSc Cusp matrices");
+
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
     //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
@@ -232,6 +264,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Create matrix
     MatCreate(PETSC_COMM_WORLD, A.get());
+
     // Set size
     MatSetSizes(*A, m, n, M, N);
 
@@ -583,6 +616,14 @@ std::string PETScMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
 {
+  if (!_use_gpu)
+    return PETScFactory::instance();
+#ifdef HAS_PETSC_CUSP
+  else
+    return PETScCuspFactory::instance();
+#endif
+
+  // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

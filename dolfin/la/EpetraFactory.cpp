@@ -27,7 +27,6 @@
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/SubSystemsManager.h"
-#include "EpetraSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"

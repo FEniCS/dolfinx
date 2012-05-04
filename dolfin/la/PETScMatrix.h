@@ -19,9 +19,10 @@
 // Modified by Garth N. Wells, 2006-2009.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
+// Modified by Fredrik Valdmanis, 2011.
 //
 // First added:  2004-01-01
-// Last changed: 2009-12-14
+// Last changed: 2011-09-29
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -54,14 +55,14 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    PETScMatrix();
+    PETScMatrix(bool use_gpu=false);
+
+    /// Create matrix from given PETSc Mat pointer
+    explicit PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu=false);
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
-
-    /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(boost::shared_ptr<Mat> A);
-
+    
     /// Destructor
     virtual ~PETScMatrix();
 
@@ -164,6 +165,9 @@ namespace dolfin
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
+
+    // PETSc matrix architecture
+    const bool _use_gpu;
 
   };
 
