@@ -29,6 +29,7 @@
 #include "BoundaryCondition.h"
 
 #include <boost/serialization/map.hpp>
+#include "tuple_serialization.hpp"
 
 namespace dolfin
 {
