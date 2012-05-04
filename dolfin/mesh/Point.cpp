@@ -56,6 +56,15 @@ double Point::dot(const Point& p) const
   return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
 }
 //-----------------------------------------------------------------------------
+Point Point::rotate(const Point& k, double theta)
+{
+  const Point& v = *this;
+  const double cosTheta = cos(theta);
+  const double sinTheta = sin(theta);
+  //Rodriques' rotation formula
+  return v*cosTheta + k.cross(v)*sinTheta + k*k.dot(v)*(1-cosTheta);
+}
+//-----------------------------------------------------------------------------
 std::string Point::str(bool verbose) const
 {
   std::stringstream s;
