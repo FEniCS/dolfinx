@@ -195,6 +195,12 @@ void PeriodicBC::apply(GenericMatrix* A,
                        const GenericVector* x) const
 {
 
+  if (MPI::num_processes() > 1)
+  {
+    parallel_apply(A, b, x);
+    return;
+  }
+
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -423,5 +429,86 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     // Store dofs
     dof_pairs.push_back(it->second);
   }
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::parallel_apply(GenericMatrix* A,
+                       GenericVector* b,
+                       const GenericVector* x) const
+{
+
+  dolfin_assert(num_dof_pairs > 0);
+
+  log(PROGRESS, "Applying periodic boundary conditions to linear system.");
+
+  // Check arguments
+  check_arguments(A, b, x);
+
+  typedef std::pair<std::vector<uint>, std::vector<double> > row_type; // the data for a row
+  typedef std::pair<uint, row_type> row_data;                          // what's the master dof for that row -- to which row should it be added
+  typedef std::map<uint, row_data> proc_row;                           // which processor should the row_data be sent to?
+
+  const GenericDofMap& dofmap = *_function_space->dofmap();
+
+  // Let's just do A for now; the story for b and x are pretty much the same.
+
+  if (A)
+  {
+    proc_row row_map;
+    std::pair<uint, uint> dof_range;
+    dof_range = A->local_range(0);
+    std::set<uint> communicating_processors;
+
+    for (uint i = 0; i < num_dof_pairs; i++)
+    {
+      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      {
+        std::vector<uint> columns;
+        std::vector<double> values;
+        A->getrow(slave_dofs[i], columns, values);
+        row_type row = row_type(columns, values);
+        row_data data = row_data(master_dofs[i], row);
+
+        // FIXME: how do I get the owner of master_dofs[i]?
+        uint master_owner = 0;
+
+        row_map[master_owner] = data;
+        communicating_processors.insert(master_owner);
+
+        // Now that we have fetched the slave row, let's zero it
+        A->zero(1, &slave_dofs[i]);
+      }
+      else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+      {
+        // FIXME: how do I get the owner of slave_dofs[i[?
+        uint slave_owner = 0;
+        communicating_processors.insert(slave_owner);
+      }
+    }
+
+    A->apply("insert"); // effect the zeroing of the slave rows
+
+    proc_row received_rows;
+    MPI::distribute(communicating_processors, row_map, received_rows);
+
+    for (proc_row::const_iterator it = received_rows.begin(); it != received_rows.end(); ++it)
+    {
+      // it->first is the slave owner (not needed)
+      // it->second is the row_data (master_dof and row_type)
+      // it->second.first is the master_dof
+      // it->second.second.first is the column data
+      // it->second.second.second is the value data
+      uint master_dof = it->second.first;
+      row_data data = it->second.second;
+      row_type row = data.second;
+      std::vector<uint> columns = row.first;
+      std::vector<double> values = row.second;
+      A->add(&values[0], 1, &master_dof, columns.size(), &columns[0]);
+    }
+
+    A->apply("add"); // effect the adding on of the slave rows
+  }
+
+  // Do something similar for b and x here
+
 }
 //-----------------------------------------------------------------------------
