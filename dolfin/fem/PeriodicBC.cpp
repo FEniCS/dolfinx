@@ -75,7 +75,11 @@ struct lt_coordinate
 
 // FIXME: Change this to boost::unordered_map
 // Mapping from coordinates to dof pairs
-typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
+// coordinate_map maps a coordinate to a pair of (master dof, slave dof)
+// and each master dof/slave dof is a pair of the degree of freedom index AND its parallel owner.
+typedef std::pair<int, int> dof_data;
+typedef std::pair<dof_data, dof_data> dof_pair;
+typedef std::map<std::vector<double>, dof_pair, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
 
 // To apply periodic BCs in parallel, we'll need to reduce the coordinate map onto each
@@ -97,8 +101,11 @@ struct merge_coordinate_map
       coordinate_iterator match = z.find(it->first);
       if (match != z.end())
       {
-        match->second.first  = std::max(it->second.first, match->second.first);
-        match->second.second = std::max(it->second.second, match->second.second);
+        // Copy the degree of freedom indices and their parallel owners
+        match->second.first.first  = std::max(it->second.first.first, match->second.first.first);
+        match->second.first.second  = std::max(it->second.first.second, match->second.first.second);
+        match->second.second.first  = std::max(it->second.second.first, match->second.second.first);
+        match->second.second.second  = std::max(it->second.second.second, match->second.second.second);
       }
       else
       {
@@ -170,7 +177,7 @@ void PeriodicBC::rebuild()
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
   // Build list of dof pairs
-  std::vector<std::pair<uint, uint> > dof_pairs;
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
   extract_dof_pairs(*_function_space, dof_pairs);
 
   // Resize arrays
@@ -179,13 +186,31 @@ void PeriodicBC::rebuild()
   slave_dofs.resize(num_dof_pairs);
   rhs_values_master.resize(num_dof_pairs);
   rhs_values_slave.resize(num_dof_pairs);
+  if (MPI::num_processes() > 1)
+  {
+    master_owners.resize(num_dof_pairs);
+    slave_owners.resize(num_dof_pairs);
+  }
 
   // Store master and slave dofs
   for (uint i = 0; i < dof_pairs.size(); ++i)
   {
-    master_dofs[i] = dof_pairs[i].first;
-    slave_dofs[i] = dof_pairs[i].second;
+    master_dofs[i] = dof_pairs[i].first.first;
+    slave_dofs[i] = dof_pairs[i].second.first;
   }
+
+  if (MPI::num_processes() > 1)
+  {
+    master_owners.resize(num_dof_pairs);
+    slave_owners.resize(num_dof_pairs);
+    // Store master and slave dofs
+    for (uint i = 0; i < dof_pairs.size(); ++i)
+    {
+      master_owners[i] = dof_pairs[i].first.second;
+      slave_owners[i] = dof_pairs[i].second.second;
+    }
+  }
+
   std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
   std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 }
@@ -271,7 +296,7 @@ void PeriodicBC::apply(GenericMatrix* A,
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
-                                   std::vector<std::pair<uint, uint> >& dof_pairs)
+                                   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs)
 {
   dolfin_assert(function_space.element());
 
@@ -359,13 +384,15 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
         if (it != coordinate_dof_pairs.end())
         {
           // Exists from before, so set dof associated with x
-          it->second.first = global_dof;
+          it->second.first = dof_data(global_dof, MPI::process_number());
         }
         else
         {
           // Doesn't exist, so create new pair (with illegal second value)
-          std::pair<int, int> dofs(global_dof, -1);
-          coordinate_dof_pairs[x] = dofs;
+          dof_data g_dofs(global_dof, -1);
+          dof_data l_dofs(-1, -1);
+          dof_pair pair(g_dofs, l_dofs);
+          coordinate_dof_pairs[x] = pair;
         }
       }
       else if (sub_domain->inside(_y, on_boundary))
@@ -378,13 +405,15 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
         if (it != coordinate_dof_pairs.end())
         {
           // Exists from before, so set dof associated with y
-          it->second.second = global_dof;
+          it->second.second = dof_data(global_dof, MPI::process_number());
         }
         else
         {
           // Doesn't exist, so create new pair (with illegal first value)
-          std::pair<int, int> dofs(-1, global_dof);
-          coordinate_dof_pairs[x] = dofs;
+          dof_data g_dofs(-1, -1);
+          dof_data l_dofs(global_dof, MPI::process_number());
+          dof_pair pair(g_dofs, l_dofs);
+          coordinate_dof_pairs[x] = pair;
         }
       }
     }
@@ -402,7 +431,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   for (coordinate_iterator it = final_coordinate_dof_pairs.begin(); it != final_coordinate_dof_pairs.end(); ++it)
   {
     // Check dofs
-    if (it->second.first == -1 || it->second.second == -1)
+    if (it->second.first.first == -1 || it->second.second.first == -1)
     {
       cout << "At coordinate: x =";
       for (uint j = 0; j < gdim; ++j)
@@ -451,14 +480,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
         A->getrow(slave_dofs[i], columns, values);
         row_type row = row_type(master_dofs[i], columns, values);
 
-        // FIXME: how do I get the owner of master_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint master_owner;
-        if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
-          master_owner = MPI::process_number();
-        else
-          master_owner = !MPI::process_number();
+        uint master_owner = master_owners[i];
 
         if (row_map.find(master_owner) == row_map.end())
         {
@@ -474,14 +496,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
-        // FIXME: how do I get the owner of slave_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint slave_owner;
-        if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
-          slave_owner = MPI::process_number();
-        else
-          slave_owner = !MPI::process_number();
+        uint slave_owner = slave_owners[i];
 
         communicating_processors.insert(slave_owner);
       }
@@ -555,14 +570,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
 
         x_type data = x_type(i, value);
 
-        // FIXME: how do I get the owner of master_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint master_owner;
-        if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
-          master_owner = MPI::process_number();
-        else
-          master_owner = !MPI::process_number();
+        uint master_owner = master_owners[i];
 
         if (x_map.find(master_owner) == x_map.end())
         {
@@ -578,14 +586,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
-        // FIXME: how do I get the owner of slave_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint slave_owner;
-        if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
-          slave_owner = MPI::process_number();
-        else
-          slave_owner = !MPI::process_number();
+        uint slave_owner = slave_owners[i];
 
         communicating_processors.insert(slave_owner);
       }
@@ -633,15 +634,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
         b->get_local(&value, 1, &slave_dofs[i]);
         vec_type data = vec_type(master_dofs[i], value);
 
-        // FIXME: how do I get the owner of master_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint master_owner;
-        if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
-          master_owner = MPI::process_number();
-        else
-          master_owner = !MPI::process_number();
-
+        uint master_owner = master_owners[i];
         if (vec_map.find(master_owner) == vec_map.end())
         {
           vecs_type list; list.push_back(data);
@@ -656,14 +649,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
-        // FIXME: how do I get the owner of slave_dofs[i]?
-        // for now, just check if I own it, and if not assume it's
-        // the other (only works on 2 processors)
-        uint slave_owner;
-        if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
-          slave_owner = MPI::process_number();
-        else
-          slave_owner = !MPI::process_number();
+        uint slave_owner = slave_owners[i];
 
         communicating_processors.insert(slave_owner);
       }
