@@ -78,7 +78,7 @@ struct lt_coordinate
 typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
 
-// To apply periodic BCs in parallel, we'll need to reduce the coordinate map onto the root
+// To apply periodic BCs in parallel, we'll need to reduce the coordinate map onto each
 // processor, and have that apply the BCs. This function below provides the reduction
 // operator used in the MPI reduce.
 struct merge_coordinate_map
