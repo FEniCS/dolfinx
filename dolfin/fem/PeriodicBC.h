@@ -140,7 +140,6 @@ namespace dolfin
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
-
     /// Rebuild mapping between dofs
     void rebuild();
 

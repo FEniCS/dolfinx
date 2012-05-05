@@ -430,6 +430,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
   // Check arguments
   check_arguments(A, b, x);
 
+  // Add the slave equations to its corresponding master equation
   if (A)
   {
     typedef boost::tuples::tuple<uint, std::vector<uint>, std::vector<double> > row_type; // the data for a row -- master dof, cols, vals
@@ -514,7 +515,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     A->zero(num_dof_pairs, &slave_dofs[0]);
     A->apply("insert");
 
-    // Insert 1 and -1
+    // Insert 1 and -1 in the master and slave column of each slave row
     uint cols[2];
     double vals[2] = {1.0, -1.0};
     for (uint i = 0; i < num_dof_pairs; ++i)
@@ -530,7 +531,9 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     A->apply("insert");
   }
 
-  // Modify boundary values for nonlinear problems
+  // Modify boundary values for nonlinear problems.
+  // This doesn't change x, it only changes what the slave
+  // entries of b will be set to.
   if (x)
   {
     typedef boost::tuples::tuple<uint, double> x_type; // dof index, value
@@ -608,6 +611,8 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
   else
     std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
+  // Add the slave equations to the master equations, then set the slave rows to the
+  // appropriate values.
   if (b)
   {
     typedef boost::tuples::tuple<uint, double> vec_type; // master dof, value that should be added
