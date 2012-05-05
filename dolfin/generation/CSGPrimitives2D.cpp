@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-04
+// Last changed: 2012-05-05
 
 #include <sstream>
 #include <cmath>
@@ -34,8 +34,8 @@ using namespace dolfin::csg;
 //-----------------------------------------------------------------------------
 // Circle
 //-----------------------------------------------------------------------------
-Circle::Circle(double x0, double x1, double r)
-  : _x0(x0), _x1(x1), _r(r)
+Circle::Circle(double x0, double x1, double r, dolfin::uint fragments)
+  : _x0(x0), _x1(x1), _r(r), fragments(fragments)
 {
   if (near(_r, 0.0))
   {
@@ -67,11 +67,9 @@ csg::Nef_polyhedron_2 Circle::get_cgal_type_2D() const
 {
   std::vector<Nef_point_2> points;
 
-  int f = 50; // FIXME: Where should we set the number of fragments?
-  //int f = (int) ceil(fmax(fmin(360.0 / 12, _r*DOLFIN_PI), 5));
-  for (int i=0; i<f; i++)
+  for (uint i=0; i < fragments; i++)
   {
-    double phi = (2*DOLFIN_PI*i) / f;
+    double phi = (2*DOLFIN_PI*i) / fragments;
     double x, y;
     if (_r > 0) {
       x = _x0 + _r*cos(phi);
@@ -84,7 +82,7 @@ csg::Nef_polyhedron_2 Circle::get_cgal_type_2D() const
   }
 
   return Nef_polyhedron_2(points.begin(), points.end(),
-			  Nef_polyhedron_2::INCLUDED);
+                          Nef_polyhedron_2::INCLUDED);
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -98,7 +96,7 @@ Rectangle::Rectangle(double x0, double x1, double y0, double y1)
     dolfin_error("CSGPrimitives2D.cpp",
                  "create rectangle",
                  "Rectangle with corner (%f, %f) and (%f, %f) degenerated",
-		 x0, x1, y0, y1);
+                 x0, x1, y0, y1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -136,7 +134,7 @@ csg::Nef_polyhedron_2 Rectangle::get_cgal_type_2D() const
   points.push_back(Nef_point_2(x0, y1));
 
   return Nef_polyhedron_2(points.begin(), points.end(),
-			  Nef_polyhedron_2::INCLUDED);
+                          Nef_polyhedron_2::INCLUDED);
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -194,7 +192,7 @@ csg::Nef_polyhedron_2 Polygon::get_cgal_type_2D() const
     points.push_back(Nef_point_2(p->x(), p->y()));
 
   return Nef_polyhedron_2(points.begin(), points.end(),
-			  Nef_polyhedron_2::INCLUDED);
+                          Nef_polyhedron_2::INCLUDED);
 }
 #endif
 //-----------------------------------------------------------------------------

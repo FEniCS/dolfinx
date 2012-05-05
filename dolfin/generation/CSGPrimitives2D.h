@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-04
+// Last changed: 2012-05-05
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -69,7 +69,9 @@ namespace dolfin
       ///         x1-coordinate of center.
       ///     r (double)
       ///         radius.
-      Circle(double x0, double x1, double r);
+      ///     fragments (uint)
+      ///         number of fragments.
+      Circle(double x0, double x1, double r, uint fragments=32);
 
       /// Informal string representation
       std::string str(bool verbose) const;
@@ -81,6 +83,7 @@ namespace dolfin
     private:
 
       double _x0, _x1, _r;
+      const uint fragments;
 
     };
 
