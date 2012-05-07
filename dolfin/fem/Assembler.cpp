@@ -168,6 +168,13 @@ void Assembler::assemble(GenericTensor& A,
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
+  // Make sure there are zeros on the diagonal
+  if (ufc.form.rank()==2)
+  {
+    if (A.size(0)==A.size(1))
+      assemble_diagonal(A, ufc);
+  }
+
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
 
@@ -180,6 +187,37 @@ void Assembler::assemble(GenericTensor& A,
   // Finalize assembly of global tensor
   if (finalize_tensor)
     A.apply("add");
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_diagonal(GenericTensor& A,
+                                  UFC& ufc)
+{
+  // Form rank
+  const uint form_rank = ufc.form.rank();
+  dolfin_assert(form_rank == 2);
+  dolfin_assert(A.size(0) == A.size(1));
+  
+  // Set timer
+  Timer timer("Assemble diagonal");
+
+  std::vector< const std::vector<uint>* > dofs(form_rank);
+  std::vector< uint > global_row(1);
+  for (uint i = 0; i < form_rank; ++i)
+    dofs[i] = &global_row;
+  const double zero = 0.0;
+
+  const std::pair<uint, uint> row_range = A.local_range(0);
+  const uint m = row_range.second - row_range.first;
+
+  // Loop over rows
+  for (uint row = 0; row < m; row++)
+  {
+    // Get global row number
+    global_row[0] = row + row_range.first;
+    A.add(&zero, dofs);
+
+  }
+
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_cells(GenericTensor& A,
