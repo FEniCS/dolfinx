@@ -157,6 +157,10 @@ namespace dolfin
                          bool add_values=false,
                          bool finalize_tensor=true);
 
+    /// Assemble tensor diagonals ensuring there is a 0.0 on all diagonal entries.
+    static void assemble_diagonal(GenericTensor& A,
+                                  UFC& ufc);
+
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.
     static void assemble_cells(GenericTensor& A,
