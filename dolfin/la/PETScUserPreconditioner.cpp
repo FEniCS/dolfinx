@@ -24,6 +24,7 @@
 #ifdef HAS_PETSC
 
 #include <boost/shared_ptr.hpp>
+#include <petscversion.h>
 #if PETSC_VERSION_RELEASE==1
 #include <private/pcimpl.h>
 #else
