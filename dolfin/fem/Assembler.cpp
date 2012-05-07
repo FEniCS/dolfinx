@@ -198,7 +198,7 @@ void Assembler::assemble_diagonal(GenericTensor& A,
   dolfin_assert(A.size(0) == A.size(1));
   
   // Set timer
-  Timer timer("Assemble cells");
+  Timer timer("Assemble diagonal");
 
   std::vector< std::vector<uint> > dofs(form_rank);
   std::vector< uint > global_row(1);
@@ -207,12 +207,11 @@ void Assembler::assemble_diagonal(GenericTensor& A,
   const std::pair<uint, uint> row_range = A.local_range(0);
   const uint m = row_range.second - row_range.first;
 
-  // Check which rows are zero
+  // Loop over rows
   for (uint row = 0; row < m; row++)
   {
     // Get global row number
     global_row[0] = row + row_range.first;
-    // Get local-to-global dof maps for cell
     for (uint i = 0; i < form_rank; ++i)
       dofs[i] = global_row;
     A.add(&zero, dofs);
