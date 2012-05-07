@@ -49,7 +49,7 @@ void store_object(const T& object, double t,
   file_data << object;
 
   // Check that time values are strictly increasing
-  const uint n = times.size();
+  const dolfin::uint n = times.size();
   if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) <= 0.0)
   {
     dolfin_error("TimeSeries.cpp",
