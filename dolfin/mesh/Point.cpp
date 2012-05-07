@@ -22,6 +22,10 @@
 
 #include <cmath>
 #include "Point.h"
+#include <dolfin/common/constants.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
+#include <dolfin/math/basic.h>
 
 using namespace dolfin;
 
@@ -58,9 +62,12 @@ double Point::dot(const Point& p) const
 //-----------------------------------------------------------------------------
 Point Point::rotate(const Point& k, double theta)
 {
+  dolfin_assert(near(k.norm(), 1.0));
+
   const Point& v = *this;
   const double cosTheta = cos(theta);
   const double sinTheta = sin(theta);
+
   //Rodriques' rotation formula
   return v*cosTheta + k.cross(v)*sinTheta + k*k.dot(v)*(1-cosTheta);
 }

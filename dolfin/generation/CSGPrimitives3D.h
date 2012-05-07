@@ -70,17 +70,19 @@ namespace dolfin
       ///         x2-coordinate of center.
       ///     r (double)
       ///         radius.
-      Sphere(double x0, double x1, double x2, double r);
+      Sphere(Point c, double r, uint slices=32);
 
       /// Informal string representation
       std::string str(bool verbose) const;
+
+      const Point c;
+      const double r;
+      const uint slices;
 
 #ifdef HAS_CGAL
       Nef_polyhedron_3 get_cgal_type_3D() const;
 #endif
 
-    private:
-      double _x0, _x1, _x2, _r;
     };
 
     /// This class describes a 3D box which can be used to build

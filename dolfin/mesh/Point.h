@@ -272,7 +272,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     a (_Point_)
-    ///         The axis to rotate around.
+    ///         The axis to rotate around. Must be unit length.
     ///     theta (_double_)
     ///         The rotation angle.
     ///
