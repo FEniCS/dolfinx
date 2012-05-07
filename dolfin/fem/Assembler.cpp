@@ -200,8 +200,10 @@ void Assembler::assemble_diagonal(GenericTensor& A,
   // Set timer
   Timer timer("Assemble diagonal");
 
-  std::vector< std::vector<uint> > dofs(form_rank);
+  std::vector< const std::vector<uint>* > dofs(form_rank);
   std::vector< uint > global_row(1);
+  for (uint i = 0; i < form_rank; ++i)
+    dofs[i] = &global_row;
   const double zero = 0.0;
 
   const std::pair<uint, uint> row_range = A.local_range(0);
@@ -212,8 +214,6 @@ void Assembler::assemble_diagonal(GenericTensor& A,
   {
     // Get global row number
     global_row[0] = row + row_range.first;
-    for (uint i = 0; i < form_rank; ++i)
-      dofs[i] = global_row;
     A.add(&zero, dofs);
 
   }
