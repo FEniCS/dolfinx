@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - Add check that sample points for TimeSeries are monotone
  - Fix handling of parameter "report" in Krylov solvers
  - Add new linear algebra backend "PETScCusp" for GPU-accelerated linear algebra
  - Add sparray method in the Python interface of GenericMatrix, requires scipy.sparse

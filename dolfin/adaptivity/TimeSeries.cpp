@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-11-23
+// Last changed: 2012-05-07
 
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <boost/scoped_ptr.hpp>
 
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/BinaryFile.h>
@@ -46,6 +47,16 @@ void store_object(const T& object, double t,
 						 times.size(), compressed),
 		       store_connectivity);
   file_data << object;
+
+  // Check that time values are strictly increasing
+  const uint n = times.size();
+  if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) <= 0.0)
+  {
+    dolfin_error("TimeSeries.cpp",
+                 "store object to time series",
+                 "Sample points must be strictly monotone (t_0 = %g, t_1 = %g, t_2 = %g)",
+                 times[n - 2], times[n - 1], t);
+  }
 
   // Add time
   times.push_back(t);
@@ -77,6 +88,13 @@ TimeSeries::TimeSeries(std::string name, bool compressed,
     File file(filename_vector);
     file >> _vector_times;
     log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
+    if (!monotone(_vector_times))
+    {
+      dolfin_error("TimeSeries.cpp",
+                   "read time series from file",
+                   "Sample points for vector data are not strictly monotone in series \"%s\"",
+                   name.c_str());
+    }
   }
   else
     log(PROGRESS, "No vector samples found in time series.");
@@ -91,6 +109,13 @@ TimeSeries::TimeSeries(std::string name, bool compressed,
     File file(filename_mesh);
     file >> _mesh_times;
     log(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
+    if (!monotone(_mesh_times))
+    {
+      dolfin_error("TimeSeries.cpp",
+                   "read time series from file",
+                   "Sample points for mesh data are not strictly monotone in series \"%s\"",
+                   name.c_str());
+    }
   }
   else
     log(PROGRESS, "No mesh samples found in time series.");
@@ -202,7 +227,7 @@ void TimeSeries::retrieve(Mesh& mesh, double t) const
       _mesh_times[index], t);
 
   // Read mesh
-  std::cout << "Mesh file name: " 
+  std::cout << "Mesh file name: "
       << filename_data(_name, "mesh", index, _compressed) << std::endl;
   File file(filename_data(_name, "mesh", index, _compressed));
   file >> mesh;
@@ -278,11 +303,13 @@ std::string TimeSeries::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-bool TimeSeries::increasing(const std::vector<double>& times)
+bool TimeSeries::monotone(const std::vector<double>& times)
 {
-  for (uint i = 0; i < times.size() - 1; i++)
-    if (!(times[i + 1] > times[i]))
+  for (uint i = 0; i < times.size() - 2; i++)
+  {
+    if ((times[i + 2] - times[i + 1])*(times[i + 1] - times[i]) <= 0.0)
       return false;
+  }
   return true;
 }
 //-----------------------------------------------------------------------------
