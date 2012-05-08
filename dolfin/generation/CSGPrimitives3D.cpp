@@ -85,7 +85,18 @@ static void add_vertex(CGAL::Polyhedron_incremental_builder_3<csg::Exact_Halfedg
 csg::Sphere::Sphere(Point c, double r, uint slices)
   : c(c), r(r), slices(slices)
 {
-  // FIXME: Check validity of coordinates here
+  if (r < DOLFIN_EPS)
+    dolfin_error("CSGPrimitives3D.cpp",
+		   "Create sphere",
+		   "Sphere with center (%f, %f, %f) has zero or negative radius", c.x(), c.y(), c.z());
+
+  if (slices < 1)
+  {
+    dolfin_error("CSGPrimitives3D.cpp",
+		 "Create sphere",
+		 "Can't create sphere with zero slices");
+
+  }
 }
 //-----------------------------------------------------------------------------
 std::string csg::Sphere::str(bool verbose) const
@@ -113,25 +124,31 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
-    // FIXME
-    const uint slices = 0;
-    const uint num_sectors = sphere.slices;
+    const uint num_slices = sphere.slices;
+    const uint num_sectors = (sphere.slices+1) * 2;
 
     const dolfin::Point top = sphere.c + Point(sphere.r, 0, 0);
     const dolfin::Point bottom = sphere.c - Point(sphere.r, 0, 0);
     const dolfin::Point axis = Point(1, 0, 0);
 
-    //const int 
+    const int num_vertices = num_slices*num_sectors+2;
+    const int num_facets = num_sectors*2*num_slices;
 
     CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder( hds, true);
 
-    builder.begin_surface(slices+5, slices + 10);
+    builder.begin_surface(num_vertices, num_facets);
 
-    for (uint i = 0; i < num_sectors; i++)
+    const Point slice_rotation_axis(0, 1, 0);
+
+    for (uint i = 0; i < num_slices; i++)
     {
-      const Point direction = Point(0, 1, 0).rotate(axis, i*2.0*DOLFIN_PI/num_sectors);
-      const Point v = sphere.c + direction*sphere.r;
-      add_vertex(builder, csg::Point_3 (v.x(), v.y(), v.z()));
+      const Point sliced = axis.rotate(slice_rotation_axis, (i+1)*DOLFIN_PI/(num_slices+1));
+      for (uint j = 0; j < num_sectors; j++)
+      {
+	const Point direction = sliced.rotate(axis, j*2.0*DOLFIN_PI/num_sectors);
+	const Point v = sphere.c + direction*sphere.r;
+	add_vertex(builder, csg::Point_3 (v.x(), v.y(), v.z()));
+      }
     }
 
     // Add top and bottom vertex
@@ -139,26 +156,55 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
     add_vertex(builder, csg::Point_3(bottom.x(), bottom.y(), bottom.z()));
 
 
+    // Add the side facets
+    for (uint i = 0; i < num_slices-1; i++)
+    {
+      for (uint j = 0; j < num_sectors; j++)
+      {
+	const uint offset1 = i*num_sectors;
+	const uint offset2 = (i+1)*num_sectors;
+
+	{
+	  std::vector<int> f;
+	  f.push_back(offset1 + j);
+	  f.push_back(offset1 + (j+1)%num_sectors);
+	  f.push_back(offset2 + j);
+	  add_facet(builder, f);
+	}
+
+	{
+	  std::vector<int> f;
+	  f.push_back(offset2 + (j+1)%num_sectors);
+	  f.push_back(offset2 + j);
+	  f.push_back(offset1 + (j+1)%num_sectors);
+	  add_facet(builder, f);
+	}
+	
+      }
+    }
+
     // Add the top and bottom facets
+    const uint bottom_offset = num_sectors*(num_slices-1);
+
     for (uint i = 0; i < num_sectors; i++)
     {
       {
 	// Top facet
 	std::vector<int> f;
-	f.push_back( num_sectors );
-	f.push_back( i );
+	f.push_back( num_vertices-2 );
 	f.push_back( (i+1)%num_sectors );
+	f.push_back( i );
 	add_facet(builder, f);
       }
-
+      
       {
-      	// Bottom facet
-      	std::vector<int> f;
-      	//const int offset = 0;
-      	f.push_back( num_sectors+1 );
-      	f.push_back( (i+1) % num_sectors );
-      	f.push_back( i);
-      	add_facet(builder, f);
+	// Bottom facet
+	std::vector<int> f;
+	//const int offset = 0;
+	f.push_back( num_vertices-1 );
+	f.push_back( bottom_offset + i);
+	f.push_back( bottom_offset + (i+1)%num_sectors );
+	add_facet(builder, f);
       }
     }
 
