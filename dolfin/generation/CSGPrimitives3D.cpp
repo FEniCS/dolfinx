@@ -82,7 +82,7 @@ static void add_vertex(CGAL::Polyhedron_incremental_builder_3<csg::Exact_Halfedg
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-csg::Sphere::Sphere(Point c, double r, uint slices)
+csg::Sphere::Sphere(Point c, double r, dolfin::uint slices)
   : c(c), r(r), slices(slices)
 {
   if (r < DOLFIN_EPS)
@@ -124,8 +124,8 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
-    const uint num_slices = sphere.slices;
-    const uint num_sectors = (sphere.slices+1) * 2;
+    const dolfin::uint num_slices = sphere.slices;
+    const dolfin::uint num_sectors = (sphere.slices+1) * 2;
 
     const dolfin::Point top = sphere.c + Point(sphere.r, 0, 0);
     const dolfin::Point bottom = sphere.c - Point(sphere.r, 0, 0);
@@ -140,10 +140,10 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
     const Point slice_rotation_axis(0, 1, 0);
 
-    for (uint i = 0; i < num_slices; i++)
+    for (dolfin::uint i = 0; i < num_slices; i++)
     {
       const Point sliced = axis.rotate(slice_rotation_axis, (i+1)*DOLFIN_PI/(num_slices+1));
-      for (uint j = 0; j < num_sectors; j++)
+      for (dolfin::uint j = 0; j < num_sectors; j++)
       {
 	const Point direction = sliced.rotate(axis, j*2.0*DOLFIN_PI/num_sectors);
 	const Point v = sphere.c + direction*sphere.r;
@@ -157,12 +157,12 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
 
     // Add the side facets
-    for (uint i = 0; i < num_slices-1; i++)
+    for (dolfin::uint i = 0; i < num_slices-1; i++)
     {
-      for (uint j = 0; j < num_sectors; j++)
+      for (dolfin::uint j = 0; j < num_sectors; j++)
       {
-	const uint offset1 = i*num_sectors;
-	const uint offset2 = (i+1)*num_sectors;
+	const dolfin::uint offset1 = i*num_sectors;
+	const dolfin::uint offset2 = (i+1)*num_sectors;
 
 	{
 	  std::vector<int> f;
@@ -184,9 +184,9 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
     }
 
     // Add the top and bottom facets
-    const uint bottom_offset = num_sectors*(num_slices-1);
+    const dolfin::uint bottom_offset = num_sectors*(num_slices-1);
 
-    for (uint i = 0; i < num_sectors; i++)
+    for (dolfin::uint i = 0; i < num_sectors; i++)
     {
       {
 	// Top facet
