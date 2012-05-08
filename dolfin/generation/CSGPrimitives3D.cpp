@@ -356,8 +356,8 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
-    const dolfin::Point axis = cone.top - cone.bottom;
-    dolfin::Point initial = generate_orthogonal(axis/axis.norm());
+    const dolfin::Point axis = (cone.top - cone.bottom)/(cone.top-cone.bottom).norm();
+    dolfin::Point initial = generate_orthogonal(axis);
 
     CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder( hds, true);
 
