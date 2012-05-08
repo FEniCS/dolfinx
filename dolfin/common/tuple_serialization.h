@@ -16,6 +16,6 @@ namespace boost { namespace serialization {
       BOOST_PP_REPEAT_FROM_TO(0,nargs,GENERATE_ELEMENT_SERIALIZE,~)     \
     }
 
-    BOOST_PP_REPEAT_FROM_TO(1,10,GENERATE_TUPLE_SERIALIZE,~);
+    BOOST_PP_REPEAT_FROM_TO(1,10,GENERATE_TUPLE_SERIALIZE,~)
 
 }} 
