@@ -30,10 +30,11 @@ using namespace dolfin;
 int main()
 {
   // Define 3D geometry
-  csg::Box a(0, 0, 0, 1.0, 1.0, 1.0);
-  csg::Cone b(Point(0.5, 0.5, 1.0), Point(.5, .5, 1.5), .5, .1, 32);
-  csg::Box c(0.4, 0.4, 0, 0.6, 0.6, 1.5);
-  const boost::shared_ptr<CSGGeometry> g3d = a + b - c;
+  csg::Box    a(0, 0, 0, 1.0, 1.0, 1.0);
+  csg::Cone   b(Point(0.5, 0.5, 0), Point(.5, .5, -1), .5, 1);
+  csg::Box    c(0.4, 0.4, -1, 0.6, 0.6, 1.5);
+  csg::Sphere d(Point(.5, .5, 1.0), 0.5);
+  const boost::shared_ptr<CSGGeometry> g3d = a + b + d - c;
 
   // Test printing
   info("\nCompact output of 3D geometry:");

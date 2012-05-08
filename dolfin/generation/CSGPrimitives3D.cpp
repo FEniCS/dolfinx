@@ -28,12 +28,75 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+// Convenience routine to make debugging easier. Remove before releasing.
+static void add_facet(CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS>& builder, 
+		      std::vector<int>& vertices, bool print=false)
+{
+  static int facet_no = 0;
+
+  if (print)
+  {
+    cout << "Begin facet " << facet_no << endl;
+    if (!vertices.size())
+    {
+      cout << "No vertices in facet!" << endl;
+      return;
+    }
+
+    // Print vertices
+    for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
+    {
+      cout << "Vertex: " << (*it) << endl;
+    }
+
+    if (builder.test_facet(vertices.begin(), vertices.end()))
+      cout << "Facet ok, size: " << vertices.size() << endl;
+    else
+      cout << "Facet not ok" << endl;
+  }
+
+  builder.begin_facet();
+  for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
+  {
+    builder.add_vertex_to_facet(*it);
+  }
+  builder.end_facet();
+
+  if (print)
+    cout << "End facet" << endl;
+  facet_no++;
+}
+//-----------------------------------------------------------------------------
+static void add_vertex(CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS>& builder, 
+		       const csg::Point_3& point, bool print=false)
+{
+  static int vertex_no = 0;
+  if (print) 
+  {
+    std::cout << "Adding vertex " << vertex_no << " at " << point << std::endl;
+  }
+
+  builder.add_vertex(point);
+  vertex_no++;
+}
+//-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-csg::Sphere::Sphere(double x0, double x1, double x2, double r)
-  : _x0(x0), _x1(x1), _x2(x2), _r(r)
+csg::Sphere::Sphere(Point c, double r, uint slices)
+  : c(c), r(r), slices(slices)
 {
-  // FIXME: Check validity of coordinates here
+  if (r < DOLFIN_EPS)
+    dolfin_error("CSGPrimitives3D.cpp",
+		   "Create sphere",
+		   "Sphere with center (%f, %f, %f) has zero or negative radius", c.x(), c.y(), c.z());
+
+  if (slices < 1)
+  {
+    dolfin_error("CSGPrimitives3D.cpp",
+		 "Create sphere",
+		 "Can't create sphere with zero slices");
+
+  }
 }
 //-----------------------------------------------------------------------------
 std::string csg::Sphere::str(bool verbose) const
@@ -42,23 +105,125 @@ std::string csg::Sphere::str(bool verbose) const
 
   if (verbose)
   {
-    s << "<Sphere at (" << _x0 << ", " << _x1 << ", " << _x2 << ") "
-      << "with radius " << _r << ">";
+    s << "<Sphere at " << c << " "
+      << "with radius " << r << ">";
   }
   else
   {
-    s << "Sphere("
-      << _x0 << ", " << _x1 << ", " << _x2 << ", " << _r << ")";
+    s << "Sphere(" << c << ", " << r << ")";
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
+class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
+{
+ public:
+  Build_sphere(const csg::Sphere& sphere) : sphere(sphere){}
+
+  void operator()( csg::Exact_HalfedgeDS& hds )
+  {
+    const uint num_slices = sphere.slices;
+    const uint num_sectors = (sphere.slices+1) * 2;
+
+    const dolfin::Point top = sphere.c + Point(sphere.r, 0, 0);
+    const dolfin::Point bottom = sphere.c - Point(sphere.r, 0, 0);
+    const dolfin::Point axis = Point(1, 0, 0);
+
+    const int num_vertices = num_slices*num_sectors+2;
+    const int num_facets = num_sectors*2*num_slices;
+
+    CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder( hds, true);
+
+    builder.begin_surface(num_vertices, num_facets);
+
+    const Point slice_rotation_axis(0, 1, 0);
+
+    for (uint i = 0; i < num_slices; i++)
+    {
+      const Point sliced = axis.rotate(slice_rotation_axis, (i+1)*DOLFIN_PI/(num_slices+1));
+      for (uint j = 0; j < num_sectors; j++)
+      {
+	const Point direction = sliced.rotate(axis, j*2.0*DOLFIN_PI/num_sectors);
+	const Point v = sphere.c + direction*sphere.r;
+	add_vertex(builder, csg::Point_3 (v.x(), v.y(), v.z()));
+      }
+    }
+
+    // Add top and bottom vertex
+    add_vertex(builder, csg::Point_3(top.x(), top.y(), top.z()));
+    add_vertex(builder, csg::Point_3(bottom.x(), bottom.y(), bottom.z()));
+
+
+    // Add the side facets
+    for (uint i = 0; i < num_slices-1; i++)
+    {
+      for (uint j = 0; j < num_sectors; j++)
+      {
+	const uint offset1 = i*num_sectors;
+	const uint offset2 = (i+1)*num_sectors;
+
+	{
+	  std::vector<int> f;
+	  f.push_back(offset1 + j);
+	  f.push_back(offset1 + (j+1)%num_sectors);
+	  f.push_back(offset2 + j);
+	  add_facet(builder, f);
+	}
+
+	{
+	  std::vector<int> f;
+	  f.push_back(offset2 + (j+1)%num_sectors);
+	  f.push_back(offset2 + j);
+	  f.push_back(offset1 + (j+1)%num_sectors);
+	  add_facet(builder, f);
+	}
+	
+      }
+    }
+
+    // Add the top and bottom facets
+    const uint bottom_offset = num_sectors*(num_slices-1);
+
+    for (uint i = 0; i < num_sectors; i++)
+    {
+      {
+	// Top facet
+	std::vector<int> f;
+	f.push_back( num_vertices-2 );
+	f.push_back( (i+1)%num_sectors );
+	f.push_back( i );
+	add_facet(builder, f);
+      }
+      
+      {
+	// Bottom facet
+	std::vector<int> f;
+	//const int offset = 0;
+	f.push_back( num_vertices-1 );
+	f.push_back( bottom_offset + i);
+	f.push_back( bottom_offset + (i+1)%num_sectors );
+	add_facet(builder, f);
+      }
+    }
+
+    builder.end_surface();
+
+  }
+
+  private:
+  const csg::Sphere& sphere;
+};
+//-----------------------------------------------------------------------------
 csg::Nef_polyhedron_3 csg::Sphere::get_cgal_type_3D() const
 {
-  //FIXME
-  return Nef_polyhedron_3();
+  Exact_Polyhedron_3 P;
+  Build_sphere builder(*this);
+  P.delegate(builder);
+  dolfin_assert(P.is_valid());
+  dolfin_assert(P.is_closed());
+  return csg::Nef_polyhedron_3(P);
 }
 #endif    
 //-----------------------------------------------------------------------------
@@ -133,7 +298,7 @@ csg::Nef_polyhedron_3 csg::Box::get_cgal_type_3D() const
   e->vertex()->point() = p7;
   P.split_facet( e, f->next()->next());
 
-  return  csg::Nef_polyhedron_3(P);;
+  return csg::Nef_polyhedron_3(P);;
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -184,42 +349,6 @@ static Point generate_orthogonal(const Point& a)
   return a.cross(d);
 }
 //-----------------------------------------------------------------------------
-// Convenience routine to make debugging easier. Remove before releasing.
-static void add_facet(CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS>& builder, 
-		      std::vector<int>& vertices, bool print=false)
-{
-  if (print)
-  {
-    cout << "Begin facet" << endl;
-    if (!vertices.size())
-    {
-      cout << "No vertices in facet!" << endl;
-      return;
-    }
-
-    // Print vertices
-    for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
-    {
-      cout << "Vertex: " << (*it) << endl;
-    }
-
-    if (builder.test_facet(vertices.begin(), vertices.end()))
-      cout << "Facet ok, size: " << vertices.size() << endl;
-    else
-      cout << "Facet not ok" << endl;
-  }
-
-  builder.begin_facet();
-  for (std::vector<int>::iterator it=vertices.begin(); it != vertices.end(); it++)
-  {
-    builder.add_vertex_to_facet(*it);
-  }
-  builder.end_facet();
-
-  if (print)
-    cout << "End facet" << endl;
-}
-//-----------------------------------------------------------------------------
 class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
 {
  public:
@@ -227,8 +356,8 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
-    const dolfin::Point axis = cone.top - cone.bottom;
-    dolfin::Point initial = generate_orthogonal(axis/axis.norm());
+    const dolfin::Point axis = (cone.top - cone.bottom)/(cone.top-cone.bottom).norm();
+    dolfin::Point initial = generate_orthogonal(axis);
 
     CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder( hds, true);
 
@@ -352,6 +481,7 @@ csg::Nef_polyhedron_3 csg::Cone::get_cgal_type_3D() const
   Exact_Polyhedron_3 P;
   Build_cone builder(*this);
   P.delegate(builder);
-  return  csg::Nef_polyhedron_3(P);
+  dolfin_assert(P.is_closed());
+  return csg::Nef_polyhedron_3(P);
 }
 #endif    
