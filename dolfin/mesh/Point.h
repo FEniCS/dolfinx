@@ -279,7 +279,7 @@ namespace dolfin
     /// *Returns*
     ///     Point
     ///         The rotated point.
-    Point rotate(const Point& a, double theta);
+    Point rotate(const Point& a, double theta) const;
 
     // Note: Not a subclass of Variable for efficiency!
 

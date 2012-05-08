@@ -60,7 +60,7 @@ double Point::dot(const Point& p) const
   return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
 }
 //-----------------------------------------------------------------------------
-Point Point::rotate(const Point& k, double theta)
+Point Point::rotate(const Point& k, double theta) const
 {
   dolfin_assert(near(k.norm(), 1.0));
 
