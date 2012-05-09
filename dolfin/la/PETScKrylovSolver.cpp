@@ -49,11 +49,13 @@ namespace dolfin
     void operator() (KSP* _ksp)
     {
       if (_ksp)
+      {
         #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         KSPDestroy(*_ksp);
         #else
         KSPDestroy(_ksp);
         #endif
+      }
       delete _ksp;
     }
   };
@@ -70,7 +72,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
                               ("bicgstab",   KSPBCGS);
 
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> > 
+const std::vector<std::pair<std::string, std::string> >
   PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
