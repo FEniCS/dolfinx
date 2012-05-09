@@ -25,6 +25,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include "Point.h"
 
@@ -59,6 +60,7 @@ namespace dolfin
 
   /// A VertexIterator is a MeshEntityIterator of topological dimension 0.
 
+  /*
   class VertexIterator : public MeshEntityIterator
   {
   public:
@@ -71,6 +73,23 @@ namespace dolfin
 
     inline const Vertex* operator->()
     { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
+
+  };
+  */
+
+  /// Test
+  class VertexIterator : public MeshEntityIteratorBase<Vertex>
+  {
+  public:
+
+    VertexIterator(const Mesh& mesh) : MeshEntityIteratorBase(mesh, 0) {}
+    VertexIterator(const MeshEntity& entity) : MeshEntityIteratorBase(entity, 0) {}
+
+    inline const Vertex& operator*()
+    { return *operator->(); }
+
+    inline const Vertex* operator->()
+    { return MeshEntityIteratorBase<Vertex>::operator->(); }
 
   };
 
