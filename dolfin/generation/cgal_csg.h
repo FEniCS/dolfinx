@@ -69,8 +69,8 @@ namespace dolfin
     typedef Nef_polyhedron_3::Plane_3 Plane_3;
 
     //Meshing
-    typedef CGAL::Mesh_polyhedron_3<Inexact_Kernel>::Type Polyhedron_3;
-    typedef CGAL::Polyhedral_mesh_domain_with_features_3<Inexact_Kernel> Mesh_domain;
+    typedef CGAL::Mesh_polyhedron_3<Inexact_Kernel>::type Polyhedron_3;
+    typedef CGAL::Polyhedral_mesh_domain_with_features_3<Inexact_Kernel, Polyhedron_3> Mesh_domain;
     typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<Inexact_Kernel> Geom_traits;
 
     // CGAL 3D triangulation vertex typedefs
