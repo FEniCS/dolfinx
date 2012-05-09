@@ -1,4 +1,6 @@
 1.1.0 [not yet released]
+ - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs are not handled correctly
+ - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
  - Add check that sample points for TimeSeries are monotone
  - Fix handling of parameter "report" in Krylov solvers
  - Add new linear algebra backend "PETScCusp" for GPU-accelerated linear algebra
