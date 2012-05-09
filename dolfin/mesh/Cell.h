@@ -176,9 +176,14 @@ namespace dolfin
     CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
     CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
-    inline Cell& operator*() { return *operator->(); }
-    inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-    inline Cell& operator[](uint index) { return static_cast<Cell&>(MeshEntityIterator::operator[](index)); }
+    inline Cell& operator*()
+    { return *operator->(); }
+
+    inline Cell* operator->()
+    { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
+
+    inline Cell& operator[](uint index)
+    { return static_cast<Cell&>(MeshEntityIterator::operator[](index)); }
 
   };
 

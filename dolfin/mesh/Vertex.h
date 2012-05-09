@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-01
-// Last changed: 2010-08-16
+// Last changed: 2012-05-09
 
 #ifndef __VERTEX_H
 #define __VERTEX_H
@@ -66,8 +66,11 @@ namespace dolfin
     VertexIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 0) {}
     VertexIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 0) {}
 
-    inline const Vertex& operator*() { return *operator->(); }
-    inline const Vertex* operator->() { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
+    inline const Vertex& operator*()
+    { return *operator->(); }
+
+    inline const Vertex* operator->()
+    { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
 
   };
 
