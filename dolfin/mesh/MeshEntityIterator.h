@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andre Massing, 2009.
+// Modified by Andre Massing 2009
 //
 // First added:  2006-05-09
 // Last changed: 2011-11-08
@@ -157,7 +157,7 @@ namespace dolfin
     MeshEntity* operator->()
     { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
-    /// Random access operator.
+    /// Random access operator
     MeshEntity& operator[] (uint pos)
     { _pos = pos; return *operator->();}
 

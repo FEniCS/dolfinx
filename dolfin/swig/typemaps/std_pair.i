@@ -123,12 +123,12 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) std::pair<dolfin::uint, dolfin::uint>
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<unsigned int, unsigned int>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;
 }
 
-%typemap(in) std::pair<dolfin::uint, dolfin::uint> (std::pair<dolfin::uint, dolfin::uint> tmp_pair, long tmp)
+%typemap(in) std::pair<unsigned int, unsigned int> (std::pair<unsigned int, unsigned int> tmp_pair, long tmp)
 {
   // Check that we have a tuple
   if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
@@ -143,7 +143,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
   {
     tmp = static_cast<long>(PyInt_AsLong(py_first));
     if (tmp>=0)
-       tmp_pair.first = static_cast<dolfin::uint>(tmp);
+       tmp_pair.first = static_cast<unsigned int>(tmp);
     else
       SWIG_exception(SWIG_TypeError, "expected positive 'int' as the first tuple argument ");
   }
@@ -155,7 +155,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
   {
     tmp = static_cast<long>(PyInt_AsLong(py_second));
     if (tmp>=0)
-       tmp_pair.second = static_cast<dolfin::uint>(tmp);
+       tmp_pair.second = static_cast<unsigned int>(tmp);
     else
       SWIG_exception(SWIG_TypeError, "expected positive 'int' as the second tuple argument ");
   }
@@ -190,11 +190,11 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-%typemap(out) std::pair<dolfin::uint, dolfin::uint>
+%typemap(out) std::pair<unsigned int, unsigned int>
 {
   $result = Py_BuildValue("ii", $1.first, $1.second);
 }
-%typemap(out) std::pair<dolfin::uint, bool>
+%typemap(out) std::pair<unsigned int, bool>
 {
   $result = Py_BuildValue("ib", $1.first, $1.second);
 }

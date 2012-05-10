@@ -48,11 +48,13 @@ namespace dolfin
     void operator() (KSP* ksp)
     {
       if (ksp)
+      {
         #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         KSPDestroy(*ksp);
         #else
         KSPDestroy(ksp);
         #endif
+      }
       delete ksp;
     }
   };

@@ -31,7 +31,7 @@
 //              SWIG use: INT32 for integer, DOUBLE for double aso.
 // NUMPYTYPE  : The NumPy type that is going to be checked for
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
-//              'dolfin::uint'
+//              'unsigned int'
 // ARGNAME    : The name of the argument the typemap will kick in for pass nothing
 //              and the typemap will kick in for all argument names
 // CONSTARRAY : If the dolfin::Array is of type const, then pass const for this
@@ -39,7 +39,7 @@
 //-----------------------------------------------------------------------------
 %define IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPECHECK, NUMPYTYPE, TYPE_NAME, ARGNAME, CONSTARRAY)
 
-%typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (CONSTARRAY dolfin::Array<TYPE> &ARGNAME) (dolfin::uint size, TYPE* data)
+%typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (CONSTARRAY dolfin::Array<TYPE> &ARGNAME) (unsigned int size, TYPE* data)
 {
   if (!convert_numpy_to_array_with_check_ ## TYPE_NAME($input, size, data))
     return NULL;
@@ -103,15 +103,15 @@
 
 // Instantiate argument name specific typemaps for non const arguments
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, values, )
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, indices,)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(unsigned int, INT32, NPY_UINT, uint, indices,)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, vertex_values, )
 
 // Instantiate argument name independent typemaps for all
 // const Array <{int, uint, double}>& arguments
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, , const)
-IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, , const)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(unsigned int, INT32, NPY_UINT, uint, , const)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, , const)
 
-OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, NPY_UINT)
+OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(unsigned int, NPY_UINT)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, NPY_DOUBLE)

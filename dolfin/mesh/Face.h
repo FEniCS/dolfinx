@@ -66,8 +66,11 @@ namespace dolfin
     FaceIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
     FaceIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
 
-    inline Face& operator*() { return *operator->(); }
-    inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }
+    inline Face& operator*()
+    { return *operator->(); }
+
+    inline Face* operator->()
+    { return static_cast<Face*>(MeshEntityIterator::operator->()); }
 
   };
 
