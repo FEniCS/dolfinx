@@ -127,7 +127,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %import"dolfin/mesh/MeshEntityIteratorBase.h"
 
 %define MESHENTITYITERATORBASE(ENTITY, name)
-%template(#name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
+%template(name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
 
 // Extend the interface (instead of renaming, doesn't seem to work)
 %extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
