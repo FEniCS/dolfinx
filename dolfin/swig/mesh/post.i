@@ -31,8 +31,6 @@
 // modules has been loaded.
 //=============================================================================
 
-%template(MeshEntityIteratorVertex) dolfin::MeshEntityIteratorBase<dolfin::Vertex>;
-
 //-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------

@@ -12,7 +12,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/MeshEntityIteratorBase.h>
 #include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Vertex.h>

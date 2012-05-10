@@ -130,8 +130,6 @@
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
 
-%shared_ptr(dolfin::MeshEntityIteratorBase<dolfin::Vertex>)
-
 // mesh
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)

@@ -111,13 +111,65 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %rename(_increment) dolfin::SubsetIterator::operator++;
 %rename(_dereference) dolfin::SubsetIterator::operator*;
 
-ignore dolfin::MeshEntityIteratorBase::operator=;
+//-----------------------------------------------------------------------------
+// MeshEntityIteratorBase
+//-----------------------------------------------------------------------------
+
+// Ignore for all specializations done before importing the type
+%ignore dolfin::MeshEntityIteratorBase::operator=;
 %ignore dolfin::MeshEntityIteratorBase::operator->;
 %ignore dolfin::MeshEntityIteratorBase::operator[];
-%rename(_increment) dolfin::MeshEntityIteratorBase::operator++;
-%rename(_decrease) dolfin::MeshEntityIteratorBase::operator--;
-%rename(_dereference) dolfin::MeshEntityIteratorBase::operator*;
+%ignore dolfin::MeshEntityIteratorBase::operator[];
+%ignore dolfin::MeshEntityIteratorBase::operator++;
+%ignore dolfin::MeshEntityIteratorBase::operator--;
+%ignore dolfin::MeshEntityIteratorBase::operator*;
 
+// Forward import base template type
+%import"dolfin/mesh/MeshEntityIteratorBase.h"
+
+%define MESHENTITYITERATORBASE(ENTITY)
+%template(ENTITY ## IteratorBase) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
+
+// Extend the interface (instead of renaming, doesn't seem to work)
+%extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
+{
+  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _increment()
+  {
+    return self->operator++();
+  }
+
+  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _decrease()
+  {
+    return self->operator--();
+  }
+
+  dolfin::ENTITY& _dereference()
+  {
+    return *self->operator->();
+  }
+
+%pythoncode
+%{
+def __iter__(self):
+    self.first = True
+    return self
+
+def next(self):
+    self.first = self.first if hasattr(self,"first") else True
+    if not self.first:
+        self._increment()
+    if self.end():
+        self._decrease()
+        raise StopIteration
+    self.first = False
+    return self._dereference()
+%}
+
+}
+
+%enddef
+
+MESHENTITYITERATORBASE(Vertex)
 
 //-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
@@ -190,3 +242,4 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
+
