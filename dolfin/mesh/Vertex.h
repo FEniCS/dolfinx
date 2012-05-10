@@ -57,18 +57,8 @@ namespace dolfin
 
   };
 
-  /// A VertexIterator is a MeshEntityIterator of topological dimension 0.
-
-  // FIXME: Change to a typedef
-
-  class VertexIterator : public MeshEntityIteratorBase<Vertex>
-  {
-  public:
-
-    VertexIterator(const Mesh& mesh) : MeshEntityIteratorBase(mesh) {}
-    VertexIterator(const MeshEntity& entity) : MeshEntityIteratorBase(entity) {}
-
-  };
+  /// A VertexIterator is a MeshEntityIterator of topological dimension 0
+  typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 
   /// A VertexFunction is a MeshFunction of topological dimension 0.
 

@@ -96,7 +96,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
 %ignore dolfin::MeshEntity::operator->;
-%ignore dolfin::MeshEntityIterator::operator[];
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
 %ignore dolfin::ParallelData::shared_vertices();
@@ -127,8 +126,8 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 // Forward import base template type
 %import"dolfin/mesh/MeshEntityIteratorBase.h"
 
-%define MESHENTITYITERATORBASE(ENTITY)
-%template(ENTITY ## IteratorBase) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
+%define MESHENTITYITERATORBASE(ENTITY, name)
+%template(#name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
 
 // Extend the interface (instead of renaming, doesn't seem to work)
 %extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
@@ -169,12 +168,11 @@ def next(self):
 
 %enddef
 
-MESHENTITYITERATORBASE(Vertex)
+MESHENTITYITERATORBASE(Vertex, vertices)
 
 //-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
 //-----------------------------------------------------------------------------
-%rename(vertices) dolfin::VertexIterator;
 %rename(edges) dolfin::EdgeIterator;
 %rename(faces) dolfin::FaceIterator;
 %rename(facets) dolfin::FacetIterator;
@@ -242,4 +240,3 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
-
