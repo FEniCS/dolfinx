@@ -24,7 +24,7 @@
 #include "dolfin/common/types.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+//#include "MeshEntityIterator.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include "Point.h"
@@ -85,11 +85,11 @@ namespace dolfin
     VertexIterator(const Mesh& mesh) : MeshEntityIteratorBase(mesh, 0) {}
     VertexIterator(const MeshEntity& entity) : MeshEntityIteratorBase(entity, 0) {}
 
-    inline const Vertex& operator*()
-    { return *operator->(); }
+    //inline const Vertex& operator*()
+    //{ return *operator->(); }
 
-    inline const Vertex* operator->()
-    { return MeshEntityIteratorBase<Vertex>::operator->(); }
+    //inline const Vertex* operator->()
+    //{ return MeshEntityIteratorBase<Vertex>::operator->(); }
 
   };
 

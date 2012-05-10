@@ -31,6 +31,8 @@
 // modules has been loaded.
 //=============================================================================
 
+%template(MeshEntityIteratorVertex) dolfin::MeshEntityIteratorBase<dolfin::Vertex>;
+
 //-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
@@ -107,7 +109,7 @@ def array(self):
 %template(CellFunction ## TYPENAME) dolfin::CellFunction<TYPE>;
 %template(EdgeFunction ## TYPENAME) dolfin::EdgeFunction<TYPE>;
 %template(FaceFunction ## TYPENAME) dolfin::FaceFunction<TYPE>;
-%template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>; 
+%template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>;
 %template(VertexFunction ## TYPENAME) dolfin::VertexFunction<TYPE>;
 %enddef
 
@@ -210,15 +212,15 @@ CellFunction = type("CellFunction", (),\
 // Extend MeshFunction interface for assign methods
 %extend dolfin::MeshValueCollection<TYPE>
 {
-  
-  void assign(const dolfin::MeshFunction<TYPE>& mesh_function) 
-  { 
-    (*self) = mesh_function; 
+
+  void assign(const dolfin::MeshFunction<TYPE>& mesh_function)
+  {
+    (*self) = mesh_function;
   }
-  
+
   void assign(const dolfin::MeshValueCollection<TYPE>& mesh_value_collection)
-  { 
-    (*self) = mesh_value_collection; 
+  {
+    (*self) = mesh_value_collection;
   }
 }
 
@@ -306,16 +308,16 @@ def ufl_cell(self):
 def coordinates(self):
     """
     * coordinates\ ()
-    
+
       Get vertex coordinates.
-      
+
       *Returns*
           numpy.array(float)
               Coordinates of all vertices.
-      
+
       *Example*
           .. code-block:: python
-          
+
               >>> mesh = dolfin.UnitSquare(1,1)
               >>> mesh.coordinates()
               array([[ 0.,  0.],
@@ -329,20 +331,20 @@ def coordinates(self):
 
     # Attach a reference to the Mesh to the coord array
     _attach_base_to_numpy_array(coord, self)
-    
+
     return coord
 
 def cells(self):
     """
     Get cell connectivity.
-    
+
     *Returns*
         numpy.array(int)
             Connectivity for all cells.
-    
+
     *Example*
         .. code-block:: python
-        
+
             >>> mesh = dolfin.UnitSquare(1,1)
             >>> mesh.cells()
             array([[0, 1, 3],
@@ -353,9 +355,8 @@ def cells(self):
 
     # Attach a reference to the Mesh to the cells array
     _attach_base_to_numpy_array(cells, self)
-    
+
     return cells
 
 %}
 }
-

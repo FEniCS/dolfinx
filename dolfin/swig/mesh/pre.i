@@ -111,6 +111,14 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %rename(_increment) dolfin::SubsetIterator::operator++;
 %rename(_dereference) dolfin::SubsetIterator::operator*;
 
+ignore dolfin::MeshEntityIteratorBase::operator=;
+%ignore dolfin::MeshEntityIteratorBase::operator->;
+%ignore dolfin::MeshEntityIteratorBase::operator[];
+%rename(_increment) dolfin::MeshEntityIteratorBase::operator++;
+%rename(_decrease) dolfin::MeshEntityIteratorBase::operator--;
+%rename(_dereference) dolfin::MeshEntityIteratorBase::operator*;
+
+
 //-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
 //-----------------------------------------------------------------------------

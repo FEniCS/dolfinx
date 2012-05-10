@@ -29,16 +29,16 @@ namespace dolfin
 
   // parameter
   class Parameters;
-  
+
   // common
-  template<typename T>
-    class Hierarchical;
+  template<typename T> class Hierarchical;
 
   // mesh
   class Mesh;
   class LocalMeshData;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
+  template<typename T> class MeshEntityIteratorBase;
 
   // adaptivity
   class ErrorControl;
@@ -60,4 +60,3 @@ namespace dolfin
   class GenericMatrix;
 
 }
-

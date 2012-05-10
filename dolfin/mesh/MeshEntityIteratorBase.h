@@ -35,7 +35,7 @@ namespace dolfin
   public:
 
     /// Default constructor
-    MeshEntityIteratorBase() : _pos(0), pos_end(0), index(0) {}
+    //MeshEntityIteratorBase() : _pos(0), pos_end(0), index(0) {}
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIteratorBase(const Mesh& mesh, uint dim)
