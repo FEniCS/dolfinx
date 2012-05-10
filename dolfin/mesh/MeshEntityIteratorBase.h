@@ -34,40 +34,32 @@ namespace dolfin
   {
   public:
 
-    /// Default constructor
-    //MeshEntityIteratorBase() : _pos(0), pos_end(0), index(0) {}
-
     /// Create iterator for mesh entities over given topological dimension
-    MeshEntityIteratorBase(const Mesh& mesh, uint dim)
-      : entity(mesh, 0), _pos(0), pos_end(mesh.size(dim)), index(0)
+    explicit MeshEntityIteratorBase(const Mesh& mesh)
+      : entity(mesh, 0), _pos(0), pos_end(0), index(0)
     {
-      // FIXME: Check dim matches dim of T
-
-
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
         return;
 
-      // Initialize mesh entity
-      //entity.init(mesh, dim, 0);
-
-      // Update end position if entities need to be generated first
-      if (pos_end == 0)
-        pos_end = mesh.init(dim);
+      // Get number of entities
+      pos_end = mesh.init(entity.dim());
     }
 
     /// Create iterator for entities of given dimension connected to given entity
-    MeshEntityIteratorBase(const MeshEntity& entity, uint dim)
+    explicit MeshEntityIteratorBase(const MeshEntity& entity)
       : entity(entity.mesh(), 0), _pos(0), index(0)
     {
       // FIXME: Check dim matches dim of T
 
       // Get connectivity
-      const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
+      //const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
+      const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), this->entity.dim());
 
       // Compute connectivity if empty
       if (c.empty())
-        entity.mesh().init(entity.dim(), dim);
+        entity.mesh().init(entity.dim(), this->entity.dim());
+        //entity.mesh().init(entity.dim(), dim);
 
       // Get size and index map
       if (c.empty())
@@ -87,7 +79,7 @@ namespace dolfin
       : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
 
     /// Destructor
-    virtual ~MeshEntityIteratorBase() {}
+    ~MeshEntityIteratorBase() {}
 
     /// Step to next mesh entity (prefix increment)
     MeshEntityIteratorBase& operator++()
