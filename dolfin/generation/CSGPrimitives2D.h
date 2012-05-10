@@ -47,11 +47,6 @@ namespace dolfin
       /// Return dimension of geometry
       uint dim() const { return 2; }
 
-#ifdef HAS_CGAL
-      Nef_polyhedron_3 get_cgal_type_3D() const
-      { return Nef_polyhedron_3(); }
-#endif
-
     };
 
     /// This class describes a 2D circle which can be used to build
@@ -75,10 +70,7 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
-
-#ifdef HAS_CGAL
-      Nef_polyhedron_2 get_cgal_type_2D() const;
-#endif
+      PrimitiveType getPrimitiveType() { return CSGPrimitive::Circle; }
 
     private:
 
@@ -110,9 +102,7 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
-#ifdef HAS_CGAL
-      Nef_polyhedron_2 get_cgal_type_2D() const;
-#endif
+      PrimitiveType getPrimitiveType() { return CSGPrimitive::Rectangle; }
 
     private:
 
@@ -135,10 +125,7 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
-
-#ifdef HAS_CGAL
-      Nef_polyhedron_2 get_cgal_type_2D() const;
-#endif
+      PrimitiveType getPrimitiveType() { return CSGPrimitive::Polygon; }
 
     private:
 

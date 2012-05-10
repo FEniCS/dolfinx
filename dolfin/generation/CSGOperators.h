@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-04-29
+// Last changed: 2012-05-10
 
 #ifndef __CSG_OPERATORS_H
 #define __CSG_OPERATORS_H
@@ -27,7 +27,6 @@
 
 #include <dolfin/common/NoDeleter.h>
 #include "CSGGeometry.h"
-#include "cgal_csg.h"
 
 namespace dolfin
 {
@@ -48,11 +47,6 @@ namespace dolfin
 
     /// Informal string representation
     std::string str(bool verbose) const;
-
-#ifdef HAS_CGAL
-    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
-    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
 
   private:
 
@@ -76,11 +70,6 @@ namespace dolfin
     /// Informal string representation
     std::string str(bool verbose) const;
 
-#ifdef HAS_CGAL
-    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
-    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
-
   private:
 
     boost::shared_ptr<CSGGeometry> _g0;
@@ -103,11 +92,6 @@ namespace dolfin
 
     /// Informal string representation
     std::string str(bool verbose) const;
-
-#ifdef HAS_CGAL
-    csg::Nef_polyhedron_2 get_cgal_type_2D() const;
-    csg::Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
 
   private:
 

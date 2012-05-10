@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,40 +15,33 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet, 2012
-// Modified by Johannes Ring, 2012
-//
-// First added:  2012-04-11
-// Last changed: 2012-05-03
+// First added:  2012-05-10
+// Last changed: 2012-05-10
 
-#ifndef __CSG_GEOMETRY_H
-#define __CSG_GEOMETRY_H
+#ifndef __CSG_CGAL_MESH_GENERATOR3D_H
+#define __CSG_CGAL_MESH_GENERATOR3D_H
 
-#include <dolfin/common/types.h>
-#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
+  // Forward declarations
+  class Mesh;
+  class CSGGeometry;
 
-  /// Geometry described by Constructive Solid Geometry (CSG)
+  /// Mesh generator for Constructive Solid Geometry (CSG)
+  /// utilizing CGALs boolean operation on Nef_polyhedrons.
 
-  class CSGGeometry : public Variable
+  class CSGCGALMeshGenerator3D
   {
-  public:
+  public :
+    CSGCGALMeshGenerator3D(const CSGGeometry& geometry);
+    ~CSGCGALMeshGenerator3D();
+    void generate(Mesh& mesh);
 
-    /// Constructor
-    CSGGeometry();
-
-    /// Destructor
-    virtual ~CSGGeometry();
-
-    /// Return dimension of geometry
-    virtual uint dim() const = 0;
-
-    /// Informal string representation
-    virtual std::string str(bool verbose) const = 0;
-
+    //TODO: Add meshing parameters
+  private:
+    const CSGGeometry& geometry;
   };
 
 }

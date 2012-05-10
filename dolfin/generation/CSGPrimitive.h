@@ -31,7 +31,8 @@ namespace dolfin
   class CSGPrimitive : public CSGGeometry
   {
   public:
-
+    enum PrimitiveType { Box, Sphere, Cone, Circle, Rectangle, Polygon };
+    virtual PrimitiveType getPrimitiveType() = 0;
   };
 
 }

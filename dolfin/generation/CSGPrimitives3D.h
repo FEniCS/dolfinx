@@ -46,11 +46,6 @@ namespace dolfin
       /// Return dimension of geometry
       uint dim() const { return 3; }
 
-#ifdef HAS_CGAL
-      Nef_polyhedron_2 get_cgal_type_2D() const
-      { return Nef_polyhedron_2(); }
-#endif
-
     };
 
     /// This class describes a 3D sphere which can be used to build
@@ -75,13 +70,12 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
+      CSGPrimitive::PrimitiveType getPrimitiveType() 
+      { return CSGPrimitive::Sphere; }
+
       const Point c;
       const double r;
       const uint slices;
-
-#ifdef HAS_CGAL
-      Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif
 
     };
 
@@ -113,9 +107,9 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
-#ifdef HAS_CGAL
-      Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif
+      CSGPrimitive::PrimitiveType getPrimitiveType() 
+      { return CSGPrimitive::Box; }
+
 
     private:
       double _x0, _x1, _x2, _y0, _y1, _y2;
@@ -147,9 +141,9 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
-#ifdef HAS_CGAL
-      Nef_polyhedron_3 get_cgal_type_3D() const;
-#endif    
+      CSGPrimitive::PrimitiveType getPrimitiveType() 
+      { return CSGPrimitive::Cone; }
+
       const Point top, bottom;
       const double top_radius, bottom_radius;
       const uint slices;
