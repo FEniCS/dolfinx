@@ -83,6 +83,7 @@ int PETScUserPreconditioner::PCCreate(PC pc)
   pc->ops->setfromoptions      = 0;
   pc->ops->view                = 0;
   pc->ops->destroy             = 0;
+  pc->ops->reset               = 0;
 
   // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
