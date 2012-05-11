@@ -61,7 +61,6 @@ namespace dolfin
   typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 
   /// A VertexFunction is a MeshFunction of topological dimension 0.
-
   template <typename T> class VertexFunction : public MeshFunction<T>
   {
   public:

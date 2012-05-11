@@ -168,15 +168,15 @@ def next(self):
 
 %enddef
 
+MESHENTITYITERATORBASE(Cell, cells)
+MESHENTITYITERATORBASE(Edge, edges)
+MESHENTITYITERATORBASE(Face, faces)
+MESHENTITYITERATORBASE(Facet, facets)
 MESHENTITYITERATORBASE(Vertex, vertices)
 
 //-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
 //-----------------------------------------------------------------------------
-%rename(edges) dolfin::EdgeIterator;
-%rename(faces) dolfin::FaceIterator;
-%rename(facets) dolfin::FacetIterator;
-%rename(cells) dolfin::CellIterator;
 %rename(entities) dolfin::MeshEntityIterator;
 
 //-----------------------------------------------------------------------------

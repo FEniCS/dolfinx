@@ -27,7 +27,7 @@
 #include <dolfin/common/types.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -102,24 +102,9 @@ namespace dolfin
   };
 
   /// An EdgeIterator is a _MeshEntityIterator_ of topological dimension 1.
-
-  class EdgeIterator : public MeshEntityIterator
-  {
-  public:
-
-    EdgeIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
-    EdgeIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
-
-    inline Edge& operator*()
-    { return *operator->(); }
-
-    inline Edge* operator->()
-    { return static_cast<Edge*>(MeshEntityIterator::operator->()); }
-
-  };
+  typedef MeshEntityIteratorBase<Edge> EdgeIterator;
 
   /// An EdgeFunction is a _MeshFunction_ of topological dimension 1.
-
   template <typename T> class EdgeFunction : public MeshFunction<T>
   {
   public:
