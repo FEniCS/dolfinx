@@ -513,13 +513,12 @@ static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
     return make_box(b);
     break;
   }
-
   default:
     dolfin_error("GeometryToCGALConverter.cpp",
 		 "converting geometry to cgal polyhedron",
 		 "Unhandled primitive type");
-    // Make compiler happy
   }
+    // Make compiler happy.
   return Nef_polyhedron_3();
 }
 //-----------------------------------------------------------------------------
