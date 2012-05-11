@@ -70,7 +70,7 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
-      PrimitiveType getPrimitiveType() { return CSGPrimitive::Circle; }
+      Type getType() const { return CSGGeometry::Circle; }
 
     private:
 
@@ -102,7 +102,7 @@ namespace dolfin
       /// Informal string representation
       std::string str(bool verbose) const;
 
-      PrimitiveType getPrimitiveType() { return CSGPrimitive::Rectangle; }
+      Type getType() const { return CSGGeometry::Rectangle; }
 
     private:
 
@@ -125,7 +125,7 @@ namespace dolfin
 
       /// Informal string representation
       std::string str(bool verbose) const;
-      PrimitiveType getPrimitiveType() { return CSGPrimitive::Polygon; }
+      Type getType() const { return CSGGeometry::Polygon; }
 
     private:
 
