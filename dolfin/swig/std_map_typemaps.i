@@ -124,5 +124,9 @@ MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME)
 //-----------------------------------------------------------------------------
 // Run the macro and instantiate the typemaps
 //-----------------------------------------------------------------------------
+// NOTE: SWIG BUG
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
+// NOTE: in typemaps
 MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint)
 MAP_OUT_TYPEMAPS(unsigned int, double, double)

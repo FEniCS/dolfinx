@@ -1,3 +1,5 @@
+ - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs are not handled correctly
+ - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
  - Add has_foo to easy check what solver and precondictioners are available
  - Add convenience functions for listing available linear_algebra_backends
  - Fix wrong link in Python quick reference.

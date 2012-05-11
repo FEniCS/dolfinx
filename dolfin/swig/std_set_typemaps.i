@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2011-10-05
+// Last changed: 2012-05-09
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -72,5 +72,9 @@ namespace std
 
 %enddef
 
-ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(dolfin::uint, INT32, ids_result, NPY_INT)
-ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
+// NOTE: SWIG BUG
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
+// NOTE: in typemaps
+ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, ids_result, NPY_INT)
+ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, cells, NPY_INT)
