@@ -35,7 +35,9 @@ include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 # Executable
 add_executable(demo_csg main.cpp)
 add_executable(demo_csg_3d main_3d.cpp)
+add_executable(failing_3d failing_3d.cpp)
 
 # Target libraries
 target_link_libraries(demo_csg ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
 target_link_libraries(demo_csg_3d ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(failing_3d ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

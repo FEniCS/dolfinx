@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -18,8 +18,8 @@
 // Modified by Benjamin Kehlet, 2012
 // Modified by Johannes Ring, 2012
 //
-// First added:  2012-04-13
-// Last changed: 2012-05-04
+// First added:  2012-05-11
+// Last changed: 2012-05-11
 
 #include <dolfin.h>
 
@@ -32,7 +32,7 @@ int main()
   // Define 3D geometry
   csg::Box box(0, 0, 0, 1, 1, 1);
   csg::Sphere sphere(Point(0, 0, 0), 0.3);
-  csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
+  csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .3);
 
   const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;;
 
@@ -59,5 +59,4 @@ int main()
   info("DOLFIN must be compiled with CGAL to run this demo.");
   return 0;
 }
-
-#endif
+#endif 
