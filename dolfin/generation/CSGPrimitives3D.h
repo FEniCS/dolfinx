@@ -110,8 +110,6 @@ namespace dolfin
       Type getType() const
       { return CSGGeometry::Box; }
 
-
-    private:
       double _x0, _x1, _x2, _y0, _y1, _y2;
     };
 

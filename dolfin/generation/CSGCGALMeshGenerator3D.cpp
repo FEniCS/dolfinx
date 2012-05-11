@@ -55,11 +55,9 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh)
   // p.make_tetrahedron(a, b, c, d);
 
   csg::Mesh_domain domain(p);
-    
-  cout << "Detecting sharp features" << endl;
 
-  // Get sharp features
-  domain.detect_features();
+  // cout << "Detecting sharp features" << endl;
+  // domain.detect_features();
 
   // Mesh criteria
   csg::Mesh_criteria criteria(CGAL::parameters::edge_size = 0.025,
