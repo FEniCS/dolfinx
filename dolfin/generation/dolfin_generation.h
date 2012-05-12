@@ -21,5 +21,5 @@
 #include <dolfin/generation/CSGPrimitive.h>
 #include <dolfin/generation/CSGPrimitives2D.h>
 #include <dolfin/generation/CSGPrimitives3D.h>
-
+#include <dolfin/generation/CSGGeometries3D.h>
 #endif
