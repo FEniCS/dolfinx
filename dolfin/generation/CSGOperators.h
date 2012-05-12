@@ -132,14 +132,14 @@ namespace dolfin
 
   //--- Difference operators ---
 
-  /// Create union of two geometries
+  /// Create difference of two geometries
   inline  boost::shared_ptr<CSGDifference> operator-(boost::shared_ptr<CSGGeometry> g0,
 					     boost::shared_ptr<CSGGeometry> g1)
   {
     return boost::shared_ptr<CSGDifference>(new CSGDifference(g0, g1));
   }
 
-  /// Create union of two geometries
+  /// Create difference of two geometries
   inline boost::shared_ptr<CSGDifference> operator-(CSGGeometry& g0,
 					     boost::shared_ptr<CSGGeometry> g1)
   {
@@ -153,7 +153,7 @@ namespace dolfin
     return g0 - reference_to_no_delete_pointer(g1);
   }
 
-  /// Create union of two geometries
+  /// Create difference of two geometries
   inline boost::shared_ptr<CSGDifference> operator-(CSGGeometry& g0,
 					     CSGGeometry& g1)
   {
