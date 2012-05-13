@@ -30,7 +30,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
   : geometry(geometry)
-{}
+{
+  parameters = default_parameters();
+}
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D() {}
 //-----------------------------------------------------------------------------
@@ -60,12 +62,12 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh)
   domain.detect_features();
 
   // Mesh criteria
-  csg::Mesh_criteria criteria(CGAL::parameters::edge_size = 0.025,
-			      CGAL::parameters::facet_angle = 25, 
-			      CGAL::parameters::facet_size = 0.05, 
-			      CGAL::parameters::facet_distance = 0.005,
-			      CGAL::parameters::cell_radius_edge_ratio = 3, 
-			      CGAL::parameters::cell_size = 0.05);
+  csg::Mesh_criteria criteria(CGAL::parameters::edge_size = parameters["edge_size"],
+			      CGAL::parameters::facet_angle = parameters["facet_angle"], 
+			      CGAL::parameters::facet_size = parameters["facet_size"], 
+			      CGAL::parameters::facet_distance = parameters["facet_distance"],
+			      CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
+			      CGAL::parameters::cell_size = parameters["cell_size"]);
 
   cout << "Generating mesh" << endl;
   

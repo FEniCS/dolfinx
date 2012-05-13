@@ -21,6 +21,7 @@
 #ifndef __CSG_CGAL_MESH_GENERATOR3D_H
 #define __CSG_CGAL_MESH_GENERATOR3D_H
 
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -32,14 +33,27 @@ namespace dolfin
   /// Mesh generator for Constructive Solid Geometry (CSG)
   /// utilizing CGALs boolean operation on Nef_polyhedrons.
 
-  class CSGCGALMeshGenerator3D
+  class CSGCGALMeshGenerator3D : public Variable
   {
   public :
     CSGCGALMeshGenerator3D(const CSGGeometry& geometry);
     ~CSGCGALMeshGenerator3D();
     void generate(Mesh& mesh);
 
-    //TODO: Add meshing parameters
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("csg_cgal_meshgenerator");
+      p.add("edge_size", 0.025);
+      p.add("facet_angle", 25.0);
+      p.add("facet_size", 0.05);
+      p.add("facet_distance", 0.005);
+      p.add("cell_radius_edge_ratio", 3.0);
+      p.add("cell_size", 0.05);
+
+      return p;
+    }
+
   private:
     const CSGGeometry& geometry;
   };
