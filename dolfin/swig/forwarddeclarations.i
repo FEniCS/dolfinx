@@ -36,6 +36,7 @@ namespace dolfin
   // mesh
   class Vertex;
   class Mesh;
+  class MeshEntity;
   class LocalMeshData;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;

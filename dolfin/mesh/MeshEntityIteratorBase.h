@@ -48,7 +48,7 @@ namespace dolfin
     }
 
     /// Create iterator for entities of given dimension connected to given entity
-    explicit MeshEntityIteratorBase(const dolfin::MeshEntity& entity)
+    explicit MeshEntityIteratorBase(const MeshEntity& entity)
       : entity(entity.mesh(), 0), _pos(0), index(0)
     {
       // Get connectivity
