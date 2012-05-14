@@ -32,7 +32,6 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "Form.h"
 
