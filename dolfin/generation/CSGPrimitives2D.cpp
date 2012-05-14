@@ -18,11 +18,9 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-05
+// Last changed: 2012-05-14
 
 #include <sstream>
-#include <cmath>
-#include <dolfin/common/constants.h>
 #include <dolfin/math/basic.h>
 
 #include "CSGPrimitives2D.h"
@@ -36,11 +34,19 @@ using namespace dolfin::csg;
 Circle::Circle(double x0, double x1, double r, dolfin::uint fragments)
   : _x0(x0), _x1(x1), _r(r), fragments(fragments)
 {
-  if (near(_r, 0.0))
+  if (_r < DOLFIN_EPS)
   {
     dolfin_error("CSGPrimitives2D.cpp",
                  "create circle",
-                 "The radius provided should be greater than zero");
+                 "Circle with center (%f, %f) has zero or negative radius",
+                 _x0, _x1);
+  }
+  if (fragments < 1)
+  {
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create circle",
+                 "Unable to create circle with zero fragments");
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -60,30 +66,6 @@ std::string Circle::str(bool verbose) const
 
   return s.str();
 }
-//-----------------------------------------------------------------------------
-#ifdef HAS_CGAL
-// csg::Nef_polyhedron_2 Circle::get_cgal_type_2D() const
-// {
-//   std::vector<Nef_point_2> points;
-
-//   for (uint i=0; i < fragments; i++)
-//   {
-//     double phi = (2*DOLFIN_PI*i) / fragments;
-//     double x, y;
-//     if (_r > 0) {
-//       x = _x0 + _r*cos(phi);
-//       y = _x1 + _r*sin(phi);
-//     } else {
-//       x=0;
-//       y=0;
-//     }
-//     points.push_back(Nef_point_2(x, y));
-//   }
-
-//   return Nef_polyhedron_2(points.begin(), points.end(),
-//                           Nef_polyhedron_2::INCLUDED);
-// }
-#endif
 //-----------------------------------------------------------------------------
 // Rectangle
 //-----------------------------------------------------------------------------
@@ -117,30 +99,10 @@ std::string Rectangle::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_CGAL
-// csg::Nef_polyhedron_2 Rectangle::get_cgal_type_2D() const
-// {
-//   const double x0 = std::min(_x0, _y0);
-//   const double y0 = std::max(_x0, _y0);
-
-//   const double x1 = std::min(_x1, _y1);
-//   const double y1 = std::max(_x1, _y1);
-
-//   std::vector<Nef_point_2> points;
-//   points.push_back(Nef_point_2(x0, x1));
-//   points.push_back(Nef_point_2(y0, x1));
-//   points.push_back(Nef_point_2(y0, y1));
-//   points.push_back(Nef_point_2(x0, y1));
-
-//   return Nef_polyhedron_2(points.begin(), points.end(),
-//                           Nef_polyhedron_2::INCLUDED);
-// }
-#endif
-//-----------------------------------------------------------------------------
 // Polygon
 //-----------------------------------------------------------------------------
 Polygon::Polygon(const std::vector<Point>& vertices)
-  : _vertices(vertices)
+  : vertices(vertices)
 {
   if (vertices.size() < 3)
   {
@@ -156,12 +118,12 @@ std::string Polygon::str(bool verbose) const
 
   if (verbose)
   {
-    s << "<Polygon with with vertices ";
+    s << "<Polygon with vertices ";
     std::vector<Point>::const_iterator p;
-    for (p = _vertices.begin(); p != _vertices.end(); ++p)
+    for (p = vertices.begin(); p != vertices.end(); ++p)
     {
       s << "(" << p->x() << ", " << p->y() << ")";
-      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
+      if ((p != vertices.end()) && (p + 1 != vertices.end()))
         s << ", ";
     }
     s << ">";
@@ -170,10 +132,10 @@ std::string Polygon::str(bool verbose) const
   {
     s << "Polygon(";
     std::vector<Point>::const_iterator p;
-    for (p = _vertices.begin(); p != _vertices.end(); ++p)
+    for (p = vertices.begin(); p != vertices.end(); ++p)
     {
       s << "(" << p->x() << ", " << p->y() << ")";
-      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
+      if ((p != vertices.end()) && (p + 1 != vertices.end()))
         s << ", ";
     }
     s << ")";
@@ -181,17 +143,4 @@ std::string Polygon::str(bool verbose) const
 
   return s.str();
 }
-//-----------------------------------------------------------------------------
-#ifdef HAS_CGAL
-// csg::Nef_polyhedron_2 Polygon::get_cgal_type_2D() const
-// {
-//   std::vector<Nef_point_2> points;
-//   std::vector<Point>::const_iterator p;
-//   for (p = _vertices.begin(); p != _vertices.end(); ++p)
-//     points.push_back(Nef_point_2(p->x(), p->y()));
-
-//   return Nef_polyhedron_2(points.begin(), points.end(),
-//                           Nef_polyhedron_2::INCLUDED);
-// }
-#endif
 //-----------------------------------------------------------------------------

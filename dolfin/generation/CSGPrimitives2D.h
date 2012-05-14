@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-05
+// Last changed: 2012-05-14
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -72,8 +72,6 @@ namespace dolfin
       std::string str(bool verbose) const;
       Type getType() const { return CSGGeometry::Circle; }
 
-    private:
-
       double _x0, _x1, _r;
       const uint fragments;
 
@@ -104,8 +102,6 @@ namespace dolfin
 
       Type getType() const { return CSGGeometry::Rectangle; }
 
-    private:
-
       double _x0, _x1, _y0, _y1;
 
     };
@@ -127,9 +123,7 @@ namespace dolfin
       std::string str(bool verbose) const;
       Type getType() const { return CSGGeometry::Polygon; }
 
-    private:
-
-      const std::vector<Point>& _vertices;
+      const std::vector<Point>& vertices;
 
     };
 
