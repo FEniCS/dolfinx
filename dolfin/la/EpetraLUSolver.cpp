@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008
-// Last changed: 2011-11-16
+// Last changed: 2012-05-07
 
 #ifdef HAS_TRILINOS
 
@@ -189,8 +189,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
-    log(PROGRESS, "Solving linear system of size %d x %d using Epetra LU solver (%s).",
-        A->size(0), A->size(1), method.c_str());
+    info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
+         A->size(0), A->size(1), method.c_str());
 
   // Downcast vector
   EpetraVector& _x = x.down_cast<EpetraVector>();

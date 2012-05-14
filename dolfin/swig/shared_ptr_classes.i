@@ -51,8 +51,14 @@
 // Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
 // UFC
+%shared_ptr(ufc::cell_integral)
+%shared_ptr(ufc::dofmap)
+%shared_ptr(ufc::finite_element)
 %shared_ptr(ufc::function)
-%import "swig/ufc.i"
+%shared_ptr(ufc::form)
+%shared_ptr(ufc::exterior_facet_integral)
+%shared_ptr(ufc::interior_facet_integral)
+%import(module="ufc") "ufc.h"
 
 //-----------------------------------------------------------------------------
 // Declare shared_ptr stored types in PyDOLFIN
@@ -228,4 +234,3 @@
 %shared_ptr(dolfin::RadauQuadrature)
 %shared_ptr(dolfin::GaussQuadrature)
 %shared_ptr(dolfin::GaussianQuadrature)
-

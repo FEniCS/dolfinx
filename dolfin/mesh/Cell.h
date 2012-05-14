@@ -28,7 +28,7 @@
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include "Point.h"
 
@@ -168,19 +168,7 @@ namespace dolfin
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
-  class CellIterator : public MeshEntityIterator
-  {
-  public:
-
-    CellIterator() : MeshEntityIterator() {}
-    CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
-    CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
-
-    inline Cell& operator*() { return *operator->(); }
-    inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-    inline Cell& operator[](uint index) { return static_cast<Cell&>(MeshEntityIterator::operator[](index)); }
-
-  };
+  typedef MeshEntityIteratorBase<Cell> CellIterator;
 
   /// A CellFunction is a MeshFunction of topological codimension 0.
   template <typename T> class CellFunction : public MeshFunction<T>

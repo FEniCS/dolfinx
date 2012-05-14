@@ -89,6 +89,17 @@ def next(self):
 
   TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+
+%pythoncode%{
+def array(self):
+    """
+    Return a NumPy array view of the data
+    """
+    data = self._array()
+    _attach_base_to_numpy_array(data, self)
+    return data
+
+%}
 }
 
 // Declare templates
@@ -96,7 +107,7 @@ def next(self):
 %template(CellFunction ## TYPENAME) dolfin::CellFunction<TYPE>;
 %template(EdgeFunction ## TYPENAME) dolfin::EdgeFunction<TYPE>;
 %template(FaceFunction ## TYPENAME) dolfin::FaceFunction<TYPE>;
-%template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>; 
+%template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>;
 %template(VertexFunction ## TYPENAME) dolfin::VertexFunction<TYPE>;
 %enddef
 
@@ -199,15 +210,15 @@ CellFunction = type("CellFunction", (),\
 // Extend MeshFunction interface for assign methods
 %extend dolfin::MeshValueCollection<TYPE>
 {
-  
-  void assign(const dolfin::MeshFunction<TYPE>& mesh_function) 
-  { 
-    (*self) = mesh_function; 
+
+  void assign(const dolfin::MeshFunction<TYPE>& mesh_function)
+  {
+    (*self) = mesh_function;
   }
-  
+
   void assign(const dolfin::MeshValueCollection<TYPE>& mesh_value_collection)
-  { 
-    (*self) = mesh_value_collection; 
+  {
+    (*self) = mesh_value_collection;
   }
 }
 
@@ -291,6 +302,59 @@ def ufl_cell(self):
     import ufl
     cells = { 1: ufl.interval, 2: ufl.triangle, 3: ufl.tetrahedron }
     return cells[self.topology().dim()]
+
+def coordinates(self):
+    """
+    * coordinates\ ()
+
+      Get vertex coordinates.
+
+      *Returns*
+          numpy.array(float)
+              Coordinates of all vertices.
+
+      *Example*
+          .. code-block:: python
+
+              >>> mesh = dolfin.UnitSquare(1,1)
+              >>> mesh.coordinates()
+              array([[ 0.,  0.],
+                     [ 1.,  0.],
+                     [ 0.,  1.],
+                     [ 1.,  1.]])
+    """
+
+    # Get coordinates
+    coord = self._coordinates()
+
+    # Attach a reference to the Mesh to the coord array
+    _attach_base_to_numpy_array(coord, self)
+
+    return coord
+
+def cells(self):
+    """
+    Get cell connectivity.
+
+    *Returns*
+        numpy.array(int)
+            Connectivity for all cells.
+
+    *Example*
+        .. code-block:: python
+
+            >>> mesh = dolfin.UnitSquare(1,1)
+            >>> mesh.cells()
+            array([[0, 1, 3],
+                  [0, 2, 3]])
+    """
+    # Get coordinates
+    cells = self._cells()
+
+    # Attach a reference to the Mesh to the cells array
+    _attach_base_to_numpy_array(cells, self)
+
+    return cells
 
 %}
 }

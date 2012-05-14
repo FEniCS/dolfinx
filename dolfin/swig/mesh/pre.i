@@ -35,13 +35,13 @@
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
-  PyObject* coordinates() {
+  PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->num_vertices(),
 					self->geometry().dim(),
 					self->coordinates(), true);
   }
 
-  PyObject* cells() {
+  PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
 				      self->cells(), false);
@@ -53,7 +53,7 @@
 //-----------------------------------------------------------------------------
 %define ALL_VALUES(name, TYPE_NAME)
 %extend name {
-PyObject* array()
+PyObject* _array()
 {
   return %make_numpy_array(1, TYPE_NAME)(self->size(), self->values(), true);
 }
@@ -96,7 +96,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshEntityIterator::operator->;
 %ignore dolfin::MeshEntityIterator::operator[];
 %ignore dolfin::MeshEntity::operator->;
-%ignore dolfin::MeshEntityIterator::operator[];
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
 %ignore dolfin::ParallelData::shared_vertices();
@@ -112,13 +111,72 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %rename(_dereference) dolfin::SubsetIterator::operator*;
 
 //-----------------------------------------------------------------------------
+// MeshEntityIteratorBase
+//-----------------------------------------------------------------------------
+
+// Ignore for all specializations done before importing the type
+%ignore dolfin::MeshEntityIteratorBase::operator=;
+%ignore dolfin::MeshEntityIteratorBase::operator->;
+%ignore dolfin::MeshEntityIteratorBase::operator[];
+%ignore dolfin::MeshEntityIteratorBase::operator[];
+%ignore dolfin::MeshEntityIteratorBase::operator++;
+%ignore dolfin::MeshEntityIteratorBase::operator--;
+%ignore dolfin::MeshEntityIteratorBase::operator*;
+
+// Forward import base template type
+%import"dolfin/mesh/MeshEntityIteratorBase.h"
+
+%define MESHENTITYITERATORBASE(ENTITY, name)
+%template(name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
+
+// Extend the interface (instead of renaming, doesn't seem to work)
+%extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
+{
+  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _increment()
+  {
+    return self->operator++();
+  }
+
+  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _decrease()
+  {
+    return self->operator--();
+  }
+
+  dolfin::ENTITY& _dereference()
+  {
+    return *self->operator->();
+  }
+
+%pythoncode
+%{
+def __iter__(self):
+    self.first = True
+    return self
+
+def next(self):
+    self.first = self.first if hasattr(self,"first") else True
+    if not self.first:
+        self._increment()
+    if self.end():
+        self._decrease()
+        raise StopIteration
+    self.first = False
+    return self._dereference()
+%}
+
+}
+
+%enddef
+
+MESHENTITYITERATORBASE(Cell, cells)
+MESHENTITYITERATORBASE(Edge, edges)
+MESHENTITYITERATORBASE(Face, faces)
+MESHENTITYITERATORBASE(Facet, facets)
+MESHENTITYITERATORBASE(Vertex, vertices)
+
+//-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
 //-----------------------------------------------------------------------------
-%rename(vertices) dolfin::VertexIterator;
-%rename(edges) dolfin::EdgeIterator;
-%rename(faces) dolfin::FaceIterator;
-%rename(facets) dolfin::FacetIterator;
-%rename(cells) dolfin::CellIterator;
 %rename(entities) dolfin::MeshEntityIterator;
 
 //-----------------------------------------------------------------------------

@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2009
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008
-// Last changed: 2011-11-18
+// Last changed: 2012-05-07
 
 #ifdef HAS_TRILINOS
 
@@ -58,7 +58,7 @@ const std::map<std::string, int> EpetraKrylovSolver::_methods
                               ("bicgstab", AZ_bicgstab);
 
 // List of available solvers descriptions
-const std::vector<std::pair<std::string, std::string> > 
+const std::vector<std::pair<std::string, std::string> >
 EpetraKrylovSolver::_methods_descr = boost::assign::pair_list_of
     ("default",    "default Krylov method")
     ("cg",         "Conjugate gradient method")
@@ -181,8 +181,9 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   }
 
   // Write a message
-  if (parameters["report"])
-    log(PROGRESS, "Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
+  const bool report = parameters["report"];
+  if (report && dolfin::MPI::process_number() == 0)
+    info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
   if (x.size() != M)
@@ -200,7 +201,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   solver->SetProblem(linear_problem);
 
   // Set output level
-  if(parameters["monitor_convergence"])
+  if (parameters["monitor_convergence"])
     solver->SetAztecOption(AZ_output, 1);
   else
     solver->SetAztecOption(AZ_output, AZ_none);

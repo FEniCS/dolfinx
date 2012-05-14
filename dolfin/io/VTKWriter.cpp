@@ -26,7 +26,6 @@
 #include <vector>
 #include <boost/detail/endian.hpp>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -34,6 +33,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "Encoder.h"

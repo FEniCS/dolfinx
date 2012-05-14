@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-12-16
-// Last changed: 2011-05-30
+// Last changed: 2012-03-28
 
 //-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
@@ -69,9 +69,19 @@
   TYPE __getitem__(unsigned int i) const { return (*self)[i]; }
   void __setitem__(unsigned int i, const TYPE& val) { (*self)[i] = val; }
 
-  PyObject * array(){
+  PyObject * _array(){
     return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data(), true);
   }
+
+  %pythoncode%{
+def array(self):
+    """
+    Return a NumPy array view of object
+    """
+    data = self._array()
+    _attach_base_to_numpy_array(data, self)
+    return data
+    %}
 
 }
 %enddef

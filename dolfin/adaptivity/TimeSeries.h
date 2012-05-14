@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-10-23
+// Last changed: 2012-05-07
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -56,7 +56,7 @@ namespace dolfin
     ///         Use compressed file format (default false)
     ///     store_connectivity (bool)
     ///         Store all computed connectivity (default false)
-    TimeSeries(std::string name, bool compressed=false, 
+    TimeSeries(std::string name, bool compressed=false,
 	       bool store_connectivity=false);
 
     /// Destructor
@@ -134,7 +134,7 @@ namespace dolfin
     ///     std::string
     ///         The filename
     static std::string filename_data(std::string series_name,
-                                     std::string type_name, uint index, 
+                                     std::string type_name, uint index,
 				     bool compressed);
 
     /// Return filename for times
@@ -151,7 +151,7 @@ namespace dolfin
     ///     std::string
     ///         The filename
     static std::string filename_times(std::string series_name,
-                                      std::string type_name, 
+                                      std::string type_name,
 				      bool compressed);
 
     /// Return informal string representation (pretty-print)
@@ -168,7 +168,7 @@ namespace dolfin
   private:
 
     // Check if values are strictly increasing
-    static bool increasing(const std::vector<double>& times);
+    static bool monotone(const std::vector<double>& times);
 
     // Find index closest to given time
     static uint find_closest_index(double t,
@@ -195,7 +195,7 @@ namespace dolfin
     // True if storing using gzipped file
     bool _compressed;
 
-    // True if all connectivity in a mesh should be stored 
+    // True if all connectivity in a mesh should be stored
     bool _store_connectivity;
 
   };

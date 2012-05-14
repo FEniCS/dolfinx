@@ -255,6 +255,7 @@ namespace dolfin
 
     // Friends
     friend class MeshEntityIterator;
+    template<typename T> friend class MeshEntityIteratorBase;
     friend class SubsetIterator;
 
     // The mesh

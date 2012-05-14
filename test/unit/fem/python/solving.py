@@ -61,6 +61,33 @@ class Solving(unittest.TestCase):
         self.assertAlmostEqual(u3.vector().norm("l2"), 14.9362601686, 10)
         self.assertAlmostEqual(u4.vector().norm("l2"), 14.9362601686, 10)
 
+    def test_calling(self):
+        "Test that unappropriate arguments are not allowed"
+        mesh = UnitSquare(4, 4)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+        f = Constant(100.0)
+
+        a = dot(grad(u), grad(v))*dx + u*v*dx
+        L = f*v*dx
+
+        bc = DirichletBC(V, 0.0, DomainBoundary())
+
+        kwargs = {"solver_parameters":{"linear_solver": "lu"},
+                  "form_compiler_parameters":{"optimize": True}}
+
+        A = assemble(a)
+        b = assemble(L)
+        x = Vector(len(b))
+
+        def wrong_solve_0():
+            solve(A, x, b, **kwargs)
+        
+        self.assertRaises(RuntimeError, wrong_solve_0)
+
+        # FIXME: Include more tests for this versatile function
+
 if __name__ == "__main__":
     print ""
     print "Testing the solve function"

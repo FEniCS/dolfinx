@@ -124,6 +124,16 @@ class AbstractBaseTest(object):
             self.assertEqual(A2.shape, (2021, 2021))
             self.assertAlmostEqual(sqrt(sum(A2**2)), A.norm('frobenius'))
 
+            if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
+                try:
+                    import scipy.sparse
+                    import numpy.linalg
+                    A3 = A.sparray()
+                    self.assertTrue(isinstance(A3, scipy.sparse.csr_matrix))
+                    self.assertAlmostEqual(numpy.linalg.norm(A3.todense() - A2), 0.0)
+                except ImportError:
+                    pass
+
         # Test expected size of rectangular array
         self.assertEqual(A.size(0), B.size(0))
         self.assertEqual(B.size(1), 528)
@@ -257,6 +267,10 @@ if MPI.num_processes() == 1:
     if has_linear_algebra_backend("MTL4"):
         class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
             backend    = "MTL4"
+
+    if has_linear_algebra_backend("PETScCusp"):
+        class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+            backend    = "PETScCusp"
 
 if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

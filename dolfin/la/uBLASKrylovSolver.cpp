@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2011
+// Modified by Anders Logg 2006-2012
 //
 // First added:  2006-05-31
-// Last changed: 2011-10-19
+// Last changed: 2012-05-07
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>

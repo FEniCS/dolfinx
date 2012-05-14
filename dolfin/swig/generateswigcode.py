@@ -300,11 +300,11 @@ def generate_swig_include_files():
         # Generate CMake help file
         header_files_file = open(os.path.join("modules", combined_module,
                                               "headers.txt"), "w")
-        header_files_file.write(";".join(all_headers))
+        header_files_file.write(";".join(sorted(all_headers)))
 
         interface_files_file = open(os.path.join("modules", combined_module,
                                                  "interface_files.txt"), "w")
-        interface_files_file.write(";".join(module_interface_files))
+        interface_files_file.write(";".join(sorted(module_interface_files)))
 
 
 if __name__ == "__main__":

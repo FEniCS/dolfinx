@@ -171,18 +171,22 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != mesh.topology().dim())
+  {
     dolfin_error("MeshRenumbering.cpp",
                  "compute renumbering of mesh",
                  "Coloring is not a cell coloring: only cell colorings are supported");
+  }
 
   // Get coloring
   MeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
   if (mesh_coloring == mesh.parallel_data().coloring.end())
+  {
     dolfin_error("MeshRenumbering.cpp",
                  "compute renumbering of mesh",
                  "Requested mesh coloring has not been computed");
+  }
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
   const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
@@ -243,9 +247,11 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   for (uint i = 0; i < new_vertex_indices.size(); i++)
   {
     if (new_vertex_indices[i] == -1)
+    {
       dolfin_error("MeshRenumbering.cpp",
                    "compute renumbering of mesh",
                    "Some vertices were not renumbered");
+    }
   }
 }
 //-----------------------------------------------------------------------------

@@ -61,11 +61,10 @@ double GenericFunction::operator() (double x)
 
   // Set up Array arguments
   Array<double> values(1);
-  Array<double> xx(1);
-  xx[0] = x;
+  const Array<double> _x(1, &x);
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 
   // Return value
   return values[0];
@@ -83,12 +82,12 @@ double GenericFunction::operator() (double x, double y)
 
   // Set up Array arguments
   Array<double> values(1);
-  Array<double> xx(2);
-  xx[0] = x;
-  xx[1] = y;
+  Array<double> _x(2);
+  _x[0] = x;
+  _x[1] = y;
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 
   // Return value
   return values[0];
@@ -106,13 +105,13 @@ double GenericFunction::operator() (double x, double y, double z)
 
   // Set up Array arguments
   Array<double> values(1);
-  Array<double> xx(3);
-  xx[0] = x;
-  xx[1] = y;
-  xx[2] = z;
+  Array<double> _x(3);
+  _x[0] = x;
+  _x[1] = y;
+  _x[2] = z;
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 
   // Return value
   return values[0];
@@ -127,36 +126,35 @@ void GenericFunction::operator() (Array<double>& values,
                                   double x)
 {
   // Set up Array argument
-  Array<double> xx(1);
-  xx[0] = x;
+  const Array<double> _x(1, &x);
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values,
                                   double x, double y)
 {
   // Set up Array argument
-  Array<double> xx(2);
-  xx[0] = x;
-  xx[1] = y;
+  Array<double> _x(2);
+  _x[0] = x;
+  _x[1] = y;
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values,
                                   double x, double y, double z)
 {
   // Set up Array argument
-  Array<double> xx(3);
-  xx[0] = x;
-  xx[1] = y;
-  xx[2] = z;
+  Array<double> _x(3);
+  _x[0] = x;
+  _x[1] = y;
+  _x[2] = z;
 
   // Call eval
-  eval(values, xx);
+  eval(values, _x);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::operator() (Array<double>& values, const Point& p)

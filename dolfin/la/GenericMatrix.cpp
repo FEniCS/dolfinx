@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Anders Logg
+// Copyright (C) 2010-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2010-02-23
-// Last changed: 2011-12-21
+// Last changed: 2012-04-17
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
@@ -110,8 +110,7 @@ void GenericMatrix::compress()
   global_dimensions[1] = size(1);
   std::vector<std::pair<uint, uint> > local_range(2);
   local_range[0] = this->local_range(0);
-  local_range[1].first = 0;  // Column range not provided by all backends
-  local_range[1].second = size(1);
+  local_range[1] = this->local_range(0);
 
   // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner

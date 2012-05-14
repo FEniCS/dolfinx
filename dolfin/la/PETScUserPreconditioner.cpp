@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005, 2012.
 // Modified by Anders Logg 2006.
 //
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2012-05-10
 
 #ifdef HAS_PETSC
 
@@ -83,7 +83,9 @@ int PETScUserPreconditioner::PCCreate(PC pc)
   pc->ops->setfromoptions      = 0;
   pc->ops->view                = 0;
   pc->ops->destroy             = 0;
-
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
+  pc->ops->reset               = 0;
+  #endif
   // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 

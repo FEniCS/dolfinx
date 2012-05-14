@@ -48,7 +48,6 @@
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
-#include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 #include "TensorLayout.h"
 #include "EpetraMatrix.h"
@@ -680,17 +679,6 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
 LinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
-}
-//-----------------------------------------------------------------------------
-void EpetraMatrix::init(const EpetraSparsityPattern& sparsity_pattern)
-{
-  if (A && !A.unique())
-  {
-    dolfin_error("EpetraMatrix.cpp",
-                 "initialize Epetra matrix",
-                 "More than one object points to the underlying Epetra object");
-  }
-  A.reset(new Epetra_FECrsMatrix(Copy, sparsity_pattern.pattern()));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const

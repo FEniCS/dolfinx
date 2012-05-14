@@ -27,9 +27,10 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
 #include "GraphBuilder.h"
 

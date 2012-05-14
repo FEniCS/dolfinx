@@ -45,6 +45,9 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
+  // FIXME: This should be removed, see https://bugs.launchpad.net/dolfin/+bug/988494
+  p.add("use_petsc_cusp_hack", false);
+
   // GMRES options
   Parameters p_gmres("gmres");
   p_gmres.add("restart", 30);
