@@ -77,15 +77,11 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R, doub
   // // blade_2.rotate(v, 1);
   // // blade_3.rotate(-v, 1);
 
-  // // Width for tips must be a little larger so NETGEN does not crash
-  // const double ww = 1.01*w;
-  const double ww = w;
-
   // Create blade tips
-  boost::shared_ptr<CSGGeometry> blade_tip_0(new csg::Cylinder( Point( R,     -0.5*h, 0), Point( R,  0.5*h, 0), 0.5*ww));
-  boost::shared_ptr<CSGGeometry> blade_tip_1(new csg::Cylinder( Point(-R,     -0.5*h, 0), Point(-R,  0.5*h, 0), 0.5*ww));
-  boost::shared_ptr<CSGGeometry> blade_tip_2(new csg::Cylinder( Point(-0.5*h,  R,     0), Point( 0.5*h,  R, 0), 0.5*ww));
-  boost::shared_ptr<CSGGeometry> blade_tip_3(new csg::Cylinder( Point(-0.5*h, -R,     0), Point( 0.5*h, -R,     0), 0.5*ww));
+  boost::shared_ptr<CSGGeometry> blade_tip_0(new csg::Cylinder( Point( R,     -0.5*h, 0), Point( R,  0.5*h, 0), 0.5*w));
+  boost::shared_ptr<CSGGeometry> blade_tip_1(new csg::Cylinder( Point(-R,     -0.5*h, 0), Point(-R,  0.5*h, 0), 0.5*w));
+  boost::shared_ptr<CSGGeometry> blade_tip_2(new csg::Cylinder( Point(-0.5*h,  R,     0), Point( 0.5*h,  R, 0), 0.5*w));
+  boost::shared_ptr<CSGGeometry> blade_tip_3(new csg::Cylinder( Point(-0.5*h, -R,     0), Point( 0.5*h, -R,     0), 0.5*w));
     
   // // Rotate blade tips
   // // blade_tip_0.rotate(-v, 0);
@@ -109,12 +105,10 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R, doub
   boost::shared_ptr<CSGGeometry> cylinder_inner(new csg::Cylinder(Point(0, 0, -0.5*w), Point(0, 0, 0.5*w), 0.5*r));
 
   // Create center cone
-  //boost::shared_ptr<CSGGeometry> cone( new csg::Cone(Point(0, 0, -0.5*w), Point(0, 0, -0.5*w - l), r, a));
-  boost::shared_ptr<CSGGeometry> cone( new csg::Cone(Point(0, 0, -.15), Point(0, 0, -.39), .125, .025));
+  boost::shared_ptr<CSGGeometry> cone( new csg::Cone(Point(0, 0, -0.5*w), Point(0, 0, -0.5*w - l), r, a));
 
   // Create sphere for tip of cone
   const double d = a*(r - a) / l;
-  //const double d = 0.0; // NETGEN hangs if we use the correct value for d
   boost::shared_ptr<CSGGeometry> tip(new csg::Sphere(Point(0, 0, -0.5*w - l + d), sqrt(a*a + d*d)));
 
   // Build propeller from parts
