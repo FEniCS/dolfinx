@@ -147,6 +147,16 @@ namespace dolfin
       const uint slices;
     };
 
+    /// This class describes a 3D cylinder which can be used to build
+    /// geometries using Constructive Solid Geometry (CSG). A cylinder
+    /// is here just a special case of a cone.
+    class Cylinder : public Cone
+    {
+    public:
+    Cylinder(Point top, Point bottom, double r) : Cone(top, bottom, r, r){}
+    };
+
+
   }
 }
 #endif
