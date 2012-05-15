@@ -17,6 +17,7 @@
 #include <dolfin/generation/UnitSphere.h>
 #include <dolfin/generation/CSGGeometry.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
+#include <dolfin/generation/CSGCGALMeshGenerator3D.h>
 #include <dolfin/generation/CSGOperators.h>
 #include <dolfin/generation/CSGPrimitive.h>
 #include <dolfin/generation/CSGPrimitives2D.h>
