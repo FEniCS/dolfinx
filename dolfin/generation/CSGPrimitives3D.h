@@ -153,7 +153,7 @@ namespace dolfin
     class Cylinder : public Cone
     {
     public:
-    Cylinder(Point top, Point bottom, double r) : Cone(top, bottom, r, r){}
+    Cylinder(Point top, Point bottom, double r, uint slices=32) : Cone(top, bottom, r, r, slices){}
     };
 
 
