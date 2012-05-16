@@ -131,3 +131,24 @@ std::string csg::Cone::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+csg::Tetrahedron::Tetrahedron(Point x0, Point x1, Point x2, Point x3)
+  : x0(x0), x1(x1), x2(x2), x3(x3)
+{}
+//-----------------------------------------------------------------------------
+/// Informal string representation
+std::string csg::Tetrahedron::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << "<Tetrahedron with point at " << x0 << ", " << x1 << ", " << x2 << ", " << x3 << ">";
+  }
+  else
+  {
+    s << "Tetrahedron( " << x0 << ", " << x1 << ", " << x2 << ", " << x3 << ")";
+
+  }
+
+  return s.str();
+}

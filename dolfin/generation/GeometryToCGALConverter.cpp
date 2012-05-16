@@ -270,7 +270,7 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
   const csg::Sphere& sphere;
 };
 //-----------------------------------------------------------------------------
-Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
+static Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
 {
   Exact_Polyhedron_3 P;
   Build_sphere builder(*s);
@@ -280,7 +280,7 @@ Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
   return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
-Nef_polyhedron_3 make_box(const csg::Box* b)
+static Nef_polyhedron_3 make_box(const csg::Box* b)
 {
   typedef typename Exact_Polyhedron_3::Halfedge_handle Halfedge_handle;
 
@@ -293,7 +293,7 @@ Nef_polyhedron_3 make_box(const csg::Box* b)
   const double x2 = std::min(b->_x2, b->_y2);
   const double y2 = std::max(b->_x2, b->_y2);
 
-  const Exact_Point_3 p0(y0,   x1,  x2);
+  const Exact_Point_3 p0( y0,  x1,  x2);
   const Exact_Point_3 p1( x0,  x1,  y2);
   const Exact_Point_3 p2( x0,  x1,  x2);
   const Exact_Point_3 p3( x0,  y1,  x2);
@@ -319,6 +319,17 @@ Nef_polyhedron_3 make_box(const csg::Box* b)
   P.split_facet( e, f->next()->next());
 
   return Nef_polyhedron_3(P);;
+}
+
+//-----------------------------------------------------------------------------
+static Nef_polyhedron_3 make_tetrahedron(const csg::Tetrahedron* b)
+{
+  Exact_Polyhedron_3 P;
+  P.make_tetrahedron( Exact_Point_3(b->x0.x(), b->x0.y(), b->x0.z()), 
+		      Exact_Point_3(b->x1.x(), b->x1.y(), b->x1.z()),
+		      Exact_Point_3(b->x2.x(), b->x2.y(), b->x2.z()),
+		      Exact_Point_3(b->x3.x(), b->x3.y(), b->x3.z()));
+  return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
 // // Return some vector orthogonal to a
@@ -471,6 +482,7 @@ Nef_polyhedron_3 make_cone(const csg::Cone* c)
 static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
 {
   switch (geometry->getType()) {
+
   case CSGGeometry::Union :
   {
     const CSGUnion* u = dynamic_cast<const CSGUnion*>(geometry);
@@ -513,6 +525,15 @@ static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
     return make_box(b);
     break;
   }
+
+  case CSGGeometry::Tetrahedron :
+  {
+    const csg::Tetrahedron* b = dynamic_cast<const csg::Tetrahedron*>(geometry);
+    dolfin_assert(b);
+    return make_tetrahedron(b);
+    break;
+  }
+
   default:
     dolfin_error("GeometryToCGALConverter.cpp",
 		 "converting geometry to cgal polyhedron",

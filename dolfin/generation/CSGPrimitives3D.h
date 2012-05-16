@@ -156,6 +156,20 @@ namespace dolfin
     Cylinder(Point top, Point bottom, double r, uint slices=32) : Cone(top, bottom, r, r, slices){}
     };
 
+    class Tetrahedron : public CSGPrimitive3D
+    {
+    public:
+      Tetrahedron(Point x0, Point x1, Point x2, Point x3);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
+      Type getType() const
+      { return CSGGeometry::Tetrahedron; }
+
+
+      Point x0, x1, x2, x3;
+    };
 
   }
 }
