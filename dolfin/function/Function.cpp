@@ -221,7 +221,7 @@ const Function& Function::operator= (const Function& v)
       old_rows[i++] = entry->second;
     }
 
-    // Gather values into an Array
+    // Gather values into a vector
     std::vector<double> gathered_values;
     dolfin_assert(v.vector());
     v.vector()->gather(gathered_values, old_rows);

@@ -24,7 +24,7 @@
 #include "dolfin/common/types.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include "Point.h"
 
@@ -57,25 +57,10 @@ namespace dolfin
 
   };
 
-  /// A VertexIterator is a MeshEntityIterator of topological dimension 0.
-
-  class VertexIterator : public MeshEntityIterator
-  {
-  public:
-
-    VertexIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 0) {}
-    VertexIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 0) {}
-
-    inline const Vertex& operator*()
-    { return *operator->(); }
-
-    inline const Vertex* operator->()
-    { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
-
-  };
+  /// A VertexIterator is a MeshEntityIterator of topological dimension 0
+  typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 
   /// A VertexFunction is a MeshFunction of topological dimension 0.
-
   template <typename T> class VertexFunction : public MeshFunction<T>
   {
   public:

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-20
-// Last changed: 2012-01-30
+// Last changed: 2012-05-10
 
 //=============================================================================
 // Forward declarations of common types in DOLFIN needed for template
@@ -29,13 +29,14 @@ namespace dolfin
 
   // parameter
   class Parameters;
-  
+
   // common
-  template<typename T>
-    class Hierarchical;
+  template<typename T> class Hierarchical;
 
   // mesh
+  class Vertex;
   class Mesh;
+  class MeshEntity;
   class LocalMeshData;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -60,4 +61,3 @@ namespace dolfin
   class GenericMatrix;
 
 }
-

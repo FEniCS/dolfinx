@@ -22,7 +22,6 @@
 // First added:  2008-06-18
 // Last changed: 2009-11-13
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericMatrix.h>

@@ -234,4 +234,3 @@
 %shared_ptr(dolfin::RadauQuadrature)
 %shared_ptr(dolfin::GaussQuadrature)
 %shared_ptr(dolfin::GaussianQuadrature)
-

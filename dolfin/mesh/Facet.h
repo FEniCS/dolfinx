@@ -28,7 +28,7 @@
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -72,24 +72,9 @@ namespace dolfin
 
 
   /// A FacetIterator is a MeshEntityIterator of topological codimension 1.
-
-  class FacetIterator : public MeshEntityIterator
-  {
-  public:
-
-    FacetIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim() - 1) {}
-    FacetIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
-
-    const Facet& operator*()
-    { return *operator->(); }
-
-    const Facet* operator->()
-    { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
-
-  };
+  typedef MeshEntityIteratorBase<Facet> FacetIterator;
 
   /// A FacetFunction is a MeshFunction of topological codimension 1.
-
   template <typename T> class FacetFunction : public MeshFunction<T>
   {
   public:

@@ -67,10 +67,14 @@ int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
+  // Wrap PETSc vectors in shared pointers
   boost::shared_ptr<Vec> _x(&x, NoDeleter());
   boost::shared_ptr<Vec> _y(&y, NoDeleter());
+
+  // Wrap PETSc vectors as DOLFIN PETScVectors
   PETScVector dolfinx(_x), dolfiny(_y);
 
+  // Solve
   newpc->solve(dolfiny, dolfinx);
 
   return 0;
@@ -88,8 +92,9 @@ int PETScUserPreconditioner::PCCreate(PC pc)
   pc->ops->setfromoptions      = 0;
   pc->ops->view                = 0;
   pc->ops->destroy             = 0;
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
   pc->ops->reset               = 0;
-
+  #endif
   // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 

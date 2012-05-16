@@ -34,7 +34,6 @@
 namespace dolfin
 {
 
-  template<typename T> class Array;
   class GenericMatrix;
   class GenericVector;
   class FunctionSpace;
@@ -46,7 +45,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    BoundaryCondition(const FunctionSpace& V);
+    explicit BoundaryCondition(const FunctionSpace& V);
 
     /// Constructor
     explicit BoundaryCondition(boost::shared_ptr<const FunctionSpace> V);
