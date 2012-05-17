@@ -65,7 +65,7 @@ namespace dolfin
       ///         x2-coordinate of center.
       ///     r (double)
       ///         radius.
-      Sphere(Point c, double r, uint slices=48);
+      Sphere(Point c, double r, uint slices=16);
 
       /// Informal string representation
       std::string str(bool verbose) const;

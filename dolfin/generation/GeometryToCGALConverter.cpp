@@ -167,7 +167,27 @@ static void add_vertex(CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS>&
   builder.add_vertex(point);
   vertex_no++;
 }
+//-----------------------------------------------------------------------------
+static void printStat(const Exact_Polyhedron_3& P, std::string title)
+{
+  cout << title << endl;
+  cout << "Number of vertices:  " << P.size_of_vertices() << endl;
+  cout << "Number of halfedges: " << P.size_of_halfedges() << endl;
+  cout << "Number of facets in:    " << P.size_of_facets() << endl;
 
+  bool triangles_only = true;
+  for (typename Exact_Polyhedron_3::Facet_const_iterator facet = P.facets_begin(); facet != P.facets_end(); ++facet)
+  {
+    // Check if there is a non-triangular facet
+    if (!facet->is_triangle())
+    {
+      cout << "Trouble: Facet is not triangle" << endl;
+      triangles_only = false;
+    }
+  }
+  if (triangles_only) cout << "Only trangles!" << endl;
+  cout << endl;
+}
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
@@ -233,7 +253,6 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
 	  f.push_back(offset1 + (j+1)%num_sectors);
 	  add_facet(builder, f);
 	}
-	
       }
     }
 
@@ -277,46 +296,150 @@ static Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
   P.delegate(builder);
   dolfin_assert(P.is_valid());
   dolfin_assert(P.is_closed());
+
+  printStat(P, "Sphere");
+
   return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
+class Build_box : public CGAL::Modifier_base<Exact_HalfedgeDS> 
+{
+ public:
+  Build_box(const csg::Box* box) : box(box){}
+
+  void operator()( Exact_HalfedgeDS& hds )
+  {
+    CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS> builder( hds, true);
+
+    builder.begin_surface(8, 12);
+    
+    const double x0 = std::min(box->_x0, box->_y0);
+    const double y0 = std::max(box->_x0, box->_y0);
+
+    const double x1 = std::min(box->_x1, box->_y1);
+    const double y1 = std::max(box->_x1, box->_y1);
+
+    const double x2 = std::min(box->_x2, box->_y2);
+    const double y2 = std::max(box->_x2, box->_y2);
+
+    add_vertex(builder, Exact_Point_3( y0,  x1,  x2));
+    add_vertex(builder, Exact_Point_3( x0,  x1,  y2));
+    add_vertex(builder, Exact_Point_3( x0,  x1,  x2));
+    add_vertex(builder, Exact_Point_3( x0,  y1,  x2));
+    add_vertex(builder, Exact_Point_3( y0,  x1,  y2));
+    add_vertex(builder, Exact_Point_3( x0,  y1,  y2));
+    add_vertex(builder, Exact_Point_3( y0,  y1,  x2));
+    add_vertex(builder, Exact_Point_3( y0,  y1,  y2));
+
+    {
+      std::vector<int> f;
+      f.push_back(1);
+      f.push_back(2);
+      f.push_back(3);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(1);
+      f.push_back(3);
+      f.push_back(5);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(1);
+      f.push_back(5);
+      f.push_back(4);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(4);
+      f.push_back(5);
+      f.push_back(7);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(4);
+      f.push_back(7);
+      f.push_back(0);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(0);
+      f.push_back(7);
+      f.push_back(6);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(0);
+      f.push_back(6);
+      f.push_back(2);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(2);
+      f.push_back(6);
+      f.push_back(3);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(7);
+      f.push_back(5);
+      f.push_back(6);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(6);
+      f.push_back(5);
+      f.push_back(3);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(1);
+      f.push_back(4);
+      f.push_back(2);
+      add_facet(builder, f);
+    }
+
+    {
+      std::vector<int> f;
+      f.push_back(2);
+      f.push_back(4);
+      f.push_back(0);
+      add_facet(builder, f);
+    }
+
+    builder.end_surface();
+  }
+
+  const csg::Box* box;
+};
 static Nef_polyhedron_3 make_box(const csg::Box* b)
 {
-  typedef typename Exact_Polyhedron_3::Halfedge_handle Halfedge_handle;
-
-  const double x0 = std::min(b->_x0, b->_y0);
-  const double y0 = std::max(b->_x0, b->_y0);
-
-  const double x1 = std::min(b->_x1, b->_y1);
-  const double y1 = std::max(b->_x1, b->_y1);
-
-  const double x2 = std::min(b->_x2, b->_y2);
-  const double y2 = std::max(b->_x2, b->_y2);
-
-  const Exact_Point_3 p0( y0,  x1,  x2);
-  const Exact_Point_3 p1( x0,  x1,  y2);
-  const Exact_Point_3 p2( x0,  x1,  x2);
-  const Exact_Point_3 p3( x0,  y1,  x2);
-  const Exact_Point_3 p4( y0,  x1,  y2);
-  const Exact_Point_3 p5( x0,  y1,  y2);
-  const Exact_Point_3 p6( y0,  y1,  x2);
-  const Exact_Point_3 p7( y0,  y1,  y2);
-  
   Exact_Polyhedron_3 P;
-  Halfedge_handle h = P.make_tetrahedron( p0, p1, p2, p3);
+  Build_box builder(b);
+  P.delegate(builder);
+  dolfin_assert(P.is_closed());
 
-  Halfedge_handle g = h->next()->opposite()->next();
-  P.split_edge( h->next());
-  P.split_edge( g->next());
-  P.split_edge( g);
-  h->next()->vertex()->point()     = p4;
-  g->next()->vertex()->point()     = p5;
-  g->opposite()->vertex()->point() = p6;
-  Halfedge_handle f = P.split_facet( g->next(),
-				     g->next()->next()->next());
-  Halfedge_handle e = P.split_edge( f);
-  e->vertex()->point() = p7;
-  P.split_facet( e, f->next()->next());
+  printStat(P, "Box");
 
   return Nef_polyhedron_3(P);;
 }
@@ -329,6 +452,9 @@ static Nef_polyhedron_3 make_tetrahedron(const csg::Tetrahedron* b)
 		      Exact_Point_3(b->x1.x(), b->x1.y(), b->x1.z()),
 		      Exact_Point_3(b->x2.x(), b->x2.y(), b->x2.z()),
 		      Exact_Point_3(b->x3.x(), b->x3.y(), b->x3.z()));
+  
+  printStat(P, "Tetrahedron");
+
   return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
@@ -486,6 +612,9 @@ Nef_polyhedron_3 make_cone(const csg::Cone* c)
   Build_cone builder(c);
   P.delegate(builder);
   dolfin_assert(P.is_closed());
+
+  printStat(P, "Cone");
+
   return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
