@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - Fix bug in producing outward pointing normals of BoundaryMesh
  - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs are not handled correctly
  - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
  - Add check that sample points for TimeSeries are monotone

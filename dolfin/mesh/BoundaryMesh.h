@@ -31,6 +31,9 @@ namespace dolfin
 {
 
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
+  /// The cells of the boundary mesh (facets of the original mesh) are
+  /// oriented to produce outward pointing normals relative to the
+  /// original mesh.
 
   class BoundaryMesh : public Mesh
   {
