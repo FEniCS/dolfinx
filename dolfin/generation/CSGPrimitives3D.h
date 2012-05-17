@@ -156,6 +156,8 @@ namespace dolfin
     Cylinder(Point top, Point bottom, double r, uint slices=32) : Cone(top, bottom, r, r, slices){}
     };
 
+    /// This class describes a Tetrahedron which can be used to build
+    /// geometries using Constructive Solid Geometry (CSG).
     class Tetrahedron : public CSGPrimitive3D
     {
     public:
