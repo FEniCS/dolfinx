@@ -25,6 +25,10 @@
 #include <dolfin/log/LogStream.h>
 #include "cgal_csg3d.h"
 
+// The below two files are from the CGAL demos. Path can be changed
+// once they are included with the CGAL code.
+#include "triangulate_polyhedron.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -38,23 +42,22 @@ CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D() {}
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator3D::generate(Mesh& mesh) 
 {
-  #ifdef NDEBUG
-  cout << "Debug disabled" << endl;
-  #else
-  cout << "Debug enabled" << endl;
-  #endif
-
-  std::cout << "CGAL version: " << CGAL_VERSION_STR << std::endl;
-
   csg::Polyhedron_3 p;
 
   cout << "Converting geometry to cgal types." << endl;
   GeometryToCGALConverter::convert(geometry, p);
-  // csg::Point_3 a(0.0, 0.0, 0.0);
-  // csg::Point_3 b(1.0, 0.0, 0.0);
-  // csg::Point_3 c(1.0, 1.0, 0.0);
-  // csg::Point_3 d(0.0, 0.0, 1.0);
-  // p.make_tetrahedron(a, b, c, d);
+
+  cout << "Triangulating polyhedron" << endl;
+  typename csg::Polyhedron_3::Facet_iterator facet;
+  for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
+  {
+    // Check if there is a non-triangular facet
+    if (!facet->is_triangle())
+    {
+      CGAL::triangulate_polyhedron<csg::Polyhedron_3>(p);
+      break;
+    }
+  }
 
   csg::Mesh_domain domain(p);
 
@@ -68,16 +71,11 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh)
 			      CGAL::parameters::facet_distance = parameters["facet_distance"],
 			      CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
 			      CGAL::parameters::cell_size = parameters["cell_size"]);
-
-  cout << "Generating mesh" << endl;
   
   // Mesh generation
+  cout << "Generating mesh" << endl;
   csg::C3t3 c3t3 = CGAL::make_mesh_3<csg::C3t3>(domain, criteria);
 
-  // Output
-  std::ofstream medit_file("out.mesh");
-  c3t3.output_to_medit(medit_file);
-
-  // // Build DOLFIN mesh from CGAL mesh/triangulation
+  // Build DOLFIN mesh from CGAL mesh/triangulation
   CGALMeshBuilder::build_from_mesh(mesh, c3t3);
 }

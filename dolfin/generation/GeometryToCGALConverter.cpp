@@ -188,7 +188,7 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
     const int num_vertices = num_slices*num_sectors+2;
     const int num_facets = num_sectors*2*num_slices;
 
-    CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS> builder( hds, true);
+    CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS> builder( hds, true );
 
     builder.begin_surface(num_vertices, num_facets);
 
@@ -355,30 +355,16 @@ class Build_cone : public CGAL::Modifier_base<Exact_HalfedgeDS>
 
     CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS> builder( hds, true);
 
-    const int num_faces = cone->slices;
+    const int num_sides = cone->slices;
     const bool top_degenerate = near(cone->top_radius, 0.0);
     const bool bottom_degenerate = near(cone->bottom_radius, 0.0);
 
-    const int num_vertices = (top_degenerate || bottom_degenerate) ? num_faces+1 : num_faces*2;
+    const int num_vertices = (top_degenerate || bottom_degenerate) ? num_sides+2 : num_sides*2+2;
 
-    builder.begin_surface(num_vertices, num_faces + 2);
+    builder.begin_surface(num_vertices, num_sides*4);
 
-    if (top_degenerate) 
-    {
-      // A single vertex at the top.
-      const Exact_Point_3 p(cone->top.x(), cone->top.y(), cone->top.z());
-      builder.add_vertex(p);
-    }
-
-    if (bottom_degenerate) 
-    {
-      // A single vertex at the bottom.
-      const Exact_Point_3 p(cone->bottom.x(), cone->bottom.y(), cone->bottom.z());
-      builder.add_vertex(p);
-    }
-
-    const double delta_theta = 2.0 * DOLFIN_PI / num_faces;
-    for (int i = 0; i < num_faces; ++i) 
+    const double delta_theta = 2.0 * DOLFIN_PI / num_sides;
+    for (int i = 0; i < num_sides; ++i) 
     {
       const double theta = i*delta_theta;
       const Point rotated = initial.rotate(axis, theta);
@@ -387,81 +373,105 @@ class Build_cone : public CGAL::Modifier_base<Exact_HalfedgeDS>
       {
 	const Point p = cone->bottom + rotated*cone->bottom_radius;
 	const Exact_Point_3 p_(p.x(), p.y(), p.z());
-	builder.add_vertex(p_);
+	add_vertex(builder, p_);
       }
 
       if (!top_degenerate) 
       {
 	const Point p = cone->top + rotated*cone->top_radius;
 	const Exact_Point_3 p_(p.x(), p.y(), p.z());
-        builder.add_vertex(p_);
+        add_vertex(builder, p_);
       }
     }
 
+    // The top and bottom vertices
+    add_vertex(builder, Exact_Point_3(cone->bottom.x(), cone->bottom.y(), cone->bottom.z()));
+    add_vertex(builder, Exact_Point_3(cone->top.x(), cone->top.y(), cone->top.z()));
+
+    // bottom vertex has index num_vertices-2, top vertex has index num_vertices-1
+
     // Construct the facets on the side. 
     // Vertices must be sorted counter clockwise seen from inside.
-    for (int i = 0; i < num_faces; ++i) 
+    for (int i = 0; i < num_sides; ++i) 
     {
       if (top_degenerate) 
       {
-	std::vector<int> f;
-	f.push_back(0);
-	f.push_back(i+1);
-	f.push_back((i+1)%num_faces + 1);
-	add_facet(builder, f);
+    	std::vector<int> f;
+    	f.push_back((i+1)%num_sides);
+    	f.push_back(i);
+    	f.push_back(num_vertices-1);
+    	add_facet(builder, f);
       } else if (bottom_degenerate) 
       {
-	std::vector<int> f;
-	f.push_back(0);
-	f.push_back((i + 1) % num_faces + 1);
-	f.push_back(i+1);
-	add_facet(builder, f);
+    	std::vector<int> f;
+    	f.push_back( (i) );
+	f.push_back( (i+1) % num_sides);
+    	f.push_back(num_vertices-1);
+    	add_facet(builder, f);
       } else 
       {
-	// NOTE: Had to draw the sides with two triangles,
-	// instead of quads. Couldn't get CGAL to accept
-	// the quads. Don't know if it as a problem here
-	// or on the CGAL side. BK
+	//Draw the sides as triangles. 
+    	const int vertex_offset = i*2;
 
-	const int vertex_to_add = i*2;
+    	// First triangle
+    	std::vector<int> f;
+    	f.push_back(vertex_offset);
+    	f.push_back(vertex_offset+1);
+    	f.push_back((vertex_offset + 2) % (num_sides*2));
+    	add_facet(builder, f);
 
-	// First triangle
+    	// Second triangle
+    	std::vector<int> g;
+    	g.push_back((vertex_offset + 3) % (num_sides*2));
+	g.push_back((vertex_offset + 2) % (num_sides*2));
+    	g.push_back(vertex_offset+1);
+    	add_facet(builder, g);
+      }
+    }
+
+    // Construct the bottom facet.
+    if (!bottom_degenerate) 
+    {
+      for (int i = num_sides-1; i >= 0; i -= 1) 
+      {
 	std::vector<int> f;
-	f.push_back(vertex_to_add+1);
-	f.push_back(vertex_to_add);
-	f.push_back((vertex_to_add + 2) % num_vertices);
+	if (!top_degenerate)
+	{
+	  f.push_back(num_vertices-2);
+	  f.push_back( i*2);
+	  f.push_back( ( (i+1)*2) % (num_sides*2));
+	} else
+	{
+	  f.push_back(num_vertices-2);
+	  f.push_back(i);
+	  f.push_back( (i+1)%num_sides );
+	}
 	add_facet(builder, f);
-
-	// Second triangle
-	std::vector<int> g;
-	g.push_back((vertex_to_add + 2) % num_vertices);
-	g.push_back((vertex_to_add + 3) % num_vertices);
-	g.push_back(vertex_to_add+1);
-	add_facet(builder, g);
       }
     }
 
     // Construct the the top facet
     if (!top_degenerate) 
     {
-      std::vector<int> f;      
-      for (int i = 0; i < num_faces; i++)
+      for (int i = 0; i < num_sides; i++)
       {
-	f.push_back(bottom_degenerate ? i+1 : i*2 +1 );
-      }
-      add_facet(builder, f);
-    }
+	if (!bottom_degenerate)
+	{
+	  std::vector<int> f;      
+	  f.push_back(num_vertices-1);
+	  f.push_back( ( (i+1)*2)%(num_sides*2) +1 );
+	  f.push_back( i*2 + 1 );
+	  add_facet(builder, f);
+	} else
+	{
+	  std::vector<int> f;
+	  f.push_back(num_vertices-2);
+	  f.push_back( (i+1)%num_sides);
+	  f.push_back(i);
 
-
-    // Construct the bottom facet.
-    if (!bottom_degenerate) 
-    {
-      std::vector<int> f;
-      for (int i = num_faces-1; i >= 0; i -= 1) 
-      {
-	f.push_back(top_degenerate ? i+1 : i*2);
+	  add_facet(builder, f);
+	}
       }
-      add_facet(builder, f);
     }
 
     builder.end_surface();
