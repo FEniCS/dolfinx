@@ -199,7 +199,7 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
   void operator()( Exact_HalfedgeDS& hds )
   {
     const dolfin::uint num_slices = sphere.slices;
-    const dolfin::uint num_sectors = (sphere.slices+1) * 2;
+    const dolfin::uint num_sectors = sphere.slices*2 + 1;
 
     const dolfin::Point top = sphere.c + Point(sphere.r, 0, 0);
     const dolfin::Point bottom = sphere.c - Point(sphere.r, 0, 0);
@@ -225,7 +225,7 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
       }
     }
 
-    // Add top and bottom vertex
+    // Add bottom has index num_vertices-1, top has index num_vertices-2
     add_vertex(builder, Exact_Point_3(top.x(), top.y(), top.z()));
     add_vertex(builder, Exact_Point_3(bottom.x(), bottom.y(), bottom.z()));
 
@@ -257,28 +257,28 @@ class Build_sphere : public CGAL::Modifier_base<Exact_HalfedgeDS>
     }
 
     // Add the top and bottom facets
-    const dolfin::uint bottom_offset = num_sectors*(num_slices-1);
+    const dolfin::uint top_offset = num_sectors*(num_slices-1);
 
     for (dolfin::uint i = 0; i < num_sectors; i++)
     {
       {
-	// Top facet
+	// Bottom facet
 	std::vector<int> f;
 	f.push_back( num_vertices-2 );
 	f.push_back( (i+1)%num_sectors );
-	f.push_back( i );
+	f.push_back(i);
 	add_facet(builder, f);
       }
-      
+
       {
-	// Bottom facet
+	// Top facet
 	std::vector<int> f;
-	//const int offset = 0;
 	f.push_back( num_vertices-1 );
-	f.push_back( bottom_offset + i);
-	f.push_back( bottom_offset + (i+1)%num_sectors );
+	f.push_back( top_offset + (i%num_sectors) );
+	f.push_back( top_offset + (i+1)%num_sectors );
 	add_facet(builder, f);
-      }
+      }      
+
     }
 
     builder.end_surface();
@@ -438,6 +438,7 @@ static Nef_polyhedron_3 make_box(const csg::Box* b)
   Build_box builder(b);
   P.delegate(builder);
   dolfin_assert(P.is_closed());
+  dolfin_assert(P.is_valid());
 
   printStat(P, "Box");
 
@@ -612,10 +613,12 @@ Nef_polyhedron_3 make_cone(const csg::Cone* c)
   Build_cone builder(c);
   P.delegate(builder);
   dolfin_assert(P.is_closed());
+  dolfin_assert(P.is_valid());
 
   printStat(P, "Cone");
-
-  return Nef_polyhedron_3(P);
+  Nef_polyhedron_3 P_nef(P);
+  dolfin_assert(P_nef.is_valid());
+  return P_nef;
 }
 //-----------------------------------------------------------------------------
 static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
