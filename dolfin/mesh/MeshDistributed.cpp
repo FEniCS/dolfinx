@@ -86,35 +86,14 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     // build and populate a local set for non-local cells
     std::set<uint> set_of_my_entities(entity_indices.begin(), entity_indices.end());
 
-    // FIXME: This can be made more efficient by exploiting fact that set is sported
+    // FIXME: This can be made more efficient by exploiting fact that
+    //        set is sorted
     // Remove local cells from set_of_my_entities to reduce communication
     for (uint j = 0; j < global_entity_indices.size(); ++j)
-    {
-      const uint global_index = global_entity_indices[j];
-      set_of_my_entities.erase(global_index);
-    }
+      set_of_my_entities.erase(global_entity_indices[j]);
 
-    /*
-    std::set<uint>::iterator it;
-    for (uint j = 0; j < global_entity_indices.size(); ++j)
-    {
-      const uint global_index = global_entity_indices[j];
-      it = set_of_my_entities.find(global_index);
-      if (it != set_of_my_entities.end())
-        set_of_my_entities.erase(it);
-    }
-    */
-
-    //copy entries from set_of_my_entities to my_entities
-    my_entities.resize(set_of_my_entities.size());
-    {
-      uint j = 0;
-      for (std::set<uint>::iterator it = set_of_my_entities.begin(); it != set_of_my_entities.end(); it++)
-      {
-        my_entities[j] = *it;
-        j++;
-      }
-    }
+    // Copy entries from set_of_my_entities to my_entities
+    my_entities = std::vector<uint>(set_of_my_entities.begin(), set_of_my_entities.end());
   }
   else
     my_entities = entity_indices;
@@ -145,9 +124,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
       // Build a temporary map hosting global_entity_indices
       std::map<uint, uint> map_of_global_entity_indices;
       for (uint j = 0; j < global_entity_indices.size(); j++)
-      {
         map_of_global_entity_indices[global_entity_indices[j]] = j;
-      }
+
       for (uint j = 0; j < recv_entity_count; j++)
       {
         // Check if this process hosts 'received_entity'
