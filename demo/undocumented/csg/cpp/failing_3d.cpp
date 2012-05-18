@@ -29,14 +29,11 @@ using namespace dolfin;
 
 int main()
 {
-  // Define 3D geometry
-  csg::Box box(-1, -1, -1, 1, 1, 1);
-  //csg::Sphere sphere(Point(0, 0, 0), 0.3);
-  //csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .3);
-  csg::Cylinder cyl(Point(-1.1, -1.1, 1.1), Point(1.1, 1.1, 1.1), .5, 10);
-  
-  const boost::shared_ptr<CSGGeometry> g3d = box - cyl;
-
+  // Define 3D geometry  
+  csg::Cone cone(Point(-1.1, 1.1, 1.1), Point(1.1, -1.1, -1.1), .5, 0);
+  //csg::Cone cone2(Point(1.1, 1.1, 1.1), Point(-1.1, -1.1, -1.1), 0, .5);
+  csg::Cylinder cyl(Point(1.1, -1.1, 1.1), Point(-1.1, 1.1, -1.1), .5);
+  const boost::shared_ptr<CSGGeometry> g3d = cone + cyl;
 
   // Test printing
   info("\nCompact output of 3D geometry:");
