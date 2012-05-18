@@ -86,12 +86,35 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     // build and populate a local set for non-local cells
     std::set<uint> set_of_my_entities(entity_indices.begin(), entity_indices.end());
 
+    // FIXME: This can be made more efficient by exploiting fact that set is sported
     // Remove local cells from set_of_my_entities to reduce communication
-    std::set<uint> tmp(global_entity_indices.begin(), global_entity_indices.end());
-    set_of_my_entities.erase(tmp.begin(), tmp.end());
+    for (uint j = 0; j < global_entity_indices.size(); ++j)
+    {
+      const uint global_index = global_entity_indices[j];
+      set_of_my_entities.erase(global_index);
+    }
 
-    // Copy entries from set_of_my_entities to my_entities
-    my_entities = std::vector<uint>(set_of_my_entities.begin(), set_of_my_entities.end());
+    /*
+    std::set<uint>::iterator it;
+    for (uint j = 0; j < global_entity_indices.size(); ++j)
+    {
+      const uint global_index = global_entity_indices[j];
+      it = set_of_my_entities.find(global_index);
+      if (it != set_of_my_entities.end())
+        set_of_my_entities.erase(it);
+    }
+    */
+
+    //copy entries from set_of_my_entities to my_entities
+    my_entities.resize(set_of_my_entities.size());
+    {
+      uint j = 0;
+      for (std::set<uint>::iterator it = set_of_my_entities.begin(); it != set_of_my_entities.end(); it++)
+      {
+        my_entities[j] = *it;
+        j++;
+      }
+    }
   }
   else
     my_entities = entity_indices;
@@ -122,15 +145,15 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
       // Build a temporary map hosting global_entity_indices
       std::map<uint, uint> map_of_global_entity_indices;
       for (uint j = 0; j < global_entity_indices.size(); j++)
+      {
         map_of_global_entity_indices[global_entity_indices[j]] = j;
-
+      }
       for (uint j = 0; j < recv_entity_count; j++)
       {
         // Check if this process hosts 'received_entity'
         const uint received_entity = off_process_entities[j];
-
-        std::map<uint, uint>::const_iterator it
-          = map_of_global_entity_indices.find(received_entity);
+        std::map<uint, uint>::const_iterator it;
+        it = map_of_global_entity_indices.find(received_entity);
         if (it != map_of_global_entity_indices.end())
         {
           const uint local_index = it->second;
