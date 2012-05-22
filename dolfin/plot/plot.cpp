@@ -17,9 +17,10 @@
 //
 // Modified by Joachim Berdal Haga, 2008.
 // Modified by Garth N. Wells, 2008.
+// Modified by Fredrik Valdmanis, 2012.
 //
 // First added:  2007-05-02
-// Last changed: 2009-10-07
+// Last changed: 2012-05-22
 
 #include <cstdlib>
 #include <sstream>
@@ -200,15 +201,16 @@ uint spatial_dim = mesh.topology().dim();
   vtkActor *actor = vtkActor::New();
   actor->SetMapper(mapper);
   actor->GetProperty()->SetRepresentationToWireframe();
+  actor->GetProperty()->SetColor(0,0,1);
 
   vtkRenderer *ren1 = vtkRenderer::New();
   ren1->AddActor(actor);
-  ren1->SetBackground(0,0,0);
+  ren1->SetBackground(1,1,1);
 
   vtkRenderWindow *window = vtkRenderWindow::New();
   window->AddRenderer(ren1);
   window->SetSize(600,600);
-  window->SetWindowName("halla");
+  window->SetWindowName(title.c_str());
 
   vtkRenderWindowInteractor *inter = vtkRenderWindowInteractor::New();
   inter->SetRenderWindow(window);
