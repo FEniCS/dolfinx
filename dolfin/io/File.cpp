@@ -35,6 +35,7 @@
 #include "VTKFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
+#include "HDF5File.h"
 #include "File.h"
 
 using namespace dolfin;
@@ -77,6 +78,8 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new XYZFile(filename));
   else if (extension == ".bin")
     file.reset(new BinaryFile(filename));
+  else if (extension == ".h5")
+    file.reset(new HDF5File(filename));
   else
   {
     dolfin_error("File.cpp",
