@@ -78,7 +78,6 @@ void HDF5File::operator<< (const GenericVector& output)
   hsize_t     count;	          /* hyperslab selection parameters */
   hsize_t     offset;
   hid_t	      plist_id;           /* property list identifier */
-  int         i;
   herr_t      status;
 
   MPICommunicator comm;
@@ -117,6 +116,7 @@ void HDF5File::operator<< (const GenericVector& output)
     
   status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
 		    plist_id, &data[0]);
+  assert(status != HDF5_FAIL);
 
   H5Dclose(dset_id);
   H5Sclose(filespace);
@@ -136,7 +136,7 @@ void HDF5File::operator>> (GenericVector& input)
     hid_t filespace;	/* File dataspace ID */
     hid_t memspace;	/* memory dataspace ID */
     hid_t dset_id;       	/* Dataset ID */
-    hsize_t     dimsf;                 /* dataset dimensions */
+    // hsize_t     dimsf;                 /* dataset dimensions */
     hsize_t     count;	          /* hyperslab selection parameters */
     hsize_t     offset;
     herr_t ret;         	/* Generic return value */
@@ -148,7 +148,7 @@ void HDF5File::operator>> (GenericVector& input)
 
     std::pair<uint,uint> range;
 
-    dimsf=input.size(dim);
+    // dimsf=input.size(dim);
     range=input.local_range(dim);
     offset=range.first;
     count=range.second-range.first;
