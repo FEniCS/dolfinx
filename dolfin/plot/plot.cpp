@@ -24,6 +24,21 @@
 #include <cstdlib>
 #include <sstream>
 
+#include <vtkUnstructuredGrid.h>
+#include <vtkPoints.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkRenderer.h>
+#include <vtkActor.h>
+#include <vtkDataSetMapper.h>
+#include <vtkGeometryFilter.h>
+#include <vtkCellType.h>
+#include <vtkCellArray.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkIdList.h>
+#include <vtkProperty.h>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -32,6 +47,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
+#include <dolfin/mesh/Vertex.h>
 #include "FunctionPlotData.h"
 #include "plot.h"
 
@@ -107,7 +123,108 @@ void dolfin::plot(const Expression& v, const Mesh& mesh,
 void dolfin::plot(const Mesh& mesh,
                   std::string title)
 {
-  plot_object(mesh, title, "auto");
+
+uint spatial_dim = mesh.topology().dim();
+  std::cout << "Initializing mesh in " << spatial_dim << " spatial dimensions." << std::endl;
+
+  vtkUnstructuredGrid *grid = vtkUnstructuredGrid::New();
+  vtkPoints *points = vtkPoints::New(); 
+
+  // Iterate over points and add to array
+  uint num_points = mesh.num_vertices();
+  points->Allocate(num_points);
+  Point p;
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) {
+    p = vertex->point();
+    // DOLFIN only stores (x,y)-coordinates for 2D meshes. Must add z-coordinate manually
+    //points->InsertNextPoint(vertex->x()[0], vertex->x()[1], 0.0);
+    points->InsertNextPoint(p.x(), p.y(), p.z());
+  }
+
+  // Iterate over cells and add to array
+  uint num_cells = mesh.num_cells();
+  // Allocate storage in VTK grid. Number of cells times spatial dim + 1, 
+  // since 2D triangles have 3 vertices, 3D tetrahedrons have 4 vertices, etc.
+  grid->Allocate(num_cells*(spatial_dim+1));
+  //cells->Allocate(num_cells*3);
+  const uint *connectivity = mesh.cells();
+  vtkIdList *ids = vtkIdList::New();
+  for (uint i = 0; i < num_cells; ++i) {
+    //cells->InsertNextCell(3, (vtkIdType*) &connectivity[3*i]);
+    ids->Initialize();
+    // Insert all vertex ids for a given cell. For a simplex in nD, n+1 ids are inserted.
+    // The connectivity array must be indexed at ((n+1) x cell_number + id_offset)
+    for(uint j = 0; j <= spatial_dim; ++j) {
+      ids->InsertNextId((vtkIdType) connectivity[(spatial_dim+1)*i + j]);
+    }
+    
+    switch (spatial_dim) {
+      case 1:
+        grid->InsertNextCell(VTK_LINE, ids);
+        break;
+      case 2:
+        grid->InsertNextCell(VTK_TRIANGLE, ids);
+        break;
+      case 3:
+        grid->InsertNextCell(VTK_TETRA, ids);
+        break;
+      default:
+        // Error handling!
+        break;
+    }
+  }
+
+  grid->SetPoints(points);
+  points->Delete();
+  // Free unused memory
+  grid->Squeeze();
+
+  std::cout << "Num cells: " << grid->GetNumberOfCells() << std::endl;
+  std::cout << "Num vertices: " << grid->GetNumberOfPoints() << std::endl;
+
+  // Create filter and attach grid to it
+  vtkGeometryFilter *geometryFilter = vtkGeometryFilter::New();
+  geometryFilter->SetInput(grid);
+  geometryFilter->Update();
+
+  // Create mapper and actor
+  vtkPolyDataMapper *mapper = vtkPolyDataMapper::New();
+  mapper->SetInputConnection(geometryFilter->GetOutputPort());
+
+  /*
+  vtkDataSetMapper *mapper = vtkDataSetMapper::New();
+  mapper->SetInput(grid);
+  mapper->ImmediateModeRenderingOn();
+  */
+
+  vtkActor *actor = vtkActor::New();
+  actor->SetMapper(mapper);
+  actor->GetProperty()->SetRepresentationToWireframe();
+
+  vtkRenderer *ren1 = vtkRenderer::New();
+  ren1->AddActor(actor);
+  ren1->SetBackground(0,0,0);
+
+  vtkRenderWindow *window = vtkRenderWindow::New();
+  window->AddRenderer(ren1);
+  window->SetSize(600,600);
+  window->SetWindowName("halla");
+
+  vtkRenderWindowInteractor *inter = vtkRenderWindowInteractor::New();
+  inter->SetRenderWindow(window);
+  vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+  inter->SetInteractorStyle(style);
+  inter->Initialize();
+  inter->Start();
+ 
+  grid->Delete();
+  geometryFilter->Delete();
+  mapper->Delete();
+  actor->Delete();
+  ren1->Delete();
+  window->Delete();
+  inter->Delete();
+  style->Delete();
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f,
