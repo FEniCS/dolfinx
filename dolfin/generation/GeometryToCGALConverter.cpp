@@ -115,6 +115,151 @@ void copy_to(const Poly_A& poly_a, Poly_B& poly_b)
   CGAL_assertion(poly_b.is_valid());
 }
 //-----------------------------------------------------------------------------
+static inline double get_edge_length(csg::Polyhedron_3::Halfedge::Halfedge_handle halfedge)
+{
+  //return std::sqrt((halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length());
+  return (halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length();
+}
+//-----------------------------------------------------------------------------
+static inline double get_min_edge_length(csg::Polyhedron_3::Facet_handle facet)
+{
+  csg::Polyhedron_3::Facet::Halfedge_around_facet_circulator half_edge = facet->facet_begin();
+  double min_length = (half_edge->vertex()->point() - half_edge->opposite()->vertex()->point()).squared_length();
+
+  half_edge++;
+  min_length = std::min(min_length, get_edge_length(half_edge));
+
+  half_edge++;
+  min_length = std::min(min_length, get_edge_length(half_edge));
+
+  return min_length;
+}
+//-----------------------------------------------------------------------------
+static inline bool facet_is_degenerate(csg::Polyhedron_3::Facet_handle facet, const double threshold)
+{
+  return get_min_edge_length(facet) < threshold;
+
+  // dolfin_assert(facet->is_triangle());
+  // csg::Polyhedron_3::Halfedge_handle e = facet->halfedge();
+  // csg::Triangle_3 t(e->vertex()->point(), e->next()->vertex()->point(), e->next()->next()->vertex()->point());
+
+  // This seems not to work...
+  // return t.is_degenerate();
+}
+//-----------------------------------------------------------------------------
+static void print_triangle(csg::Polyhedron_3::Facet_handle facet)
+{
+  dolfin_assert(facet->is_triangle());
+  csg::Polyhedron_3::Facet::Halfedge_around_facet_circulator half_edge = facet->facet_begin();
+  std::cout << "Triangle: (<" << half_edge->vertex()->point() << ">, <" <<
+    half_edge->next()->vertex()->point() << ">, <" << 
+    half_edge->next()->next()->vertex()->point() << ">), min edge: " << get_min_edge_length(facet) << std::endl;
+}
+//-----------------------------------------------------------------------------
+static void print_halfedge(csg::Polyhedron_3::Halfedge::Halfedge_handle halfedge)
+{
+  const double squared_length = (halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length();
+  std::cout << "Halfedge: (<" << halfedge->vertex()->point() << ">, <" << halfedge->opposite()->vertex()->point() << ">, squared length: " << squared_length << ")" << std::endl;
+}
+//-----------------------------------------------------------------------------
+static int number_of_degenerate_facets(csg::Polyhedron_3& p, const double threshold)
+{
+  int count = 0;
+  for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
+       facet != p.facets_end(); facet++)
+  {
+    dolfin_assert(facet->is_triangle());
+    
+    if ( facet_is_degenerate(facet, threshold) )
+      count++;
+  }
+  return count;
+}
+//-----------------------------------------------------------------------------
+double GeometryToCGALConverter::shortest_edge(csg::Polyhedron_3& p)
+{
+  double shortest = 100.0;
+  for (csg::Polyhedron_3::Halfedge_iterator halfedge = p.halfedges_begin();
+       halfedge != p.halfedges_end(); halfedge++)
+  {
+    shortest = std::min(shortest, get_edge_length(halfedge));
+  }
+
+  return shortest;
+}
+//-----------------------------------------------------------------------------
+static void remove_one_degenerate_facet(csg::Polyhedron_3& p, const double threshold)
+{
+  dolfin_assert(p.is_pure_triangle());
+
+  // FIXME: Is it possible to do this in a smarter way than a linear scan
+  for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
+       facet != p.facets_end(); facet++)
+  {
+    if ( facet_is_degenerate(facet, threshold) )
+    {
+      //print_triangle(facet);
+
+      // Find a short edge
+      csg::Polyhedron_3::Halfedge::Halfedge_handle shortest_edge = facet->facet_begin();
+      csg::Polyhedron_3::Facet::Halfedge_around_facet_circulator current_edge = facet->facet_begin();
+      double min_length = get_edge_length(current_edge);
+      
+      for (int i = 0; i < 2; i++)
+      {
+	current_edge++;
+	if (get_edge_length(current_edge) < min_length)
+	{
+	  shortest_edge = current_edge;
+	  min_length = get_edge_length(current_edge);
+	}
+      }
+
+      // Join small triangles with neighbor facets
+      shortest_edge = p.join_facet(shortest_edge->next());
+      p.join_facet(shortest_edge->opposite()->prev());
+
+      // The joined facets are now quads
+      // Join the two close vertices
+      csg::Polyhedron_3::Halfedge_handle e = p.join_vertex(shortest_edge);
+      break;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+static void remove_degenerate_facets(csg::Polyhedron_3& p, const double threshold)
+{
+  int degenerate_facets = number_of_degenerate_facets(p, threshold);
+  cout << "Number of degenerate facets: " << degenerate_facets << endl;
+  // FIXME: Use has_degenerate_facets() when debugging is done
+  while (degenerate_facets > 0)
+  {
+    dolfin_assert(p.is_pure_triangle());
+
+    // FIXME: Check if it is safe to merge facets within a facet iterator.
+    // If it is, then remove the function remove_one_facet
+    remove_one_degenerate_facet(p, threshold);
+
+    // Removal of triangles should preserve the triangular structure of the polyhedron
+    dolfin_assert(p.is_pure_triangle());
+
+    degenerate_facets = number_of_degenerate_facets(p, threshold);
+  }
+}
+//-----------------------------------------------------------------------------
+static bool has_degenerate_facets(csg::Polyhedron_3& p, const double threshold)
+{
+  for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
+       facet != p.facets_end(); facet++)
+  {
+    dolfin_assert(facet->is_triangle());
+    
+    if ( facet_is_degenerate(facet, threshold) )
+      return true;
+  }
+  return false;
+}
+//-----------------------------------------------------------------------------
 
 // // Convenience routine to make debugging easier. Remove before releasing.
 static void add_facet(CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS>& builder, 
@@ -616,9 +761,7 @@ Nef_polyhedron_3 make_cone(const csg::Cone* c)
   dolfin_assert(P.is_valid());
 
   printStat(P, "Cone");
-  Nef_polyhedron_3 P_nef(P);
-  dolfin_assert(P_nef.is_valid());
-  return P_nef;
+  return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
 static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
@@ -685,7 +828,26 @@ static Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
   return Nef_polyhedron_3();
 }
 //-----------------------------------------------------------------------------
-void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3& p)
+static void triangulate_polyhedron(csg::Polyhedron_3& p)
+{
+  while (!p.is_pure_triangle())
+  {
+    for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
+	 facet != p.facets_end(); facet++)
+    {
+      if (!facet->is_triangle())
+      {
+	cout << "Triangulating facet" << endl;
+	p.create_center_vertex(facet->halfedge());
+
+	// FIXME: Is it safe to do this without break the loop
+	break;
+      }
+    }    
+  }
+}
+//-----------------------------------------------------------------------------
+void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated)
 {
   Nef_polyhedron_3 cgal_geometry = convertSubTree(&geometry);
 
@@ -696,4 +858,16 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
   cgal_geometry.convert_to_polyhedron(p_exact);
 
   copy_to(p_exact, p);
+  dolfin_assert(p.is_valid());
+  dolfin_assert(p.is_closed());
+
+  triangulate_polyhedron(p);
+
+  if (remove_degenerated)
+  {
+    remove_degenerate_facets(p, DOLFIN_SQRT_EPS);
+
+    // FIXME: Remove before release. Probably too expensive.
+    dolfin_assert(!has_degenerate_facets(p, DOLFIN_SQRT_EPS));
+  }
 }

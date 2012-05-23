@@ -8,6 +8,8 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 
+#include <CGAL/IO/Polyhedron_iostream.h>
+
 #include <CGAL/Mesh_criteria_3.h>
 
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
@@ -23,6 +25,8 @@ namespace dolfin
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron_3;
     typedef K::Point_3 Point_3;
+    typedef K::Vector_3 Vector_3;
+    typedef K::Triangle_3 Triangle_3;
     typedef CGAL::Polyhedral_mesh_domain_with_features_3<K> Mesh_domain;
 
     // Triangulation

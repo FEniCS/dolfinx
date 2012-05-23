@@ -25,10 +25,6 @@
 #include <dolfin/log/LogStream.h>
 #include "cgal_csg3d.h"
 
-// The below two files are from the CGAL demos. Path can be changed
-// once they are included with the CGAL code.
-#include "triangulate_polyhedron.h"
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -47,17 +43,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh)
   cout << "Converting geometry to cgal types." << endl;
   GeometryToCGALConverter::convert(geometry, p);
 
-  cout << "Triangulating polyhedron" << endl;
-  typename csg::Polyhedron_3::Facet_iterator facet;
-  for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
-  {
-    // Check if there is a non-triangular facet
-    if (!facet->is_triangle())
-    {
-      CGAL::triangulate_polyhedron<csg::Polyhedron_3>(p);
-      break;
-    }
-  }
+  dolfin_assert(p.is_pure_triangle());
 
   csg::Mesh_domain domain(p);
 
