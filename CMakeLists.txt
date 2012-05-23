@@ -262,21 +262,29 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos 10.8.1 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  find_package(Trilinos 10.10.0 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages
-  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+  set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
   if (Trilinos_FOUND)
     message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
 
-    # Check for packages
+    # Check that necessary packages are enabled
     set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
-    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-      find_package(${package} PATHS $ENV{TRILINOS_DIR} QUIET)
-      if (NOT ${package}_FOUND)
+    foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
+
+      set(${required_trilinos_package}_found false)
+      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
+
+      if (required_trilinos_package_found)
+        message(STATUS "    ${required_package} found, ${required_trilinos_package_found}")
+      else()
+        message(STATUS "    Trilinos found, but required package ${required_package} not found.")
         set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+        break()
       endif()
+
     endforeach()
 
     if (DOLFIN_TRILINOS_PACKAGES_FOUND)
@@ -299,11 +307,6 @@ if (DOLFIN_ENABLE_TRILINOS)
       list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
       list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
 
-    else()
-      message(STATUS "Trilinos found, but some required components are missing.")
-      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-        message(STATUS "  ${package}: ${${package}_FOUND}")
-      endforeach()
     endif()
 
   else()
