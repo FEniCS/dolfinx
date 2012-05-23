@@ -221,7 +221,7 @@ static void remove_one_degenerate_facet(csg::Polyhedron_3& p, const double thres
 
       // The joined facets are now quads
       // Join the two close vertices
-      csg::Polyhedron_3::Halfedge_handle e = p.join_vertex(shortest_edge);
+      p.join_vertex(shortest_edge);
       break;
     }
   }
