@@ -1,4 +1,7 @@
 1.1.0 [not yet released]
+ - Improve code design for Mesh FooIterators to avoid dubious down cast
+ - Bug fix in destruction of PETSc user preconditioners
+ - Add CellVolume(mesh) convenience wrapper to Python interface for UFL function
  - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs are not handled correctly
  - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
  - Add check that sample points for TimeSeries are monotone
