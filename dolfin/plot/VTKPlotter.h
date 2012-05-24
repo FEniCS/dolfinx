@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2012-05-23
 // Last changed: 2012-05-24
 
@@ -29,6 +31,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
 
+#include <dolfin/common/Variable.h>
 namespace dolfin
 {
 
@@ -49,6 +52,16 @@ namespace dolfin
     void plot(std::string title);
 
     ~VTKPlotter();
+
+    Parameters default_parameters()
+    {
+      Parameters p("vtk_plotter");
+      p.add("mode", "auto");
+      p.add("title", "VTKPlotter");
+      return p;
+    }
+}
+
 
   private:
 

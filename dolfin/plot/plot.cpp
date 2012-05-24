@@ -18,6 +18,7 @@
 // Modified by Joachim Berdal Haga, 2008.
 // Modified by Garth N. Wells, 2008.
 // Modified by Fredrik Valdmanis, 2012.
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
 // Last changed: 2012-05-22
@@ -70,15 +71,16 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
   File file(filename);
   file << t;
 
-  // Build command string
-  std::stringstream command;
-  command << "viper --mode=" << mode << " "
-          << "--title=\"" << title
-          << "\" " << filename;
-
-  // Call Viper from command-line
-  if (system(command.str().c_str()) != 0)
-      warning("Unable to plot.");
+#ifdef HAS_VTK
+  VTKPlotter plotter(t);
+  plotter.parameters["title"] = title;
+  plotter.parameters["mode"] = mode;
+  plotter.plot();
+#else
+  dolfin_error("plot.cpp",
+               "plot object",
+	       "Plotting disbled. Dolfin has been compiled without VTK support");
+#endif
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v,
@@ -109,9 +111,7 @@ void dolfin::plot(const Expression& v, const Mesh& mesh,
 void dolfin::plot(const Mesh& mesh,
                   std::string title)
 {
-  VTKPlotter plotter(mesh);
-  plotter.init();
-  plotter.plot(title);
+  plot_object(mesh, title, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f,

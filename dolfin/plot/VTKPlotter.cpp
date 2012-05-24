@@ -43,7 +43,7 @@ VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New())
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Function& function) :
