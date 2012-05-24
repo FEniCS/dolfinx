@@ -293,13 +293,15 @@ if (DOLFIN_ENABLE_TRILINOS)
 
       # Loop over each package
       foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+
         # Loop over libs and get full path
         foreach (lib ${${package}_LIBRARIES})
-          find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
+          find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
           if (TRILINOS_LIB_${lib})
             list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
           endif()
         endforeach()
+
       endforeach()
 
       # Remove duplicates
