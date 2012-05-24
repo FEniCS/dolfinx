@@ -274,21 +274,24 @@ if (DOLFIN_ENABLE_TRILINOS)
     set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
     foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
 
+      # Search for required package in list of available packages
       set(${required_trilinos_package}_found false)
       list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
 
+      # Print whether or not package is found
       if (required_trilinos_package_found)
-        message(STATUS "    ${required_package} found, ${required_trilinos_package_found}")
+        message(STATUS "    ${required_package} found")
       else()
-        message(STATUS "    Trilinos found, but required package ${required_package} not found.")
+        message(STATUS "    Trilinos found, but required package ${required_package} not found. Trilinos will be disabled.")
         set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
         break()
       endif()
 
     endforeach()
 
+    # Add package libraries if all packages have been found
     if (DOLFIN_TRILINOS_PACKAGES_FOUND)
-      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
+      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled.")
       set(DOLFIN_TRILINOS_DEFINITIONS)
 
       # Loop over each package
