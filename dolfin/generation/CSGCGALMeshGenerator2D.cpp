@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-05-10
-// Last changed: 2012-05-14
+// Last changed: 2012-05-24
 
 #include <vector>
 #include <cmath>
@@ -47,8 +47,7 @@
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
-using namespace dolfin;
-
+//#include <CGAL/Triangulation_conformer_2.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Inexact_Kernel;
@@ -64,18 +63,88 @@ typedef Explorer::Face_const_iterator Face_const_iterator;
 typedef Explorer::Hole_const_iterator Hole_const_iterator;
 typedef Explorer::Halfedge_around_face_const_circulator Halfedge_around_face_const_circulator;
 typedef Explorer::Vertex_const_handle Vertex_const_handle;
+typedef Explorer::Halfedge_const_handle Halfedge_const_handle;
+
+typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel>  Vertex_base;
+typedef CGAL::Constrained_triangulation_face_base_2<Inexact_Kernel> Face_base;
+
+template <class Gt,
+          class Fb >
+class Enriched_face_base_2 : public Fb {
+public:
+  typedef Gt Geom_traits;
+  typedef typename Fb::Vertex_handle Vertex_handle;
+  typedef typename Fb::Face_handle Face_handle;
+
+  template < typename TDS2 >
+  struct Rebind_TDS {
+    typedef typename Fb::template Rebind_TDS<TDS2>::Other Fb2;
+    typedef Enriched_face_base_2<Gt,Fb2> Other;
+  };
+
+protected:
+  int status;
+
+public:
+  Enriched_face_base_2(): Fb(), status(-1) {};
+
+  Enriched_face_base_2(Vertex_handle v0,
+                       Vertex_handle v1,
+                       Vertex_handle v2)
+    : Fb(v0,v1,v2), status(-1) {};
+
+  Enriched_face_base_2(Vertex_handle v0,
+                       Vertex_handle v1,
+                       Vertex_handle v2,
+                       Face_handle n0,
+                       Face_handle n1,
+                       Face_handle n2)
+    : Fb(v0,v1,v2,n0,n1,n2), status(-1) {};
+
+  inline
+  bool is_in_domain() const { return (status%2 == 1); };
+
+  inline
+  void set_in_domain(const bool b) { status = (b ? 1 : 0); };
+
+  inline
+  void set_counter(int i) { status = i; };
+
+  inline
+  int counter() const { return status; };
+
+  inline
+  int& counter() { return status; };
+}; // end class Enriched_face_base_2 
+
+typedef Enriched_face_base_2<Inexact_Kernel, Face_base> Fb;
+//typedef CGAL::Triangulation_data_structure_2<Vertex_base, Fb>  TDS;
+typedef CGAL::Exact_predicates_tag              Itag;
+//typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
+//typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+
+//typedef CGAL::Lipschitz_sizing_field_2<K> Lipschitz_sizing_field;
+//typedef CGAL::Lipschitz_sizing_field_criteria_2<CDT, Lipschitz_sizing_field> Lipschitz_criteria;
+//typedef CGAL::Delaunay_mesher_2<CDT, Lipschitz_criteria> Lipschitz_mesher;
+
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Inexact_Kernel, Vb> Vbb;
-typedef CGAL::Delaunay_mesh_face_base_2<Inexact_Kernel> Fb;
+//typedef CGAL::Delaunay_mesh_face_base_2<Inexact_Kernel> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vbb, Fb> TDS;
-typedef CGAL::Constrained_Delaunay_triangulation_2<Inexact_Kernel, TDS> CDT;
+//typedef CGAL::Constrained_Delaunay_triangulation_2<Inexact_Kernel, TDS> CDT;
+typedef CGAL::Constrained_Delaunay_triangulation_2<Inexact_Kernel, TDS, Itag> CDT;
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Mesh_criteria_2;
 typedef CGAL::Delaunay_mesher_2<CDT, Mesh_criteria_2> CGAL_Mesher_2;
+
+typedef CDT::Vertex_handle Vertex_handle;
+typedef CDT::Face_handle Face_handle;
+typedef CDT::All_faces_iterator All_faces_iterator;
 
 typedef CGAL::Polygon_2<Inexact_Kernel> Polygon_2;
 typedef Inexact_Kernel::Point_2 Point_2;
 
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
@@ -189,29 +258,123 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
     dolfin_error("CSGCGALMeshGenerator2D.cpp",
                  "converting geometry to cgal polyhedron",
                  "Unhandled primitive type");
-    // Make compiler happy
   }
   return Nef_polyhedron_2();
 }
 //-----------------------------------------------------------------------------
-void insert_polygon(CDT& cdt, const Polygon_2& polygon)
+void mark_domains(CDT& ct,
+                  CDT::Face_handle start,
+                  int index,
+                  std::list<CDT::Edge>& border)
 {
-  if (polygon.is_empty())
+  if (start->counter() != -1)
     return;
 
-  CDT::Vertex_handle v_prev = cdt.insert(*CGAL::cpp0x::prev(polygon.vertices_end()));
-  for (Polygon_2::Vertex_iterator vit = polygon.vertices_begin();
-       vit != polygon.vertices_end(); ++vit)
+  std::list<CDT::Face_handle> queue;
+  queue.push_back(start);
+
+  while (!queue.empty())
   {
-    CDT::Vertex_handle vh = cdt.insert(*vit);
-    cdt.insert_constraint(vh,v_prev);
-    v_prev = vh;
+    CDT::Face_handle fh = queue.front();
+    queue.pop_front();
+    if (fh->counter() == -1)
+    {
+      fh->counter() = index;
+      for (int i = 0; i < 3; i++)
+      {
+        CDT::Edge e(fh, i);
+        CDT::Face_handle n = fh->neighbor(i);
+        if (n->counter() == -1)
+        {
+          if (ct.is_constrained(e))
+            border.push_back(e);
+          else
+            queue.push_back(n);
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void mark_domains(CDT& cdt)
+{
+  for (CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it)
+    it->set_counter(-1);
+
+  int index = 0;
+  std::list<CDT::Edge> border;
+  mark_domains(cdt, cdt.infinite_face(), index++, border);
+  while (!border.empty())
+  {
+    CDT::Edge e = border.front();
+    border.pop_front();
+    CDT::Face_handle n = e.first->neighbor(e.second);
+    if (n->counter() == -1)
+      mark_domains(cdt, n, e.first->counter()+1, border);
+  }
+}
+//-----------------------------------------------------------------------------
+void initializeID(const CDT& ct)
+{
+  for (All_faces_iterator it = ct.all_faces_begin(); it != ct.all_faces_end(); ++it)
+    it->set_counter(-1);
+}
+//-----------------------------------------------------------------------------
+void discoverComponent(const CDT & ct,
+                       Face_handle start,
+                       int index,
+                       std::list<CDT::Edge>& border)
+{
+  if(start->counter() != -1)
+    return;
+
+  std::list<Face_handle> queue;
+  queue.push_back(start);
+
+  while(!queue.empty())
+  {
+    Face_handle fh = queue.front();
+    queue.pop_front();
+    if (fh->counter() == -1)
+    {
+      fh->counter() = index;
+      fh->set_in_domain(index%2 == 1);
+      for (int i = 0; i < 3; i++)
+      {
+        CDT::Edge e(fh,i);
+        Face_handle n = fh->neighbor(i);
+        if (n->counter() == -1)
+        {
+          if (ct.is_constrained(e))
+            border.push_back(e);
+          else
+            queue.push_back(n);
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void discoverComponents(const CDT & ct)
+{
+  if (ct.dimension() != 2)
+    return;
+
+  int index = 0;
+  std::list<CDT::Edge> border;
+  discoverComponent(ct, ct.infinite_face(), index++, border);
+  while (!border.empty())
+  {
+    CDT::Edge e = border.front();
+    border.pop_front();
+    Face_handle n = e.first->neighbor(e.second);
+    if (n->counter() == -1)
+      discoverComponent(ct, n, e.first->counter()+1, border);
   }
 }
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 {
-  //Nef_polyhedron_2 cgal_geometry = geometry.get_cgal_type_2D();
   Nef_polyhedron_2 cgal_geometry = convertSubTree(&geometry);
 
   // Create empty CGAL triangulation
@@ -226,34 +389,64 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     if (! explorer.mark(fit))
       continue;
 
-    Polygon_2 polygon;
     Halfedge_around_face_const_circulator hafc = explorer.face_cycle(fit), done(hafc);
     do {
-      Vertex_const_handle vh = explorer.target(hafc);
-      polygon.push_back(Point_2(to_double(explorer.point(vh).x()),
-                                to_double(explorer.point(vh).y())));
+      Vertex_handle va = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
+                                            to_double(hafc->vertex()->point().y())));
+      Vertex_handle vb = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
+                                            to_double(hafc->next()->vertex()->point().y())));
+      cdt.insert_constraint(va, vb);
       hafc++;
-    } while(hafc != done);
-    insert_polygon(cdt, polygon);
+    } while (hafc != done);
 
     // FIXME: Holes must be marked as not part of the mesh domain
     Hole_const_iterator hit = explorer.holes_begin(fit);
     for (; hit != explorer.holes_end(fit); hit++)
     {
-      Polygon_2 hole;
       Halfedge_around_face_const_circulator hafc(hit), done(hit);
       do {
-        Vertex_const_handle vh = explorer.target(hafc);
-        hole.push_back(Point_2(to_double(explorer.point(vh).x()),
-                               to_double(explorer.point(vh).y())));
+        Vertex_handle va = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
+                                              to_double(hafc->vertex()->point().y())));
+        Vertex_handle vb = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
+                                              to_double(hafc->next()->vertex()->point().y())));
+        cdt.insert_constraint(va, vb);
         hafc++;
-      } while(hafc != done);
-      insert_polygon(cdt, hole);
+      } while (hafc != done);
     }
   }
 
+  //initializeID(cdt);
+  //discoverComponents(cdt);
+  mark_domains(cdt);
+
+  //CGAL::make_conforming_Delaunay_2(cdt);
+
+  //std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
+  //std::cout << "Number of finite faces: " << cdt.number_of_faces() << std::endl;
+  //int mesh_faces_counter = 0;
+  //for(CDT::Finite_faces_iterator fit = cdt.finite_faces_begin();
+  //    fit != cdt.finite_faces_end(); ++fit)
+  //{
+  //  if (fit->is_in_domain())
+  //  {
+  //    ++mesh_faces_counter;
+  //    std::cout << fit->vertex(0)->info() << " "
+  //            << fit->vertex(1)->info() << " "
+  //            << fit->vertex(2)->info() << std::endl;
+  //    std::cout << fit->vertex(0)->point() << " "
+  //            << fit->vertex(1)->point() << " "
+  //            << fit->vertex(2)->point() << std::endl;
+  //  }
+  //}
+  //std::cout << "Number of faces in the mesh domain: " << mesh_faces_counter << std::endl;
+
   // Create mesher
   CGAL_Mesher_2 mesher(cdt);
+
+  //// Set seeds
+  //std::list<Point_2> list_of_seeds;
+  //list_of_seeds.push_back(Point_2(0.3, 0.5));
+  //mesher.set_seeds(list_of_seeds.begin(), list_of_seeds.end());
 
   Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
                            parameters["cell_size"]);
@@ -264,7 +457,59 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   dolfin_assert(cdt.is_valid());
 
+  // Clear mesh
+  mesh.clear();
+
+  // Get various dimensions
+  const uint gdim = cdt.finite_vertices_begin()->point().dimension();
+  const uint tdim = cdt.dimension();
+  const uint num_vertices = cdt.number_of_vertices();
+  const uint num_cells = cdt.number_of_faces();
+
+  // Create a MeshEditor and open
+  dolfin::MeshEditor mesh_editor;
+  mesh_editor.open(mesh, tdim, gdim);
+  mesh_editor.init_vertices(num_vertices);
+  mesh_editor.init_cells(num_cells);
+
+  // Add vertices to mesh
+  unsigned int vertex_index = 0;
+  CDT::Finite_vertices_iterator cgal_vertex;
+  for (cgal_vertex = cdt.finite_vertices_begin();
+          cgal_vertex != cdt.finite_vertices_end(); ++cgal_vertex)
+  {
+    // Get vertex coordinates and add vertex to the mesh
+    Point p;
+    p[0] = cgal_vertex->point()[0];
+    p[1] = cgal_vertex->point()[1];
+    if (gdim == 3)
+      p[2] = cgal_vertex->point()[2];
+
+    // Add mesh vertex
+    mesh_editor.add_vertex(vertex_index, p);
+
+    // Attach index to vertex and increment
+    cgal_vertex->info() = vertex_index++;
+  }
+
+  // Add cells to mesh
+  unsigned int cell_index = 0;
+  CDT::Finite_faces_iterator cgal_cell;
+  for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
+  {
+    // Add cell if it is in the domain
+    if (cgal_cell->is_in_domain())
+    {
+      mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
+                           cgal_cell->vertex(1)->info(),
+                           cgal_cell->vertex(2)->info());
+    }
+  }
+
+  // Close mesh editor
+  mesh_editor.close();
+
   // Build DOLFIN mesh from CGAL triangulation
-  CGALMeshBuilder::build(mesh, cdt);
+  //CGALMeshBuilder::build(mesh, cdt);
 }
 //-----------------------------------------------------------------------------
