@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-05-23
 // Last changed: 2012-05-24 
 
@@ -57,6 +59,31 @@ VTKPlotter::VTKPlotter(const Function& function) :
 VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
   _function(reference_to_no_delete_pointer(expression)),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const FunctionPlotData& plot_data) :
+  _mesh(reference_to_no_delete_pointer(plot_data.mesh)),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<uint>& plot_data) :
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<double>& plot_data) :
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<bool>& plot_data) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
   // Do nothing
@@ -147,7 +174,7 @@ void VTKPlotter::construct_vtk_grid()
 
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::plot(std::string title)
+void VTKPlotter::plot()
 {
   // dolfin_assert(_grid) should be performed but doesn't make sense here
   // should the contents of init be moved to the constructor? Or would that
@@ -186,7 +213,7 @@ void VTKPlotter::plot(std::string title)
 
   // Make window title. Should probably be fetched from parameters?
   std::stringstream full_title;
-  full_title << title << " - DOLFIN VTK Plotter";
+  full_title << std::string(parameters["title"]) << " - DOLFIN VTK Plotter";
   window->SetWindowName(full_title.str().c_str());
 
   vtkSmartPointer<vtkRenderWindowInteractor> interactor = 

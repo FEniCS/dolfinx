@@ -28,28 +28,32 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkSmartPointer.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
+#include "FunctionPlotData.h"
 
 #include <dolfin/common/Variable.h>
 namespace dolfin
 {
 
-  class VTKPlotter
+  class VTKPlotter : public Variable
   {
   public:
 
     explicit VTKPlotter(const Mesh& mesh);
-
     explicit VTKPlotter(const Function& function);
-
     explicit VTKPlotter(const Expression& expression, const Mesh& mesh);
+    explicit VTKPlotter(const MeshFunction<uint>& mesh_function);
+    explicit VTKPlotter(const MeshFunction<double>& mesh_function);
+    explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
+    explicit VTKPlotter(const FunctionPlotData& plotdata);
 
     void init();
     
     void construct_vtk_grid();
 
-    void plot(std::string title);
+    void plot();
 
     ~VTKPlotter();
 
@@ -60,8 +64,6 @@ namespace dolfin
       p.add("title", "VTKPlotter");
       return p;
     }
-}
-
 
   private:
 
