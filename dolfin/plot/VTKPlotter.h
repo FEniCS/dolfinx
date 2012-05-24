@@ -57,7 +57,7 @@ namespace dolfin
 
     ~VTKPlotter();
 
-    Parameters default_parameters()
+    static Parameters default_parameters()
     {
       Parameters p("vtk_plotter");
       p.add("mode", "auto");

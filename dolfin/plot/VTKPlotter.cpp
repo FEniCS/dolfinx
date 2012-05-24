@@ -53,7 +53,7 @@ VTKPlotter::VTKPlotter(const Function& function) :
   _function(reference_to_no_delete_pointer(function)),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New())
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
@@ -61,32 +61,32 @@ VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   _function(reference_to_no_delete_pointer(expression)),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const FunctionPlotData& plot_data) :
   _mesh(reference_to_no_delete_pointer(plot_data.mesh)),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<uint>& plot_data) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<double>& plot_data) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<bool>& plot_data) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
@@ -176,6 +176,8 @@ void VTKPlotter::construct_vtk_grid()
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
+  init();
+
   // dolfin_assert(_grid) should be performed but doesn't make sense here
   // should the contents of init be moved to the constructor? Or would that
   // be a problem with regards to parameter handling?
