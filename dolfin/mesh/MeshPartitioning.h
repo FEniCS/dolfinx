@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg
+// Copyright (C) 2008-2012 Niclas Jansson, Ola Skavhaug, Anders Logg and
+// Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +20,7 @@
 // Modified by Kent-Andre Mardal, 2011
 //
 // First added:  2008-12-01
-// Last changed: 2010-04-04
+// Last changed: 2012-05-18
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -205,9 +206,11 @@ namespace dolfin
 
     // Get local local-to-global map
     if (!mesh.parallel_data().have_global_entity_indices(D))
+    {
       dolfin_error("MeshPartitioning.h",
                    "build mesh value collection",
                    "Do not have have_global_entity_indices");
+    }
 
     // Get global indices on local process
     const std::vector<uint> global_entity_indices
@@ -216,14 +219,20 @@ namespace dolfin
     // Add local (to this process) data to domain marker
     std::vector<uint>::iterator it;
     std::vector<uint> off_process_global_cell_entities;
+
+    // Build and populate a local map for global_entity_indices
+    std::map<uint, uint> map_of_global_entity_indices;
+    for (uint i = 0; i < global_entity_indices.size(); i++)
+      map_of_global_entity_indices[global_entity_indices[i]] = i;
+
     for (uint i = 0; i < ldata.size(); ++i)
     {
       const uint global_cell_index = ldata[i].first.first;
-      std::vector<uint>::const_iterator it;
-      it = std::find(global_entity_indices.begin(), global_entity_indices.end(), global_cell_index);
-      if (it != global_entity_indices.end())
+      std::map<uint, uint>::const_iterator it
+        = map_of_global_entity_indices.find(global_cell_index);
+      if (it != map_of_global_entity_indices.end())
       {
-        const uint local_cell_index = std::distance(global_entity_indices.begin(), it);
+        const uint local_cell_index = it->second;
         const uint entity_local_index = ldata[i].first.second;
         const T value = ldata[i].second;
         markers.set_value(local_cell_index, entity_local_index, value);
@@ -242,32 +251,41 @@ namespace dolfin
     std::vector<uint> destinations0;
     std::vector<uint> destinations1;
     std::map<uint, std::set<std::pair<uint, uint> > >::const_iterator entity_host;
-    for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
+
     {
-      const uint host_global_cell_index = entity_host->first;
-      const std::set<std::pair<uint, uint> >& processes_data = entity_host->second;
-
-      // Loop over local data
+      // Build a convenience map in order to speedup the loop over local data
+      std::map<uint, std::set<uint> > map_of_ldata;
       for (uint i = 0; i < ldata.size(); ++i)
+        map_of_ldata[ldata[i].first.first].insert(i);
+
+      for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
       {
-        const uint local_global_cell_index = ldata[i].first.first;
-        if (local_global_cell_index == host_global_cell_index)
+        const uint host_global_cell_index = entity_host->first;
+        const std::set<std::pair<uint, uint> >& processes_data = entity_host->second;
+
+        // Loop over local data
+        std::map<uint, std::set<uint> >::const_iterator ldata_it
+          = map_of_ldata.find(host_global_cell_index);
+        if (ldata_it != map_of_ldata.end())
         {
-          const uint local_entity_index = ldata[i].first.second;
-          const T domain_value = ldata[i].second;
-
-          std::set<std::pair<uint, uint> >::const_iterator process_data;
-          for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+          for (std::set<uint>::const_iterator it = ldata_it->second.begin(); it != ldata_it->second.end(); it++)
           {
-            const uint proc = process_data->first;
-            const uint local_cell_entity = process_data->second;
+            const uint local_entity_index = ldata[*it].first.second;
+            const T domain_value = ldata[*it].second;
 
-            send_data0.push_back(local_cell_entity);
-            send_data0.push_back(local_entity_index);
-            destinations0.insert(destinations0.end(), 2, proc);
+            std::set<std::pair<uint, uint> >::const_iterator process_data;
+            for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+            {
+              const uint proc = process_data->first;
+              const uint local_cell_entity = process_data->second;
 
-            send_data1.push_back(domain_value);
-            destinations1.push_back(proc);
+              send_data0.push_back(local_cell_entity);
+              send_data0.push_back(local_entity_index);
+              destinations0.insert(destinations0.end(), 2, proc);
+
+              send_data1.push_back(domain_value);
+              destinations1.push_back(proc);
+            }
           }
         }
       }

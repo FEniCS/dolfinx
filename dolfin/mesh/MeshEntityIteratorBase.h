@@ -25,6 +25,7 @@
 
 #include <dolfin/common/types.h>
 #include "Mesh.h"
+#include "MeshEntity.h"
 
 namespace dolfin
 {
@@ -50,16 +51,12 @@ namespace dolfin
     explicit MeshEntityIteratorBase(const MeshEntity& entity)
       : entity(entity.mesh(), 0), _pos(0), index(0)
     {
-      // FIXME: Check dim matches dim of T
-
       // Get connectivity
-      //const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), this->entity.dim());
 
       // Compute connectivity if empty
       if (c.empty())
         entity.mesh().init(entity.dim(), this->entity.dim());
-        //entity.mesh().init(entity.dim(), dim);
 
       // Get size and index map
       if (c.empty())
