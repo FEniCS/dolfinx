@@ -182,7 +182,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
                                     a.mesh(), dofmaps,
                                     a.ufc_form()->num_cell_domains(),
-                                    a.ufc_form()->num_interior_facet_domains());
+                                    a.ufc_form()->num_interior_facet_domains(),
+                                    a.ufc_form()->num_exterior_facet_domains());
     }
     t0.stop();
 

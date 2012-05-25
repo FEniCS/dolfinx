@@ -221,10 +221,6 @@ if (DOLFIN_ENABLE_PYTHON)
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
     find_package(NumPy REQUIRED)
 
-    # This is to help pick up swig on Debian/Ubuntu. It can be removed
-    # when Debian/Ubuntu rename swig2.0 -> swig
-    find_program(SWIG_EXECUTABLE swig2.0)
-
     find_package(SWIG REQUIRED)
     if (${SWIG_VERSION} LESS 2.0)
       message(FATAL_ERROR " DOLFIN requires SWIG version 2.0 or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to False or install correct SWIG version.")
@@ -266,36 +262,49 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos 10.8.1 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  find_package(Trilinos 10.10.0 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages
-  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+  set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
   if (Trilinos_FOUND)
     message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
 
-    # Check for packages
+    # Check that necessary packages are enabled
     set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
-    foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-      find_package(${package} PATHS $ENV{TRILINOS_DIR} QUIET)
-      if (NOT ${package}_FOUND)
+    foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
+
+      # Search for required package in list of available packages
+      set(${required_trilinos_package}_found false)
+      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_found)
+
+      # Print whether or not package is found
+      if (required_trilinos_package_found)
+        message(STATUS "    ${required_package} found")
+      else()
+        message(STATUS "    Trilinos found, but required package ${required_package} not found. Trilinos will be disabled.")
         set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
+        break()
       endif()
+
     endforeach()
 
+    # Add package libraries if all packages have been found
     if (DOLFIN_TRILINOS_PACKAGES_FOUND)
-      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled")
+      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled.")
       set(DOLFIN_TRILINOS_DEFINITIONS)
 
       # Loop over each package
       foreach (package ${DOLFIN_TRILINOS_PACKAGES})
+
         # Loop over libs and get full path
         foreach (lib ${${package}_LIBRARIES})
-          find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${${package}_LIBRARY_DIRS})
+          find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
           if (TRILINOS_LIB_${lib})
             list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
           endif()
         endforeach()
+
       endforeach()
 
       # Remove duplicates
@@ -303,11 +312,6 @@ if (DOLFIN_ENABLE_TRILINOS)
       list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
       list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
 
-    else()
-      message(STATUS "Trilinos found, but some required components are missing.")
-      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-        message(STATUS "  ${package}: ${${package}_FOUND}")
-      endforeach()
     endif()
 
   else()
