@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
 // Last changed: 2012-05-24
@@ -27,6 +27,9 @@
 
 #include <vtkUnstructuredGrid.h>
 #include <vtkSmartPointer.h>
+#include <vtkPointSet.h>
+#include <vtkActor.h>
+
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
@@ -49,8 +52,6 @@ namespace dolfin
     explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
     explicit VTKPlotter(const FunctionPlotData& plotdata);
 
-    void init();
-    
     void construct_vtk_grid();
 
     void plot();
@@ -61,18 +62,26 @@ namespace dolfin
     {
       Parameters p("vtk_plotter");
       p.add("mode", "auto");
-      p.add("title", "VTKPlotter");
+      p.add("title", "Plot");
       return p;
     }
 
   private:
+
+    void plot_scalar_function();
+    
+    void plot_vector_function();
+
+    void filter_and_map(vtkSmartPointer<vtkPointSet> point_set);
+    
+    void render(vtkSmartPointer<vtkActor> actor);
 
     boost::shared_ptr<const Mesh> _mesh;
 
     boost::shared_ptr<const GenericFunction> _function;
 
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
-  
+
   };
 
 }

@@ -18,16 +18,18 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-24 
+// Last changed: 2012-05-25 
 
 #ifdef HAS_VTK
 
 #include <vtkPoints.h>
 #include <vtkIdList.h>
 #include <vtkCellType.h>
+#include <vtkFloatArray.h>
+#include <vtkPointData.h>
+#include <vtkWarpScalar.h>
 #include <vtkGeometryFilter.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -64,26 +66,28 @@ VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<uint>& mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  parameters = default_parameters();
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<double>& mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  parameters = default_parameters();
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+{
+  parameters = default_parameters();
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const FunctionPlotData& plot_data) :
-  _mesh(reference_to_no_delete_pointer(plot_data.mesh)),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
-{
-  parameters = default_parameters();
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<uint>& plot_data) :
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
-{
-  parameters = default_parameters();
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<double>& plot_data) :
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
-{
-  parameters = default_parameters();
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<bool>& plot_data) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
 {
   parameters = default_parameters();
@@ -94,25 +98,52 @@ VTKPlotter::~VTKPlotter()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::init()
+void VTKPlotter::plot()
 {
   // FIXME: Is this assert redundant because of the constructors' initialization lists?
   dolfin_assert(_mesh);
 
   construct_vtk_grid();
 
-  // Extract function values into VTK array
-  // FIXME: Must be generalized to vector valued functions
-  /*if (_function) {
-    vtkSmartPointer<vtkFloatArray> scalars = vtkSmartPointer<vtkFloatArray>::New();
-    uint num_vertices = _mesh->num_vertices();
-    std::vector<double> vertex_values(num_vertices);
-    _function->compute_vertex_values(vertex_values, *_mesh);
-    for(int i = 0; i < num_vertices; ++i) {
-      scalars->InsertValue(i, vertex_values[i]);
+  if (_function) {
+    // Are we plotting a function?
+ 
+      // TODO: Check if the function is vector valued or scalar valued
+    //
+    // Make value arrays of vectors/scalars
+    //
+    // Call corresponding functions for computing the visualization of the values over the grid
+    //
+    // There can be different visualization functions for the different cases. They end up with calling 
+    // VTKPlotter::filter_and_map with their computed vtkPointSet
+    //
+    // Except those that visualize glyphs, they must create the Glyphs, actors etc and directly call 
+    // VTKPlotter::render with the computed actor
+    
+    switch (_function->value_rank()) {
+      case 0:
+        plot_scalar_function();
+        break;
+      case 1:
+        plot_vector_function();
+        break;
+      default:
+        dolfin_error("VTKPlotter.cpp",
+                     "plot function of rank > 2.",
+                     "Plotting of higher order functions is not supported.");
     }
-    _grid->GetPointData()->SetScalars(scalars);
-  */
+  }
+  /*else if (_mesh_function) {
+   // Or are we plotting a mesh function?
+
+  }*/
+  else {
+    // Or just a mesh?
+    filter_and_map(_grid);
+  }
+
+
+
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::construct_vtk_grid()
@@ -170,22 +201,63 @@ void VTKPlotter::construct_vtk_grid()
   // Set points in grid and free unused allocated memory
   _grid->SetPoints(points);
   _grid->Squeeze();
-
-
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::plot()
+void VTKPlotter::plot_scalar_function()
 {
-  init();
+  dolfin_assert(_function->value_rank() == 0);
 
-  // dolfin_assert(_grid) should be performed but doesn't make sense here
-  // should the contents of init be moved to the constructor? Or would that
-  // be a problem with regards to parameter handling?
+  // Make VTK float array and allocate storage for function values
+  uint num_vertices = _mesh->num_vertices();
+  vtkSmartPointer<vtkFloatArray> scalars = 
+    vtkSmartPointer<vtkFloatArray>::New();
+    scalars->SetNumberOfValues(num_vertices);
 
+  // Evaluate DOLFIN function and copy values to the VTK array
+  std::vector<double> vertex_values(num_vertices); 
+  _function->compute_vertex_values(vertex_values, *_mesh);
+  for(uint i = 0; i < num_vertices; ++i) {
+    scalars->SetValue(i, vertex_values[i]);
+  }
+
+  // Attach scalar values as point data in the VTK grid
+  _grid->GetPointData()->SetScalars(scalars);
+
+  // Depending on the geometrical dimension, we use different algorithms
+  // to visualize the scalar data.
+  if (_mesh->topology().dim() < 3) {
+    // In 1D and 2D, we warp the mesh according to the scalar values
+    vtkSmartPointer<vtkWarpScalar> warp = 
+      vtkSmartPointer<vtkWarpScalar>::New();
+      warp->SetInput(_grid);
+      warp->SetScaleFactor(1.0); // FIXME: Get from parameters
+
+    // Pass VTK point set to be filtered, mapped and rendered 
+    filter_and_map(warp->GetOutput());
+  }
+  else {
+    // In 3D, we just show the scalar values as colors on the mesh by 
+    // passing the grid the grid with scalar values attached (i.e. a
+    // VTK point set) to be filtered, mapped and rendered 
+    filter_and_map(_grid);
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::plot_vector_function()
+{
+  dolfin_assert(_function->value_rank() == 1);
+
+  dolfin_error("VTKPlotter.cpp",
+               "plot vector valued function",
+               "Plotting of vector valued functions not yet implemented");
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
+{
   // Create VTK geometry filter and attach grid to it
   vtkSmartPointer<vtkGeometryFilter> geometryFilter = 
     vtkSmartPointer<vtkGeometryFilter>::New();
-  geometryFilter->SetInput(_grid);
+  geometryFilter->SetInput(point_set);
   geometryFilter->Update();
 
   // Create VTK mapper and attach geometry filter to it
@@ -203,6 +275,11 @@ void VTKPlotter::plot()
   actor->GetProperty()->SetRepresentationToWireframe();
   actor->GetProperty()->SetColor(0,0,1);
 
+  render(actor);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
+{
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
   renderer->AddActor(actor);
   // FIXME: Get background color from parameters?
@@ -229,6 +306,5 @@ void VTKPlotter::plot()
   interactor->Initialize();
   interactor->Start();
 }
-//----------------------------------------------------------------------------
 
 #endif
