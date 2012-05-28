@@ -23,7 +23,7 @@
 #ifdef HAS_VTK
 
 #include <vtkPoints.h>
-#include <vtkIdList.h>
+#include <vtkCellArray.h>
 #include <vtkCellType.h>
 #include <vtkFloatArray.h>
 #include <vtkPointData.h>
@@ -39,11 +39,9 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 
-#include <vtkCellArray.h> // FIXME remove if unused
-#include <vtkIdTypeArray.h> // FIXME remove if unused
-
 #include <dolfin/function/FunctionSpace.h> 
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/common/Timer.h>
 
 #include "VTKPlotter.h"
 
@@ -146,44 +144,44 @@ void VTKPlotter::plot()
 void VTKPlotter::construct_vtk_grid()
 {
   // Construct vtkUnstructuredGrid from DOLFIN mesh
-  // FIXME: Is this assert redundant because of the constructors' initialization lists?
+  // FIXME: Is this assert redundant because of the constructors' 
+  // initialization lists?
   dolfin_assert(_grid);
+
+  Timer t("Construct VTK grid");
 
   // Construct VTK point array from DOLFIN mesh vertices
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New(); 
-  points->Allocate(_mesh->num_vertices());
-  dolfin::Point p;
- 
+  points->SetNumberOfPoints(_mesh->num_vertices());
+  Point p;
+  
   for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex) {
     p = vertex->point();
-    points->InsertNextPoint(p.x(), p.y(), p.z());
+    points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
   }
 
-  uint spatial_dim = _mesh->topology().dim();
-  vtkSmartPointer<vtkCellArray> cells = 
-    vtkSmartPointer<vtkCellArray>::New();
-    // Allocate storage for cells. Each cell is defined by (spatial_dim + 1)
-    // indices into the points list, as well as an int for the number of
-    // vertices per cell
-    cells->Allocate((spatial_dim+2)*_mesh->num_cells());
-      
-  // Get mesh connectivity (i.e. cells), iterate and add cells to VTK grid
+  // Add mesh cells to VTK cell array. Note: Preallocation of storage 
+  // in cell array did not give speedups when testing during development 
+  vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
   const uint *connectivity = _mesh->cells();
-
-  // vtkIdList to hold point IDs for a new cell in each iteration
-  //vtkSmartPointer<vtkIdList> ids = vtkSmartPointer<vtkIdList>::New();
+  uint spatial_dim = _mesh->topology().dim();
+  
   for (uint i = 0; i < _mesh->num_cells(); ++i) {
-    // Insert all vertex ids for a given cell. For a simplex cell in nD, n+1 ids are inserted.
-    // The connectivity array must be indexed at ((n+1) x cell_number + id_offset)
+
+    // Insert all vertex ids for a given cell. For a simplex cell in nD, 
+    // n+1 ids are inserted. The connectivity array must be indexed at 
+    // ((n+1) x cell_number + id_offset)
     cells->InsertNextCell(spatial_dim+1);
     for(uint j = 0; j <= spatial_dim; ++j) {
       cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
     }
   }
+  // Free unused memory in cell array 
+  // (which is automatically allocated during cell insertion)
   cells->Squeeze();
 
+  // Insert points and cells in VTK unstructured grid
   _grid->SetPoints(points);
-  
   switch (spatial_dim) {
     case 1:
       _grid->SetCells(VTK_LINE, cells);
@@ -213,6 +211,7 @@ void VTKPlotter::plot_scalar_function()
   // Evaluate DOLFIN function and copy values to the VTK array
   std::vector<double> vertex_values(num_vertices); 
   _function->compute_vertex_values(vertex_values, *_mesh);
+  
   for(uint i = 0; i < num_vertices; ++i) {
     scalars->SetValue(i, vertex_values[i]);
   }
@@ -247,9 +246,9 @@ void VTKPlotter::plot_vector_function()
   // Make VTK float array and allocate storage for function vector values
   uint num_vertices = _mesh->num_vertices();
   uint num_components = _function->value_dimension(0);
-  std::cout << "numcomp: " << num_components << std::endl;
   vtkSmartPointer<vtkFloatArray> vectors = 
     vtkSmartPointer<vtkFloatArray>::New();
+    
     // NOTE: Allocation must be done in this order!
     // Note also that the number of VTK vector components must always be 3 
     // regardless of the function vector value dimension
@@ -262,9 +261,11 @@ void VTKPlotter::plot_vector_function()
   // since DOLFIN and VTK store vector function values differently
   std::vector<double> vertex_values(num_vertices*num_components);
   _function->compute_vertex_values(vertex_values, *_mesh);
+  
   for(uint i = 0; i < num_vertices; ++i) {
     vectors->SetValue(3*i,     vertex_values[i]);
     vectors->SetValue(3*i + 1, vertex_values[i + num_vertices]);
+    
     // If the DOLFIN function vector value dimension is 2, pad with a 0
     if(num_components == 2) {
       vectors->SetValue(3*i + 2, 0.0);
@@ -373,7 +374,7 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
     window->AddRenderer(renderer);
     window->SetSize(600,600);
 
-    // Make window title. Should probably be fetched from parameters?
+    // Make window title.
     std::stringstream full_title;
     full_title << std::string(parameters["title"]) << " - DOLFIN VTK Plotter";
     window->SetWindowName(full_title.str().c_str());
