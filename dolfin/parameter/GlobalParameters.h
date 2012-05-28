@@ -52,7 +52,6 @@ namespace dolfin
 
       // General
       p.add("timer_prefix", "");                             // Prefix for timer tasks
-      p.add("plot_filename_prefix", "dolfin_plot_data");     // Prefix for temporary plot files
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
       p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
 
