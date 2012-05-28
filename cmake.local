@@ -17,8 +17,8 @@ cd build
 cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_TESTING=true \
       -DDOLFIN_ENABLE_BENCHMARKS=true \
-      -DDOLFIN_ENABLE_PYTHON=false \
       -DCMAKE_BUILD_TYPE=Developer \
+      -DDOLFIN_ENABLE_PYTHON=false \
       $CMAKE_EXTRA_ARGS \
       ..
 
