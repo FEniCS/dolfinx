@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-24
+// Last changed: 2012-05-28
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -61,7 +61,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("vtk_plotter");
-      p.add("mode", "auto");
+      p.add("vector_mode", "glyphs");
       p.add("title", "Plot");
       return p;
     }
@@ -71,6 +71,10 @@ namespace dolfin
     void plot_scalar_function();
     
     void plot_vector_function();
+
+    void plot_warp();
+
+    void plot_glyphs();
 
     void filter_and_map(vtkSmartPointer<vtkPointSet> point_set);
     

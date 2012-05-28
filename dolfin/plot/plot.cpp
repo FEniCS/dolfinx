@@ -21,7 +21,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-05-22
+// Last changed: 2012-05-28
 
 #include <cstdlib>
 #include <sstream>
@@ -74,7 +74,7 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
 #ifdef HAS_VTK
   VTKPlotter plotter(t);
   plotter.parameters["title"] = title;
-  plotter.parameters["mode"] = mode;
+  //plotter.parameters["mode"] = mode;
   plotter.plot();
 #else
   dolfin_error("plot.cpp",
@@ -111,7 +111,7 @@ void dolfin::plot(const Expression& v, const Mesh& mesh,
 #ifdef HAS_VTK
   VTKPlotter plotter(v, mesh);
   plotter.parameters["title"] = title;
-  plotter.parameters["mode"] = mode;
+  //plotter.parameters["mode"] = mode;
   plotter.plot();
 #else
   dolfin_error("plot.cpp",

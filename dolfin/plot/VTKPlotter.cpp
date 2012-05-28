@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-25 
+// Last changed: 2012-05-28 
 
 #ifdef HAS_VTK
 
@@ -28,6 +28,9 @@
 #include <vtkFloatArray.h>
 #include <vtkPointData.h>
 #include <vtkWarpScalar.h>
+#include <vtkWarpVector.h>
+#include <vtkArrowSource.h>
+#include <vtkGlyph3D.h>
 #include <vtkGeometryFilter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
@@ -141,9 +144,6 @@ void VTKPlotter::plot()
     // Or just a mesh?
     filter_and_map(_grid);
   }
-
-
-
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::construct_vtk_grid()
@@ -247,9 +247,100 @@ void VTKPlotter::plot_vector_function()
 {
   dolfin_assert(_function->value_rank() == 1);
 
-  dolfin_error("VTKPlotter.cpp",
-               "plot vector valued function",
-               "Plotting of vector valued functions not yet implemented");
+  // Make VTK float array and allocate storage for function vector values
+  uint num_vertices = _mesh->num_vertices();
+  uint num_components = _function->value_dimension(0);
+  std::cout << "numcomp: " << num_components << std::endl;
+  vtkSmartPointer<vtkFloatArray> vectors = 
+    vtkSmartPointer<vtkFloatArray>::New();
+    // NOTE: Allocation must be done in this order!
+    // Note also that the number of VTK vector components must always be 3 
+    // regardless of the function vector value dimension
+    vectors->SetNumberOfComponents(3);
+    vectors->SetNumberOfTuples(num_vertices); 
+
+  // Evaluate DOLFIN function and copy values to the VTK array
+  // The entries in "vertex_values" must be copied to "vectors". Viewing
+  // these arrays as matrices, the transpose of vertex values should be copied,
+  // since DOLFIN and VTK store vector function values differently
+  std::vector<double> vertex_values(num_vertices*num_components);
+  _function->compute_vertex_values(vertex_values, *_mesh);
+  for(uint i = 0; i < num_vertices; ++i) {
+    vectors->SetValue(3*i,     vertex_values[i]);
+    vectors->SetValue(3*i + 1, vertex_values[i + num_vertices]);
+    // If the DOLFIN function vector value dimension is 2, pad with a 0
+    if(num_components == 2) {
+      vectors->SetValue(3*i + 2, 0.0);
+    } else {
+      vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
+    }
+  }
+
+  // Attach vector values as point data in the VTK grid
+  _grid->GetPointData()->SetVectors(vectors);
+
+  // FIXME: The below block calls plot_warp or plot_glyphs assuming
+  // that function data has been attached to the grid. They depend on a 
+  // certain state of the object and it will make no sense to call them
+  // if the object is not in this state (i.e. if function values has not been
+  // added). How to make this more secure?
+
+  if(this->parameters.has_key("vector_mode")) {
+    const std::string mode = this->parameters["vector_mode"];
+    if(mode == "warp") {
+      info("Using warp (displacement) vector plotting mode.");
+      plot_warp();
+      return;
+    } else if (mode == "glyphs") {
+      info("Using glyphs (displacement) for plotting vectors.");
+    } else {
+      warning("Unrecognized option " + mode + ", using default (glyphs).");
+    }
+  } else {
+    log(DBG, "No vector plotting mode set. Using default (glyphs)");
+  }
+  plot_glyphs();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::plot_warp()
+{
+  // Use warp vector visualization 
+  // FIXME: Read "mode" parameter and branch for glyph visualization
+  vtkSmartPointer<vtkWarpVector> warp = vtkSmartPointer<vtkWarpVector>::New();
+  warp->SetInput(_grid);
+  warp->SetScaleFactor(1.0); // FIXME: Get from parameters
+
+  filter_and_map(warp->GetOutput());
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::plot_glyphs()
+{
+  // Create the glyph, a VTK arrow
+  vtkSmartPointer<vtkArrowSource> arrow = 
+    vtkSmartPointer<vtkArrowSource>::New();
+    arrow->SetTipRadius(0.08);
+    arrow->SetTipResolution(16);
+    arrow->SetTipLength(0.25);
+    arrow->SetShaftRadius(0.05);
+    arrow->SetShaftResolution(16);
+
+  vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
+    glyphs->SetSourceConnection(arrow->GetOutputPort());
+    glyphs->SetInput(_grid);
+    glyphs->SetVectorModeToUseVector();
+    glyphs->SetScaleModeToScaleByVector();
+    glyphs->SetColorModeToColorByVector();
+    //glyphs->SetScaleFactor(0.1);
+
+  vtkSmartPointer<vtkPolyDataMapper> mapper = 
+    vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(glyphs->GetOutputPort());
+
+  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+  render(actor);
+
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
@@ -257,23 +348,22 @@ void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
   // Create VTK geometry filter and attach grid to it
   vtkSmartPointer<vtkGeometryFilter> geometryFilter = 
     vtkSmartPointer<vtkGeometryFilter>::New();
-  geometryFilter->SetInput(point_set);
-  geometryFilter->Update();
+    geometryFilter->SetInput(point_set);
+    geometryFilter->Update();
 
   // Create VTK mapper and attach geometry filter to it
   vtkSmartPointer<vtkPolyDataMapper> mapper = 
     vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection(geometryFilter->GetOutputPort());
+    mapper->SetInputConnection(geometryFilter->GetOutputPort());
 
   // Create VTK actor and attach the mapper to it 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-  actor->SetMapper(mapper);
-
-  // FIXME: These properties should be gotten from parameters
-  // Idea: Wireframe is a parameter. plot(mesh) sets it to true, plot(function) to false
-  // default is wireframe on?
-  actor->GetProperty()->SetRepresentationToWireframe();
-  actor->GetProperty()->SetColor(0,0,1);
+    actor->SetMapper(mapper);
+    // FIXME: These properties should be gotten from parameters
+    // Idea: Wireframe is a parameter. plot(mesh) sets it to true, plot(function) to false
+    // default is wireframe on?
+    actor->GetProperty()->SetRepresentationToWireframe();
+    actor->GetProperty()->SetColor(0,0,1);
 
   render(actor);
 }
@@ -281,30 +371,30 @@ void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
 void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
 {
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-  renderer->AddActor(actor);
-  // FIXME: Get background color from parameters?
-  renderer->SetBackground(1,1,1);
+    renderer->AddActor(actor);
+    // FIXME: Get background color from parameters?
+    renderer->SetBackground(1,1,1);
 
   vtkSmartPointer<vtkRenderWindow> window = 
     vtkSmartPointer<vtkRenderWindow>::New();
-  window->AddRenderer(renderer);
-  window->SetSize(600,600);
+    window->AddRenderer(renderer);
+    window->SetSize(600,600);
 
-  // Make window title. Should probably be fetched from parameters?
-  std::stringstream full_title;
-  full_title << std::string(parameters["title"]) << " - DOLFIN VTK Plotter";
-  window->SetWindowName(full_title.str().c_str());
+    // Make window title. Should probably be fetched from parameters?
+    std::stringstream full_title;
+    full_title << std::string(parameters["title"]) << " - DOLFIN VTK Plotter";
+    window->SetWindowName(full_title.str().c_str());
 
-  vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
-    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-  interactor->SetRenderWindow(window);
- 
   // FIXME: Get interactorstyle from parameters? 
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
     vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-  interactor->SetInteractorStyle(style);
-  interactor->Initialize();
-  interactor->Start();
+
+  vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    interactor->SetRenderWindow(window);
+    interactor->SetInteractorStyle(style);
+    interactor->Initialize();
+    interactor->Start();
 }
 
 #endif

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2012
+//
 // First added:  2007-05-02
-// Last changed: 2009-10-07
+// Last changed: 2012-05-28
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -33,7 +35,9 @@ namespace dolfin
   class Mesh;
 
   /// Simple built-in plot commands for plotting functions and meshes.
-  /// For plotting to work, PyDOLFIN and Viper must be installed.
+
+  // FIXME: What to do with the old default arguments? The "auto" mode is no
+  // longer used by the plotter.
 
   /// Plot function
   void plot(const Function& v,
