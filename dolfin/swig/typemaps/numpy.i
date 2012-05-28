@@ -41,12 +41,13 @@ PyObject* _attach_base_to_numpy_array(PyObject* obj, PyObject* owner)
     return NULL;
   }
 
-  // Bump the reference of the owner object
+  // Bump the references
   Py_XINCREF(owner);
+  Py_XINCREF(Py_None);
 
   // Assign the base 
   PyArray_BASE(array) = owner;
-  
+
   return Py_None;
 }
 %}
