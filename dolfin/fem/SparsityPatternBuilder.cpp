@@ -84,7 +84,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   // Build sparsity pattern for interior/exterior facet integrals
   const uint D = mesh.topology().dim();
-  cout << "Here I am (-1)" << endl;
   if (interior_facets || exterior_facets)
   {
     // Compute facets and facet - cell connectivity if not already computed
