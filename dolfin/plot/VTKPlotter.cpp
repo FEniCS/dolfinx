@@ -279,19 +279,15 @@ void VTKPlotter::plot_vector_function()
   // if the object is not in this state (i.e. if function values has not been
   // added). How to make this more secure?
 
-  if(this->parameters.has_key("vector_mode")) {
-    const std::string mode = this->parameters["vector_mode"];
-    if(mode == "warp") {
-      info("Using warp (displacement) vector plotting mode.");
-      plot_warp();
-      return;
-    } else if (mode == "glyphs") {
-      info("Using glyphs (displacement) for plotting vectors.");
-    } else {
-      warning("Unrecognized option " + mode + ", using default (glyphs).");
-    }
+  const std::string mode = this->parameters["vector_mode"];
+  if(mode == "warp") {
+    info("Using warp (displacement) vector plotting mode.");
+    plot_warp();
+    return;
+  } else if (mode == "glyphs") {
+    info("Using glyphs (displacement) for plotting vectors.");
   } else {
-    log(DBG, "No vector plotting mode set. Using default (glyphs)");
+    warning("Unrecognized option " + mode + ", using default (glyphs).");
   }
   plot_glyphs();
 }
