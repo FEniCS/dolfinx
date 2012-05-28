@@ -91,10 +91,10 @@
 %typemap(out, fragment=SWIG_From_frag(unsigned int)) unsigned int
 {
   // Typemap unsigned int
-  $result = PyInt_FromLong(static_cast< long >($1));
+  //$result = PyInt_FromLong(static_cast< long >($1));
   // NOTE: From SWIG 2.0.5 does this macro return a Python long, 
   // NOTE: which we do not want
-  //$result = SWIG_From(unsigned int)($1);
+  $result = SWIG_From(unsigned int)($1);
 }
 
 //-----------------------------------------------------------------------------

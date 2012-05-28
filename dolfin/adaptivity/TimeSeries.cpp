@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2012-05-07
+// Last changed: 2012-05-28
 
 #include <algorithm>
 #include <iostream>
@@ -305,6 +305,14 @@ std::string TimeSeries::str(bool verbose) const
 //-----------------------------------------------------------------------------
 bool TimeSeries::monotone(const std::vector<double>& times)
 {
+  // If size of time series is 0 or 1 they are always monotone
+  if (times.size() < 2)
+    return true;
+
+  // If size is 2
+  if (times.size() == 2)
+    return times[0] < times[1];
+
   for (uint i = 0; i < times.size() - 2; i++)
   {
     if ((times[i + 2] - times[i + 1])*(times[i + 1] - times[i]) <= 0.0)
