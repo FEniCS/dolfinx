@@ -46,11 +46,10 @@ void plot_object(const T& t, std::string title, std::string mode)
   info("Plotting %s (%s).",
           t.name().c_str(), t.label().c_str());
   
-  // Modify prefix and title when running in parallel
+  // Modify title when running in parallel
   if (dolfin::MPI::num_processes() > 1)
   {
     const dolfin::uint p = dolfin::MPI::process_number();
-  //  prefix += std::string("_p") + to_string(p);
     title += " (process " + to_string(p) + ")";
   }
 

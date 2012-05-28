@@ -376,7 +376,8 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
 
     // Make window title.
     std::stringstream full_title;
-    full_title << std::string(parameters["title"]) << " - DOLFIN VTK Plotter";
+    full_title << std::string(parameters["title"]) << 
+      std::string(parameters["title_suffix"]);
     window->SetWindowName(full_title.str().c_str());
 
   // FIXME: Get interactorstyle from parameters? 

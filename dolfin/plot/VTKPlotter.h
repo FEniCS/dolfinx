@@ -34,8 +34,8 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
-
 #include <dolfin/common/Variable.h>
+
 namespace dolfin
 {
 
@@ -50,8 +50,6 @@ namespace dolfin
     explicit VTKPlotter(const MeshFunction<double>& mesh_function);
     explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
 
-    void construct_vtk_grid();
-
     void plot();
 
     ~VTKPlotter();
@@ -61,11 +59,14 @@ namespace dolfin
       Parameters p("vtk_plotter");
       p.add("vector_mode", "glyphs");
       p.add("title", "Plot");
+      p.add("title_suffix", " - DOLFIN VTK Plotter");
       return p;
     }
 
   private:
 
+    void construct_vtk_grid();
+    
     void plot_scalar_function();
     
     void plot_vector_function();
