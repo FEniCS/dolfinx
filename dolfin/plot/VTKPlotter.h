@@ -34,7 +34,6 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
-#include "FunctionPlotData.h"
 
 #include <dolfin/common/Variable.h>
 namespace dolfin
@@ -50,7 +49,6 @@ namespace dolfin
     explicit VTKPlotter(const MeshFunction<uint>& mesh_function);
     explicit VTKPlotter(const MeshFunction<double>& mesh_function);
     explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
-    explicit VTKPlotter(const FunctionPlotData& plotdata);
 
     void construct_vtk_grid();
 

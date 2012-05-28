@@ -35,7 +35,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
 #include "VTKPlotter.h"
-#include "FunctionPlotData.h"
 #include "plot.h"
 
 using namespace dolfin;
@@ -46,18 +45,7 @@ void plot_object(const T& t, std::string title, std::string mode)
 {
   info("Plotting %s (%s).",
           t.name().c_str(), t.label().c_str());
-/*
-  // Don't plot when running in parallel
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    warning("Plotting disabled when running in parallel; see \
-https://bugs.launchpad.net/dolfin/+bug/427534");
-    return;
-  }
-
-  // Get filename prefix
-  std::string prefix = parameters["plot_filename_prefix"];
-*/
+  
   // Modify prefix and title when running in parallel
   if (dolfin::MPI::num_processes() > 1)
   {
@@ -65,11 +53,6 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
   //  prefix += std::string("_p") + to_string(p);
     title += " (process " + to_string(p) + ")";
   }
-
-  // Save to file
-  /*std::string filename = prefix + std::string(".xml");
-  File file(filename);
-  file << t;*/
 
 #ifdef HAS_VTK
   VTKPlotter plotter(t);
@@ -86,26 +69,13 @@ https://bugs.launchpad.net/dolfin/+bug/427534");
 void dolfin::plot(const Function& v,
                   std::string title, std::string mode)
 {
-  // Duplicate test here since FunctionPlotData may fail in parallel
-  // as it does for the eigenvalue demo when vector is not initialized
-  // correctly.
-  /*if (dolfin::MPI::num_processes() > 1)
-  {
-    warning("Plotting disabled when running in parallel; see \
-https://bugs.launchpad.net/dolfin/+bug/427534");
-    return;
-  }*/
-
   dolfin_assert(v.function_space()->mesh());
-  //FunctionPlotData w(v, *v.function_space()->mesh());
   plot_object(v, title, mode);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Expression& v, const Mesh& mesh,
                   std::string title, std::string mode)
 {
-  /*FunctionPlotData w(v, mesh);
-  plot_object(w, title, mode);*/
   // FIXME: We should use plot_object here, but it is not possible since the
   // mesh must be explicitly passed to VTKPlotter. What to do?
 #ifdef HAS_VTK

@@ -90,12 +90,6 @@ VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
   parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const FunctionPlotData& plot_data) :
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
-{
-  parameters = default_parameters();
-}
-//----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
   // Do nothing
