@@ -39,6 +39,9 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 
+#include <vtkCellArray.h> // FIXME remove if unused
+#include <vtkIdTypeArray.h> // FIXME remove if unused
+
 #include <dolfin/function/FunctionSpace.h> 
 #include <dolfin/mesh/Vertex.h>
 
@@ -156,45 +159,45 @@ void VTKPlotter::construct_vtk_grid()
     points->InsertNextPoint(p.x(), p.y(), p.z());
   }
 
-  // Allocate storage in VTK grid for number of cells times spatial dim + 1, 
-  // since triangles (2D) have 3 vertices, tetrahedrons (3D) have 4 vertices, etc.
   uint spatial_dim = _mesh->topology().dim();
-  _grid->Allocate(_mesh->num_cells()*(spatial_dim+1));
-  
+  vtkSmartPointer<vtkCellArray> cells = 
+    vtkSmartPointer<vtkCellArray>::New();
+    // Allocate storage for cells. Each cell is defined by (spatial_dim + 1)
+    // indices into the points list, as well as an int for the number of
+    // vertices per cell
+    cells->Allocate((spatial_dim+2)*_mesh->num_cells());
+      
   // Get mesh connectivity (i.e. cells), iterate and add cells to VTK grid
   const uint *connectivity = _mesh->cells();
 
   // vtkIdList to hold point IDs for a new cell in each iteration
-  vtkSmartPointer<vtkIdList> ids = vtkSmartPointer<vtkIdList>::New();
+  //vtkSmartPointer<vtkIdList> ids = vtkSmartPointer<vtkIdList>::New();
   for (uint i = 0; i < _mesh->num_cells(); ++i) {
-    ids->Initialize();
-    
     // Insert all vertex ids for a given cell. For a simplex cell in nD, n+1 ids are inserted.
     // The connectivity array must be indexed at ((n+1) x cell_number + id_offset)
+    cells->InsertNextCell(spatial_dim+1);
     for(uint j = 0; j <= spatial_dim; ++j) {
-      ids->InsertNextId((vtkIdType) connectivity[(spatial_dim+1)*i + j]);
-    }
-   
-    // Insert cell into VTK grid
-    switch (spatial_dim) {
-      case 1:
-        _grid->InsertNextCell(VTK_LINE, ids);
-        break;
-      case 2:
-        _grid->InsertNextCell(VTK_TRIANGLE, ids);
-        break;
-      case 3:
-        _grid->InsertNextCell(VTK_TETRA, ids);
-        break;
-      default:
-        // Throw dolfin_error?
-        break;
+      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
     }
   }
+  cells->Squeeze();
 
-  // Set points in grid and free unused allocated memory
   _grid->SetPoints(points);
-  _grid->Squeeze();
+  
+  switch (spatial_dim) {
+    case 1:
+      _grid->SetCells(VTK_LINE, cells);
+      break;
+    case 2:
+      _grid->SetCells(VTK_TRIANGLE, cells);
+      break;
+    case 3:
+      _grid->SetCells(VTK_TETRA, cells);
+      break;
+    default:
+      // Throw dolfin_error?
+      break;
+  }
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot_scalar_function()
