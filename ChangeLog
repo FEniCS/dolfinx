@@ -1,4 +1,6 @@
 1.1.0 [not yet released]
+ - Fix bug where the reference count of Py_None was not increased
+ - Fix bug in reading TimeSeries of size smaller than 3
  - Improve code design for Mesh FooIterators to avoid dubious down cast
  - Bug fix in destruction of PETSc user preconditioners
  - Add CellVolume(mesh) convenience wrapper to Python interface for UFL function

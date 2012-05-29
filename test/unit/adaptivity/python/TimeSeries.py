@@ -90,16 +90,16 @@ class TimeSeriesTest(unittest.TestCase):
         m0 = UnitSquare(3, 3)
         x0 = Vector(10)
 
+        # Test storage of only one time point for the mesh
         series0.store(m0, 0.1)
         series0.store(x0, 0.1)
-        series0.store(m0, 0.2)
         series0.store(x0, 0.2)
 
         series1 = TimeSeries(name)
         m1 = Mesh()
         x1 = Vector()
 
-        series1.retrieve(m1, 0.15)
+        series1.retrieve(m1, 0.1)
         series1.retrieve(x1, 0.15)
 
 if __name__ == "__main__":
