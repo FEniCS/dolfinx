@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-28 
+// Last changed: 2012-05-29
 
 #ifdef HAS_VTK
 
@@ -101,30 +101,18 @@ VTKPlotter::~VTKPlotter()
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
-  // FIXME: Is this assert redundant because of the constructors' initialization lists?
   dolfin_assert(_mesh);
 
   construct_vtk_grid();
 
   if (_function) {
     // Are we plotting a function?
- 
-      // TODO: Check if the function is vector valued or scalar valued
-    //
-    // Make value arrays of vectors/scalars
-    //
-    // Call corresponding functions for computing the visualization of the values over the grid
-    //
-    // There can be different visualization functions for the different cases. They end up with calling 
-    // VTKPlotter::filter_and_map with their computed vtkPointSet
-    //
-    // Except those that visualize glyphs, they must create the Glyphs, actors etc and directly call 
-    // VTKPlotter::render with the computed actor
-    
     switch (_function->value_rank()) {
+      // Is it scalar valued?
       case 0:
         plot_scalar_function();
         break;
+      // Or vector valued?
       case 1:
         plot_vector_function();
         break;
@@ -146,9 +134,6 @@ void VTKPlotter::plot()
 //----------------------------------------------------------------------------
 void VTKPlotter::construct_vtk_grid()
 {
-  // Construct vtkUnstructuredGrid from DOLFIN mesh
-  // FIXME: Is this assert redundant because of the constructors' 
-  // initialization lists?
   dolfin_assert(_grid);
 
   Timer t("Construct VTK grid");
@@ -171,16 +156,16 @@ void VTKPlotter::construct_vtk_grid()
   
   for (uint i = 0; i < _mesh->num_cells(); ++i) {
 
-    // Insert all vertex ids for a given cell. For a simplex cell in nD, 
-    // n+1 ids are inserted. The connectivity array must be indexed at 
-    // ((n+1) x cell_number + id_offset)
+    // Insert all vertex indices for a given cell. For a simplex cell in nD, 
+    // n+1 indices are inserted. The connectivity array must be indexed at 
+    // ((n+1) x cell_number + idx_offset)
     cells->InsertNextCell(spatial_dim+1);
     for(uint j = 0; j <= spatial_dim; ++j) {
       cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
     }
   }
   // Free unused memory in cell array 
-  // (which is automatically allocated during cell insertion)
+  // (automatically allocated during cell insertion)
   cells->Squeeze();
 
   // Insert points and cells in VTK unstructured grid
@@ -196,7 +181,7 @@ void VTKPlotter::construct_vtk_grid()
       _grid->SetCells(VTK_TETRA, cells);
       break;
     default:
-      // Throw dolfin_error?
+      // Should never be reached
       break;
   }
 }
@@ -236,8 +221,9 @@ void VTKPlotter::plot_scalar_function()
   }
   else {
     // In 3D, we just show the scalar values as colors on the mesh by 
-    // passing the grid the grid with scalar values attached (i.e. a
-    // VTK point set) to be filtered, mapped and rendered 
+    // passing the grid with scalar values attached (such a grid is a
+    // VTK point set and hence accepted by filter_and_map) to be filtered, 
+    // mapped and rendered 
     filter_and_map(_grid);
   }
 }
@@ -272,11 +258,12 @@ void VTKPlotter::plot_vector_function()
     // If the DOLFIN function vector value dimension is 2, pad with a 0
     if(num_components == 2) {
       vectors->SetValue(3*i + 2, 0.0);
+    // else, add the last entry in the value vector
     } else {
       vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
     }
   }
-  // Attach vectors and as vector point data in the VTK grid
+  // Attach vectors as vector point data in the VTK grid
   _grid->GetPointData()->SetVectors(vectors);
  
   // Compute norms of vector data
@@ -295,8 +282,7 @@ void VTKPlotter::plot_vector_function()
   // that function data has been attached to the grid. They depend on a 
   // certain state of the object and it will make no sense to call them
   // if the object is not in this state (i.e. if function values has not been
-  // added). How to make this more secure?
-
+  // attached). How to make this more secure?
   const std::string mode = this->parameters["vector_mode"];
   if(mode == "warp") {
     info("Using warp (displacement) vector plotting mode.");
@@ -305,25 +291,24 @@ void VTKPlotter::plot_vector_function()
   } else if (mode == "glyphs") {
     info("Using glyphs (displacement) for plotting vectors.");
   } else {
-    warning("Unrecognized option " + mode + ", using default (glyphs).");
+    warning("Unrecognized option \"" + mode + "\", using default (glyphs).");
   }
   plot_glyphs();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot_warp()
 {
-  // Use warp vector visualization 
-  // FIXME: Read "mode" parameter and branch for glyph visualization
   vtkSmartPointer<vtkWarpVector> warp = vtkSmartPointer<vtkWarpVector>::New();
   warp->SetInput(_grid);
   warp->SetScaleFactor(parameters["warp_scalefactor"]);
 
+  // The warp must be filtered and mapped before rendering
   filter_and_map(warp->GetOutput());
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot_glyphs()
 {
-  // Create the glyph, a VTK arrow
+  // Create the glyph symbol to use, a VTK arrow
   vtkSmartPointer<vtkArrowSource> arrow = 
     vtkSmartPointer<vtkArrowSource>::New();
     arrow->SetTipRadius(0.08);
@@ -332,6 +317,8 @@ void VTKPlotter::plot_glyphs()
     arrow->SetShaftRadius(0.05);
     arrow->SetShaftResolution(16);
 
+  // Create the glyph object, set source (the arrow) and input (the grid) and
+  // adjust various parameters
   vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
     glyphs->SetSourceConnection(arrow->GetOutputPort());
     glyphs->SetInput(_grid);
@@ -340,6 +327,7 @@ void VTKPlotter::plot_glyphs()
     glyphs->SetColorModeToColorByVector();
     glyphs->SetScaleFactor(parameters["glyph_scalefactor"]);
 
+  // The glyphs need not be filtered and can be mapped directly
   map(glyphs);
 }
 //----------------------------------------------------------------------------
@@ -369,8 +357,9 @@ void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
   vtkSmartPointer<vtkPolyDataMapper> mapper = 
     vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(polyData->GetOutputPort());
-    mapper->SetScalarRange(range);
     mapper->SetLookupTable(lut);
+    // This call is what actually changes the surface color
+    mapper->SetScalarRange(range);
 
   // Create scalar bar if the parameter tells us to
   if (parameters["scalarbar"]) {
@@ -391,13 +380,11 @@ void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
   // Create VTK actor and attach the mapper to it 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    // FIXME: These properties should be gotten from parameters
-    // Idea: Wireframe is a parameter. plot(mesh) sets it to true, 
-    // plot(function) to false 
-    // Separate default_parameters function for mesh?
     if (parameters["wireframe"]) {
       actor->GetProperty()->SetRepresentationToWireframe();
     }
+    // FIXME: Get color from parameters?
+    // This color property is only used for plotting of meshes. 
     actor->GetProperty()->SetColor(0,0,1);
 
   render(actor);
@@ -411,7 +398,7 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
     // FIXME: Get background color from parameters?
     renderer->SetBackground(1,1,1);
 
-  // Add scalar bar actor to renderer if present
+  // If present, add the scalar bar actor to the renderer
   if (_scalarbar) {
     renderer->AddActor(_scalarbar);
   }
@@ -430,7 +417,7 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
     vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
 
-  // Set up interactive view and start rendering loop
+  // Set up interactor and start rendering loop
   vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
     vtkSmartPointer<vtkRenderWindowInteractor>::New();
     interactor->SetRenderWindow(window);
