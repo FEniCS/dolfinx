@@ -27,6 +27,7 @@
 #include <vtkCellType.h>
 #include <vtkFloatArray.h>
 #include <vtkPointData.h>
+#include <vtkVectorNorm.h>
 #include <vtkWarpScalar.h>
 #include <vtkWarpVector.h>
 #include <vtkArrowSource.h>
@@ -273,9 +274,20 @@ void VTKPlotter::plot_vector_function()
       vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
     }
   }
-
-  // Attach vector values as point data in the VTK grid
+  // Attach vectors and as vector point data in the VTK grid
   _grid->GetPointData()->SetVectors(vectors);
+ 
+  // Compute norms of vector data
+  vtkSmartPointer<vtkVectorNorm> norms = 
+    vtkSmartPointer<vtkVectorNorm>::New();
+    norms->SetInput(_grid);
+    norms->SetAttributeModeToUsePointData();
+    //NOTE: This update is necessary to actually compute the norms
+    norms->Update();
+
+  // Attach vector norms as scalar point data in the VTK grid
+  _grid->GetPointData()->SetScalars(
+      norms->GetOutput()->GetPointData()->GetScalars());
 
   // FIXME: The below block calls plot_warp or plot_glyphs assuming
   // that function data has been attached to the grid. They depend on a 
