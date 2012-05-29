@@ -65,4 +65,5 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+#plot(u, interactive=True)
+plot(u)

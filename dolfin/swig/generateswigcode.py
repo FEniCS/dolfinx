@@ -97,7 +97,7 @@ for submodule in original_submodules:
             break
 
 # List of headers to exclude (add more here)
-excludes = ["plot.h", "IntersectionOperatorImplementation.h" ]
+excludes = ["IntersectionOperatorImplementation.h" ] # "plot.h"
 
 def create_combined_module_file(combined_module, submodules):
     """
