@@ -208,6 +208,8 @@ void PeriodicBC::rebuild()
     {
       master_owners[i] = dof_pairs[i].first.second;
       slave_owners[i] = dof_pairs[i].second.second;
+      dolfin_assert(master_owners[i] < MPI::num_processes());
+      dolfin_assert(slave_owners[i] < MPI::num_processes());
     }
   }
 
@@ -389,7 +391,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
         else
         {
           // Doesn't exist, so create new pair (with illegal second value)
-          dof_data g_dofs(global_dof, -1);
+          dof_data g_dofs(global_dof, MPI::process_number());
           dof_data l_dofs(-1, -1);
           dof_pair pair(g_dofs, l_dofs);
           coordinate_dof_pairs[x] = pair;
@@ -440,6 +442,32 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       dolfin_error("PeriodicBC.cpp",
                    "apply periodic boundary condition",
                    "Could not find a pair of matching degrees of freedom");
+    }
+
+    if (it->second.first.second >= (int) MPI::num_processes() || it->second.first.second < 0)
+    {
+      cout << "At coordinate: x =";
+      for (uint j = 0; j < gdim; ++j)
+        cout << " " << it->first[j];
+      cout << endl;
+      cout << "degree of freedom: " << it->second.first.first << endl;
+      cout << "master owner: " << it->second.first.second << endl;
+      dolfin_error("PeriodicBC.cpp",
+                   "apply periodic boundary condition",
+                   "Invalid master owner");
+    }
+
+    if (it->second.second.second >= (int) MPI::num_processes() || it->second.second.second < 0)
+    {
+      cout << "At coordinate: x =";
+      for (uint j = 0; j < gdim; ++j)
+        cout << " " << it->first[j];
+      cout << endl;
+      cout << "degree of freedom: " << it->second.second.first << endl;
+      cout << "slave owner: " << it->second.second.second << endl;
+      dolfin_error("PeriodicBC.cpp",
+                   "apply periodic boundary condition",
+                   "Invalid slave owner");
     }
 
     // Store dofs
