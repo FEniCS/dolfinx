@@ -61,6 +61,16 @@ namespace dolfin
       p.add("vector_mode", "glyphs");
       p.add("title", "Plot");
       p.add("title_suffix", " - DOLFIN VTK Plotter");
+      p.add("wireframe", false);
+      p.add("scalarbar", true);
+      return p;
+    }
+
+    static Parameters default_mesh_parameters()
+    {
+      Parameters p = default_parameters();
+      p["wireframe"] = true;
+      p["scalarbar"] = false;
       return p;
     }
 

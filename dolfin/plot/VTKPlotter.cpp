@@ -33,6 +33,7 @@
 #include <vtkArrowSource.h>
 #include <vtkGlyph3D.h>
 #include <vtkGeometryFilter.h>
+#include <vtkLookupTable.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
@@ -52,7 +53,7 @@ VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New())
 {
-  parameters = default_parameters();
+  parameters = default_mesh_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Function& function) :
@@ -362,10 +363,10 @@ void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
   // Create VTK actor and attach the mapper to it 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    // FIXME: These properties should be gotten from parameters
-    // Idea: Wireframe is a parameter. plot(mesh) sets it to true, plot(function) to false
-    // default is wireframe on?
-    actor->GetProperty()->SetRepresentationToWireframe();
+    if (parameters["wireframe"]) {
+      actor->GetProperty()->SetRepresentationToWireframe();
+    // FIXME: Color should be gotten from parameters
+    }
     actor->GetProperty()->SetColor(0,0,1);
 
   render(actor);
