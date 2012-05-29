@@ -229,7 +229,7 @@ void VTKPlotter::plot_scalar_function()
     vtkSmartPointer<vtkWarpScalar> warp = 
       vtkSmartPointer<vtkWarpScalar>::New();
       warp->SetInput(_grid);
-      warp->SetScaleFactor(1.0); // FIXME: Get from parameters
+      warp->SetScaleFactor(parameters["warp_scalefactor"]);
 
     // Pass VTK point set to be filtered, mapped and rendered 
     filter_and_map(warp->GetOutput());
@@ -316,7 +316,7 @@ void VTKPlotter::plot_warp()
   // FIXME: Read "mode" parameter and branch for glyph visualization
   vtkSmartPointer<vtkWarpVector> warp = vtkSmartPointer<vtkWarpVector>::New();
   warp->SetInput(_grid);
-  warp->SetScaleFactor(1.0); // FIXME: Get from parameters
+  warp->SetScaleFactor(parameters["warp_scalefactor"]);
 
   filter_and_map(warp->GetOutput());
 }
@@ -338,7 +338,7 @@ void VTKPlotter::plot_glyphs()
     glyphs->SetVectorModeToUseVector();
     glyphs->SetScaleModeToScaleByVector();
     glyphs->SetColorModeToColorByVector();
-    //glyphs->SetScaleFactor(0.1);
+    glyphs->SetScaleFactor(parameters["glyph_scalefactor"]);
 
   map(glyphs);
 }
@@ -376,6 +376,8 @@ void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
   if (parameters["scalarbar"]) {
     // FIXME: _scalarbar is a class member now. There must be cleaner way
     // to do this
+    // FIXME: The title "Vector magnitude" should be added to the scalarbar
+    // when plotting glyphs
     _scalarbar = vtkSmartPointer<vtkScalarBarActor>::New();
     _scalarbar->SetLookupTable(lut);
     vtkSmartPointer<vtkTextProperty> labelprop = 

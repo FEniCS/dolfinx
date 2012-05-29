@@ -64,6 +64,8 @@ namespace dolfin
       p.add("title_suffix", " - DOLFIN VTK Plotter");
       p.add("wireframe", false);
       p.add("scalarbar", true);
+      p.add("warp_scalefactor", 1.0);
+      p.add("glyph_scalefactor", 0.8);
       return p;
     }
 
