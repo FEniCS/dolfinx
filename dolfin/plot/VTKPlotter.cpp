@@ -326,29 +326,26 @@ void VTKPlotter::plot_glyphs()
     glyphs->SetColorModeToColorByVector();
     //glyphs->SetScaleFactor(0.1);
 
-  vtkSmartPointer<vtkPolyDataMapper> mapper = 
-    vtkSmartPointer<vtkPolyDataMapper>::New();
-    mapper->SetInputConnection(glyphs->GetOutputPort());
-
-  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-    actor->SetMapper(mapper);
-
-  render(actor);
-
+  map(glyphs);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
 {
-  // Create VTK geometry filter and attach grid to it
+  // Create VTK geometry filter and attach VTK point set to it
   vtkSmartPointer<vtkGeometryFilter> geometryFilter = 
     vtkSmartPointer<vtkGeometryFilter>::New();
     geometryFilter->SetInput(point_set);
     geometryFilter->Update();
 
-  // Create VTK mapper and attach geometry filter to it
+  map(geometryFilter);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
+{
+  // Create VTK mapper and attach VTK poly data to it
   vtkSmartPointer<vtkPolyDataMapper> mapper = 
     vtkSmartPointer<vtkPolyDataMapper>::New();
-    mapper->SetInputConnection(geometryFilter->GetOutputPort());
+    mapper->SetInputConnection(polyData->GetOutputPort());
 
   // Create VTK actor and attach the mapper to it 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
@@ -373,7 +370,6 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
     vtkSmartPointer<vtkRenderWindow>::New();
     window->AddRenderer(renderer);
     window->SetSize(600,600);
-
     // Make window title.
     std::stringstream full_title;
     full_title << std::string(parameters["title"]) << 

@@ -28,6 +28,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkSmartPointer.h>
 #include <vtkPointSet.h>
+#include <vtkPolyDataAlgorithm.h>
 #include <vtkActor.h>
 
 #include <dolfin/mesh/Mesh.h>
@@ -76,6 +77,8 @@ namespace dolfin
     void plot_glyphs();
 
     void filter_and_map(vtkSmartPointer<vtkPointSet> point_set);
+    
+    void map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData);
     
     void render(vtkSmartPointer<vtkActor> actor);
 
