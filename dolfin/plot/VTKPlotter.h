@@ -25,11 +25,12 @@
 
 #ifdef HAS_VTK
 
-#include <vtkUnstructuredGrid.h>
 #include <vtkSmartPointer.h>
 #include <vtkPointSet.h>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkActor.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkScalarBarActor.h>
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -97,6 +98,8 @@ namespace dolfin
     boost::shared_ptr<const GenericFunction> _function;
 
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
+
+    vtkSmartPointer<vtkScalarBarActor> _scalarbar;
 
   };
 

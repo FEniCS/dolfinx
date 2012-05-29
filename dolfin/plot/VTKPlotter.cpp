@@ -34,6 +34,7 @@
 #include <vtkGlyph3D.h>
 #include <vtkGeometryFilter.h>
 #include <vtkLookupTable.h>
+#include <vtkTextProperty.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
@@ -355,17 +356,45 @@ void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
 //----------------------------------------------------------------------------
 void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
 {
+  // Get range of scalar values
+  double range[2];
+  _grid->GetScalarRange(range);
+  
+  // Make lookup table
+  vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+    lut->SetRange(range);
+    lut->Build();
+  
   // Create VTK mapper and attach VTK poly data to it
   vtkSmartPointer<vtkPolyDataMapper> mapper = 
     vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(polyData->GetOutputPort());
+    mapper->SetScalarRange(range);
+    mapper->SetLookupTable(lut);
+
+  // Create scalar bar if the parameter tells us to
+  if (parameters["scalarbar"]) {
+    // FIXME: _scalarbar is a class member now. There must be cleaner way
+    // to do this
+    _scalarbar = vtkSmartPointer<vtkScalarBarActor>::New();
+    _scalarbar->SetLookupTable(lut);
+    vtkSmartPointer<vtkTextProperty> labelprop = 
+      _scalarbar->GetLabelTextProperty();
+      labelprop->SetFontFamilyToTimes();
+      labelprop->SetColor(0, 0, 0);
+      labelprop->SetFontSize(14);
+    // TODO: Add similar appearance changes to TitleTextProperty
+  }
 
   // Create VTK actor and attach the mapper to it 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
+    // FIXME: These properties should be gotten from parameters
+    // Idea: Wireframe is a parameter. plot(mesh) sets it to true, 
+    // plot(function) to false 
+    // Separate default_parameters function for mesh?
     if (parameters["wireframe"]) {
       actor->GetProperty()->SetRepresentationToWireframe();
-    // FIXME: Color should be gotten from parameters
     }
     actor->GetProperty()->SetColor(0,0,1);
 
@@ -374,16 +403,22 @@ void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
 //----------------------------------------------------------------------------
 void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
 {
+  // Set up renderer and add the actor to it
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->AddActor(actor);
     // FIXME: Get background color from parameters?
     renderer->SetBackground(1,1,1);
 
+  // Add scalar bar actor to renderer if present
+  if (_scalarbar) {
+    renderer->AddActor(_scalarbar);
+  }
+
+  // Set up renderwindow, add renderer, set size and make window title
   vtkSmartPointer<vtkRenderWindow> window = 
     vtkSmartPointer<vtkRenderWindow>::New();
     window->AddRenderer(renderer);
     window->SetSize(600,600);
-    // Make window title.
     std::stringstream full_title;
     full_title << std::string(parameters["title"]) << 
       std::string(parameters["title_suffix"]);
@@ -393,6 +428,7 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
     vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
 
+  // Set up interactive view and start rendering loop
   vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
     vtkSmartPointer<vtkRenderWindowInteractor>::New();
     interactor->SetRenderWindow(window);
