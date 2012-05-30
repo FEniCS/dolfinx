@@ -19,7 +19,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-05-04
+// Last changed: 2012-05-30
 
 #include <dolfin.h>
 
@@ -31,11 +31,9 @@ int main()
 {
 
   // Define 2D geometry
-  csg::Rectangle r1(-1.25, -0.6, 1.1, 0);
-  csg::Rectangle r2(0.6, -0.8, 1.1, 0.6);
-  csg::Circle c1(-0.5, -0.3, 0.5);
-  csg::Circle c2(0.6, 0.1, 0.25);
-  boost::shared_ptr<CSGGeometry> g2d = (r1 + c1 + r2) - c2;
+  csg::Rectangle r(0.5, 0.5, 1.5, 1.5);
+  csg::Circle c(1, 1, 1);
+  boost::shared_ptr<CSGGeometry> g2d = c - r;
 
   // Test printing
   info("\nCompact output of 2D geometry:");
