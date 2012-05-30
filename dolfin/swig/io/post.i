@@ -14,7 +14,6 @@
 %template(__rshift__) dolfin::File::operator>> <MeshValueCollection<double> >;
 %template(__rshift__) dolfin::File::operator>> <MeshValueCollection<bool> >;
 %template(__rshift__) dolfin::File::operator>> <Parameters>;
-%template(__rshift__) dolfin::File::operator>> <FunctionPlotData>;
 %template(__rshift__) dolfin::File::operator>> <Function>;
 
 // Output
@@ -31,5 +30,4 @@
 %template(__lshift__) dolfin::File::operator<< <MeshValueCollection<double> >;
 %template(__lshift__) dolfin::File::operator<< <MeshValueCollection<bool> >;
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
-%template(__lshift__) dolfin::File::operator<< <FunctionPlotData>;
 %template(__lshift__) dolfin::File::operator<< <Function>;

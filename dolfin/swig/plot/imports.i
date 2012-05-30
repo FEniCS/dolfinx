@@ -22,4 +22,3 @@
 
 %import(module="dolfin.cpp.io") "dolfin/plot/plot.h"
 %import(module="dolfin.cpp.io") "dolfin/plot/VTKPlotter.h"
-%import(module="dolfin.cpp.io") "dolfin/plot/FunctionPlotData.h"

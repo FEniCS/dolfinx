@@ -226,7 +226,6 @@
 %shared_ptr(dolfin::NewtonSolver)
 
 // plot
-%shared_ptr(dolfin::FunctionPlotData)
 %shared_ptr(dolfin::VTKPlotter)
 
 // quadrature

@@ -81,10 +81,6 @@ namespace dolfin
     void operator>>(Function& input);
     void operator<<(const Function& output);
 
-    // FunctionPlotData
-    void operator>> (FunctionPlotData& input);
-    void operator<< (const FunctionPlotData& output);
-
     // MeshFunction (uint)
     void operator>> (MeshFunction<unsigned int>& input)
     { read_mesh_function(input, "uint"); }

@@ -22,4 +22,3 @@
 
 %include "dolfin/plot/plot.h"
 %include "dolfin/plot/VTKPlotter.h"
-%include "dolfin/plot/FunctionPlotData.h"
