@@ -53,7 +53,7 @@ using namespace dolfin;
 HDF5File::HDF5File(const std::string filename)
   : GenericFile(filename, "H5")
 {
-  // Do nothing
+   // Do nothing
 }
 //-----------------------------------------------------------------------------
 
@@ -69,6 +69,63 @@ void HDF5File::operator<< (const Function& u){
 }
 
 void HDF5File::operator<<(const Mesh& mesh){
+
+}
+
+void HDF5File::write(const double& data,const std::pair<uint,uint>& range){
+
+  hid_t       file_id, dset_id;         /* file and dataset identifiers */
+  hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
+  hsize_t     dimsf[2];                 /* dataset dimensions */
+  hsize_t     count[2];	          /* hyperslab selection parameters */
+  hsize_t     offset[2];
+  hid_t	      plist_id;           /* property list identifier */
+  herr_t      status;
+
+  MPICommunicator comm;
+  MPIInfo info;
+
+  offset[0]=range.first;
+  offset[1]=0;
+  count[0]=range.second-range.first;
+  count[1]=3;
+  dimsf[0]=MPI::sum(count[0]);
+  dimsf[1]=3;
+
+  fprintf(stderr,"%d %d %d\n",(int)dimsf[0],(int)count[0],(int)offset[0]);
+
+  plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist_id,*comm, *info); 
+
+  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  H5Pclose(plist_id);
+
+  filespace = H5Screate_simple(2, dimsf, NULL); 
+
+  dset_id = H5Dcreate(file_id, "dolfin_coords", H5T_NATIVE_DOUBLE, filespace,
+		      H5P_DEFAULT);
+  H5Sclose(filespace);
+  
+  memspace = H5Screate_simple(2, count, NULL);
+
+  filespace = H5Dget_space(dset_id);
+  status=H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  assert(status != HDF5_FAIL);
+
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  status=H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  assert(status != HDF5_FAIL);
+
+  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
+		    plist_id, &data);
+  assert(status != HDF5_FAIL);
+
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  H5Pclose(plist_id);
+  H5Fclose(file_id);
+
 
 }
 

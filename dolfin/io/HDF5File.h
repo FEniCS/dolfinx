@@ -60,6 +60,8 @@ namespace dolfin
     // Mesh
     void operator<< (const Mesh& mesh);
 
+    void write(const double& data,const std::pair<uint,uint>& range);
+
 
   private:
 

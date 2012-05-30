@@ -40,6 +40,7 @@
 #include <dolfin/mesh/Vertex.h>
 
 #include "XDMFFile.h"
+#include "HDF5File.h"
 
 using namespace dolfin;
 
@@ -58,76 +59,10 @@ XDMFFile::~XDMFFile()
 }
 //----------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------
-void XDMFFile::build_global_to_cell_dof(
-  std::vector<std::vector<std::pair<uint, uint> > >& global_dof_to_cell_dof,
-  const FunctionSpace& V)
-{
-  // Get mesh and dofmap
-  dolfin_assert(V.mesh());
-  dolfin_assert(V.dofmap());
-  const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = *V.dofmap();
-
-  std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
-  std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
-
-  if (MPI::num_processes() > 1)
-  {
-    // Get local-to-global cell numbering
-    dolfin_assert(mesh.parallel_data().have_global_entity_indices(mesh.topology().dim()));
-    const MeshFunction<uint>& global_cell_indices
-      = mesh.parallel_data().global_entity_indices(mesh.topology().dim());
-
-    // Build dof map data with global cell indices
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const uint local_cell_index = cell->index();
-      const uint global_cell_index = global_cell_indices[*cell];
-      local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
-      local_dofmap[local_cell_index].push_back(global_cell_index);
-    }
-  }
-  else
-  {
-    // Build dof map data
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const uint local_cell_index = cell->index();
-      local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
-      local_dofmap[local_cell_index].push_back(local_cell_index);
-    }
-  }
-
-  // Gather dof map data on root process
-  MPI::gather(local_dofmap, gathered_dofmap);
-
-  // Build global dof - (global cell, local dof) map on root process
-  if (MPI::process_number() == 0)
-  {
-    global_dof_to_cell_dof.resize(dofmap.global_dimension());
-
-    std::vector<std::vector<std::vector<uint > > > ::const_iterator proc_dofmap;
-    for (proc_dofmap = gathered_dofmap.begin(); proc_dofmap != gathered_dofmap.end(); ++proc_dofmap)
-    {
-      std::vector<std::vector<uint> >::const_iterator cell_dofmap;
-      for (cell_dofmap = proc_dofmap->begin(); cell_dofmap != proc_dofmap->end(); ++cell_dofmap)
-      {
-        const std::vector<uint>& cell_dofs = *cell_dofmap;
-        const uint global_cell_index = cell_dofs.back();
-        for (uint i = 0; i < cell_dofs.size() - 1; ++i)
-          global_dof_to_cell_dof[cell_dofs[i]].push_back(std::make_pair(global_cell_index, i));
-      }
-    }
-  }
-}
-
-
 void XDMFFile::operator<<(const Function& u)
 {
-  if(MPI::num_processes()==1) // bork if not in parallel
-    return;
+  //  if(MPI::num_processes()==1) // bork if not in parallel
+  //    return;
 
   u.update();
   const FunctionSpace& V = *u.function_space(); 
@@ -138,63 +73,76 @@ void XDMFFile::operator<<(const Function& u)
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_global_cells = MPI::sum(mesh.num_cells());
-  const uint num_local_cells = mesh.num_cells();
   const uint num_global_vertices = dofmap.global_dimension();
-  const uint num_local_vertices = vec.local_size();
   const std::pair<uint,uint> local_range = vec.local_range();
-  const std::pair<uint,uint> ownership_range=dofmap.ownership_range();
   const boost::unordered_map<uint, uint> off_process_owner=dofmap.off_process_owner();
 
-  std::stringstream s;
-
-  fprintf(stderr,"%d %d %d %d\n",num_global_cells,num_local_cells,
-	  num_global_vertices,num_local_vertices);
-
-  fprintf(stderr,"DOF Range=%d,%d\n",ownership_range.first,ownership_range.second);
-  fprintf(stderr,"Vec Range=%d,%d\n",local_range.first,local_range.second);
-
+  std::vector<uint> topo_data;
   std::map<uint,uint> local_map;
 
-  std::stringstream tstr;
-
   // make a map of global to local vertices, ignoring any off process
+  // also save some topological data for each cell
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const uint i = cell->index();
-      std::vector<uint> vv = dofmap.cell_dofs(i);
-      std::vector<uint>::iterator vvc=vv.begin();
+
+      std::vector<uint> gdof = dofmap.cell_dofs(i);
+      std::vector<uint>::iterator igdof=gdof.begin();
       for (VertexIterator v(*cell); !v.end(); ++v){
-	tstr << *vvc << " ";
-       	if (off_process_owner.find(*vvc)==off_process_owner.end())
-	  {
-	    //must be on this process
-	    //	    fprintf(stderr,"G%d=L%d\n",*vvc,v->index());
-	    local_map.insert(std::pair<uint,uint>(*vvc,v->index()));
-	  }
-	++vvc;
+	topo_data.push_back(*igdof);
+       	if (off_process_owner.find(*igdof)==off_process_owner.end())    
+	  //must be on this process
+	  local_map.insert(std::pair<uint,uint>(*igdof,v->index()));
+	++igdof;
       }
-      tstr << std::endl;
     }
 
-
-  s.str("");
-
-  // written for 2D only!!!
   const double *m_coords = mesh.coordinates();
-  
+  std::vector<double>cvec;
+
   for(uint i=local_range.first;i<local_range.second;i++)
     {
       uint j=local_map[i];
-      //      fprintf(stderr,"G%d=L%d\n",i,j);
-      //      fprintf(stderr,"%5f %5f\n",m_coords[j*2],m_coords[j*2+1]);
-      s << m_coords[j*2] << " " << m_coords[j*2+1] << " 0" <<  std::endl;
+      if(cell_dim==2){
+	cvec.push_back(m_coords[j*2]);
+	cvec.push_back(m_coords[j*2+1]);
+	cvec.push_back(0.0);
+      } else if(cell_dim==3){
+	cvec.push_back(m_coords[j*3]);
+	cvec.push_back(m_coords[j*3+1]);
+	cvec.push_back(m_coords[j*3+2]);
+      }
     }
 
-  // probably better to save as a hdf5 field
-  std::vector<std::string> ss,tss;
+  // these should all be in one HDF5 file as different datasets.
+
+  std::string basename;
+  std::ostringstream fname;
+
+  basename.assign(filename, 0, filename.find_last_of("."));
+  fname << basename << ".h5";
+  std::string filename_data(fname.str());
+
+  fname.str("");
+  fname << basename << "_coords.h5";
+  std::string filename_coords(fname.str());
+
+  fname.str("");
+  fname << basename << "_coords.h5";
+  std::string filename_topo(fname.str());
+
+  HDF5File h5coords(filename_coords);
+  h5coords.write(cvec[0],local_range);
+
+  // Want to write topo data as H5 file also, but need to 
+  // know the 'local range' for cells, as opposed to vertices...
+  // so meanwhile, use MPI::gather and XML
+  fprintf(stderr,"topo data size = %d\n",topo_data.size());
+  //  HDF5File h5topo("poisson_topo.h5");
+  //  h5topo.write(topo_data[0],???cell_range???);
   
-  MPI::gather(s.str(),ss);
-  MPI::gather(tstr.str(),tss);
+  std::vector<std::vector<uint> > topo_gather;
+  MPI::gather(topo_data,topo_gather);
 
     if(MPI::process_number()==0){
 
@@ -210,37 +158,44 @@ void XDMFFile::operator<<(const Function& u)
     xdmf_grid.append_attribute("GridType")="Uniform";
     
     pugi::xml_node xdmf_topo = xdmf_grid.append_child("Topology");
-    xdmf_topo.append_attribute("TopologyType")="Triangle";
+
+    if(cell_dim==2)
+      xdmf_topo.append_attribute("TopologyType")="Triangle";
+    else if(cell_dim==3)
+      xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
+
     xdmf_topo.append_attribute("NumberOfElements")=num_global_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
     xdmf_topo_data.append_attribute("Format")="XML";
-
-    s.str("");
-    s << num_global_cells << " " << (cell_dim+1);
+    // Soon:
+    //    xdmf_topo_data.append_attribute("Format")="HDF"; 
+    std::stringstream s;
+        s << num_global_cells << " " << (cell_dim+1);
     xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
-    s.str("");
+
+    // Write out the gathered topo data
+    s.str("\n");
+    std::vector<std::vector<uint> >::iterator topo_n;
+    for(topo_n=topo_gather.begin();topo_n!=topo_gather.end();++topo_n)
+      for(std::vector<uint>::iterator topo_i=(*topo_n).begin();
+	  topo_i!=(*topo_n).end();++topo_i)
+	s << *topo_i << " ";
     s << std::endl;
-    
-    std::vector<std::string>::iterator ss_it;
-    for (ss_it=tss.begin(); ss_it!=tss.end(); ++ss_it)
-      s << *ss_it;
 
-
+    //    s.str("\npoisson_topo.h5:/dolfin_topo\n");
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
     xdmf_geom.append_attribute("GeometryType")="XYZ";
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
-    xdmf_geom_data.append_attribute("Format")="XML";
+
+    xdmf_geom_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices << " 3 3";
+    s << num_global_vertices << " 3";
     xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
 
     s.str("");
-
-    for (ss_it=ss.begin(); ss_it!=ss.end(); ++ss_it)
-      s << *ss_it;
-
+    s << filename_coords << ":/dolfin_coords";
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data
@@ -251,7 +206,8 @@ void XDMFFile::operator<<(const Function& u)
     s.str("");
     s << num_global_vertices;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
-    s.str("\npoisson.h5:/dolfin_vector\n");
+    s.str("");
+    s<< filename_data << ":/dolfin_vector";
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     xml_doc.save_file(filename.c_str(), "  "); 
