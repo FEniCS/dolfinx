@@ -129,6 +129,9 @@ namespace dolfin
     // Render the given VTK actor
     void render(vtkSmartPointer<vtkActor> actor);
 
+    // Return the hover-over help text
+    std::string get_helptext();
+
     // The mesh to visualizae
     boost::shared_ptr<const Mesh> _mesh;
 
