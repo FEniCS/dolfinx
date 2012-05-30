@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-29
+// Last changed: 2012-05-30
 
 #ifdef HAS_VTK
 
@@ -409,8 +409,7 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
     window->AddRenderer(renderer);
     window->SetSize(600,600);
     std::stringstream full_title;
-    full_title << std::string(parameters["title"]) << 
-      std::string(parameters["title_suffix"]);
+    full_title << "DOLFIN: " << std::string(parameters["title"]);
     window->SetWindowName(full_title.str().c_str());
 
   // FIXME: Get interactorstyle from parameters? 

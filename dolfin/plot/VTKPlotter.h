@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-29
+// Last changed: 2012-05-30
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -80,7 +80,6 @@ namespace dolfin
     {
       Parameters p("vtk_plotter");
       p.add("title", "Plot");
-      p.add("title_suffix", " - DOLFIN VTK Plotter");
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("vector_mode", "glyphs");
