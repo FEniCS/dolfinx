@@ -30,6 +30,7 @@
 %import(module="mesh") "dolfin/mesh/Mesh.h"
 %import(module="mesh") "dolfin/mesh/MeshEntity.h"
 %import(module="mesh") "dolfin/mesh/MeshEntityIterator.h"
+%import(module="mesh") "dolfin/mesh/MeshEntityIteratorBase.h"
 %import(module="mesh") "dolfin/mesh/SubsetIterator.h"
 %import(module="mesh") "dolfin/mesh/Point.h"
 %import(module="mesh") "dolfin/mesh/Vertex.h"
