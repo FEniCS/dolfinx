@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-14
+// Last changed: 2012-05-30
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -73,6 +73,37 @@ namespace dolfin
       Type getType() const { return CSGGeometry::Circle; }
 
       double _x0, _x1, _r;
+      const uint fragments;
+
+    };
+
+    /// This class describes a 2D ellipse which can be used to build
+    /// geometries using Constructive Solid Geometry (CSG).
+    class Ellipse : public CSGPrimitive2D
+    {
+    public:
+
+      /// Create ellipse at x = (x0, x1) with horizontal semi-axis a and
+      /// vertical semi-axis b.
+      ///
+      /// *Arguments*
+      ///     x0 (double)
+      ///         x0-coordinate of center.
+      ///     x1 (double)
+      ///         x1-coordinate of center.
+      ///     a (double)
+      ///         horizontal semi-axis.
+      ///     b (double)
+      ///         vertical semi-axis.
+      ///     fragments (uint)
+      ///         number of fragments.
+      Ellipse(double x0, double x1, double a, double b, uint fragments=32);
+
+      /// Informal string representation
+      std::string str(bool verbose) const;
+      Type getType() const { return CSGGeometry::Ellipse; }
+
+      double _x0, _x1, _a, _b;
       const uint fragments;
 
     };

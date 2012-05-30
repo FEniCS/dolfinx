@@ -49,7 +49,7 @@ namespace dolfin
     /// Informal string representation
     virtual std::string str(bool verbose) const = 0;
 
-    enum Type { Box, Sphere, Cone, Tetrahedron, Circle, Rectangle, Polygon, Union, Intersection, Difference };
+    enum Type { Box, Sphere, Cone, Tetrahedron, Circle, Ellipse, Rectangle, Polygon, Union, Intersection, Difference };
     virtual Type getType() const = 0;
   };
 

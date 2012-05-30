@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-14
+// Last changed: 2012-05-30
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -62,6 +62,45 @@ std::string Circle::str(bool verbose) const
   {
     s << "Circle("
       << _x0 << ", " << _x1 << ", " << _r << ")";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+// Ellipse
+//-----------------------------------------------------------------------------
+Ellipse::Ellipse(double x0, double x1, double a, double b, dolfin::uint fragments)
+  : _x0(x0), _x1(x1), _a(a), _b(b), fragments(fragments)
+{
+  if (_a < DOLFIN_EPS || _b < DOLFIN_EPS)
+  {
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create ellipse",
+                 "Ellipse with center (%f, %f) has invalid semi-axis",
+                 _x0, _x1);
+  }
+  if (fragments < 1)
+  {
+    dolfin_error("CSGPrimitives2D.cpp",
+                 "create ellipse",
+                 "Unable to create ellipse with zero fragments");
+
+  }
+}
+//-----------------------------------------------------------------------------
+std::string Ellipse::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << "<Ellipse at (" << _x0 << ", " << _x1 << ") with horizontal semi-axis "
+      << _a << " and vertical semi-axis " << _b << ">";
+  }
+  else
+  {
+    s << "Ellipse("
+      << _x0 << ", " << _x1 << ", " << _a << ", " << _b << ")";
   }
 
   return s.str();

@@ -167,6 +167,22 @@ Nef_polyhedron_2 make_circle(const csg::Circle* c)
                           Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
+Nef_polyhedron_2 make_ellipse(const csg::Ellipse* e)
+{
+  std::vector<Nef_point_2> points;
+
+  for (dolfin::uint i=0; i < e->fragments; i++)
+  {
+    double phi = (2*DOLFIN_PI*i) / e->fragments;
+    double x = e->_x0 + e->_a*cos(phi);
+    double y = e->_x1 + e->_b*sin(phi);
+    points.push_back(Nef_point_2(x, y));
+  }
+
+  return Nef_polyhedron_2(points.begin(), points.end(),
+                          Nef_polyhedron_2::INCLUDED);
+}
+//-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_rectangle(const csg::Rectangle* r)
 {
   const double x0 = std::min(r->_x0, r->_y0);
@@ -225,6 +241,13 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
     const csg::Circle* c = dynamic_cast<const csg::Circle*>(geometry);
     dolfin_assert(c);
     return make_circle(c);
+    break;
+  }
+  case CSGGeometry::Ellipse:
+  {
+    const csg::Ellipse* c = dynamic_cast<const csg::Ellipse*>(geometry);
+    dolfin_assert(c);
+    return make_ellipse(c);
     break;
   }
   case CSGGeometry::Rectangle:
