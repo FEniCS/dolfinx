@@ -49,26 +49,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+
 HDF5File::HDF5File(const std::string filename)
   : GenericFile(filename, "H5")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(std::ostream& s)
-  : GenericFile("", "H5"), outstream(&s, NoDeleter())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
+
 HDF5File::~HDF5File()
 {
   // Do nothing
 }
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
+
+void HDF5File::operator<< (const Function& u){
+  
+}
+
+void HDF5File::operator<<(const Mesh& mesh){
+
+}
+
+
 void HDF5File::operator<< (const GenericVector& output)
 {
 
@@ -148,13 +152,12 @@ void HDF5File::operator>> (GenericVector& input)
 
     std::pair<uint,uint> range;
 
-    // dimsf=input.size(dim);
+    //    dimsf=input.size(dim);
     range=input.local_range(dim);
     offset=range.first;
     count=range.second-range.first;
 
     std::vector<double>data(count);
-
 
     /* setup file access template */
     plist_id = H5Pcreate (H5P_FILE_ACCESS);

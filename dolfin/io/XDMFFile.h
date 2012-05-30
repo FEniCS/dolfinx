@@ -19,8 +19,8 @@
 // First added:  2012-05-22
 // Last changed: 2012-05-22
 
-#ifndef __HDF5FILE_H
-#define __HDF5FILE_H
+#ifndef __XDMFFILE_H
+#define __XDMFFILE_H
 
 #include <map>
 #include <ostream>
@@ -28,6 +28,11 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include "GenericFile.h"
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
@@ -41,27 +46,24 @@ namespace dolfin
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
 
-  class HDF5File: public GenericFile
+  class XDMFFile: public GenericFile
   {
   public:
 
     /// Constructor
-    HDF5File(const std::string filename);
+    XDMFFile(const std::string filename);
 
-    ~HDF5File();
+    ~XDMFFile();
 
-    // Vector
-    void operator<< (const GenericVector& output);
-    void operator>> (GenericVector& input);
-
-    // Function
-    void operator<< (const Function& u);
-
-    // Mesh
-    void operator<< (const Mesh& mesh);
-
+    // Save Mesh
+    void operator<<(const Mesh& mesh);
+    void operator<<(const Function& u);
 
   private:
+
+    static void build_global_to_cell_dof(
+     std::vector<std::vector<std::pair<uint, uint> > >& global_dof_to_cell_dof, 
+     const FunctionSpace& V);
 
     boost::shared_ptr<std::ostream> outstream;
 
