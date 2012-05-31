@@ -74,7 +74,7 @@ void HDF5File::operator<<(const Mesh& mesh){
 
 
 // write a generic block of 2D data into a HDF5 dataset
-// typically in parallel
+// typically in parallel. Pre-existing file.
 template <typename T>
 void HDF5File::write(T& data, 
 		     const std::pair<uint,uint>& range,
@@ -108,9 +108,8 @@ void HDF5File::write(T& data,
 
   // try to open existing HDF5 file
   file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  if(file_id<0) //error - probably doesn't exist : create
-    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   H5Pclose(plist_id);
+
 
   filespace = H5Screate_simple(2, dimsf, NULL); 
 
@@ -161,6 +160,7 @@ void HDF5File::write(const uint& data,
   write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 
+// Create HDF File and add a dataset of vector
 void HDF5File::operator<< (const GenericVector& output)
 {
 
