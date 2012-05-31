@@ -53,7 +53,7 @@ using namespace dolfin;
 HDF5File::HDF5File(const std::string filename)
   : GenericFile(filename, "H5")
 {
-   // Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 
@@ -65,14 +65,23 @@ HDF5File::~HDF5File()
 //-----------------------------------------------------------------------------
 
 void HDF5File::operator<< (const Function& u){
-  
+  //  
 }
 
 void HDF5File::operator<<(const Mesh& mesh){
 
 }
 
-void HDF5File::write(const double& data,const std::pair<uint,uint>& range){
+
+// write a generic block of 2D data into a HDF5 dataset
+// typically in parallel
+template <typename T>
+void HDF5File::write(T& data, 
+		     const std::pair<uint,uint>& range,
+		     const std::string& dataset_name,
+		     int h5type,
+		     uint width){
+
 
   hid_t       file_id, dset_id;         /* file and dataset identifiers */
   hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
@@ -88,21 +97,24 @@ void HDF5File::write(const double& data,const std::pair<uint,uint>& range){
   offset[0]=range.first;
   offset[1]=0;
   count[0]=range.second-range.first;
-  count[1]=3;
+  count[1]=width;
   dimsf[0]=MPI::sum(count[0]);
-  dimsf[1]=3;
+  dimsf[1]=width;
 
-  fprintf(stderr,"%d %d %d\n",(int)dimsf[0],(int)count[0],(int)offset[0]);
+  //  fprintf(stderr,"%d %d %d\n",(int)dimsf[0],(int)count[0],(int)offset[0]);
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id,*comm, *info); 
 
-  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  // try to open existing HDF5 file
+  file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  if(file_id<0) //error - probably doesn't exist : create
+    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   H5Pclose(plist_id);
 
   filespace = H5Screate_simple(2, dimsf, NULL); 
 
-  dset_id = H5Dcreate(file_id, "dolfin_coords", H5T_NATIVE_DOUBLE, filespace,
+  dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
 		      H5P_DEFAULT);
   H5Sclose(filespace);
   
@@ -116,7 +128,7 @@ void HDF5File::write(const double& data,const std::pair<uint,uint>& range){
   status=H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
   assert(status != HDF5_FAIL);
 
-  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
+  status = H5Dwrite(dset_id, h5type, memspace, filespace,
 		    plist_id, &data);
   assert(status != HDF5_FAIL);
 
@@ -129,17 +141,31 @@ void HDF5File::write(const double& data,const std::pair<uint,uint>& range){
 
 }
 
+// Write data to HDF file as defined by range blocks on each process
+// range: the local range on this processor
+// width: is the width of the dataitem (e.g. 3 for x,y,z data)
+
+void HDF5File::write(const double& data,
+		     const std::pair<uint,uint>& range,
+		     const std::string& dataset_name,
+		     const uint width){
+
+  write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
+}
+
+void HDF5File::write(const uint& data,
+		     const std::pair<uint,uint>& range,
+		     const std::string& dataset_name,
+		     const uint width){
+
+  write(data,range,dataset_name,H5T_NATIVE_INT,width);
+}
 
 void HDF5File::operator<< (const GenericVector& output)
 {
 
-  hid_t       file_id, dset_id;         /* file and dataset identifiers */
-  hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
-  hsize_t     dimsf;                 /* dataset dimensions */
-  hsize_t     count;	          /* hyperslab selection parameters */
-  hsize_t     offset;
+  hid_t       file_id;         /* file and dataset identifiers */
   hid_t	      plist_id;           /* property list identifier */
-  herr_t      status;
 
   MPICommunicator comm;
   MPIInfo info;
@@ -148,42 +174,17 @@ void HDF5File::operator<< (const GenericVector& output)
   std::pair<uint,uint> range;
   std::vector<double>data;
 
-  dimsf=output.size(dim);
   range=output.local_range(dim);
-  offset=range.first;
-  count=range.second-range.first;
-
   output.get_local(data);
+
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id,*comm, *info); 
-
   file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   H5Pclose(plist_id);
-
-  filespace = H5Screate_simple(1, &dimsf, NULL); 
-
-  dset_id = H5Dcreate(file_id, "dolfin_vector", H5T_NATIVE_DOUBLE, filespace,
-		      H5P_DEFAULT);
-  H5Sclose(filespace);
-  
-  memspace = H5Screate_simple(1, &count, NULL);
-
-  filespace = H5Dget_space(dset_id);
-  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &count, NULL);
-
-  plist_id = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-    
-  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
-		    plist_id, &data[0]);
-  assert(status != HDF5_FAIL);
-
-  H5Dclose(dset_id);
-  H5Sclose(filespace);
-  H5Sclose(memspace);
-  H5Pclose(plist_id);
   H5Fclose(file_id);
+
+  write(data[0],range,"dolfin_vector",1);
 
 }
 

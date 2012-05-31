@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-05-28
+// Last changed: 2012-05-30
 
 #include <ostream>
 #include <sstream>
@@ -61,8 +61,6 @@ XDMFFile::~XDMFFile()
 
 void XDMFFile::operator<<(const Function& u)
 {
-  //  if(MPI::num_processes()==1) // bork if not in parallel
-  //    return;
 
   u.update();
   const FunctionSpace& V = *u.function_space(); 
@@ -81,7 +79,9 @@ void XDMFFile::operator<<(const Function& u)
   std::map<uint,uint> local_map;
 
   // make a map of global to local vertices, ignoring any off process
-  // also save some topological data for each cell
+  // also save some topological data for each cell.
+  // there is probably a better way of doing this...
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const uint i = cell->index();
@@ -114,8 +114,6 @@ void XDMFFile::operator<<(const Function& u)
       }
     }
 
-  // these should all be in one HDF5 file as different datasets.
-
   std::string basename;
   std::ostringstream fname;
 
@@ -123,26 +121,44 @@ void XDMFFile::operator<<(const Function& u)
   fname << basename << ".h5";
   std::string filename_data(fname.str());
 
-  fname.str("");
-  fname << basename << "_coords.h5";
-  std::string filename_coords(fname.str());
-
-  fname.str("");
-  fname << basename << "_coords.h5";
-  std::string filename_topo(fname.str());
-
-  HDF5File h5coords(filename_coords);
-  h5coords.write(cvec[0],local_range);
+  HDF5File h5file(filename_data);
+  h5file << vec; //save actual data to .h5 file
+  h5file.write(m_coords,local_range,"dolfin_coords",cell_dim);
 
   // Want to write topo data as H5 file also, but need to 
   // know the 'local range' for cells, as opposed to vertices...
-  // so meanwhile, use MPI::gather and XML
-  fprintf(stderr,"topo data size = %d\n",topo_data.size());
-  //  HDF5File h5topo("poisson_topo.h5");
-  //  h5topo.write(topo_data[0],???cell_range???);
-  
-  std::vector<std::vector<uint> > topo_gather;
-  MPI::gather(topo_data,topo_gather);
+
+  // send round the cell usage info by MPI::distribute
+  // feel there is probably another easier way to get this
+  std::vector<uint> in_values;
+  std::vector<uint> out_values;
+  std::vector<uint> destinations;
+  std::vector<uint> sources;
+
+  for (uint i=0;i<MPI::num_processes();i++){
+    destinations.push_back(i);
+    in_values.push_back(topo_data.size()/(cell_dim+1));
+  }
+
+  MPI::distribute(in_values,destinations,out_values,sources);
+
+  std::vector<uint>::iterator src=sources.begin();
+  std::vector<uint>cellrange(MPI::num_processes());
+  for(std::vector<uint>::iterator src_ncells=out_values.begin();
+      src_ncells!=out_values.end();++src_ncells) {  
+    cellrange[*src] = *src_ncells;
+    ++src;
+  }
+
+  uint offset=0;
+  for(uint i=0;i<MPI::process_number();i++)
+    offset+=cellrange[i];
+  std::pair<uint,uint> topo_range(offset,offset+cellrange[MPI::process_number()]);
+  fprintf(stderr,"Topo=%d %d %d %d\n",topo_data.size(),topo_range.first,topo_range.second,cell_dim+1);
+  h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1);
+
+  //  std::vector<std::vector<uint> > topo_gather;
+  //  MPI::gather(topo_data,topo_gather);
 
     if(MPI::process_number()==0){
 
@@ -166,23 +182,24 @@ void XDMFFile::operator<<(const Function& u)
 
     xdmf_topo.append_attribute("NumberOfElements")=num_global_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
-    xdmf_topo_data.append_attribute("Format")="XML";
-    // Soon:
-    //    xdmf_topo_data.append_attribute("Format")="HDF"; 
+    //    xdmf_topo_data.append_attribute("Format")="XML";
+
+        xdmf_topo_data.append_attribute("Format")="HDF"; 
     std::stringstream s;
         s << num_global_cells << " " << (cell_dim+1);
     xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
 
     // Write out the gathered topo data
-    s.str("\n");
-    std::vector<std::vector<uint> >::iterator topo_n;
-    for(topo_n=topo_gather.begin();topo_n!=topo_gather.end();++topo_n)
-      for(std::vector<uint>::iterator topo_i=(*topo_n).begin();
-	  topo_i!=(*topo_n).end();++topo_i)
-	s << *topo_i << " ";
-    s << std::endl;
-
-    //    s.str("\npoisson_topo.h5:/dolfin_topo\n");
+    //    s.str("\n");
+    //    std::vector<std::vector<uint> >::iterator topo_n;
+    //    for(topo_n=topo_gather.begin();topo_n!=topo_gather.end();++topo_n)
+    //      for(std::vector<uint>::iterator topo_i=(*topo_n).begin();
+    //	  topo_i!=(*topo_n).end();++topo_i)
+    //	s << *topo_i << " ";
+    //    s << std::endl;
+    
+    s.str("");
+    s<< filename_data << ":/dolfin_topo";
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -191,11 +208,11 @@ void XDMFFile::operator<<(const Function& u)
 
     xdmf_geom_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices << " 3";
+    s << num_global_vertices << " " << cell_dim;
     xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
 
     s.str("");
-    s << filename_coords << ":/dolfin_coords";
+    s << filename_data << ":/dolfin_coords";
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data

@@ -60,8 +60,23 @@ namespace dolfin
     // Mesh
     void operator<< (const Mesh& mesh);
 
-    void write(const double& data,const std::pair<uint,uint>& range);
+    //write functions for int,double, etc.
+    void write(const double& data,
+	       const std::pair<uint,uint>& range,
+	       const std::string& dataset_name,
+	       const uint width);
 
+    void write(const uint& data,
+	       const std::pair<uint,uint>& range,
+	       const std::string& dataset_name,
+	       const uint width);
+
+    template <typename T>
+    void write(T& data, 
+	       const std::pair<uint,uint>& range,
+	       const std::string& dataset_name,
+	       int h5type,
+	       uint width);
 
   private:
 
