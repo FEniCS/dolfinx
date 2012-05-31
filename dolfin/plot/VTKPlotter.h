@@ -80,6 +80,7 @@ namespace dolfin
     {
       Parameters p("vtk_plotter");
       p.add("title", "Plot");
+      p.add("interactive", true);
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("vector_mode", "glyphs");

@@ -406,16 +406,6 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
     renderer->AddActor(_scalarbar);
   }
 
-  // Add helptextactor text actor
-  vtkSmartPointer<vtkTextActor> helptextactor =
-    vtkSmartPointer<vtkTextActor>::New();
-  helptextactor->SetPosition(10,10);
-  helptextactor->SetInput("Help ");
-  helptextactor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-  helptextactor->GetTextProperty()->SetFontSize(24);
-  helptextactor->GetTextProperty()->SetFontFamilyToTimes();
-  renderer->AddActor2D(helptextactor);
-
   // Set up renderwindow, add renderer, set size and make window title
   vtkSmartPointer<vtkRenderWindow> window = 
     vtkSmartPointer<vtkRenderWindow>::New();
@@ -425,38 +415,52 @@ void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
   full_title << "DOLFIN: " << std::string(parameters["title"]);
   window->SetWindowName(full_title.str().c_str());
 
-  // Set interactor style to trackball camera
-  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
-    vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+  if (parameters["interactive"]) {
 
-  // Set up interactor and start rendering loop
-  vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
-    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-  interactor->SetRenderWindow(window);
-  interactor->SetInteractorStyle(style);
+    // Add helptextactor text actor
+    vtkSmartPointer<vtkTextActor> helptextactor =
+      vtkSmartPointer<vtkTextActor>::New();
+    helptextactor->SetPosition(10,10);
+    helptextactor->SetInput("Help ");
+    helptextactor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+    helptextactor->GetTextProperty()->SetFontSize(24);
+    helptextactor->GetTextProperty()->SetFontFamilyToTimes();
+    renderer->AddActor2D(helptextactor);
 
-  // Set up the representation for the hover-over help text box
-  vtkSmartPointer<vtkBalloonRepresentation> balloonrep =
-    vtkSmartPointer<vtkBalloonRepresentation>::New();
-  balloonrep->SetOffset(5,5);
-  balloonrep->GetTextProperty()->SetFontSize(18);
-  balloonrep->GetTextProperty()->SetFontFamilyToTimes();
-  
-  // Set up the actual widget that makes the help text pop up
-  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
-    vtkSmartPointer<vtkBalloonWidget>::New();
-  balloonwidget->SetInteractor(interactor);
-  balloonwidget->SetRepresentation(balloonrep);
-  balloonwidget->AddBalloon(helptextactor,
-      get_helptext().c_str(),NULL);
+    // Set interactor style to trackball camera
+    vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
+      vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
 
-  // Render window and enable widget. The Render() call is necessary
-  window->Render(); 
-  balloonwidget->EnabledOn();
+    // Set up interactor and start rendering loop
+    vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
+      vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    interactor->SetRenderWindow(window);
+    interactor->SetInteractorStyle(style);
 
-  // Initialize and start the mouse interaction
-  interactor->Initialize();
-  interactor->Start();
+    // Set up the representation for the hover-over help text box
+    vtkSmartPointer<vtkBalloonRepresentation> balloonrep =
+      vtkSmartPointer<vtkBalloonRepresentation>::New();
+    balloonrep->SetOffset(5,5);
+    balloonrep->GetTextProperty()->SetFontSize(18);
+    balloonrep->GetTextProperty()->SetFontFamilyToTimes();
+
+    // Set up the actual widget that makes the help text pop up
+    vtkSmartPointer<vtkBalloonWidget> balloonwidget =
+      vtkSmartPointer<vtkBalloonWidget>::New();
+    balloonwidget->SetInteractor(interactor);
+    balloonwidget->SetRepresentation(balloonrep);
+    balloonwidget->AddBalloon(helptextactor,
+        get_helptext().c_str(),NULL);
+    window->Render();
+    balloonwidget->EnabledOn();
+
+    // Initialize and start the mouse interaction
+    interactor->Initialize();
+    interactor->Start();
+
+  } else {
+    window->Render();
+  }
 }
 //----------------------------------------------------------------------------
 std::string VTKPlotter::get_helptext()
