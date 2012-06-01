@@ -55,7 +55,8 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New())
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(mesh.id())
 {
   parameters = default_mesh_parameters();
 }
@@ -63,7 +64,8 @@ VTKPlotter::VTKPlotter(const Mesh& mesh) :
 VTKPlotter::VTKPlotter(const Function& function) :
   _mesh(reference_to_no_delete_pointer(*function.function_space()->mesh())),
   _function(reference_to_no_delete_pointer(function)),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New())
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(function.id())
 {
   parameters = default_parameters();
 }
@@ -71,28 +73,32 @@ VTKPlotter::VTKPlotter(const Function& function) :
 VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
   _function(reference_to_no_delete_pointer(expression)),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(expression.id())
 {
   parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<uint>& mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(mesh_function.id())
 {
   parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<double>& mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(mesh_function.id())
 {
   parameters = default_parameters();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()) 
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(mesh_function.id())
 {
   parameters = default_parameters();
 }

@@ -146,6 +146,9 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarbar;
 
+    // The unique ID (inherited from Variable) for the object to plot
+    uint _id;
+
   };
 
 }
