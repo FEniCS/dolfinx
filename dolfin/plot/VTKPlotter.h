@@ -26,10 +26,18 @@
 #ifdef HAS_VTK
 
 #include <vtkSmartPointer.h>
+#include <vtkUnstructuredGrid.h>
 #include <vtkPointSet.h>
 #include <vtkPolyDataAlgorithm.h>
+#include <vtkWarpScalar.h>
+#include <vtkWarpVector.h>
+#include <vtkGlyph3D.h>
+#include <vtkGeometryFilter.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
-#include <vtkUnstructuredGrid.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkScalarBarActor.h>
 
 #include <dolfin/mesh/Mesh.h>
@@ -102,16 +110,40 @@ namespace dolfin
       return p;
     }
 
+    // Set up help text and start interaction loop 
+    void interactive();
+
   private:
+
+    // Setup all pipeline objects and connect them. Called from all 
+    // constructors
+    void init_pipeline();
 
     // Construct VTK grid from DOLFIN mesh
     void construct_vtk_grid();
     
-    // Plot scalar valued generic function (function or expression)
-    void plot_scalar_function();
+    // Process mesh (including filter setup)
+    void process_mesh();
+
+    // Process scalar valued generic function (function or expression),
+    // including filter setup
+    void process_scalar_function();
     
-    // Plot vector valued generic function (function or expression)
-    void plot_vector_function();
+    // Process vector valued generic function (function or expression),
+    // including filter setup
+    void process_vector_function();
+
+    // Set up plain filtering
+    void setup_filter_plain();
+
+    // Set up scalar warp filtering
+    void setup_filter_warpscalar();
+
+    // Set up vector warp filtering
+    void setup_filter_warpvector();
+
+    // Set up glyph filtering
+    void setup_glyph_filtering();
 
     // Plot vector valued function with warp (displacement) visualization
     void plot_warp();
@@ -142,9 +174,39 @@ namespace dolfin
     // The VTK grid constructed from the DOLFIN mesh
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
 
+    // The scalar warp filter
+    vtkSmartPointer<vtkWarpScalar> _warpscalar;
+
+    // The vector warp filter
+    vtkSmartPointer<vtkWarpVector> _warpvector;
+
+    // The glyph filter 
+    vtkSmartPointer<vtkGlyph3D> _glyphs;
+
+    // The geometry filter
+    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
+
+    // The poly data mapper
+    vtkSmartPointer<vtkPolyDataMapper> _mapper;
+
+    // The lookup table
+    vtkSmartPointer<vtkLookupTable> _lut;
+
+    // The main actor
+    vtkSmartPointer<vtkActor> _actor;
+
+    // The renderer
+    vtkSmartPointer<vtkRenderer> _renderer;
+
+    // The render window
+    vtkSmartPointer<vtkRenderWindow> _renderWindow;
+
+    // The render window interactor for interactive sessions
+    vtkSmartPointer<vtkRenderWindowInteractor> _interactor;
+
     // The scalar bar that gives the viewer the mapping from color to 
     // scalar value
-    vtkSmartPointer<vtkScalarBarActor> _scalarbar;
+    vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
     // The unique ID (inherited from Variable) for the object to plot
     uint _id;
