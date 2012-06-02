@@ -113,6 +113,9 @@ namespace dolfin
     // Set up help text and start interaction loop 
     void interactive();
 
+    // Return unique ID of the object to plot
+    uint id() const { return _id; }
+
   private:
 
     // Setup all pipeline objects and connect them. Called from all 
