@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-30
+// Last changed: 2012-06-02
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -133,39 +133,10 @@ namespace dolfin
     // including filter setup
     void process_vector_function();
 
-    // Set up plain filtering
-    void setup_filter_plain();
-
-    // Set up scalar warp filtering
-    void setup_filter_warpscalar();
-
-    // Set up vector warp filtering
-    void setup_filter_warpvector();
-
-    // Set up glyph filtering
-    void setup_glyph_filtering();
-
-    // Plot vector valued function with warp (displacement) visualization
-    void plot_warp();
-
-    // Plot vector valued function using visualization with glyphs (vectors)
-    void plot_glyphs();
-
-    // Filter a VTK point set through a geometryfilter and pass it to the map
-    // function
-    void filter_and_map(vtkSmartPointer<vtkPointSet> point_set);
-    
-    // Map a VTK poly data into geometric primitives, attach it to a VTK
-    // actor and pass the actor to the render function
-    void map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData);
-    
-    // Render the given VTK actor
-    void render(vtkSmartPointer<vtkActor> actor);
-
     // Return the hover-over help text
     std::string get_helptext();
 
-    // The mesh to visualizae
+    // The mesh to visualize
     boost::shared_ptr<const Mesh> _mesh;
 
     // The (optional) function values to visualize

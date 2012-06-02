@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-05-30
+// Last changed: 2012-06-02
 
 #ifdef HAS_VTK
 
@@ -115,19 +115,17 @@ void VTKPlotter::init_pipeline()
   // before plotting
   //construct_vtk_grid();
 
-  // First come all the different filters, this is the data processing part 
-  // of the pipeline. We initialize all of them and defer the connection of 
-  // filters and mappers until plotting. Not all will be used, but having them
-  // initialized makes swapping of connections easy later on.
+  // We first initialize all the different filters, this is the data 
+  // processing part of the pipeline. We initialize all of them and defer the
+  // connection of filters and mappers until plotting. Not all will be used,
+  // but having them initialized makes swapping of connections easy later on.
   //
-  // FIXME: Should we only initialize those that we need?
+  // FIXME: Should we only initialize those that we need? Probably, but that
+  // would require different init functions for different types of plots
 
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
-
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
-
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
-
   _geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
 
   // The rest of the pipeline is initalized and connected. This is the 
@@ -155,13 +153,13 @@ void VTKPlotter::init_pipeline()
 
   // Set some properties that affect the look of things
   _renderer->SetBackground(1, 1, 1);
-  _actor->GetProperty()->SetColor(0, 0, 1);
+  _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshse
   _renderWindow->SetSize(600, 600);
 
   // Set the look of scalar bar labels
   vtkSmartPointer<vtkTextProperty> labelprop = 
     _scalarBar->GetLabelTextProperty();
-  labelprop->SetFontFamilyToTimes();
+  //labelprop->SetFontFamilyToTimes();
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(14);
 
@@ -179,7 +177,7 @@ void VTKPlotter::interactive()
   helptextActor->SetInput("Help ");
   helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
   helptextActor->GetTextProperty()->SetFontSize(24);
-  helptextActor->GetTextProperty()->SetFontFamilyToTimes();
+  //helptextActor->GetTextProperty()->SetFontFamilyToTimes();
   _renderer->AddActor2D(helptextActor);
 
   // Set up the representation for the hover-over help text box
@@ -187,7 +185,7 @@ void VTKPlotter::interactive()
     vtkSmartPointer<vtkBalloonRepresentation>::New();
   balloonRep->SetOffset(5,5);
   balloonRep->GetTextProperty()->SetFontSize(18);
-  balloonRep->GetTextProperty()->SetFontFamilyToTimes();
+  //balloonRep->GetTextProperty()->SetFontFamilyToTimes();
 
   // Set up the actual widget that makes the help text pop up
   vtkSmartPointer<vtkBalloonWidget> balloonwidget =
@@ -212,7 +210,8 @@ void VTKPlotter::plot()
   dolfin_assert(_mesh);
 
   // Construct grid each time since the mesh may have been changed. 
-  // (Can we check if it has changed?)
+  // TODO: Introduce boolean flag that says if mesh has changed or not? 
+  // Probably overkill ... performs good enough already
   construct_vtk_grid();
 
   // Process some parameters
@@ -222,7 +221,7 @@ void VTKPlotter::plot()
   if (parameters["scalarbar"]) {
     _renderer->AddActor(_scalarBar);
   }
-  
+
   _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
   // Proceed depending on what type of plot this is
@@ -306,7 +305,7 @@ void VTKPlotter::construct_vtk_grid()
 //----------------------------------------------------------------------------
 void VTKPlotter::process_mesh()
 {
-   // Connect grid to filter
+  // Connect grid to filter
   _geometryFilter->SetInput(_grid);
   _geometryFilter->Update();
 
@@ -315,7 +314,6 @@ void VTKPlotter::process_mesh()
 
   // Render it
   _renderWindow->Render();
-  // TODO: more here?
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::process_scalar_function()
@@ -330,10 +328,9 @@ void VTKPlotter::process_scalar_function()
   if (_mesh->topology().dim() < 3) {
     // In 1D and 2D, we warp the mesh according to the scalar values
     _warpscalar->SetInput(_grid);
-    _warpscalar->SetScaleFactor(parameters["warp_scalefactor"]);
 
     _geometryFilter->SetInput(_warpscalar->GetOutput());
-      }
+  }
   else {
     // In 3D, we just show the scalar values as colors on the mesh
     _geometryFilter->SetInput(_grid);
@@ -375,12 +372,18 @@ void VTKPlotter::process_scalar_function()
   // This call is what actually changes the surface color
   _mapper->SetScalarRange(range);
 
+  // Set the warp scale factor to according to parameter, but multiply
+  // with a factor equal the inverse of the difference between minimum and
+  // maximum scalar value. This in order to prevent extremely large figures
+  _warpscalar->SetScaleFactor((double) parameters["warp_scalefactor"]*
+      1/(range[1]-range[0]));
+
   // STEP 4: Render
   ///////////////////////////////////////
-  
+
   _renderWindow->Render();
 
-  }
+}
 //----------------------------------------------------------------------------
 void VTKPlotter::process_vector_function()
 {
@@ -388,7 +391,11 @@ void VTKPlotter::process_vector_function()
 
   // STEP 1: Connect the pipeline parts
   ///////////////////////////////////////
-  const std::string mode = this->parameters["vector_mode"];
+
+  const std::string mode = parameters["vector_mode"];
+
+  // In warp mode, we just set up a vector warper and connect it to the 
+  // geometry filter and the mapper
   if(mode == "warp") {
     _warpvector->SetInput(_grid);
     _warpvector->SetScaleFactor(parameters["warp_scalefactor"]);
@@ -397,7 +404,14 @@ void VTKPlotter::process_vector_function()
     _geometryFilter->Update();
     _mapper->SetInputConnection(_geometryFilter->GetOutputPort());
 
-  } else if (mode == "glyphs") {
+    // In glyph mode, we must construct the glyphs. The glyphs are connected
+    // directly to the mapper, without using the geometry filter
+    // The only allowed options are "warp" and "glyphs", hence the plain 
+    // else block
+  } else {
+    if (mode != "glyphs") {
+      warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
+    }
     vtkSmartPointer<vtkArrowSource> arrow = 
       vtkSmartPointer<vtkArrowSource>::New();
     arrow->SetTipRadius(0.08);
@@ -416,18 +430,15 @@ void VTKPlotter::process_vector_function()
     _glyphs->SetScaleFactor(parameters["glyph_scalefactor"]);
 
     _mapper->SetInputConnection(_glyphs->GetOutputPort());
-  } else {
-    warning("Unrecognized option \"" + mode + "\", using default (glyphs).");
-    // TODO: make sure glyphs are used now
-    return;
   }
 
   // STEP 2: Update vector and scalar point data
   ///////////////////////////////////////
+
   // Make VTK float array and allocate storage for function vector values
   uint num_vertices = _mesh->num_vertices();
   uint num_components = _function->value_dimension(0);
-  vtkSmartPointer<vtkFloatArray> vectors = 
+  vtkSmartPointer<vtkFloatArray> vectors =
     vtkSmartPointer<vtkFloatArray>::New();
 
   // NOTE: Allocation must be done in this order!
@@ -485,173 +496,8 @@ void VTKPlotter::process_vector_function()
 
   // STEP 4: Render
   ///////////////////////////////////////
-  
+
   _renderWindow->Render();
-
-
-
-  }
-//----------------------------------------------------------------------------
-void VTKPlotter::setup_filter_plain()
-{
-  // Connect grid to filter
-  _geometryFilter->SetInput(_grid);
-  _geometryFilter->Update();
-
-  // Connect filter to mapper. This completes the pipeline! Ready to render.
-  _mapper->SetInputConnection(_geometryFilter->GetOutputPort());
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::plot_warp()
-{
-  vtkSmartPointer<vtkWarpVector> warp = vtkSmartPointer<vtkWarpVector>::New();
-  warp->SetInput(_grid);
-  warp->SetScaleFactor(parameters["warp_scalefactor"]);
-
-  // The warp must be filtered and mapped before rendering
-  filter_and_map(warp->GetOutput());
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::plot_glyphs()
-{
-  // Create the glyph symbol to use, a VTK arrow
-  vtkSmartPointer<vtkArrowSource> arrow = 
-    vtkSmartPointer<vtkArrowSource>::New();
-  arrow->SetTipRadius(0.08);
-  arrow->SetTipResolution(16);
-  arrow->SetTipLength(0.25);
-  arrow->SetShaftRadius(0.05);
-  arrow->SetShaftResolution(16);
-
-  // Create the glyph object, set source (the arrow) and input (the grid) and
-  // adjust various parameters
-  vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
-  glyphs->SetSourceConnection(arrow->GetOutputPort());
-  glyphs->SetInput(_grid);
-  glyphs->SetVectorModeToUseVector();
-  glyphs->SetScaleModeToScaleByVector();
-  glyphs->SetColorModeToColorByVector();
-  glyphs->SetScaleFactor(parameters["glyph_scalefactor"]);
-
-  // The glyphs need not be filtered and can be mapped directly
-  map(glyphs);
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::filter_and_map(vtkSmartPointer<vtkPointSet> point_set)
-{
-  _geometryFilter->SetInput(point_set);
-  _geometryFilter->Update();
-
-  map(_geometryFilter);
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::map(vtkSmartPointer<vtkPolyDataAlgorithm> polyData)
-{
-  // Get range of scalar values
-  double range[2];
-  _grid->GetScalarRange(range);
-
-  // Make lookup table
-  _lut->SetRange(range);
-  _lut->Build();
-
-  // Create VTK mapper and attach VTK poly data to it
-  _mapper->SetInputConnection(polyData->GetOutputPort());
-  // This call is what actually changes the surface color
-  _mapper->SetScalarRange(range);
-
-  // Create scalar bar if the parameter tells us to
- /* if (parameters["scalarbar"]) {
-    // FIXME: _scalarbar is a class member now. There must be cleaner way
-    // to do this
-    // FIXME: The title "Vector magnitude" should be added to the scalarbar
-    // when plotting glyphs
-    _renderer->AddActor(_scalarBar); // Check if added already! FIXME! Do this elsewhere 
-    // TODO: Add similar appearance changes to TitleTextProperty
-  }*/
-
-  // Create VTK actor and attach the mapper to it 
-  //vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-  //actor->SetMapper(mapper);
-  /*if (parameters["wireframe"]) {
-    actor->GetProperty()->SetRepresentationToWireframe();
-  }*/
-  // FIXME: Get color from parameters?
-  // This color property is only used for plotting of meshes. 
-  //actor->GetProperty()->SetColor(0,0,1);
-
-  //render(actor);
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::render(vtkSmartPointer<vtkActor> actor)
-{
-  // Set up renderer and add the actor to it
-  //vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-  //renderer->AddActor(actor);
-  // FIXME: Get background color from parameters?
-  //renderer->SetBackground(1,1,1);
-
-  // If present, add the scalar bar actor to the renderer
- /* if (_scalarbar) {
-    renderer->AddActor(_scalarbar);
-  }*/
-/*
-  // Set up renderwindow, add renderer, set size and make window title
-  vtkSmartPointer<vtkRenderWindow> window = 
-    vtkSmartPointer<vtkRenderWindow>::New();
-  window->AddRenderer(renderer);
-  window->SetSize(600,600);
-  std::stringstream full_title;
-  full_title << "DOLFIN: " << std::string(parameters["title"]);
-  window->SetWindowName(full_title.str().c_str());
-  */
-/*
-  if (parameters["interactive"]) {
-
-    // Add helptextactor text actor
-    vtkSmartPointer<vtkTextActor> helptextactor =
-      vtkSmartPointer<vtkTextActor>::New();
-    helptextactor->SetPosition(10,10);
-    helptextactor->SetInput("Help ");
-    helptextactor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-    helptextactor->GetTextProperty()->SetFontSize(24);
-    helptextactor->GetTextProperty()->SetFontFamilyToTimes();
-    renderer->AddActor2D(helptextactor);
-
-    // Set interactor style to trackball camera
-    vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = 
-      vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-
-    // Set up interactor and start rendering loop
-    vtkSmartPointer<vtkRenderWindowInteractor> interactor = 
-      vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    interactor->SetRenderWindow(window);
-    interactor->SetInteractorStyle(style);
-
-    // Set up the representation for the hover-over help text box
-    vtkSmartPointer<vtkBalloonRepresentation> balloonrep =
-      vtkSmartPointer<vtkBalloonRepresentation>::New();
-    balloonrep->SetOffset(5,5);
-    balloonrep->GetTextProperty()->SetFontSize(18);
-    balloonrep->GetTextProperty()->SetFontFamilyToTimes();
-
-    // Set up the actual widget that makes the help text pop up
-    vtkSmartPointer<vtkBalloonWidget> balloonwidget =
-      vtkSmartPointer<vtkBalloonWidget>::New();
-    balloonwidget->SetInteractor(interactor);
-    balloonwidget->SetRepresentation(balloonrep);
-    balloonwidget->AddBalloon(helptextactor,
-        get_helptext().c_str(),NULL);
-    window->Render();
-    balloonwidget->EnabledOn();
-
-    // Initialize and start the mouse interaction
-    interactor->Initialize();
-    interactor->Start();
-
-  } else {
-    window->Render();
-  }*/
 }
 //----------------------------------------------------------------------------
 std::string VTKPlotter::get_helptext()
