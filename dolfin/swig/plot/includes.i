@@ -21,4 +21,5 @@
 // Auto generated include statements for the module: plot
 
 %include "dolfin/plot/plot.h"
+%include "dolfin/plot/PlotableExpression.h"
 %include "dolfin/plot/VTKPlotter.h"

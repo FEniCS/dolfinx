@@ -43,8 +43,8 @@ using namespace dolfin;
 template <typename T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
-  info("Plotting %s (%s).",
-          t.name().c_str(), t.label().c_str());
+  //info("Plotting %s (%s).",
+  //        t.name().c_str(), t.label().c_str());
   
   // Modify title when running in parallel
   if (dolfin::MPI::num_processes() > 1)
@@ -78,10 +78,13 @@ void dolfin::plot(const Expression& v, const Mesh& mesh,
   // FIXME: We should use plot_object here, but it is not possible since the
   // mesh must be explicitly passed to VTKPlotter. What to do?
 #ifdef HAS_VTK
-  VTKPlotter plotter(v, mesh);
-  plotter.parameters["title"] = title;
+  // FIXME: Make plottable expression and do what's necessary
+  PlotableExpression e(v, mesh);
+  plot_object(e, title, mode);
+  //VTKPlotter plotter(v, mesh);
+  //plotter.parameters["title"] = title;
   //plotter.parameters["mode"] = mode;
-  plotter.plot();
+  //plotter.plot();
 #else
   dolfin_error("plot.cpp",
                "plot object",

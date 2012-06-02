@@ -67,6 +67,16 @@ VTKPlotter::VTKPlotter(const Function& function) :
   init_pipeline();
 }
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const PlotableExpression& plotable) :
+  _mesh(plotable.mesh()),
+  _function(plotable.expression()),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(plotable.id())
+{
+  parameters = default_parameters();
+  init_pipeline();
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
   _function(reference_to_no_delete_pointer(expression)),
@@ -159,7 +169,6 @@ void VTKPlotter::init_pipeline()
   // Set the look of scalar bar labels
   vtkSmartPointer<vtkTextProperty> labelprop = 
     _scalarBar->GetLabelTextProperty();
-  //labelprop->SetFontFamilyToTimes();
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(14);
 
@@ -177,7 +186,6 @@ void VTKPlotter::interactive()
   helptextActor->SetInput("Help ");
   helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
   helptextActor->GetTextProperty()->SetFontSize(24);
-  //helptextActor->GetTextProperty()->SetFontFamilyToTimes();
   _renderer->AddActor2D(helptextActor);
 
   // Set up the representation for the hover-over help text box
@@ -185,7 +193,6 @@ void VTKPlotter::interactive()
     vtkSmartPointer<vtkBalloonRepresentation>::New();
   balloonRep->SetOffset(5,5);
   balloonRep->GetTextProperty()->SetFontSize(18);
-  //balloonRep->GetTextProperty()->SetFontFamilyToTimes();
 
   // Set up the actual widget that makes the help text pop up
   vtkSmartPointer<vtkBalloonWidget> balloonwidget =

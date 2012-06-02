@@ -46,6 +46,8 @@
 #include <dolfin/function/Expression.h>
 #include <dolfin/common/Variable.h>
 
+#include "PlotableExpression.h"
+
 namespace dolfin
 {
 
@@ -65,6 +67,9 @@ namespace dolfin
 
     /// Create plotter for a function
     explicit VTKPlotter(const Function& function);
+
+    /// Create plotter for an expression
+    explicit VTKPlotter(const PlotableExpression& plotable);
 
     /// Create plotter for an expression
     explicit VTKPlotter(const Expression& expression, const Mesh& mesh);

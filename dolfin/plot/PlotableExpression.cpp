@@ -1,6 +1,4 @@
-// Auto generated SWIG file for Python interface of DOLFIN
-//
-// Copyright (C) 2012 Johan Hake
+// Copyright (C) 2012 Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -17,9 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// First added:  2012-06-02
+// Last changed: 2012-06-02
 
-// Auto generated import statements for the module: plot
+#include "PlotableExpression.h"
 
-%import(module="dolfin.cpp.io") "dolfin/plot/plot.h"
-%import(module="dolfin.cpp.io") "dolfin/plot/PlotableExpression.h"
-%import(module="dolfin.cpp.io") "dolfin/plot/VTKPlotter.h"
+using namespace dolfin;
+//----------------------------------------------------------------------------
+PlotableExpression::PlotableExpression(const Expression& expression, const Mesh& mesh) :
+  _mesh(reference_to_no_delete_pointer(mesh)),
+  _expression(reference_to_no_delete_pointer(expression))
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
