@@ -213,6 +213,16 @@ void VTKPlotter::interactive()
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  char *noplot;
+  noplot = getenv("DOLFIN_NOPLOT");
+  if (noplot != NULL) {
+    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) {
+      warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
+      return;
+    }
+  }
+
   // The plotting starts
   dolfin_assert(_mesh);
 
