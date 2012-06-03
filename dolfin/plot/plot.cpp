@@ -21,7 +21,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-05-28
+// Last changed: 2012-06-03
 
 #include <cstdlib>
 #include <sstream>
@@ -39,6 +39,10 @@
 
 using namespace dolfin;
 
+std::vector<VTKPlotter> plotter_cache;
+
+int last_used_idx = -1;
+
 // Template function for plotting objects
 template <typename T>
 void plot_object(const T& t, std::string title, std::string mode)
@@ -54,9 +58,12 @@ void plot_object(const T& t, std::string title, std::string mode)
   }
 
 #ifdef HAS_VTK
+  // Maybe implement copy constructor and assignment operator in VTKPlotter?
+  //VTKPlotter plotter = get_plotter(t);
+  // // Set parameters!!
+  //plotter.plot()
+  //
   VTKPlotter plotter(t);
-  plotter.parameters["title"] = title;
-  //plotter.parameters["mode"] = mode;
   plotter.plot();
 #else
   dolfin_error("plot.cpp",
@@ -64,6 +71,31 @@ void plot_object(const T& t, std::string title, std::string mode)
 	       "Plotting disbled. Dolfin has been compiled without VTK support");
 #endif
 }
+//-----------------------------------------------------------------------------
+// Template function for getting already instantiated VTKPlotter for the given
+// object. If none is found, a new one is created and added to the cache
+/*template <typename T>
+VTKPlotter get_plotter(const T& t)
+{
+  std::vector<VTKPlotter>::const_iterator it;
+
+  uint idx = 0;
+
+  for(it = plotter_cache.begin(); it != plotter_cache.end(); ++it) {
+    ++idx;
+    if ((*it).id() == t.id()) {
+      last_used_idx = idx;
+      return *it;
+    }
+  }
+
+  // No previous plotter found, so we create a new one
+  VTKPlotter plotter(t);
+  plotter_cache.push_back(plotter);
+  last_used_idx = plotter_cache.size() - 1;
+
+  return plotter;
+}*/
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v,
                   std::string title, std::string mode)
@@ -115,4 +147,14 @@ void dolfin::plot(const MeshFunction<bool>& f,
 {
   plot_object(f, title, "auto");
 }
+//-----------------------------------------------------------------------------
+/*void interactive()
+{
+  if (last_used_idx == -1) {
+    warning("No plots have been made so far. Ignoring call to interactive().");
+  } else {
+    // Call interactive on the last used plotter
+    plotter_cache[last_used_idx].interactive();
+  }
+}*/
 //-----------------------------------------------------------------------------
