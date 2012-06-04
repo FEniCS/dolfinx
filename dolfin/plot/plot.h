@@ -64,7 +64,7 @@ namespace dolfin
             std::string title="MeshFunction<bool>");
 
   /// Make the current plot interactive
-  // void interactive();
+  void interactive();
 
 }
 

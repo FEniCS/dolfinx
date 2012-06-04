@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg
+// Copyright (C) 2007-2009 Anders Logg, Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-06-03
+// Last changed: 2012-06-04
 
 #include <cstdlib>
 #include <sstream>
@@ -39,17 +39,10 @@
 
 using namespace dolfin;
 
-std::vector<VTKPlotter> plotter_cache;
-
-int last_used_idx = -1;
-
 // Template function for plotting objects
 template <typename T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
-  //info("Plotting %s (%s).",
-  //        t.name().c_str(), t.label().c_str());
-  
   // Modify title when running in parallel
   if (dolfin::MPI::num_processes() > 1)
   {
@@ -58,11 +51,11 @@ void plot_object(const T& t, std::string title, std::string mode)
   }
 
 #ifdef HAS_VTK
-  // Maybe implement copy constructor and assignment operator in VTKPlotter?
-  //VTKPlotter plotter = get_plotter(t);
-  // // Set parameters!!
-  //plotter.plot()
-  //
+  // FIXME: Set parameters on the plotter!
+  //boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  //plotter->parameters["title"] = title;
+  //plotter->plot();
+  
   VTKPlotter plotter(t);
   plotter.plot();
 #else
@@ -74,28 +67,30 @@ void plot_object(const T& t, std::string title, std::string mode)
 //-----------------------------------------------------------------------------
 // Template function for getting already instantiated VTKPlotter for the given
 // object. If none is found, a new one is created and added to the cache
-/*template <typename T>
-VTKPlotter get_plotter(const T& t)
+template <typename T>
+boost::shared_ptr<VTKPlotter> get_plotter(const T& t)
 {
-  std::vector<VTKPlotter>::const_iterator it;
+  std::vector<boost::shared_ptr<VTKPlotter> >::const_iterator it;
 
   uint idx = 0;
 
-  for(it = plotter_cache.begin(); it != plotter_cache.end(); ++it) {
+  for(it = VTKPlotter::plotter_cache.begin(); 
+      it != VTKPlotter::plotter_cache.end(); ++it) {
     ++idx;
-    if ((*it).id() == t.id()) {
-      last_used_idx = idx;
+    if ((*it)->id() == t.id()) {
+      VTKPlotter::last_used_idx = idx;
       return *it;
     }
   }
 
   // No previous plotter found, so we create a new one
   VTKPlotter plotter(t);
-  plotter_cache.push_back(plotter);
-  last_used_idx = plotter_cache.size() - 1;
+  VTKPlotter::plotter_cache.push_back(
+      reference_to_no_delete_pointer(plotter));
+  VTKPlotter::last_used_idx = VTKPlotter::plotter_cache.size() - 1;
 
-  return plotter;
-}*/
+  return VTKPlotter::plotter_cache.back();
+}
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v,
                   std::string title, std::string mode)
@@ -148,13 +143,15 @@ void dolfin::plot(const MeshFunction<bool>& f,
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
-/*void interactive()
+void dolfin::interactive()
 {
-  if (last_used_idx == -1) {
+  // FIXME: The cache logic doesn't work yet
+  return;
+  if (VTKPlotter::plotter_cache.size() == 0) {
     warning("No plots have been made so far. Ignoring call to interactive().");
   } else {
     // Call interactive on the last used plotter
-    plotter_cache[last_used_idx].interactive();
+    VTKPlotter::plotter_cache[VTKPlotter::last_used_idx]->interactive();
   }
-}*/
+}
 //-----------------------------------------------------------------------------

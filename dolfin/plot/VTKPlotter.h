@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-02
+// Last changed: 2012-06-04
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -83,10 +83,11 @@ namespace dolfin
     /// Create plotter for a boolean valued mesh function
     explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
 
+    /// Destructor
+    ~VTKPlotter();
+    
     /// Plot the object
     void plot();
-
-    ~VTKPlotter();
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -115,11 +116,17 @@ namespace dolfin
       return p;
     }
 
-    // Set up help text and start interaction loop 
+    /// Set up help text and start interaction loop 
     void interactive();
 
-    // Return unique ID of the object to plot
+    /// Return unique ID of the object to plot
     uint id() const { return _id; }
+    
+    // The cache of plotter objects
+    static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
+
+    // Index to the last used plotter object
+    static int last_used_idx;
 
   private:
 

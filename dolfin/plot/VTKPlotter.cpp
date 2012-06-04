@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-02
+// Last changed: 2012-06-04
 
 #ifdef HAS_VTK
 
@@ -47,6 +47,12 @@
 #include "VTKPlotter.h"
 
 using namespace dolfin;
+
+// Define the static members
+std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
+
+int VTKPlotter::last_used_idx;
+
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
