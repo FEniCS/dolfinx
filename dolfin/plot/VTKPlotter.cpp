@@ -54,6 +54,11 @@ std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 int VTKPlotter::last_used_idx;
 
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const VTKPlotter& plotter)
+{
+  // TODO: Fill in
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _mesh(reference_to_no_delete_pointer(mesh)),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
@@ -123,6 +128,13 @@ VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
 VTKPlotter::~VTKPlotter()
 {
   // Do nothing
+}
+//----------------------------------------------------------------------------
+const VTKPlotter& VTKPlotter::operator=(const VTKPlotter& plotter)
+{
+  // TODO: Fill in
+  
+  return *this;
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()

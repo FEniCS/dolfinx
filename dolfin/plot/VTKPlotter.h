@@ -62,6 +62,9 @@ namespace dolfin
   {
   public:
 
+    /// Copy constructor
+    VTKPlotter(const VTKPlotter& plotter);
+
     /// Create plotter for a mesh
     explicit VTKPlotter(const Mesh& mesh);
 
@@ -86,6 +89,9 @@ namespace dolfin
     /// Destructor
     ~VTKPlotter();
     
+    /// Assignment operator
+    const VTKPlotter& operator=(const VTKPlotter& plotter);
+
     /// Plot the object
     void plot();
 
