@@ -164,13 +164,13 @@ bool PETScVector::distributed() const
     _distributed = true;
   else if (strcmp(petsc_type, VECSEQ) == 0)
     _distributed =  false;
-#ifdef HAS_PETSC_CUSP
+  #ifdef HAS_PETSC_CUSP
   // TODO: Uncomment these two lines after implementing MPI Cusp vectors
   //else if (strcmp(petsc_type, VECMPICUSP) == 0)
   //  _distributed = true;
   else if (strcmp(petsc_type, VECSEQCUSP) == 0)
     _distributed = false;
-#endif
+  #endif
   else
   {
     dolfin_error("PETScVector.cpp",
@@ -225,9 +225,6 @@ void PETScVector::resize(std::pair<uint, uint> range)
 void PETScVector::resize(std::pair<uint, uint> range,
     const std::vector<uint>& ghost_indices)
 {
-  // Get local size
-  dolfin_assert(range.second - range.first >= 0);
-
   // FIXME: Can this check be made robust? Need to avoid parallel lock-up.
   //        Cannot just check size because range may change.
   // Check if resizing is required
@@ -685,13 +682,13 @@ std::string PETScVector::str(bool verbose) const
       VecView(*x, PETSC_VIEWER_STDOUT_SELF);
     else if (strcmp(petsc_type, VECMPI) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
-#ifdef HAS_PETSC_CUSP
+    #ifdef HAS_PETSC_CUSP
     else if (strcmp(petsc_type, VECSEQCUSP) == 0)
       VecView(*x, PETSC_VIEWER_STDOUT_SELF);
     // TODO: Uncomment these two lines after implementing MPI Cusp vectors
     //else if (strcmp(petsc_type, VECMPICUSP) == 0)
     //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
-#endif
+    #endif
   }
   else
     s << "<PETScVector of size " << size() << ">";
@@ -710,19 +707,21 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
 
-#ifndef HAS_PETSC_CUSP
+  #ifndef HAS_PETSC_CUSP
   // If PETSc is configured without Cusp, check only for one sequential type
   if (strcmp(petsc_type, VECSEQ) != 0)
     dolfin_error("PETScVector.cpp",
                  "gather values for PETSc vector",
                  "Values can only be gathered into local vectors");
-#else
+  #else
   // If PETSc is configured with Cusp, check for both sequential types
   if (strcmp(petsc_type, VECSEQ) != 0 && strcmp(petsc_type, VECSEQCUSP) != 0)
+  {
     dolfin_error("PETScVector.cpp",
                  "gather values for PETSc vector",
                  "Values can only be gathered into local vectors");
-#endif
+  }
+  #endif
 
   // Prepare data for index sets (global indices)
   const int* global_indices = reinterpret_cast<const int*>(indices.data());
@@ -737,11 +736,11 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
 
   // Create local index sets
   IS from, to;
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, PETSC_COPY_VALUES, &from);
-#else
+  #else
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-#endif
+  #endif
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
@@ -754,15 +753,15 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   VecScatterEnd(scatter, *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
 
   // Clean up
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
-#else
+  #else
   ISDestroy(&from);
   ISDestroy(&to);
   VecScatterDestroy(&scatter);
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
@@ -816,7 +815,7 @@ void PETScVector::_init(std::pair<uint, uint> range,
   x.reset(new Vec(0), PETScVectorDeleter());
 
   const uint local_size = range.second - range.first;
-  dolfin_assert(range.second - range.first >= 0);
+  dolfin_assert(int (range.second - range.first) >= 0);
 
   // Initialize vector, either default or MPI vector
   if (!distributed)
@@ -825,20 +824,21 @@ void PETScVector::_init(std::pair<uint, uint> range,
     // Set type to be either standard or Cusp sequential vector
     if (!_use_gpu)
       VecSetType(*x, VECSEQ);
-#ifdef HAS_PETSC_CUSP
+    #ifdef HAS_PETSC_CUSP
     else
       VecSetType(*x, VECSEQCUSP);
-#endif
+    #endif
 
     VecSetSizes(*x, local_size, PETSC_DECIDE);
     VecSetFromOptions(*x);
-
   }
   else
   {
     if (_use_gpu)
+    {
       not_working_in_parallel("Due to limitations in PETSc, "
           "distributed PETSc Cusp vectors");
+    }
 
     // Clear ghost indices map
     ghost_global_to_local.clear();

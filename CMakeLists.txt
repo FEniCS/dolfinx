@@ -153,6 +153,11 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
+# Disable some warnings for Intel compilers
+if(${CMAKE_CXX_COMPILER} MATCHES "icpc")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
+endif()
+
 #------------------------------------------------------------------------------
 # Enable Fortran if available. Used for some configuration tests (e.g. BLAS)
 
