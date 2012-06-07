@@ -16,8 +16,8 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 //
-// First added:  2009-03-03
-// Last changed: 2011-09-27
+// First added:  2012-06-01
+// Last changed: 2012-06-07
 
 #include <iostream>
 #include <fstream>
@@ -36,10 +36,13 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-
+#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Vertex.h>
 #include <hdf5.h>
 
 #include "HDF5File.h"
@@ -64,23 +67,87 @@ HDF5File::~HDF5File()
 
 //-----------------------------------------------------------------------------
 
-void HDF5File::operator<< (const Function& u){
-  //  
+void HDF5File::operator<<(const Function& u){
+  //use xdmf format instead
+  //could migrate some code from XDMFFile.cpp to here
+
+  //create HDF5 file
+  //add coordinates and topology (from mesh)
+  //add vector
+  //add dofmap
+  
 }
 
 void HDF5File::operator<<(const Mesh& mesh){
+  const uint cell_dim = mesh.topology().dim();
+  const uint num_local_cells = mesh.num_cells();
+  const uint num_local_vertices = mesh.num_vertices();
+
+  create(); //new HDF5 file
+
+  std::vector<std::pair<uint,uint> > in_values;
+  std::vector<std::pair<uint,uint> > out_values;
+  std::vector<uint> destinations;
+  std::vector<uint> sources;
+  //report this process's num_cells,num_vertices to all other processes
+  for (uint i=0;i<MPI::num_processes();i++){
+    destinations.push_back(i);
+    in_values.push_back(std::pair<uint,uint>(num_local_cells,num_local_vertices));
+  }
+  MPI::distribute(in_values,destinations,out_values,sources);
+  std::vector<uint>::iterator src=sources.begin();
+  std::vector<std::pair<uint,uint> >num_cv(MPI::num_processes());
+  //replies will not be in order,so need to make a list 
+  for(std::vector<std::pair<uint,uint> >::iterator src_cvi=out_values.begin();
+      src_cvi!=out_values.end();++src_cvi) {  
+    num_cv[*src] = *src_cvi;
+    ++src;
+  }
+
+  std::pair<uint,uint>offset(0,0); //calculate this process's offset
+  for(uint i=0;i<MPI::process_number();i++){
+    offset.first+=num_cv[i].first;    
+    offset.second+=num_cv[i].second;
+  }
+
+  std::pair<uint,uint>cell_range(offset.first,offset.first+num_local_cells);
+  std::pair<uint,uint>vertex_range(offset.second,offset.second+num_local_vertices);
+
+  // some duplication of vertices will occur in parallel
+  std::vector<double>data;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      Point p=v->point();
+      data.push_back(p.x());
+      data.push_back(p.y());
+      data.push_back(p.z());
+    }
+  //save to HDF file
+  write(data[0],vertex_range,"dolfin_coords",3);
+
+  // save vertex connectivity 
+  std::vector<uint>vdata;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const uint i = cell->index();
+
+      for (VertexIterator v(*cell); !v.end(); ++v){
+	fprintf(stderr,"[%d] Local cell:%d node: %d\n",MPI::process_number(),i,v->index());
+	vdata.push_back(v->index()+vertex_range.first);
+      }
+    }  
+  write(vdata[0],cell_range,"dolfin_topo",cell_dim+1);
 
 }
 
-
 // write a generic block of 2D data into a HDF5 dataset
-// typically in parallel. Pre-existing file.
+// in parallel. Pre-existing file.
 template <typename T>
 void HDF5File::write(T& data, 
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
-		     int h5type,
-		     uint width){
+		     const int h5type,
+		     const uint width){
 
 
   hid_t       file_id, dset_id;         /* file and dataset identifiers */
@@ -101,16 +168,15 @@ void HDF5File::write(T& data,
   dimsf[0]=MPI::sum(count[0]);
   dimsf[1]=width;
 
-  //  fprintf(stderr,"%d %d %d\n",(int)dimsf[0],(int)count[0],(int)offset[0]);
-
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id,*comm, *info); 
 
   // try to open existing HDF5 file
   file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+
   H5Pclose(plist_id);
 
-
+  // define a 2D dataset
   filespace = H5Screate_simple(2, dimsf, NULL); 
 
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
@@ -137,10 +203,9 @@ void HDF5File::write(T& data,
   H5Pclose(plist_id);
   H5Fclose(file_id);
 
-
 }
 
-// Write data to HDF file as defined by range blocks on each process
+// Write data to existing HDF file as defined by range blocks on each process
 // range: the local range on this processor
 // width: is the width of the dataitem (e.g. 3 for x,y,z data)
 
@@ -148,7 +213,6 @@ void HDF5File::write(const double& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
-
   write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
 }
 
@@ -156,19 +220,29 @@ void HDF5File::write(const uint& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
-
   write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 
-// Create HDF File and add a dataset of vector
-void HDF5File::operator<< (const GenericVector& output)
-{
+void HDF5File::create(){  //maybe this should be in the constructor
+  // make empty HDF5 file
+  // overwriting any existing file
 
   hid_t       file_id;         /* file and dataset identifiers */
   hid_t	      plist_id;           /* property list identifier */
 
   MPICommunicator comm;
   MPIInfo info;
+
+  plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist_id,*comm, *info); 
+  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  H5Pclose(plist_id);
+  H5Fclose(file_id);
+}
+
+// Create HDF File and add a dataset of dolfin_vector
+void HDF5File::operator<< (const GenericVector& output)
+{
   uint dim=0;
 
   std::pair<uint,uint> range;
@@ -177,13 +251,7 @@ void HDF5File::operator<< (const GenericVector& output)
   range=output.local_range(dim);
   output.get_local(data);
 
-
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id,*comm, *info); 
-  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-  H5Pclose(plist_id);
-  H5Fclose(file_id);
-
+  create(); //overwrite any existing file
   write(data[0],range,"dolfin_vector",1);
 
 }

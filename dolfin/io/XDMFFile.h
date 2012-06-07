@@ -58,12 +58,9 @@ namespace dolfin
     // Save Mesh
     void operator<<(const Mesh& mesh);
     void operator<<(const Function& u);
+    void savefunc_orig(const Function& u);
 
   private:
-
-    static void build_global_to_cell_dof(
-     std::vector<std::vector<std::pair<uint, uint> > >& global_dof_to_cell_dof, 
-     const FunctionSpace& V);
 
     boost::shared_ptr<std::ostream> outstream;
 

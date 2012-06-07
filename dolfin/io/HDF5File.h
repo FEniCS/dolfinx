@@ -60,6 +60,9 @@ namespace dolfin
     // Mesh
     void operator<< (const Mesh& mesh);
 
+    //create an empty file (truncate existing)
+    void create();
+
     //write functions for int,double, etc.
     void write(const double& data,
 	       const std::pair<uint,uint>& range,
@@ -71,16 +74,17 @@ namespace dolfin
 	       const std::string& dataset_name,
 	       const uint width);
 
+  private:
+
     template <typename T>
     void write(T& data, 
 	       const std::pair<uint,uint>& range,
 	       const std::string& dataset_name,
-	       int h5type,
-	       uint width);
+	       const int h5type,
+	       const uint width);
 
-  private:
 
-    boost::shared_ptr<std::ostream> outstream;
+    // boost::shared_ptr<std::ostream> outstream;
 
   };
 
