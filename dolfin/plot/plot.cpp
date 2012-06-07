@@ -52,12 +52,12 @@ void plot_object(const T& t, std::string title, std::string mode)
 
 #ifdef HAS_VTK
   // FIXME: Set parameters on the plotter!
-  //boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
   //plotter->parameters["title"] = title;
-  //plotter->plot();
+  plotter->plot();
   
-  VTKPlotter plotter(t);
-  plotter.plot();
+  //VTKPlotter plotter(t);
+  //plotter.plot();
 #else
   dolfin_error("plot.cpp",
                "plot object",
@@ -102,21 +102,8 @@ void dolfin::plot(const Function& v,
 void dolfin::plot(const Expression& v, const Mesh& mesh,
                   std::string title, std::string mode)
 {
-  // FIXME: We should use plot_object here, but it is not possible since the
-  // mesh must be explicitly passed to VTKPlotter. What to do?
-#ifdef HAS_VTK
-  // FIXME: Make plottable expression and do what's necessary
   PlotableExpression e(v, mesh);
   plot_object(e, title, mode);
-  //VTKPlotter plotter(v, mesh);
-  //plotter.parameters["title"] = title;
-  //plotter.parameters["mode"] = mode;
-  //plotter.plot();
-#else
-  dolfin_error("plot.cpp",
-               "plot object",
-	       "Plotting disbled. Dolfin has been compiled without VTK support");
-#endif
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh,
