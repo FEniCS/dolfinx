@@ -61,96 +61,54 @@ XDMFFile::~XDMFFile()
 
 void XDMFFile::operator<<(const Function& u)
 {
-
-  //breaks with vector fields
+  // Save Function to XDMF/HDF file for visualisation
+  // Can be read by paraview
 
   u.update();
-  const FunctionSpace& V = *u.function_space(); 
+  const Mesh& mesh = *u.function_space()->mesh();
+  const uint vrank = u.value_rank();
+  const uint vsize = u.value_size();
 
-  const Mesh& mesh = *V.mesh();
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericVector& vec = *u.vector();
+  assert(vrank<2); //abort tensors
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
-  const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_global_vertices = dofmap.global_dimension();
-  const std::pair<uint,uint> local_range = vec.local_range();
-  const boost::unordered_map<uint, uint> off_process_owner=dofmap.off_process_owner();
+  const uint num_local_vertices = mesh.num_vertices();
+  const uint num_total_vertices = MPI::sum(num_local_vertices);
+  const uint num_total_cells = MPI::sum(num_local_cells);
+
+  std::vector<double>vtx_values;
+  u.compute_vertex_values(vtx_values,mesh);
+  //need to interleave the values (e.g. if not scalar field)
+  //could possibly improve this using boost::numeric::ublas
+  if(vsize>1){
+    std::vector<double>tmp_values;
+    for(uint i=0;i<num_local_vertices;i++)
+      for(uint j=0;j<vsize;j++)
+	tmp_values.push_back(vtx_values[i+j*num_local_vertices]);
+    std::copy(tmp_values.begin(),tmp_values.end(),vtx_values.begin());
+  }
+
+  // get offset and size of local cell topology usage in global terms
+  uint off=MPI::global_offset(num_local_cells,true);
+  std::pair<uint,uint>topo_range(off,off+num_local_cells);
+
+  // get offset and size of local vertex usage in global terms
+  off=MPI::global_offset(num_local_vertices,true);
+  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
   std::vector<uint> topo_data;
-  std::map<uint,uint> local_map;
-
-  // make a map of global dof index to local vertices, ignoring any off process
-  // also save some topological data for each cell.
-  // there is probably a better way of doing this...
-
-  // This approach works for simple scalar fields, but cannot
-  // cope with vectors, which have more DOFs than nodes
-  // and may be split across processes.
-
-  // should assert scalar field here
-
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const uint i = cell->index();
+      for (VertexIterator v(*cell); !v.end(); ++v)
+	topo_data.push_back(v->index()+vertex_range.first);
 
-      std::vector<uint> gdof = dofmap.cell_dofs(i);
-      std::vector<uint>::iterator igdof=gdof.begin();
-      for (VertexIterator v(*cell); !v.end(); ++v){
-	topo_data.push_back(*igdof);
-       	if (*igdof >= local_range.first && *igdof < local_range.second)
-	  local_map.insert(std::pair<uint,uint>(*igdof,v->index()));
-	++igdof;
-      }
-    }
-
-  const double *m_coords = mesh.coordinates();
-
-  // get a list of local points, in global DOF order, padding 2D to 3D
-  std::vector<double>cvec;
-  for(uint i=local_range.first;i<local_range.second;i++)
-    {
-      uint j=local_map[i];
-      if(cell_dim==2){
-	cvec.push_back(m_coords[j*2]);
-	cvec.push_back(m_coords[j*2+1]);
-	cvec.push_back(0.0);   
-      } else if(cell_dim==3){
-	cvec.push_back(m_coords[j*3]);
-	cvec.push_back(m_coords[j*3+1]);
-	cvec.push_back(m_coords[j*3+2]);
-      }
-    }
-
-  // Want to write topo data to H5 file also, but need to 
-  // know the 'local range' for cells, as opposed to vertices...
-  // send round the cell usage info by MPI::distribute
-  // feel there is probably another easier way to get this
-
-  std::vector<uint> in_values;
-  std::vector<uint> out_values;
-  std::vector<uint> destinations;
-  std::vector<uint> sources;
-  //report this process's num_local_cells to all other processes
-  for (uint i=0;i<MPI::num_processes();i++){
-    destinations.push_back(i);
-    in_values.push_back(num_local_cells);
+  std::vector<double>vtx_coords;
+  for (VertexIterator v(mesh); !v.end(); ++v){
+    Point p=v->point();
+    vtx_coords.push_back(p.x());
+    vtx_coords.push_back(p.y());
+    vtx_coords.push_back(p.z());
   }
-  MPI::distribute(in_values,destinations,out_values,sources);
-  std::vector<uint>::iterator src=sources.begin();
-  std::vector<uint>cell_num(MPI::num_processes());
-  //replies will not be in order,so need to make a list 
-  for(std::vector<uint>::iterator src_ncells=out_values.begin();
-      src_ncells!=out_values.end();++src_ncells) {  
-    cell_num[*src] = *src_ncells;
-    ++src;
-  }
-
-  uint offset=0; //calculate this process's offset
-  for(uint i=0;i<MPI::process_number();i++)
-    offset+=cell_num[i];
-  std::pair<uint,uint> topo_range(offset,offset+cell_num[MPI::process_number()]);
 
   // Generate .h5 from .xdmf filename
   std::string basename;
@@ -161,10 +119,12 @@ void XDMFFile::operator<<(const Function& u)
 
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
-  h5file << vec; //save actual data to .h5 file
-  h5file.write(cvec[0],local_range,"dolfin_coords",3); //xyz coords
+  h5file.create();
+  h5file.write(vtx_values[0],vertex_range,"dolfin_vector",vsize); //values
+  h5file.write(vtx_coords[0],vertex_range,"dolfin_coords",3); //xyz coords
   h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1); //connectivity
 
+  //Now go ahead and write the XML meta description
   if(MPI::process_number()==0){
 
     pugi::xml_document xml_doc;
@@ -185,12 +145,12 @@ void XDMFFile::operator<<(const Function& u)
     else if(cell_dim==3)
       xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
 
-    xdmf_topo.append_attribute("NumberOfElements")=num_global_cells;
+    xdmf_topo.append_attribute("NumberOfElements")=num_total_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
 
     xdmf_topo_data.append_attribute("Format")="HDF"; 
     std::stringstream s;
-    s << num_global_cells << " " << (cell_dim+1);
+    s << num_total_cells << " " << (cell_dim+1);
     xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
     
     s.str("");
@@ -203,7 +163,7 @@ void XDMFFile::operator<<(const Function& u)
 
     xdmf_geom_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices << " 3";
+    s << num_total_vertices << " 3";
     xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
 
     s.str("");
@@ -212,12 +172,15 @@ void XDMFFile::operator<<(const Function& u)
     
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data
     xdmf_vals.append_attribute("Name")="Vertex Data";
-    xdmf_vals.append_attribute("AttributeType")="Scalar";
+    if(vsize==1)
+      xdmf_vals.append_attribute("AttributeType")="Scalar";
+    else
+      xdmf_vals.append_attribute("AttributeType")="Vector";
     xdmf_vals.append_attribute("Center")="Node";
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices;
+    s << num_total_vertices << " " << vsize;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
     s<< filename_data << ":/dolfin_vector";

@@ -60,10 +60,7 @@ namespace dolfin
     // Mesh
     void operator<< (const Mesh& mesh);
 
-    //create an empty file (truncate existing)
-    void create();
-
-    //write functions for int,double, etc.
+    //write functions for int,double, etc. used by XDMFFile
     void write(const double& data,
 	       const std::pair<uint,uint>& range,
 	       const std::string& dataset_name,
@@ -74,6 +71,10 @@ namespace dolfin
 	       const std::string& dataset_name,
 	       const uint width);
 
+    //create an empty file (truncate existing)
+    void create();
+
+
   private:
 
     template <typename T>
@@ -82,9 +83,6 @@ namespace dolfin
 	       const std::string& dataset_name,
 	       const int h5type,
 	       const uint width);
-
-
-    // boost::shared_ptr<std::ostream> outstream;
 
   };
 
