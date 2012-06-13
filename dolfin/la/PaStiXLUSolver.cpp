@@ -89,27 +89,34 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Set default parameters
   pastix_initParam(iparm, dparm);
 
-  // PaStiX object
-  pastix_data_t* pastix_data = NULL;
-
-  // Matrix data in compressed sparse column format
+  // Matrix data in compressed sparse column format (C indexing)
   std::vector<double> vals;
   std::vector<uint> rows, col_ptr, local_to_global_cols;
   A->csc(vals, rows, col_ptr, local_to_global_cols, false);
 
-  int* _col_ptr = reinterpret_cast<int*>(&col_ptr[0]);
-  int* _rows = reinterpret_cast<int*>(&rows[0]);
-  int* _local_to_global_cols = reinterpret_cast<int*>(&local_to_global_cols[0]);
-  double* _vals = &vals[0];
+  dolfin_assert(local_to_global_cols.size() > 0);
+
+  int* _col_ptr = reinterpret_cast<int*>(col_ptr.data());
+  int* _rows = reinterpret_cast<int*>(rows.data());
+  int* _local_to_global_cols = reinterpret_cast<int*>(local_to_global_cols.data());
+  double* _vals = vals.data();
 
   const uint n = col_ptr.size() - 1;
 
   // Check matrix
-  if (parameters["check_matrix"])
-  {
-    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_YES, API_YES,
-		                     n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
-  }
+  //if (parameters["check_matrix"])
+  //{
+  //  d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_YES, API_YES,
+	//	                     n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
+  //}
+
+  d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_NO, API_YES,
+		                   n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
+
+  cout << "Finished check" << endl;
+
+  // PaStiX object
+  pastix_data_t* pastix_data = NULL;
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
@@ -128,16 +135,16 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
 
   // LU or Cholesky
-  if (parameters["symmetric_operator"])
-  {
-    iparm[IPARM_SYM] = API_SYM_YES;
-    iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
-  }
-  else
-  {
+  //if (parameters["symmetric_operator"])
+  //{
+  //  iparm[IPARM_SYM] = API_SYM_YES;
+  //  iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
+  //}
+  //else
+  //{
     iparm[IPARM_SYM] = API_SYM_NO;
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
-  }
+  //}
 
   // Graph (matrix) distributed
   if (MPI::num_processes() > 1)
@@ -157,7 +164,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            &perm[0], &invp[0],
+            perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
 
   // Factorise
@@ -165,8 +172,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
-            &perm[0], &invp[0],
+            perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
+
 
   // Get local (to process) dofs
   const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
@@ -179,14 +187,14 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     _loc2glob[i]--;
 
   // Get RHS data for this process
-  std::vector<double> _b(ncol2);
+  std::vector<double> _b;
   b.gather(_b, solver_local_to_global);
-  double* b_ptr = &_b[0];
+  double* b_ptr = _b.data();
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
-  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
             _local_to_global_cols,
             perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
@@ -201,9 +209,10 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Clean up
   iparm[IPARM_START_TASK] = API_TASK_CLEAN;
   iparm[IPARM_END_TASK] = API_TASK_CLEAN;
-  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL, NULL,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+            _local_to_global_cols,
             perm.data(), invp.data(),
-            NULL, nrhs, iparm, dparm);
+            b_ptr, nrhs, iparm, dparm);
 
   return 1;
 }
