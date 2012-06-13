@@ -1,4 +1,6 @@
 1.1.0 [not yet released]
+ - Expression string parsing now understand C++ namespace such as std::cosh
+ - Fix bug in Expression so one can pass min, max
  - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble
  - Fix bug where the reference count of Py_None was not increased
  - Fix bug in reading TimeSeries of size smaller than 3
