@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-04
+// Last changed: 2012-06-13
 
 #ifdef HAS_VTK
 
@@ -65,6 +65,7 @@ VTKPlotter::VTKPlotter(const Mesh& mesh) :
   _id(mesh.id())
 {
   parameters = default_mesh_parameters();
+  set_title(mesh.name(), mesh.label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
@@ -75,6 +76,7 @@ VTKPlotter::VTKPlotter(const Function& function) :
   _id(function.id())
 {
   parameters = default_parameters();
+  set_title(function.name(), function.label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
@@ -85,6 +87,7 @@ VTKPlotter::VTKPlotter(const PlotableExpression& plotable) :
   _id(plotable.id())
 {
   parameters = default_parameters();
+  set_title(plotable.expression()->name(), plotable.expression()->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
@@ -95,6 +98,7 @@ VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   _id(expression.id())
 {
   parameters = default_parameters();
+  set_title(expression.name(), expression.label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
@@ -104,7 +108,7 @@ VTKPlotter::VTKPlotter(const MeshFunction<uint>& mesh_function) :
   _id(mesh_function.id())
 {
   parameters = default_parameters();
-  // TODO: Set function and call init
+  // TODO: Set function, title and call init
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<double>& mesh_function) :
@@ -113,7 +117,7 @@ VTKPlotter::VTKPlotter(const MeshFunction<double>& mesh_function) :
   _id(mesh_function.id())
 {
   parameters = default_parameters();
-  // TODO: Set function and call init
+  // TODO: Set function, title and call init
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
@@ -122,7 +126,7 @@ VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
   _id(mesh_function.id())
 {
   parameters = default_parameters();
-  // TODO: Set function and call init
+  // TODO: Set function, title and call init
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
@@ -135,6 +139,94 @@ const VTKPlotter& VTKPlotter::operator=(const VTKPlotter& plotter)
   // TODO: Fill in
   
   return *this;
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::interactive()
+{
+  // TODO: Set up help text, balloon etc and start interactive loop
+  // Add helptextactor text actor
+  vtkSmartPointer<vtkTextActor> helptextActor =
+    vtkSmartPointer<vtkTextActor>::New();
+  helptextActor->SetPosition(10,10);
+  helptextActor->SetInput("Help ");
+  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+  helptextActor->GetTextProperty()->SetFontSize(24);
+  _renderer->AddActor2D(helptextActor);
+
+  // Set up the representation for the hover-over help text box
+  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
+    vtkSmartPointer<vtkBalloonRepresentation>::New();
+  balloonRep->SetOffset(5,5);
+  balloonRep->GetTextProperty()->SetFontSize(18);
+
+  // Set up the actual widget that makes the help text pop up
+  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
+    vtkSmartPointer<vtkBalloonWidget>::New();
+  balloonwidget->SetInteractor(_interactor);
+  balloonwidget->SetRepresentation(balloonRep);
+  balloonwidget->AddBalloon(helptextActor,
+      get_helptext().c_str(),NULL);
+  _renderWindow->Render();
+  balloonwidget->EnabledOn();
+
+  // Initialize and start the mouse interaction
+  _interactor->Initialize();
+  _interactor->Start();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::plot()
+{
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  char *noplot;
+  noplot = getenv("DOLFIN_NOPLOT");
+  if (noplot != NULL) {
+    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) {
+      warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
+      return;
+    }
+  }
+
+  // The plotting starts
+  dolfin_assert(_mesh);
+
+  // Construct grid each time since the mesh may have been changed. 
+  // TODO: Introduce boolean flag that says if mesh has changed or not? 
+  // Probably overkill ... performs good enough already
+  construct_vtk_grid();
+
+  // Process some parameters
+  if (parameters["wireframe"]) {
+    _actor->GetProperty()->SetRepresentationToWireframe();
+  }
+  if (parameters["scalarbar"]) {
+    _renderer->AddActor(_scalarBar);
+  }
+
+  _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
+
+  // Proceed depending on what type of plot this is
+  if (_function) {
+    switch (_function->value_rank()) {
+      case 0:
+        process_scalar_function();
+        break;
+      case 1:
+        process_vector_function();
+        break;
+      default:
+        dolfin_error("VTKPlotter.cpp",
+            "plot function of rank > 2.",
+            "Plotting of higher order functions is not supported.");
+    }
+  }
+  /*else if (_mesh_function) {
+  // Or are we plotting a mesh function?
+
+  }*/
+  else {
+    // We are only plotting a mesh
+    process_mesh();
+  }
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
@@ -193,95 +285,12 @@ void VTKPlotter::init_pipeline()
   // That's it initially! Now we wait until the user wants to plot something
 
 }
-
-void VTKPlotter::interactive()
-{
-  // TODO: Set up help text, balloon etc and start interactive loop
-  // Add helptextactor text actor
-  vtkSmartPointer<vtkTextActor> helptextActor =
-    vtkSmartPointer<vtkTextActor>::New();
-  helptextActor->SetPosition(10,10);
-  helptextActor->SetInput("Help ");
-  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-  helptextActor->GetTextProperty()->SetFontSize(24);
-  _renderer->AddActor2D(helptextActor);
-
-  // Set up the representation for the hover-over help text box
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
-    vtkSmartPointer<vtkBalloonRepresentation>::New();
-  balloonRep->SetOffset(5,5);
-  balloonRep->GetTextProperty()->SetFontSize(18);
-
-  // Set up the actual widget that makes the help text pop up
-  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
-    vtkSmartPointer<vtkBalloonWidget>::New();
-  balloonwidget->SetInteractor(_interactor);
-  balloonwidget->SetRepresentation(balloonRep);
-  balloonwidget->AddBalloon(helptextActor,
-      get_helptext().c_str(),NULL);
-  _renderWindow->Render();
-  balloonwidget->EnabledOn();
-
-  // Initialize and start the mouse interaction
-  _interactor->Initialize();
-  _interactor->Start();
-}
-
-
 //----------------------------------------------------------------------------
-void VTKPlotter::plot()
+void VTKPlotter::set_title(const std::string& name, const std::string& label)
 {
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value
-  char *noplot;
-  noplot = getenv("DOLFIN_NOPLOT");
-  if (noplot != NULL) {
-    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) {
-      warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
-      return;
-    }
-  }
-
-  // The plotting starts
-  dolfin_assert(_mesh);
-
-  // Construct grid each time since the mesh may have been changed. 
-  // TODO: Introduce boolean flag that says if mesh has changed or not? 
-  // Probably overkill ... performs good enough already
-  construct_vtk_grid();
-
-  // Process some parameters
-  if (parameters["wireframe"]) {
-    _actor->GetProperty()->SetRepresentationToWireframe();
-  }
-  if (parameters["scalarbar"]) {
-    _renderer->AddActor(_scalarBar);
-  }
-
-  _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
-
-  // Proceed depending on what type of plot this is
-  if (_function) {
-    switch (_function->value_rank()) {
-      case 0:
-        process_scalar_function();
-        break;
-      case 1:
-        process_vector_function();
-        break;
-      default:
-        dolfin_error("VTKPlotter.cpp",
-            "plot function of rank > 2.",
-            "Plotting of higher order functions is not supported.");
-    }
-  }
-  /*else if (_mesh_function) {
-  // Or are we plotting a mesh function?
-
-  }*/
-  else {
-    // We are only plotting a mesh
-    process_mesh();
-  }
+  std::stringstream title;
+  title <<"Plot of \"" << name << "\" (a " << label << ")";
+  parameters["title"] =  title.str();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::construct_vtk_grid()

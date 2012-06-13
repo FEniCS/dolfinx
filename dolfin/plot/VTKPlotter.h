@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-04
+// Last changed: 2012-06-13
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -139,6 +139,9 @@ namespace dolfin
     // Setup all pipeline objects and connect them. Called from all 
     // constructors
     void init_pipeline();
+
+    // Set the title parameter from the name and label of the Variable to plot
+    void set_title(const std::string& name, const std::string& label);
 
     // Construct VTK grid from DOLFIN mesh
     void construct_vtk_grid();
