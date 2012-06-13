@@ -41,9 +41,10 @@
 #include <vtkScalarBarActor.h>
 
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
+#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Variable.h>
 
 #include "PlotableExpression.h"
@@ -76,6 +77,9 @@ namespace dolfin
 
     /// Create plotter for an expression
     explicit VTKPlotter(const Expression& expression, const Mesh& mesh);
+
+    /// Create plotter for Dirichlet B.C.
+    explicit VTKPlotter(const DirichletBC& bc);
 
     /// Create plotter for an integer valued mesh function
     explicit VTKPlotter(const MeshFunction<uint>& mesh_function);

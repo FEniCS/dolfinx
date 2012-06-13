@@ -102,6 +102,21 @@ VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
   init_pipeline();
 }
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(const DirichletBC& bc) :
+  _mesh(reference_to_no_delete_pointer(*bc.function_space()->mesh())),
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _id(bc.id())
+{
+  Function f(*bc.function_space());
+  bc.apply(*f.vector());
+  _function = reference_to_no_delete_pointer(
+      dynamic_cast<const GenericFunction&>(f));
+
+  parameters = default_parameters();
+  set_title(bc.name(), bc.label());
+  init_pipeline();
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const MeshFunction<uint>& mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),

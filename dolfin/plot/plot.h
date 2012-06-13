@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-05-28
+// Last changed: 2012-06-14
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -50,6 +50,10 @@ namespace dolfin
   /// Plot mesh
   void plot(const Mesh& mesh,
             std::string title="Mesh");
+
+  /// Plot Dirichlet B.C.
+  void plot(const DirichletBC& bc,
+            std::string title="Dirichlet B.C.");
 
   /// Plot mesh function
   void plot(const MeshFunction<uint>& f,

@@ -52,12 +52,12 @@ void plot_object(const T& t, std::string title, std::string mode)
 
 #ifdef HAS_VTK
   // FIXME: Set parameters on the plotter!
-  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  //boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
   //plotter->parameters["title"] = title;
-  plotter->plot();
+  //plotter->plot();
   
-  //VTKPlotter plotter(t);
-  //plotter.plot();
+  VTKPlotter plotter(t);
+  plotter.plot();
 #else
   dolfin_error("plot.cpp",
                "plot object",
@@ -110,6 +110,12 @@ void dolfin::plot(const Mesh& mesh,
                   std::string title)
 {
   plot_object(mesh, title, "auto");
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const DirichletBC& bc,
+                  std::string title)
+{
+  plot_object(bc, title, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f,
