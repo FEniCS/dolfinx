@@ -96,6 +96,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   dolfin_assert(local_to_global_cols.size() > 0);
 
+  const std::vector<uint> local_to_global_cols_ref = local_to_global_cols;
+
   int* _col_ptr = reinterpret_cast<int*>(col_ptr.data());
   int* _rows = reinterpret_cast<int*>(rows.data());
   int* _local_to_global_cols = reinterpret_cast<int*>(local_to_global_cols.data());
@@ -133,6 +135,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
 
+  iparm[IPARM_VERBOSE] = 20;
 
   // LU or Cholesky
   //if (parameters["symmetric_operator"])
@@ -175,21 +178,33 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
 
-
-  // Get local (to process) dofs
+  // Get local (to process) solver dofs
   const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
   std::vector<uint> solver_local_to_global(ncol2);
-  int* _loc2glob = reinterpret_cast<int*>(&solver_local_to_global[0]);
+  int* _loc2glob = reinterpret_cast<int*>(solver_local_to_global.data());
   pastix_getLocalNodeLst(&pastix_data, _loc2glob) ;
 
-  // Perform shift
+  // Perform shift (back to C numbering)
   for (uint i = 0; i < ncol2; ++i)
     _loc2glob[i]--;
 
   // Get RHS data for this process
   std::vector<double> _b;
-  b.gather(_b, solver_local_to_global);
+  //b.gather(_b, solver_local_to_global);
+  b.gather(_b, local_to_global_cols_ref);
   double* b_ptr = _b.data();
+
+  //double normb = 0.0;
+  //for (uint i = 0; i < solver_local_to_global.size(); ++i)
+  //  normb += _b[i]*_b[i];
+  //cout << "rhs norm: " << sqrt(MPI::sum(normb)) << ", " << b.norm("l2")<< endl;
+
+  dolfin_assert(ncol2 > 0);
+
+  //iparm[IPARM_RHSD_CHECK] = API_NO;
+
+  //for (uint i = 0; i < n; ++i)
+  //  cout << "Print b: " << i << ", " << _b[i] << endl;
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
@@ -199,17 +214,36 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
 
+  MPI::barrier();
+  cout << "End solve call" << endl;
+  MPI::barrier();
+
+  //if (MPI::process_number() == 1)
+  //{
+  //  for (uint i = 0; i < _b.size(); ++i)
+  //    cout << "Print b (post): " << i << ", " << _b[i] << endl;
+  //}
+
   // FIXME: Use pastix getLocalUnknownNbr?
+
+  //double norm = 0.0;
+  //for (uint i = 0; i < n; ++i)
+  //  norm += _b[i]*_b[i];
+  //cout << "Soln norm: " << sqrt(MPI::sum(norm)) << endl;
+
+  //for (uint i = 0; i < n; ++i)
+  //  cout << "Soln: " << i << ", " << _b[i] << endl;
 
   // Distribute solution
   assert(b.size() == x.size());
-  x.set(_b.data(), ncol2, solver_local_to_global.data());
+  //x.set(_b.data(), ncol2, solver_local_to_global.data());
+  x.set(_b.data(), local_to_global_cols_ref.size(), local_to_global_cols_ref.data());
   x.apply("insert");
 
   // Clean up
   iparm[IPARM_START_TASK] = API_TASK_CLEAN;
   iparm[IPARM_END_TASK] = API_TASK_CLEAN;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
             _local_to_global_cols,
             perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
