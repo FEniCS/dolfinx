@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-13
+// Last changed: 2012-06-14
 
 #ifdef HAS_VTK
 
@@ -156,39 +156,6 @@ const VTKPlotter& VTKPlotter::operator=(const VTKPlotter& plotter)
   return *this;
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::interactive()
-{
-  // TODO: Set up help text, balloon etc and start interactive loop
-  // Add helptextactor text actor
-  vtkSmartPointer<vtkTextActor> helptextActor =
-    vtkSmartPointer<vtkTextActor>::New();
-  helptextActor->SetPosition(10,10);
-  helptextActor->SetInput("Help ");
-  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-  helptextActor->GetTextProperty()->SetFontSize(24);
-  _renderer->AddActor2D(helptextActor);
-
-  // Set up the representation for the hover-over help text box
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
-    vtkSmartPointer<vtkBalloonRepresentation>::New();
-  balloonRep->SetOffset(5,5);
-  balloonRep->GetTextProperty()->SetFontSize(18);
-
-  // Set up the actual widget that makes the help text pop up
-  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
-    vtkSmartPointer<vtkBalloonWidget>::New();
-  balloonwidget->SetInteractor(_interactor);
-  balloonwidget->SetRepresentation(balloonRep);
-  balloonwidget->AddBalloon(helptextActor,
-      get_helptext().c_str(),NULL);
-  _renderWindow->Render();
-  balloonwidget->EnabledOn();
-
-  // Initialize and start the mouse interaction
-  _interactor->Initialize();
-  _interactor->Start();
-}
-//----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
@@ -242,12 +209,48 @@ void VTKPlotter::plot()
     // We are only plotting a mesh
     process_mesh();
   }
+ 
+  if (parameters["interactive"]) {
+    interactive();
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::interactive()
+{
+  // Add helptextactor text actor
+  vtkSmartPointer<vtkTextActor> helptextActor =
+    vtkSmartPointer<vtkTextActor>::New();
+  helptextActor->SetPosition(10,10);
+  helptextActor->SetInput("Help ");
+  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+  helptextActor->GetTextProperty()->SetFontSize(24);
+  _renderer->AddActor2D(helptextActor);
+
+  // Set up the representation for the hover-over help text box
+  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
+    vtkSmartPointer<vtkBalloonRepresentation>::New();
+  balloonRep->SetOffset(5,5);
+  balloonRep->GetTextProperty()->SetFontSize(18);
+
+  // Set up the actual widget that makes the help text pop up
+  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
+    vtkSmartPointer<vtkBalloonWidget>::New();
+  balloonwidget->SetInteractor(_interactor);
+  balloonwidget->SetRepresentation(balloonRep);
+  balloonwidget->AddBalloon(helptextActor,
+      get_helptext().c_str(),NULL);
+  _renderWindow->Render();
+  balloonwidget->EnabledOn();
+
+  // Initialize and start the mouse interaction
+  _interactor->Initialize();
+  _interactor->Start();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
 {
-  // Dont construct when initializing object! Mesh may change in the meantime
-  // before plotting
+  // Don't construct grid when initializing object! Mesh may change in the 
+  // meantime before plotting
   //construct_vtk_grid();
 
   // We first initialize all the different filters, this is the data 
@@ -297,7 +300,8 @@ void VTKPlotter::init_pipeline()
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(14);
 
-  // That's it initially! Now we wait until the user wants to plot something
+  // That's it for the initialization! Now we wait until the user 
+  // wants to plot something
 
 }
 //----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-13
+// Last changed: 2012-06-14
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -144,9 +144,6 @@ namespace dolfin
     /// Assignment operator
     const VTKPlotter& operator=(const VTKPlotter& plotter);
 
-    /// Plot the object
-    void plot();
-
     /// Default parameter values
     static Parameters default_parameters()
     {
@@ -172,6 +169,9 @@ namespace dolfin
       p["scalarbar"] = false;
       return p;
     }
+
+    /// Plot the object
+    void plot();
 
     /// Make the current plot interactive 
     void interactive();
