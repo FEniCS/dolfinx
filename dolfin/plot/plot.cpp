@@ -98,11 +98,25 @@ void plot_object(boost::shared_ptr<const T> t, std::string title, std::string mo
 }
 
 //-----------------------------------------------------------------------------
+void dolfin::plot(const Function& function,
+                  std::string title, std::string mode)
+{
+  plot(reference_to_no_delete_pointer(function), title, mode);
+}
+//-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const Function> function,
                   std::string title, std::string mode)
 {
   dolfin_assert(function->function_space()->mesh());
   plot_object(function, title, mode);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Expression& expression,
+                  const Mesh& mesh,
+                  std::string title, std::string mode)
+{
+  plot(reference_to_no_delete_pointer(expression),
+       reference_to_no_delete_pointer(mesh), title, mode);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const Expression> expression,
@@ -114,10 +128,22 @@ void dolfin::plot(boost::shared_ptr<const Expression> expression,
   plot_object(e, title, mode);
 }
 //-----------------------------------------------------------------------------
+void dolfin::plot(const Mesh& mesh,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh), title);
+}
+//-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const Mesh> mesh,
                   std::string title)
 {
   plot_object(mesh, title, "auto");
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const DirichletBC& bc,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(bc), title);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
@@ -126,16 +152,34 @@ void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
   plot_object(bc, title, "auto");
 }
 //-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<uint>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
                   std::string title)
 {
   plot_object(mesh_function, title, "auto");
 }
 //-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<double>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
                   std::string title)
 {
   plot_object(mesh_function, title, "auto");
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<bool>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
