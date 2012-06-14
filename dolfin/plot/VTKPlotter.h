@@ -52,12 +52,60 @@
 namespace dolfin
 {
 
-  /// This is a class for visualizing of DOLFIN meshes, functions, 
-  /// expressions and mesh functions. 
-  /// The plotter has several parameters that the user can change to control
-  /// the appearance and behavior of the plot. 
+  /// This class enables visualization of various DOLFIN entities. 
+  /// It supports visualization of meshes, functions, expressions, boundary 
+  /// conditions and mesh functions. 
+  /// The plotter has several parameters that the user can set and adjust to
+  /// affect the appearance and behavior of the plot.
   ///
-  /// TODO: Add documentation for all parameters?
+  /// A plotter can be created and used in the following way:
+  /// 
+  ///   Mesh mesh = ...;
+  ///   VTKPlotter plotter(mesh);
+  ///   plotter.plot();
+  ///
+  /// Parameters can be adjusted at any time and will take effect on the next
+  /// call to the plot() method. The following parameters exist:
+  ///
+  /// ============= ============ =============== =================================
+  ///  Name          Value type   Default value              Description
+  /// ============= ============ =============== =================================
+  ///  mode           String        "auto"        For vector valued functions,
+  ///                                             this parameter may be set to
+  ///                                             "warp" to enable vector warping
+  ///                                             visualization
+  ///  interactive    Boolean         True        Enable/disable interactive mode
+  ///                                             for the rendering window.
+  ///                                             For repeated plots of the same
+  ///                                             object (animated plots), this
+  ///                                             parameter must be set to false
+  ///  wireframe      Boolean     True for        Enable/disable wireframe
+  ///                             meshes, else    rendering of the object
+  ///                             false
+  ///  title          String      Inherited       The title of the rendering
+  ///                             from the        window
+  ///                             name/label of
+  ///                             the object
+  ///  scale          Double      1.0             Adjusts the scaling of the
+  ///                                             warping and glyphs
+  ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
+  ///                             meshes, else
+  ///                             true
+  /// ============= ============ =============== =================================
+  ///
+  /// The default visualization mode for the different plot types are as follows:
+  ///
+  /// =========================  ============================ ===================
+  ///  Plot type                  Default visualization mode   Alternatives
+  /// =========================  ============================ ===================
+  ///  Meshes                     Wireframe rendering           None
+  ///  2D scalar functions        Scalar warping                None
+  ///  3D scalar functions        Color mapping                 None
+  ///  2D/3D vector functions     Glyphs (vector arrows)        Vector warping
+  /// =========================  ============================ ===================
+  ///
+  /// Expressions and boundary conditions are also visualized according to the 
+  /// above table.
 
   class VTKPlotter : public Variable
   {
@@ -107,9 +155,8 @@ namespace dolfin
       p.add("interactive", true);
       p.add("wireframe", false);
       p.add("scalarbar", true);
-      p.add("vector_mode", "glyphs");
-      p.add("warp_scalefactor", 1.0);
-      p.add("glyph_scalefactor", 0.8);
+      p.add("mode", "auto");
+      p.add("scale", 1.0);
       return p;
     }
 
@@ -126,7 +173,7 @@ namespace dolfin
       return p;
     }
 
-    /// Set up help text and start interaction loop 
+    /// Make the current plot interactive 
     void interactive();
 
     /// Return unique ID of the object to plot

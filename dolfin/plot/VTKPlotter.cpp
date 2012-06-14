@@ -434,7 +434,7 @@ void VTKPlotter::process_scalar_function()
   // Set the warp scale factor to according to parameter, but multiply
   // with a factor equal the inverse of the difference between minimum and
   // maximum scalar value. This in order to prevent extremely large figures
-  _warpscalar->SetScaleFactor((double) parameters["warp_scalefactor"]*
+  _warpscalar->SetScaleFactor((double) parameters["scale"]*
       1/(range[1]-range[0]));
 
   // STEP 4: Render
@@ -451,13 +451,13 @@ void VTKPlotter::process_vector_function()
   // STEP 1: Connect the pipeline parts
   ///////////////////////////////////////
 
-  const std::string mode = parameters["vector_mode"];
+  const std::string mode = parameters["mode"];
 
   // In warp mode, we just set up a vector warper and connect it to the 
   // geometry filter and the mapper
   if(mode == "warp") {
     _warpvector->SetInput(_grid);
-    _warpvector->SetScaleFactor(parameters["warp_scalefactor"]);
+    _warpvector->SetScaleFactor(parameters["scale"]);
 
     _geometryFilter->SetInput(_warpvector->GetOutput());
     _geometryFilter->Update();
@@ -486,7 +486,7 @@ void VTKPlotter::process_vector_function()
     _glyphs->SetVectorModeToUseVector();
     _glyphs->SetScaleModeToScaleByVector();
     _glyphs->SetColorModeToColorByVector();
-    _glyphs->SetScaleFactor(parameters["glyph_scalefactor"]);
+    _glyphs->SetScaleFactor(parameters["scale"]);
 
     _mapper->SetInputConnection(_glyphs->GetOutputPort());
   }
