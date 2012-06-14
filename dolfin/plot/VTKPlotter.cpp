@@ -40,10 +40,10 @@
 #include <vtkBalloonWidget.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 
-#include <dolfin/function/FunctionSpace.h> 
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
-
+#include "PlottableExpression.h"
 #include "VTKPlotter.h"
 
 using namespace dolfin;
@@ -59,86 +59,87 @@ VTKPlotter::VTKPlotter(const VTKPlotter& plotter)
   // TODO: Fill in
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const Mesh& mesh) :
-  _mesh(reference_to_no_delete_pointer(mesh)),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
+  _mesh(mesh),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(mesh.id())
+  _id(mesh->id())
 {
   parameters = default_mesh_parameters();
-  set_title(mesh.name(), mesh.label());
+  set_title(mesh->name(), mesh->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const Function& function) :
-  _mesh(reference_to_no_delete_pointer(*function.function_space()->mesh())),
-  _function(reference_to_no_delete_pointer(function)),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
+  _mesh(function->function_space()->mesh()),
+  _function(function),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(function.id())
+  _id(function->id())
 {
   parameters = default_parameters();
-  set_title(function.name(), function.label());
+  set_title(function->name(), function->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const PlotableExpression& plotable) :
-  _mesh(plotable.mesh()),
-  _function(plotable.expression()),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const PlottableExpression> expression) :
+  _mesh(expression->mesh()),
+  _function(expression->expression()),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(plotable.id())
+  _id(expression->id())
 {
   parameters = default_parameters();
-  set_title(plotable.expression()->name(), plotable.expression()->label());
+  set_title(expression->expression()->name(),
+            expression->expression()->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const Expression& expression, const Mesh& mesh) :
-  _mesh(reference_to_no_delete_pointer(mesh)),
-  _function(reference_to_no_delete_pointer(expression)),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
+                       boost::shared_ptr<const Mesh> mesh) :
+  _mesh(mesh),
+  _function(expression),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(expression.id())
+  _id(expression->id())
 {
   parameters = default_parameters();
-  set_title(expression.name(), expression.label());
+  set_title(expression->name(), expression->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const DirichletBC& bc) :
-  _mesh(reference_to_no_delete_pointer(*bc.function_space()->mesh())),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
+  _mesh(bc->function_space()->mesh()),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(bc.id())
+  _id(bc->id())
 {
-  Function f(*bc.function_space());
-  bc.apply(*f.vector());
-  _function = reference_to_no_delete_pointer(
-      dynamic_cast<const GenericFunction&>(f));
+  boost::shared_ptr<Function> f(new Function(bc->function_space()));
+  bc->apply(*f->vector());
+  _function = f;
 
   parameters = default_parameters();
-  set_title(bc.name(), bc.label());
+  set_title(bc->name(), bc->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<uint>& mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(mesh_function.id())
+  _id(mesh_function->id())
 {
   parameters = default_parameters();
   // TODO: Set function, title and call init
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<double>& mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(mesh_function.id())
+  _id(mesh_function->id())
 {
   parameters = default_parameters();
   // TODO: Set function, title and call init
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const MeshFunction<bool>& mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function.mesh())),
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
+  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
-  _id(mesh_function.id())
+  _id(mesh_function->id())
 {
   parameters = default_parameters();
   // TODO: Set function, title and call init
@@ -152,7 +153,7 @@ VTKPlotter::~VTKPlotter()
 const VTKPlotter& VTKPlotter::operator=(const VTKPlotter& plotter)
 {
   // TODO: Fill in
-  
+
   return *this;
 }
 //----------------------------------------------------------------------------
@@ -171,8 +172,8 @@ void VTKPlotter::plot()
   // The plotting starts
   dolfin_assert(_mesh);
 
-  // Construct grid each time since the mesh may have been changed. 
-  // TODO: Introduce boolean flag that says if mesh has changed or not? 
+  // Construct grid each time since the mesh may have been changed.
+  // TODO: Introduce boolean flag that says if mesh has changed or not?
   // Probably overkill ... performs good enough already
   construct_vtk_grid();
 
@@ -209,7 +210,7 @@ void VTKPlotter::plot()
     // We are only plotting a mesh
     process_mesh();
   }
- 
+
   if (parameters["interactive"]) {
     interactive();
   }
@@ -249,11 +250,11 @@ void VTKPlotter::interactive()
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
 {
-  // Don't construct grid when initializing object! Mesh may change in the 
+  // Don't construct grid when initializing object! Mesh may change in the
   // meantime before plotting
   //construct_vtk_grid();
 
-  // We first initialize all the different filters, this is the data 
+  // We first initialize all the different filters, this is the data
   // processing part of the pipeline. We initialize all of them and defer the
   // connection of filters and mappers until plotting. Not all will be used,
   // but having them initialized makes swapping of connections easy later on.
@@ -266,7 +267,7 @@ void VTKPlotter::init_pipeline()
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
   _geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
 
-  // The rest of the pipeline is initalized and connected. This is the 
+  // The rest of the pipeline is initalized and connected. This is the
   // rendering part of the pipeline
   _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
   _lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -295,12 +296,12 @@ void VTKPlotter::init_pipeline()
   _renderWindow->SetSize(600, 600);
 
   // Set the look of scalar bar labels
-  vtkSmartPointer<vtkTextProperty> labelprop = 
+  vtkSmartPointer<vtkTextProperty> labelprop =
     _scalarBar->GetLabelTextProperty();
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(14);
 
-  // That's it for the initialization! Now we wait until the user 
+  // That's it for the initialization! Now we wait until the user
   // wants to plot something
 
 }
@@ -319,7 +320,7 @@ void VTKPlotter::construct_vtk_grid()
   Timer t("Construct VTK grid");
 
   // Construct VTK point array from DOLFIN mesh vertices
-  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New(); 
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
   Point p;
 
@@ -328,23 +329,23 @@ void VTKPlotter::construct_vtk_grid()
     points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
   }
 
-  // Add mesh cells to VTK cell array. Note: Preallocation of storage 
-  // in cell array did not give speedups when testing during development 
+  // Add mesh cells to VTK cell array. Note: Preallocation of storage
+  // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
   const uint *connectivity = _mesh->cells();
   uint spatial_dim = _mesh->topology().dim();
 
   for (uint i = 0; i < _mesh->num_cells(); ++i) {
 
-    // Insert all vertex indices for a given cell. For a simplex cell in nD, 
-    // n+1 indices are inserted. The connectivity array must be indexed at 
+    // Insert all vertex indices for a given cell. For a simplex cell in nD,
+    // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
     cells->InsertNextCell(spatial_dim+1);
     for(uint j = 0; j <= spatial_dim; ++j) {
       cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
     }
   }
-  // Free unused memory in cell array 
+  // Free unused memory in cell array
   // (automatically allocated during cell insertion)
   cells->Squeeze();
 
@@ -407,12 +408,12 @@ void VTKPlotter::process_scalar_function()
 
   // Make VTK float array and allocate storage for function values
   uint num_vertices = _mesh->num_vertices();
-  vtkSmartPointer<vtkFloatArray> scalars = 
+  vtkSmartPointer<vtkFloatArray> scalars =
     vtkSmartPointer<vtkFloatArray>::New();
   scalars->SetNumberOfValues(num_vertices);
 
   // Evaluate DOLFIN function and copy values to the VTK array
-  std::vector<double> vertex_values(num_vertices); 
+  std::vector<double> vertex_values(num_vertices);
   _function->compute_vertex_values(vertex_values, *_mesh);
 
   for(uint i = 0; i < num_vertices; ++i) {
@@ -457,7 +458,7 @@ void VTKPlotter::process_vector_function()
 
   const std::string mode = parameters["mode"];
 
-  // In warp mode, we just set up a vector warper and connect it to the 
+  // In warp mode, we just set up a vector warper and connect it to the
   // geometry filter and the mapper
   if(mode == "warp") {
     _warpvector->SetInput(_grid);
@@ -469,13 +470,13 @@ void VTKPlotter::process_vector_function()
 
     // In glyph mode, we must construct the glyphs. The glyphs are connected
     // directly to the mapper, without using the geometry filter
-    // The only allowed options are "warp" and "glyphs", hence the plain 
+    // The only allowed options are "warp" and "glyphs", hence the plain
     // else block
   } else {
     if (mode != "glyphs") {
       warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
     }
-    vtkSmartPointer<vtkArrowSource> arrow = 
+    vtkSmartPointer<vtkArrowSource> arrow =
       vtkSmartPointer<vtkArrowSource>::New();
     arrow->SetTipRadius(0.08);
     arrow->SetTipResolution(16);
@@ -505,10 +506,10 @@ void VTKPlotter::process_vector_function()
     vtkSmartPointer<vtkFloatArray>::New();
 
   // NOTE: Allocation must be done in this order!
-  // Note also that the number of VTK vector components must always be 3 
+  // Note also that the number of VTK vector components must always be 3
   // regardless of the function vector value dimension
   vectors->SetNumberOfComponents(3);
-  vectors->SetNumberOfTuples(num_vertices); 
+  vectors->SetNumberOfTuples(num_vertices);
 
   // Evaluate DOLFIN function and copy values to the VTK array
   // The entries in "vertex_values" must be copied to "vectors". Viewing
@@ -533,7 +534,7 @@ void VTKPlotter::process_vector_function()
   _grid->GetPointData()->SetVectors(vectors);
 
   // Compute norms of vector data
-  vtkSmartPointer<vtkVectorNorm> norms = 
+  vtkSmartPointer<vtkVectorNorm> norms =
     vtkSmartPointer<vtkVectorNorm>::New();
   norms->SetInput(_grid);
   norms->SetAttributeModeToUsePointData();
@@ -580,4 +581,6 @@ std::string VTKPlotter::get_helptext()
   text << "\t E/Q: Exit\n";
   return text.str();
 }
+//----------------------------------------------------------------------------
+
 #endif

@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2012-06-02
-// Last changed: 2012-06-02
+// Last changed: 2012-06-14
 
-#ifndef __PLOTABLE_EXPRESSION_H
-#define __PLOTABLE_EXPRESSION_H
+#ifndef __PLOTTABLE_EXPRESSION_H
+#define __PLOTTABLE_EXPRESSION_H
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Expression.h>
@@ -29,12 +31,13 @@ namespace dolfin
 
   /// A light wrapper class to hold an expression to plot, along with the mesh
   /// to plot it on. Allows for clean, templated plotter code in plot.cpp
-  class PlotableExpression
+  class PlottableExpression
   {
   public:
 
     /// Create plotable expression object
-    explicit PlotableExpression(const Expression& expression, const Mesh& mesh);
+    explicit PlottableExpression(boost::shared_ptr<const Expression> expression,
+                                 boost::shared_ptr<const Mesh> mesh);
 
     /// Return unique ID of the expression
     uint id() const { return _expression->id(); }

@@ -15,16 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2012-06-02
-// Last changed: 2012-06-02
+// Last changed: 2012-06-14
 
-#include "PlotableExpression.h"
+#include "PlottableExpression.h"
 
 using namespace dolfin;
 //----------------------------------------------------------------------------
-PlotableExpression::PlotableExpression(const Expression& expression, const Mesh& mesh) :
-  _mesh(reference_to_no_delete_pointer(mesh)),
-  _expression(reference_to_no_delete_pointer(expression))
+PlottableExpression::PlottableExpression(boost::shared_ptr<const Expression> expression,
+                                         boost::shared_ptr<const Mesh> mesh) :
+  _mesh(mesh), _expression(expression)
 {
   // Do nothing
 }

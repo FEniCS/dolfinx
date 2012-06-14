@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-29
-// Last changed: 2007-05-30
+// Last changed: 2012-06-14
 
 #include <dolfin.h>
 
