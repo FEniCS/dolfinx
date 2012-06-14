@@ -449,12 +449,27 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
   row_ptr.clear();
   local_to_global_row.clear();
 
+  // Reserve memory
+  row_ptr.reserve(codim_indices.size() + 1);
+  local_to_global_row.reserve(codim_indices.size());
+
   // Build CSR data structures
   row_ptr.push_back(0);
 
+  // Number of local non-zero entries
+  const uint _local_nnz = local_nnz();
+
+  // Number of local rows (columns)
+  const uint num_local_rows = codim_indices.size();
+
   if (!symmetric)
   {
-    for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
+    // Reserve memory
+    vals.reserve(_local_nnz);
+    cols.reserve(_local_nnz);
+
+    // Build data structures
+    for (uint local_row = 0; local_row < num_local_rows; ++local_row)
     {
       vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
       cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
@@ -465,14 +480,13 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
   }
   else
   {
+    // Reserve memory
+    vals.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+    cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+
+    // Build data structures
     for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
     {
-      cout << "Build mat (0): " << local_row << endl;
-      //const uint size = vals.size() + (_vals[local_row].size()/2 + 1;
-      //dolfin_assert(size == (cols.size() + codim_indices[local_row].size()/2 + 1));
-      //vals.reserve(size);
-      //cols.reserve(size);
-
       uint counter = 0;
       for (uint i = 0; i < codim_indices[local_row].size(); ++i)
       {
@@ -485,8 +499,6 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
         }
       }
 
-      cout << "Build mat (3): " << local_row << endl;
-      //row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size()/2 + 1);
       row_ptr.push_back(row_ptr.back() + counter);
       local_to_global_row.push_back(_local_range.first + local_row);
     }
