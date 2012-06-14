@@ -487,11 +487,12 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
     // Build data structures
     for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
     {
+      const uint global_row_index = local_row + _local_range.first;
       uint counter = 0;
       for (uint i = 0; i < codim_indices[local_row].size(); ++i)
       {
         const uint index = codim_indices[local_row][i];
-        if (index >= local_row)
+        if (index >= global_row_index)
         {
           vals.push_back(_vals[local_row][i]);
           cols.push_back(index);
@@ -500,7 +501,7 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
       }
 
       row_ptr.push_back(row_ptr.back() + counter);
-      local_to_global_row.push_back(_local_range.first + local_row);
+      local_to_global_row.push_back(global_row_index);
     }
   }
 }
