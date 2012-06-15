@@ -154,6 +154,7 @@ namespace dolfin
       p.add("scalarbar", true);
       p.add("mode", "auto");
       p.add("scale", 1.0);
+      p.add("hardcopy_prefix", "dolfin_plot_");
       return p;
     }
 
@@ -175,6 +176,9 @@ namespace dolfin
 
     /// Make the current plot interactive 
     void interactive();
+
+    /// Save plot to PNG file (file suffix appended automatically)
+    void hardcopy(std::string filename);
 
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
@@ -210,6 +214,11 @@ namespace dolfin
 
     // Return the hover-over help text
     std::string get_helptext();
+
+    // Keypress callback
+    void keypressCallback(vtkObject* caller, 
+                          long unsigned int eventId,
+                          void* callData);
 
     // The mesh to visualize
     boost::shared_ptr<const Mesh> _mesh;
@@ -256,6 +265,9 @@ namespace dolfin
 
     // The unique ID (inherited from Variable) for the object to plot
     uint _id;
+
+    // Counter for the automatically named hardcopies
+    static int hardcopy_counter; 
 
   };
 

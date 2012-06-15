@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-14
+// Last changed: 2012-06-15
 
 #ifdef HAS_VTK
 
@@ -39,10 +39,15 @@
 #include <vtkBalloonRepresentation.h>
 #include <vtkBalloonWidget.h>
 #include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkCommand.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
 
 #include <dolfin/function/FunctionSpace.h> 
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
+
+#include <boost/filesystem.hpp>
 
 #include "VTKPlotter.h"
 
@@ -52,6 +57,8 @@ using namespace dolfin;
 std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 
 int VTKPlotter::last_used_idx;
+
+int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(const VTKPlotter& plotter)
@@ -209,7 +216,7 @@ void VTKPlotter::plot()
     // We are only plotting a mesh
     process_mesh();
   }
- 
+
   if (parameters["interactive"]) {
     interactive();
   }
@@ -217,6 +224,10 @@ void VTKPlotter::plot()
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive()
 {
+  // Add keypress callback function
+  _interactor->AddObserver(vtkCommand::KeyPressEvent, this, 
+      &VTKPlotter::keypressCallback); 
+  
   // Add helptextactor text actor
   vtkSmartPointer<vtkTextActor> helptextActor =
     vtkSmartPointer<vtkTextActor>::New();
@@ -577,7 +588,60 @@ std::string VTKPlotter::get_helptext()
   text << "\t S: View figure with solid surface\n";
   text << "\t F: Fly to the point currently under the mouse pointer\n";
   text << "\t P: Add bounding box\n";
+  text << "\t S: Save plot to file\n";
   text << "\t E/Q: Exit\n";
   return text.str();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::keypressCallback(vtkObject* caller,
+                                  long unsigned int eventId,
+                                  void* callData)
+{
+  vtkSmartPointer<vtkRenderWindowInteractor> iren = 
+    static_cast<vtkRenderWindowInteractor*>(caller);
+
+  switch (iren->GetKeyCode()) {
+    // Save plot to file
+    case 's':
+      {
+        // We construct a filename from the given prefix and static counter.
+        // If a file with that filename exists, the counter is incremented
+        // until a unique filename is found. That filename is then passed 
+        // to the hardcopy function.
+        std::stringstream filename;
+        filename << std::string(parameters["hardcopy_prefix"]);
+        filename << hardcopy_counter;
+        while (boost::filesystem::exists(filename.str() + ".png")) {
+          hardcopy_counter++;
+          filename.str("");
+          filename << std::string(parameters["hardcopy_prefix"]);
+          filename << hardcopy_counter;
+        }
+        hardcopy(filename.str());
+        break;
+      }
+    default:
+      break;
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::hardcopy(std::string filename)
+{
+  dolfin_assert(_renderWindow);
+
+  info("Saving plot to file: %s", filename.c_str());
+  
+  // Create window to image filter and PNG writer
+  vtkSmartPointer<vtkWindowToImageFilter> w2i = 
+    vtkSmartPointer<vtkWindowToImageFilter>::New();
+  vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+
+  w2i->SetInput(_renderWindow);
+  w2i->Update();
+  writer->SetInputConnection(w2i->GetOutputPort());
+  writer->SetFileName((filename + ".png").c_str());
+  _renderWindow->Render();
+  writer->Modified();
+  writer->Write();
 }
 #endif
