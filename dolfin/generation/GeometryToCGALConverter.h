@@ -35,8 +35,13 @@ namespace dolfin
   {
   public:
     static void convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated=true);
-    static double shortest_edge(csg::Polyhedron_3& p);
+    //static double shortest_edge(csg::Polyhedron_3& p);
+    
   };
+
+  template <typename Polyhedron>
+    static bool has_degenerate_facets(Polyhedron& p);
+
 }
 
 #endif
