@@ -153,7 +153,8 @@ namespace dolfin
     {
       Parameters p("vtk_plotter");
       p.add("title", "Plot");
-      p.add("interactive", true);
+      //p.add("interactive", true);
+      p.add("interactive", false);
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("mode", "auto");
