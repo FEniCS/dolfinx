@@ -53,7 +53,6 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
     if (VTKPlotter::plotter_cache[i]->id() == t->id())
     {
       log(TRACE, "Found cached VTKPlotter with index %d.", i);
-      VTKPlotter::last_used_idx = i;
       return VTKPlotter::plotter_cache[i];
     }
   }
@@ -62,7 +61,6 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
   boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
   VTKPlotter::plotter_cache.push_back(plotter);
-  VTKPlotter::last_used_idx = VTKPlotter::plotter_cache.size() - 1;
   log(TRACE, "Size of plotter cache is %d.", VTKPlotter::plotter_cache.size());
 
   return VTKPlotter::plotter_cache.back();
