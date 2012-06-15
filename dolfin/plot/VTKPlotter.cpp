@@ -484,7 +484,7 @@ void VTKPlotter::process_vector_function()
     // The only allowed options are "warp" and "glyphs", hence the plain
     // else block
   } else {
-    if (mode != "glyphs") {
+    if (mode != "auto") {
       warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
     }
     vtkSmartPointer<vtkArrowSource> arrow =

@@ -193,10 +193,8 @@ void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 //-----------------------------------------------------------------------------
 void dolfin::interactive()
 {
-  // FIXME: The cache logic doesn't work yet
-  return;
   if (VTKPlotter::plotter_cache.size() == 0) {
-    warning("No plots have been made so far. Ignoring call to interactive().");
+    warning("No plots have been shown yet. Ignoring call to interactive().");
   } else {
     // Call interactive on the last used plotter
     VTKPlotter::plotter_cache[VTKPlotter::last_used_idx]->interactive();
