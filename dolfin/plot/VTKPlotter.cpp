@@ -306,7 +306,7 @@ void VTKPlotter::init_pipeline()
 void VTKPlotter::set_title(const std::string& name, const std::string& label)
 {
   std::stringstream title;
-  title <<"Plot of \"" << name << "\" (a " << label << ")";
+  title <<"Plot of \"" << name << "\" (" << label << ")";
   parameters["title"] =  title.str();
 }
 //----------------------------------------------------------------------------
