@@ -17,11 +17,10 @@
 //
 // Modified by Joachim Berdal Haga, 2008.
 // Modified by Garth N. Wells, 2008.
-// Modified by Fredrik Valdmanis, 2012.
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-06-04
+// Last changed: 2012-06-15
 
 #include <cstdlib>
 #include <sstream>
@@ -68,10 +67,11 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
 
   return VTKPlotter::plotter_cache.back();
 }
-
+//-----------------------------------------------------------------------------
 // Template function for plotting objects
 template <typename T>
-void plot_object(boost::shared_ptr<const T> t, std::string title, std::string mode)
+void plot_object(boost::shared_ptr<const T> t,
+    boost::shared_ptr<const Parameters> parameters)
 {
 #ifndef HAS_VTK
   dolfin_error("plot.cpp",
@@ -79,27 +79,18 @@ void plot_object(boost::shared_ptr<const T> t, std::string title, std::string mo
 	       "Plotting disbled. Dolfin has been compiled without VTK support");
 #else
 
-  // Modify title when running in parallel
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    const dolfin::uint p = dolfin::MPI::process_number();
-    title += " (process " + to_string(p) + ")";
-  }
-
   // Get plotter from cache
   boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
   dolfin_assert(plotter);
 
   // Set plotter parameters
-  plotter->parameters["title"] = title;
-  plotter->parameters["mode"] = mode;
+  plotter->parameters.update(*parameters);
 
   // Plot
   plotter->plot();
 
 #endif
 }
-
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& function,
                   std::string title, std::string mode)
@@ -110,8 +101,23 @@ void dolfin::plot(const Function& function,
 void dolfin::plot(boost::shared_ptr<const Function> function,
                   std::string title, std::string mode)
 {
+  Parameters parameters;
+  parameters.add("title", title);
+  parameters.add("mode", mode);
+  plot(function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Function& function, const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Function> function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
   dolfin_assert(function->function_space()->mesh());
-  plot_object(function, title, mode);
+  plot_object(function, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Expression& expression,
@@ -126,9 +132,27 @@ void dolfin::plot(boost::shared_ptr<const Expression> expression,
                   boost::shared_ptr<const Mesh> mesh,
                   std::string title, std::string mode)
 {
-  boost::shared_ptr<const PlottableExpression>
+  Parameters parameters;
+  parameters.add("title", title);
+  parameters.add("mode", mode);
+  plot(expression, mesh, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Expression& expression, const Mesh& mesh,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(expression),
+       reference_to_no_delete_pointer(mesh),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Expression> expression,
+                  boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  boost::shared_ptr<const PlottableExpression> 
     e(new PlottableExpression(expression, mesh));
-  plot_object(e, title, mode);
+  plot_object(e, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh,
@@ -140,7 +164,21 @@ void dolfin::plot(const Mesh& mesh,
 void dolfin::plot(boost::shared_ptr<const Mesh> mesh,
                   std::string title)
 {
-  plot_object(mesh, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Mesh& mesh, const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const DirichletBC& bc,
@@ -152,7 +190,21 @@ void dolfin::plot(const DirichletBC& bc,
 void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
                   std::string title)
 {
-  plot_object(bc, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(bc, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const DirichletBC& bc, const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(bc),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(bc, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& mesh_function,
@@ -164,7 +216,25 @@ void dolfin::plot(const MeshFunction<uint>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
                   std::string title)
 {
-  plot_object(mesh_function, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<uint>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  dolfin_error("plot.cpp",
+               "plot mesh function",
+               "Not implemented yet");
+  plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<double>& mesh_function,
@@ -176,7 +246,25 @@ void dolfin::plot(const MeshFunction<double>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
                   std::string title)
 {
-  plot_object(mesh_function, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<double>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  dolfin_error("plot.cpp",
+               "plot mesh function",
+               "Not implemented yet");
+  plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<bool>& mesh_function,
@@ -188,7 +276,25 @@ void dolfin::plot(const MeshFunction<bool>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
                   std::string title)
 {
-  plot_object(mesh_function, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<bool>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  dolfin_error("plot.cpp",
+               "plot mesh function",
+               "Not implemented yet");
+  plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::interactive()
