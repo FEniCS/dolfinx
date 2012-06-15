@@ -47,19 +47,22 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Variable.h>
 
-#include "PlotableExpression.h"
-
 namespace dolfin
 {
 
-  /// This class enables visualization of various DOLFIN entities. 
-  /// It supports visualization of meshes, functions, expressions, boundary 
-  /// conditions and mesh functions. 
+  // FIXME: Use forward declarations to avoid inclusion of .h files in .h files
+
+  // Forward declarations
+  class PlottableExpression;
+
+  /// This class enables visualization of various DOLFIN entities.
+  /// It supports visualization of meshes, functions, expressions, boundary
+  /// conditions and mesh functions.
   /// The plotter has several parameters that the user can set and adjust to
   /// affect the appearance and behavior of the plot.
   ///
   /// A plotter can be created and used in the following way:
-  /// 
+  ///
   ///   Mesh mesh = ...;
   ///   VTKPlotter plotter(mesh);
   ///   plotter.plot();
@@ -104,7 +107,7 @@ namespace dolfin
   ///  2D/3D vector functions     Glyphs (vector arrows)        Vector warping
   /// =========================  ============================ ===================
   ///
-  /// Expressions and boundary conditions are also visualized according to the 
+  /// Expressions and boundary conditions are also visualized according to the
   /// above table.
 
   class VTKPlotter : public Variable
@@ -115,32 +118,33 @@ namespace dolfin
     VTKPlotter(const VTKPlotter& plotter);
 
     /// Create plotter for a mesh
-    explicit VTKPlotter(const Mesh& mesh);
+    explicit VTKPlotter(boost::shared_ptr<const Mesh> mesh);
 
     /// Create plotter for a function
-    explicit VTKPlotter(const Function& function);
+    explicit VTKPlotter(boost::shared_ptr<const Function> function);
 
     /// Create plotter for an expression
-    explicit VTKPlotter(const PlotableExpression& plotable);
+    explicit VTKPlotter(boost::shared_ptr<const PlottableExpression> expression);
 
     /// Create plotter for an expression
-    explicit VTKPlotter(const Expression& expression, const Mesh& mesh);
+    explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
+                        boost::shared_ptr<const Mesh> mesh);
 
     /// Create plotter for Dirichlet B.C.
-    explicit VTKPlotter(const DirichletBC& bc);
+    explicit VTKPlotter(boost::shared_ptr<const DirichletBC> bc);
 
     /// Create plotter for an integer valued mesh function
-    explicit VTKPlotter(const MeshFunction<uint>& mesh_function);
+    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function);
 
     /// Create plotter for a double valued mesh function
-    explicit VTKPlotter(const MeshFunction<double>& mesh_function);
+    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function);
 
     /// Create plotter for a boolean valued mesh function
-    explicit VTKPlotter(const MeshFunction<bool>& mesh_function);
+    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
 
     /// Destructor
     ~VTKPlotter();
-    
+
     /// Assignment operator
     const VTKPlotter& operator=(const VTKPlotter& plotter);
 
@@ -174,7 +178,7 @@ namespace dolfin
     /// Plot the object
     void plot();
 
-    /// Make the current plot interactive 
+    /// Make the current plot interactive
     void interactive();
 
     /// Save plot to PNG file (file suffix appended automatically)
@@ -182,16 +186,17 @@ namespace dolfin
 
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
-    
-    // The cache of plotter objects
-    static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
 
+    // FIXME: Remove? Is this used?
     // Index to the last used plotter object
     static int last_used_idx;
 
+    // The cache of plotter objects
+    static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
+
   private:
 
-    // Setup all pipeline objects and connect them. Called from all 
+    // Setup all pipeline objects and connect them. Called from all
     // constructors
     void init_pipeline();
 
@@ -200,14 +205,14 @@ namespace dolfin
 
     // Construct VTK grid from DOLFIN mesh
     void construct_vtk_grid();
-    
+
     // Process mesh (including filter setup)
     void process_mesh();
 
     // Process scalar valued generic function (function or expression),
     // including filter setup
     void process_scalar_function();
-    
+
     // Process vector valued generic function (function or expression),
     // including filter setup
     void process_vector_function();
@@ -235,7 +240,7 @@ namespace dolfin
     // The vector warp filter
     vtkSmartPointer<vtkWarpVector> _warpvector;
 
-    // The glyph filter 
+    // The glyph filter
     vtkSmartPointer<vtkGlyph3D> _glyphs;
 
     // The geometry filter
@@ -259,7 +264,7 @@ namespace dolfin
     // The render window interactor for interactive sessions
     vtkSmartPointer<vtkRenderWindowInteractor> _interactor;
 
-    // The scalar bar that gives the viewer the mapping from color to 
+    // The scalar bar that gives the viewer the mapping from color to
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 

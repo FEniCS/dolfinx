@@ -25,6 +25,8 @@ from math import sqrt
 
 import sys
 
+set_log_level(TRACE)
+
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
 mesh.order()
@@ -93,14 +95,14 @@ if 3 in demos:
     f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",\
                     " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"),\
                    element=V.ufl_element(), t=0.0)
-    
+
     pts = numpy.array([
         [.24, .24],
         [.24, .74],
         [.74, .24],
         [.74, .74]
         ], dtype='d')
-    
+
     for i in range(150):
         f.t += 0.005
         plot(f, mesh=mesh, eval_pts=pts, rescale=True, title="Vector function")

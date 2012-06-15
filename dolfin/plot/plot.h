@@ -40,31 +40,61 @@ namespace dolfin
   // longer used by the plotter.
 
   /// Plot function
-  void plot(const Function& v,
+  void plot(const Function& function,
             std::string title="Function", std::string mode="auto");
 
-  /// Plot function
-  void plot(const Expression& v, const Mesh& mesh,
+  /// Plot function (shared_ptr version)
+  void plot(boost::shared_ptr<const Function> function,
+            std::string title="Function", std::string mode="auto");
+
+  /// Plot expression
+  void plot(const Expression& expression,
+            const Mesh& mesh,
+            std::string title="Expression", std::string mode="auto");
+
+  /// Plot expression (shared_ptr version)
+  void plot(boost::shared_ptr<const Expression> expression,
+            boost::shared_ptr<const Mesh> mesh,
             std::string title="Expression", std::string mode="auto");
 
   /// Plot mesh
   void plot(const Mesh& mesh,
             std::string title="Mesh");
 
-  /// Plot Dirichlet B.C.
+  /// Plot mesh (shared_ptr version)
+  void plot(boost::shared_ptr<const Mesh> mesh,
+            std::string title="Mesh");
+
+  /// Plot Dirichlet BC
   void plot(const DirichletBC& bc,
             std::string title="Dirichlet B.C.");
 
-  /// Plot mesh function
-  void plot(const MeshFunction<uint>& f,
+  /// Plot Dirichlet BC (shared_ptr version)
+  void plot(boost::shared_ptr<const DirichletBC> bc,
+            std::string title="Dirichlet B.C.");
+
+  /// Plot uint-valued mesh function
+  void plot(const MeshFunction<uint>& mesh_function,
             std::string title="DOLFIN MeshFunction<uint>");
 
-  /// Plot mesh function
-  void plot(const MeshFunction<double>& f,
+  /// Plot uint-valued mesh function (shared_ptr version)
+  void plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+            std::string title="DOLFIN MeshFunction<uint>");
+
+  /// Plot double-valued mesh function
+  void plot(const MeshFunction<double>& mesh_function,
             std::string title="MeshFunction<double>");
 
-  /// Plot mesh function
-  void plot(const MeshFunction<bool>& f,
+  /// Plot double-valued mesh function  (shared_ptr version)
+  void plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+            std::string title="MeshFunction<double>");
+
+  /// Plot boolean-valued mesh function
+  void plot(const MeshFunction<bool>& mesh_function,
+            std::string title="MeshFunction<bool>");
+
+  /// Plot boolean-valued mesh function (shared_ptr version)
+  void plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
             std::string title="MeshFunction<bool>");
 
   /// Make the current plot interactive
