@@ -302,8 +302,10 @@ void dolfin::interactive()
   if (VTKPlotter::plotter_cache.size() == 0) {
     warning("No plots have been shown yet. Ignoring call to interactive().");
   } else {
-    // Call interactive on the last used plotter
-    VTKPlotter::plotter_cache[VTKPlotter::last_used_idx]->interactive();
+    // Call interactive on every plotter
+    for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) {
+      VTKPlotter::plotter_cache[i]->interactive();
+    }
   }
 }
 //-----------------------------------------------------------------------------

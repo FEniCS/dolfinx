@@ -94,6 +94,11 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
+  ///  hardcopy_prefix string     "dolfin_plot_"  Filename prefix used when
+  ///                                             saving plots to file in
+  ///                                             interactive mode. An integer
+  ///                                             counter is appended after the 
+  ///                                             prefix.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -157,14 +162,11 @@ namespace dolfin
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("mode", "auto");
+      p.add("rescale", true); // FIXME: Check this parameter in VTKPlotter.cpp
       p.add("scale", 1.0);
       p.add("hardcopy_prefix", "dolfin_plot_");
       return p;
     }
-
-    // TODO: Add separate default parameters for each type?
-    // TODO: Set title in default_parameters to "Mesh", "Expression" etc
-    // as in plot.h?
 
     /// Default parameter values for mesh plotting
     static Parameters default_mesh_parameters()
@@ -186,10 +188,6 @@ namespace dolfin
 
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
-
-    // FIXME: Remove? Is this used?
-    // Index to the last used plotter object
-    static int last_used_idx;
 
     // The cache of plotter objects
     static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;

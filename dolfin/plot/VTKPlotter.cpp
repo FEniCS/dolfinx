@@ -56,8 +56,6 @@ using namespace dolfin;
 // Define the static members
 std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 
-int VTKPlotter::last_used_idx;
-
 int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
