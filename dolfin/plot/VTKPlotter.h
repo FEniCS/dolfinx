@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-14
+// Last changed: 2012-06-15
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -119,9 +119,6 @@ namespace dolfin
   {
   public:
 
-    /// Copy constructor
-    VTKPlotter(const VTKPlotter& plotter);
-
     /// Create plotter for a mesh
     explicit VTKPlotter(boost::shared_ptr<const Mesh> mesh);
 
@@ -149,9 +146,6 @@ namespace dolfin
 
     /// Destructor
     ~VTKPlotter();
-
-    /// Assignment operator
-    const VTKPlotter& operator=(const VTKPlotter& plotter);
 
     /// Default parameter values
     static Parameters default_parameters()

@@ -59,11 +59,6 @@ std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(const VTKPlotter& plotter)
-{
-  // TODO: Fill in
-}
-//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _mesh(mesh),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
@@ -153,13 +148,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 VTKPlotter::~VTKPlotter()
 {
   // Do nothing
-}
-//----------------------------------------------------------------------------
-const VTKPlotter& VTKPlotter::operator=(const VTKPlotter& plotter)
-{
-  // TODO: Fill in
-
-  return *this;
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
