@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg, Fredrik Valdmanis
+// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -44,27 +44,27 @@ using namespace dolfin;
 // the given object. If none is found, a new one is created and added
 // to the cache.
 template <typename T>
-boost::shared_ptr<VTKPlotter>
-get_plotter(boost::shared_ptr<const T> t)
+boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
 {
-  std::vector<boost::shared_ptr<VTKPlotter> >::const_iterator it;
+  log(TRACE, "Looking for cached VTKPlotter.");
 
-  uint idx = 0;
-
-  for (it = VTKPlotter::plotter_cache.begin();
-       it != VTKPlotter::plotter_cache.end(); ++it)
+  for (uint i = 0; i < VTKPlotter::plotter_cache.size(); i++)
   {
-    ++idx;
-    if ((*it)->id() == t->id()) {
-      VTKPlotter::last_used_idx = idx;
-      return *it;
+    dolfin_assert(VTKPlotter::plotter_cache[i]);
+    if (VTKPlotter::plotter_cache[i]->id() == t->id())
+    {
+      log(TRACE, "Found cached VTKPlotter with index %d.", i);
+      VTKPlotter::last_used_idx = i;
+      return VTKPlotter::plotter_cache[i];
     }
   }
 
   // No previous plotter found, so we create a new one
+  log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
   boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
   VTKPlotter::plotter_cache.push_back(plotter);
   VTKPlotter::last_used_idx = VTKPlotter::plotter_cache.size() - 1;
+  log(TRACE, "Size of plotter cache is %d.", VTKPlotter::plotter_cache.size());
 
   return VTKPlotter::plotter_cache.back();
 }
@@ -86,13 +86,16 @@ void plot_object(boost::shared_ptr<const T> t, std::string title, std::string mo
     title += " (process " + to_string(p) + ")";
   }
 
-  // FIXME: Set parameters on the plotter!
-  boost::shared_ptr<VTKPlotter> p = get_plotter(t);
-  p->parameters["title"] = title;
-  //plotter->plot();
+  // Get plotter from cache
+  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  dolfin_assert(plotter);
 
-  VTKPlotter plotter(t);
-  plotter.plot();
+  // Set plotter parameters
+  plotter->parameters["title"] = title;
+  plotter->parameters["mode"] = mode;
+
+  // Plot
+  plotter->plot();
 
 #endif
 }
