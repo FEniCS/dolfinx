@@ -155,18 +155,21 @@ static void print_facet(typename Polyhedron::Facet_handle facet)
   typename Polyhedron::Facet::Halfedge_around_facet_circulator half_edge = facet->facet_begin();
   std::cout << "Facet: ( ";
  
+  double min_edge = std::numeric_limits<double>::max();
 
   for (unsigned int i = 0; i < facet->facet_degree(); i++)
   {
     std::cout << "<" << half_edge->vertex()->point() << "> ";
+    min_edge = std::min(min_edge, get_edge_length<Polyhedron>(half_edge));
     half_edge++;
   }
 
-    if (facet->is_triangle())
-    {
-      std::cout << ", min edge: " << get_min_edge_length<Polyhedron>(facet) <<
-	", triangle area: " << get_triangle_area<Polyhedron>(facet);
-    }
+  std::cout << ", min edge: " << min_edge;
+
+  if (facet->is_triangle())
+  {
+    std::cout << ", triangle area: " << get_triangle_area<Polyhedron>(facet);
+  }
 
     std::cout << " )" << std::endl;
 }
@@ -318,7 +321,18 @@ static typename Polyhedron::Point_3 facet_midpoint(typename Polyhedron::Facet_ha
     half_edge++;
   }
 
-  return CGAL::ORIGIN + (p - CGAL::ORIGIN)/facet->facet_degree();
+  p = CGAL::ORIGIN + (p - CGAL::ORIGIN)/facet->facet_degree();
+
+  // std::cout << "Center coordinates computed: " << p << std::endl;
+
+  // half_edge = facet->facet_begin();
+  // for (unsigned int i = 0; i < facet->facet_degree(); i++)
+  // {
+  //   std::cout << "Distance to point << " << half_edge->vertex()->point() << " = " << (half_edge->vertex()->point() - p).squared_length() << std::endl;
+  //   half_edge++;
+  // }  
+
+  return p;
 }
 //-----------------------------------------------------------------------------
 template <typename Polyhedron>
@@ -338,8 +352,6 @@ static void remove_triangle(Polyhedron& p, typename Polyhedron::Facet_handle fac
   // cout << "Opposite triangle" << endl;
   // print_facet<Polyhedron>(edge->opposite()->facet());
 
-  //dolfin_assert(!facet_is_degenerate<Polyhedron>(edge->opposite()->facet(), DOLFIN_SQRT_EPS));
-
   edge = p.join_facet(edge);
   // cout << "Edge after join: " << endl;
   // print_halfedge<Polyhedron>(edge);
@@ -351,11 +363,15 @@ static void remove_triangle(Polyhedron& p, typename Polyhedron::Facet_handle fac
 
   edge = p.create_center_vertex(edge);
 
-  // std::cout << "Center vertex: " << edge->vertex()->point() << std::endl;
-  // cout << "Triangle after triangulation" << endl;
-  // print_facet<Polyhedron>(edge->facet());
-
   edge->vertex()->point() = new_center;
+
+  // std::cout << "Center vertex: " << edge->vertex()->point() << std::endl;
+
+  // for (uint i=0; i < 4; i++)
+  // {
+  //   print_facet<Polyhedron>(edge->facet());
+  //   edge = edge->next()->opposite();
+  // }
 }
 //-----------------------------------------------------------------------------
 template<typename Polyhedron>
@@ -365,8 +381,6 @@ static void remove_small_triangles(Polyhedron& p, const double threshold)
 
   while (n > 0)
   {
-    cout << "Number of degenerate facets: " << n << endl;
-
     for (typename Polyhedron::Facet_iterator facet = p.facets_begin();
 	 facet != p.facets_end(); facet++)
     {
@@ -375,15 +389,12 @@ static void remove_small_triangles(Polyhedron& p, const double threshold)
       if (get_triangle_area<Polyhedron>(facet) < threshold)
       {
 	// cout << "Small triangle detected" << endl;
-	print_facet<Polyhedron>(facet);
+	// print_facet<Polyhedron>(facet);
 	remove_triangle<Polyhedron>(p, facet);
 	n = number_of_degenerate_facets<Polyhedron>(p, threshold);
 	break;
       }
     }
-
-    // Should never reach this point
-    dolfin_assert(false);
   }
 }
 //-----------------------------------------------------------------------------
@@ -416,21 +427,21 @@ static void remove_degenerate_facets(Polyhedron& p, const double threshold)
 }
 //-----------------------------------------------------------------------------
 template<typename Polyhedron>
-static bool has_degenerate_facets(Polyhedron& p, const double threshold)
+static inline bool has_degenerate_facets(Polyhedron& p, const double threshold)
 {
   for (typename Polyhedron::Facet_iterator facet = p.facets_begin();
        facet != p.facets_end(); facet++)
   {
     dolfin_assert(facet->is_triangle());
     
-    if ( facet_is_degenerate<typename csg::Polyhedron_3>(facet, threshold) )
+    if ( facet_is_degenerate<Polyhedron>(facet, threshold) )
       return true;
   }
   return false;
 }
 //-----------------------------------------------------------------------------
 
-// // Convenience routine to make debugging easier. Remove before releasing.
+// Convenience routine to make debugging easier. Remove before releasing.
 static void add_facet(CGAL::Polyhedron_incremental_builder_3<Exact_HalfedgeDS>& builder, 
 		      std::vector<int>& vertices, bool print=false)
 {
@@ -611,7 +622,7 @@ static Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
   dolfin_assert(P.is_valid());
   dolfin_assert(P.is_closed());
 
-  printStat(P, "Sphere");
+  //printStat(P, "Sphere");
 
   return Nef_polyhedron_3(P);
 }
@@ -754,7 +765,7 @@ static Nef_polyhedron_3 make_box(const csg::Box* b)
   dolfin_assert(P.is_closed());
   dolfin_assert(P.is_valid());
 
-  printStat(P, "Box");
+  //printStat(P, "Box");
 
   return Nef_polyhedron_3(P);;
 }
@@ -768,7 +779,7 @@ static Nef_polyhedron_3 make_tetrahedron(const csg::Tetrahedron* b)
 		      Exact_Point_3(b->x2.x(), b->x2.y(), b->x2.z()),
 		      Exact_Point_3(b->x3.x(), b->x3.y(), b->x3.z()));
   
-  printStat(P, "Tetrahedron");
+  //printStat(P, "Tetrahedron");
 
   return Nef_polyhedron_3(P);
 }
@@ -929,7 +940,7 @@ Nef_polyhedron_3 make_cone(const csg::Cone* c)
   dolfin_assert(P.is_closed());
   dolfin_assert(P.is_valid());
 
-  printStat(P, "Cone");
+  //printStat(P, "Cone");
   return Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
@@ -1029,15 +1040,16 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
   if (remove_degenerated)
   {
     remove_degenerate_facets(p_exact, DOLFIN_SQRT_EPS);
-
-    // FIXME: Remove before release. Probably too expensive.
-    //dolfin_assert(!has_degenerate_facets(p, DOLFIN_SQRT_EPS));
   }
 
   copy_to(p_exact, p);
+
   dolfin_assert(p.is_valid());
   dolfin_assert(p.is_closed());
-
-  triangulate_polyhedron(p);
+  dolfin_assert(p.is_pure_triangle());
+  //dolfin_assert(!has_degenerate_facets<csg::Polyhedron_3>(p));
+  
+  cout << "Number of vertices: " << p.size_of_vertices() << endl;
+  cout << "Number of facets:   " << p.size_of_facets() << endl;
 
 }
