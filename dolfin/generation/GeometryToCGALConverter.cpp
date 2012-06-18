@@ -321,7 +321,7 @@ static typename Polyhedron::Point_3 facet_midpoint(typename Polyhedron::Facet_ha
     half_edge++;
   }
 
-  p = CGAL::ORIGIN + (p - CGAL::ORIGIN)/facet->facet_degree();
+  p = CGAL::ORIGIN + (p - CGAL::ORIGIN)/static_cast<double>(facet->facet_degree());
 
   // std::cout << "Center coordinates computed: " << p << std::endl;
 
