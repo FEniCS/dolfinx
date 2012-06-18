@@ -60,6 +60,19 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   // No previous plotter found, so we create a new one
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
   boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
+
+  // Adjust window position to not completely overlap previous plots
+  uint num_old_plots = VTKPlotter::plotter_cache.size();
+  int width, height;
+  plotter->get_window_size(width, height);
+
+  // FIXME: This approach might need some tweaking. It tiles the winows in a 
+  // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
+  // windows
+  plotter->set_window_position((num_old_plots%2)*width,
+      (num_old_plots/2)*height);
+
+  // Add plotter to cache
   VTKPlotter::plotter_cache.push_back(plotter);
   log(TRACE, "Size of plotter cache is %d.", VTKPlotter::plotter_cache.size());
 

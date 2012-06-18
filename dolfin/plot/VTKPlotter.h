@@ -186,6 +186,12 @@ namespace dolfin
     /// Save plot to PNG file (file suffix appended automatically)
     void hardcopy(std::string filename);
 
+    /// Get size of the plot window
+    void get_window_size(int& width, int& height);
+
+    /// Set the position of the plot window on the screen
+    void set_window_position(int x, int y);
+
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
 

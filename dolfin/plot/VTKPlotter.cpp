@@ -643,4 +643,16 @@ void VTKPlotter::hardcopy(std::string filename)
   writer->Modified();
   writer->Write();
 }
+//----------------------------------------------------------------------------
+void VTKPlotter::get_window_size(int& width, int& height)
+{
+  dolfin_assert(_interactor);
+  _interactor->GetSize(width, height);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_window_position(int x, int y)
+{
+  dolfin_assert(_renderWindow);
+  _renderWindow->SetPosition(x, y);
+}
 #endif
