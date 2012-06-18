@@ -20,6 +20,7 @@
 
 
 #include "CSGCGALMeshGenerator3D.h"
+#include "CSGGeometry.h"
 #include "GeometryToCGALConverter.h"
 #include "CGALMeshBuilder.h"
 #include <dolfin/log/LogStream.h>
@@ -29,19 +30,28 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
+{
+  boost::shared_ptr<const CSGGeometry> tmp = reference_to_no_delete_pointer<const CSGGeometry>(geometry);
+  this->geometry = tmp;
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
   : geometry(geometry)
 {
   parameters = default_parameters();
 }
+
+
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D() {}
 //-----------------------------------------------------------------------------
-void CSGCGALMeshGenerator3D::generate(Mesh& mesh) 
+void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
 {
   csg::Polyhedron_3 p;
 
   cout << "Converting geometry to cgal types." << endl;
-  GeometryToCGALConverter::convert(geometry, p);
+  GeometryToCGALConverter::convert(*geometry, p);
 
   dolfin_assert(p.is_pure_triangle());
 
@@ -64,4 +74,18 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh)
 
   // Build DOLFIN mesh from CGAL mesh/triangulation
   CGALMeshBuilder::build_from_mesh(mesh, c3t3);
+}
+//-----------------------------------------------------------------------------
+void CSGCGALMeshGenerator3D::save_off(std::string filename) const
+{
+  csg::Polyhedron_3 p;
+
+  cout << "Converting geometry to cgal types." << endl;
+  GeometryToCGALConverter::convert(*geometry, p);
+
+  cout << "Writing to file " << filename << endl;
+  std::ofstream outfile(filename.c_str());
+
+  outfile << p;
+  outfile.close();
 }

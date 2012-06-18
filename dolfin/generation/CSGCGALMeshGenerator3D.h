@@ -22,6 +22,7 @@
 #define __CSG_CGAL_MESH_GENERATOR3D_H
 
 #include <dolfin/common/Variable.h>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
@@ -37,8 +38,10 @@ namespace dolfin
   {
   public :
     CSGCGALMeshGenerator3D(const CSGGeometry& geometry);
+    CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry);
     ~CSGCGALMeshGenerator3D();
-    void generate(Mesh& mesh);
+    void generate(Mesh& mesh) const;
+    void save_off(std::string filename) const;
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -55,7 +58,7 @@ namespace dolfin
     }
 
   private:
-    const CSGGeometry& geometry;
+    boost::shared_ptr<const CSGGeometry> geometry;
   };
 
 }
