@@ -94,11 +94,14 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
-  ///  hardcopy_prefix string     "dolfin_plot_"  Filename prefix used when
+  ///  prefix         String      "dolfin_plot_"  Filename prefix used when
   ///                                             saving plots to file in
   ///                                             interactive mode. An integer
   ///                                             counter is appended after the 
   ///                                             prefix.
+  ///  helptext       Boolean     True            Enable/disable the hover-over
+  ///                                             help-text in interactive
+  ///                                             mode
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -158,7 +161,10 @@ namespace dolfin
       p.add("mode", "auto");
       p.add("rescale", true); // FIXME: Check this parameter in VTKPlotter.cpp
       p.add("scale", 1.0);
-      p.add("hardcopy_prefix", "dolfin_plot_");
+      p.add("prefix", "dolfin_plot_");
+      p.add("helptext", true);
+      p.add("window_width", 600);
+      p.add("window_height", 400);
       return p;
     }
 

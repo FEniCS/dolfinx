@@ -35,6 +35,7 @@
 #include <vtkLookupTable.h>
 #include <vtkTextProperty.h>
 #include <vtkProperty.h>
+#include <vtkProperty2D.h>
 #include <vtkTextActor.h>
 #include <vtkBalloonRepresentation.h>
 #include <vtkBalloonWidget.h>
@@ -88,12 +89,12 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const PlottableExpression> expression) 
 {
   parameters = default_parameters();
   set_title(expression->expression()->name(),
-            expression->expression()->label());
+      expression->expression()->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-                       boost::shared_ptr<const Mesh> mesh) :
+    boost::shared_ptr<const Mesh> mesh) :
   _mesh(mesh),
   _function(expression),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
@@ -214,31 +215,38 @@ void VTKPlotter::interactive()
   // Add keypress callback function
   _interactor->AddObserver(vtkCommand::KeyPressEvent, this, 
       &VTKPlotter::keypressCallback); 
-  
-  // Add helptextactor text actor
+
+  // These must be declared outside the if test to not go out of scope
+  // before the interaction starts
   vtkSmartPointer<vtkTextActor> helptextActor =
     vtkSmartPointer<vtkTextActor>::New();
-  helptextActor->SetPosition(10,10);
-  helptextActor->SetInput("Help ");
-  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-  helptextActor->GetTextProperty()->SetFontSize(24);
-  _renderer->AddActor2D(helptextActor);
-
-  // Set up the representation for the hover-over help text box
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
+  vtkSmartPointer<vtkBalloonRepresentation> balloonRep = 
     vtkSmartPointer<vtkBalloonRepresentation>::New();
-  balloonRep->SetOffset(5,5);
-  balloonRep->GetTextProperty()->SetFontSize(18);
-
-  // Set up the actual widget that makes the help text pop up
   vtkSmartPointer<vtkBalloonWidget> balloonwidget =
     vtkSmartPointer<vtkBalloonWidget>::New();
-  balloonwidget->SetInteractor(_interactor);
-  balloonwidget->SetRepresentation(balloonRep);
-  balloonwidget->AddBalloon(helptextActor,
-      get_helptext().c_str(),NULL);
-  _renderWindow->Render();
-  balloonwidget->EnabledOn();
+
+  if (parameters["helptext"]) {
+    // Add help text actor
+    helptextActor->SetPosition(10,10);
+    helptextActor->SetInput("Help ");
+    helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+    helptextActor->GetTextProperty()->SetFontSize(20);
+    _renderer->AddActor2D(helptextActor);
+
+    // Set up the representation for the hover-over help text box
+    balloonRep->SetOffset(5,5);
+    balloonRep->GetTextProperty()->SetFontSize(18);
+    balloonRep->GetTextProperty()->BoldOff();
+    balloonRep->GetFrameProperty()->SetOpacity(0.7);
+
+    // Set up the actual widget that makes the help text pop up
+    balloonwidget->SetInteractor(_interactor);
+    balloonwidget->SetRepresentation(balloonRep);
+    balloonwidget->AddBalloon(helptextActor,
+        get_helptext().c_str(),NULL);
+    _renderWindow->Render();
+    balloonwidget->EnabledOn();
+  }
 
   // Initialize and start the mouse interaction
   _interactor->Initialize();
@@ -290,16 +298,20 @@ void VTKPlotter::init_pipeline()
   // Set some properties that affect the look of things
   _renderer->SetBackground(1, 1, 1);
   _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshse
-  _renderWindow->SetSize(600, 600);
+  _renderWindow->SetSize(parameters["window_width"],
+      parameters["window_height"]);
+  _scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
   vtkSmartPointer<vtkTextProperty> labelprop =
     _scalarBar->GetLabelTextProperty();
   labelprop->SetColor(0, 0, 0);
-  labelprop->SetFontSize(14);
+  labelprop->SetFontSize(20);
+  labelprop->ItalicOff();
+  labelprop->BoldOff();
 
-  // That's it for the initialization! Now we wait until the user
-  // wants to plot something
+  // That's it for the initialization! Now we wait until the user wants to 
+  // plot something
 
 }
 //----------------------------------------------------------------------------
@@ -581,8 +593,8 @@ std::string VTKPlotter::get_helptext()
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::keypressCallback(vtkObject* caller,
-                                  long unsigned int eventId,
-                                  void* callData)
+    long unsigned int eventId,
+    void* callData)
 {
   vtkSmartPointer<vtkRenderWindowInteractor> iren = 
     static_cast<vtkRenderWindowInteractor*>(caller);
@@ -596,12 +608,12 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
         // until a unique filename is found. That filename is then passed 
         // to the hardcopy function.
         std::stringstream filename;
-        filename << std::string(parameters["hardcopy_prefix"]);
+        filename << std::string(parameters["prefix"]);
         filename << hardcopy_counter;
         while (boost::filesystem::exists(filename.str() + ".png")) {
           hardcopy_counter++;
           filename.str("");
-          filename << std::string(parameters["hardcopy_prefix"]);
+          filename << std::string(parameters["prefix"]);
           filename << hardcopy_counter;
         }
         hardcopy(filename.str());
@@ -616,8 +628,8 @@ void VTKPlotter::hardcopy(std::string filename)
 {
   dolfin_assert(_renderWindow);
 
-  info("Saving plot to file: %s", filename.c_str());
-  
+  info("Saving plot to file: %s.png", filename.c_str());
+
   // Create window to image filter and PNG writer
   vtkSmartPointer<vtkWindowToImageFilter> w2i = 
     vtkSmartPointer<vtkWindowToImageFilter>::New();
