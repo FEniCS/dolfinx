@@ -18,13 +18,13 @@
 // Modified by Anders Logg 2012
 //
 // First added:  2012-06-02
-// Last changed: 2012-06-14
+// Last changed: 2012-06-19
 
-#include "PlottableExpression.h"
+#include "ExpressionWrapper.h"
 
 using namespace dolfin;
 //----------------------------------------------------------------------------
-PlottableExpression::PlottableExpression(boost::shared_ptr<const Expression> expression,
+ExpressionWrapper::ExpressionWrapper(boost::shared_ptr<const Expression> expression,
                                          boost::shared_ptr<const Mesh> mesh) :
   _mesh(mesh), _expression(expression)
 {

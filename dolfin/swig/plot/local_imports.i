@@ -21,5 +21,5 @@
 // Auto generated local_import statements for the module: plot
 
 %import(module="io") "dolfin/plot/plot.h"
-%import(module="io") "dolfin/plot/PlottableExpression.h"
+%import(module="io") "dolfin/plot/ExpressionWrapper.h"
 %import(module="io") "dolfin/plot/VTKPlotter.h"

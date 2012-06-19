@@ -4,7 +4,7 @@
 // DOLFIN plot interface
 
 #include <dolfin/plot/plot.h>
-#include <dolfin/plot/PlottableExpression.h>
+#include <dolfin/plot/ExpressionWrapper.h>
 #include <dolfin/plot/VTKPlotter.h>
 
 #endif

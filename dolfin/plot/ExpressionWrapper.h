@@ -18,10 +18,10 @@
 // Modified by Anders Logg 2012
 //
 // First added:  2012-06-02
-// Last changed: 2012-06-14
+// Last changed: 2012-06-19
 
-#ifndef __PLOTTABLE_EXPRESSION_H
-#define __PLOTTABLE_EXPRESSION_H
+#ifndef __EXPRESSION_WRAPPER_H
+#define __EXPRESSION_WRAPPER_H
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Expression.h>
@@ -31,12 +31,12 @@ namespace dolfin
 
   /// A light wrapper class to hold an expression to plot, along with the mesh
   /// to plot it on. Allows for clean, templated plotter code in plot.cpp
-  class PlottableExpression
+  class ExpressionWrapper
   {
   public:
 
     /// Create plotable expression object
-    explicit PlottableExpression(boost::shared_ptr<const Expression> expression,
+    explicit ExpressionWrapper(boost::shared_ptr<const Expression> expression,
                                  boost::shared_ptr<const Mesh> mesh);
 
     /// Return unique ID of the expression

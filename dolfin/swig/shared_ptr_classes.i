@@ -227,7 +227,7 @@
 
 // plot
 %shared_ptr(dolfin::VTKPlotter)
-%shared_ptr(dolfin::PlottableExpression)
+%shared_ptr(dolfin::ExpressionWrapper)
 
 // quadrature
 %shared_ptr(dolfin::Quadrature)

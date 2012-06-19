@@ -53,7 +53,7 @@ namespace dolfin
   // FIXME: Use forward declarations to avoid inclusion of .h files in .h files
 
   // Forward declarations
-  class PlottableExpression;
+  class ExpressionWrapper;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -129,7 +129,7 @@ namespace dolfin
     explicit VTKPlotter(boost::shared_ptr<const Function> function);
 
     /// Create plotter for an expression
-    explicit VTKPlotter(boost::shared_ptr<const PlottableExpression> expression);
+    explicit VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression);
 
     /// Create plotter for an expression
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,

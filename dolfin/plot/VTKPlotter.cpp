@@ -49,7 +49,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
-#include "PlottableExpression.h"
+#include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 
 using namespace dolfin;
@@ -83,7 +83,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   init_pipeline();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const PlottableExpression> expression) :
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
   _mesh(expression->mesh()),
   _function(expression->expression()),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),

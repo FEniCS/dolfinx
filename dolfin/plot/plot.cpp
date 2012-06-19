@@ -33,7 +33,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
-#include "PlottableExpression.h"
+#include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 #include "plot.h"
 
@@ -161,8 +161,8 @@ void dolfin::plot(boost::shared_ptr<const Expression> expression,
                   boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const Parameters> parameters)
 {
-  boost::shared_ptr<const PlottableExpression> 
-    e(new PlottableExpression(expression, mesh));
+  boost::shared_ptr<const ExpressionWrapper> 
+    e(new ExpressionWrapper(expression, mesh));
   plot_object(e, parameters);
 }
 //-----------------------------------------------------------------------------
