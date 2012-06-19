@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-15
+// Last changed: 2012-06-19
 
 #ifdef HAS_VTK
 
@@ -63,6 +63,7 @@ int VTKPlotter::hardcopy_counter = 0;
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _mesh(mesh),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(mesh->id())
 {
   parameters = default_mesh_parameters();
@@ -74,6 +75,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   _mesh(function->function_space()->mesh()),
   _function(function),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(function->id())
 {
   parameters = default_parameters();
@@ -85,6 +87,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const PlottableExpression> expression) 
   _mesh(expression->mesh()),
   _function(expression->expression()),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(expression->id())
 {
   parameters = default_parameters();
@@ -98,6 +101,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
   _mesh(mesh),
   _function(expression),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(expression->id())
 {
   parameters = default_parameters();
@@ -108,6 +112,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   _mesh(bc->function_space()->mesh()),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(bc->id())
 {
   boost::shared_ptr<Function> f(new Function(bc->function_space()));
@@ -122,6 +127,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
@@ -131,6 +137,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
@@ -140,6 +147,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
   _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
@@ -204,6 +212,8 @@ void VTKPlotter::plot()
     // We are only plotting a mesh
     process_mesh();
   }
+
+  _frame_counter++;
 
   if (parameters["interactive"]) {
     interactive();
@@ -629,6 +639,8 @@ void VTKPlotter::hardcopy(std::string filename)
   dolfin_assert(_renderWindow);
 
   info("Saving plot to file: %s.png", filename.c_str());
+
+  // FIXME: Remove help-text-actor before hardcopying.
 
   // Create window to image filter and PNG writer
   vtkSmartPointer<vtkWindowToImageFilter> w2i = 

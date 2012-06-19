@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-06-15
+// Last changed: 2012-06-18
 
 #include <cstdlib>
 #include <sstream>

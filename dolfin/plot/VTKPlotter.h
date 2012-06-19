@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-15
+// Last changed: 2012-06-19
 
 #ifndef __VTKPLOTTER_H
 #define __VTKPLOTTER_H
@@ -272,11 +272,14 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
+    // The number of plotted frames
+    uint _frame_counter;
+
     // The unique ID (inherited from Variable) for the object to plot
     uint _id;
 
     // Counter for the automatically named hardcopies
-    static int hardcopy_counter; 
+    static int hardcopy_counter;
 
   };
 
