@@ -53,8 +53,6 @@ int VTKPlotter::hardcopy_counter = 0;
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
-  //_mesh(mesh),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh->id())
 {
@@ -66,9 +64,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableGenericFunction(function))),
-  //_mesh(function->function_space()->mesh()),
-  //_function(function),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(function->id())
 {
@@ -81,9 +76,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
   _plottable(boost::shared_ptr<VTKPlottableMesh>(
         new VTKPlottableGenericFunction(expression->expression(),
           expression->mesh()))),
-  //_mesh(expression->mesh()),
-  //_function(expression->expression()),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(expression->id())
 {
@@ -97,9 +89,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<VTKPlottableMesh>(
         new VTKPlottableGenericFunction(expression, mesh))),
-  //_mesh(mesh),
-  //_function(expression),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(expression->id())
 {
@@ -109,8 +98,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  //_mesh(bc->function_space()->mesh()),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(bc->id())
 {
@@ -125,8 +112,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
-  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -135,8 +120,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
-  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -145,8 +128,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
-  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -172,12 +153,6 @@ void VTKPlotter::plot()
   }
 
   // The plotting starts
- // dolfin_assert(_mesh);
-
-  // Construct grid each time since the mesh may have been changed.
-  // TODO: Introduce boolean flag that says if mesh has changed or not?
-  // Probably overkill ... performs good enough already
-  //construct_vtk_grid();
 
   // Process some parameters
   if (parameters["wireframe"]) {
@@ -188,30 +163,6 @@ void VTKPlotter::plot()
   }
 
   _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
-/*
-  // Proceed depending on what type of plot this is
-  if (_function) {
-    switch (_function->value_rank()) {
-      case 0:
-        process_scalar_function();
-        break;
-      case 1:
-        process_vector_function();
-        break;
-      default:
-        dolfin_error("VTKPlotter.cpp",
-            "plot function of rank > 2.",
-            "Plotting of higher order functions is not supported.");
-    }
-  }*/
-  /*else if (_mesh_function) {
-  // Or are we plotting a mesh function?
-
-  }*/
-  /*else {
-    // We are only plotting a mesh
-    process_mesh();
-  }*/
 
   // Update the plottable data
   _plottable->update(parameters);
@@ -360,7 +311,7 @@ std::string VTKPlotter::get_helptext()
   text << "\t S: View figure with solid surface\n";
   text << "\t F: Fly to the point currently under the mouse pointer\n";
   text << "\t P: Add bounding box\n";
-  text << "\t S: Save plot to file\n";
+  text << "\t H: Save plot to file\n";
   text << "\t E/Q: Exit\n";
   return text.str();
 }
@@ -374,7 +325,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
 
   switch (iren->GetKeyCode()) {
     // Save plot to file
-    case 's':
+    case 'h':
       {
         // We construct a filename from the given prefix and static counter.
         // If a file with that filename exists, the counter is incremented
