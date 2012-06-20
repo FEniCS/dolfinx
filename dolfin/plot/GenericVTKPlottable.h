@@ -18,56 +18,33 @@
 // First added:  2012-06-20
 // Last changed: 2012-06-20
 
-#ifndef __VTK_PLOTTABLE_MESH_H
-#define __VTK_PLOTTABLE_MESH_H
+#ifndef __GENERIC_VTK_PLOTTABLE_H
+#define __GENERIC_VTK_PLOTTABLE_H
 
 #ifdef HAS_VTK
 
-#include <vtkUnstructuredGrid.h>
-#include <vtkGeometryFilter.h>
-
-#include <dolfin/mesh/Mesh.h>
-
-#include "GenericVTKPlottable.h"
+#include <vtkSmartPointer.h>
+#include <vtkAlgorithmOutput.h>
 
 namespace dolfin
 {
-  class VTKPlottableMesh : public GenericVTKPlottable
+  class GenericVTKPlottable
   {
   public:
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
-
-    //--- Implementation of the GenericVTKPlottable interface ---
-
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline();
+    virtual void init_pipeline() = 0;
 
     /// Update the plottable data
-    void update(const Parameters& parameters);
+    virtual void update(const Parameters& parameters) = 0;
 
     /// Update the scalar range of the plottable data
-    void update_range(double range[2]);
-
+    virtual void update_range(double range[2]) = 0;
+   
     /// Return data to visualize
-    vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
-
-  protected:
-
-    // The VTK grid constructed from the DOLFIN mesh
-    vtkSmartPointer<vtkUnstructuredGrid> _grid;
-
-    // The geometry filter
-    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
-
-    // The mesh to visualize
-    boost::shared_ptr<const Mesh> _mesh;
-
-  private:
-
+    virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
 
   };
-
 }
 
 #endif

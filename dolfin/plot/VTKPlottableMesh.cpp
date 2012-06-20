@@ -35,11 +35,19 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
   _mesh(mesh)
 {
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::init_pipeline()
+{
+  dolfin_assert(_geometryFilter);
+
   _geometryFilter->SetInput(_grid);
   _geometryFilter->Update();
 }
+
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update()
+void VTKPlottableMesh::update(const Parameters& parameters)
 {
   dolfin_assert(_grid);
 

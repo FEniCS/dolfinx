@@ -26,14 +26,8 @@
 #ifdef HAS_VTK
 
 #include <vtkSmartPointer.h>
-#include <vtkUnstructuredGrid.h>
-#include <vtkPointSet.h>
-#include <vtkPolyDataAlgorithm.h>
-#include <vtkWarpScalar.h>
-#include <vtkWarpVector.h>
-#include <vtkGlyph3D.h>
-#include <vtkGeometryFilter.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkLookupTable.h>
 #include <vtkActor.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -54,7 +48,7 @@ namespace dolfin
 
   // Forward declarations
   class ExpressionWrapper;
-  class VTKPlottableMesh;
+  class GenericVTKPlottable;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -160,7 +154,7 @@ namespace dolfin
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("mode", "auto");
-      p.add("rescale", false); // FIXME: Check this parameter in VTKPlotter.cpp
+      p.add("rescale", false);
       p.add("scale", 1.0);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
@@ -208,20 +202,6 @@ namespace dolfin
     // Set the title parameter from the name and label of the Variable to plot
     void set_title(const std::string& name, const std::string& label);
 
-    // Construct VTK grid from DOLFIN mesh
-    void construct_vtk_grid();
-
-    // Process mesh (including filter setup)
-    void process_mesh();
-
-    // Process scalar valued generic function (function or expression),
-    // including filter setup
-    void process_scalar_function();
-
-    // Process vector valued generic function (function or expression),
-    // including filter setup
-    void process_vector_function();
-
     // Return the hover-over help text
     std::string get_helptext();
 
@@ -231,28 +211,7 @@ namespace dolfin
                           void* callData);
 
     // The plottable object (plot data wrapper)
-    boost::shared_ptr<VTKPlottableMesh> _plottable;
-
-    // The mesh to visualize
-    boost::shared_ptr<const Mesh> _mesh; //TODO REMOVE
-
-    // The (optional) function values to visualize
-    boost::shared_ptr<const GenericFunction> _function;//TODO REMOVE
-
-    // The VTK grid constructed from the DOLFIN mesh
-    vtkSmartPointer<vtkUnstructuredGrid> _grid;//TODO REMOVE
-
-    // The scalar warp filter
-    vtkSmartPointer<vtkWarpScalar> _warpscalar;//TODO REMOVE
-
-    // The vector warp filter
-    vtkSmartPointer<vtkWarpVector> _warpvector;//TODO REMOVE
-
-    // The glyph filter
-    vtkSmartPointer<vtkGlyph3D> _glyphs;//TODO REMOVE
-
-    // The geometry filter
-    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;//TODO REMOVE
+    boost::shared_ptr<GenericVTKPlottable> _plottable;
 
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;

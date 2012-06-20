@@ -18,28 +18,40 @@
 // First added:  2012-06-20
 // Last changed: 2012-06-20
 
-#ifndef __VTK_PLOTTABLE_MESH_H
-#define __VTK_PLOTTABLE_MESH_H
+#ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
+#define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 
 #ifdef HAS_VTK
 
-#include <vtkUnstructuredGrid.h>
-#include <vtkGeometryFilter.h>
+#include <vtkWarpScalar.h>
+#include <vtkWarpVector.h>
+#include <vtkGlyph3D.h>
 
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/Expression.h>
 
 #include "GenericVTKPlottable.h"
 
 namespace dolfin
 {
-  class VTKPlottableMesh : public GenericVTKPlottable
+
+  // Forward declarations
+  class VTKPlottableMesh;
+
+  class VTKPlottableGenericFunction : public VTKPlottableMesh
   {
   public:
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
+    explicit VTKPlottableGenericFunction(
+        boost::shared_ptr<const Function> function);
+    
+    explicit VTKPlottableGenericFunction(
+        boost::shared_ptr<const Expression> expression,
+        boost::shared_ptr<const Mesh> mesh);
 
     //--- Implementation of the GenericVTKPlottable interface ---
-
+    
     /// Initialize the parts of the pipeline that this class controls
     void init_pipeline();
 
@@ -47,25 +59,33 @@ namespace dolfin
     void update(const Parameters& parameters);
 
     /// Update the scalar range of the plottable data
-    void update_range(double range[2]);
+    void update_range(double range[]);
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
-  protected:
-
-    // The VTK grid constructed from the DOLFIN mesh
-    vtkSmartPointer<vtkUnstructuredGrid> _grid;
-
-    // The geometry filter
-    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
-
-    // The mesh to visualize
-    boost::shared_ptr<const Mesh> _mesh;
-
   private:
+    
+    // Update scalar values
+    void update_scalar();
 
+    // Update vector values
+    void update_vector();
 
+    // The function to visualize
+    boost::shared_ptr<const GenericFunction> _function;
+
+    // The scalar warp filter
+    vtkSmartPointer<vtkWarpScalar> _warpscalar;
+
+    // The vector warp filter
+    vtkSmartPointer<vtkWarpVector> _warpvector;
+
+    // The glyph filter
+    vtkSmartPointer<vtkGlyph3D> _glyphs;
+
+    // Warp vector mode? FIXME: This is horrible, we must be able to avoid this somehow 
+    bool warp_vector_mode;
   };
 
 }

@@ -22,17 +22,6 @@
 
 #ifdef HAS_VTK
 
-#include <vtkPoints.h>
-#include <vtkCellArray.h>
-#include <vtkCellType.h>
-#include <vtkFloatArray.h>
-#include <vtkPointData.h>
-#include <vtkVectorNorm.h>
-#include <vtkWarpScalar.h>
-#include <vtkWarpVector.h>
-#include <vtkArrowSource.h>
-#include <vtkGlyph3D.h>
-#include <vtkLookupTable.h>
 #include <vtkTextProperty.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
@@ -51,6 +40,7 @@
 #include <dolfin/common/Timer.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlottableMesh.h"
+#include "VTKPlottableGenericFunction.h"
 #include "VTKPlotter.h"
 
 using namespace dolfin;
@@ -62,7 +52,7 @@ int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
-  _plottable(boost::shared_ptr<VTKPlottableMesh>(new VTKPlottableMesh(mesh))),
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
   //_mesh(mesh),
   //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
@@ -74,9 +64,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
-  _mesh(function->function_space()->mesh()),
-  _function(function),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableGenericFunction(function))),
+  //_mesh(function->function_space()->mesh()),
+  //_function(function),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(function->id())
 {
@@ -86,9 +78,12 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
-  _mesh(expression->mesh()),
-  _function(expression->expression()),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _plottable(boost::shared_ptr<VTKPlottableMesh>(
+        new VTKPlottableGenericFunction(expression->expression(),
+          expression->mesh()))),
+  //_mesh(expression->mesh()),
+  //_function(expression->expression()),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(expression->id())
 {
@@ -100,9 +95,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
-  _mesh(mesh),
-  _function(expression),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _plottable(boost::shared_ptr<VTKPlottableMesh>(
+        new VTKPlottableGenericFunction(expression, mesh))),
+  //_mesh(mesh),
+  //_function(expression),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(expression->id())
 {
@@ -112,14 +109,15 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  _mesh(bc->function_space()->mesh()),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  //_mesh(bc->function_space()->mesh()),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(bc->id())
 {
   boost::shared_ptr<Function> f(new Function(bc->function_space()));
   bc->apply(*f->vector());
-  _function = f;
+  _plottable = boost::shared_ptr<VTKPlottableMesh>(
+      new VTKPlottableGenericFunction(f));
 
   parameters = default_parameters();
   set_title(bc->name(), bc->label());
@@ -127,8 +125,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -137,8 +135,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -147,8 +145,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
-  _mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  //_mesh(reference_to_no_delete_pointer(mesh_function->mesh())),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh_function->id())
 {
@@ -216,8 +214,8 @@ void VTKPlotter::plot()
   }*/
 
   // Update the plottable data
-  _plottable->update();
- 
+  _plottable->update(parameters);
+  
   // If this is the first render of this plot and/or the rescale parameter is
   // set, we read get the min/max values of the data and process them 
   if (_frame_counter == 0 || parameters["rescale"]) {
@@ -291,25 +289,12 @@ void VTKPlotter::interactive()
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
 {
-  // Don't construct grid when initializing object! Mesh may change in the
-  // meantime before plotting
-  //construct_vtk_grid();
+  // We first initialize the part of the pipeline that the plotter controls.
+  // This is the part from the Poly data mapper and out, including actor, 
+  // renderer, renderwindow and interaction. It also takes care of the scalar
+  // bar and other decorations. 
 
-  // We first initialize all the different filters, this is the data
-  // processing part of the pipeline. We initialize all of them and defer the
-  // connection of filters and mappers until plotting. Not all will be used,
-  // but having them initialized makes swapping of connections easy later on.
-  //
-  // FIXME: Should we only initialize those that we need? Probably, but that
-  // would require different init functions for different types of plots
-
-/*  _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
-  _warpvector = vtkSmartPointer<vtkWarpVector>::New();
-  _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
-  _geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();*/
-
-  // The rest of the pipeline is initalized and connected. This is the
-  // rendering part of the pipeline
+  // Initialize objects
   _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
   _lut = vtkSmartPointer<vtkLookupTable>::New();
   _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -346,6 +331,9 @@ void VTKPlotter::init_pipeline()
   labelprop->ItalicOff();
   labelprop->BoldOff();
 
+  // Let the plottable initialize its part of the pipeline
+  _plottable->init_pipeline();
+
   // That's it for the initialization! Now we wait until the user wants to 
   // plot something
 
@@ -356,257 +344,6 @@ void VTKPlotter::set_title(const std::string& name, const std::string& label)
   std::stringstream title;
   title <<"Plot of \"" << name << "\" (" << label << ")";
   parameters["title"] =  title.str();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::construct_vtk_grid()
-{
-  dolfin_assert(_grid);
-
-  Timer t("Construct VTK grid");
-
-  // Construct VTK point array from DOLFIN mesh vertices
-  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-  points->SetNumberOfPoints(_mesh->num_vertices());
-  Point p;
-
-  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex) {
-    p = vertex->point();
-    points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
-  }
-
-  // Add mesh cells to VTK cell array. Note: Preallocation of storage
-  // in cell array did not give speedups when testing during development
-  vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const uint *connectivity = _mesh->cells();
-  uint spatial_dim = _mesh->topology().dim();
-
-  for (uint i = 0; i < _mesh->num_cells(); ++i) {
-
-    // Insert all vertex indices for a given cell. For a simplex cell in nD,
-    // n+1 indices are inserted. The connectivity array must be indexed at
-    // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim+1);
-    for(uint j = 0; j <= spatial_dim; ++j) {
-      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
-    }
-  }
-  // Free unused memory in cell array
-  // (automatically allocated during cell insertion)
-  cells->Squeeze();
-
-  // Insert points and cells in VTK unstructured grid
-  _grid->SetPoints(points);
-  switch (spatial_dim) {
-    case 1:
-      _grid->SetCells(VTK_LINE, cells);
-      break;
-    case 2:
-      _grid->SetCells(VTK_TRIANGLE, cells);
-      break;
-    case 3:
-      _grid->SetCells(VTK_TETRA, cells);
-      break;
-    default:
-      // Should never be reached
-      break;
-  }
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::process_mesh()
-{
-  // Connect grid to filter
-  _geometryFilter->SetInput(_grid);
-  _geometryFilter->Update();
-
-  // Connect filter to mapper. This completes the pipeline! Ready to render.
-  _mapper->SetInputConnection(_geometryFilter->GetOutputPort());
-
-  // Render it
-  _renderWindow->Render();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::process_scalar_function()
-{
-  dolfin_assert(_function->value_rank() == 0);
-
-  // STEP 1: Connect the pipeline parts
-  ///////////////////////////////////////
-
-  // Depending on the geometrical dimension, we use different algorithms
-  // to visualize the scalar data.
-  if (_mesh->topology().dim() < 3) {
-    // In 1D and 2D, we warp the mesh according to the scalar values
-    _warpscalar->SetInput(_grid);
-
-    _geometryFilter->SetInput(_warpscalar->GetOutput());
-  }
-  else {
-    // In 3D, we just show the scalar values as colors on the mesh
-    _geometryFilter->SetInput(_grid);
-
-  }
-  _geometryFilter->Update();
-  _mapper->SetInputConnection(_geometryFilter->GetOutputPort());
-
-  // STEP 2: Update scalar point data
-  ///////////////////////////////////////
-
-  // Make VTK float array and allocate storage for function values
-  uint num_vertices = _mesh->num_vertices();
-  vtkSmartPointer<vtkFloatArray> scalars =
-    vtkSmartPointer<vtkFloatArray>::New();
-  scalars->SetNumberOfValues(num_vertices);
-
-  // Evaluate DOLFIN function and copy values to the VTK array
-  std::vector<double> vertex_values(num_vertices);
-  _function->compute_vertex_values(vertex_values, *_mesh);
-
-  for(uint i = 0; i < num_vertices; ++i) {
-    scalars->SetValue(i, vertex_values[i]);
-  }
-
-  // Attach scalar values as point data in the VTK grid
-  _grid->GetPointData()->SetScalars(scalars);
-
-  // STEP 3: Update scalar ranges
-  ///////////////////////////////////////
-
-  double range[2];
-  _grid->GetScalarRange(range);
-
-  // Update lookuptable so that the scalar bar shows correct colors
-  _lut->SetRange(range);
-  _lut->Build();
-
-  // This call is what actually changes the surface color
-  _mapper->SetScalarRange(range);
-
-  // Set the warp scale factor to according to parameter, but multiply
-  // with a factor equal the inverse of the difference between minimum and
-  // maximum scalar value. This in order to prevent extremely large figures
-  _warpscalar->SetScaleFactor((double) parameters["scale"]*
-      1/(range[1]-range[0]));
-
-  // STEP 4: Render
-  ///////////////////////////////////////
-
-  _renderWindow->Render();
-
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::process_vector_function()
-{
-  dolfin_assert(_function->value_rank() == 1);
-
-  // STEP 1: Connect the pipeline parts
-  ///////////////////////////////////////
-
-  const std::string mode = parameters["mode"];
-
-  // In warp mode, we just set up a vector warper and connect it to the
-  // geometry filter and the mapper
-  if(mode == "warp") {
-    _warpvector->SetInput(_grid);
-    _warpvector->SetScaleFactor(parameters["scale"]);
-
-    _geometryFilter->SetInput(_warpvector->GetOutput());
-    _geometryFilter->Update();
-    _mapper->SetInputConnection(_geometryFilter->GetOutputPort());
-
-    // In glyph mode, we must construct the glyphs. The glyphs are connected
-    // directly to the mapper, without using the geometry filter
-    // The only allowed options are "warp" and "glyphs", hence the plain
-    // else block
-  } else {
-    if (mode != "auto") {
-      warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
-    }
-    vtkSmartPointer<vtkArrowSource> arrow =
-      vtkSmartPointer<vtkArrowSource>::New();
-    arrow->SetTipRadius(0.08);
-    arrow->SetTipResolution(16);
-    arrow->SetTipLength(0.25);
-    arrow->SetShaftRadius(0.05);
-    arrow->SetShaftResolution(16);
-
-    // Create the glyph object, set source (the arrow) and input (the grid) and
-    // adjust various parameters
-    _glyphs->SetSourceConnection(arrow->GetOutputPort());
-    _glyphs->SetInput(_grid);
-    _glyphs->SetVectorModeToUseVector();
-    _glyphs->SetScaleModeToScaleByVector();
-    _glyphs->SetColorModeToColorByVector();
-    _glyphs->SetScaleFactor(parameters["scale"]);
-
-    _mapper->SetInputConnection(_glyphs->GetOutputPort());
-  }
-
-  // STEP 2: Update vector and scalar point data
-  ///////////////////////////////////////
-
-  // Make VTK float array and allocate storage for function vector values
-  uint num_vertices = _mesh->num_vertices();
-  uint num_components = _function->value_dimension(0);
-  vtkSmartPointer<vtkFloatArray> vectors =
-    vtkSmartPointer<vtkFloatArray>::New();
-
-  // NOTE: Allocation must be done in this order!
-  // Note also that the number of VTK vector components must always be 3
-  // regardless of the function vector value dimension
-  vectors->SetNumberOfComponents(3);
-  vectors->SetNumberOfTuples(num_vertices);
-
-  // Evaluate DOLFIN function and copy values to the VTK array
-  // The entries in "vertex_values" must be copied to "vectors". Viewing
-  // these arrays as matrices, the transpose of vertex values should be copied,
-  // since DOLFIN and VTK store vector function values differently
-  std::vector<double> vertex_values(num_vertices*num_components);
-  _function->compute_vertex_values(vertex_values, *_mesh);
-
-  for(uint i = 0; i < num_vertices; ++i) {
-    vectors->SetValue(3*i,     vertex_values[i]);
-    vectors->SetValue(3*i + 1, vertex_values[i + num_vertices]);
-
-    // If the DOLFIN function vector value dimension is 2, pad with a 0
-    if(num_components == 2) {
-      vectors->SetValue(3*i + 2, 0.0);
-      // else, add the last entry in the value vector
-    } else {
-      vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
-    }
-  }
-  // Attach vectors as vector point data in the VTK grid
-  _grid->GetPointData()->SetVectors(vectors);
-
-  // Compute norms of vector data
-  vtkSmartPointer<vtkVectorNorm> norms =
-    vtkSmartPointer<vtkVectorNorm>::New();
-  norms->SetInput(_grid);
-  norms->SetAttributeModeToUsePointData();
-  //NOTE: This update is necessary to actually compute the norms
-  norms->Update();
-
-  // Attach vector norms as scalar point data in the VTK grid
-  _grid->GetPointData()->SetScalars(
-      norms->GetOutput()->GetPointData()->GetScalars());
-
-  // STEP 3: Update scalar ranges
-  ///////////////////////////////////////
-
-  double range[2];
-  _grid->GetScalarRange(range);
-
-  // Update lookuptable so that the scalar bar shows correct colors
-  _lut->SetRange(range);
-  _lut->Build();
-
-  // This call is what actually changes the surface color
-  _mapper->SetScalarRange(range);
-
-  // STEP 4: Render
-  ///////////////////////////////////////
-
-  _renderWindow->Render();
 }
 //----------------------------------------------------------------------------
 std::string VTKPlotter::get_helptext()
