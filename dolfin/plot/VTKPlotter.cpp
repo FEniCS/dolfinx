@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-19
+// Last changed: 2012-06-20
 
 #ifdef HAS_VTK
 
@@ -50,6 +50,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
 #include "ExpressionWrapper.h"
+#include "VTKPlottableMesh.h"
 #include "VTKPlotter.h"
 
 using namespace dolfin;
@@ -61,8 +62,9 @@ int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
-  _mesh(mesh),
-  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _plottable(boost::shared_ptr<VTKPlottableMesh>(new VTKPlottableMesh(mesh))),
+  //_mesh(mesh),
+  //_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _frame_counter(0),
   _id(mesh->id())
 {
@@ -172,12 +174,12 @@ void VTKPlotter::plot()
   }
 
   // The plotting starts
-  dolfin_assert(_mesh);
+ // dolfin_assert(_mesh);
 
   // Construct grid each time since the mesh may have been changed.
   // TODO: Introduce boolean flag that says if mesh has changed or not?
   // Probably overkill ... performs good enough already
-  construct_vtk_grid();
+  //construct_vtk_grid();
 
   // Process some parameters
   if (parameters["wireframe"]) {
@@ -188,7 +190,7 @@ void VTKPlotter::plot()
   }
 
   _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
-
+/*
   // Proceed depending on what type of plot this is
   if (_function) {
     switch (_function->value_rank()) {
@@ -203,15 +205,39 @@ void VTKPlotter::plot()
             "plot function of rank > 2.",
             "Plotting of higher order functions is not supported.");
     }
-  }
+  }*/
   /*else if (_mesh_function) {
   // Or are we plotting a mesh function?
 
   }*/
-  else {
+  /*else {
     // We are only plotting a mesh
     process_mesh();
+  }*/
+
+  // Update the plottable data
+  _plottable->update();
+ 
+  // If this is the first render of this plot and/or the rescale parameter is
+  // set, we read get the min/max values of the data and process them 
+  if (_frame_counter == 0 || parameters["rescale"]) {
+    double range[2];
+    
+    _plottable->update_range(range);
+
+    _lut->SetRange(range);
+    _lut->Build();
+
+    _mapper->SetScalarRange(range);
+
   }
+
+  // Set the mapper's connection on each plot. This must be done since the
+  // visualization parameters may have changed since the last frame, and 
+  // the input may hence also have changed
+  _mapper->SetInputConnection(_plottable->get_output());
+
+  _renderWindow->Render();
 
   _frame_counter++;
 
@@ -277,10 +303,10 @@ void VTKPlotter::init_pipeline()
   // FIXME: Should we only initialize those that we need? Probably, but that
   // would require different init functions for different types of plots
 
-  _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
+/*  _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
-  _geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+  _geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();*/
 
   // The rest of the pipeline is initalized and connected. This is the
   // rendering part of the pipeline
@@ -307,7 +333,7 @@ void VTKPlotter::init_pipeline()
 
   // Set some properties that affect the look of things
   _renderer->SetBackground(1, 1, 1);
-  _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshse
+  _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
   _renderWindow->SetSize(parameters["window_width"],
       parameters["window_height"]);
   _scalarBar->SetTextPositionToPrecedeScalarBar();

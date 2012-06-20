@@ -18,10 +18,10 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-19
+// Last changed: 2012-06-20
 
-#ifndef __VTKPLOTTER_H
-#define __VTKPLOTTER_H
+#ifndef __VTK_PLOTTER_H
+#define __VTK_PLOTTER_H
 
 #ifdef HAS_VTK
 
@@ -54,6 +54,7 @@ namespace dolfin
 
   // Forward declarations
   class ExpressionWrapper;
+  class VTKPlottableMesh;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -159,7 +160,7 @@ namespace dolfin
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("mode", "auto");
-      p.add("rescale", true); // FIXME: Check this parameter in VTKPlotter.cpp
+      p.add("rescale", false); // FIXME: Check this parameter in VTKPlotter.cpp
       p.add("scale", 1.0);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
@@ -229,26 +230,29 @@ namespace dolfin
                           long unsigned int eventId,
                           void* callData);
 
+    // The plottable object (plot data wrapper)
+    boost::shared_ptr<VTKPlottableMesh> _plottable;
+
     // The mesh to visualize
-    boost::shared_ptr<const Mesh> _mesh;
+    boost::shared_ptr<const Mesh> _mesh; //TODO REMOVE
 
     // The (optional) function values to visualize
-    boost::shared_ptr<const GenericFunction> _function;
+    boost::shared_ptr<const GenericFunction> _function;//TODO REMOVE
 
     // The VTK grid constructed from the DOLFIN mesh
-    vtkSmartPointer<vtkUnstructuredGrid> _grid;
+    vtkSmartPointer<vtkUnstructuredGrid> _grid;//TODO REMOVE
 
     // The scalar warp filter
-    vtkSmartPointer<vtkWarpScalar> _warpscalar;
+    vtkSmartPointer<vtkWarpScalar> _warpscalar;//TODO REMOVE
 
     // The vector warp filter
-    vtkSmartPointer<vtkWarpVector> _warpvector;
+    vtkSmartPointer<vtkWarpVector> _warpvector;//TODO REMOVE
 
     // The glyph filter
-    vtkSmartPointer<vtkGlyph3D> _glyphs;
+    vtkSmartPointer<vtkGlyph3D> _glyphs;//TODO REMOVE
 
     // The geometry filter
-    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
+    vtkSmartPointer<vtkGeometryFilter> _geometryFilter;//TODO REMOVE
 
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;

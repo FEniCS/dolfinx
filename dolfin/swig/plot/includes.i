@@ -22,4 +22,5 @@
 
 %include "dolfin/plot/plot.h"
 %include "dolfin/plot/ExpressionWrapper.h"
+%include "dolfin/plot/VTKPlottableMesh.h"
 %include "dolfin/plot/VTKPlotter.h"
