@@ -311,6 +311,7 @@ std::string VTKPlotter::get_helptext()
   text << "\t S: View figure with solid surface\n";
   text << "\t F: Fly to the point currently under the mouse pointer\n";
   text << "\t P: Add bounding box\n";
+  text << "\t I/O: Turn vertex indices on/off\n";
   text << "\t H: Save plot to file\n";
   text << "\t E/Q: Exit\n";
   return text.str();
@@ -326,7 +327,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
   switch (iren->GetKeyCode()) {
     // Save plot to file
     case 'h':
-      {
+    {
         // We construct a filename from the given prefix and static counter.
         // If a file with that filename exists, the counter is incremented
         // until a unique filename is found. That filename is then passed 
@@ -342,7 +343,29 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
         }
         hardcopy(filename.str());
         break;
+    }
+    case 'i': 
+    {
+      // Check if actor is present. If not, get from plottable. If it is, turn on visibility
+      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
+      if (_renderer->HasViewProp(labels)) {
+        labels->VisibilityOn();
+      } else {
+        _renderer->AddActor(labels);
       }
+      _renderWindow->Render();
+      break;
+    }
+    case 'o': 
+    {
+      // Check if actor is present. If not, ignore. If it is, turn off visibility
+      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
+      if (_renderer->HasViewProp(labels)) {
+        labels->VisibilityOff();
+      }
+      _renderWindow->Render();
+      break;
+    }
     default:
       break;
   }

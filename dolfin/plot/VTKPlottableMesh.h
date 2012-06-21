@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-20
+// Last changed: 2012-06-21
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -52,6 +52,9 @@ namespace dolfin
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
+    /// Get an actor for showing vertex labels
+    vtkSmartPointer<vtkActor2D> get_vertex_label_actor();
+
   protected:
 
     // The VTK grid constructed from the DOLFIN mesh
@@ -62,6 +65,9 @@ namespace dolfin
 
     // The mesh to visualize
     boost::shared_ptr<const Mesh> _mesh;
+
+    // The label actor
+    vtkSmartPointer<vtkActor2D> _vertexLabelActor;
 
   private:
 

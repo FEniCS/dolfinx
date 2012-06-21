@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-20
+// Last changed: 2012-06-21
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -25,6 +25,7 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkAlgorithmOutput.h>
+#include <vtkActor2D.h>
 
 namespace dolfin
 {
@@ -43,6 +44,9 @@ namespace dolfin
    
     /// Return data to visualize
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
+
+    /// Get an actor for showing vertex labels
+    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor() = 0;
 
   };
 }

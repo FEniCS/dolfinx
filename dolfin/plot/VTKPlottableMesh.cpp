@@ -16,11 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-20
+// Last changed: 2012-06-21
 
 #ifdef HAS_VTK
 
+#include <vtkStringArray.h>
 #include <vtkCellArray.h>
+#include <vtkPointData.h>
+#include <vtkPointSetToLabelHierarchy.h>
+#include <vtkTextProperty.h>
+#include <vtkLabelPlacementMapper.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
@@ -54,13 +59,27 @@ void VTKPlottableMesh::update(const Parameters& parameters)
   Timer t("Construct VTK grid");
 
   // Construct VTK point array from DOLFIN mesh vertices
+
+  // Create pint array
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
-  Point p;
 
+  // Create array to hold index labels
+  vtkSmartPointer<vtkStringArray> labels = vtkSmartPointer<vtkStringArray>::New();
+  std::stringstream label;
+  labels->SetNumberOfValues(_mesh->num_vertices());
+  labels->SetName("indices");
+ 
+  // Iterate vertices and add to point and label array
+  Point p;
   for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex) {
     p = vertex->point();
     points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
+
+    // Reset label, convert integer index to string and add to array
+    label.str("");
+    label << vertex->index();
+    labels->SetValue(vertex->index(), label.str().c_str()); 
   }
 
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
@@ -83,8 +102,9 @@ void VTKPlottableMesh::update(const Parameters& parameters)
   // (automatically allocated during cell insertion)
   cells->Squeeze();
 
-  // Insert points and cells in VTK unstructured grid
+  // Insert points, vertex labels and cells in VTK unstructured grid
   _grid->SetPoints(points);
+  _grid->GetPointData()->AddArray(labels);
   switch (spatial_dim) {
     case 1:
       _grid->SetCells(VTK_LINE, cells);
@@ -110,5 +130,37 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
 {
   return _geometryFilter->GetOutputPort();
 }
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
+{
+  // Return actor if already created
+  if (_vertexLabelActor) {
+    return _vertexLabelActor;
+  }
+
+  // We create the actor on the first call to the method
+  
+  // Generate the label hierarchy.
+  vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter =
+    vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
+  pointSetToLabelHierarchyFilter->SetInput(_grid);
+  pointSetToLabelHierarchyFilter->SetLabelArrayName("indices"); // This name must match the one set in "update"
+  // NOTE: One may set an integer array with priorites on the hierarchy filter.
+  // These priorities will indicate which labels will be shown when there is
+  // limited space.
+  //pointSetToLabelHierarchyFilter->SetPriorityArrayName("priorities");
+  pointSetToLabelHierarchyFilter->GetTextProperty()->SetColor(0, 0, 0);
+  pointSetToLabelHierarchyFilter->Update();
+ 
+  // Create a mapper and actor for the labels.
+  vtkSmartPointer<vtkLabelPlacementMapper> labelMapper = vtkSmartPointer<
+    vtkLabelPlacementMapper>::New();
+  labelMapper->SetInputConnection(
+    pointSetToLabelHierarchyFilter->GetOutputPort());
+  _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
+  _vertexLabelActor->SetMapper(labelMapper);
+
+  return _vertexLabelActor;
+} 
 //----------------------------------------------------------------------------
 #endif
