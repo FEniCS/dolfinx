@@ -242,10 +242,6 @@ void BinaryFile::open_read()
   ifilter.push(ifile);
 }
 //-----------------------------------------------------------------------------
-// Pragma to avoid Boost.iostreams error with strict compiler flags
-#if defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Woverflow"
-#endif
 void BinaryFile::open_write()
 {
   // Compress if filename has extension '.gz'

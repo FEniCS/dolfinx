@@ -237,7 +237,6 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
         // Renumber and copy connectivity data (must be done after vertex renumbering)
         const uint new_vertex_index = new_vertex_indices[vertex_index];
-        dolfin_assert(new_vertex_index >= 0);
         new_connections[connections_offset++] = new_vertex_index;
       }
     }

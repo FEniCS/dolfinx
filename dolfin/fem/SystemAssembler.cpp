@@ -298,6 +298,16 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   if (b_ufc.form.num_exterior_facet_domains() > 0)
     b_exterior_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
+  // If using external facet integrals
+  if (A_ufc.form.num_exterior_facet_domains() > 0 ||
+      b_ufc.form.num_exterior_facet_domains() > 0)
+  {
+    // Compute facets and facet - cell connectivity if not already computed 
+    const uint D = mesh.topology().dim();
+    mesh.init(D - 1);
+    mesh.init(D - 1, D);
+  }
+
   // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
