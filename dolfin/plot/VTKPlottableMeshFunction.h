@@ -44,9 +44,6 @@ namespace dolfin
     
     //--- Implementation of the GenericVTKPlottable interface ---
     
-    /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline();
-
     /// Update the plottable data
     void update(const Parameters& parameters);
 
@@ -76,13 +73,6 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   template <typename T>
-  void VTKPlottableMeshFunction<T>::init_pipeline()
-  {
-    _geometryFilter->SetInput(_grid);
-    _geometryFilter->Update();
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
   void VTKPlottableMeshFunction<T>::update(const Parameters& parameters)
   {
     VTKPlottableMesh::update(parameters);
@@ -106,6 +96,10 @@ namespace dolfin
     dolfin_assert(_mesh_function->dim() == 0);
 
     // Update vertex/point data
+
+    // FIXME: The technique used for vertex valued mesh functions at the
+    // moment leads to colors interpolated over the facets/cells. We need to
+    // find a way to turn off interpolation (possibly using vtkImageActor?)
 
     // Make VTK float array and allocate storage for mesh function values
     uint num_vertices = _mesh->num_vertices();

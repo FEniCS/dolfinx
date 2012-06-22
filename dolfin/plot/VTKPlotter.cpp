@@ -118,6 +118,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
   _frame_counter(0),
   _id(mesh_function->id())
 {
+  // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
   init_pipeline();
