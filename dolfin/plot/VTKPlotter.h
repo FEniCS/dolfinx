@@ -72,7 +72,7 @@ namespace dolfin
   ///                                             this parameter may be set to
   ///                                             "warp" to enable vector warping
   ///                                             visualization
-  ///  interactive    Boolean         True        Enable/disable interactive mode
+  ///  interactive    Boolean         False       Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
   ///                                             object (animated plots), this
@@ -153,7 +153,7 @@ namespace dolfin
     {
       Parameters p("vtk_plotter");
       p.add("title", "Plot");
-      p.add("interactive", true);
+      p.add("interactive", false);
       p.add("wireframe", false);
       p.add("scalarbar", true);
       p.add("mode", "auto");
