@@ -59,7 +59,7 @@ namespace dolfin
     void update(const Parameters& parameters);
 
     /// Update the scalar range of the plottable data
-    void update_range(double range[]);
+    void update_range(double range[2]);
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;

@@ -142,7 +142,7 @@ void VTKPlottableGenericFunction::update(const Parameters& parameters)
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update_range(double range[])
+void VTKPlottableGenericFunction::update_range(double range[2])
 {
   // Superclass gets the range from the grid
   VTKPlottableMesh::update_range(range);

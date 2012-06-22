@@ -140,6 +140,11 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
 
   // We create the actor on the first call to the method
   
+  // FIXME: Should we use vtkLabeledDataMapper here instead? Together with
+  // vtkSelectVisiblePoints to only label visible points, and use vtkCellCenters
+  // to generate points at the center of cells to label cells. See
+  // http://www.vtk.org/doc/release/5.8/html/a01117.html
+
   // Generate the label hierarchy.
   vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter =
     vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
