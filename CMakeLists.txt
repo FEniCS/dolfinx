@@ -271,7 +271,7 @@ if (DOLFIN_ENABLE_TRILINOS)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages
-  set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
+  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
   if (Trilinos_FOUND)
     message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
 
