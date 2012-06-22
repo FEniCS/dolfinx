@@ -117,3 +117,4 @@ while (t < T):
     file << (u.split()[0], t)
 
 plot(u.split()[0])
+interactive()
