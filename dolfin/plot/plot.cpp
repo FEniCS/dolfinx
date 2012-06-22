@@ -245,6 +245,33 @@ void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
   plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<int>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<int>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh_function, parameters);
+}
+//-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<double>& mesh_function,
                   std::string title)
 {

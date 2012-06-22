@@ -113,6 +113,22 @@ namespace dolfin
   void plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
             boost::shared_ptr<const Parameters> parameters);
 
+  /// Plot int-valued mesh function
+  void plot(const MeshFunction<int>& mesh_function,
+            std::string title="DOLFIN MeshFunction<int>");
+
+  /// Plot int-valued mesh function (shared_ptr version)
+  void plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+            std::string title="DOLFIN MeshFunction<int>");
+
+  /// Plot int-valued mesh function (parameter version)
+  void plot(const MeshFunction<int>& mesh_function,
+            const Parameters& parameters);
+
+  /// Plot int-valued mesh function (parameter, shared_ptr version)
+  void plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+            boost::shared_ptr<const Parameters> parameters);
+
   /// Plot double-valued mesh function
   void plot(const MeshFunction<double>& mesh_function,
             std::string title="MeshFunction<double>");

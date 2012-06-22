@@ -123,6 +123,17 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
   init_pipeline();
 }
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableMeshFunction<int>(mesh_function))),
+  _frame_counter(0),
+  _id(mesh_function->id())
+{
+  parameters = default_parameters();
+  set_title(mesh_function->name(), mesh_function->label());
+  init_pipeline();
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableMeshFunction<double>(mesh_function))),
