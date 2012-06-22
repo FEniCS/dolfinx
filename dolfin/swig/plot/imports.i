@@ -25,4 +25,5 @@
 %import(module="dolfin.cpp.io") "dolfin/plot/GenericVTKPlottable.h"
 %import(module="dolfin.cpp.io") "dolfin/plot/VTKPlottableMesh.h"
 %import(module="dolfin.cpp.io") "dolfin/plot/VTKPlottableGenericFunction.h"
+%import(module="dolfin.cpp.io") "dolfin/plot/VTKPlottableMeshFunction.h"
 %import(module="dolfin.cpp.io") "dolfin/plot/VTKPlotter.h"

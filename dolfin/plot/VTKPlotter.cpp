@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-20
+// Last changed: 2012-06-21
 
 #ifdef HAS_VTK
 
@@ -41,6 +41,7 @@
 #include "ExpressionWrapper.h"
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableGenericFunction.h"
+#include "VTKPlottableMeshFunction.h"
 #include "VTKPlotter.h"
 
 using namespace dolfin;
@@ -73,7 +74,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
-  _plottable(boost::shared_ptr<VTKPlottableMesh>(
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableGenericFunction(expression->expression(),
           expression->mesh()))),
   _frame_counter(0),
@@ -87,7 +88,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
-  _plottable(boost::shared_ptr<VTKPlottableMesh>(
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableGenericFunction(expression, mesh))),
   _frame_counter(0),
   _id(expression->id())
@@ -112,27 +113,36 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableMeshFunction<uint>(mesh_function))),
   _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
-  // TODO: Set function, title and call init
+  set_title(mesh_function->name(), mesh_function->label());
+  init_pipeline();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableMeshFunction<double>(mesh_function))),
   _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
-  // TODO: Set function, title and call init
+  set_title(mesh_function->name(), mesh_function->label());
+  init_pipeline();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableMeshFunction<bool>(mesh_function))),
   _frame_counter(0),
   _id(mesh_function->id())
 {
   parameters = default_parameters();
-  // TODO: Set function, title and call init
+  set_title(mesh_function->name(), mesh_function->label());
+  init_pipeline();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()

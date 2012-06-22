@@ -242,9 +242,6 @@ void dolfin::plot(const MeshFunction<uint>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
                   boost::shared_ptr<const Parameters> parameters)
 {
-  dolfin_error("plot.cpp",
-               "plot mesh function",
-               "Not implemented yet");
   plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
@@ -272,9 +269,6 @@ void dolfin::plot(const MeshFunction<double>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
                   boost::shared_ptr<const Parameters> parameters)
 {
-  dolfin_error("plot.cpp",
-               "plot mesh function",
-               "Not implemented yet");
   plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
@@ -302,9 +296,6 @@ void dolfin::plot(const MeshFunction<bool>& mesh_function,
 void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
                   boost::shared_ptr<const Parameters> parameters)
 {
-  dolfin_error("plot.cpp",
-               "plot mesh function",
-               "Not implemented yet");
   plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------

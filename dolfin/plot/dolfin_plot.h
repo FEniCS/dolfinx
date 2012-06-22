@@ -8,6 +8,7 @@
 #include <dolfin/plot/GenericVTKPlottable.h>
 #include <dolfin/plot/VTKPlottableMesh.h>
 #include <dolfin/plot/VTKPlottableGenericFunction.h>
+#include <dolfin/plot/VTKPlottableMeshFunction.h>
 #include <dolfin/plot/VTKPlotter.h>
 
 #endif
