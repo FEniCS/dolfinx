@@ -92,4 +92,4 @@ file = File("biharmonic.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)

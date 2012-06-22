@@ -95,4 +95,4 @@ file = File("displacement.pvd");
 file << u;
 
 # Plot and hold solution
-plot(u, mode = "displacement", interactive = True)
+plot(u, mode = "warp")

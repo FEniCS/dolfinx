@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-21
-// Last changed: 2012-06-21
+// Last changed: 2012-06-22
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -49,12 +49,6 @@ namespace dolfin
 
     /// Update the plottable data
     void update(const Parameters& parameters);
-
-    /// Update the scalar range of the plottable data
-    void update_range(double range[2]);
-
-    /// Return data to visualize
-    vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
   private: 
 
@@ -104,20 +98,6 @@ namespace dolfin
                    "plot mesh function",
                    "Only able to plot vertex and cell valued mesh functions.");
     }
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
-  void VTKPlottableMeshFunction<T>::update_range(double range[2])
-  {
-    // FIXME: Do we need to define this since it just calls the superclass?
-    VTKPlottableMesh::update_range(range);
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
-  vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMeshFunction<T>::get_output() const
-  {
-    // FIXME: Do we need to define this since it just calls the superclass?
-    return _geometryFilter->GetOutputPort();
   }
   //----------------------------------------------------------------------------
   template <typename T>
