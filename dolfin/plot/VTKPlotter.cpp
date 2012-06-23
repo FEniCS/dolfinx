@@ -22,6 +22,15 @@
 
 #ifdef HAS_VTK
 
+
+#include <vtkSmartPointer.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkLookupTable.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkScalarBarActor.h>
 #include <vtkTextProperty.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
@@ -50,13 +59,44 @@ using namespace dolfin;
 std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 
 int VTKPlotter::hardcopy_counter = 0;
+namespace dolfin
+{
+  class PrivateVTKPipeline
+  {
+   public:
+    // The poly data mapper
+    vtkSmartPointer<vtkPolyDataMapper> _mapper;
+
+    // The lookup table
+    vtkSmartPointer<vtkLookupTable> _lut;
+
+    // The main actor
+    vtkSmartPointer<vtkActor> _actor;
+
+    // The renderer
+    vtkSmartPointer<vtkRenderer> _renderer;
+
+    // The render window
+    vtkSmartPointer<vtkRenderWindow> _renderWindow;
+
+    // The render window interactor for interactive sessions
+    vtkSmartPointer<vtkRenderWindowInteractor> _interactor;
+
+    // The scalar bar that gives the viewer the mapping from color to
+    // scalar value
+    vtkSmartPointer<vtkScalarBarActor> _scalarBar;
+  };
+}
+
 
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
+  vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(mesh->id())
 {
+  
   parameters = default_mesh_parameters();
   set_title(mesh->name(), mesh->label());
   init_pipeline();
@@ -159,7 +199,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  // Do nothing
+  delete vtk_pipeline;
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
@@ -178,13 +218,13 @@ void VTKPlotter::plot()
 
   // Process some parameters
   if (parameters["wireframe"]) {
-    _actor->GetProperty()->SetRepresentationToWireframe();
+    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
   }
   if (parameters["scalarbar"]) {
-    _renderer->AddActor(_scalarBar);
+    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
   }
 
-  _renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
+  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
   // Update the plottable data
   _plottable->update(parameters);
@@ -196,19 +236,19 @@ void VTKPlotter::plot()
     
     _plottable->update_range(range);
 
-    _lut->SetRange(range);
-    _lut->Build();
+    vtk_pipeline->_lut->SetRange(range);
+    vtk_pipeline->_lut->Build();
 
-    _mapper->SetScalarRange(range);
+    vtk_pipeline->_mapper->SetScalarRange(range);
 
   }
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and 
   // the input may hence also have changed
-  _mapper->SetInputConnection(_plottable->get_output());
+  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
 
-  _renderWindow->Render();
+  vtk_pipeline->_renderWindow->Render();
 
   _frame_counter++;
 
@@ -220,7 +260,7 @@ void VTKPlotter::plot()
 void VTKPlotter::interactive()
 {
   // Add keypress callback function
-  _interactor->AddObserver(vtkCommand::KeyPressEvent, this, 
+  vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this, 
       &VTKPlotter::keypressCallback); 
 
   // These must be declared outside the if test to not go out of scope
@@ -238,7 +278,7 @@ void VTKPlotter::interactive()
     helptextActor->SetInput("Help ");
     helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
     helptextActor->GetTextProperty()->SetFontSize(20);
-    _renderer->AddActor2D(helptextActor);
+    vtk_pipeline->_renderer->AddActor2D(helptextActor);
 
     // Set up the representation for the hover-over help text box
     balloonRep->SetOffset(5,5);
@@ -247,17 +287,17 @@ void VTKPlotter::interactive()
     balloonRep->GetFrameProperty()->SetOpacity(0.7);
 
     // Set up the actual widget that makes the help text pop up
-    balloonwidget->SetInteractor(_interactor);
+    balloonwidget->SetInteractor(vtk_pipeline->_interactor);
     balloonwidget->SetRepresentation(balloonRep);
     balloonwidget->AddBalloon(helptextActor,
         get_helptext().c_str(),NULL);
-    _renderWindow->Render();
+    vtk_pipeline->_renderWindow->Render();
     balloonwidget->EnabledOn();
   }
 
   // Initialize and start the mouse interaction
-  _interactor->Initialize();
-  _interactor->Start();
+  vtk_pipeline->_interactor->Initialize();
+  vtk_pipeline->_interactor->Start();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
@@ -268,37 +308,37 @@ void VTKPlotter::init_pipeline()
   // bar and other decorations. 
 
   // Initialize objects
-  _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
-  _lut = vtkSmartPointer<vtkLookupTable>::New();
-  _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  _actor = vtkSmartPointer<vtkActor>::New();
-  _renderer = vtkSmartPointer<vtkRenderer>::New();
-  _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-  _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  vtk_pipeline->_scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
+  vtk_pipeline->_lut = vtkSmartPointer<vtkLookupTable>::New();
+  vtk_pipeline->_mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  vtk_pipeline->_actor = vtkSmartPointer<vtkActor>::New();
+  vtk_pipeline->_renderer = vtkSmartPointer<vtkRenderer>::New();
+  vtk_pipeline->_renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+  vtk_pipeline->_interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 
   // Connect the parts
-  _mapper->SetLookupTable(_lut);
-  _scalarBar->SetLookupTable(_lut);
-  _actor->SetMapper(_mapper);
-  _renderer->AddActor(_actor);
-  _renderWindow->AddRenderer(_renderer);
+  vtk_pipeline->_mapper->SetLookupTable(vtk_pipeline->_lut);
+  vtk_pipeline->_scalarBar->SetLookupTable(vtk_pipeline->_lut);
+  vtk_pipeline->_actor->SetMapper(vtk_pipeline->_mapper);
+  vtk_pipeline->_renderer->AddActor(vtk_pipeline->_actor);
+  vtk_pipeline->_renderWindow->AddRenderer(vtk_pipeline->_renderer);
 
   // Set up interactorstyle and connect interactor
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> style =
     vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-  _interactor->SetRenderWindow(_renderWindow);
-  _interactor->SetInteractorStyle(style);
+  vtk_pipeline->_interactor->SetRenderWindow(vtk_pipeline->_renderWindow);
+  vtk_pipeline->_interactor->SetInteractorStyle(style);
 
   // Set some properties that affect the look of things
-  _renderer->SetBackground(1, 1, 1);
-  _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
-  _renderWindow->SetSize(parameters["window_width"],
+  vtk_pipeline->_renderer->SetBackground(1, 1, 1);
+  vtk_pipeline->_actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
+  vtk_pipeline->_renderWindow->SetSize(parameters["window_width"],
       parameters["window_height"]);
-  _scalarBar->SetTextPositionToPrecedeScalarBar();
+  vtk_pipeline->_scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
   vtkSmartPointer<vtkTextProperty> labelprop =
-    _scalarBar->GetLabelTextProperty();
+    vtk_pipeline->_scalarBar->GetLabelTextProperty();
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(20);
   labelprop->ItalicOff();
@@ -370,22 +410,22 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
     {
       // Check if actor is present. If not, get from plottable. If it is, turn on visibility
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-      if (_renderer->HasViewProp(labels)) {
+      if (vtk_pipeline->_renderer->HasViewProp(labels)) {
         labels->VisibilityOn();
       } else {
-        _renderer->AddActor(labels);
+        vtk_pipeline->_renderer->AddActor(labels);
       }
-      _renderWindow->Render();
+      vtk_pipeline->_renderWindow->Render();
       break;
     }
     case 'o': 
     {
       // Check if actor is present. If not, ignore. If it is, turn off visibility
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-      if (_renderer->HasViewProp(labels)) {
+      if (vtk_pipeline->_renderer->HasViewProp(labels)) {
         labels->VisibilityOff();
       }
-      _renderWindow->Render();
+      vtk_pipeline->_renderWindow->Render();
       break;
     }
     default:
@@ -395,7 +435,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
 //----------------------------------------------------------------------------
 void VTKPlotter::hardcopy(std::string filename)
 {
-  dolfin_assert(_renderWindow);
+  dolfin_assert(vtk_pipeline->_renderWindow);
 
   info("Saving plot to file: %s.png", filename.c_str());
 
@@ -406,24 +446,24 @@ void VTKPlotter::hardcopy(std::string filename)
     vtkSmartPointer<vtkWindowToImageFilter>::New();
   vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
 
-  w2i->SetInput(_renderWindow);
+  w2i->SetInput(vtk_pipeline->_renderWindow);
   w2i->Update();
   writer->SetInputConnection(w2i->GetOutputPort());
   writer->SetFileName((filename + ".png").c_str());
-  _renderWindow->Render();
+  vtk_pipeline->_renderWindow->Render();
   writer->Modified();
   writer->Write();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::get_window_size(int& width, int& height)
 {
-  dolfin_assert(_interactor);
-  _interactor->GetSize(width, height);
+  dolfin_assert(vtk_pipeline->_interactor);
+  vtk_pipeline->_interactor->GetSize(width, height);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_window_position(int x, int y)
 {
-  dolfin_assert(_renderWindow);
-  _renderWindow->SetPosition(x, y);
+  dolfin_assert(vtk_pipeline->_renderWindow);
+  vtk_pipeline->_renderWindow->SetPosition(x, y);
 }
 #endif

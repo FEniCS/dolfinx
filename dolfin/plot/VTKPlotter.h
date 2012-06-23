@@ -25,15 +25,6 @@
 
 #ifdef HAS_VTK
 
-#include <vtkSmartPointer.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkLookupTable.h>
-#include <vtkActor.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkScalarBarActor.h>
-
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
@@ -41,8 +32,11 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/common/Variable.h>
 
+class vtkObject;
+
 namespace dolfin
 {
+  class PrivateVTKPipeline;
 
   // FIXME: Use forward declarations to avoid inclusion of .h files in .h files
 
@@ -216,27 +210,7 @@ namespace dolfin
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
 
-    // The poly data mapper
-    vtkSmartPointer<vtkPolyDataMapper> _mapper;
-
-    // The lookup table
-    vtkSmartPointer<vtkLookupTable> _lut;
-
-    // The main actor
-    vtkSmartPointer<vtkActor> _actor;
-
-    // The renderer
-    vtkSmartPointer<vtkRenderer> _renderer;
-
-    // The render window
-    vtkSmartPointer<vtkRenderWindow> _renderWindow;
-
-    // The render window interactor for interactive sessions
-    vtkSmartPointer<vtkRenderWindowInteractor> _interactor;
-
-    // The scalar bar that gives the viewer the mapping from color to
-    // scalar value
-    vtkSmartPointer<vtkScalarBarActor> _scalarBar;
+    PrivateVTKPipeline* vtk_pipeline;
 
     // The number of plotted frames
     uint _frame_counter;
