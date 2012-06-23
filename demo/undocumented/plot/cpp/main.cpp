@@ -27,4 +27,5 @@ int main()
   // Read and plot mesh from file
   Mesh mesh("dolfin-2.xml.gz");
   plot(mesh);
+  interactive();
 }
