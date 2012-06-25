@@ -144,6 +144,12 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   _frame_counter(0),
   _id(bc->id())
 {
+  dolfin_error("VTKPlotter.cpp",
+               "create plotter for Dirichlet B.C.",
+               "Plotting of boundary conditions is not yet implemented");
+
+  // FIXME: There is something wrong with the below code. The function is not
+  // plotted, only an empty plotting window is shown.
   boost::shared_ptr<Function> f(new Function(bc->function_space()));
   bc->apply(*f->vector());
   _plottable = boost::shared_ptr<VTKPlottableMesh>(

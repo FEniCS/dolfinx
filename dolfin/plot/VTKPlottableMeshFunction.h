@@ -86,7 +86,7 @@ namespace dolfin
     } else {
       dolfin_error("VTKPlottableMeshFunction.h",
                    "plot mesh function",
-                   "Only able to plot vertex and cell valued mesh functions.");
+                   "Only able to plot vertex and cell valued mesh functions");
     }
   }
   //----------------------------------------------------------------------------
