@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg
+// Copyright (C) 2007-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-01-30
-// Last changed: 2011-03-17
+// Last changed: 2012-06-25
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/NoDeleter.h>
@@ -42,10 +42,16 @@ void MeshOrdering::order(Mesh& mesh)
   if (mesh.parallel_data().have_global_entity_indices(0))
     global_vertex_indices = &(mesh.parallel_data().global_entity_indices(0));
 
+  // Skip ordering for dimension 0
+  if (mesh.topology().dim() == 0)
+    return;
+
   // Iterate over all cells and order the mesh entities locally
   Progress p("Ordering mesh", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    cout << "ordering" << endl;
+    cout << "dim = " << mesh.topology().dim() << endl;
     cell->order(global_vertex_indices);
     p++;
   }
