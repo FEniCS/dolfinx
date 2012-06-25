@@ -50,8 +50,6 @@ void MeshOrdering::order(Mesh& mesh)
   Progress p("Ordering mesh", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    cout << "ordering" << endl;
-    cout << "dim = " << mesh.topology().dim() << endl;
     cell->order(global_vertex_indices);
     p++;
   }
