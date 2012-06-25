@@ -17,19 +17,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Fredrik Valdmanis, 2012
+#
 # First added:  2007-05-29
-# Last changed: 2009-10-15
+# Last changed: 2012-06-25
 
 from dolfin import *
 from math import sqrt
 
 import sys
 
-set_log_level(TRACE)
-
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
-mesh.order()
 
 # Decide which demos to run
 try:
@@ -105,5 +104,6 @@ if 3 in demos:
 
     for i in range(150):
         f.t += 0.005
-        plot(f, mesh=mesh, eval_pts=pts, rescale=True, title="Vector function")
+        plot(f, mesh=mesh, rescale=True, title="Vector function")
 
+interactive()
