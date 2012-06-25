@@ -26,6 +26,43 @@ int main()
 {
   // Read and plot mesh from file
   Mesh mesh("dolfin-2.xml.gz");
-  plot(mesh);
+
+  double R = 0.15;
+  double H = 0.025;
+  double X = 0.3;
+  double Y = 0.4;
+  double dX = H;
+  double dY = 1.5*H;
+  double* coordinates = mesh.coordinates();
+  double original[mesh.num_vertices()*2];
+  memcpy(original, coordinates, sizeof(original));
+
+  double x, y, r;
+
+  for(int i = 0; i < 100; i++) {
+    if (X < H || X > 1.0 - H) {
+      dX = -dX;
+    }
+    if (Y < H || Y > 1.0 - H) {
+      dY = -dY;
+    }
+    X += dX;
+    Y += dY;
+
+    for (int j = 0; j < mesh.num_vertices(); ++j) {
+      x = coordinates[2*j];
+      y = coordinates[2*j+1];
+      r = sqrt(pow((x - X),2) + pow((y - Y),2));
+      if (r < R) {
+        coordinates[2*j]   = X + pow((r/R),2)*(x - X);
+        coordinates[2*j+1] = Y + pow((r/R),2)*(y - Y);
+      }
+    }
+    plot(mesh, "Animated mesh plot");
+
+    for (int j = 0; j < mesh.num_vertices()*2; ++j) {
+      coordinates[j] = original[j];
+    }
+  }
   interactive();
 }
