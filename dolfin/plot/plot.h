@@ -34,9 +34,6 @@ namespace dolfin
 
   /// Simple built-in plot commands for plotting functions and meshes.
 
-  // TODO: What to do with the default arguments for title?
-  // They will always override the default title set in VTKPlotter.h
-
   /// Plot function
   void plot(const Function& function,
             std::string title="Function", std::string mode="auto");

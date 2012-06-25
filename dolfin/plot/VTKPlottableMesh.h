@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-21
+// Last changed: 2012-06-25
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -32,6 +32,11 @@
 
 namespace dolfin
 {
+
+  /// Data wrapper class for plotting meshes. It also acts as a superclass
+  /// for the other data wrapper classes, as all kinds of plottable data
+  /// also holds a mesh.
+
   class VTKPlottableMesh : public GenericVTKPlottable
   {
   public:

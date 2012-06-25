@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-20
+// Last changed: 2012-06-25
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -31,13 +31,15 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
 
-#include "GenericVTKPlottable.h"
-
 namespace dolfin
 {
 
   // Forward declarations
   class VTKPlottableMesh;
+  class GenericVTKPlottable;
+
+  /// Data wrapper class for plotting generic functions, including
+  /// instances of the Function and Expression classes.
 
   class VTKPlottableGenericFunction : public VTKPlottableMesh
   {

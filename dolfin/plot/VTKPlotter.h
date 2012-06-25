@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-20
+// Last changed: 2012-06-25
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -36,17 +36,16 @@ class vtkObject;
 
 namespace dolfin
 {
-  class PrivateVTKPipeline;
-
-  // FIXME: Use forward declarations to avoid inclusion of .h files in .h files
-
+  
   // Forward declarations
+  class PrivateVTKPipeline;
   class ExpressionWrapper;
   class GenericVTKPlottable;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
-  /// conditions and mesh functions.
+  /// conditions and mesh functions. It can plot data wrapped in classes 
+  /// conforming to the GenericVTKPlottable interface. 
   /// The plotter has several parameters that the user can set and adjust to
   /// affect the appearance and behavior of the plot.
   ///
@@ -66,7 +65,7 @@ namespace dolfin
   ///                                             this parameter may be set to
   ///                                             "warp" to enable vector warping
   ///                                             visualization
-  ///  interactive    Boolean         False       Enable/disable interactive mode
+  ///  interactive    Boolean     False           Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
   ///                                             object (animated plots), this
@@ -83,6 +82,11 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
+  ///  rescale        Boolean     False           Enable/disable recomputation
+  ///                                             of the scalar to color mapping
+  ///                                             on every iteration when performing
+  ///                                             repeated/animated plots of the same
+  ///                                             data
   ///  prefix         String      "dolfin_plot_"  Filename prefix used when
   ///                                             saving plots to file in
   ///                                             interactive mode. An integer
@@ -91,6 +95,10 @@ namespace dolfin
   ///  helptext       Boolean     True            Enable/disable the hover-over
   ///                                             help-text in interactive
   ///                                             mode
+  ///  window_width   Integer     600             The width of the plotting window
+  ///                                             in pixels
+  ///  window_height  Integer     400             The height of the plotting window
+  ///                                             in pixels
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -146,13 +154,13 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("vtk_plotter");
-      p.add("title", "Plot");
+      p.add("mode", "auto");
       p.add("interactive", false);
       p.add("wireframe", false);
-      p.add("scalarbar", true);
-      p.add("mode", "auto");
-      p.add("rescale", false);
+      p.add("title", "Plot");
       p.add("scale", 1.0);
+      p.add("scalarbar", true);
+      p.add("rescale", false);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
       p.add("window_width", 600);

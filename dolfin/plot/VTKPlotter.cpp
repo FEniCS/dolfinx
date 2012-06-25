@@ -18,10 +18,9 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-21
+// Last changed: 2012-06-25
 
 #ifdef HAS_VTK
-
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataMapper.h>
@@ -59,6 +58,7 @@ using namespace dolfin;
 std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
 
 int VTKPlotter::hardcopy_counter = 0;
+//----------------------------------------------------------------------------
 namespace dolfin
 {
   class PrivateVTKPipeline
@@ -87,8 +87,6 @@ namespace dolfin
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
   };
 }
-
-
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
@@ -416,7 +414,8 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
     }
     case 'i': 
     {
-      // Check if actor is present. If not, get from plottable. If it is, turn on visibility
+      // Check if label actor is present. If not, get from plottable. If it
+      // is, turn on visibility
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
       if (vtk_pipeline->_renderer->HasViewProp(labels)) {
         labels->VisibilityOn();
@@ -428,7 +427,8 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
     }
     case 'o': 
     {
-      // Check if actor is present. If not, ignore. If it is, turn off visibility
+      // Check if actor is present. If not, ignore. If it is, turn off
+      // visibility
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
       if (vtk_pipeline->_renderer->HasViewProp(labels)) {
         labels->VisibilityOff();

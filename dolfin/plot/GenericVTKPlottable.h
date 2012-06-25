@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-21
+// Last changed: 2012-06-25
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -29,6 +29,10 @@
 
 namespace dolfin
 {
+
+  /// This class defines a common interface for objects that can be plotted by
+  /// the VTKPlotter class
+
   class GenericVTKPlottable
   {
   public:
