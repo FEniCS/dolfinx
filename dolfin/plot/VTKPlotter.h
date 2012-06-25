@@ -136,7 +136,7 @@ namespace dolfin
     explicit VTKPlotter(boost::shared_ptr<const DirichletBC> bc);
 
     /// Create plotter for an uint valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function);
+    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
     
     /// Create plotter for an intr valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
