@@ -34,6 +34,11 @@
 %template (HierarchicalErrorControl) dolfin::Hierarchical<dolfin::ErrorControl>;
 
 //-----------------------------------------------------------------------------
+// Remove silly warning from friend function
+//-----------------------------------------------------------------------------
+%warnfilter(503) ErrorControl;
+
+//-----------------------------------------------------------------------------
 // Ignore GoalFunctional entirely
 //-----------------------------------------------------------------------------
 %ignore dolfin::GoalFunctional;

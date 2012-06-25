@@ -94,6 +94,8 @@ namespace dolfin
     /// Finalize sparsity pattern
     virtual void apply() = 0;
 
+  private:
+
     // Primary sparsity pattern storage dimension
     // (e.g., 0=row partition, 1=column partition)
     const uint _primary_dim;

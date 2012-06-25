@@ -25,6 +25,7 @@
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
+#include "MeshEntity.h"
 #include "Vertex.h"
 #include "PointCell.h"
 
