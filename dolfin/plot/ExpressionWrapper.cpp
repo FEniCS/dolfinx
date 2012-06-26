@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Garth N. Wells
+// Copyright (C) 2012 Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -15,37 +15,19 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2003-07-15
-// Last changed: 2006-05-23
+// Modified by Anders Logg 2012
+//
+// First added:  2012-06-02
+// Last changed: 2012-06-19
 
-#ifndef __XMLMESHFUNCTIONPLOTDATA_H
-#define __XMLMESHFUNCTIONPLOTDATA_H
+#include "ExpressionWrapper.h"
 
-#include <ostream>
-
-namespace pugi
+using namespace dolfin;
+//----------------------------------------------------------------------------
+ExpressionWrapper::ExpressionWrapper(boost::shared_ptr<const Expression> expression,
+                                         boost::shared_ptr<const Mesh> mesh) :
+  _mesh(mesh), _expression(expression)
 {
-  class xml_node;
+  // Do nothing
 }
-
-namespace dolfin
-{
-
-  class FunctionPlotData;
-
-  class XMLFunctionPlotData
-  {
-  public:
-
-    // Read XML vector
-    static void read(FunctionPlotData& plot_data,
-                     const pugi::xml_node xml_dolfin);
-
-    /// Write the XML file
-    static void write(const FunctionPlotData& data, pugi::xml_node xml_node);
-
-  };
-
-}
-
-#endif
+//----------------------------------------------------------------------------
