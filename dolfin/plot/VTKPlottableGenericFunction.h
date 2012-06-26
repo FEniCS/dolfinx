@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-25
+// Last changed: 2012-06-26
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -45,15 +45,15 @@ namespace dolfin
   {
   public:
 
-    explicit VTKPlottableGenericFunction(
-        boost::shared_ptr<const Function> function);
-    
-    explicit VTKPlottableGenericFunction(
-        boost::shared_ptr<const Expression> expression,
-        boost::shared_ptr<const Mesh> mesh);
+    explicit
+    VTKPlottableGenericFunction(boost::shared_ptr<const Function> function);
+
+    explicit
+    VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
+                                boost::shared_ptr<const Mesh> mesh);
 
     //--- Implementation of the GenericVTKPlottable interface ---
-    
+
     /// Initialize the parts of the pipeline that this class controls
     void init_pipeline();
 
@@ -67,7 +67,7 @@ namespace dolfin
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
   private:
-    
+
     // Update scalar values
     void update_scalar();
 
@@ -86,8 +86,9 @@ namespace dolfin
     // The glyph filter
     vtkSmartPointer<vtkGlyph3D> _glyphs;
 
-    // Warp vector mode? FIXME: This is horrible, we must be able to avoid this somehow 
+    // Warp vector mode? FIXME: This is horrible, we must be able to avoid this somehow
     bool warp_vector_mode;
+
   };
 
 }

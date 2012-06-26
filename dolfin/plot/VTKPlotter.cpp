@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
 // Last changed: 2012-06-25
@@ -56,14 +56,15 @@ using namespace dolfin;
 
 // Define the static members
 std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
-
 int VTKPlotter::hardcopy_counter = 0;
+
 //----------------------------------------------------------------------------
 namespace dolfin
 {
   class PrivateVTKPipeline
   {
-   public:
+  public:
+
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;
 
@@ -85,6 +86,7 @@ namespace dolfin
     // The scalar bar that gives the viewer the mapping from color to
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
+
   };
 }
 //----------------------------------------------------------------------------
@@ -95,7 +97,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _id(mesh->id()),
   _toggle_vertex_labels(false)
 {
-  
+
   parameters = default_mesh_parameters();
   set_title(mesh->name(), mesh->label());
   init_pipeline();
@@ -116,8 +118,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableGenericFunction(expression->expression(),
-          expression->mesh()))),
+    new VTKPlottableGenericFunction(expression->expression(), expression->mesh()))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(expression->id()),
@@ -125,14 +126,14 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
 {
   parameters = default_parameters();
   set_title(expression->expression()->name(),
-      expression->expression()->label());
+            expression->expression()->label());
   init_pipeline();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableGenericFunction(expression, mesh))),
+    new VTKPlottableGenericFunction(expression, mesh))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(expression->id()),
@@ -157,8 +158,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   // plotted, only an empty plotting window is shown.
   boost::shared_ptr<Function> f(new Function(bc->function_space()));
   bc->apply(*f->vector());
-  _plottable = boost::shared_ptr<VTKPlottableMesh>(
-      new VTKPlottableGenericFunction(f));
+  _plottable
+    = boost::shared_ptr<VTKPlottableMesh>(new VTKPlottableGenericFunction(f));
 
   parameters = default_parameters();
   set_title(bc->name(), bc->label());
@@ -181,7 +182,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableMeshFunction<int>(mesh_function))),
+    new VTKPlottableMeshFunction<int>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(mesh_function->id()),
@@ -194,7 +195,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableMeshFunction<double>(mesh_function))),
+    new VTKPlottableMeshFunction<double>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(mesh_function->id()),
@@ -207,7 +208,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableMeshFunction<bool>(mesh_function))),
+    new VTKPlottableMeshFunction<bool>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
   _id(mesh_function->id()),
@@ -228,9 +229,9 @@ void VTKPlotter::plot()
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
   char *noplot;
   noplot = getenv("DOLFIN_NOPLOT");
-  if (noplot != NULL) 
+  if (noplot != NULL)
   {
-    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) 
+    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0)
     {
       warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
       return;
@@ -240,23 +241,23 @@ void VTKPlotter::plot()
   // The plotting starts
 
   // Process some parameters
-  if (parameters["wireframe"]) 
+  if (parameters["wireframe"])
     vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
 
-  if (parameters["scalarbar"]) 
+  if (parameters["scalarbar"])
     vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
 
   vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
   // Update the plottable data
   _plottable->update(parameters);
-  
+
   // If this is the first render of this plot and/or the rescale parameter is
-  // set, we read get the min/max values of the data and process them 
-  if (_frame_counter == 0 || parameters["rescale"]) 
+  // set, we read get the min/max values of the data and process them
+  if (_frame_counter == 0 || parameters["rescale"])
   {
     double range[2];
-    
+
     _plottable->update_range(range);
 
     vtk_pipeline->_lut->SetRange(range);
@@ -266,7 +267,7 @@ void VTKPlotter::plot()
   }
 
   // Set the mapper's connection on each plot. This must be done since the
-  // visualization parameters may have changed since the last frame, and 
+  // visualization parameters may have changed since the last frame, and
   // the input may hence also have changed
   vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
 
@@ -281,19 +282,19 @@ void VTKPlotter::plot()
 void VTKPlotter::interactive()
 {
   // Add keypress callback function
-  vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this, 
-      &VTKPlotter::keypressCallback); 
+  vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this,
+                                         &VTKPlotter::keypressCallback);
 
   // These must be declared outside the if test to not go out of scope
   // before the interaction starts
   vtkSmartPointer<vtkTextActor> helptextActor =
     vtkSmartPointer<vtkTextActor>::New();
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep = 
+  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
     vtkSmartPointer<vtkBalloonRepresentation>::New();
   vtkSmartPointer<vtkBalloonWidget> balloonwidget =
     vtkSmartPointer<vtkBalloonWidget>::New();
 
-  if (parameters["helptext"]) 
+  if (parameters["helptext"])
   {
     // Add help text actor
     helptextActor->SetPosition(10,10);
@@ -312,7 +313,7 @@ void VTKPlotter::interactive()
     balloonwidget->SetInteractor(vtk_pipeline->_interactor);
     balloonwidget->SetRepresentation(balloonRep);
     balloonwidget->AddBalloon(helptextActor,
-        get_helptext().c_str(),NULL);
+                              get_helptext().c_str(),NULL);
     vtk_pipeline->_renderWindow->Render();
     balloonwidget->EnabledOn();
   }
@@ -325,9 +326,9 @@ void VTKPlotter::interactive()
 void VTKPlotter::init_pipeline()
 {
   // We first initialize the part of the pipeline that the plotter controls.
-  // This is the part from the Poly data mapper and out, including actor, 
+  // This is the part from the Poly data mapper and out, including actor,
   // renderer, renderwindow and interaction. It also takes care of the scalar
-  // bar and other decorations. 
+  // bar and other decorations.
 
   // Initialize objects
   vtk_pipeline->_scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -369,7 +370,7 @@ void VTKPlotter::init_pipeline()
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline();
 
-  // That's it for the initialization! Now we wait until the user wants to 
+  // That's it for the initialization! Now we wait until the user wants to
   // plot something
 
 }
@@ -402,38 +403,39 @@ std::string VTKPlotter::get_helptext()
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::keypressCallback(vtkObject* caller,
-    long unsigned int eventId,
-    void* callData)
+                                  long unsigned int eventId,
+                                  void* callData)
 {
-  vtkSmartPointer<vtkRenderWindowInteractor> iren = 
+  vtkSmartPointer<vtkRenderWindowInteractor> iren =
     static_cast<vtkRenderWindowInteractor*>(caller);
 
-  switch (iren->GetKeyCode()) {
+  switch (iren->GetKeyCode())
+  {
     // Save plot to file
-    case 'h':
+  case 'h':
     {
-        // We construct a filename from the given prefix and static counter.
-        // If a file with that filename exists, the counter is incremented
-        // until a unique filename is found. That filename is then passed 
-        // to the hardcopy function.
-        std::stringstream filename;
+      // We construct a filename from the given prefix and static counter.
+      // If a file with that filename exists, the counter is incremented
+      // until a unique filename is found. That filename is then passed
+      // to the hardcopy function.
+      std::stringstream filename;
+      filename << std::string(parameters["prefix"]);
+      filename << hardcopy_counter;
+      while (boost::filesystem::exists(filename.str() + ".png")) {
+        hardcopy_counter++;
+        filename.str("");
         filename << std::string(parameters["prefix"]);
         filename << hardcopy_counter;
-        while (boost::filesystem::exists(filename.str() + ".png")) {
-          hardcopy_counter++;
-          filename.str("");
-          filename << std::string(parameters["prefix"]);
-          filename << hardcopy_counter;
-        }
-        hardcopy(filename.str());
-        break;
+      }
+      hardcopy(filename.str());
+      break;
     }
-    case 'i': 
+  case 'i':
     {
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-      
+
       // Check for excistance of labels
       if (!vtk_pipeline->_renderer->HasViewProp(labels))
 	vtk_pipeline->_renderer->AddActor(labels);
@@ -443,18 +445,18 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
       {
         labels->VisibilityOff();
 	_toggle_vertex_labels = false;
-      } 
-      else 
+      }
+      else
       {
         labels->VisibilityOn();
 	_toggle_vertex_labels = true;
       }
-      
+
       vtk_pipeline->_renderWindow->Render();
       break;
     }
-    default:
-      break;
+  default:
+    break;
   }
 }
 //----------------------------------------------------------------------------
@@ -467,7 +469,7 @@ void VTKPlotter::hardcopy(std::string filename)
   // FIXME: Remove help-text-actor before hardcopying.
 
   // Create window to image filter and PNG writer
-  vtkSmartPointer<vtkWindowToImageFilter> w2i = 
+  vtkSmartPointer<vtkWindowToImageFilter> w2i =
     vtkSmartPointer<vtkWindowToImageFilter>::New();
   vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
 
@@ -491,4 +493,6 @@ void VTKPlotter::set_window_position(int x, int y)
   dolfin_assert(vtk_pipeline->_renderWindow);
   vtk_pipeline->_renderWindow->SetPosition(x, y);
 }
+//----------------------------------------------------------------------------
+
 #endif
