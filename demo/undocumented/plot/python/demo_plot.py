@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Fredrik Valdmanis, 2012
-# Modified by Benjamin Kehlet, 2012
+# Modified by Fredrik Valdmanis 2012
+# Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-29
 # Last changed: 2012-06-25
@@ -29,7 +29,7 @@ from math import sqrt
 
 import sys
 
-# Read and plot mesh from file
+# Read mesh from file
 mesh = Mesh(os.path.join(os.path.pardir, "dolfin-2.xml.gz"))
 
 # Decide which demos to run
@@ -65,7 +65,7 @@ if 0 in demos:
             if r < R:
                 coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
 
-        plot(mesh)
+        plot(mesh, title="Plotting mesh")
 
         for j in xrange(mesh.num_vertices()):
             coordinates[j] = original[j]
@@ -76,7 +76,7 @@ if 1 in demos:
     f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))", element=V.ufl_element(), t=0.0)
     for i in range(100):
         f.t += 0.01
-        plot(f, mesh=mesh, rescale=True, title="Scalar function")
+        plot(f, mesh=mesh, rescale=True, title="Plotting scalar function")
 
 # Plot vector function
 if 2 in demos:
@@ -87,6 +87,6 @@ if 2 in demos:
                    element=V.ufl_element(), t=0.0)
     for i in range(200):
         f.t += 0.005
-        plot(f, mesh=mesh, rescale=True, title="Vector function")
+        plot(f, mesh=mesh, rescale=True, title="Plotting vector function")
 
 interactive()
