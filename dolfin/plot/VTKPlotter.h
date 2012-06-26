@@ -226,6 +226,9 @@ namespace dolfin
     // The unique ID (inherited from Variable) for the object to plot
     uint _id;
 
+    // Flag to set the state of vertex labels
+    bool _toggle_vertex_labels;
+
     // Counter for the automatically named hardcopies
     static int hardcopy_counter;
 

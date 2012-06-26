@@ -92,7 +92,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(mesh->id())
+  _id(mesh->id()),
+  _toggle_vertex_labels(false)
 {
   
   parameters = default_mesh_parameters();
@@ -105,7 +106,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
         new VTKPlottableGenericFunction(function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(function->id())
+  _id(function->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(function->name(), function->label());
@@ -118,7 +120,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
           expression->mesh()))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(expression->id())
+  _id(expression->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(expression->expression()->name(),
@@ -132,7 +135,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
         new VTKPlottableGenericFunction(expression, mesh))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(expression->id())
+  _id(expression->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(expression->name(), expression->label());
@@ -142,7 +146,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(bc->id())
+  _id(bc->id()),
+  _toggle_vertex_labels(false)
 {
   dolfin_error("VTKPlotter.cpp",
                "create plotter for Dirichlet B.C.",
@@ -165,7 +170,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
         new VTKPlottableMeshFunction<uint>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(mesh_function->id())
+  _id(mesh_function->id()),
+  _toggle_vertex_labels(false)
 {
   // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
@@ -178,7 +184,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
         new VTKPlottableMeshFunction<int>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(mesh_function->id())
+  _id(mesh_function->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
@@ -190,7 +197,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
         new VTKPlottableMeshFunction<double>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(mesh_function->id())
+  _id(mesh_function->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
@@ -202,7 +210,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
         new VTKPlottableMeshFunction<bool>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline),
   _frame_counter(0),
-  _id(mesh_function->id())
+  _id(mesh_function->id()),
+  _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
@@ -219,8 +228,10 @@ void VTKPlotter::plot()
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
   char *noplot;
   noplot = getenv("DOLFIN_NOPLOT");
-  if (noplot != NULL) {
-    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) {
+  if (noplot != NULL) 
+  {
+    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0) 
+    {
       warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
       return;
     }
@@ -229,12 +240,11 @@ void VTKPlotter::plot()
   // The plotting starts
 
   // Process some parameters
-  if (parameters["wireframe"]) {
+  if (parameters["wireframe"]) 
     vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
-  }
-  if (parameters["scalarbar"]) {
+
+  if (parameters["scalarbar"]) 
     vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
-  }
 
   vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
@@ -243,7 +253,8 @@ void VTKPlotter::plot()
   
   // If this is the first render of this plot and/or the rescale parameter is
   // set, we read get the min/max values of the data and process them 
-  if (_frame_counter == 0 || parameters["rescale"]) {
+  if (_frame_counter == 0 || parameters["rescale"]) 
+  {
     double range[2];
     
     _plottable->update_range(range);
@@ -252,7 +263,6 @@ void VTKPlotter::plot()
     vtk_pipeline->_lut->Build();
 
     vtk_pipeline->_mapper->SetScalarRange(range);
-
   }
 
   // Set the mapper's connection on each plot. This must be done since the
@@ -264,9 +274,8 @@ void VTKPlotter::plot()
 
   _frame_counter++;
 
-  if (parameters["interactive"]) {
+  if (parameters["interactive"])
     interactive();
-  }
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive()
@@ -284,7 +293,8 @@ void VTKPlotter::interactive()
   vtkSmartPointer<vtkBalloonWidget> balloonwidget =
     vtkSmartPointer<vtkBalloonWidget>::New();
 
-  if (parameters["helptext"]) {
+  if (parameters["helptext"]) 
+  {
     // Add help text actor
     helptextActor->SetPosition(10,10);
     helptextActor->SetInput("Help ");
@@ -385,7 +395,7 @@ std::string VTKPlotter::get_helptext()
   text << "\t S: View figure with solid surface\n";
   text << "\t F: Fly to the point currently under the mouse pointer\n";
   text << "\t P: Add bounding box\n";
-  text << "\t I/O: Turn vertex indices on/off\n";
+  text << "\t I: Toggle vertex indices on/off\n";
   text << "\t H: Save plot to file\n";
   text << "\t E/Q: Exit\n";
   return text.str();
@@ -420,25 +430,26 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
     }
     case 'i': 
     {
-      // Check if label actor is present. If not, get from plottable. If it
-      // is, turn on visibility
+      // Check if label actor is present. If not get from plottable. If it
+      // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-      if (vtk_pipeline->_renderer->HasViewProp(labels)) {
-        labels->VisibilityOn();
-      } else {
-        vtk_pipeline->_renderer->AddActor(labels);
-      }
-      vtk_pipeline->_renderWindow->Render();
-      break;
-    }
-    case 'o': 
-    {
-      // Check if actor is present. If not, ignore. If it is, turn off
-      // visibility
-      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-      if (vtk_pipeline->_renderer->HasViewProp(labels)) {
+      
+      // Check for excistance of labels
+      if (!vtk_pipeline->_renderer->HasViewProp(labels))
+	vtk_pipeline->_renderer->AddActor(labels);
+
+      // Turn on or off dependent on present state
+      if (_toggle_vertex_labels)
+      {
         labels->VisibilityOff();
+	_toggle_vertex_labels = false;
+      } 
+      else 
+      {
+        labels->VisibilityOn();
+	_toggle_vertex_labels = true;
       }
+      
       vtk_pipeline->_renderWindow->Render();
       break;
     }
