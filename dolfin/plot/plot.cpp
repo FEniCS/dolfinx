@@ -39,6 +39,7 @@
 
 using namespace dolfin;
 
+#ifdef HAS_VTK
 // Template function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created and added
 // to the cache.
@@ -66,7 +67,7 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   int width, height;
   plotter->get_window_size(width, height);
 
-  // FIXME: This approach might need some tweaking. It tiles the winows in a 
+  // FIXME: This approach might need some tweaking. It tiles the winows in a
   // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
   // windows
   plotter->set_window_position((num_old_plots%2)*width,
@@ -78,16 +79,15 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
 
   return VTKPlotter::plotter_cache.back();
 }
-//-----------------------------------------------------------------------------
+#endif
+
 // Template function for plotting objects
 template <typename T>
 void plot_object(boost::shared_ptr<const T> t,
     boost::shared_ptr<const Parameters> parameters)
 {
 #ifndef HAS_VTK
-  dolfin_error("plot.cpp",
-               "plot object",
-	       "Plotting disbled. Dolfin has been compiled without VTK support");
+  warning("Plotting disbled. DOLFIN has been compiled without VTK support");
 #else
 
   // Get plotter from cache
@@ -102,6 +102,7 @@ void plot_object(boost::shared_ptr<const T> t,
 
 #endif
 }
+
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& function,
                   std::string title, std::string mode)
@@ -161,7 +162,7 @@ void dolfin::plot(boost::shared_ptr<const Expression> expression,
                   boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const Parameters> parameters)
 {
-  boost::shared_ptr<const ExpressionWrapper> 
+  boost::shared_ptr<const ExpressionWrapper>
     e(new ExpressionWrapper(expression, mesh));
   plot_object(e, parameters);
 }
@@ -328,13 +329,24 @@ void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 //-----------------------------------------------------------------------------
 void dolfin::interactive()
 {
-  if (VTKPlotter::plotter_cache.size() == 0) {
+#ifdef HAS_VTK
+
+  if (VTKPlotter::plotter_cache.size() == 0)
+  {
     warning("No plots have been shown yet. Ignoring call to interactive().");
-  } else {
+  }
+  else
+  {
     // Call interactive on every plotter
     for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) {
       VTKPlotter::plotter_cache[i]->interactive();
     }
   }
+
+#else
+
+  warning("Plotting disbled. DOLFIN has been compiled without VTK support");
+
+#endif
 }
 //-----------------------------------------------------------------------------
