@@ -360,7 +360,7 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK 5.8 HINTS ${VTK_DIR} $ENV{VTK_DIR})
 endif()
 
 #------------------------------------------------------------------------------
