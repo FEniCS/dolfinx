@@ -23,6 +23,7 @@
 // This demo illustrates basic plotting.
 
 #include <dolfin.h>
+#include <boost/scoped_array.hpp>
 
 using namespace dolfin;
 
@@ -68,8 +69,8 @@ int main()
   double dX = H;
   double dY = 1.5*H;
   double* coordinates = mesh.coordinates();
-  double original[mesh.num_vertices()*2];
-  memcpy(original, coordinates, sizeof(original));
+  boost::scoped_array<double> original(new double[mesh.num_vertices()*2]);
+  std::copy(&coordinates[0], &coordinates[mesh.num_vertices()*2], original.get());
 
   double x, y, r;
   for (dolfin::uint i = 0; i < 100; i++)
