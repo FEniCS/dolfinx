@@ -75,6 +75,7 @@ list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "VTK")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -355,6 +356,11 @@ endif()
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.0.7)
+endif()
+
+# Check for VTK
+if (DOLFIN_ENABLE_VTK)
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
 endif()
 
 #------------------------------------------------------------------------------

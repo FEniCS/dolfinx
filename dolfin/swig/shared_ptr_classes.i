@@ -18,9 +18,10 @@
 //
 // Modified by Anders logg, 2009.
 // Modified by Garth N. Wells, 2009.
+// Modified by Fredrik Valdmanis, 2012.
 //
 // First added:  2007-11-25
-// Last changed: 2012-01-20
+// Last changed: 2012-06-21
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -226,7 +227,12 @@
 %shared_ptr(dolfin::NewtonSolver)
 
 // plot
-%shared_ptr(dolfin::FunctionPlotData)
+%shared_ptr(dolfin::VTKPlotter)
+%shared_ptr(dolfin::GenericVTKPlottable)
+%shared_ptr(dolfin::VTKPlottableMesh)
+%shared_ptr(dolfin::VTKPlottableGenericFunction)
+%shared_ptr(dolfin::VTKPlottableMeshFunction)
+%shared_ptr(dolfin::ExpressionWrapper)
 
 // quadrature
 %shared_ptr(dolfin::Quadrature)

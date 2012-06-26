@@ -199,6 +199,45 @@ if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
 
 endif()
 
+# VTK
+if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
+  include(${VTK_USE_FILE})
+
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
+
+  if (NOT VTK_LIBRARIES)
+    # FIXME: Check which of these we actually need.
+    set(VTK_LIBRARIES
+      vtkCommon
+      vtkFiltering
+      vtkImaging
+      vtkGraphics
+      vtkGenericFiltering
+      vtkIO
+      vtkRendering
+      vtkVolumeRendering
+      vtkHybrid
+      vtkWidgets
+      vtkParallel
+      vtkInfovis
+      vtkGeovis
+      vtkViews
+      vtkCharts
+      )
+  endif()
+
+  # Loop over libs and get full path
+  foreach (lib ${VTK_LIBRARIES})
+    find_library(VTK_LIB_${lib} ${lib} HINTS ${VTK_LIBRARY_DIRS})
+    if (VTK_LIB_${lib})
+      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
+    endif()
+  endforeach()
+
+  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
+endif()
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

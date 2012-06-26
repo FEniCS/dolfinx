@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg
+// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -17,9 +17,10 @@
 //
 // Modified by Joachim Berdal Haga, 2008.
 // Modified by Garth N. Wells, 2008.
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2009-10-07
+// Last changed: 2012-06-18
 
 #include <cstdlib>
 #include <sstream>
@@ -32,99 +33,308 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
-#include "FunctionPlotData.h"
+#include "ExpressionWrapper.h"
+#include "VTKPlotter.h"
 #include "plot.h"
 
 using namespace dolfin;
 
+// Template function for getting already instantiated VTKPlotter for
+// the given object. If none is found, a new one is created and added
+// to the cache.
+template <typename T>
+boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
+{
+  log(TRACE, "Looking for cached VTKPlotter.");
+
+  for (uint i = 0; i < VTKPlotter::plotter_cache.size(); i++)
+  {
+    dolfin_assert(VTKPlotter::plotter_cache[i]);
+    if (VTKPlotter::plotter_cache[i]->id() == t->id())
+    {
+      log(TRACE, "Found cached VTKPlotter with index %d.", i);
+      return VTKPlotter::plotter_cache[i];
+    }
+  }
+
+  // No previous plotter found, so we create a new one
+  log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
+  boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
+
+  // Adjust window position to not completely overlap previous plots
+  uint num_old_plots = VTKPlotter::plotter_cache.size();
+  int width, height;
+  plotter->get_window_size(width, height);
+
+  // FIXME: This approach might need some tweaking. It tiles the winows in a 
+  // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
+  // windows
+  plotter->set_window_position((num_old_plots%2)*width,
+      (num_old_plots/2)*height);
+
+  // Add plotter to cache
+  VTKPlotter::plotter_cache.push_back(plotter);
+  log(TRACE, "Size of plotter cache is %d.", VTKPlotter::plotter_cache.size());
+
+  return VTKPlotter::plotter_cache.back();
+}
+//-----------------------------------------------------------------------------
 // Template function for plotting objects
 template <typename T>
-void plot_object(const T& t, std::string title, std::string mode)
+void plot_object(boost::shared_ptr<const T> t,
+    boost::shared_ptr<const Parameters> parameters)
 {
-  info("Plotting %s (%s).",
-          t.name().c_str(), t.label().c_str());
+#ifndef HAS_VTK
+  dolfin_error("plot.cpp",
+               "plot object",
+	       "Plotting disbled. Dolfin has been compiled without VTK support");
+#else
 
-  // Don't plot when running in parallel
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    warning("Plotting disabled when running in parallel; see \
-https://bugs.launchpad.net/dolfin/+bug/427534");
-    return;
-  }
+  // Get plotter from cache
+  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  dolfin_assert(plotter);
 
-  // Get filename prefix
-  std::string prefix = parameters["plot_filename_prefix"];
+  // Set plotter parameters
+  plotter->parameters.update(*parameters);
 
-  // Modify prefix and title when running in parallel
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    const dolfin::uint p = dolfin::MPI::process_number();
-    prefix += std::string("_p") + to_string(p);
-    title += " (process " + to_string(p) + ")";
-  }
+  // Plot
+  plotter->plot();
 
-  // Save to file
-  std::string filename = prefix + std::string(".xml");
-  File file(filename);
-  file << t;
-
-  // Build command string
-  std::stringstream command;
-  command << "viper --mode=" << mode << " "
-          << "--title=\"" << title
-          << "\" " << filename;
-
-  // Call Viper from command-line
-  if (system(command.str().c_str()) != 0)
-      warning("Unable to plot.");
+#endif
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const Function& v,
+void dolfin::plot(const Function& function,
                   std::string title, std::string mode)
 {
-  // Duplicate test here since FunctionPlotData may fail in parallel
-  // as it does for the eigenvalue demo when vector is not initialized
-  // correctly.
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    warning("Plotting disabled when running in parallel; see \
-https://bugs.launchpad.net/dolfin/+bug/427534");
-    return;
-  }
-
-  dolfin_assert(v.function_space()->mesh());
-  FunctionPlotData w(v, *v.function_space()->mesh());
-  plot_object(w, title, mode);
+  plot(reference_to_no_delete_pointer(function), title, mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const Expression& v, const Mesh& mesh,
+void dolfin::plot(boost::shared_ptr<const Function> function,
                   std::string title, std::string mode)
 {
-  FunctionPlotData w(v, mesh);
-  plot_object(w, title, mode);
+  Parameters parameters;
+  parameters.add("title", title);
+  parameters.add("mode", mode);
+  plot(function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Function& function, const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Function> function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  dolfin_assert(function->function_space()->mesh());
+  plot_object(function, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Expression& expression,
+                  const Mesh& mesh,
+                  std::string title, std::string mode)
+{
+  plot(reference_to_no_delete_pointer(expression),
+       reference_to_no_delete_pointer(mesh), title, mode);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Expression> expression,
+                  boost::shared_ptr<const Mesh> mesh,
+                  std::string title, std::string mode)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  parameters.add("mode", mode);
+  plot(expression, mesh, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Expression& expression, const Mesh& mesh,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(expression),
+       reference_to_no_delete_pointer(mesh),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const Expression> expression,
+                  boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  boost::shared_ptr<const ExpressionWrapper> 
+    e(new ExpressionWrapper(expression, mesh));
+  plot_object(e, parameters);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh,
                   std::string title)
 {
-  plot_object(mesh, title, "auto");
+  plot(reference_to_no_delete_pointer(mesh), title);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<uint>& f,
+void dolfin::plot(boost::shared_ptr<const Mesh> mesh,
                   std::string title)
 {
-  plot_object(f, title, "auto");
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<double>& f,
-                  std::string title)
+void dolfin::plot(const Mesh& mesh, const Parameters& parameters)
 {
-  plot_object(f, title, "auto");
+  plot(reference_to_no_delete_pointer(mesh),
+       reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<bool>& f,
+void dolfin::plot(boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const DirichletBC& bc,
                   std::string title)
 {
-  plot_object(f, title, "auto");
+  plot(reference_to_no_delete_pointer(bc), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(bc, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const DirichletBC& bc, const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(bc),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(bc, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<uint>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<uint>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh_function, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<int>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<int>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh_function, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<double>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<double>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh_function, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<bool>& mesh_function,
+                  std::string title)
+{
+  plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
+                  std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const MeshFunction<bool>& mesh_function,
+                  const Parameters& parameters)
+{
+  plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
+                  boost::shared_ptr<const Parameters> parameters)
+{
+  plot_object(mesh_function, parameters);
+}
+//-----------------------------------------------------------------------------
+void dolfin::interactive()
+{
+  if (VTKPlotter::plotter_cache.size() == 0) {
+    warning("No plots have been shown yet. Ignoring call to interactive().");
+  } else {
+    // Call interactive on every plotter
+    for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) {
+      VTKPlotter::plotter_cache[i]->interactive();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
