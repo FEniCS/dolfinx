@@ -40,6 +40,7 @@
 using namespace dolfin;
 
 #ifdef HAS_VTK
+
 // Template function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created and added
 // to the cache.
@@ -79,6 +80,7 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
 
   return VTKPlotter::plotter_cache.back();
 }
+
 #endif
 
 // Template function for plotting objects
@@ -87,7 +89,9 @@ void plot_object(boost::shared_ptr<const T> t,
     boost::shared_ptr<const Parameters> parameters)
 {
 #ifndef HAS_VTK
+
   warning("Plotting disbled. DOLFIN has been compiled without VTK support");
+
 #else
 
   // Get plotter from cache

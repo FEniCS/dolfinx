@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-20
+// Last changed: 2012-06-26
 
 #ifdef HAS_VTK
 
@@ -44,6 +44,7 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(
 {
   // Do nothing
 }
+//----------------------------------------------------------------------------
 VTKPlottableGenericFunction::VTKPlottableGenericFunction(
     boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
@@ -60,27 +61,32 @@ void VTKPlottableGenericFunction::init_pipeline()
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
 
-  switch (_function->value_rank()) {
-    
+  switch (_function->value_rank())
+  {
     // Setup pipeline for scalar functions
-    case 0:
-      if (_mesh->topology().dim() < 3) {
+  case 0:
+    {
+      if (_mesh->topology().dim() < 3)
+      {
         // In 1D and 2D, we warp the mesh according to the scalar values
         _warpscalar->SetInput(_grid);
 
         _geometryFilter->SetInput(_warpscalar->GetOutput());
       }
-      else {
+      else
+      {
         // In 3D, we just show the scalar values as colors on the mesh
         _geometryFilter->SetInput(_grid);
 
       }
       _geometryFilter->Update();
-      break;
-    
+    }
+    break;
+
     // Setup pipeline for vector functions. Everything is set up except the
     // mapper
-    case 1: {
+  case 1:
+    {
       // Setup pipeline for warp visualization
       _warpvector->SetInput(_grid);
       _geometryFilter->SetInput(_warpvector->GetOutput());
@@ -102,12 +108,12 @@ void VTKPlottableGenericFunction::init_pipeline()
       _glyphs->SetVectorModeToUseVector();
       _glyphs->SetScaleModeToScaleByVector();
       _glyphs->SetColorModeToColorByVector();
-      break;
     }
-    default:
-      dolfin_error("VTKPlotter.cpp",
-          "plot function of rank > 2.",
-          "Plotting of higher order functions is not supported.");
+    break;
+  default:
+    dolfin_error("VTKPlotter.cpp",
+                 "plot function of rank > 2.",
+                 "Plotting of higher order functions is not supported.");
   }
 }
 //----------------------------------------------------------------------------
@@ -121,24 +127,27 @@ void VTKPlottableGenericFunction::update(const Parameters& parameters)
   _glyphs->SetScaleFactor(scale);
 
   const std::string mode = parameters["mode"];
-  if (mode == "warp") {
+  if (mode == "warp")
+  {
     warp_vector_mode = true;
-  } else {
-    if (mode != "auto") {
+  }
+  else
+  {
+    if (mode != "auto")
       warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
-    }
     warp_vector_mode = false;
   }
-  
-  switch(_function->value_rank()) {
-    case 0:
-      update_scalar();
-      break;
-    case 1:
-      update_vector();
-      break;
-    default:
-      break;
+
+  switch(_function->value_rank())
+  {
+  case 0:
+    update_scalar();
+    break;
+  case 1:
+    update_vector();
+    break;
+  default:
+    break;
   }
 }
 //----------------------------------------------------------------------------
@@ -156,10 +165,13 @@ void VTKPlottableGenericFunction::update_range(double range[2])
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() const
 {
   // In the 3D glyph case, return the glyphs' output
-  if (_function->value_rank() == 1 && !warp_vector_mode) {
+  if (_function->value_rank() == 1 && !warp_vector_mode)
+  {
     return _glyphs->GetOutputPort();
-  // Otherwise return the geometryfilter's output
-  } else {
+    // Otherwise return the geometryfilter's output
+  }
+  else
+  {
     return _geometryFilter->GetOutputPort();
   }
 }
@@ -180,7 +192,8 @@ void VTKPlottableGenericFunction::update_scalar()
   std::vector<double> vertex_values(num_vertices);
   _function->compute_vertex_values(vertex_values, *_mesh);
 
-  for(uint i = 0; i < num_vertices; ++i) {
+  for (uint i = 0; i < num_vertices; ++i)
+  {
     scalars->SetValue(i, vertex_values[i]);
   }
 
@@ -213,15 +226,19 @@ void VTKPlottableGenericFunction::update_vector()
   std::vector<double> vertex_values(num_vertices*num_components);
   _function->compute_vertex_values(vertex_values, *_mesh);
 
-  for(uint i = 0; i < num_vertices; ++i) {
+  for (uint i = 0; i < num_vertices; ++i)
+  {
     vectors->SetValue(3*i,     vertex_values[i]);
     vectors->SetValue(3*i + 1, vertex_values[i + num_vertices]);
 
     // If the DOLFIN function vector value dimension is 2, pad with a 0
-    if(num_components == 2) {
+    if (num_components == 2)
+    {
       vectors->SetValue(3*i + 2, 0.0);
       // else, add the last entry in the value vector
-    } else {
+    }
+    else
+    {
       vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
     }
   }
@@ -241,4 +258,5 @@ void VTKPlottableGenericFunction::update_vector()
       norms->GetOutput()->GetPointData()->GetScalars());
 }
 //----------------------------------------------------------------------------
+
 #endif

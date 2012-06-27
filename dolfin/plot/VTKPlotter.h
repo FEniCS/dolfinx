@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
 // Last changed: 2012-06-25
@@ -36,7 +36,7 @@ class vtkObject;
 
 namespace dolfin
 {
-  
+
   // Forward declarations
   class PrivateVTKPipeline;
   class ExpressionWrapper;
@@ -44,8 +44,8 @@ namespace dolfin
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
-  /// conditions and mesh functions. It can plot data wrapped in classes 
-  /// conforming to the GenericVTKPlottable interface. 
+  /// conditions and mesh functions. It can plot data wrapped in classes
+  /// conforming to the GenericVTKPlottable interface.
   /// The plotter has several parameters that the user can set and adjust to
   /// affect the appearance and behavior of the plot.
   ///
@@ -90,7 +90,7 @@ namespace dolfin
   ///  prefix         String      "dolfin_plot_"  Filename prefix used when
   ///                                             saving plots to file in
   ///                                             interactive mode. An integer
-  ///                                             counter is appended after the 
+  ///                                             counter is appended after the
   ///                                             prefix.
   ///  helptext       Boolean     True            Enable/disable the hover-over
   ///                                             help-text in interactive
@@ -137,7 +137,7 @@ namespace dolfin
 
     /// Create plotter for an uint valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-    
+
     /// Create plotter for an intr valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
 
@@ -211,7 +211,7 @@ namespace dolfin
     std::string get_helptext();
 
     // Keypress callback
-    void keypressCallback(vtkObject* caller, 
+    void keypressCallback(vtkObject* caller,
                           long unsigned int eventId,
                           void* callData);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis 
+// Copyright (C) 2007-2012 Anders Logg and Fredrik Valdmanis
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-02
-// Last changed: 2012-06-15
+// Last changed: 2012-06-26
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -141,7 +141,7 @@ namespace dolfin
   /// Plot double-valued mesh function  (parameter, shared_ptr version)
   void plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
             boost::shared_ptr<const Parameters> parameters);
-  
+
   /// Plot boolean-valued mesh function
   void plot(const MeshFunction<bool>& mesh_function,
             std::string title="MeshFunction<bool>");

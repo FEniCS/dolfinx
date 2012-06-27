@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-21
-// Last changed: 2012-06-22
+// Last changed: 2012-06-26
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -39,15 +39,15 @@ namespace dolfin
   {
   public:
 
-    explicit VTKPlottableMeshFunction(
-        boost::shared_ptr<const MeshFunction<T> > mesh_function);
-    
+    explicit
+    VTKPlottableMeshFunction(boost::shared_ptr<const MeshFunction<T> > mesh_function);
+
     //--- Implementation of the GenericVTKPlottable interface ---
-    
+
     /// Update the plottable data
     void update(const Parameters& parameters);
 
-  private: 
+  private:
 
     // Update vertex values
     void update_vertices();
@@ -77,13 +77,18 @@ namespace dolfin
   {
     VTKPlottableMesh::update(parameters);
 
-    if (_mesh_function->dim() == 0) {
-      // Vertex valued mesh function 
+    if (_mesh_function->dim() == 0)
+    {
+      // Vertex valued mesh function
       update_vertices();
-    } else if (_mesh_function->dim() == _mesh->topology().dim()) {
+    }
+    else if (_mesh_function->dim() == _mesh->topology().dim())
+    {
       // Cell valued
       update_cells();
-    } else {
+    }
+    else
+    {
       dolfin_error("VTKPlottableMeshFunction.h",
                    "plot mesh function",
                    "Only able to plot vertex and cell valued mesh functions");
@@ -109,7 +114,8 @@ namespace dolfin
 
     // Iterate the mesh function and convert the value at each vertex to double
     T value;
-    for(uint i = 0; i < num_vertices; ++i) {
+    for (uint i = 0; i < num_vertices; ++i)
+    {
       value = (*_mesh_function)[i];
       values->SetValue(i, (double) value);
     }
@@ -133,7 +139,8 @@ namespace dolfin
 
     // Iterate the mesh function and convert the value at each vertex to double
     T value;
-    for(uint i = 0; i < num_cells; ++i) {
+    for (uint i = 0; i < num_cells; ++i)
+    {
       value = (*_mesh_function)[i];
       values->SetValue(i, (double) value);
     }
@@ -148,4 +155,3 @@ namespace dolfin
 #endif
 
 #endif
-

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-21
+// Last changed: 2012-06-26
 
 #ifdef HAS_VTK
 
@@ -29,7 +29,6 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
-
 #include "VTKPlottableMesh.h"
 
 using namespace dolfin;
@@ -69,17 +68,18 @@ void VTKPlottableMesh::update(const Parameters& parameters)
   std::stringstream label;
   labels->SetNumberOfValues(_mesh->num_vertices());
   labels->SetName("indices");
- 
+
   // Iterate vertices and add to point and label array
   Point p;
-  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex) {
+  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+  {
     p = vertex->point();
     points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
 
     // Reset label, convert integer index to string and add to array
     label.str("");
     label << vertex->index();
-    labels->SetValue(vertex->index(), label.str().c_str()); 
+    labels->SetValue(vertex->index(), label.str().c_str());
   }
 
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
@@ -88,8 +88,8 @@ void VTKPlottableMesh::update(const Parameters& parameters)
   const uint *connectivity = _mesh->cells();
   uint spatial_dim = _mesh->topology().dim();
 
-  for (uint i = 0; i < _mesh->num_cells(); ++i) {
-
+  for (uint i = 0; i < _mesh->num_cells(); ++i)
+  {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
@@ -139,7 +139,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   }
 
   // We create the actor on the first call to the method
-  
+
   // TODO: Should we use vtkLabeledDataMapper here instead? Together with
   // vtkSelectVisiblePoints to only label visible points, and use vtkCellCenters
   // to generate points at the center of cells to label cells. See
@@ -156,7 +156,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   //pointSetToLabelHierarchyFilter->SetPriorityArrayName("priorities");
   pointSetToLabelHierarchyFilter->GetTextProperty()->SetColor(0, 0, 0);
   pointSetToLabelHierarchyFilter->Update();
- 
+
   // Create a mapper and actor for the labels.
   vtkSmartPointer<vtkLabelPlacementMapper> labelMapper = vtkSmartPointer<
     vtkLabelPlacementMapper>::New();
@@ -166,6 +166,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   _vertexLabelActor->SetMapper(labelMapper);
 
   return _vertexLabelActor;
-} 
+}
 //----------------------------------------------------------------------------
+
 #endif

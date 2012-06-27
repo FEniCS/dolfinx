@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-06-20
-// Last changed: 2012-06-25
+// Last changed: 2012-06-26
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -27,7 +27,6 @@
 #include <vtkGeometryFilter.h>
 
 #include <dolfin/mesh/Mesh.h>
-
 #include "GenericVTKPlottable.h"
 
 namespace dolfin
@@ -73,9 +72,6 @@ namespace dolfin
 
     // The label actor
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;
-
-  private:
-
 
   };
 
