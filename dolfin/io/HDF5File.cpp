@@ -19,6 +19,7 @@
 // First added:  2012-06-01
 // Last changed: 2012-06-07
 
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 
@@ -43,11 +44,11 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+
+#define H5_USE_16_API 1
 #include <hdf5.h>
 
 #include "HDF5File.h"
-
-#define HDF5_FAIL -1
 
 using namespace dolfin;
 
@@ -165,7 +166,7 @@ void HDF5File::write(T& data,
   offset[1]=0;
   count[0]=range.second-range.first;
   count[1]=width;
-  dimsf[0]=MPI::sum(count[0]);
+  dimsf[0]=MPI::sum((int)count[0]);
   dimsf[1]=width;
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -182,7 +183,7 @@ void HDF5File::write(T& data,
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
 		      H5P_DEFAULT);
   H5Sclose(filespace);
-  
+
   memspace = H5Screate_simple(2, count, NULL);
 
   filespace = H5Dget_space(dset_id);
@@ -213,6 +214,7 @@ void HDF5File::write(const double& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
+  printf("range=%d %d\n",range.first,range.second);
   write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
 }
 
@@ -220,6 +222,7 @@ void HDF5File::write(const uint& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
+  printf("range=%d %d\n",range.first,range.second);
   write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 

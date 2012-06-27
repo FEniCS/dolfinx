@@ -75,6 +75,7 @@ list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -256,6 +257,12 @@ endif()
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
   find_package(CHOLMOD)
+endif()
+
+# Check for HDF5
+if (DOLFIN_ENABLE_HDF5)
+  find_package(HDF5)
+  message(STATUS "hdf5lib:${HDF5_LIBRARIES} hdf5inc:${HDF5_INCLUDE_DIRS}")
 endif()
 
 # Check for PaStiX

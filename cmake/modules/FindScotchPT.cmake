@@ -80,6 +80,8 @@ find_library(PTSCOTCHERR_LIBRARY
   DOC "The PTSCOTCH-ERROR library"
   )
 
+set(SCOTCH_DEBUG 1)
+set(CMAKE_CXX_FLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
 
 # Try compiling and running test program

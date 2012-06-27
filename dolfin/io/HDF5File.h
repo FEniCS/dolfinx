@@ -29,6 +29,8 @@
 #include <boost/shared_ptr.hpp>
 #include "GenericFile.h"
 
+#define HDF5_FAIL -1
+
 namespace dolfin
 {
 
