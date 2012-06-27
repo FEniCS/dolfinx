@@ -27,6 +27,7 @@
 #include <vtkLookupTable.h>
 #include <vtkActor.h>
 #include <vtkRenderer.h>
+#include <vtkCamera.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkScalarBarActor.h>
@@ -494,5 +495,25 @@ void VTKPlotter::set_window_position(int x, int y)
   vtk_pipeline->_renderWindow->SetPosition(x, y);
 }
 //----------------------------------------------------------------------------
+void VTKPlotter::azimuth(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Azimuth(angle);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::elevate(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Elevation(angle);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::dolly(double value)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Dolly(value);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_viewangle(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->SetViewAngle(angle);
+}
+
 
 #endif

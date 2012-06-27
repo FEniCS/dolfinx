@@ -195,6 +195,15 @@ namespace dolfin
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
 
+    /// Camera control
+    void azimuth(double angle);
+    void elevate(double angle);
+    void dolly(double value);
+    void set_viewangle(double angle);
+
+
+
+
     // The cache of plotter objects
     static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
 
