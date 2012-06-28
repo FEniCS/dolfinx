@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-11
-// Last changed: 2010-11-29
+// Last changed: 2012-06-28
 //
 // If run without command-line arguments, this benchmark iterates from
 // zero to MAX_NUM_THREADS. If a command-line argument --num_threads n
@@ -58,9 +58,9 @@ class PoissonFactory
       dofmaps[1] = dofmap.get();
 
       TensorLayout tensor_layout(0, true);
-      std::vector<uint> global_dimensions(2);
-      std::vector<std::pair<uint, uint> > local_range(2);
-      for (uint i = 0; i < 2; i++)
+      std::vector<dolfin::uint> global_dimensions(2);
+      std::vector<std::pair<dolfin::uint, dolfin::uint> > local_range(2);
+      for (dolfin::uint i = 0; i < 2; i++)
         {
           global_dimensions[i] = dofmap->global_dimension();
           local_range[i]       = dofmap->ownership_range();
@@ -71,7 +71,7 @@ class PoissonFactory
                                     true, false, false);
 
       MatrixRenumbering matrix_renumbering(tensor_layout);
-      std::vector<uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
+      std::vector<dolfin::uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
 
       // Renumber dofs
       const_cast<GenericDofMap*>(dofmap.get())->renumber(dof_remap);
@@ -119,9 +119,9 @@ class NavierStokesFactory
       dofmaps[1] = dofmap.get();
 
       TensorLayout tensor_layout(0, true);
-      std::vector<uint> global_dimensions(2);
-      std::vector<std::pair<uint, uint> > local_range(2);
-      for (uint i = 0; i < 2; i++)
+      std::vector<dolfin::uint> global_dimensions(2);
+      std::vector<std::pair<dolfin::uint, dolfin::uint> > local_range(2);
+      for (dolfin::uint i = 0; i < 2; i++)
         {
           global_dimensions[i] = dofmap->global_dimension();
           local_range[i]       = dofmap->ownership_range();
@@ -132,7 +132,7 @@ class NavierStokesFactory
                                     true, false, false);
 
       MatrixRenumbering matrix_renumbering(tensor_layout);
-      std::vector<uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
+      std::vector<dolfin::uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
 
       // Renumber dofs
       const_cast<GenericDofMap*>(dofmap.get())->renumber(dof_remap);
