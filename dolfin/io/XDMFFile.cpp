@@ -38,6 +38,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/common/Timer.h>
 
 #include "XDMFFile.h"
 #include "HDF5File.h"
@@ -63,6 +64,8 @@ void XDMFFile::operator<<(const Function& u)
 {
   // Save Function to XDMF/HDF file for visualisation
   // Can be read by paraview
+
+  Timer hdf5timer("HDF5+XDMF Output (mesh+data)");
 
   u.update();
   const Mesh& mesh = *u.function_space()->mesh();

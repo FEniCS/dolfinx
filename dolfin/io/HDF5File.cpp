@@ -46,9 +46,9 @@
 #include <dolfin/mesh/Vertex.h>
 
 #define H5_USE_16_API 1
-#include <hdf5.h>
-
 #include "HDF5File.h"
+
+#include <hdf5.h>
 
 using namespace dolfin;
 
@@ -214,7 +214,6 @@ void HDF5File::write(const double& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
-  printf("range=%d %d\n",range.first,range.second);
   write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
 }
 
@@ -222,7 +221,6 @@ void HDF5File::write(const uint& data,
 		     const std::pair<uint,uint>& range,
 		     const std::string& dataset_name,
 		     const uint width){
-  printf("range=%d %d\n",range.first,range.second);
   write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 
