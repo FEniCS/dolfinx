@@ -62,48 +62,41 @@ int main()
   Mesh mesh("../dolfin-2.xml.gz");
 
   // Have some fun with the mesh
-  double R = 0.15;
-  double H = 0.025;
+  const double R = 0.15;
+  const double H = 0.025;
   double X = 0.3;
   double Y = 0.4;
   double dX = H;
   double dY = 1.5*H;
   double* coordinates = mesh.coordinates();
-  boost::scoped_array<double> original(new double[mesh.num_vertices()*2]);
-  std::copy(&coordinates[0], &coordinates[mesh.num_vertices()*2], original.get());
+  const std::vector<double> original(coordinates, coordinates + 2*mesh.num_vertices());
 
-  double x, y, r;
   for (dolfin::uint i = 0; i < 100; i++)
   {
     if (X < H || X > 1.0 - H)
-    {
       dX = -dX;
-    }
 
     if (Y < H || Y > 1.0 - H)
-    {
       dY = -dY;
-    }
 
     X += dX;
     Y += dY;
 
     for (dolfin::uint j = 0; j < mesh.num_vertices(); ++j)
     {
-      x = coordinates[2*j];
-      y = coordinates[2*j + 1];
-      r = sqrt(pow((x - X), 2) + pow((y - Y), 2));
+      const double x = coordinates[2*j];
+      const double y = coordinates[2*j + 1];
+      const double r = std::sqrt((x - X)*(x - X) + (y - Y)*(y - Y));
       if (r < R)
       {
-  	coordinates[2*j]   = X + pow((r/R),2)*(x - X);
-  	coordinates[2*j + 1] = Y + pow((r/R),2)*(y - Y);
+        coordinates[2*j]     = X + (r/R)*(r/R)*(x - X);
+        coordinates[2*j + 1] = Y + (r/R)*(r/R)*(y - Y);
       }
     }
 
     plot(mesh, "Plotting mesh");
 
-    for (dolfin::uint j = 0; j < mesh.num_vertices()*2; ++j)
-      coordinates[j] = original[j];
+    std::copy(original.begin(), original.end(), coordinates);
   }
 
   // Plot scalar function
