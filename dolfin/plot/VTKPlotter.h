@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-25
+// Last changed: 2012-06-30
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -160,6 +160,9 @@ namespace dolfin
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
+      p.add("autorange", true);
+      p.add("range_min", 0.0);
+      p.add("range_max", 1.0);
       p.add("rescale", false);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
@@ -201,7 +204,8 @@ namespace dolfin
     void dolly(double value);
     void set_viewangle(double angle);
 
-
+    // Set the range of the color table
+    void set_min_max(double min, double max);
 
 
     // The cache of plotter objects

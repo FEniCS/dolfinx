@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-25
+// Last changed: 2012-06-30
 
 #ifdef HAS_VTK
 
@@ -253,19 +253,32 @@ void VTKPlotter::plot()
   // Update the plottable data
   _plottable->update(parameters);
 
-  // If this is the first render of this plot and/or the rescale parameter is
-  // set, we read get the min/max values of the data and process them
-  if (_frame_counter == 0 || parameters["rescale"])
+
+
+  if (parameters["autorange"])
+  {
+
+    // If this is the first render of this plot and/or the rescale parameter is
+    // set, we read get the min/max values of the data and process them
+    if (_frame_counter == 0 || parameters["rescale"])
+    {
+      double range[2];
+      _plottable->update_range(range);
+      vtk_pipeline->_lut->SetRange(range);
+      vtk_pipeline->_lut->Build();
+      vtk_pipeline->_mapper->SetScalarRange(range);
+    }
+  }
+  else
   {
     double range[2];
-
-    _plottable->update_range(range);
-
+    range[0] = parameters["range_min"];
+    range[1] = parameters["range_max"];
     vtk_pipeline->_lut->SetRange(range);
     vtk_pipeline->_lut->Build();
-
     vtk_pipeline->_mapper->SetScalarRange(range);
   }
+  
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
@@ -357,7 +370,7 @@ void VTKPlotter::init_pipeline()
   vtk_pipeline->_renderer->SetBackground(1, 1, 1);
   vtk_pipeline->_actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
   vtk_pipeline->_renderWindow->SetSize(parameters["window_width"],
-      parameters["window_height"]);
+				       parameters["window_height"]);
   vtk_pipeline->_scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
@@ -514,6 +527,12 @@ void VTKPlotter::set_viewangle(double angle)
 {
   vtk_pipeline->_renderer->GetActiveCamera()->SetViewAngle(angle);
 }
-
+//----------------------------------------------------------------------------
+void VTKPlotter::set_min_max(double min, double max)
+{
+  parameters["autorange"] = false;
+  parameters["range_min"] = min;
+  parameters["range_max"] = max;
+}
 
 #endif
