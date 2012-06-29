@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-22
-// Last changed: 2012-05-22
+// Last changed: 2012-06-29
 
 #ifndef __HDF5FILE_H
 #define __HDF5FILE_H
@@ -57,10 +57,10 @@ namespace dolfin
     void operator>> (GenericVector& input);
 
     // Function
-    void operator<< (const Function& u);
+    //    void operator<< (const Function& u);
 
     // Mesh
-    void operator<< (const Mesh& mesh);
+    //    void operator<< (const Mesh& mesh);
 
     //write functions for int,double, etc. used by XDMFFile
     void write(const double& data,

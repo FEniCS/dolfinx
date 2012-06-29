@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2012-06-07
+// Last changed: 2012-06-29
 
 #include <cstdio>
 #include <iostream>
@@ -68,78 +68,16 @@ HDF5File::~HDF5File()
 
 //-----------------------------------------------------------------------------
 
-void HDF5File::operator<<(const Function& u){
+//void HDF5File::operator<<(const Function& u){
   //use xdmf format instead
   //could migrate some code from XDMFFile.cpp to here
 
   //create HDF5 file
   //add coordinates and topology (from mesh)
   //add vector
-  //add dofmap
+  //add dofmap?
   
-}
-
-void HDF5File::operator<<(const Mesh& mesh){
-  const uint cell_dim = mesh.topology().dim();
-  const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_vertices();
-
-  create(); //new HDF5 file
-
-  std::vector<std::pair<uint,uint> > in_values;
-  std::vector<std::pair<uint,uint> > out_values;
-  std::vector<uint> destinations;
-  std::vector<uint> sources;
-  //report this process's num_cells,num_vertices to all other processes
-  for (uint i=0;i<MPI::num_processes();i++){
-    destinations.push_back(i);
-    in_values.push_back(std::pair<uint,uint>(num_local_cells,num_local_vertices));
-  }
-  MPI::distribute(in_values,destinations,out_values,sources);
-  std::vector<uint>::iterator src=sources.begin();
-  std::vector<std::pair<uint,uint> >num_cv(MPI::num_processes());
-  //replies will not be in order,so need to make a list 
-  for(std::vector<std::pair<uint,uint> >::iterator src_cvi=out_values.begin();
-      src_cvi!=out_values.end();++src_cvi) {  
-    num_cv[*src] = *src_cvi;
-    ++src;
-  }
-
-  std::pair<uint,uint>offset(0,0); //calculate this process's offset
-  for(uint i=0;i<MPI::process_number();i++){
-    offset.first+=num_cv[i].first;    
-    offset.second+=num_cv[i].second;
-  }
-
-  std::pair<uint,uint>cell_range(offset.first,offset.first+num_local_cells);
-  std::pair<uint,uint>vertex_range(offset.second,offset.second+num_local_vertices);
-
-  // some duplication of vertices will occur in parallel
-  std::vector<double>data;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      Point p=v->point();
-      data.push_back(p.x());
-      data.push_back(p.y());
-      data.push_back(p.z());
-    }
-  //save to HDF file
-  write(data[0],vertex_range,"dolfin_coords",3);
-
-  // save vertex connectivity 
-  std::vector<uint>vdata;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      const uint i = cell->index();
-
-      for (VertexIterator v(*cell); !v.end(); ++v){
-	fprintf(stderr,"[%d] Local cell:%d node: %d\n",MPI::process_number(),i,v->index());
-	vdata.push_back(v->index()+vertex_range.first);
-      }
-    }  
-  write(vdata[0],cell_range,"dolfin_topo",cell_dim+1);
-
-}
+//}
 
 // write a generic block of 2D data into a HDF5 dataset
 // in parallel. Pre-existing file.
@@ -170,19 +108,25 @@ void HDF5File::write(T& data,
   dimsf[1]=width;
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id,*comm, *info); 
+  status=H5Pset_fapl_mpio(plist_id,*comm, *info); 
+  assert(status != HDF5_FAIL);
 
   // try to open existing HDF5 file
   file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  assert(file_id != HDF5_FAIL);
 
-  H5Pclose(plist_id);
+  status=H5Pclose(plist_id);
+  assert(status != HDF5_FAIL);
 
   // define a 2D dataset
   filespace = H5Screate_simple(2, dimsf, NULL); 
+  assert(filespace != HDF5_FAIL);
 
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
 		      H5P_DEFAULT);
-  H5Sclose(filespace);
+  assert(dset_id != HDF5_FAIL);
+  status=H5Sclose(filespace);
+  assert(status != HDF5_FAIL);
 
   memspace = H5Screate_simple(2, count, NULL);
 
@@ -198,11 +142,16 @@ void HDF5File::write(T& data,
 		    plist_id, &data);
   assert(status != HDF5_FAIL);
 
-  H5Dclose(dset_id);
-  H5Sclose(filespace);
-  H5Sclose(memspace);
-  H5Pclose(plist_id);
-  H5Fclose(file_id);
+  status=H5Dclose(dset_id);
+  assert(status != HDF5_FAIL);
+  status=H5Sclose(filespace);
+  assert(status != HDF5_FAIL);
+  status=H5Sclose(memspace);
+  assert(status != HDF5_FAIL);
+  status=H5Pclose(plist_id);
+  assert(status != HDF5_FAIL);
+  status=H5Fclose(file_id);
+  assert(status != HDF5_FAIL);
 
 }
 
@@ -230,15 +179,20 @@ void HDF5File::create(){  //maybe this should be in the constructor
 
   hid_t       file_id;         /* file and dataset identifiers */
   hid_t	      plist_id;           /* property list identifier */
+  herr_t      status;
 
   MPICommunicator comm;
   MPIInfo info;
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id,*comm, *info); 
+  status = H5Pset_fapl_mpio(plist_id, *comm, *info);     
+  assert(status != HDF5_FAIL);
   file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-  H5Pclose(plist_id);
-  H5Fclose(file_id);
+  assert(file_id != HDF5_FAIL);
+  status=H5Pclose(plist_id);
+  assert(status != HDF5_FAIL);
+  status=H5Fclose(file_id);
+  assert(status != HDF5_FAIL);
 }
 
 // Create HDF File and add a dataset of dolfin_vector
@@ -270,7 +224,7 @@ void HDF5File::operator>> (GenericVector& input)
     // hsize_t     dimsf;                 /* dataset dimensions */
     hsize_t     count;	          /* hyperslab selection parameters */
     hsize_t     offset;
-    herr_t ret;         	/* Generic return value */
+    herr_t status;         	/* Generic return value */
 
     uint dim=0;
 
@@ -290,16 +244,16 @@ void HDF5File::operator>> (GenericVector& input)
     plist_id = H5Pcreate (H5P_FILE_ACCESS);
     assert(plist_id != HDF5_FAIL);
     /* set Parallel access with communicator */
-    ret = H5Pset_fapl_mpio(plist_id, *comm, *info);     
-    assert(ret != HDF5_FAIL);
+    status = H5Pset_fapl_mpio(plist_id, *comm, *info);     
+    assert(status != HDF5_FAIL);
 
     /* open the file collectively */
     file_id=H5Fopen(filename.c_str(),H5F_ACC_RDWR,plist_id);
     assert(file_id != HDF5_FAIL);
 
     /* Release file-access template */
-    ret=H5Pclose(plist_id);
-    assert(ret != HDF5_FAIL);
+    status=H5Pclose(plist_id);
+    assert(status != HDF5_FAIL);
 
     /* open the dataset collectively */
     dset_id = H5Dopen(file_id, "dolfin_vector");
@@ -309,27 +263,29 @@ void HDF5File::operator>> (GenericVector& input)
     filespace = H5Dget_space (dset_id);
     assert(filespace != HDF5_FAIL);
 
-    ret=H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &count, NULL);
-    assert(ret != HDF5_FAIL);
+    status=H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &count, NULL);
+    assert(status != HDF5_FAIL);
 
     /* create a memory dataspace independently */
     memspace = H5Screate_simple (1, &count, NULL);
     assert (memspace != HDF5_FAIL);
 
     /* read data independently */
-    ret = H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
+    status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace,
 	    H5P_DEFAULT, &data[0]);
-    assert(ret != HDF5_FAIL);
+    assert(status != HDF5_FAIL);
 
     /* close dataset collectively */
-    ret=H5Dclose(dset_id);
-    assert(ret != HDF5_FAIL);
+    status=H5Dclose(dset_id);
+    assert(status != HDF5_FAIL);
 
     /* release all IDs created */
-    H5Sclose(filespace);
+    status=H5Sclose(filespace);
+    assert(status != HDF5_FAIL);
 
     /* close the file collectively */
-    H5Fclose(file_id);
+    status=H5Fclose(file_id);
+    assert(status != HDF5_FAIL);
 
     input.set_local(data);
 

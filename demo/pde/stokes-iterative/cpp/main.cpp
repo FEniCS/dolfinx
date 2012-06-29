@@ -153,9 +153,9 @@ int main()
   plot(p);
 
   // Save solution in VTK format
-  File ufile_pvd("velocity.pvd");
+  File ufile_pvd("velocity.xdmf");
   ufile_pvd << u;
-  File pfile_pvd("pressure.pvd");
+  File pfile_pvd("pressure.xdmf");
   pfile_pvd << p;
 }
 

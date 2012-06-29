@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2011-07-01
+// Last changed: 2012-06-29
 //
 // This demo program solves Poisson's equation
 //
@@ -89,11 +89,13 @@ int main()
   solve(a == L, u, bc);
 
   // Save solution in VTK format
-  File file("poisson.pvd");
+   u.rename("phi","field");
+  File file("poisson.xdmf");
   file << u;
 
   // Plot solution
-  plot(u);
+
+//  plot(u);
 
   return 0;
 }
