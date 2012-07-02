@@ -151,7 +151,7 @@ void EpetraVector::resize(std::pair<uint, uint> range,
 
   // Compute local size
   const uint local_size = range.second - range.first;
-  dolfin_assert(range.second - range.first >= 0);
+  dolfin_assert(int (range.second - range.first) >= 0);
 
   // Create vector
   if (type == "local")

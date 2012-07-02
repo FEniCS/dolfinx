@@ -27,7 +27,7 @@ from dolfin import *
 class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
-        self.intervall = UnitInterval(10)
+        self.interval = UnitInterval(10)
         self.circle = UnitCircle(5)
         self.square = UnitSquare(5, 5)
         self.rectangle = Rectangle(0, 0, 2, 2, 5, 5)
@@ -37,7 +37,7 @@ class MeshConstruction(unittest.TestCase):
 
     def testUFLCell(self):
         import ufl
-        self.assertEqual(ufl.interval, self.intervall.ufl_cell())
+        self.assertEqual(ufl.interval, self.interval.ufl_cell())
         self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())

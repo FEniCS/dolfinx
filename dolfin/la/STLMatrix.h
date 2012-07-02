@@ -163,13 +163,13 @@ namespace dolfin
     void csr(std::vector<double>& vals, std::vector<uint>& cols,
              std::vector<uint>& row_ptr,
              std::vector<uint>& local_to_global_row,
-             bool base_one = false) const;
+             bool symmetric) const;
 
     /// Return matrix in CSC format
     void csc(std::vector<double>& vals, std::vector<uint>& rows,
              std::vector<uint>& col_ptr,
              std::vector<uint>& local_to_global_col,
-             bool base_one = false) const;
+             bool symmetric) const;
 
     /// Return number of global non-zero entries
     uint nnz() const;
@@ -184,7 +184,7 @@ namespace dolfin
                             std::vector<uint>& rows,
                             std::vector<uint>& col_ptr,
                             std::vector<uint>& local_to_global_col,
-                            bool base_one) const;
+                            bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
     const uint primary_dim;

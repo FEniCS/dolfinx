@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2010-02-08
+// Last changed: 2012-06-25
 
 #include <iostream>
 
@@ -34,9 +34,14 @@ BoundaryMesh::BoundaryMesh() : Mesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(const Mesh& mesh) : Mesh()
+BoundaryMesh::BoundaryMesh(const Mesh& mesh, bool order) : Mesh()
 {
+  // Create boundary mesh
   init_exterior_boundary(mesh);
+
+  // Order mesh if requested
+  if (order)
+    this->order();
 }
 //-----------------------------------------------------------------------------
 BoundaryMesh::~BoundaryMesh()

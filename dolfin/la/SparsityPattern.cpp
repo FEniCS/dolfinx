@@ -54,6 +54,8 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
 
+  const uint _primary_dim = primary_dim();
+
   // Check that dimensions match
   dolfin_assert(dims.size() == local_range.size());
   dolfin_assert(dims.size() == off_process_owner.size());
@@ -101,6 +103,8 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
   dolfin_assert(entries[1]);
+
+  const uint _primary_dim = primary_dim();
 
   const std::vector<uint>* map_i;
   const std::vector<uint>* map_j;
@@ -227,6 +231,8 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
+  const uint _primary_dim = primary_dim();
+
   uint primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
@@ -314,7 +320,7 @@ std::string SparsityPattern::str(bool verbose) const
   typedef set_type::const_iterator entry_it;
   for (uint i = 0; i < diagonal.size(); i++)
   {
-    if (_primary_dim == 0)
+    if (primary_dim() == 0)
       s << "Row " << i << ":";
     else
       s << "Col " << i << ":";
