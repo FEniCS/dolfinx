@@ -226,16 +226,11 @@ VTKPlotter::~VTKPlotter()
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value
-  char *noplot;
-  noplot = getenv("DOLFIN_NOPLOT");
-  if (noplot != NULL)
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value.
+  if (no_plot)
   {
-    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0)
-    {
-      warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
-      return;
-    }
+    warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
+    return;
   }
 
   // The plotting starts
@@ -281,6 +276,13 @@ void VTKPlotter::plot()
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive()
 {
+
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  if (no_plot)
+    return;
+
+
+
   // Add keypress callback function
   vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this,
                                          &VTKPlotter::keypressCallback);
@@ -325,6 +327,13 @@ void VTKPlotter::interactive()
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
 {
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  {
+    char *noplot_env;
+    noplot_env = getenv("DOLFIN_NOPLOT");
+    no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
+  } 
+
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
   // renderer, renderwindow and interaction. It also takes care of the scalar

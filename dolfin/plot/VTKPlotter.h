@@ -232,6 +232,7 @@ namespace dolfin
     // Counter for the automatically named hardcopies
     static int hardcopy_counter;
 
+    bool no_plot;
   };
 
 }
