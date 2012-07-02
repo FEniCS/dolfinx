@@ -239,51 +239,8 @@ void VTKPlotter::plot()
     }
   }
 
-  // The plotting starts
 
-  // Process some parameters
-  if (parameters["wireframe"])
-    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
-
-  if (parameters["scalarbar"])
-    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
-
-  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
-
-  // Update the plottable data
-  _plottable->update(parameters);
-
-
-
-  if (parameters["autorange"])
-  {
-
-    // If this is the first render of this plot and/or the rescale parameter is
-    // set, we read get the min/max values of the data and process them
-    if (_frame_counter == 0 || parameters["rescale"])
-    {
-      double range[2];
-      _plottable->update_range(range);
-      vtk_pipeline->_lut->SetRange(range);
-      vtk_pipeline->_lut->Build();
-      vtk_pipeline->_mapper->SetScalarRange(range);
-    }
-  }
-  else
-  {
-    double range[2];
-    range[0] = parameters["range_min"];
-    range[1] = parameters["range_max"];
-    vtk_pipeline->_lut->SetRange(range);
-    vtk_pipeline->_lut->Build();
-    vtk_pipeline->_mapper->SetScalarRange(range);
-  }
-  
-
-  // Set the mapper's connection on each plot. This must be done since the
-  // visualization parameters may have changed since the last frame, and
-  // the input may hence also have changed
-  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
+  update();
 
   vtk_pipeline->_renderWindow->Render();
 
@@ -441,7 +398,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
         filename << std::string(parameters["prefix"]);
         filename << hardcopy_counter;
       }
-      hardcopy(filename.str());
+      write_png(filename.str());
       break;
     }
   case 'i':
@@ -474,11 +431,13 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::hardcopy(std::string filename)
+void VTKPlotter::write_png(std::string filename)
 {
   dolfin_assert(vtk_pipeline->_renderWindow);
 
   info("Saving plot to file: %s.png", filename.c_str());
+
+  update();
 
   // FIXME: Remove help-text-actor before hardcopying.
 
@@ -494,6 +453,11 @@ void VTKPlotter::hardcopy(std::string filename)
   vtk_pipeline->_renderWindow->Render();
   writer->Modified();
   writer->Write();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::write_ps(std::string filename, std::string format)
+{
+  warning("VTKPlotter::write_ps() not implemented");
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::get_window_size(int& width, int& height)
@@ -534,5 +498,63 @@ void VTKPlotter::set_min_max(double min, double max)
   parameters["range_min"] = min;
   parameters["range_max"] = max;
 }
+//----------------------------------------------------------------------------
+void VTKPlotter::update()
+{
+  warning("VTKPlotter::update() is deprecated. Create a VTKPlotter object, apply settings and parameters and call plot()");
+
+  // Process some parameters
+  if (parameters["wireframe"])
+    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
+
+  if (parameters["scalarbar"])
+    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
+
+  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
+
+  // Update the plottable data
+  _plottable->update(parameters);
+
+  if (parameters["autorange"])
+  {
+    // If this is the first render of this plot and/or the rescale parameter is
+    // set, we read get the min/max values of the data and process them
+    if (_frame_counter == 0 || parameters["rescale"])
+    {
+      double range[2];
+      _plottable->update_range(range);
+      vtk_pipeline->_lut->SetRange(range);
+      vtk_pipeline->_lut->Build();
+      vtk_pipeline->_mapper->SetScalarRange(range);
+    }
+  }
+  else
+  {
+    // FIXME: This needs to be fixed!
+
+    double range[2];
+    range[0] = parameters["range_min"];
+    range[1] = parameters["range_max"];
+
+    vtk_pipeline->_lut->SetRange(range);
+    vtk_pipeline->_lut->Build();
+    vtk_pipeline->_mapper->SetScalarRange(range);
+  }  
+
+  // Set the mapper's connection on each plot. This must be done since the
+  // visualization parameters may have changed since the last frame, and
+  // the input may hence also have changed
+  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
+}
+
+void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){ update(); }
+void VTKPlotter::update(boost::shared_ptr<const Function> function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){ update(); }
 
 #endif

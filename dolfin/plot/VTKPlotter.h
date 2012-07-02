@@ -180,6 +180,27 @@ namespace dolfin
       return p;
     }
 
+    // This function should be private, but is available
+    // to keep backward compatibilty with Viper
+    // Update all VTK structures
+    // Is called both from plot() and write_png()
+    void update();
+
+    // These functions are kept for backward compatibility with Viper
+    // They issue a warDeprecated update function
+    void update(boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const Function> function);
+    void update(boost::shared_ptr<const ExpressionWrapper> expression);
+    void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const DirichletBC> bc);
+    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+
+
+
+
     /// Plot the object
     void plot();
 
@@ -187,7 +208,10 @@ namespace dolfin
     void interactive();
 
     /// Save plot to PNG file (file suffix appended automatically)
-    void hardcopy(std::string filename);
+    void write_png(std::string filename);
+
+    /// Not implemented (but present for backward compatibility with Viper
+    void write_ps(std::string filename, std::string format);
 
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
