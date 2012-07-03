@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-22
-// Last changed: 2012-06-29
+// Last changed: 2012-07-02
 
 #ifndef __XDMFFILE_H
 #define __XDMFFILE_H
@@ -63,8 +63,6 @@ namespace dolfin
   private:
 
     std::string HDF5Filename();
-
-    std::pair<uint,uint>vertex_range;
 
   };
 

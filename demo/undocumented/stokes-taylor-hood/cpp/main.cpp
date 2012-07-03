@@ -101,8 +101,8 @@ int main()
   Function p = w[1];
 
   // Plot solution
-  plot(u);
-  plot(p);
+//  plot(u);
+  //plot(p);
 
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");

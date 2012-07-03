@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-06-29
+// Last changed: 2012-07-02
 
 #include <ostream>
 #include <sstream>
@@ -98,8 +98,7 @@ void XDMFFile::operator<<(const Function& u)
 
   // get offset and size of local vertex usage in global terms
   off=MPI::global_offset(num_local_vertices,true);
-  vertex_range.first=off;
-  vertex_range.second=off+num_local_vertices;
+  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
   std::vector<uint> topo_data;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -115,58 +114,116 @@ void XDMFFile::operator<<(const Function& u)
   }
 
   std::string filename_data(HDF5Filename());
+
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
-  h5file.create();
-  h5file.write(vtx_values[0],vertex_range,"dolfin_vector",vsize); //values
-  h5file.write(vtx_coords[0],vertex_range,"dolfin_coords",3); //xyz coords
-  h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1); //connectivity
+  // only save grid on first timestep (?)
+  if(counter==0){
+    h5file.create();
+    h5file.write(vtx_coords[0],vertex_range,"dolfin_coords",3); //xyz coords
+    h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1); //connectivity
+  }
+
+  std::stringstream s("");
+  s << "dolfin_vector_" << counter;
+  h5file.write(vtx_values[0],vertex_range,s.str().c_str(),vsize); //values
 
   //Now go ahead and write the XML meta description
   if(MPI::process_number()==0){
 
     pugi::xml_document xml_doc;
+    pugi::xml_node xdmf_timegrid;
+    pugi::xml_node xdmf_timedata;
 
-    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
-    xdmf.append_attribute("Version")="2.0";
-    xdmf.append_attribute("xmlns:xi")="http://www.w3.org/2001/XInclude";
-    pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
-    pugi::xml_node xdmf_grid = xdmf_domn.append_child("Grid");
-    xdmf_grid.append_attribute("Name")="dolfin_grid";
+    if(counter==0){
+      xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+      pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
+      xdmf.append_attribute("Version")="2.0";
+      xdmf.append_attribute("xmlns:xi")="http://www.w3.org/2001/XInclude";
+
+      pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
+
+      //         /Xdmf/Domain/Topology
+
+      pugi::xml_node xdmf_topo = xdmf_domn.append_child("Topology");      
+      if(cell_dim==2)
+	xdmf_topo.append_attribute("TopologyType")="Triangle";
+      else if(cell_dim==3)
+	xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
+      
+      xdmf_topo.append_attribute("NumberOfElements")=num_total_cells;
+      pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
+      
+      xdmf_topo_data.append_attribute("Format")="HDF"; 
+      std::stringstream s;
+      s << num_total_cells << " " << (cell_dim+1);
+      xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
+      
+      s.str("");
+      s<< filename_data << ":/dolfin_topo";
+      xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+
+      //      /Xdmf/Domain/Geometry
+      
+      pugi::xml_node xdmf_geom = xdmf_domn.append_child("Geometry");
+      xdmf_geom.append_attribute("GeometryType")="XYZ";
+      pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
+      
+      xdmf_geom_data.append_attribute("Format")="HDF";
+      s.str("");
+      s << num_total_vertices << " 3";
+      xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
+      
+      s.str("");
+      s << filename_data << ":/dolfin_coords";
+      xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+
+
+      //     /Xdmf/Domain/Grid
+
+      xdmf_timegrid = xdmf_domn.append_child("Grid");
+      xdmf_timegrid.append_attribute("Name")="TimeSeries";
+      xdmf_timegrid.append_attribute("GridType")="Collection";
+      xdmf_timegrid.append_attribute("CollectionType")="Temporal";
+
+      //     /Xdmf/Domain/Grid/Time
+      pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
+      xdmf_time.append_attribute("TimeType")="HyperSlab";
+      xdmf_timedata=xdmf_time.append_child("DataItem");
+      xdmf_timedata.append_attribute("Format")="XML";
+      xdmf_timedata.append_attribute("Dimensions")="3";
+      xdmf_timedata.append_child(pugi::node_pcdata);
+
+    } else {
+      pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+      if (!result)
+	{
+	  dolfin_error("XDMFFile.cpp",
+		       "write data to XDMF file",
+		       "XML parsing error when reading from existing file");
+	}   
+
+      xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
+      xdmf_timedata = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Time").child("DataItem");
+    
+    }
+
+
+    // maybe should use "List" instead of "Hyperslab"
+    s.str("");
+    s << "0.0 1.0 "<< (counter+1);
+    xdmf_timedata.first_child().set_value(s.str().c_str());
+
+    //    /Xdmf/Domain/Grid/Grid
+    pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
+    s.str("");
+    s << u.name() << "_" << counter; 
+    xdmf_grid.append_attribute("Name")=s.str().c_str();
     xdmf_grid.append_attribute("GridType")="Uniform";
-    
-    pugi::xml_node xdmf_topo = xdmf_grid.append_child("Topology");
-
-    if(cell_dim==2)
-      xdmf_topo.append_attribute("TopologyType")="Triangle";
-    else if(cell_dim==3)
-      xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
-
-    xdmf_topo.append_attribute("NumberOfElements")=num_total_cells;
-    pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
-
-    xdmf_topo_data.append_attribute("Format")="HDF"; 
-    std::stringstream s;
-    s << num_total_cells << " " << (cell_dim+1);
-    xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
-    
-    s.str("");
-    s<< filename_data << ":/dolfin_topo";
-    xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
-    
-    pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
-    xdmf_geom.append_attribute("GeometryType")="XYZ";
-    pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
-
-    xdmf_geom_data.append_attribute("Format")="HDF";
-    s.str("");
-    s << num_total_vertices << " 3";
-    xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
-
-    s.str("");
-    s << filename_data << ":/dolfin_coords";
-    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    pugi::xml_node xdmf_toporef = xdmf_grid.append_child("Topology");
+    xdmf_toporef.append_attribute("Reference")="/Xdmf/Domain/Topology[1]";
+    pugi::xml_node xdmf_geomref = xdmf_grid.append_child("Geometry");
+    xdmf_geomref.append_attribute("Reference")="/Xdmf/Domain/Geometry[1]";
     
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data
     xdmf_vals.append_attribute("Name")=u.name().c_str();
@@ -181,12 +238,14 @@ void XDMFFile::operator<<(const Function& u)
     s << num_total_vertices << " " << vsize;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
-    s<< filename_data << ":/dolfin_vector";
+    s<< filename_data << ":/dolfin_vector_" << counter;
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     xml_doc.save_file(filename.c_str(), "  "); 
+    
   }
 
+  counter++;
 
 }
 
@@ -219,8 +278,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
   // get offset and size of local vertex usage in global terms
   off=MPI::global_offset(num_local_vertices,true);
-  vertex_range.first=off;
-  vertex_range.second=off+num_local_vertices;
+  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
   std::vector<uint> topo_data;
   for (CellIterator cell(mesh); !cell.end(); ++cell)

@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   double t = k;
 
   // Output file
-  File file("results/temperature.pvd");
+  File file("temperature.xdmf");
 
   // Time-stepping
   Progress p("Time-stepping");
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
     lu.solve(*u.vector(), b);
 
     // Save solution in VTK format
-    file << std::make_pair(&u, t);
+   // file << std::make_pair(&u, t);
+    file << u;
 
     // Move to next interval
     p = t / T;
@@ -107,5 +108,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  plot(u);
+ // plot(u);
 }
