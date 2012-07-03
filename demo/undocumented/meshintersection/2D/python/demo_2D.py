@@ -70,21 +70,23 @@ while theta < 2*DOLFIN_PI + dtheta:
     if _first:
         p = plot(intersection, rescale=False)
 #        p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
-        p.add_polygon([[0, 0, -0.01],
-                       [1, 0, -0.01],
-                       [1, 1, -0.01],
-                       [0, 1, -0.01],
-                       [0, 0, -0.01]])
-        p.ren.ResetCamera()
-        p.update(intersection)
+
+        # FIXME: This needs to be updated to work with the new plotting functionality
+        # p.add_polygon([[0, 0, -0.01],
+        #                [1, 0, -0.01],
+        #                [1, 1, -0.01],
+        #                [0, 1, -0.01],
+        #                [0, 0, -0.01]])
+        # p.ren.ResetCamera()
+        # p.update(intersection)
         _first = False
         interactive()
     else:
         plot(intersection)
 
-    p.update(intersection)
-    if create_movies:
-      p.write_png()
+    # p.update(intersection)
+    # if create_movies:
+    #   p.write_png()
 
     # Rotate circle around (0.5, 0.5)
     xr = x[:, 0].copy() - 0.5
@@ -95,8 +97,9 @@ while theta < 2*DOLFIN_PI + dtheta:
 
     theta += dtheta
 
-if create_movies:
-  p.movie("circle_square_intersection.avi", cleanup=True)
+# FIXME: This needs to be updated to the new plotting functionality
+# if create_movies:
+#   p.movie("circle_square_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()
@@ -126,15 +129,17 @@ while theta < 2*DOLFIN_PI + dtheta:
   if _first :
     q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)
     q = plot(intersection, rescale=False, wireframe=True)
-    q.ren.ResetCamera()
+    # FIXME: This needs to be updated to the new plotting functionality
+    # q.ren.ResetCamera()
     _first = False
 
   else :
     plot(intersection)
 
-  q.update(intersection)
-  if create_movies:
-    q.write_png()
+  # FIXME: This needs to be updated to the new plotting functionality
+  # q.update(intersection)
+  # if create_movies:
+  #   q.write_png()
 
   # Rotate rotator
   xr = x[:, 0].copy()
@@ -145,8 +150,8 @@ while theta < 2*DOLFIN_PI + dtheta:
 
   theta += dtheta
 
-if create_movies:
-  q.movie("rotator_cavity_intersection.avi", cleanup=True)
+# if create_movies:
+#   q.movie("rotator_cavity_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()

@@ -412,7 +412,7 @@ dolfin::uint STLMatrix::local_nnz() const
 void STLMatrix::csr(std::vector<double>& vals, std::vector<uint>& cols,
                     std::vector<uint>& row_ptr,
                     std::vector<uint>& local_to_global_row,
-                    bool base_one) const
+                    bool symmetric) const
 {
   if (primary_dim != 0)
   {
@@ -420,13 +420,13 @@ void STLMatrix::csr(std::vector<double>& vals, std::vector<uint>& cols,
                  "creating compressed row storage data",
                  "Cannot create CSR matrix from STLMatrix with column-wise storage.");
   }
-  compressed_storage(vals, cols, row_ptr, local_to_global_row, base_one);
+  compressed_storage(vals, cols, row_ptr, local_to_global_row, symmetric);
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::csc(std::vector<double>& vals, std::vector<uint>& rows,
                     std::vector<uint>& col_ptr,
                     std::vector<uint>& local_to_global_col,
-                    bool base_one) const
+                    bool symmetric) const
 {
   if (primary_dim != 1)
   {
@@ -434,14 +434,14 @@ void STLMatrix::csc(std::vector<double>& vals, std::vector<uint>& rows,
                  "creating compressed column storage data",
                  "Cannot create CSC matrix from STLMatrix with row-wise storage.");
   }
-  compressed_storage(vals, rows, col_ptr, local_to_global_col, base_one);
+  compressed_storage(vals, rows, col_ptr, local_to_global_col, symmetric);
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::compressed_storage(std::vector<double>& vals,
                                    std::vector<uint>& cols,
                                    std::vector<uint>& row_ptr,
                                    std::vector<uint>& local_to_global_row,
-                                   bool base_one) const
+                                   bool symmetric) const
 {
   // Reset data structures
   vals.clear();
@@ -449,27 +449,60 @@ void STLMatrix::compressed_storage(std::vector<double>& vals,
   row_ptr.clear();
   local_to_global_row.clear();
 
+  // Reserve memory
+  row_ptr.reserve(codim_indices.size() + 1);
+  local_to_global_row.reserve(codim_indices.size());
+
   // Build CSR data structures
-  if (base_one)
-    row_ptr.push_back(1);
-  else
-    row_ptr.push_back(0);
-  for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
-  {
-    vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
-    cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
+  row_ptr.push_back(0);
 
-    row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size());
-    local_to_global_row.push_back(_local_range.first + local_row);
+  // Number of local non-zero entries
+  const uint _local_nnz = local_nnz();
+
+  // Number of local rows (columns)
+  const uint num_local_rows = codim_indices.size();
+
+  if (!symmetric)
+  {
+    // Reserve memory
+    vals.reserve(_local_nnz);
+    cols.reserve(_local_nnz);
+
+    // Build data structures
+    for (uint local_row = 0; local_row < num_local_rows; ++local_row)
+    {
+      vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
+      cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
+
+      row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size());
+      local_to_global_row.push_back(_local_range.first + local_row);
+    }
   }
-
-  // Shift to array base 1
-  if (base_one)
+  else
   {
-    for (uint i = 0; i < local_to_global_row.size(); ++i)
-      local_to_global_row[i]++;
-    for (uint i = 0; i < cols.size(); ++i)
-      cols[i]++;
+    // Reserve memory
+    vals.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+    cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+
+    // Build data structures
+    for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
+    {
+      const uint global_row_index = local_row + _local_range.first;
+      uint counter = 0;
+      for (uint i = 0; i < codim_indices[local_row].size(); ++i)
+      {
+        const uint index = codim_indices[local_row][i];
+        if (index >= global_row_index)
+        {
+          vals.push_back(_vals[local_row][i]);
+          cols.push_back(index);
+          ++counter;
+        }
+      }
+
+      row_ptr.push_back(row_ptr.back() + counter);
+      local_to_global_row.push_back(global_row_index);
+    }
   }
 }
 //-----------------------------------------------------------------------------

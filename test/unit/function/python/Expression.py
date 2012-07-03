@@ -300,5 +300,12 @@ class Instantiation(unittest.TestCase):
           e2 = Expression("1e+10")
           self.assertEqual(e2(0,0,0), 1e+10)
 
+     def testNameSpaceUsage(self):
+          e0 = Expression("std::sin(x[0])*cos(x[1])")
+          e1 = Expression("sin(x[0])*std::cos(x[1])")
+          self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
+                                 assemble(e1*dx, mesh=mesh))
+
+
 if __name__ == "__main__":
     unittest.main()

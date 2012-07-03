@@ -193,9 +193,11 @@ namespace dolfin
     void compute_extrapolation(const Function& z,
          const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
 
-    friend const ErrorControl& dolfin::adapt(const ErrorControl& ec,
+    friend const ErrorControl& adapt(const ErrorControl& ec,
                                      boost::shared_ptr<const Mesh> adapted_mesh,
                                      bool adapt_coefficients);
+
+    //friend dolfin::adapt;
 
   private:
 

@@ -28,7 +28,6 @@
 %import(module="la") "dolfin/la/GenericMatrix.h"
 %import(module="la") "dolfin/la/GenericSparsityPattern.h"
 %import(module="la") "dolfin/la/GenericVector.h"
-%import(module="la") "dolfin/la/GenericSparsityPattern.h"
 %import(module="la") "dolfin/la/PETScObject.h"
 %import(module="la") "dolfin/la/PETScBaseMatrix.h"
 %import(module="la") "dolfin/la/uBLASFactory.h"

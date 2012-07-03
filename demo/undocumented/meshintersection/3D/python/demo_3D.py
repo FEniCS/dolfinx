@@ -68,18 +68,20 @@ while t < 1.4 :
     # Plot intersection
     if _first:
         p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
-        p.elevate(-50)
-        p.azimuth(40)
-        p.update(intersection)
+        # FIXME: This needs to be updated to the new plotting functionality
+        # p.elevate(-50)
+        # p.azimuth(40)
+        # p.update(intersection)
         _first = False
         interactive()
 
     else:
         plot(intersection)
 
-    p.update(intersection)
-    if create_movies:
-      p.write_png()
+    # FIXME: This needs to be updated to the new plotting functionality
+    # p.update(intersection)
+    # if create_movies:
+    #   p.write_png()
 
     #Propagate sphere along the line t(1,1,1).
     x[:,0] += dt
@@ -88,8 +90,9 @@ while t < 1.4 :
 
     t += dt
 
-if create_movies:
-  p.movie("sphere_cube_intersection.avi", cleanup=True)
+# FIXME: This needs to be updated to the new plotting functionality
+# if create_movies:
+#   p.movie("sphere_cube_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()

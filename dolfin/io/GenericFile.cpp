@@ -119,11 +119,6 @@ void GenericFile::operator>> (Parameters& parameters)
   read_not_impl("Parameters");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (FunctionPlotData& data)
-{
-  read_not_impl("FunctionPlotData");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator>> (std::vector<int>& x)
 {
   read_not_impl("std::vector<int>");
@@ -252,11 +247,6 @@ void GenericFile::operator<< (const std::pair<const Function*, double> u)
 void GenericFile::operator<< (const Parameters& parameters)
 {
   write_not_impl("Parameters");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const FunctionPlotData& data)
-{
-  write_not_impl("FunctionPlotData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const std::vector<int>& x)

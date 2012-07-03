@@ -20,4 +20,5 @@
 
 // Auto generated import statements for the module: plot
 
-%import(module="dolfin.cpp.io") "dolfin/plot/FunctionPlotData.h"
+%import(module="dolfin.cpp.io") "dolfin/plot/plot.h"
+%import(module="dolfin.cpp.io") "dolfin/plot/VTKPlotter.h"
