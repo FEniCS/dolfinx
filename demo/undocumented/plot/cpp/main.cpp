@@ -23,7 +23,6 @@
 // This demo illustrates basic plotting.
 
 #include <dolfin.h>
-#include <boost/scoped_array.hpp>
 
 using namespace dolfin;
 
