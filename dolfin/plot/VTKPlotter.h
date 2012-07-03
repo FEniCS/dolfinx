@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-25
+// Last changed: 2012-06-30
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -162,6 +162,9 @@ namespace dolfin
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
+      p.add("autorange", true);
+      p.add("range_min", 0.0);
+      p.add("range_max", 1.0);
       p.add("rescale", false);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
@@ -179,6 +182,27 @@ namespace dolfin
       return p;
     }
 
+    // This function should be private, but is available
+    // to keep backward compatibilty with Viper
+    // Update all VTK structures
+    // Is called both from plot() and write_png()
+    void update();
+
+    // These functions are kept for backward compatibility with Viper
+    // They issue a warDeprecated update function
+    void update(boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const Function> function);
+    void update(boost::shared_ptr<const ExpressionWrapper> expression);
+    void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const DirichletBC> bc);
+    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+
+
+
+
     /// Plot the object
     void plot();
 
@@ -186,7 +210,10 @@ namespace dolfin
     void interactive();
 
     /// Save plot to PNG file (file suffix appended automatically)
-    void hardcopy(std::string filename);
+    void write_png(std::string filename);
+
+    /// Not implemented (but present for backward compatibility with Viper
+    void write_ps(std::string filename, std::string format);
 
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
@@ -196,6 +223,16 @@ namespace dolfin
 
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
+
+    /// Camera control
+    void azimuth(double angle);
+    void elevate(double angle);
+    void dolly(double value);
+    void set_viewangle(double angle);
+
+    // Set the range of the color table
+    void set_min_max(double min, double max);
+
 
     // The cache of plotter objects
     static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;

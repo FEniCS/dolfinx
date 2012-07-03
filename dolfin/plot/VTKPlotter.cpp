@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-25
+// Last changed: 2012-06-30
 
 #ifdef HAS_VTK
 
@@ -27,6 +27,7 @@
 #include <vtkLookupTable.h>
 #include <vtkActor.h>
 #include <vtkRenderer.h>
+#include <vtkCamera.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkScalarBarActor.h>
@@ -233,39 +234,7 @@ void VTKPlotter::plot()
     return;
   }
 
-  // The plotting starts
-  dolfin_assert(vtk_pipeline);
-
-  // Process some parameters
-  if (parameters["wireframe"])
-    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
-
-  if (parameters["scalarbar"])
-    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
-
-  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
-
-  // Update the plottable data
-  _plottable->update(parameters);
-
-  // If this is the first render of this plot and/or the rescale parameter is
-  // set, we read get the min/max values of the data and process them
-  if (_frame_counter == 0 || parameters["rescale"])
-  {
-    double range[2];
-
-    _plottable->update_range(range);
-
-    vtk_pipeline->_lut->SetRange(range);
-    vtk_pipeline->_lut->Build();
-
-    vtk_pipeline->_mapper->SetScalarRange(range);
-  }
-
-  // Set the mapper's connection on each plot. This must be done since the
-  // visualization parameters may have changed since the last frame, and
-  // the input may hence also have changed
-  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
+  update();
 
   vtk_pipeline->_renderWindow->Render();
 
@@ -368,7 +337,7 @@ void VTKPlotter::init_pipeline()
   vtk_pipeline->_renderer->SetBackground(1, 1, 1);
   vtk_pipeline->_actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
   vtk_pipeline->_renderWindow->SetSize(parameters["window_width"],
-      parameters["window_height"]);
+				       parameters["window_height"]);
   vtk_pipeline->_scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
@@ -438,7 +407,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
         filename << std::string(parameters["prefix"]);
         filename << hardcopy_counter;
       }
-      hardcopy(filename.str());
+      write_png(filename.str());
       break;
     }
     case 'i':
@@ -471,12 +440,14 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::hardcopy(std::string filename)
+void VTKPlotter::write_png(std::string filename)
 {
   dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_renderWindow);
 
   info("Saving plot to file: %s.png", filename.c_str());
+
+  update();
 
   // FIXME: Remove help-text-actor before hardcopying.
 
@@ -494,6 +465,11 @@ void VTKPlotter::hardcopy(std::string filename)
   writer->Write();
 }
 //----------------------------------------------------------------------------
+void VTKPlotter::write_ps(std::string filename, std::string format)
+{
+  warning("VTKPlotter::write_ps() not implemented");
+}
+//----------------------------------------------------------------------------
 void VTKPlotter::get_window_size(int& width, int& height)
 {
   dolfin_assert(vtk_pipeline);
@@ -508,5 +484,87 @@ void VTKPlotter::set_window_position(int x, int y)
   vtk_pipeline->_renderWindow->SetPosition(x, y);
 }
 //----------------------------------------------------------------------------
+void VTKPlotter::azimuth(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Azimuth(angle);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::elevate(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Elevation(angle);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::dolly(double value)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->Dolly(value);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_viewangle(double angle)
+{
+  vtk_pipeline->_renderer->GetActiveCamera()->SetViewAngle(angle);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_min_max(double min, double max)
+{
+  parameters["autorange"] = false;
+  parameters["range_min"] = min;
+  parameters["range_max"] = max;
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::update()
+{
+  // Process some parameters
+  if (parameters["wireframe"])
+    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
+
+  if (parameters["scalarbar"])
+    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
+
+  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
+
+  // Update the plottable data
+  _plottable->update(parameters);
+
+  if (parameters["autorange"])
+  {
+    // If this is the first render of this plot and/or the rescale parameter is
+    // set, we read get the min/max values of the data and process them
+    if (_frame_counter == 0 || parameters["rescale"])
+    {
+      double range[2];
+      _plottable->update_range(range);
+      vtk_pipeline->_lut->SetRange(range);
+      vtk_pipeline->_lut->Build();
+      vtk_pipeline->_mapper->SetScalarRange(range);
+    }
+  }
+  else
+  {
+    // FIXME: This needs to be fixed!
+
+    double range[2];
+    range[0] = parameters["range_min"];
+    range[1] = parameters["range_max"];
+
+    vtk_pipeline->_lut->SetRange(range);
+    vtk_pipeline->_lut->Build();
+    vtk_pipeline->_mapper->SetScalarRange(range);
+  }  
+
+  // Set the mapper's connection on each plot. This must be done since the
+  // visualization parameters may have changed since the last frame, and
+  // the input may hence also have changed
+  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
+}
+
+void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){ update(); }
+void VTKPlotter::update(boost::shared_ptr<const Function> function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){ update(); }
 
 #endif
