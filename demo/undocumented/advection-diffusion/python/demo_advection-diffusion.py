@@ -95,7 +95,7 @@ solver = LUSolver(A)
 solver.parameters["reuse_factorization"] = True
 
 # Output file
-out_file = File("results/temperature.pvd")
+out_file = File("temperature.xdmf")
 
 # Set intial condition
 u = u0
@@ -114,10 +114,11 @@ while t < T:
     u0 = u
 
     # Plot solution
-    plot(u)
+    # plot(u)
 
     # Save the solution to file
-    out_file << (u, t)
+    out_file <<  (u, t)
+    # out_file << u
 
     # Move to next interval and adjust boundary condition
     t += dt

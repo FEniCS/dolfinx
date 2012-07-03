@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-22
-// Last changed: 2012-07-02
+// Last changed: 2012-07-03
 
 #ifndef __XDMFFILE_H
 #define __XDMFFILE_H
@@ -58,7 +58,7 @@ namespace dolfin
     // Save Mesh
     void operator<<(const Mesh& mesh);
     void operator<<(const Function& u);
-    void savefunc_orig(const Function& u);
+    void operator<<(const std::pair<const Function*, double> u);
 
   private:
 

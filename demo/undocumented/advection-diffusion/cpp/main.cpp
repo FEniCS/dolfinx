@@ -99,8 +99,8 @@ int main(int argc, char *argv[])
     lu.solve(*u.vector(), b);
 
     // Save solution in VTK format
-   // file << std::make_pair(&u, t);
-    file << u;
+    file << std::make_pair(&u, t);
+   // file << u;
 
     // Move to next interval
     p = t / T;

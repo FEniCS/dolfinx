@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-02
+// Last changed: 2012-07-03
 
 #include <ostream>
 #include <sstream>
@@ -60,8 +60,16 @@ XDMFFile::~XDMFFile()
 }
 //----------------------------------------------------------------------------
 
-void XDMFFile::operator<<(const Function& u)
+void XDMFFile::operator<<(const Function& u){
+  std::pair<const Function*,double>ut(&u,(double)counter);
+  operator<<(ut);
+}
+
+void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 {
+  const Function &u=*(ut.first);
+  double time_step=ut.second;
+
   // Save Function to XDMF/HDF file for visualisation
   // Can be read by paraview
 
@@ -188,7 +196,7 @@ void XDMFFile::operator<<(const Function& u)
 
       //     /Xdmf/Domain/Grid/Time
       pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
-      xdmf_time.append_attribute("TimeType")="HyperSlab";
+      xdmf_time.append_attribute("TimeType")="List";
       xdmf_timedata=xdmf_time.append_child("DataItem");
       xdmf_timedata.append_attribute("Format")="XML";
       xdmf_timedata.append_attribute("Dimensions")="3";
@@ -208,10 +216,8 @@ void XDMFFile::operator<<(const Function& u)
     
     }
 
-
-    // maybe should use "List" instead of "Hyperslab"
     s.str("");
-    s << "0.0 1.0 "<< (counter+1);
+    s << xdmf_timedata.first_child().value() << " " << time_step;
     xdmf_timedata.first_child().set_value(s.str().c_str());
 
     //    /Xdmf/Domain/Grid/Grid
