@@ -501,8 +501,6 @@ void VTKPlotter::set_min_max(double min, double max)
 //----------------------------------------------------------------------------
 void VTKPlotter::update()
 {
-  warning("VTKPlotter::update() is deprecated. Create a VTKPlotter object, apply settings and parameters and call plot()");
-
   // Process some parameters
   if (parameters["wireframe"])
     vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
