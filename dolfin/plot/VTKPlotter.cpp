@@ -88,6 +88,15 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
+
+    // Note: VTK (current 5.6.1) seems to very picky about the order
+    // of destruction. It seg faults if the objects are destroyed
+    // first (probably before the renderer).
+    vtkSmartPointer<vtkTextActor> helptextActor;
+    vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
+    vtkSmartPointer<vtkBalloonWidget> balloonwidget;
+
+
     PrivateVTKPipeline() 
     {
       // Initialize objects
@@ -95,6 +104,12 @@ namespace dolfin
       _lut = vtkSmartPointer<vtkLookupTable>::New();
       _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
       _actor = vtkSmartPointer<vtkActor>::New();
+      helptextActor = vtkSmartPointer<vtkTextActor>::New();
+      balloonRep = vtkSmartPointer<vtkBalloonRepresentation>::New();
+      balloonwidget = vtkSmartPointer<vtkBalloonWidget>::New();
+
+
+
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 
@@ -300,40 +315,35 @@ void VTKPlotter::interactive(bool enter_eventloop)
 
   // These must be declared outside the if test to not go out of scope
   // before the interaction starts
-  vtkSmartPointer<vtkTextActor> helptextActor
-    = vtkSmartPointer<vtkTextActor>::New();
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep
-    = vtkSmartPointer<vtkBalloonRepresentation>::New();
-  vtkSmartPointer<vtkBalloonWidget> balloonwidget
-    = vtkSmartPointer<vtkBalloonWidget>::New();
+
 
   if (parameters["helptext"])
   {
     // Add help text actor
-    helptextActor->SetPosition(10,10);
-    helptextActor->SetInput("Help ");
-    helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-    helptextActor->GetTextProperty()->SetFontSize(20);
-    vtk_pipeline->_renderer->AddActor2D(helptextActor);
+    vtk_pipeline->helptextActor->SetPosition(10,10);
+    vtk_pipeline->helptextActor->SetInput("Help ");
+    vtk_pipeline->helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+    vtk_pipeline->helptextActor->GetTextProperty()->SetFontSize(20);
+    vtk_pipeline->_renderer->AddActor2D(vtk_pipeline->helptextActor);
 
     // Set up the representation for the hover-over help text box
-    balloonRep->SetOffset(5,5);
-    balloonRep->GetTextProperty()->SetFontSize(18);
-    balloonRep->GetTextProperty()->BoldOff();
-    balloonRep->GetFrameProperty()->SetOpacity(0.7);
+    vtk_pipeline->balloonRep->SetOffset(5,5);
+    vtk_pipeline->balloonRep->GetTextProperty()->SetFontSize(18);
+    vtk_pipeline->balloonRep->GetTextProperty()->BoldOff();
+    vtk_pipeline->balloonRep->GetFrameProperty()->SetOpacity(0.7);
 
     // Set up the actual widget that makes the help text pop up
-    balloonwidget->SetInteractor(vtk_pipeline->_interactor);
-    balloonwidget->SetRepresentation(balloonRep);
-    balloonwidget->AddBalloon(helptextActor,
+    vtk_pipeline->balloonwidget->SetInteractor(vtk_pipeline->_interactor);
+    vtk_pipeline->balloonwidget->SetRepresentation(vtk_pipeline->balloonRep);
+    vtk_pipeline->balloonwidget->AddBalloon(vtk_pipeline->helptextActor,
                               get_helptext().c_str(),NULL);
-
-    vtk_pipeline->_renderWindow->Render();
-    balloonwidget->EnabledOn();
+    vtk_pipeline->balloonwidget->EnabledOn();
   }
 
   // Initialize and start the mouse interaction
   vtk_pipeline->_interactor->Initialize();
+
+  vtk_pipeline->_renderWindow->Render();
 
   if (enter_eventloop)
     start_eventloop();
