@@ -488,11 +488,6 @@ void VTKPlotter::write_png(std::string filename)
   writer->Write();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::write_ps(std::string filename, std::string format)
-{
-  warning("VTKPlotter::write_ps() not implemented");
-}
-//----------------------------------------------------------------------------
 void VTKPlotter::get_window_size(int& width, int& height)
 {
   dolfin_assert(vtk_pipeline);

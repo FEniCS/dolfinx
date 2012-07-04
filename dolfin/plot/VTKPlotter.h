@@ -214,9 +214,6 @@ namespace dolfin
     /// Save plot to PNG file (file suffix appended automatically)
     void write_png(std::string filename);
 
-    /// Not implemented (but present for backward compatibility with Viper
-    void write_ps(std::string filename, std::string format);
-
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
 
