@@ -207,7 +207,9 @@ namespace dolfin
     void plot();
 
     /// Make the current plot interactive
-    void interactive();
+    void interactive(bool enter_eventloop = true);
+
+    void start_eventloop();
 
     /// Save plot to PNG file (file suffix appended automatically)
     void write_png(std::string filename);

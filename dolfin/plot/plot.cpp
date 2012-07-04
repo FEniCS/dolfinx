@@ -346,9 +346,12 @@ void dolfin::interactive()
   else
   {
     // Call interactive on every plotter
-    for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) {
-      VTKPlotter::plotter_cache[i]->interactive();
+    for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) 
+    {
+      VTKPlotter::plotter_cache[i]->interactive(false);
     }
+
+    VTKPlotter::plotter_cache[VTKPlotter::plotter_cache.size()-1]->start_eventloop();
   }
 
 #else

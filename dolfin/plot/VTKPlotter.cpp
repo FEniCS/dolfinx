@@ -88,6 +88,47 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
+    PrivateVTKPipeline() 
+    {
+      // Initialize objects
+      _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
+      _lut = vtkSmartPointer<vtkLookupTable>::New();
+      _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+      _actor = vtkSmartPointer<vtkActor>::New();
+      _renderer = vtkSmartPointer<vtkRenderer>::New();
+      _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+
+      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+      
+      // Connect the parts
+      _mapper->SetLookupTable(_lut);
+      _scalarBar->SetLookupTable(_lut);
+      _actor->SetMapper(_mapper);
+      _renderer->AddActor(_actor);
+      _renderWindow->AddRenderer(_renderer);
+      
+      // Set up interactorstyle and connect interactor
+      vtkSmartPointer<vtkInteractorStyleTrackballCamera> style
+	= vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+      _interactor->SetRenderWindow(_renderWindow);
+      _interactor->SetInteractorStyle(style);
+
+      // Set some properties that affect the look of things
+      _renderer->SetBackground(1, 1, 1);
+      _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
+
+      // FIXME: Take this as parameter
+      _renderWindow->SetSize(600, 400);
+      _scalarBar->SetTextPositionToPrecedeScalarBar();
+
+      // Set the look of scalar bar labels
+      vtkSmartPointer<vtkTextProperty> labelprop
+	= _scalarBar->GetLabelTextProperty();
+      labelprop->SetColor(0, 0, 0);
+      labelprop->SetFontSize(20);
+      labelprop->ItalicOff();
+      labelprop->BoldOff();
+    }
   };
 }
 //----------------------------------------------------------------------------
@@ -244,7 +285,7 @@ void VTKPlotter::plot()
     interactive();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::interactive()
+void VTKPlotter::interactive(bool enter_eventloop)
 {
 
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
@@ -286,12 +327,20 @@ void VTKPlotter::interactive()
     balloonwidget->SetRepresentation(balloonRep);
     balloonwidget->AddBalloon(helptextActor,
                               get_helptext().c_str(),NULL);
+
     vtk_pipeline->_renderWindow->Render();
     balloonwidget->EnabledOn();
   }
 
   // Initialize and start the mouse interaction
   vtk_pipeline->_interactor->Initialize();
+
+  if (enter_eventloop)
+    start_eventloop();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::start_eventloop()
+{
   vtk_pipeline->_interactor->Start();
 }
 //----------------------------------------------------------------------------
@@ -311,42 +360,6 @@ void VTKPlotter::init_pipeline()
 
   dolfin_assert(vtk_pipeline);
 
-  // Initialize objects
-  vtk_pipeline->_scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
-  vtk_pipeline->_lut = vtkSmartPointer<vtkLookupTable>::New();
-  vtk_pipeline->_mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  vtk_pipeline->_actor = vtkSmartPointer<vtkActor>::New();
-  vtk_pipeline->_renderer = vtkSmartPointer<vtkRenderer>::New();
-  vtk_pipeline->_renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-  vtk_pipeline->_interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-
-  // Connect the parts
-  vtk_pipeline->_mapper->SetLookupTable(vtk_pipeline->_lut);
-  vtk_pipeline->_scalarBar->SetLookupTable(vtk_pipeline->_lut);
-  vtk_pipeline->_actor->SetMapper(vtk_pipeline->_mapper);
-  vtk_pipeline->_renderer->AddActor(vtk_pipeline->_actor);
-  vtk_pipeline->_renderWindow->AddRenderer(vtk_pipeline->_renderer);
-
-  // Set up interactorstyle and connect interactor
-  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style
-    = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-  vtk_pipeline->_interactor->SetRenderWindow(vtk_pipeline->_renderWindow);
-  vtk_pipeline->_interactor->SetInteractorStyle(style);
-
-  // Set some properties that affect the look of things
-  vtk_pipeline->_renderer->SetBackground(1, 1, 1);
-  vtk_pipeline->_actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
-  vtk_pipeline->_renderWindow->SetSize(parameters["window_width"],
-				       parameters["window_height"]);
-  vtk_pipeline->_scalarBar->SetTextPositionToPrecedeScalarBar();
-
-  // Set the look of scalar bar labels
-  vtkSmartPointer<vtkTextProperty> labelprop
-    = vtk_pipeline->_scalarBar->GetLabelTextProperty();
-  labelprop->SetColor(0, 0, 0);
-  labelprop->SetFontSize(20);
-  labelprop->ItalicOff();
-  labelprop->BoldOff();
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline();
