@@ -22,9 +22,90 @@
 // The PyDOLFIN extension module for the la module
 %module(package="dolfin.cpp.la", directors="1") la
 
+// Define module name for conditional includes
+#define LAMODULE
+
 %{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_LA
+
+// Include types from dependent modules
+
+// #include types from common submodule of module common
+#include "dolfin/common/types.h"
+#include "dolfin/common/Array.h"
+#include "dolfin/common/Variable.h"
+
+// #include types from parameter submodule of module common
+#include "dolfin/parameter/Parameter.h"
+#include "dolfin/parameter/Parameters.h"
+
+// Include types from present module la
+
+// #include types from la submodule
+#include "dolfin/la/ublas.h"
+#include "dolfin/la/GenericTensor.h"
+#include "dolfin/la/GenericMatrix.h"
+#include "dolfin/la/GenericSparsityPattern.h"
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/la/GenericLinearSolver.h"
+#include "dolfin/la/GenericLUSolver.h"
+#include "dolfin/la/PETScObject.h"
+#include "dolfin/la/PETScBaseMatrix.h"
+#include "dolfin/la/uBLASFactory.h"
+#include "dolfin/la/uBLASMatrix.h"
+#include "dolfin/la/uBLASKrylovMatrix.h"
+#include "dolfin/la/PETScMatrix.h"
+#include "dolfin/la/PETScKrylovMatrix.h"
+#include "dolfin/la/PETScPreconditioner.h"
+#include "dolfin/la/EpetraLUSolver.h"
+#include "dolfin/la/EpetraKrylovSolver.h"
+#include "dolfin/la/EpetraMatrix.h"
+#include "dolfin/la/EpetraVector.h"
+#include "dolfin/la/PETScKrylovSolver.h"
+#include "dolfin/la/PETScLUSolver.h"
+#include "dolfin/la/CholmodCholeskySolver.h"
+#include "dolfin/la/UmfpackLUSolver.h"
+#include "dolfin/la/ITLKrylovSolver.h"
+#include "dolfin/la/MUMPSLUSolver.h"
+#include "dolfin/la/PaStiXLUSolver.h"
+#include "dolfin/la/MTL4Matrix.h"
+#include "dolfin/la/STLMatrix.h"
+#include "dolfin/la/CoordinateMatrix.h"
+#include "dolfin/la/uBLASVector.h"
+#include "dolfin/la/PETScVector.h"
+#include "dolfin/la/MTL4Vector.h"
+#include "dolfin/la/SparsityPattern.h"
+#include "dolfin/la/LinearAlgebraFactory.h"
+#include "dolfin/la/DefaultFactory.h"
+#include "dolfin/la/PETScUserPreconditioner.h"
+#include "dolfin/la/PETScFactory.h"
+#include "dolfin/la/PETScCuspFactory.h"
+#include "dolfin/la/EpetraFactory.h"
+#include "dolfin/la/MTL4Factory.h"
+#include "dolfin/la/STLFactory.h"
+#include "dolfin/la/SLEPcEigenSolver.h"
+#include "dolfin/la/TrilinosPreconditioner.h"
+#include "dolfin/la/uBLASSparseMatrix.h"
+#include "dolfin/la/uBLASDenseMatrix.h"
+#include "dolfin/la/uBLASPreconditioner.h"
+#include "dolfin/la/uBLASKrylovSolver.h"
+#include "dolfin/la/uBLASILUPreconditioner.h"
+#include "dolfin/la/Vector.h"
+#include "dolfin/la/Matrix.h"
+#include "dolfin/la/Scalar.h"
+#include "dolfin/la/LinearSolver.h"
+#include "dolfin/la/KrylovSolver.h"
+#include "dolfin/la/LUSolver.h"
+#include "dolfin/la/SingularSolver.h"
+#include "dolfin/la/solve.h"
+#include "dolfin/la/BlockVector.h"
+#include "dolfin/la/BlockMatrix.h"
+
+// #include types from nls submodule
+#include "dolfin/nls/NonlinearProblem.h"
+#include "dolfin/nls/NewtonSolver.h"
+
+// NumPy includes
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_LA
 #include <numpy/arrayobject.h>
 %}
 
@@ -36,23 +117,16 @@ import_array();
 // Typemaps, shared_ptr declarations, exceptions, version
 %include "dolfin/swig/globalincludes.i"
 
-// Import types from other combined modules
-%include "dolfin/swig/common/local_imports.i"
-%include "dolfin/swig/parameter/local_imports.i"
-%include "dolfin/swig/log/local_imports.i"
-%include "dolfin/swig/intersection/local_imports.i"
-%include "dolfin/swig/mesh/local_imports.i"
-%include "dolfin/swig/generation/local_imports.i"
-%include "dolfin/swig/refinement/local_imports.i"
-%include "dolfin/swig/function/local_imports.i"
-%include "dolfin/swig/graph/local_imports.i"
-%include "dolfin/swig/plot/local_imports.i"
-%include "dolfin/swig/math/local_imports.i"
-%include "dolfin/swig/quadrature/local_imports.i"
-%include "dolfin/swig/ale/local_imports.i"
-%include "dolfin/swig/fem/local_imports.i"
-%include "dolfin/swig/adaptivity/local_imports.i"
-%include "dolfin/swig/io/local_imports.i"
+// %import types from submodule common of SWIG module common
+%include "dolfin/swig/common/pre.i"
+%import(module="common") "dolfin/common/types.h"
+%import(module="common") "dolfin/common/Array.h"
+%import(module="common") "dolfin/common/Variable.h"
+
+// %import types from submodule parameter of SWIG module common
+%include "dolfin/swig/parameter/pre.i"
+%import(module="common") "dolfin/parameter/Parameter.h"
+%import(module="common") "dolfin/parameter/Parameters.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
@@ -60,7 +134,70 @@ import_array();
 %include "dolfin/swig/la/docstrings.i"
 %include "dolfin/swig/nls/docstrings.i"
 
-// Include generated include files for the DOLFIN headers for this module
-%include "dolfin/swig/la/includes.i"
-%include "dolfin/swig/nls/includes.i"
+// %include types from submodule la
+%include "dolfin/swig/la/pre.i"
+%include "dolfin/la/ublas.h"
+%include "dolfin/la/GenericTensor.h"
+%include "dolfin/la/GenericMatrix.h"
+%include "dolfin/la/GenericSparsityPattern.h"
+%include "dolfin/la/GenericVector.h"
+%include "dolfin/la/GenericLinearSolver.h"
+%include "dolfin/la/GenericLUSolver.h"
+%include "dolfin/la/PETScObject.h"
+%include "dolfin/la/PETScBaseMatrix.h"
+%include "dolfin/la/uBLASFactory.h"
+%include "dolfin/la/uBLASMatrix.h"
+%include "dolfin/la/uBLASKrylovMatrix.h"
+%include "dolfin/la/PETScMatrix.h"
+%include "dolfin/la/PETScKrylovMatrix.h"
+%include "dolfin/la/PETScPreconditioner.h"
+%include "dolfin/la/EpetraLUSolver.h"
+%include "dolfin/la/EpetraKrylovSolver.h"
+%include "dolfin/la/EpetraMatrix.h"
+%include "dolfin/la/EpetraVector.h"
+%include "dolfin/la/PETScKrylovSolver.h"
+%include "dolfin/la/PETScLUSolver.h"
+%include "dolfin/la/CholmodCholeskySolver.h"
+%include "dolfin/la/UmfpackLUSolver.h"
+%include "dolfin/la/ITLKrylovSolver.h"
+%include "dolfin/la/MUMPSLUSolver.h"
+%include "dolfin/la/PaStiXLUSolver.h"
+%include "dolfin/la/MTL4Matrix.h"
+%include "dolfin/la/STLMatrix.h"
+%include "dolfin/la/CoordinateMatrix.h"
+%include "dolfin/la/uBLASVector.h"
+%include "dolfin/la/PETScVector.h"
+%include "dolfin/la/MTL4Vector.h"
+%include "dolfin/la/SparsityPattern.h"
+%include "dolfin/la/LinearAlgebraFactory.h"
+%include "dolfin/la/DefaultFactory.h"
+%include "dolfin/la/PETScUserPreconditioner.h"
+%include "dolfin/la/PETScFactory.h"
+%include "dolfin/la/PETScCuspFactory.h"
+%include "dolfin/la/EpetraFactory.h"
+%include "dolfin/la/MTL4Factory.h"
+%include "dolfin/la/STLFactory.h"
+%include "dolfin/la/SLEPcEigenSolver.h"
+%include "dolfin/la/TrilinosPreconditioner.h"
+%include "dolfin/la/uBLASSparseMatrix.h"
+%include "dolfin/la/uBLASDenseMatrix.h"
+%include "dolfin/la/uBLASPreconditioner.h"
+%include "dolfin/la/uBLASKrylovSolver.h"
+%include "dolfin/la/uBLASILUPreconditioner.h"
+%include "dolfin/la/Vector.h"
+%include "dolfin/la/Matrix.h"
+%include "dolfin/la/Scalar.h"
+%include "dolfin/la/LinearSolver.h"
+%include "dolfin/la/KrylovSolver.h"
+%include "dolfin/la/LUSolver.h"
+%include "dolfin/la/SingularSolver.h"
+%include "dolfin/la/solve.h"
+%include "dolfin/la/BlockVector.h"
+%include "dolfin/la/BlockMatrix.h"
+%include "dolfin/swig/la/post.i"
+
+// %include types from submodule nls
+%include "dolfin/swig/nls/pre.i"
+%include "dolfin/nls/NonlinearProblem.h"
+%include "dolfin/nls/NewtonSolver.h"
 

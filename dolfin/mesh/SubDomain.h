@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-04-10
-// Last changed: 2011-09-15
+// Last changed: 2012-07-04
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
@@ -27,6 +27,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  class Mesh;
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
   template <typename T> class Array;

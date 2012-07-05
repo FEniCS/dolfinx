@@ -123,6 +123,8 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshEntityIteratorBase::operator--;
 %ignore dolfin::MeshEntityIteratorBase::operator*;
 
+#ifdef MESHMODULE // Conditional statements only for MESH module
+
 // Forward import base template type
 %import"dolfin/mesh/MeshEntityIteratorBase.h"
 
@@ -209,17 +211,13 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %}
 }
 
-//-----------------------------------------------------------------------------
-// Add director classes
-//-----------------------------------------------------------------------------
-%feature("director") dolfin::SubDomain;
-
-%template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
+#endif // End ifdef for MESHMODULE
 
 %define FORWARD_DECLARE_MESHFUNCTIONS(TYPE, TYPENAME)
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >)
 %template (HierarchicalMeshFunction ## TYPENAME) \
     dolfin::Hierarchical<dolfin::MeshFunction<TYPE> >;
+
 
 // Forward declaration of template
 %template() dolfin::MeshFunction<TYPE>;
@@ -240,3 +238,12 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
+
+// Exclude from ifdef as it is used by other modules
+%template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
+
+//-----------------------------------------------------------------------------
+// Add director classes
+//-----------------------------------------------------------------------------
+%feature("director") dolfin::SubDomain;
+

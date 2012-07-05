@@ -22,9 +22,40 @@
 // The PyDOLFIN extension module for the io module
 %module(package="dolfin.cpp.io", directors="1") io
 
+// Define module name for conditional includes
+#define IOMODULE
+
 %{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_IO
+
+// Include types from dependent modules
+
+// #include types from common submodule of module common
+#include "dolfin/common/Variable.h"
+#include "dolfin/common/Hierarchical.h"
+
+// #include types from la submodule of module la
+#include "dolfin/la/GenericTensor.h"
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/la/Vector.h"
+
+// #include types from mesh submodule of module mesh
+#include "dolfin/mesh/Mesh.h"
+
+// #include types from function submodule of module function
+#include "dolfin/function/GenericFunction.h"
+#include "dolfin/function/Function.h"
+#include "dolfin/function/FunctionSpace.h"
+
+// Include types from present module io
+
+// #include types from plot submodule
+#include "dolfin/plot/FunctionPlotData.h"
+
+// #include types from io submodule
+#include "dolfin/io/File.h"
+
+// NumPy includes
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_IO
 #include <numpy/arrayobject.h>
 %}
 
@@ -36,23 +67,26 @@ import_array();
 // Typemaps, shared_ptr declarations, exceptions, version
 %include "dolfin/swig/globalincludes.i"
 
-// Import types from other combined modules
-%include "dolfin/swig/common/local_imports.i"
-%include "dolfin/swig/parameter/local_imports.i"
-%include "dolfin/swig/log/local_imports.i"
-%include "dolfin/swig/la/local_imports.i"
-%include "dolfin/swig/nls/local_imports.i"
-%include "dolfin/swig/intersection/local_imports.i"
-%include "dolfin/swig/mesh/local_imports.i"
-%include "dolfin/swig/generation/local_imports.i"
-%include "dolfin/swig/refinement/local_imports.i"
-%include "dolfin/swig/function/local_imports.i"
-%include "dolfin/swig/graph/local_imports.i"
-%include "dolfin/swig/math/local_imports.i"
-%include "dolfin/swig/quadrature/local_imports.i"
-%include "dolfin/swig/ale/local_imports.i"
-%include "dolfin/swig/fem/local_imports.i"
-%include "dolfin/swig/adaptivity/local_imports.i"
+// %import types from submodule common of SWIG module common
+%include "dolfin/swig/common/pre.i"
+%import(module="common") "dolfin/common/Variable.h"
+%import(module="common") "dolfin/common/Hierarchical.h"
+
+// %import types from submodule la of SWIG module la
+%include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/GenericTensor.h"
+%import(module="la") "dolfin/la/GenericVector.h"
+%import(module="la") "dolfin/la/Vector.h"
+
+// %import types from submodule mesh of SWIG module mesh
+%include "dolfin/swig/mesh/pre.i"
+%import(module="mesh") "dolfin/mesh/Mesh.h"
+
+// %import types from submodule function of SWIG module function
+%include "dolfin/swig/function/pre.i"
+%import(module="function") "dolfin/function/GenericFunction.h"
+%import(module="function") "dolfin/function/Function.h"
+%import(module="function") "dolfin/function/FunctionSpace.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
@@ -60,7 +94,10 @@ import_array();
 %include "dolfin/swig/plot/docstrings.i"
 %include "dolfin/swig/io/docstrings.i"
 
-// Include generated include files for the DOLFIN headers for this module
-%include "dolfin/swig/plot/includes.i"
-%include "dolfin/swig/io/includes.i"
+// %include types from submodule plot
+%include "dolfin/plot/FunctionPlotData.h"
+
+// %include types from submodule io
+%include "dolfin/io/File.h"
+%include "dolfin/swig/io/post.i"
 

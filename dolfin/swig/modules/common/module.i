@@ -22,9 +22,44 @@
 // The PyDOLFIN extension module for the common module
 %module(package="dolfin.cpp.common", directors="1") common
 
+// Define module name for conditional includes
+#define COMMONMODULE
+
 %{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_COMMON
+
+// Include types from dependent modules
+
+// Include types from present module common
+
+// #include types from common submodule
+#include "dolfin/common/init.h"
+#include "dolfin/common/defines.h"
+#include "dolfin/common/types.h"
+#include "dolfin/common/constants.h"
+#include "dolfin/common/timing.h"
+#include "dolfin/common/Array.h"
+#include "dolfin/common/IndexSet.h"
+#include "dolfin/common/Set.h"
+#include "dolfin/common/Timer.h"
+#include "dolfin/common/Variable.h"
+#include "dolfin/common/Hierarchical.h"
+#include "dolfin/common/MPI.h"
+#include "dolfin/common/SubSystemsManager.h"
+
+// #include types from parameter submodule
+#include "dolfin/parameter/Parameter.h"
+#include "dolfin/parameter/Parameters.h"
+#include "dolfin/parameter/GlobalParameters.h"
+
+// #include types from log submodule
+#include "dolfin/log/log.h"
+#include "dolfin/log/Event.h"
+#include "dolfin/log/Progress.h"
+#include "dolfin/log/Table.h"
+#include "dolfin/log/LogLevel.h"
+
+// NumPy includes
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_COMMON
 #include <numpy/arrayobject.h>
 %}
 
@@ -36,8 +71,6 @@ import_array();
 // Typemaps, shared_ptr declarations, exceptions, version
 %include "dolfin/swig/globalincludes.i"
 
-// Import types from other combined modules
-
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
@@ -46,8 +79,36 @@ import_array();
 %include "dolfin/swig/parameter/docstrings.i"
 %include "dolfin/swig/log/docstrings.i"
 
-// Include generated include files for the DOLFIN headers for this module
-%include "dolfin/swig/common/includes.i"
-%include "dolfin/swig/parameter/includes.i"
-%include "dolfin/swig/log/includes.i"
+// %include types from submodule common
+%include "dolfin/swig/common/pre.i"
+%include "dolfin/common/init.h"
+%include "dolfin/common/defines.h"
+%include "dolfin/common/types.h"
+%include "dolfin/common/constants.h"
+%include "dolfin/common/timing.h"
+%include "dolfin/common/Array.h"
+%include "dolfin/common/IndexSet.h"
+%include "dolfin/common/Set.h"
+%include "dolfin/common/Timer.h"
+%include "dolfin/common/Variable.h"
+%include "dolfin/common/Hierarchical.h"
+%include "dolfin/common/MPI.h"
+%include "dolfin/common/SubSystemsManager.h"
+%include "dolfin/swig/common/post.i"
+
+// %include types from submodule parameter
+%include "dolfin/swig/parameter/pre.i"
+%include "dolfin/parameter/Parameter.h"
+%include "dolfin/parameter/Parameters.h"
+%include "dolfin/parameter/GlobalParameters.h"
+%include "dolfin/swig/parameter/post.i"
+
+// %include types from submodule log
+%include "dolfin/swig/log/pre.i"
+%include "dolfin/log/log.h"
+%include "dolfin/log/Event.h"
+%include "dolfin/log/Progress.h"
+%include "dolfin/log/Table.h"
+%include "dolfin/log/LogLevel.h"
+%include "dolfin/swig/log/post.i"
 
