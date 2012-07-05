@@ -18,12 +18,10 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-30
+// Last changed: 2012-07-05
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
-
-#ifdef HAS_VTK
 
 #include <boost/scoped_ptr.hpp>
 
@@ -185,7 +183,6 @@ namespace dolfin
     // This function should be private, but is available
     // to keep backward compatibilty with Viper
     // Update all VTK structures
-    // Is called both from plot() and write_png()
     void update();
 
     // These functions are kept for backward compatibility with Viper
@@ -274,7 +271,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

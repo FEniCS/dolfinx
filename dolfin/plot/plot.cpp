@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-06-18
+// Last changed: 2012-07-05
 
 #include <cstdlib>
 #include <sstream>
@@ -38,8 +38,6 @@
 #include "plot.h"
 
 using namespace dolfin;
-
-#ifdef HAS_VTK
 
 // Template function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created and added
@@ -81,19 +79,11 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   return VTKPlotter::plotter_cache.back();
 }
 
-#endif
-
 // Template function for plotting objects
 template <typename T>
 boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
     boost::shared_ptr<const Parameters> parameters)
 {
-#ifndef HAS_VTK
-
-  warning("Plotting disbled. DOLFIN has been compiled without VTK support");
-
-#else
-
   // Get plotter from cache
   boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
   dolfin_assert(plotter);
@@ -105,7 +95,6 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
   plotter->plot();
 
   return plotter;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -337,8 +326,6 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
 //-----------------------------------------------------------------------------
 void dolfin::interactive()
 {
-#ifdef HAS_VTK
-
   if (VTKPlotter::plotter_cache.size() == 0)
   {
     warning("No plots have been shown yet. Ignoring call to interactive().");
@@ -353,11 +340,5 @@ void dolfin::interactive()
 
     VTKPlotter::plotter_cache[VTKPlotter::plotter_cache.size()-1]->start_eventloop();
   }
-
-#else
-
-  warning("Plotting disbled. DOLFIN has been compiled without VTK support");
-
-#endif
 }
 //-----------------------------------------------------------------------------

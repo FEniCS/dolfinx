@@ -18,9 +18,21 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-30
+// Last changed: 2012-07-05
+
+
 
 #ifdef HAS_VTK
+
+#include "VTKPlotter.h"
+
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/common/Timer.h>
+#include "ExpressionWrapper.h"
+#include "VTKPlottableMesh.h"
+#include "VTKPlottableGenericFunction.h"
+#include "VTKPlottableMeshFunction.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataMapper.h>
@@ -44,20 +56,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/common/Timer.h>
-#include "ExpressionWrapper.h"
-#include "VTKPlottableMesh.h"
-#include "VTKPlottableGenericFunction.h"
-#include "VTKPlottableMeshFunction.h"
-#include "VTKPlotter.h"
-
 using namespace dolfin;
-
-// Define the static members
-std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
-int VTKPlotter::hardcopy_counter = 0;
 
 //----------------------------------------------------------------------------
 namespace dolfin
@@ -585,4 +584,58 @@ void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_functio
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){ update(); }
 
+#else
+
+// Implement dummy version of class VTKPlotter even if VTK is not present. 
+
+
+#include "VTKPlotter.h"
+#include "ExpressionWrapper.h"
+namespace dolfin { class PrivateVTKPipeline{}; }
+
+using namespace dolfin;
+
+static void vtk_warning() { warning("Plotting not available. DOLFIN has been compiled without VTK support"); }
+
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
+		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { vtk_warning(); }
+VTKPlotter::~VTKPlotter(){}
+
+void VTKPlotter::update(){}
+void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){}
+void VTKPlotter::update(boost::shared_ptr<const Function> function){}
+void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression){}
+void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh){}
+void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc){}
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function){}
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function){}
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){}
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){}
+
+
+void VTKPlotter::plot               () {}
+void VTKPlotter::interactive        (bool enter_eventloop){}
+void VTKPlotter::start_eventloop    (){}
+void VTKPlotter::write_png          (std::string filename){}
+void VTKPlotter::get_window_size    (int& width, int& height){}
+void VTKPlotter::set_window_position(int x, int y){}
+void VTKPlotter::azimuth            (double angle) {}
+void VTKPlotter::elevate            (double angle){}
+void VTKPlotter::dolly              (double value){}
+void VTKPlotter::set_viewangle      (double angle){}
+void VTKPlotter::set_min_max        (double min, double max){}
+
 #endif
+
+// Define the static members
+std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
+int VTKPlotter::hardcopy_counter = 0;
+
