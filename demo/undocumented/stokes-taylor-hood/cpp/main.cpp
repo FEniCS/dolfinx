@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2011-06-29
+// Last changed: 2012-07-05
 //
 // This demo solves the Stokes equations, using quadratic elements for
 // the velocity and first degree elements for the pressure
@@ -100,10 +100,6 @@ int main()
   Function u = w[0];
   Function p = w[1];
 
-  // Plot solution
-  plot(u);
-  plot(p);
-
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");
   ufile_pvd << u;
@@ -112,4 +108,11 @@ int main()
 
   File pfile_mf("mf.pvd");
   pfile_mf << sub_domains;
+
+  // Plot solution
+  plot(u);
+  plot(p);
+  interactive();
+
+  return 0;
 }

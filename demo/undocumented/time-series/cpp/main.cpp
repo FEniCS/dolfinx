@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2011-02-25
+// Last changed: 2012-07-05
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -64,6 +64,7 @@ int main()
 
   // Plot mesh
   plot(mesh);
+  interactive();
 
   return 0;
 }

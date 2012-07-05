@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2009-06-26
-// Last changed: 2010-09-01
+// Last changed: 2012-07-05
 //
 // This demo program solves the Biharmonic equation,
 //
@@ -88,12 +88,14 @@ int main()
   Function u(V);
   solve(a == L, u, bc);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("biharmonic.pvd");
   file << u;
+
+
+  // Plot solution
+  plot(u);
+  interactive();
 
   return 0;
 }

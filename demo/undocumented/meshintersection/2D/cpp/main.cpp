@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-01-14
-// Last changed: 2011-08-10
+// Last changed: 2012-07-05
 
 #include <dolfin.h>
 #include <math.h>
@@ -71,6 +71,9 @@ int main()
       x[1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr);
     }
   }
+
+  // Make plot window interactive
+  interactive();
 }
 
 #else

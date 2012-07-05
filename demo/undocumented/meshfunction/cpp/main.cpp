@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2006-11-29
-// Last changed: 2009-09-15
+// Last changed: 2012-07-05
 
 #include <dolfin.h>
 
@@ -39,4 +39,7 @@ int main()
 
   // Plot mesh function
   plot(f);
+  interactive();
+
+  return 0;
 }

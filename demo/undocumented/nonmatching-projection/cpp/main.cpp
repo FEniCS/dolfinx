@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-10-10
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 //
 // This program demonstrates the L2 projection of a function onto a
 // non-matching mesh.
@@ -68,6 +68,7 @@ int main()
   // Plot results
   plot(f0);
   plot(f1);
+  interactive();
 
   return 0;
 }

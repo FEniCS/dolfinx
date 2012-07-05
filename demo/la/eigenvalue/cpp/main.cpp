@@ -19,7 +19,7 @@
 // Modified by Marie E. Rognes, 2010.
 //
 // First added:  2007-03-08
-// Last changed: 2010-09-05
+// Last changed: 2012-07-05
 //
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
@@ -60,6 +60,7 @@ int main()
 
   // Plot eigenfunction
   plot(u);
+  interactive();
 
   #else
 
