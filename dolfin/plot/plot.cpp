@@ -47,7 +47,7 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
 {
   log(TRACE, "Looking for cached VTKPlotter.");
 
-  for (uint i = 0; i < VTKPlotter::plotter_cache.size(); i++)
+  for (dolfin::uint i = 0; i < VTKPlotter::plotter_cache.size(); i++)
   {
     dolfin_assert(VTKPlotter::plotter_cache[i]);
     if (VTKPlotter::plotter_cache[i]->id() == t->id())
@@ -62,7 +62,7 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
 
   // Adjust window position to not completely overlap previous plots
-  uint num_old_plots = VTKPlotter::plotter_cache.size();
+  dolfin::uint num_old_plots = VTKPlotter::plotter_cache.size();
   int width, height;
   plotter->get_window_size(width, height);
 
