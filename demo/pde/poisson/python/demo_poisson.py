@@ -63,7 +63,7 @@ solve(a == L, u, bc)
 
 # Save solution in VTK format
 file = File("poisson.xdmf")
-file << u
+file << u.vector()
 
 # Plot solution
 # plot(u, interactive=True)

@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2012-06-29
+// Last changed: 2012-07-05
 
 #include <cstdio>
 #include <iostream>
@@ -64,6 +64,39 @@ HDF5File::HDF5File(const std::string filename)
 HDF5File::~HDF5File()
 {
   // Do nothing
+}
+
+
+void HDF5File::operator<<(const Mesh& mesh){
+
+  const uint cell_dim = mesh.topology().dim();
+  const uint num_local_cells = mesh.num_cells();
+  const uint num_local_vertices = mesh.num_vertices();
+
+  // get offset and size of local cell topology usage in global terms
+  uint off=MPI::global_offset(num_local_cells,true);
+  std::pair<uint,uint>topo_range(off,off+num_local_cells);
+
+  // get offset and size of local vertex usage in global terms
+  off=MPI::global_offset(num_local_vertices,true);
+  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
+
+  std::vector<uint> topo_data;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+      for (VertexIterator v(*cell); !v.end(); ++v)
+	topo_data.push_back(v->index()+vertex_range.first);
+
+  std::vector<double>vtx_coords;
+  for (VertexIterator v(mesh); !v.end(); ++v){
+    Point p=v->point();
+    vtx_coords.push_back(p.x());
+    vtx_coords.push_back(p.y());
+    vtx_coords.push_back(p.z());
+  }
+
+  write(vtx_coords[0],vertex_range,"/Mesh/Coordinates",3); //xyz coords
+  write(topo_data[0],topo_range,"/Mesh/Topology",cell_dim+1); //connectivity
+
 }
 
 //-----------------------------------------------------------------------------
@@ -179,6 +212,7 @@ void HDF5File::create(){  //maybe this should be in the constructor
 
   hid_t       file_id;         /* file and dataset identifiers */
   hid_t	      plist_id;           /* property list identifier */
+  hid_t       group_id;
   herr_t      status;
 
   MPICommunicator comm;
@@ -189,13 +223,33 @@ void HDF5File::create(){  //maybe this should be in the constructor
   assert(status != HDF5_FAIL);
   file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   assert(file_id != HDF5_FAIL);
+
+  // create subgroups suitable for storing different types of data.
+  // VertexVector - for visualisation
+  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT);
+  assert(group_id != HDF5_FAIL);
+  status = H5Gclose (group_id);
+  assert(status != HDF5_FAIL);
+
+  // Vector - for checkpointing etc
+  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
+  assert(group_id != HDF5_FAIL);
+  status = H5Gclose (group_id);
+  assert(status != HDF5_FAIL);
+
+  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
+  assert(group_id != HDF5_FAIL);
+  status = H5Gclose (group_id);
+  assert(status != HDF5_FAIL);
+
   status=H5Pclose(plist_id);
   assert(status != HDF5_FAIL);
   status=H5Fclose(file_id);
   assert(status != HDF5_FAIL);
 }
 
-// Create HDF File and add a dataset of dolfin_vector
+// Create HDF File and add a dataset
+// Allow multiple vectors within one file
 void HDF5File::operator<< (const GenericVector& output)
 {
   uint dim=0;
@@ -206,9 +260,15 @@ void HDF5File::operator<< (const GenericVector& output)
   range=output.local_range(dim);
   output.get_local(data);
 
-  create(); //overwrite any existing file
-  write(data[0],range,"dolfin_vector",1);
+  if(counter==0)
+    create(); //overwrite any existing file
 
+  std::stringstream s("");
+  s << "/Vector/" << counter;
+
+  write(data[0],range,s.str().c_str(),1);
+
+  counter++;
 }
 
 
@@ -218,12 +278,14 @@ void HDF5File::operator>> (GenericVector& input)
 
     hid_t file_id;		/* HDF5 file ID */
     hid_t plist_id;		/* File access template */
+    hid_t group_id;
     hid_t filespace;	/* File dataspace ID */
     hid_t memspace;	/* memory dataspace ID */
     hid_t dset_id;       	/* Dataset ID */
     // hsize_t     dimsf;                 /* dataset dimensions */
-    hsize_t     count;	          /* hyperslab selection parameters */
-    hsize_t     offset;
+    hsize_t     count[2];	          /* hyperslab selection parameters */
+    hsize_t     offset[2];
+    hsize_t     num_obj;        /* number of objects in group */
     herr_t status;         	/* Generic return value */
 
     uint dim=0;
@@ -235,10 +297,12 @@ void HDF5File::operator>> (GenericVector& input)
 
     //    dimsf=input.size(dim);
     range=input.local_range(dim);
-    offset=range.first;
-    count=range.second-range.first;
+    offset[0]=range.first;
+    offset[1]=0;
+    count[0]=range.second-range.first;
+    count[1]=1;
 
-    std::vector<double>data(count);
+    std::vector<double>data(count[0]);
 
     /* setup file access template */
     plist_id = H5Pcreate (H5P_FILE_ACCESS);
@@ -255,19 +319,31 @@ void HDF5File::operator>> (GenericVector& input)
     status=H5Pclose(plist_id);
     assert(status != HDF5_FAIL);
 
+    group_id = H5Gopen(file_id,"/Vector");
+    assert(group_id != HDF5_FAIL);
+
+    status=H5Gget_num_objs(group_id, &num_obj);
+    assert(status != HDF5_FAIL);
+
+    status=H5Gclose(group_id);
+    assert(status != HDF5_FAIL);
+
+    std::stringstream s("");  //load last vector
+    s << "/Vector/" << (num_obj-1);
+
     /* open the dataset collectively */
-    dset_id = H5Dopen(file_id, "dolfin_vector");
+    dset_id = H5Dopen(file_id, s.str().c_str());
     assert(dset_id != HDF5_FAIL);
 
     /* create a file dataspace independently */
     filespace = H5Dget_space (dset_id);
     assert(filespace != HDF5_FAIL);
 
-    status=H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &count, NULL);
+    status=H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
     assert(status != HDF5_FAIL);
 
     /* create a memory dataspace independently */
-    memspace = H5Screate_simple (1, &count, NULL);
+    memspace = H5Screate_simple (1, count, NULL);
     assert (memspace != HDF5_FAIL);
 
     /* read data independently */

@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-03
+// Last changed: 2012-07-05
 
 #include <ostream>
 #include <sstream>
@@ -101,25 +101,25 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   }
 
   // get offset and size of local cell topology usage in global terms
-  uint off=MPI::global_offset(num_local_cells,true);
-  std::pair<uint,uint>topo_range(off,off+num_local_cells);
+  //  uint off=MPI::global_offset(num_local_cells,true);
+  //  std::pair<uint,uint>topo_range(off,off+num_local_cells);
 
   // get offset and size of local vertex usage in global terms
-  off=MPI::global_offset(num_local_vertices,true);
-  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
+  //  off=MPI::global_offset(num_local_vertices,true);
+  //  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
-  std::vector<uint> topo_data;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-      for (VertexIterator v(*cell); !v.end(); ++v)
-	topo_data.push_back(v->index()+vertex_range.first);
+  // std::vector<uint> topo_data;
+  // for (CellIterator cell(mesh); !cell.end(); ++cell)
+  //     for (VertexIterator v(*cell); !v.end(); ++v)
+  // 	topo_data.push_back(v->index()+vertex_range.first);
 
-  std::vector<double>vtx_coords;
-  for (VertexIterator v(mesh); !v.end(); ++v){
-    Point p=v->point();
-    vtx_coords.push_back(p.x());
-    vtx_coords.push_back(p.y());
-    vtx_coords.push_back(p.z());
-  }
+  // std::vector<double>vtx_coords;
+  // for (VertexIterator v(mesh); !v.end(); ++v){
+  //   Point p=v->point();
+  //   vtx_coords.push_back(p.x());
+  //   vtx_coords.push_back(p.y());
+  //   vtx_coords.push_back(p.z());
+  // }
 
   std::string filename_data(HDF5Filename());
 
@@ -128,12 +128,11 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // only save grid on first timestep (?)
   if(counter==0){
     h5file.create();
-    h5file.write(vtx_coords[0],vertex_range,"dolfin_coords",3); //xyz coords
-    h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1); //connectivity
+    h5file << mesh;
   }
 
   std::stringstream s("");
-  s << "dolfin_vector_" << counter;
+  s << "/VertexVector/" << counter;
   h5file.write(vtx_values[0],vertex_range,s.str().c_str(),vsize); //values
 
   //Now go ahead and write the XML meta description
@@ -168,7 +167,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
       
       s.str("");
-      s<< filename_data << ":/dolfin_topo";
+      s<< filename_data << ":/Mesh/Topology";
       xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
       //      /Xdmf/Domain/Geometry
@@ -183,7 +182,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
       
       s.str("");
-      s << filename_data << ":/dolfin_coords";
+      s << filename_data << ":/Mesh/Coordinates";
       xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
 
@@ -244,7 +243,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     s << num_total_vertices << " " << vsize;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
-    s<< filename_data << ":/dolfin_vector_" << counter;
+    s<< filename_data << ":/VertexVector/" << counter;
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     xml_doc.save_file(filename.c_str(), "  "); 
@@ -272,12 +271,6 @@ void XDMFFile::operator<<(const Mesh& mesh)
 {
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
-  const uint cell_dim = mesh.topology().dim();
-  const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint num_total_vertices = MPI::sum(num_local_vertices);
-  const uint num_total_cells = MPI::sum(num_local_cells);
-
   // get offset and size of local cell topology usage in global terms
   uint off=MPI::global_offset(num_local_cells,true);
   std::pair<uint,uint>topo_range(off,off+num_local_cells);
@@ -303,8 +296,8 @@ void XDMFFile::operator<<(const Mesh& mesh)
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
   h5file.create();
-  h5file.write(vtx_coords[0],vertex_range,"dolfin_coords",3); //xyz coords
-  h5file.write(topo_data[0],topo_range,"dolfin_topo",cell_dim+1); //connectivity
+  h5file.write(vtx_coords[0],vertex_range,"/Mesh/Coordinates",3); //xyz coords
+  h5file.write(topo_data[0],topo_range,"/Mesh/Topology",cell_dim+1); //connectivity
 
   //Now go ahead and write the XML meta description
   if(MPI::process_number()==0){
@@ -336,7 +329,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_topo_data.append_attribute("Dimensions")=s.str().c_str();
     
     s.str("");
-    s<< filename_data << ":/dolfin_topo";
+    s<< filename_data << ":/Mesh/Topology";
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -349,7 +342,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_geom_data.append_attribute("Dimensions")=s.str().c_str();
 
     s.str("");
-    s << filename_data << ":/dolfin_coords";
+    s << filename_data << ":/Mesh/Coordinates";
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
         
     xml_doc.save_file(filename.c_str(), "  "); 
