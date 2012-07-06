@@ -48,7 +48,7 @@ namespace dolfin
     void init_pipeline();
 
     /// Update the plottable data
-    void update(const Parameters& parameters);
+    void update(const Parameters& parameters, int frame_counter);
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);

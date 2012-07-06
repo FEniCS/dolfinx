@@ -51,7 +51,7 @@ void VTKPlottableMesh::init_pipeline()
 }
 
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(const Parameters& parameters)
+void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
 {
   dolfin_assert(_grid);
 

@@ -540,33 +540,28 @@ void VTKPlotter::update()
   vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
   // Update the plottable data
-  _plottable->update(parameters);
+  _plottable->update(parameters, _frame_counter);
 
-  if (parameters["autorange"])
+  // If this is the first render of this plot and/or the rescale parameter is
+  // set, we read get the min/max values of the data and process them
+  if (_frame_counter == 0 || parameters["rescale"])
   {
-    // If this is the first render of this plot and/or the rescale parameter is
-    // set, we read get the min/max values of the data and process them
-    if (_frame_counter == 0 || parameters["rescale"])
-    {
-      double range[2];
-      _plottable->update_range(range);
-      vtk_pipeline->_lut->SetRange(range);
-      vtk_pipeline->_lut->Build();
-      vtk_pipeline->_mapper->SetScalarRange(range);
-    }
-  }
-  else
-  {
-    // FIXME: This needs to be fixed!
-
     double range[2];
-    range[0] = parameters["range_min"];
-    range[1] = parameters["range_max"];
+
+    if (parameters["autorange"])
+    {
+      _plottable->update_range(range);
+    }
+    else
+    {
+      range[0] = parameters["range_min"];
+      range[1] = parameters["range_max"];
+    }
 
     vtk_pipeline->_lut->SetRange(range);
     vtk_pipeline->_lut->Build();
     vtk_pipeline->_mapper->SetScalarRange(range);
-  }  
+  }
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and

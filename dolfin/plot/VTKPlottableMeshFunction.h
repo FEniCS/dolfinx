@@ -45,7 +45,7 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Update the plottable data
-    void update(const Parameters& parameters);
+    void update(const Parameters& parameters, int frame_counter);
 
   private:
 
@@ -73,9 +73,9 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   template <typename T>
-  void VTKPlottableMeshFunction<T>::update(const Parameters& parameters)
+    void VTKPlottableMeshFunction<T>::update(const Parameters& parameters, int frame_counter)
   {
-    VTKPlottableMesh::update(parameters);
+    VTKPlottableMesh::update(parameters, frame_counter);
 
     if (_mesh_function->dim() == 0)
     {
