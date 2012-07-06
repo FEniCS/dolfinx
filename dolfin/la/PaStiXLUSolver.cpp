@@ -106,7 +106,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
 
   // Block sizes (affects performance)
-  iparm[IPARM_MIN_BLOCKSIZE] = 9;
+  iparm[IPARM_MIN_BLOCKSIZE] = 60;
   iparm[IPARM_MAX_BLOCKSIZE] = 300;
   //iparm[IPARM_ABS] = API_YES;
 

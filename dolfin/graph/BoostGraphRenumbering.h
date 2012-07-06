@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Compute renumbering (map[old] -> new) using Cuthill-McKee algorithm
-    static std::vector<uint> compute_cuthill_mckee(const Graph& graph);
+    static std::vector<uint> compute_cuthill_mckee(const Graph& graph, bool reverse=false);
 
     /// Compute renumbering (map[old] -> new) using King algorithm
     static std::vector<uint> compute_king(const Graph& graph);

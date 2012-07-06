@@ -31,7 +31,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> BoostGraphRenumbering::compute_cuthill_mckee(const Graph& graph)
+std::vector<dolfin::uint>
+  BoostGraphRenumbering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
 
@@ -54,7 +55,10 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_cuthill_mckee(const Gra
 
   // Renumber graph (reverse Cuthill--McKee)
   std::vector<uint> inv_perm(n);
-  boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+  if (!reverse)
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+  else
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
 
   // Build old-to-new vertex map
   std::vector<dolfin::uint> map(n);
