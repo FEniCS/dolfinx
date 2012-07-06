@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-05
+// Last changed: 2012-07-06
 
 #include <ostream>
 #include <sstream>
@@ -105,8 +105,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   //  std::pair<uint,uint>topo_range(off,off+num_local_cells);
 
   // get offset and size of local vertex usage in global terms
-  //  off=MPI::global_offset(num_local_vertices,true);
-  //  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
+  uint off=MPI::global_offset(num_local_vertices,true);
+  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
   // std::vector<uint> topo_data;
   // for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -270,6 +270,12 @@ std::string XDMFFile::HDF5Filename(){
 void XDMFFile::operator<<(const Mesh& mesh)
 {
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
+
+  const uint cell_dim = mesh.topology().dim();
+  const uint num_local_cells = mesh.num_cells();
+  const uint num_local_vertices = mesh.num_vertices();
+  const uint num_total_vertices = MPI::sum(num_local_vertices);
+  const uint num_total_cells = MPI::sum(num_local_cells);
 
   // get offset and size of local cell topology usage in global terms
   uint off=MPI::global_offset(num_local_cells,true);
