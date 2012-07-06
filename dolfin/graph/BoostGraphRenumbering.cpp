@@ -20,6 +20,7 @@
 
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/king_ordering.hpp>
+#include <boost/graph/minimum_degree_ordering.hpp>
 #include <boost/graph/properties.hpp>
 
 #include "dolfin/log/log.h"
@@ -46,9 +47,35 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_local_renumbering_map(c
   boost::property_map<BoostUndirectedGraph, boost::vertex_index_t>::type
     boost_index_map = get(boost::vertex_index, boost_graph);
 
-  // Renumber graph (reverse Cuthill--McKee)
+  //for (uint i = 0; i < graph.size(); ++i)
+  //  cout << i << ": " << index_map[i] << endl;
+
+
   std::vector<uint> inv_perm(boost::num_vertices(boost_graph));
-  boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+
+  // Renumber graph (reverse Cuthill--McKee)
+  //boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+
+  // Renumber graph (King)
+  //boost::king_ordering(boost_graph, inv_perm.rbegin());
+
+
+  cout << "Start renumbering" << endl;
+  // Renumber graph (minimum degree)
+  std::vector<uint> perm(boost::num_vertices(boost_graph));
+  std::vector<uint> degree(boost::num_vertices(boost_graph), 0);
+  std::vector<uint> super_node_sizes(boost::num_vertices(boost_graph), 1);
+
+  int delta = -1;
+
+  boost::minimum_degree_ordering(boost_graph,
+     boost::make_iterator_property_map(&degree[0], boost_index_map, degree[0]),
+     &inv_perm[0],
+     &perm[0],
+     boost::make_iterator_property_map(&super_node_sizes[0], boost_index_map, super_node_sizes[0]),
+     delta, boost_index_map);
+
+  cout << "End renumbering" << endl;
 
   // Build old-to-new vertex map
   std::vector<dolfin::uint> map(boost::num_vertices(boost_graph));
