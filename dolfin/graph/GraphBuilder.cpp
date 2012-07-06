@@ -52,9 +52,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
 
     std::vector<uint>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
-    {
       graph[*node].insert(dofs1.begin(), dofs1.end());
-    }
   }
 
   return graph;

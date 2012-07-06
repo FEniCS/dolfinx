@@ -102,6 +102,14 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
   }
 
+  // Do not renumber
+  //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
+
+  // Block sizes (affects performance)
+  iparm[IPARM_MIN_BLOCKSIZE] = 9;
+  iparm[IPARM_MAX_BLOCKSIZE] = 300;
+  //iparm[IPARM_ABS] = API_YES;
+
   // Matrix data in compressed sparse column format (C indexing)
   std::vector<double> vals;
   std::vector<uint> rows, col_ptr, local_to_global_cols;
@@ -114,13 +122,13 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   int* _col_ptr = reinterpret_cast<int*>(col_ptr.data());
   int* _rows = reinterpret_cast<int*>(rows.data());
   int* _local_to_global_cols = reinterpret_cast<int*>(local_to_global_cols.data());
-  double* _vals = vals.data();
 
   const uint n = col_ptr.size() - 1;
 
   // Check matrix
   if (parameters["check_matrix"])
   {
+    double* _vals = vals.data();
     d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_YES,
   		                   n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
   }
@@ -153,13 +161,19 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   std::vector<int> perm(local_to_global_cols.size());
   std::vector<int> invp(local_to_global_cols.size());
 
+  //for (uint i = 0; i < local_to_global_cols.size(); ++i)
+  //{
+  //  perm[i] = i + 1;
+  //  invp[i] = i + 1;
+ // }
+
   // Number of RHS vectors
   const int nrhs = 1;
 
   // Re-order
   iparm[IPARM_START_TASK] = API_TASK_ORDERING;
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
             _local_to_global_cols,
             perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
@@ -167,7 +181,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Factorise
   iparm[IPARM_START_TASK] = API_TASK_NUMFACT;
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
             _local_to_global_cols,
             perm.data(), invp.data(),
             NULL, nrhs, iparm, dparm);
@@ -180,7 +194,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
             _local_to_global_cols,
             perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
@@ -197,6 +211,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _local_to_global_cols,
             perm.data(), invp.data(),
             b_ptr, nrhs, iparm, dparm);
+
+  //cout << "Some number: " << iparm[IPARM_ABS_NBTASKS] << endl;
 
   return 1;
 }

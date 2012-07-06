@@ -36,9 +36,15 @@ namespace dolfin
 
   public:
 
-    /// Compute renumbering for process (map[old] -> new)
-    static std::vector<uint> compute_local_renumbering_map(const Graph& graph);
+    /// Compute renumbering (map[old] -> new) using Cuthill-McKee algorithm
+    static std::vector<uint> compute_cuthill_mckee(const Graph& graph);
 
+    /// Compute renumbering (map[old] -> new) using King algorithm
+    static std::vector<uint> compute_king(const Graph& graph);
+
+    /// Compute renumbering (map[old] -> new) using minimum degree algorithm
+    static std::vector<uint> compute_minimum_degree(const Graph& graph,
+                                                    const int delta=0);
 
   };
 
