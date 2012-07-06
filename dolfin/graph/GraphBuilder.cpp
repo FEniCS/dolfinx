@@ -27,6 +27,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -36,6 +37,28 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
+                                                  const GenericDofMap& dofmap1)
+{
+  // Create empty graph
+  Graph graph(dofmap0.global_dimension());
+
+  // Build graph
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+
+    std::vector<uint>::const_iterator node;
+    for (node = dofs0.begin(); node != dofs0.end(); ++node)
+    {
+      graph[*node].insert(dofs1.begin(), dofs1.end());
+    }
+  }
+
+  return graph;
+}
 //-----------------------------------------------------------------------------
 Graph GraphBuilder::local_graph(const Mesh& mesh,
                                 const std::vector<uint>& coloring_type)
