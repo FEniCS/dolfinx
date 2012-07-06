@@ -21,6 +21,7 @@
 // First added:  2007-01-17
 // Last changed: 2012-03-15
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -366,25 +367,31 @@ std::string STLMatrix::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
     for (uint i = 0; i < _local_range.second - _local_range.first; i++)
     {
-      const std::vector<uint>& rcols = codim_indices[i];
-      const std::vector<double>& rvals = _vals[i];
+      // Sort row data by colmun index
+      const uint num_entries = codim_indices[i].size();
+      std::vector<std::pair<uint, double> > data(num_entries);
+      for (uint k = 0; k < num_entries; k++)
+        data[i] = std::make_pair(codim_indices[i][k], _vals[i][k]);
+      std::sort(data.begin(), data.end());
 
+      // Set precision
       std::stringstream line;
       line << std::setiosflags(std::ios::scientific);
       line << std::setprecision(16);
 
+      // Format matrix
       line << "|";
-      for (uint k = 0; k < rcols.size(); k++)
-        line << " (" << i << ", " << rcols[k] << ", " << rvals[k] << ")";
+      std::vector<std::pair<uint, double> >::const_iterator entry;
+      for (entry = data.begin(); entry != data.end(); ++entry)
+        line << " (" << i << ", " << entry->first << ", " << entry->second << ")";
       line << " |";
 
       s << line.str().c_str() << std::endl;
     }
   }
   else
-  {
     s << "<STLMatrix of size " << size(0) << " x " << size(1) << ">";
-  }
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
