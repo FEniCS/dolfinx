@@ -595,19 +595,26 @@ namespace dolfin { class PrivateVTKPipeline{}; }
 
 using namespace dolfin;
 
-static void vtk_warning() { warning("Plotting not available. DOLFIN has been compiled without VTK support"); }
-
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { vtk_warning(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { init_pipeline(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { vtk_warning(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { vtk_warning(); }
+		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init_pipeline(); }
 VTKPlotter::~VTKPlotter(){}
+
+// (Ab)use init_pipeline() to issue a warning. 
+// We also need to initialize the parameter set to avoid tons of warning when running the tests without VTK.
+
+void VTKPlotter::init_pipeline()
+{
+  parameters = default_parameters();
+  warning("Plotting not available. DOLFIN has been compiled without VTK support.");
+}
 
 void VTKPlotter::update(){}
 void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){}
