@@ -92,7 +92,6 @@ int main()
   File file("biharmonic.pvd");
   file << u;
 
-
   // Plot solution
   plot(u);
   interactive();
