@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-30
-// Last changed: 2012-01-31
+// Last changed: 2012-07-05
 //
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
@@ -196,6 +196,7 @@ int main()
   // Plot solution
   plot(p1, "Pressure");
   plot(u1, "Velocity");
+  interactive();
 
   return 0;
 }

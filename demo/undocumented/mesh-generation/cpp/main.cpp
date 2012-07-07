@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-02-02
-// Last changed:
+// Last changed: 2012-07-05
 //
 // This program generates a mesh for a polygonal domain that is
 // represented by a list of its vertices.
@@ -81,6 +81,8 @@ int main()
   // Generate 3D mesh from OFF file input (cube)
   PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
   plot(mesh);
+
+  interactive();
 }
 
 #else

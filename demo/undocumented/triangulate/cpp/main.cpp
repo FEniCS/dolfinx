@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-02-02
-// Last changed:
+// Last changed: 2012-07-05
 //
 // This demo creates meshes from the triangulation of a collection of
 // random point.
@@ -45,6 +45,9 @@ int main()
   // Triangulate points in 3D and plot mesh
   Triangulate::triangulate(mesh, random_points, 3);
   plot(mesh);
+
+  // Make plot windows interactive
+  interactive();
 }
 
 #else

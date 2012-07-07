@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-29
-// Last changed: 2009-09-29
+// Last changed: 2012-07-05
 //
 // This demo illustrates the built-in mesh types.
 
@@ -77,4 +77,8 @@ int main()
   UnitSphere sphere(10);
   info("Plotting a UnitSphere");
   plot(sphere, "Unit sphere");
+
+  interactive();
+  
+  return 0;
 }

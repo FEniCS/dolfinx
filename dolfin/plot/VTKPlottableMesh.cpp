@@ -105,7 +105,8 @@ void VTKPlottableMesh::update(const Parameters& parameters)
   // Insert points, vertex labels and cells in VTK unstructured grid
   _grid->SetPoints(points);
   _grid->GetPointData()->AddArray(labels);
-  switch (spatial_dim) {
+  switch (spatial_dim)
+  {
     case 1:
       _grid->SetCells(VTK_LINE, cells);
       break;
@@ -134,9 +135,8 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
 {
   // Return actor if already created
-  if (_vertexLabelActor) {
+  if (_vertexLabelActor)
     return _vertexLabelActor;
-  }
 
   // We create the actor on the first call to the method
 
@@ -146,8 +146,8 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   // http://www.vtk.org/doc/release/5.8/html/a01117.html
 
   // Generate the label hierarchy.
-  vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter =
-    vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
+  vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter
+    = vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
   pointSetToLabelHierarchyFilter->SetInput(_grid);
   pointSetToLabelHierarchyFilter->SetLabelArrayName("indices"); // This name must match the one set in "update"
   // NOTE: One may set an integer array with priorites on the hierarchy filter.
@@ -158,8 +158,8 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   pointSetToLabelHierarchyFilter->Update();
 
   // Create a mapper and actor for the labels.
-  vtkSmartPointer<vtkLabelPlacementMapper> labelMapper = vtkSmartPointer<
-    vtkLabelPlacementMapper>::New();
+  vtkSmartPointer<vtkLabelPlacementMapper> labelMapper
+    = vtkSmartPointer<vtkLabelPlacementMapper>::New();
   labelMapper->SetInputConnection(
     pointSetToLabelHierarchyFilter->GetOutputPort());
   _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();

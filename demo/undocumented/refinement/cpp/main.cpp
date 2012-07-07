@@ -18,7 +18,7 @@
 // Modified by Johan Hoffman, 2006.
 //
 // First added:  2006-10-26
-// Last changed: 2011-02-04
+// Last changed: 2012-07-05
 
 #include <dolfin.h>
 
@@ -55,6 +55,8 @@ int main()
     file << mesh;
     plot(mesh);
   }
+
+  interactive();
 
   return 0;
 }

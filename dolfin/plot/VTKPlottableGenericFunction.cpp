@@ -111,9 +111,11 @@ void VTKPlottableGenericFunction::init_pipeline()
     }
     break;
   default:
+    {
     dolfin_error("VTKPlotter.cpp",
                  "plot function of rank > 2.",
                  "Plotting of higher order functions is not supported.");
+    }
   }
 }
 //----------------------------------------------------------------------------
@@ -128,9 +130,7 @@ void VTKPlottableGenericFunction::update(const Parameters& parameters)
 
   const std::string mode = parameters["mode"];
   if (mode == "warp")
-  {
     warp_vector_mode = true;
-  }
   else
   {
     if (mode != "auto")
@@ -158,7 +158,7 @@ void VTKPlottableGenericFunction::update_range(double range[2])
 
   // We also multiply the warpscalar's scale factor by the width of the scalar
   // range
-  double scale = _warpscalar->GetScaleFactor();
+  const double scale = _warpscalar->GetScaleFactor();
   _warpscalar->SetScaleFactor(scale/(range[1]-range[0]));
 }
 //----------------------------------------------------------------------------
@@ -193,9 +193,7 @@ void VTKPlottableGenericFunction::update_scalar()
   _function->compute_vertex_values(vertex_values, *_mesh);
 
   for (uint i = 0; i < num_vertices; ++i)
-  {
     scalars->SetValue(i, vertex_values[i]);
-  }
 
   // Attach scalar values as point data in the VTK grid
   _grid->GetPointData()->SetScalars(scalars);
@@ -210,8 +208,8 @@ void VTKPlottableGenericFunction::update_vector()
   // Make VTK float array and allocate storage for function vector values
   uint num_vertices = _mesh->num_vertices();
   uint num_components = _function->value_dimension(0);
-  vtkSmartPointer<vtkFloatArray> vectors =
-    vtkSmartPointer<vtkFloatArray>::New();
+  vtkSmartPointer<vtkFloatArray> vectors
+    = vtkSmartPointer<vtkFloatArray>::New();
 
   // NOTE: Allocation must be done in this order!
   // Note also that the number of VTK vector components must always be 3

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-07-11
-// Last changed: 2012-04-23
+// Last changed: 2012-07-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -109,12 +109,13 @@ int main()
   Function u(V);
   solve(a == L, u, bcs);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("periodic.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
+  interactive();
 
   return 0;
 }

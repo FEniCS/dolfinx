@@ -156,7 +156,7 @@ endif()
 
 # Disable some warnings for Intel compilers
 if(${CMAKE_CXX_COMPILER} MATCHES "icpc")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,1125")
 endif()
 
 #------------------------------------------------------------------------------

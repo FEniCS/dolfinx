@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-23
-// Last changed: 2011-08-23
+// Last changed: 2012-07-05
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
@@ -63,6 +63,7 @@ int main()
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

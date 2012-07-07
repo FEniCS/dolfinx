@@ -221,24 +221,20 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  delete vtk_pipeline;
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
 {
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value
-  char *noplot;
-  noplot = getenv("DOLFIN_NOPLOT");
-  if (noplot != NULL)
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value.
+  if (no_plot)
   {
-    if (strcmp(noplot, "0") != 0 && strcmp(noplot, "") != 0)
-    {
-      warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
-      return;
-    }
+    warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
+    return;
   }
 
   // The plotting starts
+  dolfin_assert(vtk_pipeline);
 
   // Process some parameters
   if (parameters["wireframe"])
@@ -281,18 +277,25 @@ void VTKPlotter::plot()
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive()
 {
+
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  if (no_plot)
+    return;
+
+  dolfin_assert(vtk_pipeline);
+
   // Add keypress callback function
   vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this,
                                          &VTKPlotter::keypressCallback);
 
   // These must be declared outside the if test to not go out of scope
   // before the interaction starts
-  vtkSmartPointer<vtkTextActor> helptextActor =
-    vtkSmartPointer<vtkTextActor>::New();
-  vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
-    vtkSmartPointer<vtkBalloonRepresentation>::New();
-  vtkSmartPointer<vtkBalloonWidget> balloonwidget =
-    vtkSmartPointer<vtkBalloonWidget>::New();
+  vtkSmartPointer<vtkTextActor> helptextActor
+    = vtkSmartPointer<vtkTextActor>::New();
+  vtkSmartPointer<vtkBalloonRepresentation> balloonRep
+    = vtkSmartPointer<vtkBalloonRepresentation>::New();
+  vtkSmartPointer<vtkBalloonWidget> balloonwidget
+    = vtkSmartPointer<vtkBalloonWidget>::New();
 
   if (parameters["helptext"])
   {
@@ -325,10 +328,19 @@ void VTKPlotter::interactive()
 //----------------------------------------------------------------------------
 void VTKPlotter::init_pipeline()
 {
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  {
+    char *noplot_env;
+    noplot_env = getenv("DOLFIN_NOPLOT");
+    no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
+  }
+
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
   // renderer, renderwindow and interaction. It also takes care of the scalar
   // bar and other decorations.
+
+  dolfin_assert(vtk_pipeline);
 
   // Initialize objects
   vtk_pipeline->_scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -347,8 +359,8 @@ void VTKPlotter::init_pipeline()
   vtk_pipeline->_renderWindow->AddRenderer(vtk_pipeline->_renderer);
 
   // Set up interactorstyle and connect interactor
-  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style =
-    vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style
+    = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
   vtk_pipeline->_interactor->SetRenderWindow(vtk_pipeline->_renderWindow);
   vtk_pipeline->_interactor->SetInteractorStyle(style);
 
@@ -360,8 +372,8 @@ void VTKPlotter::init_pipeline()
   vtk_pipeline->_scalarBar->SetTextPositionToPrecedeScalarBar();
 
   // Set the look of scalar bar labels
-  vtkSmartPointer<vtkTextProperty> labelprop =
-    vtk_pipeline->_scalarBar->GetLabelTextProperty();
+  vtkSmartPointer<vtkTextProperty> labelprop
+    = vtk_pipeline->_scalarBar->GetLabelTextProperty();
   labelprop->SetColor(0, 0, 0);
   labelprop->SetFontSize(20);
   labelprop->ItalicOff();
@@ -372,7 +384,6 @@ void VTKPlotter::init_pipeline()
 
   // That's it for the initialization! Now we wait until the user wants to
   // plot something
-
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_title(const std::string& name, const std::string& label)
@@ -406,13 +417,13 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
                                   long unsigned int eventId,
                                   void* callData)
 {
-  vtkSmartPointer<vtkRenderWindowInteractor> iren =
-    static_cast<vtkRenderWindowInteractor*>(caller);
+  vtkSmartPointer<vtkRenderWindowInteractor> iren
+    = static_cast<vtkRenderWindowInteractor*>(caller);
 
   switch (iren->GetKeyCode())
   {
     // Save plot to file
-  case 'h':
+    case 'h':
     {
       // We construct a filename from the given prefix and static counter.
       // If a file with that filename exists, the counter is incremented
@@ -430,7 +441,7 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
       hardcopy(filename.str());
       break;
     }
-  case 'i':
+    case 'i':
     {
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
@@ -438,30 +449,31 @@ void VTKPlotter::keypressCallback(vtkObject* caller,
 
       // Check for excistance of labels
       if (!vtk_pipeline->_renderer->HasViewProp(labels))
-	vtk_pipeline->_renderer->AddActor(labels);
+        vtk_pipeline->_renderer->AddActor(labels);
 
       // Turn on or off dependent on present state
       if (_toggle_vertex_labels)
       {
         labels->VisibilityOff();
-	_toggle_vertex_labels = false;
+        _toggle_vertex_labels = false;
       }
       else
       {
         labels->VisibilityOn();
-	_toggle_vertex_labels = true;
+        _toggle_vertex_labels = true;
       }
 
       vtk_pipeline->_renderWindow->Render();
       break;
     }
-  default:
-    break;
+    default:
+      break;
   }
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::hardcopy(std::string filename)
 {
+  dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_renderWindow);
 
   info("Saving plot to file: %s.png", filename.c_str());
@@ -484,12 +496,14 @@ void VTKPlotter::hardcopy(std::string filename)
 //----------------------------------------------------------------------------
 void VTKPlotter::get_window_size(int& width, int& height)
 {
+  dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_interactor);
   vtk_pipeline->_interactor->GetSize(width, height);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_window_position(int x, int y)
 {
+  dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_renderWindow);
   vtk_pipeline->_renderWindow->SetPosition(x, y);
 }

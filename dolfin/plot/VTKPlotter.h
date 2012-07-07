@@ -25,6 +25,8 @@
 
 #ifdef HAS_VTK
 
+#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Expression.h>
@@ -218,7 +220,7 @@ namespace dolfin
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
 
-    PrivateVTKPipeline* vtk_pipeline;
+    boost::scoped_ptr<PrivateVTKPipeline> vtk_pipeline;
 
     // The number of plotted frames
     uint _frame_counter;
@@ -232,6 +234,7 @@ namespace dolfin
     // Counter for the automatically named hardcopies
     static int hardcopy_counter;
 
+    bool no_plot;
   };
 
 }

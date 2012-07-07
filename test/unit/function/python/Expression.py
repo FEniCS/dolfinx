@@ -305,7 +305,7 @@ class Instantiation(unittest.TestCase):
           e1 = Expression("sin(x[0])*std::cos(x[1])")
           self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
                                  assemble(e1*dx, mesh=mesh))
-          
+
 
 if __name__ == "__main__":
     unittest.main()
