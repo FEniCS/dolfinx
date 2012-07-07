@@ -116,23 +116,23 @@ void PETScMatrix::resize(uint M, uint N)
     // and number of off-diagonal non-zeroes (50 in this case).
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    #if PETSC_VERSION_RELEASE==1
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
-                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    #else
+    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
                     50, PETSC_NULL, 50, PETSC_NULL, A.get());
     MatSetUp(*A.get());
+    #else
+    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
+                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
     #endif
   }
   else
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in this case)
-    #if PETSC_VERSION_RELEASE==1
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
-    #else
+    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
     MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
                     50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    #else
+    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
     #endif
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
@@ -140,7 +140,7 @@ void PETScMatrix::resize(uint M, uint N)
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #endif
     MatSetFromOptions(*A);
-    #if PETSC_VERSION_RELEASE==0
+    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
     MatSetUp(*A.get());
     #endif
   }
@@ -240,7 +240,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     MatSetFromOptions(*A);
 
-    #if PETSC_VERSION_RELEASE==0
+    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
     MatSetUp(*A.get());
     #endif
   }
@@ -285,7 +285,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     MatSetFromOptions(*A);
 
-    #if PETSC_VERSION_RELEASE==0
+    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
     MatSetUp(*A.get());
     #endif
   }
