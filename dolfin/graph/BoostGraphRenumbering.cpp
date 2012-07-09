@@ -23,10 +23,12 @@
 #include <boost/graph/minimum_degree_ordering.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "dolfin/log/log.h"
-#include "dolfin/common/MPI.h"
+#include "dolfin/common/types.h"
 #include "Graph.h"
 #include "BoostGraphRenumbering.h"
+
+#include "dolfin/log/LogStream.h"
+#include "dolfin/common/timing.h"
 
 using namespace dolfin;
 
@@ -34,31 +36,25 @@ using namespace dolfin;
 std::vector<dolfin::uint>
   BoostGraphRenumbering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
+  // Typedef for Boost undirected graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
 
-  // Create Boost graph
+  // Graph size
   const uint n = graph.size();
-  UndirectedGraph boost_graph(n);
 
   // Build Boost graph
-  for (uint i = 0; i < n; ++i)
-  {
-    for (uint j = 0; j < graph[i].size(); ++j)
-    {
-      if (i != graph[i][j])
-        boost::add_edge(i, graph[i][j], boost_graph);
-    }
-  }
+  UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
 
-  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
-    boost_index_map = get(boost::vertex_index, boost_graph);
-
-  // Renumber graph (reverse Cuthill--McKee)
+  // Renumber graph
   std::vector<uint> inv_perm(n);
   if (!reverse)
     boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
   else
     boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
+
+  // Boost vertex -> index map
+  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
 
   // Build old-to-new vertex map
   std::vector<dolfin::uint> map(n);
@@ -70,28 +66,22 @@ std::vector<dolfin::uint>
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph)
 {
+  // Typedef for Boost undirected graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
 
-  // Create Boost graph
+  // Graph size
   const uint n = graph.size();
-  UndirectedGraph boost_graph(n);
 
   // Build Boost graph
-  for (uint i = 0; i < n; ++i)
-  {
-    for (uint j = 0; j < graph[i].size(); ++j)
-    {
-      if (i != graph[i][j])
-        boost::add_edge(i, graph[i][j], boost_graph);
-    }
-  }
+  UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
 
-  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
-    boost_index_map = get(boost::vertex_index, boost_graph);
-
-  // Renumber graph (King)
+  // Renumber graph
   std::vector<uint> inv_perm(n);
   boost::king_ordering(boost_graph, inv_perm.rbegin());
+
+  // Boost vertex -> index map
+  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
 
   // Build old-to-new vertex map
   std::vector<dolfin::uint> map(n);
@@ -104,72 +94,73 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph
 std::vector<dolfin::uint>
   BoostGraphRenumbering::compute_minimum_degree(const Graph& graph, const int delta)
 {
-  cout << "Start renumbering" << endl;
+  // Typedef for Boost directed graph
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> BoostGraph;
 
-  typedef double Type;
-
-  using namespace boost;
-
-  //must be BGL directed graph now
-  typedef adjacency_list<vecS, vecS, directedS>  BoostGraph;
-  typedef graph_traits<BoostGraph>::vertex_descriptor Vertex;
-
+  // Graph size
   const uint n = graph.size();
 
-  cout << "n is " << n << endl;
+  // Build Boost directed graph
+  BoostGraph boost_graph = build_directed_graph<BoostGraph>(graph);
 
-  BoostGraph boost_graph(n);
+  // Boost vertex -> index map
+  boost::property_map<BoostGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
+
+  // Renumber graph
+  std::vector<int> inv_perm(n, 0), perm(n, 0), degree(n, 0);
+  std::vector<int> supernode_sizes(n, 1);
+  boost::minimum_degree_ordering(boost_graph,
+     make_iterator_property_map(degree.begin(), boost_index_map, degree[0]),
+     inv_perm.begin(), perm.begin(),
+     make_iterator_property_map(supernode_sizes.begin(), boost_index_map, supernode_sizes[0]),
+     delta, boost_index_map);
+
+  // Build old-to-new vertex map
+  std::vector<dolfin::uint> map(n);
+  for (uint i = 0; i < n; ++i)
+    map[boost_index_map[inv_perm[i]]] = i;
+
+  return map;
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+T BoostGraphRenumbering::build_undirected_graph(const Graph& graph)
+{
+  // Graph size
+  const uint n = graph.size();
 
   // Build Boost graph
+  T boost_graph(n);
+  for (uint i = 0; i < n; ++i)
+  {
+    for (uint j = 0; j < graph[i].size(); ++j)
+    {
+      if (i < graph[i][j])
+        boost::add_edge(i, graph[i][j], boost_graph);
+    }
+  }
+
+  return boost_graph;
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+T BoostGraphRenumbering::build_directed_graph(const Graph& graph)
+{
+  // Graph size
+  const uint n = graph.size();
+
+  // Build Boost graph
+  T boost_graph(n);
   for (uint i = 0; i < n; ++i)
   {
     for (uint j = 0; j < graph[i].size(); ++j)
     {
       if (i != graph[i][j])
         boost::add_edge(i, graph[i][j], boost_graph);
-      //if (i < graph[i][j])
-      //{
-      //  boost::add_edge(i, graph[i][j], boost_graph);
-      //  boost::add_edge(graph[i][j], i, boost_graph);
-      //}
     }
   }
 
-  /*
-  Graph::const_iterator vertex;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    const uint vertex_index = std::distance(graph.begin(), vertex);
-    graph_set_type::const_iterator edge;
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-    {
-      if (vertex_index != *edge)
-        boost::add_edge(vertex_index, *edge, boost_graph);
-    }
-  }
-  */
-
-  std::vector<int> inv_perm(n, 0), perm(n, 0), degree(n, 0);
-  std::vector<int> supernode_sizes(n, 1);
-
-  boost::property_map<BoostGraph, vertex_index_t>::type
-    id = get(vertex_index, boost_graph);
-
-  minimum_degree_ordering
-    (boost_graph,
-     make_iterator_property_map(&degree[0], id, degree[0]),
-     &inv_perm[0],
-     &perm[0],
-     make_iterator_property_map(&supernode_sizes[0], id, supernode_sizes[0]),
-     delta, id);
-
-  cout << "End renumbering" << endl;
-
-  // Build old-to-new vertex map
-  std::vector<dolfin::uint> map(n);
-  for (uint i = 0; i < n; ++i)
-    map[id[inv_perm[i]]] = i;
-
-  return map;
+  return boost_graph;
 }
 //-----------------------------------------------------------------------------

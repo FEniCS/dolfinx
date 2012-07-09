@@ -53,6 +53,13 @@ Parameters PaStiXLUSolver::default_parameters()
   // Number of threads per MPI process
   p.add<uint>("num_threads");
 
+  // max = 300 good with 1 thread on laptop
+  // min, max = 180, 340 good with 2 thread on laptop
+
+  // Min/max block size for BLAS
+  p.add("min_block_size", 180);
+  p.add("max_block_size", 340);
+
   // Check matrix for consistency
   p.add("check_matrix", false);
 
@@ -60,14 +67,13 @@ Parameters PaStiXLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
-  : A(reference_to_no_delete_pointer(A)), id(0)
+  : A(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A)
-  : A(A), id(0)
+PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -106,8 +112,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
 
   // Block sizes (affects performance)
-  iparm[IPARM_MIN_BLOCKSIZE] = 60;
-  iparm[IPARM_MAX_BLOCKSIZE] = 300;
+  iparm[IPARM_MIN_BLOCKSIZE] = parameters["min_block_size"];
+  iparm[IPARM_MAX_BLOCKSIZE] = parameters["max_block_size"];
   //iparm[IPARM_ABS] = API_YES;
 
   // Matrix data in compressed sparse column format (C indexing)

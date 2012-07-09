@@ -21,10 +21,6 @@
 #include <iostream>
 #include <vector>
 
-// This is to avoid a GCC 4.3+ error
-// FIXME: Check that it does not impact on performance
-#define BOOST_NO_HASH
-
 #include <boost/foreach.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
