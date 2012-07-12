@@ -120,15 +120,16 @@ if(_libraries_work)
   set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_thread})
 #  message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
 
-  # GNW: Do not test for BLAS function with statically linked MKL
-  #      Test gives false negative
-  if(NOT BLA_STATIC AND NOT BLA_VENDOR MATCHES "Intel*")
-    if (_CHECK_FORTRAN)
-      check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
-    else()
-      check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
-    endif()
-  endif
+  # GNW: Add special flags for static BLAS libraries for function check
+  if(BLA_STATIC AND UNIX)
+    set(CMAKE_REQUIRED_LIBRARIES ${_flags} "-Wl,--start-group ${${LIBRARIES}};-Wl,--end-group" ${_thread})
+  endif()
+
+  if (_CHECK_FORTRAN)
+    check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
+  else()
+    check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
+  endif()
 
   set(CMAKE_REQUIRED_LIBRARIES)
   mark_as_advanced(${_prefix}${_combined_name}_WORKS)
