@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-06-01
-// Last changed: 2012-07-05
+// Last changed: 2012-07-12
 
 #include <cstdio>
 #include <iostream>
@@ -68,6 +68,8 @@ HDF5File::~HDF5File()
 
 
 void HDF5File::operator<<(const Mesh& mesh){
+  // Write a Mesh to an existing HDF5 file.
+  // TODO: create file if not existing.
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
@@ -206,9 +208,10 @@ void HDF5File::write(const uint& data,
   write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 
-void HDF5File::create(){  //maybe this should be in the constructor
+void HDF5File::create(){
   // make empty HDF5 file
   // overwriting any existing file
+  // create some default 'folders' for storing different datasets
 
   hid_t       file_id;         /* file and dataset identifiers */
   hid_t	      plist_id;           /* property list identifier */
@@ -237,6 +240,7 @@ void HDF5File::create(){  //maybe this should be in the constructor
   status = H5Gclose (group_id);
   assert(status != HDF5_FAIL);
 
+  // Mesh
   group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
   assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
@@ -275,6 +279,8 @@ void HDF5File::operator<< (const GenericVector& output)
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (GenericVector& input)
 {
+  // Read input in parallel. Assumes the input vector
+  // is correctly allocated to receive the data.
 
     hid_t file_id;		/* HDF5 file ID */
     hid_t plist_id;		/* File access template */
@@ -322,6 +328,7 @@ void HDF5File::operator>> (GenericVector& input)
     group_id = H5Gopen(file_id,"/Vector");
     assert(group_id != HDF5_FAIL);
 
+    // count how many datasets in the /Vector directory 
     status=H5Gget_num_objs(group_id, &num_obj);
     assert(status != HDF5_FAIL);
 

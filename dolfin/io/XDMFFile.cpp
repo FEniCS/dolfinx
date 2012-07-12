@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-06
+// Last changed: 2012-07-12
 
 #include <ostream>
 #include <sstream>
@@ -91,46 +91,36 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   std::vector<double>vtx_values;
   u.compute_vertex_values(vtx_values,mesh);
   //need to interleave the values (e.g. if not scalar field)
-  //could possibly improve this using boost::numeric::ublas
   if(vsize>1){
-    std::vector<double>tmp_values;
+    std::vector<double>tmp;
     for(uint i=0;i<num_local_vertices;i++)
       for(uint j=0;j<vsize;j++)
-	tmp_values.push_back(vtx_values[i+j*num_local_vertices]);
-    std::copy(tmp_values.begin(),tmp_values.end(),vtx_values.begin());
+	tmp.push_back(vtx_values[i+j*num_local_vertices]);
+    std::copy(tmp.begin(),tmp.end(),vtx_values.begin());
   }
-
-  // get offset and size of local cell topology usage in global terms
-  //  uint off=MPI::global_offset(num_local_cells,true);
-  //  std::pair<uint,uint>topo_range(off,off+num_local_cells);
 
   // get offset and size of local vertex usage in global terms
   uint off=MPI::global_offset(num_local_vertices,true);
   std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
 
-  // std::vector<uint> topo_data;
-  // for (CellIterator cell(mesh); !cell.end(); ++cell)
-  //     for (VertexIterator v(*cell); !v.end(); ++v)
-  // 	topo_data.push_back(v->index()+vertex_range.first);
-
-  // std::vector<double>vtx_coords;
-  // for (VertexIterator v(mesh); !v.end(); ++v){
-  //   Point p=v->point();
-  //   vtx_coords.push_back(p.x());
-  //   vtx_coords.push_back(p.y());
-  //   vtx_coords.push_back(p.z());
-  // }
-
   std::string filename_data(HDF5Filename());
 
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
-  // only save grid on first timestep (?)
+  // Presently, only save mesh on first timestep.
+  // This is a practical consideration to rein in the size
+  // of the file. Ideally, the mesh could have a UID or counter
+  // which indicates when the mesh has changed.
+  // Failing that, there could be a switch to choose between the 
+  // two behaviours (save mesh once, or save mesh every timestep)
   if(counter==0){
     h5file.create();
     h5file << mesh;
   }
 
+  // Vertex values are saved in the hdf5 'folder' /VertexVector
+  // as distinct from /Vector which is used for raw vectors.
+  // For simple Lagrange elements, they are identical.
   std::stringstream s("");
   s << "/VertexVector/" << counter;
   h5file.write(vtx_values[0],vertex_range,s.str().c_str(),vsize); //values
@@ -186,7 +176,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
 
-      //     /Xdmf/Domain/Grid
+      //     /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
 
       xdmf_timegrid = xdmf_domn.append_child("Grid");
       xdmf_timegrid.append_attribute("Name")="TimeSeries";
@@ -202,6 +192,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_timedata.append_child(pugi::node_pcdata);
 
     } else {
+      // Read in existing XDMF file
       pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
       if (!result)
 	{
@@ -215,11 +206,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     
     }
 
+    // Add an extra timestep to the TimeSeries List
     s.str("");
     s << xdmf_timedata.first_child().value() << " " << time_step;
     xdmf_timedata.first_child().set_value(s.str().c_str());
 
-    //    /Xdmf/Domain/Grid/Grid
+    //    /Xdmf/Domain/Grid/Grid - the actual data for this timestep
     pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
     s.str("");
     s << u.name() << "_" << counter; 
@@ -263,12 +255,9 @@ std::string XDMFFile::HDF5Filename(){
 };
 
 
-
-// mostly this is a copy of operator<<Function.
-// the two should be combined.
-
 void XDMFFile::operator<<(const Mesh& mesh)
 {
+  // Mesh for visualisation, with e.g. paraview
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
   const uint cell_dim = mesh.topology().dim();
@@ -277,35 +266,16 @@ void XDMFFile::operator<<(const Mesh& mesh)
   const uint num_total_vertices = MPI::sum(num_local_vertices);
   const uint num_total_cells = MPI::sum(num_local_cells);
 
-  // get offset and size of local cell topology usage in global terms
-  uint off=MPI::global_offset(num_local_cells,true);
-  std::pair<uint,uint>topo_range(off,off+num_local_cells);
-
-  // get offset and size of local vertex usage in global terms
-  off=MPI::global_offset(num_local_vertices,true);
-  std::pair<uint,uint>vertex_range(off,off+num_local_vertices);
-
-  std::vector<uint> topo_data;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-      for (VertexIterator v(*cell); !v.end(); ++v)
-	topo_data.push_back(v->index()+vertex_range.first);
-
-  std::vector<double>vtx_coords;
-  for (VertexIterator v(mesh); !v.end(); ++v){
-    Point p=v->point();
-    vtx_coords.push_back(p.x());
-    vtx_coords.push_back(p.y());
-    vtx_coords.push_back(p.z());
-  }
-
   std::string filename_data(HDF5Filename());
-  // Create HDF5 file and save data and coords
-  HDF5File h5file(filename_data);
-  h5file.create();
-  h5file.write(vtx_coords[0],vertex_range,"/Mesh/Coordinates",3); //xyz coords
-  h5file.write(topo_data[0],topo_range,"/Mesh/Topology",cell_dim+1); //connectivity
 
-  //Now go ahead and write the XML meta description
+  HDF5File h5file(filename_data);
+  // Truncate existing file. Could check, and add to it instead.
+  // However, that is probably more suitable behaviour for 
+  // HDF5File::operator<<(const Mesh& mesh)
+  h5file.create();
+  h5file << mesh;
+
+  //Go ahead and write the XML meta description
   if(MPI::process_number()==0){
 
     pugi::xml_document xml_doc;

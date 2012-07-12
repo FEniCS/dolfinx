@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2012-06-29
+// Last changed: 2012-07-08
 //
 // This demo program solves Poisson's equation
 //
@@ -68,30 +68,27 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
-  Poisson::FunctionSpace V(mesh);
 
-  // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
-  DirichletBC bc(V, u0, boundary);
+  for(uint i=10;i<22;i++){
 
-  // Define variational forms
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
-  Source f;
-  dUdN g;
-  L.f = f;
-  L.g = g;
+    uint j=(uint)pow(10,(double)i/5.0);
+    printf("%d\n", j);
 
-  // Compute solution
-  Function u(V);
-  solve(a == L, u, bc);
+    UnitSquare mesh(j,j);
+    Poisson::FunctionSpace V(mesh);
 
-  // Save solution in VTK format
-   u.rename("phi","field");
-  File file("poisson.xdmf");
-  file << u;
+    std::stringstream s;
+    s << "poisson" << std::setfill('0') << std::setw(2) << i << ".xdmf";
+    File file(s.str());
+    Function u(V);
+
+    Timer T(s.str());
+    file << u;
+    T.stop();
+
+  }
+
+  list_timings();
 
   // Plot solution
 
