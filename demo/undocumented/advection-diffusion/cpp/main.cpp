@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   double t = k;
 
   // Output file
-  File file("temperature.xdmf");
+  File file("results/temperature.pvd");
 
   // Time-stepping
   Progress p("Time-stepping");
@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
 
     // Save solution in VTK format
     file << std::make_pair(&u, t);
-   // file << u;
 
     // Move to next interval
     p = t / T;
@@ -108,5 +107,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
- // plot(u);
+  plot(u);
 }

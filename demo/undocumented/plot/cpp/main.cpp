@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-29
-// Last changed: 2012-06-25
+// Last changed: 2012-07-05
 //
 // This demo illustrates basic plotting.
 
@@ -121,6 +121,7 @@ int main()
     plot(f_vector, unit_square, "Plotting vector function");
   }
 
+  // Make plot windows interactive
   interactive();
 
   return 0;

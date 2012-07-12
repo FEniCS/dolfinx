@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-02
-// Last changed: 2009-01-12
+// Last changed: 2012-07-05
 //
 // This demo demonstrates how to move the vertex coordinates
 // of a boundary mesh and then updating the interior vertex
@@ -50,6 +50,7 @@ int main()
 
   // Plot mesh
   plot(mesh);
+  interactive();
 
   return 0;
 }

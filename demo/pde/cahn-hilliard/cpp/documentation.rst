@@ -381,6 +381,7 @@ The final result is plotted to the screen and the program is finished.
 
     // Plot solution
     plot(u[0]);
+    interactive();
 
     return 0;
   }

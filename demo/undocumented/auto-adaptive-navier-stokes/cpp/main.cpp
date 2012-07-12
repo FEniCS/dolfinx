@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-10-04
+// Last changed: 2012-07-05
 
 #include <dolfin.h>
 #include "AdaptiveNavierStokes.h"
@@ -114,13 +114,14 @@ int main() {
   // Solve problem with goal-oriented error control to given tolerance
   solver.solve(tol, M);
 
+  // Show timings
+  list_timings();
+
   // Plot solutions
   Function solution = w.leaf_node();
   plot(solution[0], "Velocity on finest mesh");
   plot(solution[1], "Pressure on finest mesh");
-
-  // Show timings
-  list_timings();
+  interactive();
 
   return 0;
 }

@@ -29,37 +29,37 @@
 #include "dolfin/common/MPI.h"
 #include "dolfin/la/GenericSparsityPattern.h"
 #include "dolfin/la/TensorLayout.h"
-#include "MatrixRenumbering.h"
+#include "GraphRenumbering.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MatrixRenumbering::MatrixRenumbering(const TensorLayout& tensor_layout)
+GraphRenumbering::GraphRenumbering(const TensorLayout& tensor_layout)
       : tensor_layout(tensor_layout)
 {
   if (tensor_layout.rank() != 2)
   {
-    dolfin_error("MatrixRenumbering.cpp",
+    dolfin_error("GraphRenumbering.cpp",
                  "create matrix renumbering",
                  "Zoltan object for sparsity pattern renumbering can only be used for rank 2 tensors");
   }
 
   if (!tensor_layout.sparsity_pattern())
   {
-    dolfin_error("MatrixRenumbering.cpp",
+    dolfin_error("GraphRenumbering.cpp",
                  "create matrix renumbering",
                  "TensorLayout object must a have sparsity pattern");
   }
 
   if (tensor_layout.size(0) != tensor_layout.size(1))
   {
-    dolfin_error("MatrixRenumbering.cpp",
+    dolfin_error("GraphRenumbering.cpp",
                  "create matrix renumbering",
                  "Zoltan object for sparsity pattern renumbering can only be used for square matrices");
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
+std::vector<dolfin::uint> GraphRenumbering::compute_local_renumbering_map()
 {
   // Initialise Zoltan
   float version;
@@ -79,10 +79,10 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
   zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   // omit object weights
 
   // Set call-back functions
-  zoltan.Set_Num_Obj_Fn(MatrixRenumbering::get_number_of_objects, this);
-  zoltan.Set_Obj_List_Fn(MatrixRenumbering::get_object_list, this);
-  zoltan.Set_Num_Edges_Multi_Fn(MatrixRenumbering::get_number_edges, this);
-  zoltan.Set_Edge_List_Multi_Fn(MatrixRenumbering::get_all_edges, this);
+  zoltan.Set_Num_Obj_Fn(GraphRenumbering::get_number_of_objects, this);
+  zoltan.Set_Obj_List_Fn(GraphRenumbering::get_object_list, this);
+  zoltan.Set_Num_Edges_Multi_Fn(GraphRenumbering::get_number_edges, this);
+  zoltan.Set_Edge_List_Multi_Fn(GraphRenumbering::get_all_edges, this);
 
   // Create array for global ids that should be renumbered
   std::vector<ZOLTAN_ID_TYPE> global_ids(num_global_objects());
@@ -98,7 +98,7 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
   // Check for errors
   if (rc != ZOLTAN_OK)
   {
-    dolfin_error("MatrixRenumbering.cpp",
+    dolfin_error("GraphRenumbering.cpp",
                  "compute matrix renumbering",
                  "Zoltan partitioning failed");
   }
@@ -109,41 +109,41 @@ std::vector<dolfin::uint> MatrixRenumbering::compute_local_renumbering_map()
   return map;
 }
 //-----------------------------------------------------------------------------
-int MatrixRenumbering::num_global_objects() const
+int GraphRenumbering::num_global_objects() const
 {
   return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
-int MatrixRenumbering::num_local_objects() const
+int GraphRenumbering::num_local_objects() const
 {
   return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
-void MatrixRenumbering::num_edges_per_vertex(std::vector<uint>& num_edges) const
+void GraphRenumbering::num_edges_per_vertex(std::vector<uint>& num_edges) const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<dolfin::uint> > MatrixRenumbering::edges() const
+const std::vector<std::vector<dolfin::uint> > GraphRenumbering::edges() const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   return tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int MatrixRenumbering::get_number_of_objects(void *data, int *ierr)
+int GraphRenumbering::get_number_of_objects(void *data, int *ierr)
 {
-  MatrixRenumbering *objs = (MatrixRenumbering *)data;
+  GraphRenumbering *objs = (GraphRenumbering *)data;
   *ierr = ZOLTAN_OK;
   return objs->num_local_objects();
 }
 //-----------------------------------------------------------------------------
-void MatrixRenumbering::get_object_list(void *data, int sizeGID, int sizeLID,
+void GraphRenumbering::get_object_list(void *data, int sizeGID, int sizeLID,
           ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
           int wgt_dim, float *obj_wgts, int *ierr)
 {
-  MatrixRenumbering *objs = (MatrixRenumbering *)data;
+  GraphRenumbering *objs = (GraphRenumbering *)data;
   *ierr = ZOLTAN_OK;
   for (int i = 0; i< objs->num_local_objects(); i++)
   {
@@ -152,13 +152,13 @@ void MatrixRenumbering::get_object_list(void *data, int sizeGID, int sizeLID,
   }
 }
 //-----------------------------------------------------------------------------
-void MatrixRenumbering::get_number_edges(void *data, int num_gid_entries,
+void GraphRenumbering::get_number_edges(void *data, int num_gid_entries,
                                        int num_lid_entries,
                                        int num_obj, ZOLTAN_ID_PTR global_ids,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  MatrixRenumbering *objs = (MatrixRenumbering *)data;
+  GraphRenumbering *objs = (GraphRenumbering *)data;
 
   //std::cout << "Testing global id entires: " << num_gid_entries << "  " << objs->num_global_objects() << std::endl;
   //std::cout << "Testing local id entires: "  << num_lid_entries << "  " << objs->num_local_objects() << std::endl;
@@ -174,7 +174,7 @@ void MatrixRenumbering::get_number_edges(void *data, int num_gid_entries,
     num_edges[i] = number_edges[i];
 }
 //-----------------------------------------------------------------------------
-void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,
+void GraphRenumbering::get_all_edges(void *data, int num_gid_entries,
                               int num_lid_entries, int num_obj,
                               ZOLTAN_ID_PTR global_ids,
                               ZOLTAN_ID_PTR local_ids,
@@ -183,9 +183,7 @@ void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,
                               int *nbor_procs, int wgt_dim,
                               float *ewgts, int *ierr)
 {
-  std::cout << "Testing:" << num_gid_entries << "  " << num_lid_entries << std::endl;
-
-  MatrixRenumbering *objs = (MatrixRenumbering *)data;
+  GraphRenumbering *objs = (GraphRenumbering *)data;
   const std::vector<std::vector<uint> > edges = objs->edges();
 
   uint sum = 0;

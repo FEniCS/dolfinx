@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-05
-// Last changed:
+// Last changed: 2012-07-05
 //
 // This demo solves the Stokes equations using an iterative linear solver.
 // Its also demonstrates how to use a precontioner matrix that is different
@@ -148,15 +148,16 @@ int main()
   Function u = w[0];
   Function p = w[1];
 
-  // Plot solution
-  plot(u);
-  plot(p);
-
   // Save solution in VTK format
   File ufile_pvd("velocity.xdmf");
   ufile_pvd << u;
   File pfile_pvd("pressure.xdmf");
   pfile_pvd << p;
+
+  // Plot solution
+  plot(u);
+  plot(p);
+  interactive();
 }
 
 #else

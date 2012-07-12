@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2006-03-02
-// Last changed: 2011-06-30
+// Last changed: 2012-07-05
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -181,6 +181,7 @@ int main(int argc, char* argv[])
 
   // Plot solution
   plot(u[0]);
+  interactive();
 
   return 0;
 }
