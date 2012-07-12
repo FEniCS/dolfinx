@@ -47,7 +47,7 @@ find_package(CGAL
   HINTS
   ${CGAL_DIR}
   $ENV{CGAL_DIR}
-  PATH_SUFFIXES lib cmake/modules lib/cmake)
+  PATH_SUFFIXES lib cmake/modules lib/cmake lib/CGAL)
 
 # Restore CGAL_FIND_VERSION
 set(CGAL_FIND_VERSION ${CGAL_FIND_VERSION_TMP})
@@ -72,7 +72,11 @@ if (CGAL_INCLUDE_DIRS AND CGAL_LIBRARIES)
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${CGAL_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CGAL_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS "-frounding-math")
+  set(CMAKE_REQUIRED_FLAGS ${CGAL_CXX_FLAGS_INIT})
+
+  # Add all previusly found Boost libraries - CGAL doesn't appear to supply
+  # all necessary Boost libs (test with Boost 1.50 + CGAL 4.0.2)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES})
 
   # Build and run test program
   include(CheckCXXSourceRuns)
