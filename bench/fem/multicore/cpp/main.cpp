@@ -26,7 +26,6 @@
 
 #include <dolfin.h>
 #include <dolfin/fem/AssemblerTools.h>
-#include <dolfin/graph/MatrixRenumbering.h>
 #include "Poisson.h"
 #include "NavierStokes.h"
 
@@ -44,44 +43,7 @@ class PoissonFactory
   {
     // Create function space
     boost::shared_ptr<FunctionSpace> _V(new Poisson::FunctionSpace(mesh));
-
-    boost::shared_ptr<Form> _a;
-
-    if (renumber)
-    {
-      // Access dofmap
-      boost::shared_ptr<const GenericDofMap> dofmap = _V->dofmap();
-
-      // Reorder dofs
-      std::vector<const GenericDofMap*> dofmaps(2);
-      dofmaps[0] = dofmap.get();
-      dofmaps[1] = dofmap.get();
-
-      TensorLayout tensor_layout(0, true);
-      std::vector<dolfin::uint> global_dimensions(2);
-      std::vector<std::pair<dolfin::uint, dolfin::uint> > local_range(2);
-      for (dolfin::uint i = 0; i < 2; i++)
-        {
-          global_dimensions[i] = dofmap->global_dimension();
-          local_range[i]       = dofmap->ownership_range();
-        }
-      tensor_layout.init(global_dimensions, local_range);
-      SparsityPatternBuilder::build(*tensor_layout.sparsity_pattern(),
-                                    mesh, dofmaps,
-                                    true, false, false);
-
-      MatrixRenumbering matrix_renumbering(tensor_layout);
-      std::vector<dolfin::uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
-
-      // Renumber dofs
-      const_cast<GenericDofMap*>(dofmap.get())->renumber(dof_remap);
-
-      boost::shared_ptr<FunctionSpace> V(new FunctionSpace(_V->mesh(), _V->element(), dofmap));
-      _a.reset(new Poisson::BilinearForm(V, V));
-    }
-    else
-      _a.reset(new Poisson::BilinearForm(_V, _V));
-
+    boost::shared_ptr<Form> _a(new Poisson::BilinearForm(_V, _V));;
     return _a;
   }
 
@@ -107,41 +69,7 @@ class NavierStokesFactory
     boost::shared_ptr<Function> w3(new Function(W3));
     boost::shared_ptr<Function> w4(new Function(W4));
 
-    boost::shared_ptr<Form> a;
-    if (renumber)
-    {
-      // Access dofmap
-      boost::shared_ptr<const GenericDofMap> dofmap = _V->dofmap();
-
-      // Reorder dofs
-      std::vector<const GenericDofMap*> dofmaps(2);
-      dofmaps[0] = dofmap.get();
-      dofmaps[1] = dofmap.get();
-
-      TensorLayout tensor_layout(0, true);
-      std::vector<dolfin::uint> global_dimensions(2);
-      std::vector<std::pair<dolfin::uint, dolfin::uint> > local_range(2);
-      for (dolfin::uint i = 0; i < 2; i++)
-        {
-          global_dimensions[i] = dofmap->global_dimension();
-          local_range[i]       = dofmap->ownership_range();
-        }
-      tensor_layout.init(global_dimensions, local_range);
-      SparsityPatternBuilder::build(*tensor_layout.sparsity_pattern(),
-                                    mesh, dofmaps,
-                                    true, false, false);
-
-      MatrixRenumbering matrix_renumbering(tensor_layout);
-      std::vector<dolfin::uint> dof_remap = matrix_renumbering.compute_local_renumbering_map();
-
-      // Renumber dofs
-      const_cast<GenericDofMap*>(dofmap.get())->renumber(dof_remap);
-
-      boost::shared_ptr<FunctionSpace> V(new FunctionSpace(_V->mesh(), _V->element(), dofmap));
-      a.reset(new NavierStokes::BilinearForm(V, V));
-    }
-    else
-      a.reset(new NavierStokes::BilinearForm(_V, _V));
+    boost::shared_ptr<Form> a(new NavierStokes::BilinearForm(_V, _V));
 
     a->set_coefficient(0, w0);
     a->set_coefficient(1, w1);
