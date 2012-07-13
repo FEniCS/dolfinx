@@ -29,7 +29,7 @@ background mesh.
 # Last changed: 2011-02-14
 
 from dolfin import *
-from numpy import max
+from numpy import max, array
 
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
@@ -56,8 +56,21 @@ dtheta = 0.05*DOLFIN_PI
 intersection = MeshFunction("uint", omega0, omega0.topology().dim())
 _first = True
 
-while theta < 2*DOLFIN_PI + dtheta:
+p = VTKPlotter(intersection)
+p.parameters["rescale"] = True
+p.parameters["wireframe"] = False
+#p.parameters["axes"] = True
+p.parameters["scalarbar"] = False
+p.parameters["helptext"] = False
 
+
+p.add_polygon(array([0.0, 0.0,
+                     1.0, 0.0,
+                     1.0, 1.0,
+                     0.0, 1.0,
+                     0.0, 0.0]))
+
+while theta < 2*DOLFIN_PI + dtheta:
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
     cells = omega0.intersected_cells(boundary)
@@ -66,27 +79,7 @@ while theta < 2*DOLFIN_PI + dtheta:
     intersection.array()[:] = 0
     intersection.array()[cells] = 1
 
-    # Plot intersection
-    if _first:
-        p = plot(intersection, rescale=False)
-#        p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
-
-        # FIXME: This needs to be updated to work with the new plotting functionality
-        # p.add_polygon([[0, 0, -0.01],
-        #                [1, 0, -0.01],
-        #                [1, 1, -0.01],
-        #                [0, 1, -0.01],
-        #                [0, 0, -0.01]])
-        # p.ren.ResetCamera()
-        # p.update(intersection)
-        _first = False
-        interactive()
-    else:
-        plot(intersection)
-
-    # p.update(intersection)
-    # if create_movies:
-    #   p.write_png()
+    p.plot()
 
     # Rotate circle around (0.5, 0.5)
     xr = x[:, 0].copy() - 0.5
@@ -96,13 +89,6 @@ while theta < 2*DOLFIN_PI + dtheta:
     omega0.intersection_operator().clear()
 
     theta += dtheta
-
-# FIXME: This needs to be updated to the new plotting functionality
-# if create_movies:
-#   p.movie("circle_square_intersection.avi", cleanup=True)
-
-# Hold plot
-interactive()
 
 # Repeat the same with the rotator in the cavity example.
 background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30)
@@ -126,20 +112,7 @@ while theta < 2*DOLFIN_PI + dtheta:
   intersection.array()[:] = 0
   intersection.array()[cells] = 1
 
-  if _first :
-    q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)
-    q = plot(intersection, rescale=False, wireframe=True)
-    # FIXME: This needs to be updated to the new plotting functionality
-    # q.ren.ResetCamera()
-    _first = False
-
-  else :
-    plot(intersection)
-
-  # FIXME: This needs to be updated to the new plotting functionality
-  # q.update(intersection)
-  # if create_movies:
-  #   q.write_png()
+  plot(intersection, rescale=True, wireframe=True)
 
   # Rotate rotator
   xr = x[:, 0].copy()
@@ -149,9 +122,6 @@ while theta < 2*DOLFIN_PI + dtheta:
   x[:,1] = (sin(dtheta)*xr + cos(dtheta)*yr)
 
   theta += dtheta
-
-# if create_movies:
-#   q.movie("rotator_cavity_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()

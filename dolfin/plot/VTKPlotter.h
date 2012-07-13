@@ -229,6 +229,8 @@ namespace dolfin
     // Set the range of the color table
     void set_min_max(double min, double max);
 
+    void add_polygon(const Array<double>& points);
+
 
     // The cache of plotter objects
     static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;

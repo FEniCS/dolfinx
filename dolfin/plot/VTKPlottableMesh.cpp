@@ -120,11 +120,20 @@ void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
       // Should never be reached
       break;
   }
+  
+  // Is this needed?
+  // _grid->Modified();
+  // _geometryFilter->Modified();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::update_range(double range[2])
 {
   _grid->GetScalarRange(range);
+}
+//----------------------------------------------------------------------------
+dolfin::uint VTKPlottableMesh::dim()
+{
+  return _mesh->topology().dim();
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const

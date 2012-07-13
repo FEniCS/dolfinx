@@ -53,6 +53,9 @@ namespace dolfin
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
 
+    /// Return geometric dimension
+    virtual uint dim();
+
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 

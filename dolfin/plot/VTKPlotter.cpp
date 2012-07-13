@@ -53,6 +53,9 @@
 #include <vtkCommand.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
+#include <vtkPoints.h>
+#include <vtkPolyLine.h>
+#include <vtkCylinderSource.h>
 
 #include <boost/filesystem.hpp>
 
@@ -74,6 +77,9 @@ namespace dolfin
     // The main actor
     vtkSmartPointer<vtkActor> _actor;
 
+    // The actor for polygons
+    vtkSmartPointer<vtkActor> polygon_actor;
+
     // The renderer
     vtkSmartPointer<vtkRenderer> _renderer;
 
@@ -86,7 +92,6 @@ namespace dolfin
     // The scalar bar that gives the viewer the mapping from color to
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
-
 
     // Note: VTK (current 5.6.1) seems to very picky about the order
     // of destruction. It seg faults if the objects are destroyed
@@ -103,22 +108,22 @@ namespace dolfin
       _lut = vtkSmartPointer<vtkLookupTable>::New();
       _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
       _actor = vtkSmartPointer<vtkActor>::New();
+      polygon_actor = vtkSmartPointer<vtkActor>::New();
       helptextActor = vtkSmartPointer<vtkTextActor>::New();
       balloonRep = vtkSmartPointer<vtkBalloonRepresentation>::New();
       balloonwidget = vtkSmartPointer<vtkBalloonWidget>::New();
 
-
-
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 
-      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-      
+      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();      
+
       // Connect the parts
       _mapper->SetLookupTable(_lut);
       _scalarBar->SetLookupTable(_lut);
       _actor->SetMapper(_mapper);
       _renderer->AddActor(_actor);
+      _renderer->AddActor(polygon_actor);
       _renderWindow->AddRenderer(_renderer);
       
       // Set up interactorstyle and connect interactor
@@ -526,6 +531,57 @@ void VTKPlotter::set_min_max(double min, double max)
   parameters["autorange"] = false;
   parameters["range_min"] = min;
   parameters["range_max"] = max;
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::add_polygon(const Array<double>& points)
+{
+  const dolfin::uint dim = _plottable->dim();
+
+  if (points.size() % dim != 0)
+    warning("VTKPlotter::add_polygon() : Size of array is not a multiple of %d", dim);
+
+  const dolfin::uint numpoints = points.size() / dim;
+
+  vtkSmartPointer<vtkPoints> vtk_points = vtkSmartPointer<vtkPoints>::New();
+  vtk_points->SetNumberOfPoints(numpoints);
+
+  double point[3];
+  point[2] = 0.0;
+
+  for (dolfin::uint i = 0; i < numpoints; i++)
+  {
+    for (dolfin::uint j = 0; j < dim; j++)
+      point[j] = points[i*dim + j];
+
+    vtk_points->InsertPoint(i, point);
+  }
+
+  vtkSmartPointer<vtkPolyLine> line = vtkSmartPointer<vtkPolyLine>::New();
+  line->GetPointIds()->SetNumberOfIds(numpoints);
+
+  for (dolfin::uint i=0; i < numpoints; i++)
+  {
+    line->GetPointIds()->SetId(i, i);
+  }
+
+  vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+  grid->Allocate(1, 1);
+  
+  grid->InsertNextCell(line->GetCellType(), line->GetPointIds());
+  grid->SetPoints(vtk_points);
+    
+  vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
+  extract->SetInput(grid);
+
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(extract->GetOutputPort());
+
+  vtk_pipeline->polygon_actor->SetMapper(mapper);
+      
+  mapper->SetInputConnection(extract->GetOutputPort());
+
+  vtk_pipeline->polygon_actor->GetProperty()->SetColor(0,0,1);
+  vtk_pipeline->polygon_actor->GetProperty()->SetLineWidth(1);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::update()
