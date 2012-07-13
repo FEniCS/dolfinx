@@ -19,13 +19,11 @@
 // First added:  2012-05-22
 // Last changed: 2012-07-03
 
-#ifndef __XDMFFILE_H
-#define __XDMFFILE_H
+#ifndef __DOLFIN_XDMFFILE_H
+#define __DOLFIN_XDMFFILE_H
 
-#include <map>
-#include <ostream>
 #include <string>
-#include <vector>
+#include <utility>
 #include <boost/shared_ptr.hpp>
 #include "GenericFile.h"
 
@@ -37,14 +35,12 @@ namespace pugi
 namespace dolfin
 {
 
+  // Forward declarations
   class Function;
   class GenericVector;
   class LocalMeshData;
   class Mesh;
   class Parameters;
-  template<typename T> class Array;
-  template<typename T> class MeshFunction;
-  template<typename T> class MeshValueCollection;
 
   class XDMFFile: public GenericFile
   {
@@ -53,16 +49,21 @@ namespace dolfin
     /// Constructor
     XDMFFile(const std::string filename);
 
+    /// Destructor
     ~XDMFFile();
 
-    // Save Mesh
+    /// Save Mesh to file
     void operator<<(const Mesh& mesh);
+
+    /// Save Function to file
     void operator<<(const Function& u);
+
+    /// Save Function + time stamp to file
     void operator<<(const std::pair<const Function*, double> u);
 
   private:
 
-    std::string HDF5Filename();
+    std::string HDF5Filename() const;
 
   };
 
