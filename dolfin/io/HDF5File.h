@@ -15,18 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-07-05
+// Last changed: 2012-07-13
 
-#ifndef __HDF5FILE_H
-#define __HDF5FILE_H
+#ifndef __DOLFIN_HDF5FILE_H
+#define __DOLFIN_HDF5FILE_H
 
-#include <map>
-#include <ostream>
 #include <string>
-#include <vector>
-#include <boost/shared_ptr.hpp>
+#include <utility>
+#include "dolfin/common/types.h"
 #include "GenericFile.h"
 
 #define HDF5_FAIL -1
@@ -36,12 +35,7 @@ namespace dolfin
 
   class Function;
   class GenericVector;
-  class LocalMeshData;
   class Mesh;
-  class Parameters;
-  template<typename T> class Array;
-  template<typename T> class MeshFunction;
-  template<typename T> class MeshValueCollection;
 
   class HDF5File: public GenericFile
   {
@@ -50,42 +44,41 @@ namespace dolfin
     /// Constructor
     HDF5File(const std::string filename);
 
+    /// Destructor
     ~HDF5File();
 
-    // Vector
+    /// Write vector to file
     void operator<< (const GenericVector& output);
+
+    /// Read vector from file
     void operator>> (GenericVector& input);
 
-    // Function
-    //    void operator<< (const Function& u);
-
-    // Mesh
+    /// Write Mesh to file
     void operator<< (const Mesh& mesh);
-
-    //write functions for int,double, etc. used by XDMFFile
-    void write(const double& data,
-	       const std::pair<uint,uint>& range,
-	       const std::string& dataset_name,
-	       const uint width);
-
-    void write(const uint& data,
-	       const std::pair<uint,uint>& range,
-	       const std::string& dataset_name,
-	       const uint width);
-
-    //create an empty file (truncate existing)
-    void create();
-
 
   private:
 
-    template <typename T>
-    void write(T& data, 
-	       const std::pair<uint,uint>& range,
-	       const std::string& dataset_name,
-	       const int h5type,
-	       const uint width);
+    // Write functions for int, double, etc. Used by XDMFFile
+    void write(const double& data,
+               const std::pair<uint, uint>& range,
+               const std::string& dataset_name,
+               const uint width);
 
+    void write(const uint& data,
+               const std::pair<uint, uint>& range,
+               const std::string& dataset_name,
+               const uint width);
+
+    // Create an empty file (truncate existing)
+    void create();
+
+    template <typename T>
+    void write(T& data, const std::pair<uint,uint>& range,
+               const std::string& dataset_name, const int h5type,
+               const uint width) const;
+
+    // Friend
+    friend class XDMFFile;
   };
 
 }

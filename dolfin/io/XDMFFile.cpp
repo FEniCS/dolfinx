@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-12
+// Last changed: 2012-07-13
 
 #include <ostream>
 #include <sstream>
@@ -25,15 +26,12 @@
 
 #include "pugixml.hpp"
 
-#include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
 
@@ -56,7 +54,7 @@ XDMFFile::~XDMFFile()
 void XDMFFile::operator<<(const Function& u)
 {
   std::pair<const Function*, double> ut(&u, (double)counter);
-  operator<<(ut);
+  operator << (ut);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
@@ -68,7 +66,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Save Function to XDMF/HDF file for visualisation
   // Can be read by paraview
 
-  Timer hdf5timer("HDF5+XDMF Output (mesh+data)");
+  Timer hdf5timer("HDF5 + XDMF Output (mesh + data)");
 
   u.update();
   dolfin_assert(u.function_space()->mesh());
@@ -77,13 +75,18 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const uint vsize = u.value_size();
 
   // Tensors of rank > 1 not yet supported
-  dolfin_assert(vrank < 2);
+  if (vrank > 1)
+  {
+    dolfin_error("XDMFFile.cpp",
+                "write data to XDMF file",
+                "Outout of tensors with rank > 1 not yet supported");
+  }
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-  const uint num_total_vertices = MPI::sum(num_local_vertices);
-  const uint num_total_cells = MPI::sum(num_local_cells);
+  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_global_cells = MPI::sum(num_local_cells);
 
   // Compute vertex values
   std::vector<double> vtx_values;
@@ -152,12 +155,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       else if(cell_dim==3)
         xdmf_topo.append_attribute("TopologyType") = "Tetrahedron";
 
-      xdmf_topo.append_attribute("NumberOfElements") = num_total_cells;
+      xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
       pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
 
       xdmf_topo_data.append_attribute("Format") = "HDF";
       std::stringstream s;
-      s << num_total_cells << " " << (cell_dim + 1);
+      s << num_global_cells << " " << (cell_dim + 1);
       xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
 
       s.str("");
@@ -172,7 +175,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
       xdmf_geom_data.append_attribute("Format")="HDF";
       s.str("");
-      s << num_total_vertices << " 3";
+      s << num_global_vertices << " 3";
       xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
 
       s.str("");
@@ -203,8 +206,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       if (!result)
       {
         dolfin_error("XDMFFile.cpp",
-               "write data to XDMF file",
-               "XML parsing error when reading from existing file");
+                     "write data to XDMF file",
+                     "XML parsing error when reading from existing file");
       }
 
       xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
@@ -237,7 +240,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_total_vertices << " " << vsize;
+    s << num_global_vertices << " " << vsize;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
     s<< filename_data << ":/VertexVector/" << counter;
@@ -251,14 +254,14 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const Mesh& mesh)
 {
-  // Mesh for visualisation, with e.g. paraview
+  // Mesh for visualisation, with e.g. ParaView
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-  const uint num_total_vertices = MPI::sum(num_local_vertices);
-  const uint num_total_cells = MPI::sum(num_local_cells);
+  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_global_cells = MPI::sum(num_local_cells);
 
   std::string filename_data(HDF5Filename());
 
@@ -269,7 +272,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
   h5file.create();
   h5file << mesh;
 
-  //Go ahead and write the XML meta description
+  // Go ahead and write the XML meta description
   if(MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
@@ -290,12 +293,12 @@ void XDMFFile::operator<<(const Mesh& mesh)
     else if(cell_dim==3)
       xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
 
-    xdmf_topo.append_attribute("NumberOfElements") = num_total_cells;
+    xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
 
     xdmf_topo_data.append_attribute("Format")="HDF";
     std::stringstream s;
-    s << num_total_cells << " " << (cell_dim + 1);
+    s << num_global_cells << " " << (cell_dim + 1);
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
@@ -308,7 +311,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
     xdmf_geom_data.append_attribute("Format") = "HDF";
     s.str("");
-    s << num_total_vertices << " 3";
+    s << num_global_vertices << " 3";
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
