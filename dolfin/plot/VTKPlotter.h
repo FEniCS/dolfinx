@@ -237,9 +237,9 @@ namespace dolfin
 
   private:
 
-    // Setup all pipeline objects and connect them. Called from all
-    // constructors
-    void init_pipeline();
+    // Initialization common to all constructors.
+    // Setup all pipeline objects and connect them. 
+    void init();
 
     // Set the title parameter from the name and label of the Variable to plot
     void set_title(const std::string& name, const std::string& label);

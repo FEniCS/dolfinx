@@ -161,7 +161,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 
   parameters = default_mesh_parameters();
   set_title(mesh->name(), mesh->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
@@ -174,7 +174,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 {
   parameters = default_parameters();
   set_title(function->name(), function->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
@@ -188,7 +188,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
   parameters = default_parameters();
   set_title(expression->expression()->name(),
             expression->expression()->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
@@ -202,7 +202,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 {
   parameters = default_parameters();
   set_title(expression->name(), expression->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
@@ -224,7 +224,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 
   parameters = default_parameters();
   set_title(bc->name(), bc->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
@@ -238,7 +238,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
   // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
@@ -251,7 +251,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
@@ -264,7 +264,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
@@ -277,7 +277,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 {
   parameters = default_parameters();
   set_title(mesh_function->name(), mesh_function->label());
-  init_pipeline();
+  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
@@ -358,7 +358,7 @@ void VTKPlotter::start_eventloop()
   vtk_pipeline->_interactor->Start();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::init_pipeline()
+void VTKPlotter::init()
 {
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
   {
