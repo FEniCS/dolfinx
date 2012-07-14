@@ -18,12 +18,13 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-07-13
+// Last changed: 2012-07-14
 
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 
+#define H5_USE_16_API 1
 #include <hdf5.h>
 
 #include <dolfin/common/types.h>
@@ -39,7 +40,6 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 
-#define H5_USE_16_API 1
 #include "HDF5File.h"
 
 using namespace dolfin;
