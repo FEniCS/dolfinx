@@ -61,7 +61,6 @@ p.parameters["rescale"] = True
 p.parameters["wireframe"] = False
 #p.parameters["axes"] = True
 p.parameters["scalarbar"] = False
-p.parameters["helptext"] = False
 
 
 p.add_polygon(array([0.0, 0.0,
