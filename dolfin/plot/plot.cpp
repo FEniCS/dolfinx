@@ -40,52 +40,35 @@
 using namespace dolfin;
 
 // Template function for getting already instantiated VTKPlotter for
-// the given object. If none is found, a new one is created and added
-// to the cache.
+// the given object. If none is found, a new one is created.
 template <typename T>
-boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
+VTKPlotter* get_plotter(boost::shared_ptr<const T> t)
 {
   log(TRACE, "Looking for cached VTKPlotter.");
 
-  for (dolfin::uint i = 0; i < VTKPlotter::plotter_cache.size(); i++)
+  for (std::vector<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
   {
-    dolfin_assert(VTKPlotter::plotter_cache[i]);
-    if (VTKPlotter::plotter_cache[i]->id() == t->id())
+    if ( (*it)->id() == t->id() )
     {
-      log(TRACE, "Found cached VTKPlotter with index %d.", i);
-      return VTKPlotter::plotter_cache[i];
+      log(TRACE, "Found cached VTKPlotter.");
+      return *it;
     }
   }
 
   // No previous plotter found, so we create a new one
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
-  boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
+  VTKPlotter* plotter = new VTKPlotter(t);
 
-  // Adjust window position to not completely overlap previous plots
-  dolfin::uint num_old_plots = VTKPlotter::plotter_cache.size();
-  int width, height;
-  plotter->get_window_size(width, height);
-
-  // FIXME: This approach might need some tweaking. It tiles the winows in a
-  // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
-  // windows
-  plotter->set_window_position((num_old_plots%2)*width,
-      (num_old_plots/2)*height);
-
-  // Add plotter to cache
-  VTKPlotter::plotter_cache.push_back(plotter);
-  log(TRACE, "Size of plotter cache is %d.", VTKPlotter::plotter_cache.size());
-
-  return VTKPlotter::plotter_cache.back();
+  return plotter;
 }
-
+//-----------------------------------------------------------------------------
 // Template function for plotting objects
 template <typename T>
-boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
+VTKPlotter* plot_object(boost::shared_ptr<const T> t,
     boost::shared_ptr<const Parameters> parameters)
 {
   // Get plotter from cache
-  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  VTKPlotter* plotter = get_plotter(t);
   dolfin_assert(plotter);
 
   // Set plotter parameters
@@ -96,16 +79,15 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
 
   return plotter;
 }
-
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Function& function,
+VTKPlotter* dolfin::plot(const Function& function,
 					   std::string title, 
 					   std::string mode)
 {
   return plot(reference_to_no_delete_pointer(function), title, mode);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Function> function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Function> function,
 					   std::string title, std::string mode)
 {
   Parameters parameters;
@@ -114,21 +96,21 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Function> fun
   return plot(function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Function& function, 
+VTKPlotter* dolfin::plot(const Function& function, 
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(function),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Function> function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Function> function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   dolfin_assert(function->function_space()->mesh());
   return plot_object(function, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
+VTKPlotter* dolfin::plot(const Expression& expression,
 					   const Mesh& mesh,
 					   std::string title, std::string mode)
 {
@@ -136,7 +118,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
 	      reference_to_no_delete_pointer(mesh), title, mode);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> expression,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Expression> expression,
 					   boost::shared_ptr<const Mesh> mesh,
 					   std::string title, std::string mode)
 {
@@ -146,7 +128,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
   return plot(expression, mesh, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression, const Mesh& mesh,
+VTKPlotter* dolfin::plot(const Expression& expression, const Mesh& mesh,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(expression),
@@ -154,7 +136,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression, const M
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> expression,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Expression> expression,
 					   boost::shared_ptr<const Mesh> mesh,
 					   boost::shared_ptr<const Parameters> parameters)
 {
@@ -163,13 +145,13 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
   return plot_object(e, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Mesh& mesh,
+VTKPlotter* dolfin::plot(const Mesh& mesh,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(mesh), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Mesh> mesh,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Mesh> mesh,
 					   std::string title)
 {
   Parameters parameters;
@@ -177,26 +159,26 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Mesh> mesh,
   return plot(mesh, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Mesh& mesh, 
+VTKPlotter* dolfin::plot(const Mesh& mesh, 
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Mesh> mesh,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const Mesh> mesh,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(mesh, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc,
+VTKPlotter* dolfin::plot(const DirichletBC& bc,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(bc), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
 					   std::string title)
 {
   Parameters parameters;
@@ -204,25 +186,25 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> 
   return plot(bc, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc, const Parameters& parameters)
+VTKPlotter* dolfin::plot(const DirichletBC& bc, const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(bc),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(bc, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<uint>& mesh_function,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(mesh_function), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
 					   std::string title)
 {
   Parameters parameters;
@@ -230,26 +212,26 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot(mesh_function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<uint>& mesh_function,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh_function),
        reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<int>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<int>& mesh_function,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(mesh_function), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
 					   std::string title)
 {
   Parameters parameters;
@@ -257,26 +239,26 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot(mesh_function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<int>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<int>& mesh_function,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh_function),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<double>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<double>& mesh_function,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(mesh_function), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
 					   std::string title)
 {
   Parameters parameters;
@@ -284,26 +266,26 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot(mesh_function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<double>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<double>& mesh_function,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh_function),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<bool>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<bool>& mesh_function,
 					   std::string title)
 {
   return plot(reference_to_no_delete_pointer(mesh_function), title);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 					   std::string title)
 {
   Parameters parameters;
@@ -311,14 +293,14 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot(mesh_function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<bool>& mesh_function,
+VTKPlotter* dolfin::plot(const MeshFunction<bool>& mesh_function,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh_function),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
+VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(mesh_function, parameters);
@@ -332,13 +314,13 @@ void dolfin::interactive()
   }
   else
   {
-    // Call interactive on every plotter
-    for (uint i = 0; i < VTKPlotter::plotter_cache.size(); ++i) 
+    // Prepare interactiveness on every plotter
+    for (std::vector<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
     {
-      VTKPlotter::plotter_cache[i]->interactive(false);
+      (*it)->interactive(false);
     }
 
-    VTKPlotter::plotter_cache[VTKPlotter::plotter_cache.size()-1]->start_eventloop();
+    (*VTKPlotter::plotter_cache.begin())->start_eventloop();
   }
 }
 //-----------------------------------------------------------------------------

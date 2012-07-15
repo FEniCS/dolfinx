@@ -233,7 +233,11 @@ namespace dolfin
 
 
     // The cache of plotter objects
-    static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
+    // FIXME: We need to handle the memory. 
+    // Caching smart pointers would be preferable, but we can't save
+    // smart pointers from the constructor...
+    // TODO: Use a std::map with the id as key
+    static std::vector<VTKPlotter*> plotter_cache;
 
   private:
 

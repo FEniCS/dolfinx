@@ -282,7 +282,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  // Do nothing
+  // FIXME: Delete entry in plotter_cache
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
@@ -360,12 +360,27 @@ void VTKPlotter::start_eventloop()
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
 {
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value
+  // Check if environment variable DOLFIN_NOPLOT is set to a nonzero value
   {
     char *noplot_env;
     noplot_env = getenv("DOLFIN_NOPLOT");
     no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
   }
+
+  // Adjust window position to not completely overlap previous plots
+  dolfin::uint num_old_plots = VTKPlotter::plotter_cache.size();
+  int width, height;
+  get_window_size(width, height);
+
+  // FIXME: This approach might need some tweaking. It tiles the winows in a
+  // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
+  // windows
+  set_window_position((num_old_plots%2)*width, (num_old_plots/2)*height);
+
+  // Add plotter to cache
+  plotter_cache.push_back(this);
+  log(TRACE, "Size of plotter cache is %d.", plotter_cache.size());
+
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -646,22 +661,22 @@ namespace dolfin { class PrivateVTKPipeline{}; }
 
 using namespace dolfin;
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { init_pipeline(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init_pipeline(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init_pipeline(); }
+		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::~VTKPlotter(){}
 
-// (Ab)use init_pipeline() to issue a warning. 
+// (Ab)use init() to issue a warning. 
 // We also need to initialize the parameter set to avoid tons of warning when running the tests without VTK.
 
-void VTKPlotter::init_pipeline()
+void VTKPlotter::init()
 {
   parameters = default_parameters();
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
@@ -694,6 +709,6 @@ void VTKPlotter::set_min_max        (double min, double max){}
 #endif
 
 // Define the static members
-std::vector<boost::shared_ptr<VTKPlotter> > VTKPlotter::plotter_cache;
+std::vector<VTKPlotter*> VTKPlotter::plotter_cache;
 int VTKPlotter::hardcopy_counter = 0;
 
