@@ -149,9 +149,9 @@ int main()
   Function p = w[1];
 
   // Save solution in VTK format
-  File ufile_pvd("velocity.xdmf");
+  File ufile_pvd("velocity.pvd");
   ufile_pvd << u;
-  File pfile_pvd("pressure.xdmf");
+  File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 
   // Plot solution

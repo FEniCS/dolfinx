@@ -105,7 +105,7 @@ solver.parameters["convergence_criterion"] = "incremental"
 solver.parameters["relative_tolerance"] = 1e-6
 
 # Output file
-file = File("output.xdmf")
+file = File("output.pvd", "compressed")
 
 # Step in time
 t = 0.0
@@ -114,7 +114,7 @@ while (t < T):
     t += dt
     u0.vector()[:] = u.vector()
     solver.solve(problem, u.vector())
-    file << u.split()[0]
+    file << (u.split()[0], t)
 
 plot(u.split()[0])
 interactive()

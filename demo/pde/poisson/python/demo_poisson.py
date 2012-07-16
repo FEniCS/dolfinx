@@ -36,7 +36,6 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 from dolfin import *
 
-
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
@@ -62,8 +61,8 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # Save solution in VTK format
-file = File("poisson.xdmf")
-file << u.vector()
+file = File("poisson.pvd")
+file << u
 
 # Plot solution
-# plot(u, interactive=True)
+plot(u, interactive=True)

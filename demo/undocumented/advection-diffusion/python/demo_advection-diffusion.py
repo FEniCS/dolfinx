@@ -20,7 +20,7 @@
 # Modified by Garth N. Wells, 2009
 #
 # First added:  2007-11-14
-# Last changed: 2012-07-05
+# Last changed: 2009-10-06
 #
 # This demo solves the time-dependent convection-diffusion equation by
 # a SUPG stabilized method. The velocity field used
@@ -95,8 +95,7 @@ solver = LUSolver(A)
 solver.parameters["reuse_factorization"] = True
 
 # Output file
-out_file = File("temperature.xdmf")
-x_file = File("test.h5")
+out_file = File("results/temperature.pvd")
 
 # Set intial condition
 u = u0
@@ -115,18 +114,14 @@ while t < T:
     u0 = u
 
     # Plot solution
-    # plot(u)
+    plot(u)
 
     # Save the solution to file
-    out_file <<  (u, t)
-    x_file << u.vector()
+    out_file << (u, t)
 
     # Move to next interval and adjust boundary condition
     t += dt
     g.assign( boundary_value( int(t/dt) ) )
 
-x_file << mesh
-x_file >> u.vector()
-
-print u.vector().array()
-
+# Hold plot
+#interactive()
