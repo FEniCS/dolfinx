@@ -264,7 +264,6 @@ endif()
 # Check for HDF5
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
-  message(STATUS "hdf5lib:${HDF5_LIBRARIES} hdf5inc:${HDF5_INCLUDE_DIRS}")
 endif()
 
 # Check for PaStiX
