@@ -30,14 +30,16 @@
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
 
+#include <dolfin/log/dolfin_log.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-                                   const Mesh& mesh,
-                                   const std::vector<const GenericDofMap*>& dofmaps,
-                                   bool cells, bool interior_facets,
-                                   bool exterior_facets)
+                   const Mesh& mesh,
+                   const std::vector<const GenericDofMap*>& dofmaps,
+                   const std::vector<std::pair<uint, uint> >& master_slave_dofs,
+                   bool cells, bool interior_facets, bool exterior_facets)
 {
   const uint rank = dofmaps.size();
 
@@ -148,6 +150,51 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       p++;
+    }
+  }
+
+  // Master-slave rows for periodic boundary conditions
+  std::vector<uint> dofs0(1);
+  std::vector<uint> dofs1;
+  dofs[0] = &dofs0;
+  dofs[1] = &dofs1;
+
+  std::vector<std::pair<uint, uint> >::const_iterator master_slave;
+  for (master_slave = master_slave_dofs.begin(); master_slave != master_slave_dofs.end(); ++master_slave)
+  {
+    const uint master_dof = master_slave->first;
+    const uint slave_dof  = master_slave->second;
+
+    if (master_dof >= local_range[0].first && master_dof < local_range[0].second)
+    {
+      // Get non-zero columns for master row
+      dofs0[0] = master_dof;
+      sparsity_pattern.get_edges(master_dof, dofs1);
+
+      cout << "Master dof: " << dofs0[0] << endl;
+      cout << " Edge count: " << dofs1.size() << endl;
+      for (uint i = 0; i < dofs1.size(); ++i)
+        cout << "  " << dofs1[i] << endl;
+
+      // Add non-zero columns to slave row
+      dofs0[0] = slave_dof;
+      sparsity_pattern.insert(dofs);
+    }
+
+    if (slave_dof >= local_range[0].first && slave_dof < local_range[0].second)
+    {
+      // Get non-zero columns for slave row
+      dofs0[0] = slave_dof;
+      sparsity_pattern.get_edges(slave_dof, dofs1);
+
+      cout << "Slave dof: " << dofs0[0] << endl;
+      cout << " Edge count: " << dofs1.size() << endl;
+      for (uint i = 0; i < dofs1.size(); ++i)
+        cout << "  " << dofs1[i] << endl;
+
+      // Add non-zero columns to master row
+      dofs0[0] = master_dof;
+      sparsity_pattern.insert(dofs);
     }
   }
 

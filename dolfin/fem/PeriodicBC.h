@@ -143,15 +143,19 @@ namespace dolfin
     /// Rebuild mapping between dofs
     void rebuild();
 
+    /// Compute dof pairs (master dof, slave dof)
+    void compute_dof_pairs(const FunctionSpace& V,
+      std::vector<std::pair<uint, uint> >& dof_pairs) const;
+
   private:
 
     // Apply boundary conditions, common method
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
     void parallel_apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
-    // Extract dof pairs for sub space and append to list
-    void extract_dof_pairs(const FunctionSpace& function_space,
-      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs);
+    // Extract dof pairs for subspace and append to vector
+    void extract_dof_pairs(const FunctionSpace& V,
+      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;

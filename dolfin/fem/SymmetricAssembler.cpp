@@ -206,8 +206,11 @@ void SymmetricAssembler::PImpl::assemble()
     coefficients[i]->update();
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(A_asymm, a, reset_sparsity, add_values);
+  const std::vector<std::pair<uint, uint> > periodic_master_slave_dofs;
+  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values);
 
   // Get dofs that are local to this processor
   processor_dof_range = A.local_range(0);

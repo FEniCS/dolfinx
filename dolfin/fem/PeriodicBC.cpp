@@ -115,11 +115,10 @@ struct merge_coordinate_map
 };
 
 //-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(const FunctionSpace& V,
-                       const SubDomain& sub_domain)
+PeriodicBC::PeriodicBC(const FunctionSpace& V, const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
-  // Build mapping
+  // Build mapping between dofs
   rebuild();
 }
 //-----------------------------------------------------------------------------
@@ -127,7 +126,7 @@ PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
 {
-  // Build mapping
+  // Build mapping between dofs
   rebuild();
 }
 //-----------------------------------------------------------------------------
@@ -156,8 +155,7 @@ void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
   apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A,
-                       GenericVector& b,
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x) const
 {
   apply(&A, &b, &x);
@@ -187,26 +185,25 @@ void PeriodicBC::rebuild()
   for (uint i = 0; i < dof_pairs.size(); ++i)
   {
     master_dofs[i] = dof_pairs[i].first.first;
-    slave_dofs[i] = dof_pairs[i].second.first;
+    slave_dofs[i]  = dof_pairs[i].second.first;
   }
 
   if (MPI::num_processes() > 1)
   {
+    // Store master and slave dofs
     master_owners.resize(num_dof_pairs);
     slave_owners.resize(num_dof_pairs);
-    // Store master and slave dofs
     for (uint i = 0; i < dof_pairs.size(); ++i)
     {
       master_owners[i] = dof_pairs[i].first.second;
-      slave_owners[i] = dof_pairs[i].second.second;
+      slave_owners[i]  = dof_pairs[i].second.second;
       dolfin_assert(master_owners[i] < MPI::num_processes());
       dolfin_assert(slave_owners[i] < MPI::num_processes());
     }
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix* A,
-                       GenericVector* b,
+void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
                        const GenericVector* x) const
 {
   if (MPI::num_processes() > 1)
@@ -287,31 +284,41 @@ void PeriodicBC::apply(GenericMatrix* A,
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
-   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs)
+void PeriodicBC::compute_dof_pairs(const FunctionSpace& V,
+  std::vector<std::pair<uint, uint> >& dof_pairs) const
 {
-  dolfin_assert(function_space.element());
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > _dof_pairs;
+  extract_dof_pairs(V, _dof_pairs);
 
+  dof_pairs.resize(_dof_pairs.size());
+  for (uint i = 0; i < dof_pairs.size(); ++i)
+    dof_pairs[i] = std::make_pair(_dof_pairs[i].first.first, _dof_pairs[i].second.first);
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
+   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
+{
   // Call recursively for subspaces, should work for arbitrary nesting
-  const uint num_sub_spaces = function_space.element()->num_sub_elements();
+  dolfin_assert(V.element());
+  const uint num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
     for (uint i = 0; i < num_sub_spaces; ++i)
     {
       cout << "Extracting matching degrees of freedom for sub space " << i << "." << endl;
-      extract_dof_pairs((*function_space[i]), dof_pairs);
+      extract_dof_pairs((*V[i]), dof_pairs);
     }
     return;
   }
 
   // Assuming we have a non-mixed element
-  dolfin_assert(function_space.element()->num_sub_elements() == 0);
+  dolfin_assert(V.element()->num_sub_elements() == 0);
 
   // Get mesh and dofmap
-  dolfin_assert(function_space.mesh());
-  dolfin_assert(function_space.dofmap());
-  const Mesh& mesh = *function_space.mesh();
-  const GenericDofMap& dofmap = *function_space.dofmap();
+  dolfin_assert(V.mesh());
+  dolfin_assert(V.dofmap());
+  const Mesh& mesh = *V.mesh();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Get dimensions
   const uint tdim = mesh.topology().dim();
@@ -342,7 +349,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell (there may be two, but pick first) and local facet index
-    Cell cell(mesh, facet->entities(tdim)[0]);
+    const Cell cell(mesh, facet->entities(tdim)[0]);
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs and coordinates on cell
@@ -467,9 +474,8 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::parallel_apply(GenericMatrix* A,
-                       GenericVector* b,
-                       const GenericVector* x) const
+void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
+                                const GenericVector* x) const
 {
   const uint num_dof_pairs = master_dofs.size();
   dolfin_assert(num_dof_pairs > 0);
@@ -561,6 +567,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
         A->set(vals, 1, &row, 2, cols);
       }
     }
+
     A->apply("insert");
   }
 
@@ -618,8 +625,8 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     }
   }
 
-  // Add the slave equations to the master equations, then set the slave rows to the
-  // appropriate values.
+  // Add the slave equations to the master equations, then set the slave
+  // rows to the appropriate values.
   if (b)
   {
     typedef boost::tuples::tuple<uint, double> vec_type; // master dof, value that should be added
@@ -681,8 +688,8 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
         b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
     }
+
     b->apply("insert");
   }
-
 }
 //-----------------------------------------------------------------------------

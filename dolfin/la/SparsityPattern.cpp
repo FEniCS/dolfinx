@@ -229,6 +229,30 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::get_edges(uint vertex, std::vector<uint>& edges) const
+{
+  dolfin_assert(vertex >= _local_range[0].first && vertex < _local_range[0].second);
+
+  const uint local_vertex = vertex - _local_range[0].first;
+  dolfin_assert(local_vertex < diagonal.size());
+  uint size = diagonal[local_vertex].size();
+  if (!off_diagonal.empty())
+  {
+    dolfin_assert(local_vertex < off_diagonal.size());
+    size += off_diagonal[local_vertex].size();
+  }
+  edges.resize(size);
+
+  std::copy(diagonal[local_vertex].begin(), diagonal[local_vertex].end(), edges.begin());
+  if (!off_diagonal.empty())
+  {
+    std::copy(off_diagonal[local_vertex].begin(),
+              off_diagonal[local_vertex].end(),
+              edges.begin() + diagonal[local_vertex].size());
+  }
+  cout << "Number of edges (3): " << edges.size() << endl;
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
   const uint _primary_dim = primary_dim();

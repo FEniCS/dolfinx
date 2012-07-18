@@ -24,7 +24,9 @@
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
 
+#include <utility>
 #include <vector>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
@@ -43,6 +45,7 @@ namespace dolfin
     static void build(GenericSparsityPattern& sparsity_pattern,
                       const Mesh& mesh,
                       const std::vector<const GenericDofMap*>& dofmaps,
+                      const std::vector<std::pair<uint, uint> >& master_slave_dofs,
                       bool cells, bool interior_facets,
                       bool exterior_facets);
 

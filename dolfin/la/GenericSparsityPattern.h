@@ -91,6 +91,9 @@ namespace dolfin
     /// 'sorted' and 'unsorted'.
     virtual std::vector<std::vector<uint> > off_diagonal_pattern(Type type) const = 0;
 
+    /// Fill vector with edges for given vertex
+    virtual void get_edges(uint vertex, std::vector<uint>& edges) const = 0;
+
     /// Finalize sparsity pattern
     virtual void apply() = 0;
 

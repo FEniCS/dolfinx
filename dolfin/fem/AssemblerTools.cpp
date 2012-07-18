@@ -141,7 +141,8 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
-                                        bool reset_sparsity, bool add_values)
+          const std::vector<std::pair<uint, uint> >& periodic_master_slave_dofs,
+          bool reset_sparsity, bool add_values)
 {
   dolfin_assert(a.ufc_form());
 
@@ -180,10 +181,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     if (tensor_layout->sparsity_pattern())
     {
       SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
-                                    a.mesh(), dofmaps,
-                                    a.ufc_form()->num_cell_domains(),
-                                    a.ufc_form()->num_interior_facet_domains(),
-                                    a.ufc_form()->num_exterior_facet_domains());
+                                a.mesh(), dofmaps, periodic_master_slave_dofs,
+                                a.ufc_form()->num_cell_domains(),
+                                a.ufc_form()->num_interior_facet_domains(),
+                                a.ufc_form()->num_exterior_facet_domains());
     }
     t0.stop();
 

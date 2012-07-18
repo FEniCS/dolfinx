@@ -25,6 +25,8 @@
 #define __ASSEMBLER_TOOLS_H
 
 #include <string>
+#include <utility>
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -45,14 +47,12 @@ namespace dolfin
     static void check(const Form& a);
 
     // Initialize global tensor
-    static void init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   bool reset_sparsity,
-                                   bool add_values);
+    static void init_global_tensor(GenericTensor& A, const Form& a,
+         const std::vector<std::pair<uint, uint> >& periodic_master_slave_dofs,
+         bool reset_sparsity, bool add_values);
 
     // Pretty-printing for progress bar
-    static std::string progress_message(uint rank,
-                                        std::string integral_type);
+    static std::string progress_message(uint rank, std::string integral_type);
 
   };
 

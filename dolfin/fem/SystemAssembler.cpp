@@ -99,8 +99,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    if (a.cell_domains_shared_ptr().get() ||
-        L.cell_domains_shared_ptr().get())
+    if (a.cell_domains_shared_ptr().get() || L.cell_domains_shared_ptr().get())
     {
       warning("Ignoring cell domains defined as part of form in system assembler.");
     }
@@ -139,9 +138,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Check that forms share a function space
   if (*a.function_space(1) != *L.function_space(0))
+  {
     dolfin_error("SystemAssembler.cpp",
 		 "assemble system",
 		 "expected forms (a, L) to share a FunctionSpace");
+  }
 
   // FIXME: This may update coefficients twice. Checked for shared coefficients
 
@@ -159,8 +160,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
+  const std::vector<std::pair<uint, uint> > periodic_master_slave_dofs;
+  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(b, L, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values);
 
   // Allocate data
   Scratch data(a, L);
@@ -302,7 +306,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   if (A_ufc.form.num_exterior_facet_domains() > 0 ||
       b_ufc.form.num_exterior_facet_domains() > 0)
   {
-    // Compute facets and facet - cell connectivity if not already computed 
+    // Compute facets and facet - cell connectivity if not already computed
     const uint D = mesh.topology().dim();
     mesh.init(D - 1);
     mesh.init(D - 1, D);

@@ -26,6 +26,7 @@
 // at y = 0, 1 and periodic boundary conditions at x = 0, 1.
 
 #include <dolfin.h>
+#include <dolfin/fem/AssemblerTools.h>
 #include "Poisson.h"
 
 using namespace dolfin;
@@ -81,7 +82,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(2, 2);
 
   // Create functions
   Source f;
@@ -101,21 +102,42 @@ int main()
   PeriodicBoundary periodic_boundary;
   PeriodicBC bc1(V, periodic_boundary);
 
+  std::vector<std::pair<uint, uint> > dof_pairs;
+  bc1.compute_dof_pairs(V, dof_pairs);
+  for (uint i = 0; i < dof_pairs.size(); ++i)
+  {
+    cout << "Master, slave: " << dof_pairs[i].first << ", " << dof_pairs[i].second << endl;
+  }
+
+
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc0); bcs.push_back(&bc1);
 
   // Compute solution
   Function u(V);
-  solve(a == L, u, bcs);
+
+  boost::shared_ptr<GenericMatrix> A(new Matrix());
+  Vector b;
+  AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false);
+
+  assemble(*A, a);
+  assemble(b, L);
+  for (uint i = 0; i < bcs.size(); ++i)
+    bcs[i]->apply(*A, b);
+
+  LUSolver lu(A);
+  lu.solve(*u.vector(), b);
+
+  //solve(a == L, u, bcs);
 
   // Save solution in VTK format
   File file("periodic.pvd");
   file << u;
 
   // Plot solution
-  plot(u);
-  interactive();
+  //plot(u);
+  //interactive();
 
   return 0;
 }
