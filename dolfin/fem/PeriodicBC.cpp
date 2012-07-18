@@ -74,27 +74,26 @@ struct lt_coordinate
 
 
 // FIXME: Change this to boost::unordered_map
+
 // Mapping from coordinates to dof pairs
 // coordinate_map maps a coordinate to a pair of (master dof, slave dof)
-// and each master dof/slave dof is a pair of the degree of freedom index AND its parallel owner.
+// and each master dof/slave dof is a pair of the degree of freedom
+// index AND its parallel owner.
 typedef std::pair<int, int> dof_data;
 typedef std::pair<dof_data, dof_data> dof_pair;
 typedef std::map<std::vector<double>, dof_pair, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
 
-// To apply periodic BCs in parallel, we'll need to reduce the coordinate map onto each
-// processor, and have that apply the BCs. This function below provides the reduction
-// operator used in the MPI reduce.
+// To apply periodic BCs in parallel, we'll need to reduce the coordinate
+// map onto each processor, and have that apply the BCs. This function
+// below provides the reduction operator used in the MPI reduce.
 struct merge_coordinate_map
 {
   coordinate_map operator() (coordinate_map x, coordinate_map y)
   {
     coordinate_map z;
-
     for (coordinate_iterator it = x.begin(); it != x.end(); ++it)
-    {
       z[it->first] = it->second;
-    }
 
     for (coordinate_iterator it = y.begin(); it != y.end(); ++it)
     {
@@ -102,15 +101,13 @@ struct merge_coordinate_map
       if (match != z.end())
       {
         // Copy the degree of freedom indices and their parallel owners
-        match->second.first.first  = std::max(it->second.first.first, match->second.first.first);
+        match->second.first.first   = std::max(it->second.first.first, match->second.first.first);
         match->second.first.second  = std::max(it->second.first.second, match->second.first.second);
         match->second.second.first  = std::max(it->second.second.first, match->second.second.first);
-        match->second.second.second  = std::max(it->second.second.second, match->second.second.second);
+        match->second.second.second = std::max(it->second.second.second, match->second.second.second);
       }
       else
-      {
         z[it->first] = it->second;
-      }
     }
 
     return z;
@@ -120,9 +117,7 @@ struct merge_coordinate_map
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
-  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
-    rhs_values_master(0), rhs_values_slave(0)
+  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   // Build mapping
   rebuild();
@@ -130,9 +125,7 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
-  : BoundaryCondition(V), sub_domain(sub_domain),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
-    rhs_values_master(0), rhs_values_slave(0)
+  : BoundaryCondition(V), sub_domain(sub_domain)
 {
   // Build mapping
   rebuild();
@@ -181,11 +174,9 @@ void PeriodicBC::rebuild()
   extract_dof_pairs(*_function_space, dof_pairs);
 
   // Resize arrays
-  num_dof_pairs = dof_pairs.size();
+  const uint num_dof_pairs = dof_pairs.size();
   master_dofs.resize(num_dof_pairs);
   slave_dofs.resize(num_dof_pairs);
-  rhs_values_master.resize(num_dof_pairs);
-  rhs_values_slave.resize(num_dof_pairs);
   if (MPI::num_processes() > 1)
   {
     master_owners.resize(num_dof_pairs);
@@ -212,9 +203,6 @@ void PeriodicBC::rebuild()
       dolfin_assert(slave_owners[i] < MPI::num_processes());
     }
   }
-
-  std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
-  std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix* A,
@@ -227,6 +215,7 @@ void PeriodicBC::apply(GenericMatrix* A,
     return;
   }
 
+  const uint num_dof_pairs = master_dofs.size();
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -266,7 +255,7 @@ void PeriodicBC::apply(GenericMatrix* A,
 
     // Insert 1 and -1
     uint cols[2];
-    double vals[2] = {1.0, -1.0};
+    const double vals[2] = {1.0, -1.0};
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
       const uint row = slave_dofs[i];
@@ -278,8 +267,10 @@ void PeriodicBC::apply(GenericMatrix* A,
   }
 
   // Modify boundary values for nonlinear problems
+  std::vector<double> rhs_values_slave(num_dof_pairs, 0.0);
   if (x)
   {
+    std::vector<double> rhs_values_master(num_dof_pairs);
     x->get_local(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
     x->get_local(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
     for (uint i = 0; i < num_dof_pairs; i++)
@@ -367,8 +358,8 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = cell_dofs[local_dof];
-      for (uint j = 0; j < gdim; ++j)
-        x[j] = data.coordinates[local_dof][j];
+      std::copy(data.coordinates[local_dof].begin(),
+                data.coordinates[local_dof].end(), x.begin());
 
       // Set y = x
       y.assign(x.begin(), x.end());
@@ -377,7 +368,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       sub_domain->map(_x, _y);
 
       // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = facet->num_entities(tdim) == 1;
+      const bool on_boundary = (facet->num_entities(tdim) == 1);
       if (sub_domain->inside(_x, on_boundary))
       {
         // Check if coordinate exists from before
@@ -480,6 +471,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
                        GenericVector* b,
                        const GenericVector* x) const
 {
+  const uint num_dof_pairs = master_dofs.size();
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -575,6 +567,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems.
   // This doesn't change x, it only changes what the slave
   // entries of b will be set to.
+  std::vector<double> rhs_values_slave(num_dof_pairs, 0.0);
   if (x)
   {
     typedef boost::tuples::tuple<uint, double> x_type; // dof index, value
@@ -624,8 +617,6 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
       }
     }
   }
-  else
-    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
   // Add the slave equations to the master equations, then set the slave rows to the
   // appropriate values.

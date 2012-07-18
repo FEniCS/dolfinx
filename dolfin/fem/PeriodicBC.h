@@ -150,29 +150,23 @@ namespace dolfin
     void parallel_apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Extract dof pairs for sub space and append to list
-    void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs);
+    void extract_dof_pairs(const FunctionSpace& function_space,
+      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs);
 
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;
 
-    // Number of dof pairs
-    uint num_dof_pairs;
-
-    // Array of master dofs (size num_dof_pairs)
+    // Array of master dofs (size = num_dof_pairs)
     std::vector<uint> master_dofs;
 
-    // Owners of master dofs in parallel (size num_dof_pairs)
+    // Owners of master dofs in parallel (size = num_dof_pairs)
     std::vector<uint> master_owners;
 
-    // Array of slave dofs (size num_dof_pairs)
+    // Array of slave dofs (size = num_dof_pairs)
     std::vector<uint> slave_dofs;
 
-    // Owners of slave dofs in parallel (size num_dof_pairs)
+    // Owners of slave dofs in parallel (size = num_dof_pairs)
     std::vector<uint> slave_owners;
-
-    // Right-hand side values, used for zeroing entries in right-hand side (size num_dof_pairs)
-    mutable std::vector<double> rhs_values_master;
-    mutable std::vector<double> rhs_values_slave;
 
   };
 

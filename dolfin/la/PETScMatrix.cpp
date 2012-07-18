@@ -517,9 +517,7 @@ std::string PETScMatrix::str(bool verbose) const
       MatView(*A, PETSC_VIEWER_STDOUT_SELF);
   }
   else
-  {
     s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
-  }
 
   return s.str();
 }
