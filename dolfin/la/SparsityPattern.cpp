@@ -250,7 +250,6 @@ void SparsityPattern::get_edges(uint vertex, std::vector<uint>& edges) const
               off_diagonal[local_vertex].end(),
               edges.begin() + diagonal[local_vertex].size());
   }
-  cout << "Number of edges (3): " << edges.size() << endl;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()

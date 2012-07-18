@@ -37,6 +37,7 @@
 #include "PETScVector.h"
 #include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
+#include "SparsityPattern.h"
 #include "TensorLayout.h"
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
@@ -154,6 +155,21 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
+
+    // Set column indices
+    const std::vector<std::vector<uint> > _column_indices
+        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
+    std::vector<int> column_indices;
+    column_indices.reserve(sparsity_pattern.num_nonzeros());
+    for (uint i = 0; i < _column_indices.size(); ++i)
+    {
+      //cout << "Row: " << i << endl;
+      //for (uint j = 0; j < _column_indices[i].size(); ++j)
+      //  cout << "  Col: " << _column_indices[i][j] << endl;
+      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
+    }
+
+    MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
   }
   else
   {
@@ -193,7 +209,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Set some options
 
   // Do not allow new nonzero entries
-  MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
+  //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);

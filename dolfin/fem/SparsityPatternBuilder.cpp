@@ -168,13 +168,12 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     if (master_dof >= local_range[0].first && master_dof < local_range[0].second)
     {
       // Get non-zero columns for master row
-      dofs0[0] = master_dof;
       sparsity_pattern.get_edges(master_dof, dofs1);
+      dofs1.push_back(slave_dof);
 
-      cout << "Master dof: " << dofs0[0] << endl;
-      cout << " Edge count: " << dofs1.size() << endl;
-      for (uint i = 0; i < dofs1.size(); ++i)
-        cout << "  " << dofs1[i] << endl;
+      //cout << "Master, slave dof: " << master_dof << ", " << slave_dof << endl;
+      //for (uint i = 0; i < dofs1.size(); ++i)
+      //  cout << "  " << (*dofs[1])[i] << endl;
 
       // Add non-zero columns to slave row
       dofs0[0] = slave_dof;
@@ -184,13 +183,12 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     if (slave_dof >= local_range[0].first && slave_dof < local_range[0].second)
     {
       // Get non-zero columns for slave row
-      dofs0[0] = slave_dof;
       sparsity_pattern.get_edges(slave_dof, dofs1);
+      dofs1.push_back(master_dof);
 
-      cout << "Slave dof: " << dofs0[0] << endl;
-      cout << " Edge count: " << dofs1.size() << endl;
-      for (uint i = 0; i < dofs1.size(); ++i)
-        cout << "  " << dofs1[i] << endl;
+      //cout << "Slave, master dof: " << slave_dof << ", " << master_dof << endl;
+      //for (uint i = 0; i < dofs1.size(); ++i)
+      //  cout << "  " << (*dofs[1])[i] << endl;
 
       // Add non-zero columns to master row
       dofs0[0] = master_dof;

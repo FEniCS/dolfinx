@@ -33,11 +33,11 @@ using namespace dolfin;
 
 int main()
 {
-  // Periodic BCs don't work with Epetra
+  // Periodic BCs don't work with Epetra in parallel yet
   const std::string backend = parameters["linear_algebra_backend"];
-  if (backend == "Epetra")
+  if (dolfin::MPI::num_processes() > 1 && backend == "Epetra")
   {
-    info("Sorry, this demo does not work with the Epetra backend");
+    info("Sorry, this demo does not work with the Epetra backend in parallel");
     return 0;
   }
 
@@ -48,8 +48,8 @@ int main()
 
     void eval(Array<double>& values, const Array<double>& x) const
     {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
+      const double dx = x[0] - 0.5;
+      const double dy = x[1] - 0.5;
       values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 
@@ -82,7 +82,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(32, 32);
 
   // Create functions
   Source f;
@@ -102,26 +102,22 @@ int main()
   PeriodicBoundary periodic_boundary;
   PeriodicBC bc1(V, periodic_boundary);
 
-  std::vector<std::pair<uint, uint> > dof_pairs;
-  bc1.compute_dof_pairs(V, dof_pairs);
-  for (uint i = 0; i < dof_pairs.size(); ++i)
-  {
-    cout << "Master, slave: " << dof_pairs[i].first << ", " << dof_pairs[i].second << endl;
-  }
-
-
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
-  bcs.push_back(&bc0); bcs.push_back(&bc1);
+  bcs.push_back(&bc0);
+  bcs.push_back(&bc1);
 
   // Compute solution
   Function u(V);
 
-  boost::shared_ptr<GenericMatrix> A(new Matrix());
+  boost::shared_ptr<GenericMatrix> A(new Matrix);
   Vector b;
+
+  std::vector<std::pair<uint, uint> > dof_pairs;
+  bc1.compute_dof_pairs(V, dof_pairs);
   AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false);
 
-  assemble(*A, a);
+  assemble(*A, a, false);
   assemble(b, L);
   for (uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
@@ -136,8 +132,8 @@ int main()
   file << u;
 
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }
