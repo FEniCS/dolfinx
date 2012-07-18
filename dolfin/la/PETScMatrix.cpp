@@ -157,6 +157,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 
     // Set column indices
+    /*
     const std::vector<std::vector<uint> > _column_indices
         = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
     std::vector<int> column_indices;
@@ -168,8 +169,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       //  cout << "  Col: " << _column_indices[i][j] << endl;
       column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
     }
-
     MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
+    */
   }
   else
   {

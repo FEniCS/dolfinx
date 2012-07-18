@@ -82,7 +82,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(2, 2);
 
   // Create functions
   Source f;
@@ -116,7 +116,6 @@ int main()
   std::vector<std::pair<uint, uint> > dof_pairs;
   bc1.compute_dof_pairs(V, dof_pairs);
   AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false);
-
   assemble(*A, a, false);
   assemble(b, L);
   for (uint i = 0; i < bcs.size(); ++i)

@@ -27,6 +27,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
@@ -180,7 +181,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
+      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPatternBuilder::build(pattern,
                                 a.mesh(), dofmaps, periodic_master_slave_dofs,
                                 a.ufc_form()->num_cell_domains(),
                                 a.ufc_form()->num_interior_facet_domains(),
@@ -192,6 +194,33 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t1("Init tensor");
     A.init(*tensor_layout);
     t1.stop();
+
+    // Insert zeros for
+    if (A.rank() == 2)
+    {
+      const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      GenericMatrix& _A = A.down_cast<GenericMatrix>();
+      std::vector<std::pair<uint, uint> >::const_iterator dof_pair;
+      for (dof_pair = periodic_master_slave_dofs.begin(); dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
+      {
+        uint dofs[2];
+        dofs[0] = dof_pair->first;
+        dofs[1] = dof_pair->second;
+
+        std::vector<uint> edges;
+        for (uint i = 0; i < 2; ++i)
+        {
+          if (dofs[i] >= pattern.local_range(0).first && dofs[i] < pattern.local_range(0).second)
+          {
+            const uint local_index = dofs[i] - pattern.local_range(0).first;
+            pattern.get_edges(local_index, edges);
+            const std::vector<double> block(edges.size(), 0.0);
+            _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+          }
+        }
+      }
+      A.apply("flush");
+    }
 
     // Delete sparsity pattern
     Timer t2("Delete sparsity");
