@@ -24,9 +24,10 @@ background mesh.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Andre Massing
+# Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-10-14
-# Last changed: 2011-02-14
+# Last changed: 2012-07-19
 
 from dolfin import *
 from numpy import max, array
@@ -35,13 +36,9 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-# Set to False if you do not want to create movies
-# (default should be True since you probably want to :)
-create_movies = True
-
 # Create meshes (omega0 overlapped by omega1)
-omega0 = UnitCircle(20)
-omega1 = UnitSquare(20, 20)
+omega0 = UnitCircle(5)
+omega1 = UnitSquare(5, 5)
 
 # Access mesh geometry
 x = omega0.coordinates()
@@ -91,7 +88,7 @@ while theta < 2*DOLFIN_PI + dtheta:
 
 # Repeat the same with the rotator in the cavity example.
 background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30)
-structure_mesh = Mesh("rotator.xml.gz")
+structure_mesh = Mesh("../rotator.xml.gz")
 
 # Access mesh geometry
 x = structure_mesh.coordinates()
