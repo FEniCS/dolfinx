@@ -45,7 +45,7 @@ t = -0.61
 
 # Scale and move the circle.
 x *= 0.7
-x[:] += t
+x += t
 
 intersection = MeshFunction("uint", cube, cube.topology().dim())
 _first = True
@@ -65,7 +65,7 @@ while t < 1.4 :
 
     # Plot intersection
     if _first:
-        p = plot(intersection, rescale=True, wireframe=False, axes=True, scalar_bar=False)
+        p = plot(intersection, rescale=True, wireframe=False, axes=True, scalarbar=False)
         p.elevate(-50)
         p.azimuth(40)
         p.update()
