@@ -215,22 +215,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
-
-    // Do not allow new nonzero entries
-    //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
-
-    // Set some options
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #endif
-
-    MatSetFromOptions(*A);
-
-    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatSetUp(*A.get());
-    #endif
   }
   else
   {
@@ -265,28 +249,31 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     MatMPIAIJSetPreallocation(*A,
            PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]),
            PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
-
-    // Set some options
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #endif
-
-    MatSetFromOptions(*A);
-
-    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatSetUp(*A.get());
-    #endif
   }
+
+  // Set some options
+
+  // Do not allow new nonzero entries
+  MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
+
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
+  MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+  #else
+  MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+  #endif
+
+  MatSetFromOptions(*A);
+
+  #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
+  MatSetUp(*A.get());
+  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block, uint m, const uint* rows,
                                      uint n, const uint* cols) const
 {
-  dolfin_assert(A);
-
   // Get matrix entries (must be on this process)
+  dolfin_assert(A);
   MatGetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
