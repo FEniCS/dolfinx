@@ -129,7 +129,7 @@ void PETScMatrix::resize(uint M, uint N)
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in this case)
     #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N, 
+    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N,
                     50, PETSC_NULL, 50, PETSC_NULL, A.get());
     #else
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
@@ -216,20 +216,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Allocate space (using data from sparsity pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
 
-    // Set column indices
-    /*
-    const std::vector<std::vector<uint> > _column_indices
-        = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
-    std::vector<int> column_indices;
-    column_indices.reserve(sparsity_pattern.num_nonzeros());
-    for (uint i = 0; i < _column_indices.size(); ++i)
-      column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
-
-    MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
-
     // Do not allow new nonzero entries
-    MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-    */
+    //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
@@ -247,8 +235,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   else
   {
     if (_use_gpu)
+    {
       not_working_in_parallel("Due to limitations in PETSc, "
           "distributed PETSc Cusp matrices");
+    }
 
     // FIXME: Try using MatStashSetInitialSize to optimise performance
 
