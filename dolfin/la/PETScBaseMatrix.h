@@ -67,9 +67,6 @@ namespace dolfin
     /// Constructor
     PETScBaseMatrix(boost::shared_ptr<Mat> A) : A(A) {}
 
-    /// Resize virtual matrix
-    virtual void resize(uint m, uint n) = 0;
-
     /// Return number of rows (dim = 0) or columns (dim = 1)
     uint size(uint dim) const;
 

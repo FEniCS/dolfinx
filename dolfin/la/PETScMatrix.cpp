@@ -74,8 +74,6 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A, bool use_gpu) :
                  "PETSc not compiled with Cusp support");
   }
 #endif
-
-  // Do nothing else
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A): _use_gpu(false)
@@ -88,71 +86,11 @@ PETScMatrix::~PETScMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::resize(uint M, uint N)
-{
-  // FIXME: Remove this function or use init() function somehow to
-  // FIXME: avoid duplication of code
-
-  if (A && size(0) == N && size(1) == N)
-    return;
-
-  // Create matrix (any old matrix is destroyed automatically)
-  if (A && !A.unique())
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "resize PETSc matrix",
-                 "More than one object points to the underlying PETSc object");
-  }
-  A.reset(new Mat, PETScMatrixDeleter());
-
-  // FIXME: maybe 50 should be a parameter?
-  // FIXME: it should definitely be a parameter
-
-  // FIXME: Check for arch and branch code here
-  // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case)
-    // and number of off-diagonal non-zeroes (50 in this case).
-    // Note that guessing too high leads to excessive memory usage.
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
-                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    MatSetUp(*A.get());
-    #else
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
-                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    #endif
-  }
-  else
-  {
-    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in this case)
-    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatCreateAIJ(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, M, N,
-                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    #else
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
-    #endif
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #endif
-    MatSetFromOptions(*A);
-    #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
-    MatSetUp(*A.get());
-    #endif
-  }
-}
-//-----------------------------------------------------------------------------
 boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
+  boost::shared_ptr<GenericMatrix> B;
   if (!A)
-  {
-    boost::shared_ptr<GenericMatrix> B(new PETScMatrix());
-    return B;
-  }
+    B.reset(new PETScMatrix());
   else
   {
     // Create copy of PETSc matrix
@@ -160,9 +98,10 @@ boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
     MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
     // Create PETScMatrix
-    boost::shared_ptr<GenericMatrix> B(new PETScMatrix(_Acopy));
-    return B;
+    B.reset(new PETScMatrix(_Acopy));
   }
+
+  return B;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const TensorLayout& tensor_layout)
@@ -415,9 +354,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-  {
     resize(yy, 0);
-  }
 
   if (size(0) != yy.size())
   {
@@ -445,9 +382,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 
   // Resize RHS if empty
   if (yy.size() == 0)
-  {
     resize(yy, 1);
-  }
 
   if (size(1) != yy.size())
   {
@@ -533,9 +468,7 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
   if (!A.mat())
-  {
     this->A.reset();
-  }
   else if (this != &A) // Check for self-assignment
   {
     if (this->A && !this->A.unique())
