@@ -221,7 +221,6 @@ void PeriodicBC::apply(GenericMatrix* A,
                        GenericVector* b,
                        const GenericVector* x) const
 {
-
   if (MPI::num_processes() > 1)
   {
     parallel_apply(A, b, x);
@@ -298,7 +297,7 @@ void PeriodicBC::apply(GenericMatrix* A,
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
-                                   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs)
+   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs)
 {
   dolfin_assert(function_space.element());
 
@@ -423,14 +422,16 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     p++;
   }
 
-#ifdef HAS_MPI
-  coordinate_map final_coordinate_dof_pairs = MPI::all_reduce(coordinate_dof_pairs, merge_coordinate_map());
-#else
+  #ifdef HAS_MPI
+  coordinate_map final_coordinate_dof_pairs
+      = MPI::all_reduce(coordinate_dof_pairs, merge_coordinate_map());
+  #else
   coordinate_map final_coordinate_dof_pairs = coordinate_dof_pairs;
-#endif
+  #endif
 
   // Fill up list of dof pairs
-  for (coordinate_iterator it = final_coordinate_dof_pairs.begin(); it != final_coordinate_dof_pairs.end(); ++it)
+  for (coordinate_iterator it = final_coordinate_dof_pairs.begin();
+                                it != final_coordinate_dof_pairs.end(); ++it)
   {
     // Check dofs
     if (it->second.first.first == -1 || it->second.second.first == -1)
@@ -479,7 +480,6 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
                        GenericVector* b,
                        const GenericVector* x) const
 {
-
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -500,8 +500,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     typedef std::map<uint, rows_type> row_map_type;
 
     row_map_type row_map;
-    std::pair<uint, uint> dof_range;
-    dof_range = A->local_range(0);
+    const std::pair<uint, uint> dof_range = A->local_range(0);
     std::set<uint> communicating_processors;
 
     for (uint i = 0; i < num_dof_pairs; i++)
@@ -521,16 +520,13 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
           row_map[master_owner] = rows_list;
         }
         else
-        {
           row_map[master_owner].push_back(row);
-        }
 
         communicating_processors.insert(master_owner);
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
         uint slave_owner = slave_owners[i];
-
         communicating_processors.insert(slave_owner);
       }
     }
@@ -547,7 +543,6 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
         uint master_dof = row.get<0>();
         std::vector<uint> columns = row.get<1>();
         std::vector<double> values = row.get<2>();
-
         A->add(&values[0], 1, &master_dof, columns.size(), &columns[0]);
       }
     }
@@ -557,15 +552,13 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
 
   if (A) // now set the slave rows
   {
-    std::pair<uint, uint> dof_range;
-    dof_range = A->local_range(0);
-
+    const std::pair<uint, uint> dof_range = A->local_range(0);
     A->zero(num_dof_pairs, &slave_dofs[0]);
     A->apply("insert");
 
     // Insert 1 and -1 in the master and slave column of each slave row
     uint cols[2];
-    double vals[2] = {1.0, -1.0};
+    const double vals[2] = {1.0, -1.0};
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
@@ -590,52 +583,41 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
 
     std::set<uint> communicating_processors;
     x_map_type x_map;
-
-    std::pair<uint, uint> dof_range;
-    dof_range = x->local_range(0);
-
+    const std::pair<uint, uint> dof_range = x->local_range(0);
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
       {
         double value;
         x->get_local(&value, 1, &slave_dofs[i]);
-
         x_type data = x_type(i, value);
-
         uint master_owner = master_owners[i];
-
         if (x_map.find(master_owner) == x_map.end())
         {
           xs_type x_list; x_list.push_back(data);
           x_map[master_owner] = x_list;
         }
         else
-        {
           x_map[master_owner].push_back(data);
-        }
 
         communicating_processors.insert(master_owner);
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
         uint slave_owner = slave_owners[i];
-
         communicating_processors.insert(slave_owner);
       }
     }
 
     x_map_type received_x;
     MPI::distribute(communicating_processors, x_map, received_x);
-
     for (x_map_type::const_iterator proc_it = received_x.begin(); proc_it != received_x.end(); ++proc_it)
     {
       xs_type xs = proc_it->second;
       for (xs_type::const_iterator x_it = xs.begin(); x_it != xs.end(); ++x_it)
       {
-        x_type x_data = *x_it;
-        uint dof_idx = x_data.get<0>();
-        double slave_value = x_data.get<1>();
+        const uint dof_idx = x_it->get<0>();
+        const double slave_value = x_it->get<1>();
         double master_value;
         x->get_local(&master_value, 1, &master_dofs[dof_idx]);
         rhs_values_slave[dof_idx] = master_value - slave_value;
@@ -654,11 +636,8 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     typedef std::map<uint, vecs_type> vec_map_type; // which processor should the vec_data be sent to?
 
     vec_map_type vec_map;
-
-    std::pair<uint, uint> dof_range;
-    dof_range = b->local_range(0);
+    const std::pair<uint, uint> dof_range = b->local_range(0);
     std::set<uint> communicating_processors;
-
     for (uint i = 0; i < num_dof_pairs; i++)
     {
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
@@ -674,16 +653,13 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
           vec_map[master_owner] = list;
         }
         else
-        {
           vec_map[master_owner].push_back(data);
-        }
 
         communicating_processors.insert(master_owner);
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
         uint slave_owner = slave_owners[i];
-
         communicating_processors.insert(slave_owner);
       }
     }
@@ -691,15 +667,14 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
     vec_map_type received_vecs;
     MPI::distribute(communicating_processors, vec_map, received_vecs);
 
-    for (vec_map_type::const_iterator proc_it = received_vecs.begin(); proc_it != received_vecs.end(); ++proc_it)
+    for (vec_map_type::const_iterator proc_it = received_vecs.begin();
+            proc_it != received_vecs.end(); ++proc_it)
     {
       vecs_type vecs = proc_it->second;
       for (vecs_type::const_iterator vec_it = vecs.begin(); vec_it != vecs.end(); ++vec_it)
       {
-        vec_type vec_data = *vec_it;
-        uint master_dof = vec_data.get<0>();
-        double value    = vec_data.get<1>();
-
+        const uint master_dof   = vec_it->get<0>();
+        const double value      = vec_it->get<1>();
         b->add(&value, 1, &master_dof);
       }
     }
@@ -709,15 +684,11 @@ void PeriodicBC::parallel_apply(GenericMatrix* A,
 
   if (b) // now zero the slave rows
   {
-    std::pair<uint, uint> dof_range;
-    dof_range = b->local_range(0);
-
+    const std::pair<uint, uint> dof_range = b->local_range(0);
     for (uint i = 0; i < num_dof_pairs; i++)
     {
       if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
-      {
         b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
-      }
     }
     b->apply("insert");
   }

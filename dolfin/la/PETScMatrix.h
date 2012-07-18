@@ -62,7 +62,7 @@ namespace dolfin
 
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
-    
+
     /// Destructor
     virtual ~PETScMatrix();
 
@@ -98,7 +98,7 @@ namespace dolfin
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
-    virtual void resize(uint M, uint N);
+    //virtual void resize(uint M, uint N);
 
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
