@@ -201,33 +201,36 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // GenericMatrix::apply, e.g. PETSc does this
     if (A.rank() == 2)
     {
-      const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-      if (pattern.primary_dim() != 0)
+      if (tensor_layout->sparsity_pattern())
       {
-        dolfin_error("AssemblerTools.cpp",
-                     "insert zero values in periodic boundary condition positions",
-                     "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
-      }
-
-      GenericMatrix& _A = A.down_cast<GenericMatrix>();
-      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
-      for (dof_pair = periodic_master_slave_dofs.begin(); dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
-      {
-        const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
-
-        std::vector<uint> edges;
-        for (uint i = 0; i < 2; ++i)
+        const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+        if (pattern.primary_dim() != 0)
         {
-          if (dofs[i] >= pattern.local_range(0).first && dofs[i] < pattern.local_range(0).second)
-          {
-            pattern.get_edges(dofs[i], edges);
-            const std::vector<double> block(edges.size(), 0.0);
-            _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+          dolfin_error("AssemblerTools.cpp",
+                       "insert zero values in periodic boundary condition positions",
+                       "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
+        }
 
+        GenericMatrix& _A = A.down_cast<GenericMatrix>();
+        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
+        for (dof_pair = periodic_master_slave_dofs.begin(); dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
+        {
+          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
+
+          std::vector<uint> edges;
+          for (uint i = 0; i < 2; ++i)
+          {
+            if (dofs[i] >= pattern.local_range(0).first && dofs[i] < pattern.local_range(0).second)
+            {
+              pattern.get_edges(dofs[i], edges);
+              const std::vector<double> block(edges.size(), 0.0);
+              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+
+            }
           }
         }
+        A.apply("flush");
       }
-      A.apply("flush");
     }
 
     // Delete sparsity pattern

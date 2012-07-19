@@ -238,6 +238,8 @@ void EpetraVector::apply(std::string mode)
   // because Epetra_FEVector::ReplaceGlobalValues does not behave well.
   // This would be simpler if we required that only local values (on
   // this process) can be set
+  int err = 0;
+  /*
   if (MPI::sum(static_cast<uint>(off_process_set_values.size())) > 0)
   {
     // Create communicator
@@ -268,28 +270,36 @@ void EpetraVector::apply(std::string mode)
     if (mode == "add")
       x->Import(y, importer, Add);
     else if (mode == "insert")
-      x->Import(y, importer, InsertAdd);
+      x->Import(y, importer, Insert);
+
+    err = x->GlobalAssemble(Add);
   }
   else
+  */
   {
-    int err = 0;
     if (mode == "add")
       err = x->GlobalAssemble(Add);
     else if (mode == "insert")
-      err = x->GlobalAssemble(Insert);
+    {
+      // This is 'Add' because we take of data that is set in the previous
+      // code block. Epetra behaviour is very poor w.r.t 'set' - probably
+      // need to keep track of state set/add internally.
+      err = x->GlobalAssemble(Add);
+    }
     else
     {
       dolfin_error("EpetraVector.cpp",
                    "apply changes to Epetra vector",
                    "Unknown apply mode (\"%s\")", mode.c_str());
     }
+  }
 
-    if (err != 0)
-    {
-      dolfin_error("EpetraVector.cpp",
-                   "apply changes to Epetra vector",
-                   "Did not manage to perform Epetra_Vector::GlobalAssemble");
-    }
+  // Check that call to GlobalAssemble was successful
+  if (err != 0)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "apply changes to Epetra vector",
+                 "Did not manage to perform Epetra_Vector::GlobalAssemble");
   }
 
   // Clear map of off-process set values
@@ -366,8 +376,6 @@ void EpetraVector::add_local(const Array<double>& values)
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
-
-  /*
   for (uint i = 0; i < m; ++i)
   {
 	  //const int local_row = x->Map().LID(rows[i]);
@@ -384,8 +392,8 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
     //else
     //  (*x)[0][local_row] = block[i];
   }
-  */
 
+  /*
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
   const uint n0 = map.MinMyGID();
@@ -399,6 +407,7 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
     else
       off_process_set_values[rows[i]] = block[i];
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)

@@ -497,12 +497,12 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     typedef std::map<uint, rows_type> row_map_type;
 
     row_map_type row_map;
-    const std::pair<uint, uint> dof_range = A->local_range(0);
+    const std::pair<uint, uint> local_range = A->local_range(0);
     std::set<uint> communicating_processors;
 
     for (uint i = 0; i < num_dof_pairs; i++)
     {
-      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
         std::vector<uint> columns;
         std::vector<double> values;
@@ -521,7 +521,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
         communicating_processors.insert(master_owner);
       }
-      else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
         uint slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
@@ -549,16 +549,16 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
   if (A) // now set the slave rows
   {
-    const std::pair<uint, uint> dof_range = A->local_range(0);
     A->zero(num_dof_pairs, &slave_dofs[0]);
     A->apply("insert");
 
     // Insert 1 and -1 in the master and slave column of each slave row
     uint cols[2];
     const double vals[2] = {1.0, -1.0};
+    const std::pair<uint, uint> local_range = A->local_range(0);
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
-      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
         const uint row = slave_dofs[i];
         cols[0] = master_dofs[i];
@@ -582,10 +582,10 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
     std::set<uint> communicating_processors;
     x_map_type x_map;
-    const std::pair<uint, uint> dof_range = x->local_range(0);
+    const std::pair<uint, uint> local_range = x->local_range();
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
-      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
         double value;
         x->get_local(&value, 1, &slave_dofs[i]);
@@ -601,7 +601,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
         communicating_processors.insert(master_owner);
       }
-      else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
         uint slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
@@ -633,11 +633,11 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     typedef std::map<uint, vecs_type> vec_map_type; // which processor should the vec_data be sent to?
 
     vec_map_type vec_map;
-    const std::pair<uint, uint> dof_range = b->local_range(0);
+    const std::pair<uint, uint> local_range = b->local_range();
     std::set<uint> communicating_processors;
     for (uint i = 0; i < num_dof_pairs; i++)
     {
-      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
         double value;
         b->get_local(&value, 1, &slave_dofs[i]);
@@ -654,7 +654,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
         communicating_processors.insert(master_owner);
       }
-      else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
         const uint slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
@@ -681,12 +681,12 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
   if (b) // now zero the slave rows
   {
-    info(*b, true);
-    b->apply("insert");
-    info(*b, true);
+    const std::pair<uint, uint> local_range = b->local_range();
     for (uint i = 0; i < num_dof_pairs; i++)
-      b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
-
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+        b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
+    }
     b->apply("insert");
   }
 }

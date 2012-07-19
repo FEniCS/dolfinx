@@ -76,7 +76,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(32, 32);
 
   // Create functions
   Source f;
@@ -98,15 +98,14 @@ int main()
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
-  //bcs.push_back(&bc0);
+  bcs.push_back(&bc0);
   bcs.push_back(&bc1);
 
   // Compute solution
   Function u(V);
 
   boost::shared_ptr<GenericMatrix> A(new Matrix);
-  EpetraVector b;
-  //PETScVector b;
+  Vector b;
 
   // Get list of master-slave dofs
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
@@ -118,24 +117,12 @@ int main()
   assemble(*A, a, false);
   assemble(b, L);
 
-  //cout << "Matrix norm (0): " << A->norm("frobenius") << endl;
-  cout << "Vector norm (0): " << b.norm("l2") << endl;
-
-  info(b, true);
-  b.apply("insert");
-  info(b, true);
-
   for (uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
 
-  //cout << "Matrix norm (1): " << A->norm("frobenius") << endl;
-  info(b, true);
-  cout << "Vector norm (1): " << b.norm("l2") << endl;
-
-
-  //LUSolver lu(A);
-  //lu.solve(*u.vector(), b);
-  //cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
+  LUSolver lu(A);
+  lu.solve(*u.vector(), b);
+  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   //solve(a == L, u, bcs);
 
@@ -143,10 +130,9 @@ int main()
   File file("periodic.pvd");
   file << u;
 
-
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }
