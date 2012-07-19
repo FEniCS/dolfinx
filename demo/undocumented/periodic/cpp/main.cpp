@@ -98,7 +98,7 @@ int main()
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
-  bcs.push_back(&bc0);
+  //bcs.push_back(&bc0);
   bcs.push_back(&bc1);
 
   // Compute solution
@@ -117,11 +117,17 @@ int main()
   assemble(*A, a, false);
   assemble(b, L);
 
+  cout << "Matrix norm (0): " << A->norm("frobenius") << endl;
+  cout << "Vector norm (0): " << b.norm("l2") << endl;
+
   for (uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
 
-  LUSolver lu(A);
-  lu.solve(*u.vector(), b);
+  cout << "Matrix norm (1): " << A->norm("frobenius") << endl;
+  cout << "Vector norm (1): " << b.norm("l2") << endl;
+
+  //LUSolver lu(A);
+  //lu.solve(*u.vector(), b);
 
   //solve(a == L, u, bcs);
 
@@ -129,9 +135,11 @@ int main()
   File file("periodic.pvd");
   file << u;
 
+  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
+
   // Plot solution
-  plot(u);
-  interactive();
+  //plot(u);
+  //interactive();
 
   return 0;
 }
