@@ -210,7 +210,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Set some options
 
   // Do not allow new nonzero entries
-  //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE);
+  MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
