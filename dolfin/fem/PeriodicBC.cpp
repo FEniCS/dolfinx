@@ -656,7 +656,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       }
       else if (master_dofs[i] >= dof_range.first && master_dofs[i] < dof_range.second)
       {
-        uint slave_owner = slave_owners[i];
+        const uint slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
       }
     }
@@ -681,12 +681,11 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
   if (b) // now zero the slave rows
   {
-    const std::pair<uint, uint> dof_range = b->local_range(0);
+    info(*b, true);
+    b->apply("insert");
+    info(*b, true);
     for (uint i = 0; i < num_dof_pairs; i++)
-    {
-      if (slave_dofs[i] >= dof_range.first && slave_dofs[i] < dof_range.second)
-        b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
-    }
+      b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
 
     b->apply("insert");
   }

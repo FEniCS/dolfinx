@@ -33,7 +33,7 @@ using namespace dolfin;
 
 int main()
 {
-  //parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "Epetra";
 
   // Source term
   class Source : public Expression
@@ -76,7 +76,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(2, 2);
 
   // Create functions
   Source f;
@@ -105,7 +105,8 @@ int main()
   Function u(V);
 
   boost::shared_ptr<GenericMatrix> A(new Matrix);
-  Vector b;
+  EpetraVector b;
+  //PETScVector b;
 
   // Get list of master-slave dofs
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
@@ -117,17 +118,24 @@ int main()
   assemble(*A, a, false);
   assemble(b, L);
 
-  cout << "Matrix norm (0): " << A->norm("frobenius") << endl;
+  //cout << "Matrix norm (0): " << A->norm("frobenius") << endl;
   cout << "Vector norm (0): " << b.norm("l2") << endl;
+
+  info(b, true);
+  b.apply("insert");
+  info(b, true);
 
   for (uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
 
-  cout << "Matrix norm (1): " << A->norm("frobenius") << endl;
+  //cout << "Matrix norm (1): " << A->norm("frobenius") << endl;
+  info(b, true);
   cout << "Vector norm (1): " << b.norm("l2") << endl;
+
 
   //LUSolver lu(A);
   //lu.solve(*u.vector(), b);
+  //cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   //solve(a == L, u, bcs);
 
@@ -135,7 +143,6 @@ int main()
   File file("periodic.pvd");
   file << u;
 
-  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   // Plot solution
   //plot(u);
