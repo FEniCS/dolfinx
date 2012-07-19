@@ -38,7 +38,7 @@ using namespace dolfin;
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    const Mesh& mesh,
                    const std::vector<const GenericDofMap*>& dofmaps,
-                   const std::vector<std::pair<uint, uint> >& master_slave_dofs,
+                   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& master_slave_dofs,
                    bool cells, bool interior_facets, bool exterior_facets)
 {
   const uint rank = dofmaps.size();
@@ -153,46 +153,36 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
-  // Master-slave rows for periodic boundary conditions
-  std::vector<uint> dofs0(1);
-  std::vector<uint> dofs1;
-  dofs[0] = &dofs0;
-  dofs[1] = &dofs1;
+  // Finalize sparsity pattern (communicate off-process terms)
+  sparsity_pattern.apply();
 
-  std::vector<std::pair<uint, uint> >::const_iterator master_slave;
+  // Add master-slave rows positions for periodic boundary conditions
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator master_slave;
   for (master_slave = master_slave_dofs.begin(); master_slave != master_slave_dofs.end(); ++master_slave)
   {
-    const uint master_dof = master_slave->first;
-    const uint slave_dof  = master_slave->second;
+    const uint master_dof = master_slave->first.first;
+    const uint slave_dof  = master_slave->second.first;
 
     if (master_dof >= local_range[0].first && master_dof < local_range[0].second)
     {
       // Get non-zero columns for master row
-      sparsity_pattern.get_edges(master_dof, dofs1);
-      dofs1.push_back(slave_dof);
-
-      //cout << "Master, slave dof: " << master_dof << ", " << slave_dof << endl;
-      //for (uint i = 0; i < dofs1.size(); ++i)
-      //  cout << "  " << (*dofs[1])[i] << endl;
+      std::vector<uint> column_indices;
+      sparsity_pattern.get_edges(master_dof, column_indices);
+      column_indices.push_back(slave_dof);
 
       // Add non-zero columns to slave row
-      dofs0[0] = slave_dof;
-      sparsity_pattern.insert(dofs);
+      sparsity_pattern.add_edges(master_slave->second, column_indices);
     }
 
     if (slave_dof >= local_range[0].first && slave_dof < local_range[0].second)
     {
-      // Get non-zero columns for slave row
-      sparsity_pattern.get_edges(slave_dof, dofs1);
-      dofs1.push_back(master_dof);
-
-      //cout << "Slave, master dof: " << slave_dof << ", " << master_dof << endl;
-      //for (uint i = 0; i < dofs1.size(); ++i)
-      //  cout << "  " << (*dofs[1])[i] << endl;
+      // Get non-zero columns for slace row
+      std::vector<uint> column_indices;
+      sparsity_pattern.get_edges(slave_dof, column_indices);
+      column_indices.push_back(master_dof);
 
       // Add non-zero columns to master row
-      dofs0[0] = master_dof;
-      sparsity_pattern.insert(dofs);
+      sparsity_pattern.add_edges(master_slave->first, column_indices);
     }
   }
 

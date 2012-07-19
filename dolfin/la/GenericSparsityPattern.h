@@ -58,6 +58,9 @@ namespace dolfin
     /// Insert non-zero entries
     virtual void insert(const std::vector<const std::vector<uint>* >& entries) = 0;
 
+    /// Add edges (vertex = [index, owning process])
+    virtual void add_edges(const std::pair<uint, uint>& vertex, const std::vector<uint>& edges) = 0;
+
     /// Return rank
     virtual uint rank() const = 0;
 

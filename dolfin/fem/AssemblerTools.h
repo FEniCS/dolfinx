@@ -48,7 +48,7 @@ namespace dolfin
 
     // Initialize global tensor
     static void init_global_tensor(GenericTensor& A, const Form& a,
-         const std::vector<std::pair<uint, uint> >& periodic_master_slave_dofs,
+         const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
          bool reset_sparsity, bool add_values);
 
     // Pretty-printing for progress bar

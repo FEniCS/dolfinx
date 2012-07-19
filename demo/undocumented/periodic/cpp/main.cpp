@@ -33,13 +33,7 @@ using namespace dolfin;
 
 int main()
 {
-  // Periodic BCs don't work with Epetra in parallel yet
-  const std::string backend = parameters["linear_algebra_backend"];
-  if (dolfin::MPI::num_processes() > 1 && backend == "Epetra")
-  {
-    info("Sorry, this demo does not work with the Epetra backend in parallel");
-    return 0;
-  }
+  //parameters["linear_algebra_backend"] = "Epetra";
 
   // Source term
   class Source : public Expression
@@ -82,7 +76,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(32, 32);
 
   // Create functions
   Source f;
@@ -113,11 +107,16 @@ int main()
   boost::shared_ptr<GenericMatrix> A(new Matrix);
   Vector b;
 
-  std::vector<std::pair<uint, uint> > dof_pairs;
+  // Get list of master-slave dofs
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
   bc1.compute_dof_pairs(V, dof_pairs);
+
+  // Intialise tensor, taking into account periodic dofs
   AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false);
+
   assemble(*A, a, false);
   assemble(b, L);
+
   for (uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
 

@@ -397,6 +397,10 @@ void EpetraMatrix::apply(std::string mode)
     err = A->GlobalAssemble(true, Add);
   else if (mode == "insert")
     err = A->GlobalAssemble(true, Insert);
+  else if (mode == "flush")
+  {
+    // Do nothing
+  }
   else
   {
     dolfin_error("EpetraMatrix.cpp",
