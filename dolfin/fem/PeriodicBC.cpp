@@ -273,8 +273,6 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
     for (uint i = 0; i < num_dof_pairs; i++)
       rhs_values_slave[i] = rhs_values_master[i] - rhs_values_slave[i];
   }
-  else
-    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
   // Zero slave rows in right-hand side
   if (b)
@@ -285,14 +283,10 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::compute_dof_pairs(const FunctionSpace& V,
-  std::vector<std::pair<uint, uint> >& dof_pairs) const
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
 {
-  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > _dof_pairs;
-  extract_dof_pairs(V, _dof_pairs);
-
-  dof_pairs.resize(_dof_pairs.size());
-  for (uint i = 0; i < dof_pairs.size(); ++i)
-    dof_pairs[i] = std::make_pair(_dof_pairs[i].first.first, _dof_pairs[i].second.first);
+  dof_pairs.clear();
+  extract_dof_pairs(V, dof_pairs);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
@@ -365,54 +359,59 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = cell_dofs[local_dof];
-      std::copy(data.coordinates[local_dof].begin(),
-                data.coordinates[local_dof].end(), x.begin());
 
-      // Set y = x
-      y.assign(x.begin(), x.end());
-
-      // Map coordinate from H to G
-      sub_domain->map(_x, _y);
-
-      // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = (facet->num_entities(tdim) == 1);
-      if (sub_domain->inside(_x, on_boundary))
+      // Only handle dofs that are owned by this process
+      if (global_dof >= (int) dofmap.ownership_range().first && global_dof < (int) dofmap.ownership_range().second)
       {
-        // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(x);
-        if (it != coordinate_dof_pairs.end())
-        {
-          // Exists from before, so set dof associated with x
-          it->second.first = dof_data(global_dof, MPI::process_number());
-        }
-        else
-        {
-          // Doesn't exist, so create new pair (with illegal second value)
-          dof_data g_dofs(global_dof, MPI::process_number());
-          dof_data l_dofs(-1, -1);
-          dof_pair pair(g_dofs, l_dofs);
-          coordinate_dof_pairs[x] = pair;
-        }
-      }
-      else if (sub_domain->inside(_y, on_boundary))
-      {
-        // Copy coordinate to std::vector
-        x.assign(y.begin(), y.end());
+        std::copy(data.coordinates[local_dof].begin(),
+                  data.coordinates[local_dof].end(), x.begin());
 
-        // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(x);
-        if (it != coordinate_dof_pairs.end())
+        // Set y = x
+        y.assign(x.begin(), x.end());
+
+        // Map coordinate from H to G
+        sub_domain->map(_x, _y);
+
+        // Check if coordinate is inside the domain G or in H
+        const bool on_boundary = (facet->num_entities(tdim) == 1);
+        if (sub_domain->inside(_x, on_boundary))
         {
-          // Exists from before, so set dof associated with y
-          it->second.second = dof_data(global_dof, MPI::process_number());
+          // Check if coordinate exists from before
+          coordinate_iterator it = coordinate_dof_pairs.find(x);
+          if (it != coordinate_dof_pairs.end())
+          {
+            // Exists from before, so set dof associated with x
+            it->second.first = dof_data(global_dof, MPI::process_number());
+          }
+          else
+          {
+            // Doesn't exist, so create new pair (with illegal second value)
+            dof_data g_dofs(global_dof, MPI::process_number());
+            dof_data l_dofs(-1, -1);
+            dof_pair pair(g_dofs, l_dofs);
+            coordinate_dof_pairs[x] = pair;
+          }
         }
-        else
+        else if (sub_domain->inside(_y, on_boundary))
         {
-          // Doesn't exist, so create new pair (with illegal first value)
-          dof_data g_dofs(-1, -1);
-          dof_data l_dofs(global_dof, MPI::process_number());
-          dof_pair pair(g_dofs, l_dofs);
-          coordinate_dof_pairs[x] = pair;
+          // Copy coordinate to std::vector
+          x.assign(y.begin(), y.end());
+
+          // Check if coordinate exists from before
+          coordinate_iterator it = coordinate_dof_pairs.find(x);
+          if (it != coordinate_dof_pairs.end())
+          {
+            // Exists from before, so set dof associated with y
+            it->second.second = dof_data(global_dof, MPI::process_number());
+          }
+          else
+          {
+            // Doesn't exist, so create new pair (with illegal first value)
+            dof_data g_dofs(-1, -1);
+            dof_data l_dofs(global_dof, MPI::process_number());
+            dof_pair pair(g_dofs, l_dofs);
+            coordinate_dof_pairs[x] = pair;
+          }
         }
       }
     }

@@ -143,16 +143,22 @@ namespace dolfin
     /// Rebuild mapping between dofs
     void rebuild();
 
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
     void compute_dof_pairs(const FunctionSpace& V,
-      std::vector<std::pair<uint, uint> >& dof_pairs) const;
+      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
   private:
 
     // Apply boundary conditions, common method
-    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
-    void parallel_apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
+    void apply(GenericMatrix* A, GenericVector* b,
+               const GenericVector* x) const;
+    void parallel_apply(GenericMatrix* A, GenericVector* b,
+                        const GenericVector* x) const;
 
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
     // Extract dof pairs for subspace and append to vector
     void extract_dof_pairs(const FunctionSpace& V,
       std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
