@@ -282,7 +282,16 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  // FIXME: Delete entry in plotter_cache
+  for (std::list<VTKPlotter*>::iterator it = plotter_cache.begin(); it != plotter_cache.end(); it++)
+  {
+    if (*it == this)
+    {
+      plotter_cache.erase(it);
+      return;
+    }
+  }
+  // Plotter not found. This point should never be reached.
+  dolfin_assert(false);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot()
@@ -710,6 +719,6 @@ void VTKPlotter::set_min_max        (double min, double max){}
 #endif
 
 // Define the static members
-std::vector<VTKPlotter*> VTKPlotter::plotter_cache;
+std::list<VTKPlotter*> VTKPlotter::plotter_cache;
 int VTKPlotter::hardcopy_counter = 0;
 

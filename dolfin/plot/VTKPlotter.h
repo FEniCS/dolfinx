@@ -231,13 +231,10 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-
     // The cache of plotter objects
-    // FIXME: We need to handle the memory. 
-    // Caching smart pointers would be preferable, but we can't save
-    // smart pointers from the constructor...
-    // TODO: Use a std::map with the id as key
-    static std::vector<VTKPlotter*> plotter_cache;
+    // Used when calling interactive() 
+    // (which should have effect on all plot windows)
+    static std::list<VTKPlotter*> plotter_cache;
 
   private:
 

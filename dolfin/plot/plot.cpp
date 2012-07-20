@@ -46,7 +46,7 @@ VTKPlotter* get_plotter(boost::shared_ptr<const T> t)
 {
   log(TRACE, "Looking for cached VTKPlotter.");
 
-  for (std::vector<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
+  for (std::list<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
   {
     if ( (*it)->id() == t->id() )
     {
@@ -315,7 +315,7 @@ void dolfin::interactive()
   else
   {
     // Prepare interactiveness on every plotter
-    for (std::vector<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
+    for (std::list<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
     {
       (*it)->interactive(false);
     }
