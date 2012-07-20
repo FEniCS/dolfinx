@@ -156,18 +156,6 @@ int main(int argc, char* argv[])
       // Iterate over forms
       for (unsigned int i = 0; i < forms.size(); i++)
       {
-
-        // Create form
-        /*
-        boost::shared_ptr<Form> a;
-        if (forms[i] == "Poisson")
-          a = PoissonFactory::a(mesh);
-        else if (forms[i] == "NavierStokes")
-          a = NavierStokesFactory::a(mesh);
-        else
-          error("Form name unknown");
-        */
-
         // Run test case
         const double t = bench(forms[i].first, forms[i].second);
 
