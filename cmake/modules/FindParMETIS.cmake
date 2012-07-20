@@ -65,6 +65,7 @@ if (MPI_FOUND)
     # Build and run test program
     include(CheckCXXSourceRuns)
     check_cxx_source_runs("
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <parmetis.h>
 

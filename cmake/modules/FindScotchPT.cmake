@@ -104,9 +104,10 @@ if (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
   endif()
 
-  set(SCOTCH_CONFIG_TEST_VERSION_CPP 
+  set(SCOTCH_CONFIG_TEST_VERSION_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/scotch_config_test_version.cpp")
   file(WRITE ${SCOTCH_CONFIG_TEST_VERSION_CPP} "
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <stdio.h>
 #include <mpi.h>
 #include <ptscotch.h>
@@ -140,9 +141,10 @@ int main() {
   # FIXME: parallel graph partitioning features in PT-SCOTCH was first
   #        introduced in 5.1. Do we require version 5.1?
   if (NOT ${SCOTCH_VERSION} VERSION_LESS "5.0")
-    set(SCOTCH_TEST_LIB_CPP 
+    set(SCOTCH_TEST_LIB_CPP
       "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/scotch_test_lib.cpp")
     file(WRITE ${SCOTCH_TEST_LIB_CPP} "
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <sys/types.h>
 #include <stdio.h>
 #include <mpi.h>

@@ -186,9 +186,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # FIXME: Is this linker flag required?
   #list(APPEND DOLFIN_LINK_FLAGS ${MPI_LINK_FLAGS})
 
-  # Necessary flag for MPICH2
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DMPICH_IGNORE_CXX_SEEK")
-
 endif()
 
 # OpenMP

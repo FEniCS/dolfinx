@@ -21,6 +21,7 @@
 // Last changed: 2012-04-04
 
 #ifdef HAS_MPI
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <iostream>
 #endif
