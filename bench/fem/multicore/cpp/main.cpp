@@ -91,7 +91,10 @@ double bench(std::string form, boost::shared_ptr<const Form> a)
   Matrix A;
 
   // Intialise matrix
-  AssemblerTools::init_global_tensor(A, *a, true, false);
+  typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+  typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
+  std::vector<MasterSlavePair> periodic_dof_pairs;
+  AssemblerTools::init_global_tensor(A, *a, periodic_dof_pairs, true, false);
 
   // Assemble
   Timer timer("Total time");
