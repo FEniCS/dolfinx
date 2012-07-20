@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#define BOOST_NO_HASH
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>

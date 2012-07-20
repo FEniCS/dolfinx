@@ -21,6 +21,8 @@
 #include <iostream>
 #include <vector>
 
+#define BOOST_NO_HASH
+
 #include <boost/foreach.hpp>
 #include <boost/graph/adjacency_list.hpp>
 

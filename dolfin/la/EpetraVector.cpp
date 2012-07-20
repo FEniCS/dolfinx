@@ -235,7 +235,10 @@ void EpetraVector::apply(std::string mode)
   dolfin_assert(x);
 
   // Special treatement required for values applied using 'set'
-  // This would be simpler if we required that only local values (on this process) can be set
+  // because Epetra_FEVector::ReplaceGlobalValues does not behave well.
+  // This would be simpler if we required that only local values (on
+  // this process) can be set
+  int err = 0;
   if (MPI::sum(static_cast<uint>(off_process_set_values.size())) > 0)
   {
     // Create communicator
@@ -266,32 +269,39 @@ void EpetraVector::apply(std::string mode)
     if (mode == "add")
       x->Import(y, importer, Add);
     else if (mode == "insert")
-      x->Import(y, importer, InsertAdd);
+      x->Import(y, importer, Insert);
 
-    // Clear map of off-process set values
-    off_process_set_values.clear();
+    err = x->GlobalAssemble(Add);
   }
   else
   {
-    int err = 0;
     if (mode == "add")
       err = x->GlobalAssemble(Add);
     else if (mode == "insert")
-      err = x->GlobalAssemble(Insert);
+    {
+      // This is 'Add' because we take of data that is set in the previous
+      // code block. Epetra behaviour is very poor w.r.t 'set' - probably
+      // need to keep track of state set/add internally.
+      err = x->GlobalAssemble(Add);
+    }
     else
     {
       dolfin_error("EpetraVector.cpp",
                    "apply changes to Epetra vector",
                    "Unknown apply mode (\"%s\")", mode.c_str());
     }
-
-    if (err != 0)
-    {
-      dolfin_error("EpetraVector.cpp",
-                   "apply changes to Epetra vector",
-                   "Did not manage to perform Epetra_Vector::GlobalAssemble");
-    }
   }
+
+  // Check that call to GlobalAssemble was successful
+  if (err != 0)
+  {
+    dolfin_error("EpetraVector.cpp",
+                 "apply changes to Epetra vector",
+                 "Did not manage to perform Epetra_Vector::GlobalAssemble");
+  }
+
+  // Clear map of off-process set values
+  off_process_set_values.clear();
 }
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
@@ -302,7 +312,6 @@ std::string EpetraVector::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
     dolfin_assert(x);
     x->Print(std::cout);
   }
@@ -365,24 +374,31 @@ void EpetraVector::add_local(const Array<double>& values)
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
-
-  const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                         block, 0);
-
-  if (err != 0)
+  /*
+  for (uint i = 0; i < m; ++i)
   {
-    dolfin_error("EpetraVector.cpp",
-                 "set block of values for Epetra vector",
-                 "Did not manage to perform Epetra_Vector::ReplaceGlobalValues");
+	  //const int local_row = x->Map().LID(rows[i]);
+    //if (local_row == -1)
+    {
+      const int err = x->ReplaceGlobalValues(1, (int*) &rows[i], &block[i], 0);
+      if (err != 0)
+      {
+        dolfin_error("EpetraVector.cpp",
+                     "set block of values for Epetra vector",
+                     "Did not manage to perform Epetra_Vector::ReplaceGlobalValues");
+      }
+    }
+    //else
+    //  (*x)[0][local_row] = block[i];
   }
+  */
 
-  dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
   const uint n0 = map.MinMyGID();
   const uint n1 = map.MaxMyGID();
 
-  // Set local values, or add to off-process cache
+  // Set local values, or add to off-process cache for later communication
   for (uint i = 0; i < m; ++i)
   {
     if (rows[i] >= n0 && rows[i] <= n1)
@@ -398,7 +414,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
   {
     dolfin_error("EpetraVector.cpp",
                  "add block of values to Epetra vector",
-                 "Must be called between calling EpetraVector::set and EpetraVector::add");
+                 "apply() must be called between calling EpetraVector::set and EpetraVector::add");
   }
 
   dolfin_assert(x);

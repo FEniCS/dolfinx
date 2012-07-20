@@ -90,8 +90,8 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   // Strange weight arrays needed by ParMETIS
   int ncon = 1;
   #if PARMETIS_MAJOR_VERSION >= 4
-  std::vector<double> tpwgts(ncon*nparts, 1.0/static_cast<double>(nparts));
-  std::vector<double> ubvec(ncon, 1.05);
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
   #else
   std::vector<float> tpwgts(ncon*nparts, 1.0/static_cast<float>(nparts));
   std::vector<float> ubvec(ncon, 1.05);

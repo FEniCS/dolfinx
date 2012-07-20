@@ -18,6 +18,8 @@
 // First added:  2012-07-06
 // Last changed:
 
+#define BOOST_NO_HASH
+
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/king_ordering.hpp>
 #include <boost/graph/minimum_degree_ordering.hpp>

@@ -286,23 +286,27 @@ void EpetraMatrix::set(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
+  // This function is awkward and somewhat restrictive because of the
+  // poor support for setting off-process values in Epetra
+
   dolfin_assert(A);
 
-  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  // Check that all rows are local to this process
   /*
   for (uint i = 0; i < m; ++i)
   {
-    const uint row = rows[i];
-    const double* values = block + i*n;
-    const int err = A->ReplaceGlobalValues(row, n, values,
-                                           reinterpret_cast<const int*>(cols));
-    dolfin_assert(!err);
+    if (!A->MyGRID(rows[i]))
+    {
+      dolfin_error("EpetraMatrix.cpp",
+                   "set block of values for Epetra matrix",
+                   "Only values in row belonging to process can be set");
+    }
   }
   */
 
-  const int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   n, reinterpret_cast<const int*>(cols), block,
-                                   Epetra_FECrsMatrix::ROW_MAJOR);
+  const int err = A->ReplaceGlobalValues(m,
+      reinterpret_cast<const int*>(rows), n,
+      reinterpret_cast<const int*>(cols), block, Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -316,19 +320,6 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   dolfin_assert(A);
-
-  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
-  /*
-  for (uint i = 0; i < m; ++i)
-  {
-    const uint row = rows[i];
-    const double* values = block + i*n;
-    const int err = A->SumIntoGlobalValues(row, n, values,
-                                           reinterpret_cast<const int*>(cols));
-    dolfin_assert(!err);
-  }
-  */
-
   const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                          n, reinterpret_cast<const int*>(cols), block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
@@ -396,7 +387,12 @@ void EpetraMatrix::apply(std::string mode)
   if (mode == "add")
     err = A->GlobalAssemble(true, Add);
   else if (mode == "insert")
-    err = A->GlobalAssemble(true, Insert);
+    //err = A->GlobalAssemble(true, Insert);
+    err = A->GlobalAssemble(true);
+  else if (mode == "flush")
+  {
+    // Do nothing
+  }
   else
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -524,8 +520,8 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
-  // FIXME: This can be made more efficient by eliminating creation of some
-  //        obejcts inside the loop
+  // FIXME: This can be made more efficient by eliminating creation of
+  //        some obejcts inside the loop
 
   dolfin_assert(A);
   const Epetra_CrsGraph& graph = A->Graph();

@@ -172,6 +172,24 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::add_edges(const std::pair<uint, uint>& vertex,
+                                const std::vector<uint>& edges)
+{
+  const uint _primary_dim = primary_dim();
+  const uint vertex_index = vertex.first;
+
+  // Add off-process owner if vertex is not owned by this process
+  if (vertex_index < _local_range[_primary_dim].first || vertex_index >= _local_range[_primary_dim].second)
+    off_process_owner[_primary_dim].insert(vertex);
+
+  // Add edges
+  std::vector<uint> dofs0(1, vertex.first);
+  std::vector<const std::vector<uint>* > entries(2);
+  entries[0] = &dofs0;
+  entries[1] = &edges;
+  insert(entries);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
 {
   return 2;
@@ -226,6 +244,29 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
     dolfin_assert(num_nonzeros.size() == tmp.size());
     std::transform(num_nonzeros.begin(), num_nonzeros.end(), tmp.begin(),
                    num_nonzeros.begin(), std::plus<uint>());
+  }
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::get_edges(uint vertex, std::vector<uint>& edges) const
+{
+  dolfin_assert(vertex >= _local_range[0].first && vertex < _local_range[0].second);
+
+  const uint local_vertex = vertex - _local_range[0].first;
+  dolfin_assert(local_vertex < diagonal.size());
+  uint size = diagonal[local_vertex].size();
+  if (!off_diagonal.empty())
+  {
+    dolfin_assert(local_vertex < off_diagonal.size());
+    size += off_diagonal[local_vertex].size();
+  }
+  edges.resize(size);
+
+  std::copy(diagonal[local_vertex].begin(), diagonal[local_vertex].end(), edges.begin());
+  if (!off_diagonal.empty())
+  {
+    std::copy(off_diagonal[local_vertex].begin(),
+              off_diagonal[local_vertex].end(),
+              edges.begin() + diagonal[local_vertex].size());
   }
 }
 //-----------------------------------------------------------------------------

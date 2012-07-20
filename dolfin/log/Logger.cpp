@@ -111,10 +111,11 @@ void Logger::dolfin_error(std::string location,
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl
-    << "*** " << "Error:  Unable to " << task << "." << std::endl
-    << "*** " << "Reason: " << reason << "." << std::endl
-    << "*** " << "Where:  This error was encountered inside " << location << "."
+    << "*** " << "Error:   Unable to " << task << "." << std::endl
+    << "*** " << "Reason:  " << reason << "." << std::endl
+    << "*** " << "Where:   This error was encountered inside " << location << "."
     << std::endl
+    << "*** " << "Process: " << MPI::process_number() << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl;
