@@ -119,7 +119,7 @@ int main()
   assemble(*A, a, false);
   assemble(b, L);
 
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (dolfin::uint i = 0; i < bcs.size(); ++i)
     bcs[i]->apply(*A, b);
 
   LUSolver lu(A);
