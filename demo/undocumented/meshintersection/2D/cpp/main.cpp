@@ -112,9 +112,6 @@ int main()
     MeshGeometry& geometry = structure_mesh.geometry();
     
 
-    // Access mesh geometry
-    double *x = structure_mesh.coordinates();
-
     // Iterate over angle
     double theta = 0.0;
     double dtheta = 0.1*DOLFIN_PI;
