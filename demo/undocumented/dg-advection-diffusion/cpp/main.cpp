@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-06-29
-// Last changed: 2011-06-29
+// Last changed: 2012-07-05
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -116,4 +116,5 @@ int main(int argc, char *argv[])
 
   // Plot projected solution
   plot(phi_h);
+  interactive();
 }

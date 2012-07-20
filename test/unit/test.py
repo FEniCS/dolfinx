@@ -27,7 +27,7 @@ import sys, os, re
 import platform
 import instant
 from dolfin_utils.commands import getstatusoutput
-from dolfin import has_mpi, has_parmetis
+from dolfin import has_mpi, has_parmetis, has_scotch
 
 # Tests to run
 tests = {
@@ -65,7 +65,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 
 # Build prefix list
 prefixes = [""]
-if has_mpi() and has_parmetis():
+if has_mpi() and (has_parmetis() or has_scotch()):
     prefixes.append("mpirun -np 3 ")
 else:
     print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."

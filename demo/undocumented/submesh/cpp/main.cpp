@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2009-03-02
+// Last changed: 2012-07-05
 //
 // This demo program demonstrates how to extract matching sub meshes
 // from a common mesh.
@@ -66,4 +66,8 @@ int main()
   // Plot meshes
   plot(fluid_mesh);
   plot(structure_mesh);
+  
+  interactive();
+
+  return 0;
 }

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2007-11-23
-// Last changed: 2010-01-27
+// Last changed: 2012-07-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -103,6 +103,7 @@ int main()
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

@@ -38,13 +38,13 @@ namespace dolfin
   /// representation of a sparse matrix. It uses Zoltan, which is part of
   /// Trilinos.
 
-  class MatrixRenumbering
+  class GraphRenumbering
   {
 
   public:
 
     /// Constructor
-    MatrixRenumbering(const TensorLayout& tensor_layout);
+    GraphRenumbering(const TensorLayout& tensor_layout);
 
     /// Compute renumbering for process (map[old] -> new)
     std::vector<uint> compute_local_renumbering_map();

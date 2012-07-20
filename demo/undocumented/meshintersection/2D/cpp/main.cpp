@@ -95,7 +95,6 @@ int main()
 
 
   // Repeat the same with the rotator in the cavity example.
-
   Rectangle background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
   boost::shared_ptr<dolfin::MeshFunction<unsigned int> >intersection2(new dolfin::MeshFunction<unsigned int>(background_mesh, background_mesh.topology().dim()));
 
@@ -147,7 +146,6 @@ int main()
   }
 
   interactive();
-
   return 0;
 }
 

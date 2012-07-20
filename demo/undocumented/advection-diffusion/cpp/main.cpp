@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2011-01-17
+// Last changed: 2012-07-05
 //
 // This demo solves the time-dependent advection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -108,4 +108,5 @@ int main(int argc, char *argv[])
 
   // Plot solution
   plot(u);
+  interactive();
 }

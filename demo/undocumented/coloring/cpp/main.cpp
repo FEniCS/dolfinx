@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-16
-// Last changed: 2011-01-30
+// Last changed: 2012-07-05
 //
 // This demo colors a given mesh entities such that entities with the
 // same color are not neighbors. 'Neighbors' can be in the sense of shared
@@ -54,6 +54,8 @@ int main()
   coloring_type.push_back(mesh.topology().dim());
   const MeshFunction<dolfin::uint>& colors_vertex_2 = mesh.color(coloring_type);
   plot(colors_vertex_2, "Facet-based cell coloring with distance 2");
+
+  interactive();
 
   return 0;
 }

@@ -24,9 +24,11 @@
 #include <vector>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -36,6 +38,55 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
+                                                  const GenericDofMap& dofmap1)
+{
+  // Create empty graph
+  const uint n = dofmap0.global_dimension();
+  Graph graph(n);
+
+  // Build graph
+  //tic();
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+
+    std::vector<uint>::const_iterator node;
+    for (node = dofs0.begin(); node != dofs0.end(); ++node)
+      graph[*node].insert(dofs1.begin(), dofs1.end());
+  }
+  //cout << "** DOLFIN Graph time: " << toc() << endl;
+
+  /*
+  // Build Boost graph
+  tic();
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> BoostGraph;
+  typedef boost::graph_traits<BoostGraph>::edge_descriptor Edge;
+  BoostGraph boost_graph(n);
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+
+    std::vector<uint>::const_iterator node;
+    for (node = dofs0.begin(); node != dofs0.end(); ++node)
+    {
+      for (uint i = 0; i < dofs1.size(); ++i)
+      {
+        //std::pair<Edge, bool> edge = boost::edge(*node, dofs1[i], boost_graph);
+        if (*node < dofs1[i] && !boost::edge(*node, dofs1[i], boost_graph).second)
+          boost::add_edge(*node, dofs1[i], boost_graph);
+      }
+    }
+  }
+  cout << "** Boost graph time: " << toc() << endl;
+  */
+
+  return graph;
+}
 //-----------------------------------------------------------------------------
 Graph GraphBuilder::local_graph(const Mesh& mesh,
                                 const std::vector<uint>& coloring_type)
@@ -162,6 +213,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                 std::vector<std::set<uint> >& local_graph,
                                 std::set<uint>& ghost_vertices)
 {
+  const uint num_mpi_procs = MPI::num_processes();
+
   // List of cell vertices
   const std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
 
@@ -179,8 +232,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   MPI::all_gather(num_local_cells, cells_per_process);
 
   // Compute offset for going from local to (internal) global numbering
-  std::vector<uint> process_offsets(MPI::num_processes());
-  for (uint i = 0; i < MPI::num_processes(); ++i)
+  std::vector<uint> process_offsets(num_mpi_procs);
+  for (uint i = 0; i < num_mpi_procs; ++i)
     process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0);
   const uint process_offset = process_offsets[MPI::process_number()];
 
@@ -193,6 +246,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   //-----------------------------------------------
   // The rest only applies when running in parallel
   //-----------------------------------------------
+
 
   // Determine candidate ghost cells (graph ghost vertices)
   info("Preparing data to to send off-process.");
@@ -225,7 +279,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // Prepare package to send (do not send data belonging to this process)
   std::vector<uint> destinations;
   std::vector<uint> send_data;
-  for (uint i = 0; i < MPI::num_processes(); ++i)
+  for (uint i = 0; i < num_mpi_procs; ++i)
   {
     if (i != MPI::process_number())
     {
@@ -235,7 +289,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
   }
 
-  // Set number of candidate ghost cells on this process to zero (not communicated to self)
+  // Set number of candidate ghost cells on this process to zero
+  // (not communicated to self)
   boundary_cells_per_process[MPI::process_number()] = 0;
 
   // FIXME: Make the communication cleverer and more scalable. Send to
@@ -247,11 +302,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   MPI::distribute(send_data, destinations, received_data, sources);
 
   // Data structures for unpacking data
-  std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(MPI::num_processes());
-  std::vector<std::vector<uint> > candidate_ghost_cell_global_indices(MPI::num_processes());
+  std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(num_mpi_procs);
+  std::vector<std::vector<uint> > candidate_ghost_cell_global_indices(num_mpi_procs);
 
   uint _offset = 0;
-  for (uint i = 0; i < MPI::num_processes() - 1; ++i)
+  for (uint i = 0; i < num_mpi_procs - 1; ++i)
   {
     // Check if there is data to unpack
     if (_offset >= sources.size())
@@ -275,7 +330,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       // Get cell vertices
       std::vector<uint> vertices;
       for (uint k = 0; k < num_cell_vertices; ++k)
-        vertices.push_back(received_data[(j + 1) +k]);
+        vertices.push_back(received_data[(j + 1) + k]);
       _cell_vertices.push_back(vertices);
     }
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-03-05
-// Last changed: 2011-06-30
+// Last changed: 2012-07-05
 //
 // This demo program solves Poisson's equation
 //
@@ -77,6 +77,7 @@ int main()
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

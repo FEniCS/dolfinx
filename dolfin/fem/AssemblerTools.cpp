@@ -27,6 +27,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
@@ -141,7 +142,8 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 }
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
-                                        bool reset_sparsity, bool add_values)
+          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
+          bool reset_sparsity, bool add_values)
 {
   dolfin_assert(a.ufc_form());
 
@@ -179,11 +181,12 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      SparsityPatternBuilder::build(*tensor_layout->sparsity_pattern(),
-                                    a.mesh(), dofmaps,
-                                    a.ufc_form()->num_cell_domains(),
-                                    a.ufc_form()->num_interior_facet_domains(),
-                                    a.ufc_form()->num_exterior_facet_domains());
+      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPatternBuilder::build(pattern,
+                                a.mesh(), dofmaps, periodic_master_slave_dofs,
+                                a.ufc_form()->num_cell_domains(),
+                                a.ufc_form()->num_interior_facet_domains(),
+                                a.ufc_form()->num_exterior_facet_domains());
     }
     t0.stop();
 
@@ -191,6 +194,43 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t1("Init tensor");
     A.init(*tensor_layout);
     t1.stop();
+
+    // Insert zeros in positions required for periodic boundary
+    // conditions. These are applied post-assembly, and may be prematurely
+    // optimised away by the linear algebra backend when calling
+    // GenericMatrix::apply, e.g. PETSc does this
+    if (A.rank() == 2)
+    {
+      if (tensor_layout->sparsity_pattern())
+      {
+        const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+        if (pattern.primary_dim() != 0)
+        {
+          dolfin_error("AssemblerTools.cpp",
+                       "insert zero values in periodic boundary condition positions",
+                       "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
+        }
+
+        GenericMatrix& _A = A.down_cast<GenericMatrix>();
+        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
+        for (dof_pair = periodic_master_slave_dofs.begin(); dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
+        {
+          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
+
+          std::vector<uint> edges;
+          for (uint i = 0; i < 2; ++i)
+          {
+            if (dofs[i] >= pattern.local_range(0).first && dofs[i] < pattern.local_range(0).second)
+            {
+              pattern.get_edges(dofs[i], edges);
+              const std::vector<double> block(edges.size(), 0.0);
+              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+            }
+          }
+        }
+        A.apply("flush");
+      }
+    }
 
     // Delete sparsity pattern
     Timer t2("Delete sparsity");

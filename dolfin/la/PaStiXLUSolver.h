@@ -61,8 +61,6 @@ namespace dolfin
 
     boost::shared_ptr<const STLMatrix> A;
 
-    const uint id;
-
   };
 
 }

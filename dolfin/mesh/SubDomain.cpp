@@ -54,7 +54,7 @@ bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(const Array<double>& x, Array<double>&) const
+void SubDomain::map(const Array<double>& x, Array<double>& y) const
 {
   dolfin_error("SubDomain.cpp",
                "map points within subdomain",

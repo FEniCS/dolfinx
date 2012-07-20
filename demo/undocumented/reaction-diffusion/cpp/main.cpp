@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-06-15
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 //
 // This demo program solves the reaction-diffusion equation
 //
@@ -57,6 +57,7 @@ int main()
   Function u(V);
   solve(a == L, u);
   plot(u);
+  interactive();
 
   return 0;
 }
