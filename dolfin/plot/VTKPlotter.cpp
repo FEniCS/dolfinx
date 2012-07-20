@@ -355,7 +355,8 @@ void VTKPlotter::interactive(bool enter_eventloop)
 //----------------------------------------------------------------------------
 void VTKPlotter::start_eventloop()
 {
-  vtk_pipeline->_interactor->Start();
+  if (!no_plot)
+    vtk_pipeline->_interactor->Start();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
