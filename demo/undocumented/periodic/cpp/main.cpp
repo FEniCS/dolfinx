@@ -108,7 +108,9 @@ int main()
   Vector b;
 
   // Get list of master-slave dofs
-  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
+  typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+  typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
+  std::vector<MasterSlavePair> dof_pairs;
   bc1.compute_dof_pairs(V, dof_pairs);
 
   // Intialise tensor, taking into account periodic dofs
