@@ -239,7 +239,6 @@ void EpetraVector::apply(std::string mode)
   // This would be simpler if we required that only local values (on
   // this process) can be set
   int err = 0;
-  /*
   if (MPI::sum(static_cast<uint>(off_process_set_values.size())) > 0)
   {
     // Create communicator
@@ -275,7 +274,6 @@ void EpetraVector::apply(std::string mode)
     err = x->GlobalAssemble(Add);
   }
   else
-  */
   {
     if (mode == "add")
       err = x->GlobalAssemble(Add);
@@ -376,6 +374,7 @@ void EpetraVector::add_local(const Array<double>& values)
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
+  /*
   for (uint i = 0; i < m; ++i)
   {
 	  //const int local_row = x->Map().LID(rows[i]);
@@ -392,8 +391,8 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
     //else
     //  (*x)[0][local_row] = block[i];
   }
+  */
 
-  /*
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
   const uint n0 = map.MinMyGID();
@@ -407,7 +406,6 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
     else
       off_process_set_values[rows[i]] = block[i];
   }
-  */
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)

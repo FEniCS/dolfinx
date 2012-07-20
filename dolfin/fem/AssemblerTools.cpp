@@ -225,7 +225,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
               _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
-
             }
           }
         }
