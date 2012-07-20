@@ -75,8 +75,6 @@ int main()
     }
   };
 
-  parameters["linear_algebra_backend"] = "Epetra";
-
   // Create mesh
   UnitSquare mesh(32, 32);
 
@@ -133,8 +131,8 @@ int main()
   file << u;
 
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }
