@@ -39,7 +39,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    const Mesh& mesh,
                    const std::vector<const GenericDofMap*>& dofmaps,
                    const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& master_slave_dofs,
-                   bool cells, bool interior_facets, bool exterior_facets)
+                   bool cells, bool interior_facets, bool exterior_facets, bool diagonal)
 {
   const uint rank = dofmaps.size();
 
@@ -149,6 +149,24 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         sparsity_pattern.insert(dofs);
       }
 
+      p++;
+    }
+  }
+
+  if (diagonal)
+  {
+    Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
+
+    std::vector<uint> diagonal_dof(1,0);
+    for (uint i = 0; i < rank; ++i)
+      dofs[i] = &diagonal_dof;
+
+    for (uint j = local_range[0].first; j < local_range[0].second; j++)
+    {
+      diagonal_dof[0] = j;
+
+      // Insert diagonal non-zeroes in sparsity pattern
+      sparsity_pattern.insert(dofs);
       p++;
     }
   }

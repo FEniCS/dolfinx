@@ -61,7 +61,8 @@ namespace dolfin
                          const Form& L,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
     static void assemble(GenericMatrix& A,
@@ -71,7 +72,8 @@ namespace dolfin
                          const DirichletBC& bc,
                          bool reset_sparsity=true,
                          bool add_values=true,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -81,7 +83,8 @@ namespace dolfin
                          const std::vector<const DirichletBC*>& bcs,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
@@ -95,7 +98,8 @@ namespace dolfin
                          const GenericVector* x0,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
   private:
 

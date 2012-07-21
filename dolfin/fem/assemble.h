@@ -126,7 +126,8 @@ namespace dolfin
                           const MeshFunction<unsigned int>* interior_facet_domains=NULL,
                           bool reset_sparsity=true,
                           bool add_values=false,
-                          bool finalize_tensor=true);
+                          bool finalize_tensor=true,
+                          bool keep_diagonal=false);
 
   /// Symmetric assembly of As, storing the modifications in An. To create
   /// matching RHS, assemble and apply bcs normally, then subtract An*b.
@@ -143,7 +144,8 @@ namespace dolfin
                           const MeshFunction<unsigned int>* interior_facet_domains=NULL,
                           bool reset_sparsity=true,
                           bool add_values=false,
-                          bool finalize_tensor=true);
+                          bool finalize_tensor=true,
+                          bool keep_diagonal=false);
 
   //--- Specialized versions for scalars ---
 
