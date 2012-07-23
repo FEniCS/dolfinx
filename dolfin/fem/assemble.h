@@ -51,7 +51,8 @@ namespace dolfin
                 const Form& a,
                 bool reset_sparsity=true,
                 bool add_values=false,
-                bool finalize_tensor=true);
+                bool finalize_tensor=true,
+                bool keep_diagonal=false);
 
   /// Assemble tensor on sub domain
   void assemble(GenericTensor& A,
@@ -59,7 +60,8 @@ namespace dolfin
                 const SubDomain& sub_domain,
                 bool reset_sparsity=true,
                 bool add_values=false,
-                bool finalize_tensor=true);
+                bool finalize_tensor=true,
+                bool keep_diagonal=false);
 
   /// Assemble tensor on sub domains
   void assemble(GenericTensor& A,
@@ -69,7 +71,8 @@ namespace dolfin
                 const MeshFunction<unsigned int>* interior_facet_domains,
                 bool reset_sparsity=true,
                 bool add_values=false,
-                bool finalize_tensor=true);
+                bool finalize_tensor=true,
+                bool keep_diagonal=false);
 
   /// Assemble system (A, b)
   void assemble_system(GenericMatrix& A,
@@ -78,7 +81,8 @@ namespace dolfin
                        const Form& L,
                        bool reset_sparsity=true,
                        bool add_values=false,
-                       bool finalize_tensor=true);
+                       bool finalize_tensor=true,
+                       bool keep_diagonal=false);
 
   /// Assemble system (A, b) and apply Dirichlet boundary condition
   void assemble_system(GenericMatrix& A,
@@ -88,7 +92,8 @@ namespace dolfin
                        const DirichletBC& bc,
                        bool reset_sparsity=true,
                        bool add_values=false,
-                       bool finalize_tensor=true);
+                       bool finalize_tensor=true,
+                       bool keep_diagonal=false);
 
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
@@ -98,7 +103,8 @@ namespace dolfin
                        const std::vector<const DirichletBC*>& bcs,
                        bool reset_sparsity=true,
                        bool add_values=false,
-                       bool finalize_tensor=true);
+                       bool finalize_tensor=true,
+                       bool keep_diagonal=false);
 
   /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
@@ -112,7 +118,8 @@ namespace dolfin
                        const GenericVector* x0,
                        bool reset_sparsity=true,
                        bool add_values=false,
-                       bool finalize_tensor=true);
+                       bool finalize_tensor=true,
+                       bool keep_diagonal=false);
 
   /// Symmetric assembly of As, storing the modifications in An. To create
   /// matching RHS, assemble and apply bcs normally, then subtract An*b.
