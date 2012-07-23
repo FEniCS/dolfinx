@@ -131,6 +131,10 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   s << "/VertexVector/" << counter;
   h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize); //values
 
+  // remove path from filename_data
+  std::size_t lastslash=filename_data.rfind('/');
+  filename_data.erase(0,lastslash+1);
+
   //Now go ahead and write the XML meta description
   if(MPI::process_number()==0)
   {
