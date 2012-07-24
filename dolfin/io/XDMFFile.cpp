@@ -73,6 +73,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const Mesh& mesh = *u.function_space()->mesh();
   const uint vrank = u.value_rank();
   const uint vsize = u.value_size();
+  uint vsize_io=vsize; //output size may be padded 2D -> 3D for paraview
 
   // Tensors of rank > 1 not yet supported
   if (vrank > 1)
@@ -98,10 +99,15 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     std::vector<double> tmp;
     tmp.reserve(num_local_vertices);
     for(uint i = 0; i < num_local_vertices; i++)
-      for(uint j = 0; j < vsize; j++)
-	      tmp.push_back(vtx_values[i + j*num_local_vertices]);
+      {
+	for(uint j = 0; j < vsize; j++)
+	  tmp.push_back(vtx_values[i + j*num_local_vertices]);
+	if(vsize==2) tmp.push_back(0.0);
+      }
+    vtx_values.resize(tmp.size());
     std::copy(tmp.begin(), tmp.end(), vtx_values.begin());
   }
+  if(vsize==2) vsize_io=3;
 
   // Get offset and size of local vertex usage in global terms
   const uint off = MPI::global_offset(num_local_vertices, true);
@@ -129,7 +135,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // For simple Lagrange elements, they are identical.
   std::stringstream s("");
   s << "/VertexVector/" << counter;
-  h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize); //values
+  h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize_io); //values
 
   // remove path from filename_data
   std::size_t lastslash=filename_data.rfind('/');
@@ -236,7 +242,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data
     xdmf_vals.append_attribute("Name")=u.name().c_str();
-    if(vsize==1)
+    if(vsize_io==1)
       xdmf_vals.append_attribute("AttributeType")="Scalar";
     else
       xdmf_vals.append_attribute("AttributeType")="Vector";
@@ -244,7 +250,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices << " " << vsize;
+    s << num_global_vertices << " " << vsize_io;
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
     s<< filename_data << ":/VertexVector/" << counter;
