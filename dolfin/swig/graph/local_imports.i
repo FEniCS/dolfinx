@@ -20,3 +20,6 @@
 
 // Auto generated local_import statements for the module: graph
 
+%import(module="mesh") "dolfin/graph/Graph.h"
+%import(module="mesh") "dolfin/graph/GraphBuilder.h"
+%import(module="mesh") "dolfin/graph/BoostGraphRenumbering.h"

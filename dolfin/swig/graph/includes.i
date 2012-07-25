@@ -20,3 +20,7 @@
 
 // Auto generated include statements for the module: graph
 
+%include "dolfin/graph/Graph.h"
+%include "dolfin/graph/GraphBuilder.h"
+%include "dolfin/graph/BoostGraphRenumbering.h"
+%include "dolfin/swig/graph/post.i"

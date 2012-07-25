@@ -20,3 +20,6 @@
 
 // Auto generated import statements for the module: graph
 
+%import(module="dolfin.cpp.mesh") "dolfin/graph/Graph.h"
+%import(module="dolfin.cpp.mesh") "dolfin/graph/GraphBuilder.h"
+%import(module="dolfin.cpp.mesh") "dolfin/graph/BoostGraphRenumbering.h"
