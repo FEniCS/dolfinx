@@ -41,10 +41,13 @@ namespace dolfin
     virtual void init_pipeline() = 0;
 
     /// Update the plottable data
-    virtual void update(const Parameters& parameters) = 0;
+    virtual void update(const Parameters& parameters, int framecounter) = 0;
 
     /// Update the scalar range of the plottable data
     virtual void update_range(double range[2]) = 0;
+
+    /// Return geometric dimension
+    virtual uint dim() = 0;
    
     /// Return data to visualize
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;

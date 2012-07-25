@@ -18,12 +18,10 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-06-25
+// Last changed: 2012-07-05
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
-
-#ifdef HAS_VTK
 
 #include <boost/scoped_ptr.hpp>
 
@@ -162,6 +160,9 @@ namespace dolfin
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
+      p.add("autorange", true);
+      p.add("range_min", 0.0);
+      p.add("range_max", 1.0);
       p.add("rescale", false);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
@@ -179,14 +180,36 @@ namespace dolfin
       return p;
     }
 
+    // This function should be private, but is available
+    // to keep backward compatibilty with Viper
+    // Update all VTK structures
+    void update();
+
+    // These functions are kept for backward compatibility with Viper
+    // They issue a warDeprecated update function
+    void update(boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const Function> function);
+    void update(boost::shared_ptr<const ExpressionWrapper> expression);
+    void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
+    void update(boost::shared_ptr<const DirichletBC> bc);
+    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
+    void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+
+
+
+
     /// Plot the object
     void plot();
 
     /// Make the current plot interactive
-    void interactive();
+    void interactive(bool enter_eventloop = true);
+
+    void start_eventloop();
 
     /// Save plot to PNG file (file suffix appended automatically)
-    void hardcopy(std::string filename);
+    void write_png(std::string filename);
 
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
@@ -197,14 +220,27 @@ namespace dolfin
     /// Return unique ID of the object to plot
     uint id() const { return _id; }
 
+    /// Camera control
+    void azimuth(double angle);
+    void elevate(double angle);
+    void dolly(double value);
+    void set_viewangle(double angle);
+
+    // Set the range of the color table
+    void set_min_max(double min, double max);
+
+    void add_polygon(const Array<double>& points);
+
     // The cache of plotter objects
-    static std::vector<boost::shared_ptr<VTKPlotter> > plotter_cache;
+    // Used when calling interactive() 
+    // (which should have effect on all plot windows)
+    static std::list<VTKPlotter*> plotter_cache;
 
   private:
 
-    // Setup all pipeline objects and connect them. Called from all
-    // constructors
-    void init_pipeline();
+    // Initialization common to all constructors.
+    // Setup all pipeline objects and connect them. 
+    void init();
 
     // Set the title parameter from the name and label of the Variable to plot
     void set_title(const std::string& name, const std::string& label);
@@ -238,7 +274,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif
