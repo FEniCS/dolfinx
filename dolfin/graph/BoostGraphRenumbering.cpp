@@ -134,12 +134,15 @@ T BoostGraphRenumbering::build_undirected_graph(const Graph& graph)
 
   // Build Boost graph
   T boost_graph(n);
-  for (uint i = 0; i < n; ++i)
+  std::vector<graph_set_type>::const_iterator vertex;
+  graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
-    for (uint j = 0; j < graph[i].size(); ++j)
+    const uint vertex_index = vertex - graph.begin();
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
     {
-      if (i < graph[i][j])
-        boost::add_edge(i, graph[i][j], boost_graph);
+      if (vertex_index < *edge)
+        boost::add_edge(vertex_index, *edge, boost_graph);
     }
   }
 
@@ -154,12 +157,15 @@ T BoostGraphRenumbering::build_directed_graph(const Graph& graph)
 
   // Build Boost graph
   T boost_graph(n);
-  for (uint i = 0; i < n; ++i)
+  std::vector<graph_set_type>::const_iterator vertex;
+  graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
-    for (uint j = 0; j < graph[i].size(); ++j)
+    const uint vertex_index = vertex - graph.begin();
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
     {
-      if (i != graph[i][j])
-        boost::add_edge(i, graph[i][j], boost_graph);
+      if (vertex_index != *edge)
+        boost::add_edge(vertex_index, *edge, boost_graph);
     }
   }
 

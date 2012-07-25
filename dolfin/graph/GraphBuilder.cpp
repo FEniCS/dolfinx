@@ -47,7 +47,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   Graph graph(n);
 
   // Build graph
-  //tic();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
@@ -57,33 +56,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
   }
-  //cout << "** DOLFIN Graph time: " << toc() << endl;
-
-  /*
-  // Build Boost graph
-  tic();
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> BoostGraph;
-  typedef boost::graph_traits<BoostGraph>::edge_descriptor Edge;
-  BoostGraph boost_graph(n);
-
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
-
-    std::vector<uint>::const_iterator node;
-    for (node = dofs0.begin(); node != dofs0.end(); ++node)
-    {
-      for (uint i = 0; i < dofs1.size(); ++i)
-      {
-        //std::pair<Edge, bool> edge = boost::edge(*node, dofs1[i], boost_graph);
-        if (*node < dofs1[i] && !boost::edge(*node, dofs1[i], boost_graph).second)
-          boost::add_edge(*node, dofs1[i], boost_graph);
-      }
-    }
-  }
-  cout << "** Boost graph time: " << toc() << endl;
-  */
 
   return graph;
 }
