@@ -28,7 +28,10 @@
 #include <AztecOO.h>
 #include <Epetra_CombineMode.h>
 #include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
 #include <Epetra_RowMatrix.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_Vector.h>
 #include <Ifpack.h>
 #include <ml_include.h>
 #include <ml_epetra_utils.h>
@@ -38,6 +41,8 @@
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
+#include "EpetraVector.h"
+#include "GenericVector.h"
 #include "KrylovSolver.h"
 #include "TrilinosPreconditioner.h"
 
@@ -169,6 +174,27 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
   }
 }
 //-----------------------------------------------------------------------------
+void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list)
+{
+  parameter_list = list;
+}
+//-----------------------------------------------------------------------------
+void TrilinosPreconditioner::set_null_vectors(const std::vector<const GenericVector*>& null_vectors)
+{
+  for (uint i = 0; i < null_vectors.size(); ++i)
+  {
+    dolfin_assert(null_vectors[i]);
+    const EpetraVector& v = null_vectors[i]->down_cast<EpetraVector>();
+    dolfin_assert(v.data());
+    if (i == 0)
+      _null_vectors.reset(new Epetra_MultiVector(v.vec()->Map(), null_vectors.size()));
+
+    Epetra_MultiVector& __null_spaces = *(_null_vectors);
+    const Epetra_Vector& _v = *(*(v.vec()))(0);
+    *__null_spaces(i) = _v;
+  }
+}
+//-----------------------------------------------------------------------------
 std::string TrilinosPreconditioner::name() const
 {
   return preconditioner;
@@ -208,6 +234,16 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   mlist.set("ML output", output_level);
 
   // Create preconditioner (assumes the A has been created)
+  if (parameter_list)
+    mlist.setParameters(mlist);
+
+  if(_null_vectors)
+  {
+    mlist.set("null space: type", "pre-computed");
+    mlist.set("null space: dimension", _null_vectors->NumVectors());
+    mlist.set("null space: vectors", _null_vectors->Values());
+  }
+
   ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist, true));
 
   // Set this operator as preconditioner for AztecOO
