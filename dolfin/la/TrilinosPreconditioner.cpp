@@ -185,7 +185,7 @@ void TrilinosPreconditioner::set_null_vectors(const std::vector<const GenericVec
   {
     dolfin_assert(null_vectors[i]);
     const EpetraVector& v = null_vectors[i]->down_cast<EpetraVector>();
-    dolfin_assert(v.data());
+    dolfin_assert(v.vec());
     if (i == 0)
       _null_vectors.reset(new Epetra_MultiVector(v.vec()->Map(), null_vectors.size()));
 
@@ -230,12 +230,12 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   //mlist.set("max levels", max_levels);
 
   // Set output level
-  const int output_level = parameters("ml")["output_level"];
-  mlist.set("ML output", output_level);
+  //const int output_level = parameters("ml")["output_level"];
+  //mlist.set("ML output", output_level);
 
   // Create preconditioner (assumes the A has been created)
   if (parameter_list)
-    mlist.setParameters(mlist);
+    mlist.setParameters(*parameter_list);
 
   if(_null_vectors)
   {
