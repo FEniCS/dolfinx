@@ -25,8 +25,6 @@
 
 #define BOOST_NO_HASH
 
-#include <boost/container/flat_set.hpp>
-
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>
