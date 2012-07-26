@@ -185,9 +185,8 @@ void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::Par
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList> list)
 {
-  //parameter_list.reset(reference_to_no_delete_pointer(list.get()));
   parameter_list = boost::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
-  ref_keeper = list;
+  parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*>& null_space)

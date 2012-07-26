@@ -116,7 +116,7 @@ namespace dolfin
 
     // Teuchos::ParameterList pointer, used when initialized with a
     // Teuchos::RCP shared_ptr
-    Teuchos::RCP<Teuchos::ParameterList> ref_keeper;
+    Teuchos::RCP<const Teuchos::ParameterList> parameter_ref_keeper;
 
     // Vectors spanning the null space
     boost::shared_ptr<Epetra_MultiVector> _null_space;
