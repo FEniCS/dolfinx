@@ -29,6 +29,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -73,8 +74,11 @@ namespace dolfin
     /// Set the precondtioner and matrix used in preconditioner
     virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
 
-    /// Set the precondtioner and matrix used in preconditioner
+    /// Set the Trilonos preconditioner parameters list
     void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
+
+    /// Set the Trilonos preconditioner parameters list (for use from Python)
+    void set_parameters(Teuchos::RCP<Teuchos::ParameterList> list);
 
     /// Set basis for the null space of the operator. Setting this
     /// is critical to the performance of some preconditioners, e.g. ML.
@@ -109,6 +113,10 @@ namespace dolfin
 
     // Parameter list
     boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+
+    // Teuchos::ParameterList pointer, used when initialized with a
+    // Teuchos::RCP shared_ptr
+    Teuchos::RCP<Teuchos::ParameterList> ref_keeper;
 
     // Vectors spanning the null space
     boost::shared_ptr<Epetra_MultiVector> _null_space;

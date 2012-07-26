@@ -233,6 +233,7 @@
 
 %RCP_to_const_ref_typemap(Epetra_CrsGraph);
 %RCP_to_const_ref_typemap(Epetra_BlockMap);
+%RCP_to_const_ref_typemap(Teuchos::ParameterList);
 #endif
 
 //-----------------------------------------------------------------------------
