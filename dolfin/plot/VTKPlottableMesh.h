@@ -26,11 +26,12 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkGeometryFilter.h>
 
-#include <dolfin/mesh/Mesh.h>
 #include "GenericVTKPlottable.h"
 
 namespace dolfin
 {
+
+  class Mesh;
 
   /// Data wrapper class for plotting meshes. It also acts as a superclass
   /// for the other data wrapper classes, as all kinds of plottable data
@@ -48,10 +49,13 @@ namespace dolfin
     void init_pipeline();
 
     /// Update the plottable data
-    void update(const Parameters& parameters);
+    void update(const Parameters& parameters, int frame_counter);
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
+
+    /// Return geometric dimension
+    virtual uint dim();
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;

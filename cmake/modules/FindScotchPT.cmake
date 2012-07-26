@@ -96,6 +96,7 @@ if (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
   set(SCOTCH_CONFIG_TEST_VERSION_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/scotch_config_test_version.cpp")
   file(WRITE ${SCOTCH_CONFIG_TEST_VERSION_CPP} "
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <stdio.h>
 #include <mpi.h>
 #include <ptscotch.h>
@@ -132,6 +133,7 @@ int main() {
     set(SCOTCH_TEST_LIB_CPP
       "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/scotch_test_lib.cpp")
     file(WRITE ${SCOTCH_TEST_LIB_CPP} "
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <sys/types.h>
 #include <stdio.h>
 #include <mpi.h>

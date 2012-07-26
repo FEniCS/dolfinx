@@ -23,11 +23,14 @@
 #ifndef __EXPRESSION_WRAPPER_H
 #define __EXPRESSION_WRAPPER_H
 
-#include <dolfin/mesh/Mesh.h>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/function/Expression.h>
 
 namespace dolfin
 {
+
+  class Expression;
+  class Mesh;
 
   /// A light wrapper class to hold an expression to plot, along with the mesh
   /// to plot it on. Allows clean, templated plotter code in plot.cpp
@@ -38,10 +41,11 @@ namespace dolfin
 
     /// Create wrapped expression object
     explicit ExpressionWrapper(boost::shared_ptr<const Expression> expression,
-                                 boost::shared_ptr<const Mesh> mesh);
+                               boost::shared_ptr<const Mesh> mesh);
 
     /// Return unique ID of the expression
-    uint id() const { return _expression->id(); }
+    uint id() const
+    { return _expression->id(); }
 
     /// Get shared pointer to the expression
     boost::shared_ptr<const Expression> expression() const

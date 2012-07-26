@@ -91,7 +91,10 @@ double bench(std::string form, boost::shared_ptr<const Form> a)
   Matrix A;
 
   // Intialise matrix
-  AssemblerTools::init_global_tensor(A, *a, true, false);
+  typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+  typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
+  std::vector<MasterSlavePair> periodic_dof_pairs;
+  AssemblerTools::init_global_tensor(A, *a, periodic_dof_pairs, true, false);
 
   // Assemble
   Timer timer("Total time");
@@ -153,18 +156,6 @@ int main(int argc, char* argv[])
       // Iterate over forms
       for (unsigned int i = 0; i < forms.size(); i++)
       {
-
-        // Create form
-        /*
-        boost::shared_ptr<Form> a;
-        if (forms[i] == "Poisson")
-          a = PoissonFactory::a(mesh);
-        else if (forms[i] == "NavierStokes")
-          a = NavierStokesFactory::a(mesh);
-        else
-          error("Form name unknown");
-        */
-
         // Run test case
         const double t = bench(forms[i].first, forms[i].second);
 

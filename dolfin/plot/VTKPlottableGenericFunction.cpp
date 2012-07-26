@@ -27,8 +27,10 @@
 #include <vtkVectorNorm.h>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/Vertex.h>
+#include <dolfin/function/Expression.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/Vertex.h>
 
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableGenericFunction.h"
@@ -77,7 +79,6 @@ void VTKPlottableGenericFunction::init_pipeline()
       {
         // In 3D, we just show the scalar values as colors on the mesh
         _geometryFilter->SetInput(_grid);
-
       }
       _geometryFilter->Update();
     }
@@ -119,25 +120,12 @@ void VTKPlottableGenericFunction::init_pipeline()
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update(const Parameters& parameters)
+void VTKPlottableGenericFunction::update(const Parameters& parameters, int frame_counter)
 {
-  VTKPlottableMesh::update(parameters);
+  // Update the mesh
+  VTKPlottableMesh::update(parameters, frame_counter);
 
-  const double scale = parameters["scale"];
-  _warpscalar->SetScaleFactor(scale);
-  _warpvector->SetScaleFactor(scale);
-  _glyphs->SetScaleFactor(scale);
-
-  const std::string mode = parameters["mode"];
-  if (mode == "warp")
-    warp_vector_mode = true;
-  else
-  {
-    if (mode != "auto")
-      warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
-    warp_vector_mode = false;
-  }
-
+  // Update function values
   switch(_function->value_rank())
   {
   case 0:
@@ -149,17 +137,42 @@ void VTKPlottableGenericFunction::update(const Parameters& parameters)
   default:
     break;
   }
+
+  // If this is the first render of this plot and/or the rescale parameter is
+  // set, we read get the min/max values of the data and process them
+  if (frame_counter == 0 || parameters["rescale"])
+  {
+    const double scale = parameters["scale"];
+    _warpvector->SetScaleFactor(scale);
+    _glyphs->SetScaleFactor(scale);
+
+    // Compute the scale factor for scalar warping
+    double range[2];
+    update_range(range);
+    double* bounds = _grid->GetBounds();
+    double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
+
+    // Set the default warp such that the max warp is one fourth of the longest
+    // axis of the mesh.
+    _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
+  }
+
+  const std::string mode = parameters["mode"];
+  if (mode == "warp")
+    warp_vector_mode = true;
+  else
+  {
+    if (mode != "auto")
+      warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
+
+    warp_vector_mode = false;
+  }
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])
 {
   // Superclass gets the range from the grid
   VTKPlottableMesh::update_range(range);
-
-  // We also multiply the warpscalar's scale factor by the width of the scalar
-  // range
-  const double scale = _warpscalar->GetScaleFactor();
-  _warpscalar->SetScaleFactor(scale/(range[1]-range[0]));
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() const

@@ -463,12 +463,15 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
 //-----------------------------------------------------------------------------
 void DofMap::renumber(const std::vector<uint>& renumbering_map)
 {
+  // FIXME: Need to handle/invalidate sub-dofmaps
+
+  dolfin_assert(MPI::num_processes() == 1);
   dolfin_assert(global_dimension() == renumbering_map.size());
 
   // Update or build ufc-to-dofmap
   if (ufc_map_to_dofmap.empty())
   {
-    for (uint i = 0; i < _dofmap.size(); ++i)
+    for (uint i = 0; i < global_dimension(); ++i)
       ufc_map_to_dofmap[i] = renumbering_map[i];
   }
   else
