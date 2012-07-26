@@ -27,8 +27,10 @@
 #include <vtkVectorNorm.h>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/Vertex.h>
+#include <dolfin/function/Expression.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/Vertex.h>
 
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableGenericFunction.h"

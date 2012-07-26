@@ -30,6 +30,8 @@
 namespace dolfin
 {
 
+  class Parameters;
+
   /// This class defines a common interface for objects that can be plotted by
   /// the VTKPlotter class
 
@@ -48,14 +50,14 @@ namespace dolfin
 
     /// Return geometric dimension
     virtual uint dim() = 0;
-   
+
     /// Return data to visualize
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
 
     /// Get an actor for showing vertex labels
     virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor()
     {
-      warning("Plotting of vertex labels is not implemented by the current" 
+      warning("Plotting of vertex labels is not implemented by the current"
           " VTK plottable type.");
       // Return empty actor to have something (invisible) to render
       return vtkSmartPointer<vtkActor2D>::New();

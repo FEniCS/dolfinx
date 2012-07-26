@@ -42,12 +42,12 @@ int main()
   p.parameters["scalarbar"] = false;
 
   double polygon[] = { 0.0, 0.0,
-		       1.0, 0.0,
-		       1.0, 1.0,
-		       0.0, 1.0,
-		       0.0, 0.0 };
-
-  p.add_polygon(Array<double>(10, polygon));
+                       1.0, 0.0,
+                       1.0, 1.0,
+                       0.0, 1.0,
+                       0.0, 0.0 };
+  Array<double> _polygon(10, polygon);
+  p.add_polygon(_polygon);
 
   {
     // Access mesh geometry
@@ -69,11 +69,11 @@ int main()
       BoundaryMesh boundary(omega1);
       std::set<dolfin::uint> cells;
       omega0.intersected_cells(boundary, cells);
-      
+
       // Copy values to mesh function for plotting
       *intersection1 = 0;
       for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
-      (*intersection1)[*i] = 1;
+        (*intersection1)[*i] = 1;
 
       // Plot intersection
       p.plot();
@@ -81,14 +81,15 @@ int main()
       // Rotate circle around (0.5, 0.5)
       for (VertexIterator vertex(omega0); !vertex.end(); ++vertex)
       {
-	double* x = geometry.x(vertex->index());
-	const double xr = x[0] - 0.5;
-	const double yr = x[1] - 0.5;
-	x[0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr);
-	x[1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr);
+        double* x = geometry.x(vertex->index());
+        const double xr = x[0] - 0.5;
+        const double yr = x[1] - 0.5;
+        x[0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr);
+        x[1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr);
       }
 
-      // Clear the cached intersection operator. Necessary because mesh has changed.
+      // Clear the cached intersection operator. Necessary because mesh
+      // has changed.
       omega0.intersection_operator().clear();
     }
   }
@@ -109,36 +110,36 @@ int main()
 
     // Access mesh geometry
     MeshGeometry& geometry = structure_mesh.geometry();
-    
 
     // Iterate over angle
     double theta = 0.0;
     double dtheta = 0.1*DOLFIN_PI;
-    while ( theta < 2*DOLFIN_PI + dtheta )
+    while (theta < 2*DOLFIN_PI + dtheta)
     {
       std::set<dolfin::uint> cells;
       background_mesh.intersected_cells(structure_mesh, cells);
 
       // Mark intersected values
       *intersection2 = 0;
-      
+
       // Copy values to mesh function for plotting
       for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
-	(*intersection2)[*i] = 1;
+        (*intersection2)[*i] = 1;
 
       p2.plot();
 
       // Rotate rotator
       for (VertexIterator vertex(structure_mesh); !vertex.end(); ++vertex)
       {
-	double* x = geometry.x(vertex->index());
-	const double xr = x[0];
-	const double yr = x[1];
-	x[0] = cos(dtheta)*xr - sin(dtheta)*yr;
-	x[1] = sin(dtheta)*xr + cos(dtheta)*yr;
+        double* x = geometry.x(vertex->index());
+        const double xr = x[0];
+        const double yr = x[1];
+        x[0] = cos(dtheta)*xr - sin(dtheta)*yr;
+        x[1] = sin(dtheta)*xr + cos(dtheta)*yr;
       }
 
-      // Clear the cached intersection operator. Necessary because mesh has changed.
+      // Clear the cached intersection operator. Necessary because mesh
+      // has changed.
       structure_mesh.intersection_operator().clear();
 
       theta += dtheta;

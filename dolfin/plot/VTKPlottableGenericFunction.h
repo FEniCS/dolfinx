@@ -23,20 +23,24 @@
 
 #ifdef HAS_VTK
 
+#include <boost/shared_ptr.hpp>
 #include <vtkWarpScalar.h>
 #include <vtkWarpVector.h>
 #include <vtkGlyph3D.h>
 
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/Expression.h>
+#include "VTKPlottableMesh.h"
 
 namespace dolfin
 {
 
   // Forward declarations
-  class VTKPlottableMesh;
+  class Expression;
+  class Function;
+  class GenericFunction;
   class GenericVTKPlottable;
+  class Mesh;
+  class Parameters;
+  class VTKPlottableMesh;
 
   /// Data wrapper class for plotting generic functions, including
   /// instances of the Function and Expression classes.

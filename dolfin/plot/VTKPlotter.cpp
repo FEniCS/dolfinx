@@ -16,23 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet 2012
+// Modified by Garth N. Wells 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-07-05
-
+// Last changed: 2012-07-26
 
 
 #ifdef HAS_VTK
-
-#include "VTKPlotter.h"
-
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/common/Timer.h>
-#include "ExpressionWrapper.h"
-#include "VTKPlottableMesh.h"
-#include "VTKPlottableGenericFunction.h"
-#include "VTKPlottableMeshFunction.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataMapper.h>
@@ -58,6 +48,16 @@
 #include <vtkCylinderSource.h>
 
 #include <boost/filesystem.hpp>
+
+#include <dolfin/common/Timer.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/Vertex.h>
+#include "ExpressionWrapper.h"
+#include "VTKPlottableGenericFunction.h"
+#include "VTKPlottableMesh.h"
+#include "VTKPlottableMeshFunction.h"
+#include "VTKPlotter.h"
+
 
 using namespace dolfin;
 
@@ -101,7 +101,7 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
 
-    PrivateVTKPipeline() 
+    PrivateVTKPipeline()
     {
       // Initialize objects
       _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -116,7 +116,7 @@ namespace dolfin
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 
-      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();      
+      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 
       // Connect the parts
       _mapper->SetLookupTable(_lut);
@@ -125,7 +125,7 @@ namespace dolfin
       _renderer->AddActor(_actor);
       _renderer->AddActor(polygon_actor);
       _renderWindow->AddRenderer(_renderer);
-      
+
       // Set up interactorstyle and connect interactor
       vtkSmartPointer<vtkInteractorStyleTrackballCamera> style
 	= vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
@@ -391,14 +391,12 @@ void VTKPlotter::init()
   plotter_cache.push_back(this);
   log(TRACE, "Size of plotter cache is %d.", plotter_cache.size());
 
-
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
   // renderer, renderwindow and interaction. It also takes care of the scalar
   // bar and other decorations.
 
   dolfin_assert(vtk_pipeline);
-
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline();
@@ -565,7 +563,7 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   if (points.size() % dim != 0)
     warning("VTKPlotter::add_polygon() : Size of array is not a multiple of %d", dim);
 
-  const dolfin::uint numpoints = points.size() / dim;
+  const dolfin::uint numpoints = points.size()/dim;
 
   vtkSmartPointer<vtkPoints> vtk_points = vtkSmartPointer<vtkPoints>::New();
   vtk_points->SetNumberOfPoints(numpoints);
@@ -584,17 +582,15 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtkSmartPointer<vtkPolyLine> line = vtkSmartPointer<vtkPolyLine>::New();
   line->GetPointIds()->SetNumberOfIds(numpoints);
 
-  for (dolfin::uint i=0; i < numpoints; i++)
-  {
+  for (dolfin::uint i = 0; i < numpoints; i++)
     line->GetPointIds()->SetId(i, i);
-  }
 
   vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
   grid->Allocate(1, 1);
-  
+
   grid->InsertNextCell(line->GetCellType(), line->GetPointIds());
   grid->SetPoints(vtk_points);
-    
+
   vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
   extract->SetInput(grid);
 
@@ -602,10 +598,10 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   mapper->SetInputConnection(extract->GetOutputPort());
 
   vtk_pipeline->polygon_actor->SetMapper(mapper);
-      
+
   mapper->SetInputConnection(extract->GetOutputPort());
 
-  vtk_pipeline->polygon_actor->GetProperty()->SetColor(0,0,1);
+  vtk_pipeline->polygon_actor->GetProperty()->SetColor(0, 0, 1);
   vtk_pipeline->polygon_actor->GetProperty()->SetLineWidth(1);
 }
 //----------------------------------------------------------------------------
@@ -623,16 +619,14 @@ void VTKPlotter::update()
   // Update the plottable data
   _plottable->update(parameters, _frame_counter);
 
-  // If this is the first render of this plot and/or the rescale parameter is
-  // set, we read get the min/max values of the data and process them
+  // If this is the first render of this plot and/or the rescale parameter
+  // is set, we read get the min/max values of the data and process them
   if (_frame_counter == 0 || parameters["rescale"])
   {
     double range[2];
 
     if (parameters["autorange"])
-    {
       _plottable->update_range(range);
-    }
     else
     {
       range[0] = parameters["range_min"];
@@ -662,7 +656,7 @@ void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_functi
 
 #else
 
-// Implement dummy version of class VTKPlotter even if VTK is not present. 
+// Implement dummy version of class VTKPlotter even if VTK is not present.
 
 
 #include "VTKPlotter.h"
@@ -671,11 +665,11 @@ namespace dolfin { class PrivateVTKPipeline{}; }
 
 using namespace dolfin;
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                   { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                       { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())          { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                    { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                        { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())           { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                              { init(); }
+		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                                          { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init(); }
@@ -683,8 +677,9 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::~VTKPlotter(){}
 
-// (Ab)use init() to issue a warning. 
-// We also need to initialize the parameter set to avoid tons of warning when running the tests without VTK.
+// (Ab)use init() to issue a warning.
+// We also need to initialize the parameter set to avoid tons of warning
+// when running the tests without VTK.
 
 void VTKPlotter::init()
 {
@@ -722,4 +717,3 @@ void VTKPlotter::add_polygon(const Array<double>&){}
 // Define the static members
 std::list<VTKPlotter*> VTKPlotter::plotter_cache;
 int VTKPlotter::hardcopy_counter = 0;
-

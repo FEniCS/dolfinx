@@ -27,12 +27,12 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/parameter/GlobalParameters.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Expression.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/Expression.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 #include "plot.h"
@@ -81,7 +81,7 @@ VTKPlotter* plot_object(boost::shared_ptr<const T> t,
 }
 //-----------------------------------------------------------------------------
 VTKPlotter* dolfin::plot(const Function& function,
-					   std::string title, 
+					   std::string title,
 					   std::string mode)
 {
   return plot(reference_to_no_delete_pointer(function), title, mode);
@@ -96,7 +96,7 @@ VTKPlotter* dolfin::plot(boost::shared_ptr<const Function> function,
   return plot(function, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-VTKPlotter* dolfin::plot(const Function& function, 
+VTKPlotter* dolfin::plot(const Function& function,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(function),
@@ -159,7 +159,7 @@ VTKPlotter* dolfin::plot(boost::shared_ptr<const Mesh> mesh,
   return plot(mesh, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-VTKPlotter* dolfin::plot(const Mesh& mesh, 
+VTKPlotter* dolfin::plot(const Mesh& mesh,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(mesh),
