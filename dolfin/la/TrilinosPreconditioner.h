@@ -76,8 +76,10 @@ namespace dolfin
     /// Set the precondtioner and matrix used in preconditioner
     void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
 
-    /// Set null vectors
-    void set_null_vectors(const std::vector<const GenericVector*>& null_vectors);
+    /// Set basis for the null space of the operator. Setting this
+    /// is critical to the performance of some preconditioners, e.g. ML.
+    /// The vectors spanning the null space are copied.
+    void set_null_space(const std::vector<const GenericVector*>& null_space);
 
     /// Return preconditioner name
     std::string name() const;
@@ -108,8 +110,8 @@ namespace dolfin
     // Parameter list
     boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
 
-    // Null vectors
-    boost::shared_ptr<Epetra_MultiVector> _null_vectors;
+    // Vectors spanning the null space
+    boost::shared_ptr<Epetra_MultiVector> _null_space;
 
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
     boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;

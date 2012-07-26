@@ -123,12 +123,12 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
 void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
                                  const EpetraMatrix& P)
 {
-  dolfin_assert(solver.aztecoo());
-
   // Pointer to preconditioner matrix
   Epetra_RowMatrix* _P = P.mat().get();
+  dolfin_assert(_P);
 
   // Get underlying solver object
+  dolfin_assert(solver.aztecoo());
   AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
@@ -139,10 +139,10 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     const int overlap              = parameters("schwarz")["overlap"];
     const std::string reordering   = parameters("schwarz")["reordering_type"];
     const std::string schwarz_mode = parameters("schwarz")["mode"];
-    Teuchos::ParameterList list;
-    list.set("fact: level-of-fill",      ilu_fill_level);
-    list.set("schwarz: combine mode",    schwarz_mode);
-    list.set("schwarz: reordering type", reordering);
+    Teuchos::ParameterList plist;
+    plist.set("fact: level-of-fill",      ilu_fill_level);
+    plist.set("schwarz: combine mode",    schwarz_mode);
+    plist.set("schwarz: reordering type", reordering);
 
     // Create preconditioner
     if (preconditioner == "icc")
@@ -153,8 +153,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     ifpack_preconditioner.reset(ifpack_factory.Create(preconditioner, _P, overlap));
     dolfin_assert(ifpack_preconditioner != 0);
 
+    // Set any user-provided parameters
+    if (parameter_list)
+      plist.setParameters(*parameter_list);
+
     // Set up preconditioner
-    ifpack_preconditioner->SetParameters(list);
+    ifpack_preconditioner->SetParameters(plist);
     ifpack_preconditioner->Initialize();
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
@@ -179,19 +183,25 @@ void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::Par
   parameter_list = list;
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_null_vectors(const std::vector<const GenericVector*>& null_vectors)
+void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*>& null_space)
 {
-  for (uint i = 0; i < null_vectors.size(); ++i)
+  // Loop over vectors spanning the null space and copy into a
+  // Epetra_MultiVector
+  for (uint i = 0; i < null_space.size(); ++i)
   {
-    dolfin_assert(null_vectors[i]);
-    const EpetraVector& v = null_vectors[i]->down_cast<EpetraVector>();
-    dolfin_assert(v.vec());
-    if (i == 0)
-      _null_vectors.reset(new Epetra_MultiVector(v.vec()->Map(), null_vectors.size()));
+    dolfin_assert(null_space[i]);
 
-    Epetra_MultiVector& __null_spaces = *(_null_vectors);
+    // Get Epetra vector
+    const EpetraVector& v = null_space[i]->down_cast<EpetraVector>();
+    dolfin_assert(v.vec());
+
+    // Initialise null space multivector on first pass
+    if (i == 0)
+      _null_space.reset(new Epetra_MultiVector(v.vec()->Map(), null_space.size()));
+
+    // Copy data into Epetra_MultiVector object
     const Epetra_Vector& _v = *(*(v.vec()))(0);
-    *__null_spaces(i) = _v;
+    *(*_null_space)(i) = _v;
   }
 }
 //-----------------------------------------------------------------------------
@@ -233,17 +243,19 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   //const int output_level = parameters("ml")["output_level"];
   //mlist.set("ML output", output_level);
 
-  // Create preconditioner (assumes the A has been created)
+  // Set any user-provided parameters
   if (parameter_list)
     mlist.setParameters(*parameter_list);
 
-  if(_null_vectors)
+  // Set null space
+  if(_null_space)
   {
     mlist.set("null space: type", "pre-computed");
-    mlist.set("null space: dimension", _null_vectors->NumVectors());
-    mlist.set("null space: vectors", _null_vectors->Values());
+    mlist.set("null space: dimension", _null_space->NumVectors());
+    mlist.set("null space: vectors", _null_space->Values());
   }
 
+  // Create preconditioner
   ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist, true));
 
   // Set this operator as preconditioner for AztecOO
