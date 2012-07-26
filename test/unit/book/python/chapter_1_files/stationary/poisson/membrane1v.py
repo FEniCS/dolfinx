@@ -67,7 +67,7 @@ print 'Maximum real deflection is', max_D
 # viz_f.write_png('pressure.png')
 # viz_f.write_ps('pressure', format='eps')
 
-viz_m = plot(mesh, title='Finite element mesh')
+#viz_m = plot(mesh, title='Finite element mesh')
 
 #time.sleep(15)
 
