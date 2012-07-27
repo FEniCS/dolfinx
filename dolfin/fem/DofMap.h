@@ -43,6 +43,7 @@
 namespace dolfin
 {
 
+  class GenericVector;
   class UFC;
   class UFCMesh;
 
@@ -278,6 +279,16 @@ namespace dolfin
     ///         The collapsed dofmap.
     DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                      const Mesh& mesh) const;
+
+    /// Set dof values in vector to a specified value. Parallel layout
+    /// of vector must be consistent with dof map range
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to set.
+    ///     value (double)
+    ///         The value to set.
+    void set(GenericVector& x, double value) const;
 
     /// Return the set of dof indices
     ///

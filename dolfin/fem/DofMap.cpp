@@ -28,6 +28,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -354,6 +355,17 @@ DofMap* DofMap::collapse(boost::unordered_map<uint, uint>& collapsed_map,
                          const Mesh& mesh) const
 {
   return new DofMap(collapsed_map, *this, mesh, _distributed);
+}
+//-----------------------------------------------------------------------------
+void DofMap::set(GenericVector& x, double value) const
+{
+  std::vector<std::vector<uint> >::const_iterator cell_dofs;
+  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+  {
+    std::vector<double> _value(cell_dofs->size(), value);
+    x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
+  }
+  x.apply("add");
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,

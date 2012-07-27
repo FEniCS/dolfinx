@@ -143,7 +143,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
           const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
-          bool reset_sparsity, bool add_values)
+          bool reset_sparsity, bool add_values, bool keep_diagonal)
 {
   dolfin_assert(a.ufc_form());
 
@@ -186,7 +186,8 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
                                 a.mesh(), dofmaps, periodic_master_slave_dofs,
                                 a.ufc_form()->num_cell_domains(),
                                 a.ufc_form()->num_interior_facet_domains(),
-                                a.ufc_form()->num_exterior_facet_domains());
+                                a.ufc_form()->num_exterior_facet_domains(),
+                                keep_diagonal);
     }
     t0.stop();
 
@@ -194,6 +195,27 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     Timer t1("Init tensor");
     A.init(*tensor_layout);
     t1.stop();
+
+    // Insert zeros in the diagonal as diagonal entries may be prematurely
+    // optimised away by the linear algebra backend when calling
+    // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
+    // have no diagonal entry.
+    if (A.rank() == 2 && keep_diagonal)
+    {
+      GenericMatrix& _A = A.down_cast<GenericMatrix>();
+
+      const double block = 0.0;
+
+      const std::pair<uint, uint> row_range = A.local_range(0);
+      // Loop over rows
+      for (uint i = row_range.first; i < row_range.second; i++)
+      {
+        // Get global row number
+        _A.set(&block, (uint) 1, &i, (uint) 1, &i);
+
+      }
+      A.apply("flush");
+    }
 
     // Insert zeros in positions required for periodic boundary
     // conditions. These are applied post-assembly, and may be prematurely

@@ -60,7 +60,7 @@ public:
   const MeshFunction<uint>* cell_domains;
   const MeshFunction<uint>* exterior_facet_domains;
   const MeshFunction<uint>* interior_facet_domains;
-  bool reset_sparsity, add_values, finalize_tensor;
+  bool reset_sparsity, add_values, finalize_tensor, keep_diagonal;
 
   PImpl(GenericMatrix& _A, GenericMatrix& _A_asymm,
         const Form& _a,
@@ -69,7 +69,8 @@ public:
         const MeshFunction<uint>* _cell_domains,
         const MeshFunction<uint>* _exterior_facet_domains,
         const MeshFunction<uint>* _interior_facet_domains,
-        bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
+        bool _reset_sparsity, bool _add_values, bool _finalize_tensor, 
+        bool _keep_diagonal)
     : A(_A), A_asymm(_A_asymm), a(_a),
       row_bcs(_row_bcs), col_bcs(_col_bcs),
       cell_domains(_cell_domains),
@@ -78,6 +79,7 @@ public:
       reset_sparsity(_reset_sparsity),
       add_values(_add_values),
       finalize_tensor(_finalize_tensor),
+      keep_diagonal(_keep_diagonal),
       mesh(_a.mesh()), ufc(_a), ufc_asymm(_a)
   {
   }
@@ -124,11 +126,12 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
                                   const MeshFunction<uint>* interior_facet_domains,
                                   bool reset_sparsity,
                                   bool add_values,
-                                  bool finalize_tensor)
+                                  bool finalize_tensor,
+                                  bool keep_diagonal)
 {
   PImpl pImpl(A, A_asymm, a, row_bcs, col_bcs,
             cell_domains, exterior_facet_domains, interior_facet_domains,
-            reset_sparsity, add_values, finalize_tensor);
+            reset_sparsity, add_values, finalize_tensor, keep_diagonal);
   pImpl.assemble();
 }
 //-----------------------------------------------------------------------------
@@ -208,9 +211,9 @@ void SymmetricAssembler::PImpl::assemble()
   // Initialize global tensors
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
   AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values);
+                                     reset_sparsity, add_values, keep_diagonal);
   AssemblerTools::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values);
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // Get dofs that are local to this processor
   processor_dof_range = A.local_range(0);

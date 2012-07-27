@@ -183,6 +183,12 @@ void TrilinosPreconditioner::set_parameters(boost::shared_ptr<const Teuchos::Par
   parameter_list = list;
 }
 //-----------------------------------------------------------------------------
+void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList> list)
+{
+  parameter_list = boost::shared_ptr<const Teuchos::ParameterList>(reference_to_no_delete_pointer(*list.get()));
+  parameter_ref_keeper = list;
+}
+//-----------------------------------------------------------------------------
 void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*>& null_space)
 {
   // Loop over vectors spanning the null space and copy into a
