@@ -157,6 +157,11 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 {
   double value;
   dolfin::uint i(Indices::check_index(index, self->size()));
+
+  // Check that requested index is owned by this process
+  if (i < self->local_range().first || i >= self->local_range().second)
+    throw std::runtime_error("index must belong to this process, cannot index off-process entries in a GenericVector");
+
   self->get_local(&value, 1, &i);
   return value;
 }
@@ -164,7 +169,6 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 // Get item for slice, list, or numpy array object
 boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
 {
-
   Indices* inds;
   dolfin::uint* range;
   dolfin::uint* indices;
