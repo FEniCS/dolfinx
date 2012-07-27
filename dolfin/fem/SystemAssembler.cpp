@@ -47,11 +47,12 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   std::vector<const DirichletBC*> bcs;
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -59,12 +60,13 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const DirichletBC& bc,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -72,10 +74,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const std::vector<const DirichletBC*>& bcs,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -87,7 +90,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const GenericVector* x0,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   // Set timer
   Timer timer("Assemble system");
@@ -162,9 +166,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Initialize global tensors
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
   AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values);
+                                     reset_sparsity, add_values, keep_diagonal);
   AssemblerTools::init_global_tensor(b, L, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values);
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // Allocate data
   Scratch data(a, L);

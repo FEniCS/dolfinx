@@ -57,9 +57,10 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                const Form& a,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor);
+  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
@@ -69,7 +70,8 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                const MeshFunction<uint>* interior_facet_domains,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   if (MPI::num_processes() > 1)
   {
@@ -100,7 +102,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   // Initialize global tensor
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
   AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values);
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // FIXME: The below selections should be made robust
 

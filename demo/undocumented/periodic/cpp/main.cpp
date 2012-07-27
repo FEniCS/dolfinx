@@ -114,7 +114,7 @@ int main()
   bc1.compute_dof_pairs(V, dof_pairs);
 
   // Intialise tensor, taking into account periodic dofs
-  AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false);
+  AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false, false);
 
   assemble(*A, a, false);
   assemble(b, L);

@@ -91,7 +91,8 @@ namespace dolfin
                          const Form& a,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble tensor from given form on subdomain
     ///
@@ -120,7 +121,8 @@ namespace dolfin
                          const SubDomain& sub_domain,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble tensor from given form on subdomains
     ///
@@ -155,7 +157,8 @@ namespace dolfin
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.
