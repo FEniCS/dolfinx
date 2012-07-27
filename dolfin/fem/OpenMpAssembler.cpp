@@ -191,7 +191,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, integral)
-    for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
+    for (int cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Cell index
       const uint index = colored_cells[cell_index];
@@ -237,10 +237,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
-    double scalar_sum = 0.0;
-    for (uint i = 0; i < scalars.size(); i++)
-      scalar_sum += scalars[i];
-
+    const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
     A.add(&scalar_sum, dofs);
   }
 
@@ -326,7 +323,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, cell_integral, facet_integral)
-    for (uint index = 0; index < num_cell_in_color; ++index)
+    for (int index = 0; index < num_cell_in_color; ++index)
     {
       // Cell index
       const uint cell_index = colored_cells[index];
@@ -358,15 +355,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
-      {
-	cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
-      }
+	      cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
       else
-      {
-        // Zero out tensor when no cell integral
-        for (uint i = 0; i < dim; ++i)
-          ufc.A[i] = 0.0;
-      }
+        std::fill(ufc.A.begin(), ufc.A.end(), 0.0);
 
       // Assemble over external facet
       for (FacetIterator facet(cell); !facet.end(); ++facet)
@@ -381,25 +372,26 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         // Get local facet index
         const uint local_facet = cell.index(*facet);
 
-	// Get integral for sub domain (if any)
-	if (exterior_facet_domains && !exterior_facet_domains->empty())
-	{
+        // Get integral for sub domain (if any)
+        if (exterior_facet_domains && !exterior_facet_domains->empty())
+        {
 
-	  // Get global facet index
-	  const uint facet_index = connectivity(cell_index)[local_facet];
-	  const uint facet_domain = (*exterior_facet_domains)[facet_index];
+          // Get global facet index
+          const uint facet_index = connectivity(cell_index)[local_facet];
+          const uint facet_domain = (*exterior_facet_domains)[facet_index];
 
-	  if (facet_domain < ufc.form.num_exterior_facet_domains())
-	    facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
-	  else
-	    continue;
-	}
+          if (facet_domain < ufc.form.num_exterior_facet_domains())
+            facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
+          else
+            continue;
+        }
 
-	// Skip integral if zero
-	if (!facet_integral)
-	  continue;
+        // Skip integral if zero
+        if (!facet_integral)
+          continue;
 
-	// FIXME: Do we really need an update version with the local facet index?
+        // FIXME: Do we really need an update version with the local
+        //        facet index?
         // Update UFC object
         ufc.update(cell, local_facet);
 
@@ -426,10 +418,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // If we assemble a scalar we need to sum the contributions from each thread
   if (form_rank == 0)
   {
-    double scalar_sum = 0.0;
-    for (uint i = 0; i < scalars.size(); i++)
-      scalar_sum += scalars[i];
-
+    const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
     A.add(&scalar_sum, dofs);
   }
 }
@@ -441,6 +430,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
                                          std::vector<double>* values)
 {
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
+
+  dolfin_assert(!values);
 
   // Skip assembly if there are no interior facet integrals
   if (_ufc.form.num_interior_facet_domains() == 0)
@@ -527,7 +518,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, macro_dofs, integral)
-    for (uint facet_index = 0; facet_index < num_facets; ++facet_index)
+    for (int facet_index = 0; facet_index < num_facets; ++facet_index)
     {
       // Facet index
       const uint index = colored_facets[facet_index];
