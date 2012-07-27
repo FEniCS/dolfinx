@@ -25,6 +25,7 @@
 
 #ifdef HAS_OPENMP
 
+#include <algorithm>
 #include <map>
 #include <utility>
 #include <vector>
@@ -186,7 +187,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     const std::vector<uint>& colored_cells = entities_of_color[color];
 
     // Number of cells of current color
-    const uint num_cells = colored_cells.size();
+    const int num_cells = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
@@ -318,7 +319,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     const std::vector<uint>& colored_cells = entities_of_color[color];
 
     // Number of cells of current color
-    const uint num_cell_in_color = colored_cells.size();
+    const int num_cell_in_color = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
@@ -513,7 +514,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
     const std::vector<uint>& colored_facets = entities_of_color[color];
 
     // Number of facets of current color
-    const uint num_facets = colored_facets.size();
+    const int num_facets = colored_facets.size();
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
