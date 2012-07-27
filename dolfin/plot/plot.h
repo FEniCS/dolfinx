@@ -28,10 +28,12 @@
 namespace dolfin
 {
 
+  class DirichletBC;
   class Function;
   class Expression;
   class Mesh;
   template<typename T> class MeshFunction;
+  class Parameters;
   class VTKPlotter;
 
   /// Simple built-in plot commands for plotting functions and meshes.
