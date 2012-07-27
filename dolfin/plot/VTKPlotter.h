@@ -18,11 +18,12 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-07-05
+// Last changed: 2012-07-27
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
 
+#include <list>
 #include <boost/scoped_ptr.hpp>
 
 #include <dolfin/mesh/Mesh.h>
@@ -196,9 +197,6 @@ namespace dolfin
     void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
-
-
-
 
     /// Plot the object
     void plot();
