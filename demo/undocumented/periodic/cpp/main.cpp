@@ -103,30 +103,7 @@ int main()
 
   // Compute solution
   Function u(V);
-
-  boost::shared_ptr<GenericMatrix> A(new Matrix);
-  Vector b;
-
-  // Get list of master-slave dofs
-  typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
-  typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
-  std::vector<MasterSlavePair> dof_pairs;
-  bc1.compute_dof_pairs(V, dof_pairs);
-
-  // Intialise tensor, taking into account periodic dofs
-  AssemblerTools::init_global_tensor(*A, a, dof_pairs, true, false, false);
-
-  assemble(*A, a, false);
-  assemble(b, L);
-
-  for (dolfin::uint i = 0; i < bcs.size(); ++i)
-    bcs[i]->apply(*A, b);
-
-  LUSolver lu(A);
-  lu.solve(*u.vector(), b);
-  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
-
-  //solve(a == L, u, bcs);
+  solve(a == L, u, bcs);
 
   // Save solution in VTK format
   File file("periodic.pvd");

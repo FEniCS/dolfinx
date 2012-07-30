@@ -146,8 +146,7 @@ namespace dolfin
     // FIXME: This should find only pairs for which this process owns
     //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
-    void compute_dof_pairs(const FunctionSpace& V,
-      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+    void compute_dof_pairs(std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
   private:
 

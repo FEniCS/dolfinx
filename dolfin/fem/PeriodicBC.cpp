@@ -282,10 +282,16 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::compute_dof_pairs(const FunctionSpace& V,
+void PeriodicBC::compute_dof_pairs(
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
 {
   dof_pairs.clear();
+
+  // Get function space
+  dolfin_assert(function_space());
+  const FunctionSpace& V = *function_space();
+
+  // Compute pairs
   extract_dof_pairs(V, dof_pairs);
 }
 //-----------------------------------------------------------------------------
