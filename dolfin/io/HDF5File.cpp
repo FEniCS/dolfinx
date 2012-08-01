@@ -18,13 +18,14 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-07-29
+// Last changed: 2012-08-01
 
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <boost/filesystem.hpp>
 
-#define H5_USE_16_API 1
+// #define H5_USE_16_API 1
 #include <hdf5.h>
 
 #include <dolfin/common/types.h>
@@ -56,11 +57,33 @@ HDF5File::~HDF5File()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void HDF5File::operator>>(Mesh& mesh)
+{
+  if(!exists("/Mesh/Topology"))
+    dolfin_error("HDF5File.cpp",
+	       "read mesh from .h5 file",
+	       "Mesh Topology dataset missing");
+  
+  if(!exists("/Mesh/Coordinates"))
+    dolfin_error("HDF5File.cpp",
+	       "read mesh from .h5 file",
+	       "Mesh Coordinates dataset missing");
+
+  std::string cell_type=get_attribute("/Mesh/Topology","cell_type");
+
+  
+
+}
+//-----------------------------------------------------------------------------
 void HDF5File::operator<<(const Mesh& mesh)
 {
   // Write a Mesh to an existing HDF5 file.
-  // TODO: create file if not existing.
-  // TODO: add some self-description to file (element type etc)
+  // Used by XDMFFile to add mesh to an existing HDF5
+  // Also may be called to just save a mesh to .h5
+
+  // if no existing file, create...
+  if(boost::filesystem::file_size(filename.c_str())==0)
+    create();
 
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
@@ -160,7 +183,7 @@ void HDF5File::operator>> (GenericVector& input)
   status=H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  group_id = H5Gopen(file_id,"/Vector");
+  group_id = H5Gopen(file_id,"/Vector",H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
 
   // count how many datasets in the /Vector directory
@@ -174,7 +197,7 @@ void HDF5File::operator>> (GenericVector& input)
   s << "/Vector/" << (num_obj - 1);
 
   // open the dataset collectively
-  dset_id = H5Dopen(file_id, s.str().c_str());
+  dset_id = H5Dopen(file_id, s.str().c_str(),H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // create a file dataspace independently
@@ -249,20 +272,23 @@ void HDF5File::create()
   dolfin_assert(file_id != HDF5_FAIL);
 
   // create subgroups suitable for storing different types of data.
-  // VertexVector - for visualisation
-  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT);
+  // VertexVector - values for visualisation
+  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT, 
+		       H5P_DEFAULT, H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
 
   // Vector - for checkpointing etc
-  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
+  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT, 
+		       H5P_DEFAULT, H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   assert(status != HDF5_FAIL);
 
   // Mesh
-  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
+  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT, 
+		       H5P_DEFAULT, H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
@@ -315,7 +341,7 @@ void HDF5File::write(T& data, const std::pair<uint, uint>& range,
   assert(filespace != HDF5_FAIL);
 
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
-                      H5P_DEFAULT);
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
   
   status = H5Sclose(filespace);
@@ -346,6 +372,43 @@ void HDF5File::write(T& data, const std::pair<uint, uint>& range,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+bool HDF5File::exists(const std::string& dataset_name){
+
+  MPICommunicator comm;
+  MPIInfo info;
+  herr_t status;
+
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Try to open existing HDF5 file
+  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  dolfin_assert(file_id != HDF5_FAIL);
+
+  status = H5Pclose(plist_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // disable error reporting
+  status = H5Eset_auto(H5E_DEFAULT,NULL,NULL);
+  dolfin_assert(status != HDF5_FAIL);
+
+  //try to open dataset - returns HDF5_FAIL if non-existent
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
+
+  if(dset_id!=HDF5_FAIL)
+    H5Dclose(dset_id);
+
+  //re-enable error reporting
+  status = H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)H5Eprint,stderr);
+  dolfin_assert(status != HDF5_FAIL);
+
+  status = H5Fclose(file_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return (dset_id!=HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
 void HDF5File::add_attribute(const std::string& dataset_name,
 			     const std::string& attribute_name,
 			     const std::string& attribute_value)
@@ -366,7 +429,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // add string attribute
@@ -374,7 +437,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Tset_size (datatype_id, attribute_value.size());
   hid_t dataspaces_id = H5Screate (H5S_SCALAR);
   hid_t attribute_id = H5Acreate (dset_id, attribute_name.c_str(), datatype_id,
-				  dataspaces_id, H5P_DEFAULT);
+				  dataspaces_id, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
   dolfin_assert(status != HDF5_FAIL);
 
@@ -387,5 +450,56 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
+}
+//-----------------------------------------------------------------------------
+
+std::string HDF5File::get_attribute(const std::string& dataset_name,
+				    const std::string& attribute_name)
+{
+
+  MPICommunicator comm;
+  MPIInfo info;
+  herr_t status;
+
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Try to open existing HDF5 file
+  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  dolfin_assert(file_id != HDF5_FAIL);
+
+  status = H5Pclose(plist_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+
+  hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
+  hid_t filetype = H5Aget_type(attr_id);
+  int slen = H5Tget_size(filetype);
+  slen++;
+
+  hid_t space_id = H5Aget_space(attr_id);
+  hid_t memtype = H5Tcopy (H5T_C_S1);
+  
+  status=H5Tset_size(memtype,slen);
+  dolfin_assert(status != HDF5_FAIL);
+
+  char str[slen];
+  status=H5Aread(attr_id, memtype, str);
+
+  status = H5Aclose(attr_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  status = H5Dclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+  
+  status = H5Fclose(file_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  
+  return std::string(str);
 }
 //-----------------------------------------------------------------------------

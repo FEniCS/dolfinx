@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-07-29
+// Last changed: 2012-08-01
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -56,9 +56,12 @@ namespace dolfin
     /// Write Mesh to file
     void operator<< (const Mesh& mesh);
 
+    /// Read Mesh from file
+    void operator>> (Mesh& mesh);
+
   private:
 
-    // Create an empty file (truncate existing)
+    // Create an empty file (truncate if existing)
     void create();
 
     // Write functions for int, double, etc. Used by XDMFFile
@@ -77,11 +80,17 @@ namespace dolfin
                const std::string& dataset_name, const int h5type,
                const uint width) const;
 
-    // Add a string attribute to a dataset
+    //Check existence of dataset in file
+    bool exists(const std::string& dataset_name);
+
+    // Add/get a string attribute to/from a dataset
     void add_attribute(const std::string& dataset_name,
 		       const std::string& attribute_name,
 		       const std::string& attribute_value);
-      
+
+    std::string get_attribute(const std::string& dataset_name,
+			      const std::string& attribute_name);
+
     // Friend
     friend class XDMFFile;
   };
