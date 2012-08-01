@@ -160,15 +160,17 @@ namespace dolfin
     ///--- STLMatrix interface ---
 
     /// Return matrix in CSR format
-    void csr(std::vector<double>& vals, std::vector<uint>& cols,
-             std::vector<uint>& row_ptr,
-             std::vector<uint>& local_to_global_row,
+    template<typename T>
+    void csr(std::vector<double>& vals, std::vector<T>& cols,
+             std::vector<T>& row_ptr,
+             std::vector<T>& local_to_global_row,
              bool symmetric) const;
 
     /// Return matrix in CSC format
-    void csc(std::vector<double>& vals, std::vector<uint>& rows,
-             std::vector<uint>& col_ptr,
-             std::vector<uint>& local_to_global_col,
+    template<typename T>
+    void csc(std::vector<double>& vals, std::vector<T>& rows,
+             std::vector<T>& col_ptr,
+             std::vector<T>& local_to_global_col,
              bool symmetric) const;
 
     /// Return number of global non-zero entries
@@ -180,10 +182,11 @@ namespace dolfin
   private:
 
     /// Return matrix in compressed format
+    template<typename T>
     void compressed_storage(std::vector<double>& vals,
-                            std::vector<uint>& rows,
-                            std::vector<uint>& col_ptr,
-                            std::vector<uint>& local_to_global_col,
+                            std::vector<T>& rows,
+                            std::vector<T>& col_ptr,
+                            std::vector<T>& local_to_global_col,
                             bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
@@ -208,6 +211,110 @@ namespace dolfin
     boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
 
   };
+
+  //---------------------------------------------------------------------------
+  // Implementation of templated functions
+  //---------------------------------------------------------------------------
+  template<typename T>
+  void STLMatrix::csr(std::vector<double>& vals, std::vector<T>& cols,
+                      std::vector<T>& row_ptr,
+                      std::vector<T>& local_to_global_row,
+                      bool symmetric) const
+  {
+    if (primary_dim != 0)
+    {
+      dolfin_error("STLMatrix.cpp",
+                   "creating compressed row storage data",
+                   "Cannot create CSR matrix from STLMatrix with column-wise storage.");
+    }
+    compressed_storage(vals, cols, row_ptr, local_to_global_row, symmetric);
+  }
+  //-----------------------------------------------------------------------------
+  template<typename T>
+  void STLMatrix::csc(std::vector<double>& vals, std::vector<T>& rows,
+                      std::vector<T>& col_ptr,
+                      std::vector<T>& local_to_global_col,
+                      bool symmetric) const
+  {
+    if (primary_dim != 1)
+    {
+      dolfin_error("STLMatrix.cpp",
+                   "creating compressed column storage data",
+                   "Cannot create CSC matrix from STLMatrix with row-wise storage.");
+    }
+    compressed_storage(vals, rows, col_ptr, local_to_global_col, symmetric);
+  }
+  //-----------------------------------------------------------------------------
+  template<typename T>
+  void STLMatrix::compressed_storage(std::vector<double>& vals,
+                                     std::vector<T>& cols,
+                                     std::vector<T>& row_ptr,
+                                     std::vector<T>& local_to_global_row,
+                                     bool symmetric) const
+  {
+    // Reset data structures
+    vals.clear();
+    cols.clear();
+    row_ptr.clear();
+    local_to_global_row.clear();
+
+    // Reserve memory
+    row_ptr.reserve(codim_indices.size() + 1);
+    local_to_global_row.reserve(codim_indices.size());
+
+    // Build CSR data structures
+    row_ptr.push_back(0);
+
+    // Number of local non-zero entries
+    const std::size_t _local_nnz = local_nnz();
+
+    // Number of local rows (columns)
+    const std::size_t num_local_rows = codim_indices.size();
+
+    if (!symmetric)
+    {
+      // Reserve memory
+      vals.reserve(_local_nnz);
+      cols.reserve(_local_nnz);
+
+      // Build data structures
+      for (std::size_t local_row = 0; local_row < num_local_rows; ++local_row)
+      {
+        vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
+        cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
+
+        row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size());
+        local_to_global_row.push_back(_local_range.first + local_row);
+      }
+    }
+    else
+    {
+      // Reserve memory
+      vals.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+      cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
+
+      // Build data structures
+      for (std::size_t local_row = 0; local_row < codim_indices.size(); ++local_row)
+      {
+        const uint global_row_index = local_row + _local_range.first;
+        std::size_t counter = 0;
+        for (std::size_t i = 0; i < codim_indices[local_row].size(); ++i)
+        {
+          const std::size_t index = codim_indices[local_row][i];
+          if (index >= global_row_index)
+          {
+            vals.push_back(_vals[local_row][i]);
+            cols.push_back(index);
+            ++counter;
+          }
+        }
+
+        row_ptr.push_back(row_ptr.back() + counter);
+        local_to_global_row.push_back(global_row_index);
+      }
+    }
+  }
+//-----------------------------------------------------------------------------
 
 }
 
