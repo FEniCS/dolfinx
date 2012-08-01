@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+// Necessary since pastix.h does not include it
+#include <cstdint>
+
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
