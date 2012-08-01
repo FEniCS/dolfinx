@@ -115,11 +115,11 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
 
   // Block sizes (affects performance)
-  //const uint min_block_size = parameters["min_block_size"];
-  //iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
-  //const uint max_block_size = parameters["max_block_size"];
-  //iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
-  ////iparm[IPARM_ABS] = API_YES;
+  const uint min_block_size = parameters["min_block_size"];
+  iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
+  const uint max_block_size = parameters["max_block_size"];
+  iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
+  //iparm[IPARM_ABS] = API_YES;
 
   // Matrix data in compressed sparse column format (C indexing)
   std::vector<double> vals;
@@ -137,7 +137,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   const pastix_int_t n = col_ptr.size() - 1;
 
   // Check matrix
-  //if (parameters["check_matrix"])
+  if (parameters["check_matrix"])
   {
     double* _vals = vals.data();
     d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_YES,
@@ -149,11 +149,10 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   pastix_data_t* pastix_data = NULL;
 
   // Number of threads per MPI process
-  //if (parameters["num_threads"].is_set())
-  //  iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) parameters["num_threads"]);
-  //else
-  //  iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) dolfin::parameters["num_threads"]);
-  iparm[IPARM_THREAD_NBR] = 1;
+  if (parameters["num_threads"].is_set())
+    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) parameters["num_threads"]);
+  else
+    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) dolfin::parameters["num_threads"]);
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
@@ -183,16 +182,6 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Number of RHS vectors
   const pastix_int_t nrhs = 1;
 
-  for (uint i = 0; i < local_to_global_cols.size(); ++i)
-  {
-    cout << "Test (0): " << perm[i] << ", " << invp[i] << endl;
-  }
-
-  for (uint i = 0; i < rows.size(); ++i)
-  {
-    cout << "Test (1): " << *(_rows + i) << ", " << rows[i] << endl;
-  }
-
   // Re-order
   iparm[IPARM_START_TASK] = API_TASK_ORDERING;
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
@@ -200,8 +189,6 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _local_to_global_cols, perm.data(), invp.data(), NULL, nrhs,
             iparm, dparm);
 
-  cout << "****----****----" << endl;
-  /*
   // Factorise
   iparm[IPARM_START_TASK] = API_TASK_NUMFACT;
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
@@ -211,19 +198,19 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get RHS data for this process
   std::vector<double> _b;
-  b.gather(_b, local_to_global_cols_ref);
-  double* b_ptr = _b.data();
+  std::vector<uint> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  b.gather(_b, idx);
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
   d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
             _local_to_global_cols, perm.data(), invp.data(),
-            b_ptr, nrhs, iparm, dparm);
+            _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
   assert(b.size() == x.size());
-  x.set(_b.data(), local_to_global_cols_ref.size(), local_to_global_cols_ref.data());
+  x.set(_b.data(), local_to_global_cols_ref.size(), idx.data());
   x.apply("insert");
 
   // Clean up
@@ -232,8 +219,8 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
             _local_to_global_cols,
             perm.data(), invp.data(),
-            b_ptr, nrhs, iparm, dparm);
-  */
+            _b.data(), nrhs, iparm, dparm);
+
   return 1;
 }
 //-----------------------------------------------------------------------------
