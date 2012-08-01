@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-07-13
+// Last changed: 2012-07-29
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -58,6 +58,9 @@ namespace dolfin
 
   private:
 
+    // Create an empty file (truncate existing)
+    void create();
+
     // Write functions for int, double, etc. Used by XDMFFile
     void write(const double& data,
                const std::pair<uint, uint>& range,
@@ -69,14 +72,16 @@ namespace dolfin
                const std::string& dataset_name,
                const uint width);
 
-    // Create an empty file (truncate existing)
-    void create();
-
     template <typename T>
     void write(T& data, const std::pair<uint,uint>& range,
                const std::string& dataset_name, const int h5type,
                const uint width) const;
 
+    // Add a string attribute to a dataset
+    void add_attribute(const std::string& dataset_name,
+		       const std::string& attribute_name,
+		       const std::string& attribute_value);
+      
     // Friend
     friend class XDMFFile;
   };

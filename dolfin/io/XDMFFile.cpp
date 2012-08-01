@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-13
+// Last changed: 2012-07-28
 
 #include <ostream>
 #include <sstream>
@@ -59,12 +59,19 @@ void XDMFFile::operator<<(const Function& u)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 {
+  // Save a Function to XDMF/HDF files for visualisation.
+  // Downgrading may occur due to collecting the values 
+  // to vertices using compute_vertex_values()
+  // 
+  // Creates an HDF5 file for storing Mesh and Vertex Values, 
+  // and an associated XDMF file for metadata.
+  // Subsequent calls will store additional Vertex Values 
+  // in the same HDF5 file, and update the XDMF metadata
+  // to represent a time series.
+
   dolfin_assert(ut.first);
   const Function &u = *(ut.first);
   const double time_step = ut.second;
-
-  // Save Function to XDMF/HDF file for visualisation
-  // Can be read by paraview
 
   Timer hdf5timer("HDF5 + XDMF Output (mesh + data)");
 
@@ -104,7 +111,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 	  tmp.push_back(vtx_values[i + j*num_local_vertices]);
 	if(vsize==2) tmp.push_back(0.0);
       }
-    vtx_values.resize(tmp.size());
+    vtx_values.resize(tmp.size()); // 2D->3D padding increases size
     std::copy(tmp.begin(), tmp.end(), vtx_values.begin());
   }
   if(vsize==2) vsize_io=3;
@@ -131,17 +138,18 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   }
 
   // Vertex values are saved in the hdf5 'folder' /VertexVector
-  // as distinct from /Vector which is used for raw vectors.
-  // For simple Lagrange elements, they are identical.
+  // as distinct from /Vector which is used for solution vectors.
+
+  // Save actual vertex values to HDF5 file
   std::stringstream s("");
   s << "/VertexVector/" << counter;
-  h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize_io); //values
+  h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize_io);
 
   // remove path from filename_data
   std::size_t lastslash=filename_data.rfind('/');
   filename_data.erase(0,lastslash+1);
 
-  //Now go ahead and write the XML meta description
+  // Write the XML meta description - see www.xdmf.org
   if(MPI::process_number()==0)
   {
     pugi::xml_document xml_doc;
@@ -150,6 +158,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     if(counter==0)
     {
+      // First time step - create document template, adding a mesh and an empty time-series.
+
       xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
       pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
       xdmf.append_attribute("Version")="2.0";
@@ -205,13 +215,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_time.append_attribute("TimeType") = "List";
       xdmf_timedata=xdmf_time.append_child("DataItem");
       xdmf_timedata.append_attribute("Format") = "XML";
-      xdmf_timedata.append_attribute("Dimensions") = "3";
       xdmf_timedata.append_child(pugi::node_pcdata);
 
     }
     else
     {
-      // Read in existing XDMF file
+      // Subsequent timestep - read in existing XDMF file
       pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
       if (!result)
       {
@@ -264,7 +273,9 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const Mesh& mesh)
 {
-  // Mesh for visualisation, with e.g. ParaView
+  // Save a mesh for visualisation, with e.g. ParaView
+  // Creates a HDF5 file to store the mesh, and a related XDMF file with metadata.
+
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
   const uint cell_dim = mesh.topology().dim();
@@ -275,14 +286,12 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
   std::string filename_data(HDF5Filename());
 
+  // Create a new HDF5 file and save the mesh in it.
   HDF5File h5file(filename_data);
-  // Truncate existing file. Could check, and add to it instead.
-  // However, that is probably more suitable behaviour for
-  // HDF5File::operator<<(const Mesh& mesh)
   h5file.create();
   h5file << mesh;
 
-  // Go ahead and write the XML meta description
+  // Write the XML meta description
   if(MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
@@ -330,8 +339,6 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
     xml_doc.save_file(filename.c_str(), "  ");
 
-    log(TRACE, "Saved mesh %s (%s) to file %s in XDMF format.",
-    mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
   }
 }
 //----------------------------------------------------------------------------
