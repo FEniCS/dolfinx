@@ -18,14 +18,13 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-08-01
+// Last changed: 2012-08-02
 
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
 
-// #define H5_USE_16_API 1
 #include <hdf5.h>
 
 #include <dolfin/common/types.h>
@@ -69,9 +68,11 @@ void HDF5File::operator>>(Mesh& mesh)
 	       "read mesh from .h5 file",
 	       "Mesh Coordinates dataset missing");
 
-  std::string cell_type=get_attribute("/Mesh/Topology","cell_type");
+  std::string cell_type_str=get_attribute("/Mesh/Topology","celltype");
 
-  
+  dolfin_error("HDF5File.cpp",
+	       "read mesh from .h5 file",
+	       "Not implemented");
 
 }
 //-----------------------------------------------------------------------------
@@ -114,9 +115,19 @@ void HDF5File::operator<<(const Mesh& mesh)
     vtx_coords.push_back(p.z());
   }
 
-  write(vtx_coords[0], vertex_range, "/Mesh/Coordinates", 3); //xyz coords
-  write(topo_data[0], topo_range, "/Mesh/Topology", cell_dim + 1); //connectivity
-  add_attribute("/Mesh/Topology","cell_type",cell_type); //add string attribute to data
+  std::stringstream s;
+  s << "/Mesh/Coordinates_" << std::hex << mesh.coordinates_hash();
+  if(!exists(s.str()))
+    write(vtx_coords[0], vertex_range, s.str(), 3); //xyz coords
+
+  s.str("");
+  s << "/Mesh/Topology_" << std::hex << mesh.topology_hash();
+  if(!exists(s.str()))
+    {
+      write(topo_data[0], topo_range, s.str(), cell_dim + 1); //connectivity
+      add_attribute(s.str(),"celltype",cell_type); 
+    }
+
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& output)
@@ -152,7 +163,6 @@ void HDF5File::operator>> (GenericVector& input)
   hid_t filespace;	  // File dataspace ID
   hid_t memspace;	    // memory dataspace ID
   hid_t dset_id;      // Dataset ID
-  //  hsize_t dimsf;     // dataset dimensions
   hsize_t count[2];   // hyperslab selection parameters
   hsize_t offset[2];
   hsize_t num_obj;    // number of objects in group
@@ -160,7 +170,6 @@ void HDF5File::operator>> (GenericVector& input)
   MPICommunicator comm;
   MPIInfo info;
 
-  // dimsf=input.size(dim);
   const std::pair<uint, uint> range = input.local_range(0);
   offset[0] = range.first;
   offset[1] = 0;
@@ -372,6 +381,7 @@ void HDF5File::write(T& data, const std::pair<uint, uint>& range,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+// check existence of a dataset in this file
 bool HDF5File::exists(const std::string& dataset_name){
 
   MPICommunicator comm;
@@ -409,6 +419,7 @@ bool HDF5File::exists(const std::string& dataset_name){
   return (dset_id!=HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+// add an attribute to an existing dataset
 void HDF5File::add_attribute(const std::string& dataset_name,
 			     const std::string& attribute_name,
 			     const std::string& attribute_value)
@@ -475,7 +486,6 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
-
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
   hid_t filetype = H5Aget_type(attr_id);
   int slen = H5Tget_size(filetype);
@@ -499,7 +509,6 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  
   return std::string(str);
 }
 //-----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-08-01
+// Last changed: 2012-08-02
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -48,12 +48,21 @@ namespace dolfin
     ~HDF5File();
 
     /// Write vector to file
+    /// saves into HDF5 folder 'Vector'
+    /// multiple calls will save in the same file
+    /// with incrementing dataset names
+    ///
     void operator<< (const GenericVector& output);
 
     /// Read vector from file
+    /// looks in HDF5 folder 'Vector' for last dataset
+    ///
     void operator>> (GenericVector& input);
 
     /// Write Mesh to file
+    /// Saves into folder 'Mesh' as two datasets,
+    /// 'Topology' and 'Coordinates'
+    ///
     void operator<< (const Mesh& mesh);
 
     /// Read Mesh from file

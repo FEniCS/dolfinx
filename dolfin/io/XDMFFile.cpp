@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-07-28
+// Last changed: 2012-08-02
 
 #include <ostream>
 #include <sstream>
@@ -78,6 +78,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   u.update();
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
+  std::string sig = u.function_space()->element()->signature();
   const uint vrank = u.value_rank();
   const uint vsize = u.value_size();
   uint vsize_io=vsize; //output size may be padded 2D -> 3D for paraview
@@ -125,18 +126,21 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
 
-  // Presently, only save mesh on first timestep.
-  // This is a practical consideration to rein in the size
-  // of the file. Ideally, the mesh could have a UID or counter
-  // which indicates when the mesh has changed.
-  // Failing that, there could be a switch to choose between the
-  // two behaviours (save mesh once, or save mesh every timestep)
-  if(counter == 0)
-  {
-    h5file.create();
-    h5file << mesh;
-  }
+  std::stringstream mc_name;
+  mc_name << "/Mesh/Coordinates_" << std::hex << mesh.coordinates_hash();
 
+  std::stringstream mt_name;
+  mt_name << "/Mesh/Topology_" << std::hex << mesh.topology_hash();
+
+  if(counter == 0)
+    {
+      h5file.create();
+      h5file << mesh;
+    } 
+  else if( !h5file.exists(mc_name.str()) || !h5file.exists(mt_name.str()) )
+    {
+      h5file << mesh;
+    }
   // Vertex values are saved in the hdf5 'folder' /VertexVector
   // as distinct from /Vector which is used for solution vectors.
 
@@ -167,41 +171,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
       pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
 
-      //         /Xdmf/Domain/Topology
-
-      pugi::xml_node xdmf_topo = xdmf_domn.append_child("Topology");
-      if(cell_dim==2)
-        xdmf_topo.append_attribute("TopologyType") = "Triangle";
-      else if(cell_dim==3)
-        xdmf_topo.append_attribute("TopologyType") = "Tetrahedron";
-
-      xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
-      pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
-
-      xdmf_topo_data.append_attribute("Format") = "HDF";
-      std::stringstream s;
-      s << num_global_cells << " " << (cell_dim + 1);
-      xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
-
-      s.str("");
-      s << filename_data << ":/Mesh/Topology";
-      xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
       //      /Xdmf/Domain/Geometry
-
-      pugi::xml_node xdmf_geom = xdmf_domn.append_child("Geometry");
-      xdmf_geom.append_attribute("GeometryType") = "XYZ";
-      pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
-
-      xdmf_geom_data.append_attribute("Format")="HDF";
-      s.str("");
-      s << num_global_vertices << " 3";
-      xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
-
-      s.str("");
-      s << filename_data << ":/Mesh/Coordinates";
-      xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
-
 
       //     /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
 
@@ -244,12 +215,45 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     s << u.name() << "_" << counter;
     xdmf_grid.append_attribute("Name") = s.str().c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
-    pugi::xml_node xdmf_toporef = xdmf_grid.append_child("Topology");
-    xdmf_toporef.append_attribute("Reference") = "/Xdmf/Domain/Topology[1]";
-    pugi::xml_node xdmf_geomref = xdmf_grid.append_child("Geometry");
-    xdmf_geomref.append_attribute("Reference") = "/Xdmf/Domain/Geometry[1]";
 
-    pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute"); //actual data
+    // Grid/Topology
+
+    pugi::xml_node xdmf_topo = xdmf_grid.append_child("Topology");
+    if(cell_dim==2)
+      xdmf_topo.append_attribute("TopologyType") = "Triangle";
+    else if(cell_dim==3)
+      xdmf_topo.append_attribute("TopologyType") = "Tetrahedron";
+
+    xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
+    pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
+    
+    xdmf_topo_data.append_attribute("Format") = "HDF";
+    std::stringstream s;
+    s << num_global_cells << " " << (cell_dim + 1);
+    xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
+    
+    s.str("");
+    s << filename_data << ":" << mt_name.str();
+    xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+
+    // Grid/Geometry
+
+    pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
+    xdmf_geom.append_attribute("GeometryType") = "XYZ";
+    pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
+    
+    xdmf_geom_data.append_attribute("Format")="HDF";
+    s.str("");
+    s << num_global_vertices << " 3";
+    xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
+    
+    s.str("");
+    s << filename_data << ":" << mc_name.str();
+    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+
+    // Grid/Attribute - actual data
+
+    pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute");
     xdmf_vals.append_attribute("Name")=u.name().c_str();
     if(vsize_io==1)
       xdmf_vals.append_attribute("AttributeType")="Scalar";

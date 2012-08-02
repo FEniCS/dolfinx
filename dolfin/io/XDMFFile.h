@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-07-12
+// Last changed: 2012-08-02
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -51,16 +51,23 @@ namespace dolfin
     ~XDMFFile();
 
     /// Save Mesh to file
+    /// data in .h5, xml description in .xdmf
+    ///
     void operator<<(const Mesh& mesh);
 
-    /// Save Function to file
+    /// Save Function to file 
+    /// data in .h5, xml description in .xdmf
+    ///
     void operator<<(const Function& u);
 
     /// Save Function + time stamp to file
+    /// data in .h5, xml description in .xdmf
+    ///
     void operator<<(const std::pair<const Function*, double> u);
 
   private:
 
+    /// change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;
 
   };

@@ -22,7 +22,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-14
+// Last changed: 2012-08-02
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -45,6 +45,8 @@
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
+
+#include <boost/functional/hash.hpp>
 
 using namespace dolfin;
 
@@ -473,3 +475,45 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+uint Mesh::coordinates_hash() const
+{
+  std::vector<double>coords;
+  for (VertexIterator v(*this); !v.end(); ++v)
+  {
+    const Point p = v->point();
+    coords.push_back(p.x());
+    coords.push_back(p.y());
+    coords.push_back(p.z());
+  }
+  
+  boost::hash<std::vector<double> > dhash;
+  
+  uint local_hash=dhash(coords);
+  std::vector<uint>all_hashes;
+  MPI::gather(local_hash, all_hashes);
+
+  boost::hash<std::vector<uint> > uhash;
+  uint total_hash=uhash(all_hashes);
+  MPI::broadcast(total_hash);
+
+  return total_hash; 
+
+}
+//-----------------------------------------------------------------------------
+uint Mesh::topology_hash() const
+{
+  std::vector<uint> topo;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+      for (VertexIterator v(*cell); !v.end(); ++v)
+        topo.push_back(v->index());
+  boost::hash<std::vector<uint> > uhash;
+  uint local_hash=uhash(topo);
+
+  std::vector<uint>all_hashes;
+  MPI::gather(local_hash, all_hashes);
+  uint total_hash=uhash(all_hashes);
+  MPI::broadcast(total_hash);
+
+  return total_hash; 
+
+}
