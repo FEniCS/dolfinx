@@ -186,6 +186,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_time.append_attribute("TimeType") = "List";
       xdmf_timedata=xdmf_time.append_child("DataItem");
       xdmf_timedata.append_attribute("Format") = "XML";
+      xdmf_timedata.append_attribute("Dimensions") = "1";
       xdmf_timedata.append_child(pugi::node_pcdata);
 
     }
@@ -201,13 +202,16 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       }
 
       xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
-      xdmf_timedata = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Time").child("DataItem");
+      xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
     }
 
     // Add an extra timestep to the TimeSeries List
     s.str("");
     s << xdmf_timedata.first_child().value() << " " << time_step;
     xdmf_timedata.first_child().set_value(s.str().c_str());
+    s.str("");
+    s << (counter+1);
+    xdmf_timedata.attribute("Dimensions").set_value(s.str().c_str());
 
     //    /Xdmf/Domain/Grid/Grid - the actual data for this timestep
     pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
