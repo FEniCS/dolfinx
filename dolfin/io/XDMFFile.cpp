@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-08-02
+// Last changed: 2012-08-03
 
 #include <ostream>
 #include <sstream>
@@ -92,6 +92,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   }
 
   const uint cell_dim = mesh.topology().dim();
+  // error if cell_dim==1 - 1D Interval not supported
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
@@ -282,7 +283,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 void XDMFFile::operator<<(const Mesh& mesh)
 {
   // Save a mesh for visualisation, with e.g. ParaView
-  // Creates a HDF5 file to store the mesh, and a related XDMF file with metadata.
+  // Creates a HDF5 file to store the mesh, 
+  // and a related XDMF file with metadata.
 
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
@@ -329,7 +331,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s<< filename_data << ":/Mesh/Topology";
+    s<< filename_data << ":/Mesh/Topology_" << std::hex << mesh.toplogy_hash();
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -342,7 +344,8 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s << filename_data << ":/Mesh/Coordinates";
+    s << filename_data << ":/Mesh/Coordinates_" 
+      << std::hex << mesh.coordinates_hash();
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     xml_doc.save_file(filename.c_str(), "  ");
