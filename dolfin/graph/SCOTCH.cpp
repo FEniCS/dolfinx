@@ -88,9 +88,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   const int vertlocnbr = local_graph.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
-  std::vector<SCOTCH_Idx> vertloctab;
+  std::vector<SCOTCH_Num> vertloctab;
   vertloctab.reserve(local_graph.size() + 1);
-  std::vector<SCOTCH_Idx> edgeloctab;
+  std::vector<SCOTCH_Num> edgeloctab;
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
@@ -112,8 +112,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
-  std::vector<SCOTCH_Idx> proccnttab;
-  const SCOTCH_Idx local_graph_size = local_graph.size();
+  std::vector<SCOTCH_Num> proccnttab;
+  const SCOTCH_Num local_graph_size = local_graph.size();
   MPI::all_gather(local_graph_size, proccnttab);
 
   // FIXME: explain this test
@@ -225,9 +225,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
 
   // Resize vector to hold cell partition indices (ugly to handle vertlocnbr = 0 case)
-  std::vector<SCOTCH_Idx> _cell_partition(vertlocnbr);
-  SCOTCH_Idx _cell_dummy = 0;
-  SCOTCH_Idx* __cell_partition = 0;
+  std::vector<SCOTCH_Num> _cell_partition(vertlocnbr);
+  SCOTCH_Num _cell_dummy = 0;
+  SCOTCH_Num* __cell_partition = 0;
   cell_partition.resize(vertlocnbr);
   if (vertlocnbr > 0)
     __cell_partition = &_cell_partition[0];
