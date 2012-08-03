@@ -25,20 +25,22 @@
 #include <cstdlib>
 #include <sstream>
 
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlotter.h"
 #include "plot.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 // Template function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created.
 template <typename T>
@@ -309,16 +311,13 @@ VTKPlotter* dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_funct
 void dolfin::interactive()
 {
   if (VTKPlotter::plotter_cache.size() == 0)
-  {
     warning("No plots have been shown yet. Ignoring call to interactive().");
-  }
   else
   {
     // Prepare interactiveness on every plotter
-    for (std::list<VTKPlotter*>::iterator it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
-    {
+    std::list<VTKPlotter*>::iterator it;
+    for (it = VTKPlotter::plotter_cache.begin(); it != VTKPlotter::plotter_cache.end(); it++)
       (*it)->interactive(false);
-    }
 
     (*VTKPlotter::plotter_cache.begin())->start_eventloop();
   }

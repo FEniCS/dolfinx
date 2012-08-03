@@ -22,6 +22,21 @@
 // Last changed: 2012-07-26
 
 
+#include <dolfin/common/Array.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/function/Expression.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Vertex.h>
+#include "ExpressionWrapper.h"
+#include "VTKPlottableGenericFunction.h"
+#include "VTKPlottableMesh.h"
+#include "VTKPlottableMeshFunction.h"
+#include "VTKPlotter.h"
+
 #ifdef HAS_VTK
 
 #include <vtkSmartPointer.h>
@@ -48,15 +63,6 @@
 #include <vtkCylinderSource.h>
 
 #include <boost/filesystem.hpp>
-
-#include <dolfin/common/Timer.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Vertex.h>
-#include "ExpressionWrapper.h"
-#include "VTKPlottableGenericFunction.h"
-#include "VTKPlottableMesh.h"
-#include "VTKPlottableMeshFunction.h"
-#include "VTKPlotter.h"
 
 
 using namespace dolfin;

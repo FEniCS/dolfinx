@@ -38,7 +38,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const BoundaryCondition& bc, 
+                   const BoundaryCondition& bc,
 		   Parameters params)
 {
   // Create list containing single boundary condition
@@ -51,7 +51,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   std::vector<const BoundaryCondition*> bcs, 
+                   std::vector<const BoundaryCondition*> bcs,
 		   Parameters params)
 {
   // Solve linear problem
@@ -75,7 +75,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const Form& J, 
+                   const Form& J,
 		   Parameters params)
 {
   // Create empty list of boundary conditions
@@ -88,8 +88,8 @@ void dolfin::solve(const Equation& equation,
 void dolfin::solve(const Equation& equation,
                    Function& u,
                    const BoundaryCondition& bc,
-                   const Form& J, 
-		   Parameters params)
+                   const Form& J,
+                    Parameters params)
 {
   // Create list containing single boundary condition
   std::vector<const BoundaryCondition*> bcs;
@@ -102,7 +102,7 @@ void dolfin::solve(const Equation& equation,
 void dolfin::solve(const Equation& equation,
                    Function& u,
                    std::vector<const BoundaryCondition*> bcs,
-                   const Form& J, 
+                   const Form& J,
 		   Parameters params)
 {
   // Check that the problem is linear

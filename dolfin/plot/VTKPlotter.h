@@ -18,19 +18,19 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-07-05
+// Last changed: 2012-07-27
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
 
+#include <list>
+#include <string>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/Expression.h>
-#include <dolfin/fem/DirichletBC.h>
-#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/parameter/Parameters.h>
 
 class vtkObject;
 
@@ -38,9 +38,15 @@ namespace dolfin
 {
 
   // Forward declarations
-  class PrivateVTKPipeline;
+  class DirichletBC;
+  class Expression;
   class ExpressionWrapper;
+  class Function;
   class GenericVTKPlottable;
+  class Mesh;
+  class PrivateVTKPipeline;
+  template<typename T> class Array;
+  template<typename T> class MeshFunction;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -197,9 +203,6 @@ namespace dolfin
     void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
 
-
-
-
     /// Plot the object
     void plot();
 
@@ -218,7 +221,8 @@ namespace dolfin
     void set_window_position(int x, int y);
 
     /// Return unique ID of the object to plot
-    uint id() const { return _id; }
+    uint id() const
+    { return _id; }
 
     /// Camera control
     void azimuth(double angle);
@@ -232,14 +236,14 @@ namespace dolfin
     void add_polygon(const Array<double>& points);
 
     // The cache of plotter objects
-    // Used when calling interactive() 
+    // Used when calling interactive()
     // (which should have effect on all plot windows)
     static std::list<VTKPlotter*> plotter_cache;
 
   private:
 
     // Initialization common to all constructors.
-    // Setup all pipeline objects and connect them. 
+    // Setup all pipeline objects and connect them.
     void init();
 
     // Set the title parameter from the name and label of the Variable to plot
