@@ -19,7 +19,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-05-04
+// Last changed: 2012-08-08
 
 #include <dolfin.h>
 
@@ -48,6 +48,7 @@ int main()
 
   // Plot meshes
   plot(mesh3d, "3D mesh");
+  interactive();
 
   return 0;
 }

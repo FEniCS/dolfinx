@@ -19,7 +19,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-05-30
+// Last changed: 2012-08-08
 
 #include <dolfin.h>
 
@@ -47,6 +47,7 @@ int main()
 
   // Plot meshes
   plot(mesh2d, "2D mesh");
+  interactive();
 
   return 0;
 }
