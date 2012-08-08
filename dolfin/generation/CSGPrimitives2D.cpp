@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-30
+// Last changed: 2012-08-08
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -32,7 +32,7 @@ using namespace dolfin::csg;
 // Circle
 //-----------------------------------------------------------------------------
 Circle::Circle(double x0, double x1, double r, dolfin::uint fragments)
-  : _x0(x0), _x1(x1), _r(r), fragments(fragments)
+  : _x0(x0), _x1(x1), _r(r), _fragments(fragments)
 {
   if (_r < DOLFIN_EPS)
   {
@@ -41,11 +41,11 @@ Circle::Circle(double x0, double x1, double r, dolfin::uint fragments)
                  "Circle with center (%f, %f) has zero or negative radius",
                  _x0, _x1);
   }
-  if (fragments < 1)
+  if (_fragments < 3)
   {
     dolfin_error("CSGPrimitives2D.cpp",
                  "create circle",
-                 "Unable to create circle with zero fragments");
+                 "Unable to create circle with less than 3 fragments");
 
   }
 }
@@ -70,7 +70,7 @@ std::string Circle::str(bool verbose) const
 // Ellipse
 //-----------------------------------------------------------------------------
 Ellipse::Ellipse(double x0, double x1, double a, double b, dolfin::uint fragments)
-  : _x0(x0), _x1(x1), _a(a), _b(b), fragments(fragments)
+  : _x0(x0), _x1(x1), _a(a), _b(b), _fragments(fragments)
 {
   if (_a < DOLFIN_EPS || _b < DOLFIN_EPS)
   {
@@ -79,11 +79,11 @@ Ellipse::Ellipse(double x0, double x1, double a, double b, dolfin::uint fragment
                  "Ellipse with center (%f, %f) has invalid semi-axis",
                  _x0, _x1);
   }
-  if (fragments < 1)
+  if (_fragments < 3)
   {
     dolfin_error("CSGPrimitives2D.cpp",
                  "create ellipse",
-                 "Unable to create ellipse with zero fragments");
+                 "Unable to create ellipse with less than 3 fragments");
 
   }
 }
@@ -141,9 +141,9 @@ std::string Rectangle::str(bool verbose) const
 // Polygon
 //-----------------------------------------------------------------------------
 Polygon::Polygon(const std::vector<Point>& vertices)
-  : vertices(vertices)
+  : _vertices(vertices)
 {
-  if (vertices.size() < 3)
+  if (_vertices.size() < 3)
   {
     dolfin_error("CSGPrimitives2D.cpp",
                  "create polygon",
@@ -159,10 +159,10 @@ std::string Polygon::str(bool verbose) const
   {
     s << "<Polygon with vertices ";
     std::vector<Point>::const_iterator p;
-    for (p = vertices.begin(); p != vertices.end(); ++p)
+    for (p = _vertices.begin(); p != _vertices.end(); ++p)
     {
       s << "(" << p->x() << ", " << p->y() << ")";
-      if ((p != vertices.end()) && (p + 1 != vertices.end()))
+      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
         s << ", ";
     }
     s << ">";
@@ -171,10 +171,10 @@ std::string Polygon::str(bool verbose) const
   {
     s << "Polygon(";
     std::vector<Point>::const_iterator p;
-    for (p = vertices.begin(); p != vertices.end(); ++p)
+    for (p = _vertices.begin(); p != _vertices.end(); ++p)
     {
       s << "(" << p->x() << ", " << p->y() << ")";
-      if ((p != vertices.end()) && (p + 1 != vertices.end()))
+      if ((p != _vertices.end()) && (p + 1 != _vertices.end()))
         s << ", ";
     }
     s << ")";

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-05-10
-// Last changed: 2012-05-30
+// Last changed: 2012-08-08
 
 #include <vector>
 #include <cmath>
@@ -144,72 +144,59 @@ CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D() {}
 //-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_circle(const csg::Circle* c)
 {
-  std::vector<Nef_point_2> points;
+  std::vector<Nef_point_2> pts;
 
-  for (dolfin::uint i=0; i < c->fragments; i++)
+  for (dolfin::uint i = 0; i < c->fragments(); i++)
   {
-    double phi = (2*DOLFIN_PI*i) / c->fragments;
-    double x, y;
-    if (c->_r > 0)
-    {
-      x = c->_x0 + c->_r*cos(phi);
-      y = c->_x1 + c->_r*sin(phi);
-    }
-    else
-    {
-      x = 0;
-      y = 0;
-    }
-    points.push_back(Nef_point_2(x, y));
+    const double phi = (2*DOLFIN_PI*i) / c->fragments();
+    const double x = c->center().x() + c->radius()*cos(phi);
+    const double y = c->center().y() + c->radius()*sin(phi);
+    pts.push_back(Nef_point_2(x, y));
   }
 
-  return Nef_polyhedron_2(points.begin(), points.end(),
-                          Nef_polyhedron_2::INCLUDED);
+  return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_ellipse(const csg::Ellipse* e)
 {
-  std::vector<Nef_point_2> points;
+  std::vector<Nef_point_2> pts;
 
-  for (dolfin::uint i=0; i < e->fragments; i++)
+  for (dolfin::uint i = 0; i < e->fragments(); i++)
   {
-    double phi = (2*DOLFIN_PI*i) / e->fragments;
-    double x = e->_x0 + e->_a*cos(phi);
-    double y = e->_x1 + e->_b*sin(phi);
-    points.push_back(Nef_point_2(x, y));
+    const double phi = (2*DOLFIN_PI*i) / e->fragments();
+    const double x = e->center().x() + e->a()*cos(phi);
+    const double y = e->center().y() + e->b()*sin(phi);
+    pts.push_back(Nef_point_2(x, y));
   }
 
-  return Nef_polyhedron_2(points.begin(), points.end(),
-                          Nef_polyhedron_2::INCLUDED);
+  return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_rectangle(const csg::Rectangle* r)
 {
-  const double x0 = std::min(r->_x0, r->_y0);
-  const double y0 = std::max(r->_x0, r->_y0);
+  const double x0 = std::min(r->first_corner().x(), r->first_corner().y());
+  const double y0 = std::max(r->first_corner().x(), r->first_corner().y());
 
-  const double x1 = std::min(r->_x1, r->_y1);
-  const double y1 = std::max(r->_x1, r->_y1);
+  const double x1 = std::min(r->second_corner().x(), r->second_corner().y());
+  const double y1 = std::max(r->second_corner().x(), r->second_corner().y());
 
-  std::vector<Nef_point_2> points;
-  points.push_back(Nef_point_2(x0, x1));
-  points.push_back(Nef_point_2(y0, x1));
-  points.push_back(Nef_point_2(y0, y1));
-  points.push_back(Nef_point_2(x0, y1));
+  std::vector<Nef_point_2> pts;
+  pts.push_back(Nef_point_2(x0, x1));
+  pts.push_back(Nef_point_2(y0, x1));
+  pts.push_back(Nef_point_2(y0, y1));
+  pts.push_back(Nef_point_2(x0, y1));
 
-  return Nef_polyhedron_2(points.begin(), points.end(),
-                          Nef_polyhedron_2::INCLUDED);
+  return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_polygon(const csg::Polygon* p)
 {
-  std::vector<Nef_point_2> points;
+  std::vector<Nef_point_2> pts;
   std::vector<Point>::const_iterator v;
-  for (v = p->vertices.begin(); v != p->vertices.end(); ++v)
-    points.push_back(Nef_point_2(v->x(), v->y()));
+  for (v = p->vertices().begin(); v != p->vertices().end(); ++v)
+    pts.push_back(Nef_point_2(v->x(), v->y()));
 
-  return Nef_polyhedron_2(points.begin(), points.end(),
-                          Nef_polyhedron_2::INCLUDED);
+  return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
 static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)

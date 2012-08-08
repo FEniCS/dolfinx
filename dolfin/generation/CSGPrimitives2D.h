@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-30
+// Last changed: 2012-08-08
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -72,8 +72,19 @@ namespace dolfin
       std::string str(bool verbose) const;
       Type getType() const { return CSGGeometry::Circle; }
 
+      /// Return center of circle
+      Point center() const { return Point(_x0, _x1); }
+
+      /// Return radius of circle
+      double radius() const { return _r; }
+
+      /// Return number of fragments around the circle
+      uint fragments() const { return _fragments; }
+
+    private:
+
       double _x0, _x1, _r;
-      const uint fragments;
+      const uint _fragments;
 
     };
 
@@ -103,8 +114,22 @@ namespace dolfin
       std::string str(bool verbose) const;
       Type getType() const { return CSGGeometry::Ellipse; }
 
+      /// Return center of ellipse
+      Point center() const { return Point(_x0, _x1); }
+
+      /// Return horizontal semi-axis
+      double a() const { return _a; }
+
+      /// Return vertical semi-axis
+      double b() const { return _b; }
+
+      /// Return number of fragments around the ellipse
+      uint fragments() const { return _fragments; }
+
+    private:
+
       double _x0, _x1, _a, _b;
-      const uint fragments;
+      const uint _fragments;
 
     };
 
@@ -133,6 +158,14 @@ namespace dolfin
 
       Type getType() const { return CSGGeometry::Rectangle; }
 
+      /// Return first corner
+      Point first_corner() const { return Point(_x0, _y0); }
+
+      /// Return second corner
+      Point second_corner() const { return Point(_x1, _y1); }
+
+    private:
+
       double _x0, _x1, _y0, _y1;
 
     };
@@ -154,7 +187,12 @@ namespace dolfin
       std::string str(bool verbose) const;
       Type getType() const { return CSGGeometry::Polygon; }
 
-      const std::vector<Point>& vertices;
+      /// Return vertices in polygon
+      std::vector<Point> vertices() const { return _vertices; }
+
+    private:
+
+      const std::vector<Point>& _vertices;
 
     };
 
