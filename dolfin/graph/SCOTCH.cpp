@@ -88,9 +88,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   const int vertlocnbr = local_graph.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
-  std::vector<int> vertloctab;
+  std::vector<SCOTCH_Num> vertloctab;
   vertloctab.reserve(local_graph.size() + 1);
-  std::vector<int> edgeloctab;
+  std::vector<SCOTCH_Num> edgeloctab;
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
@@ -112,8 +112,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
-  std::vector<uint> proccnttab;
-  const uint local_graph_size = local_graph.size();
+  std::vector<SCOTCH_Num> proccnttab;
+  const SCOTCH_Num local_graph_size = local_graph.size();
   MPI::all_gather(local_graph_size, proccnttab);
 
   // FIXME: explain this test
@@ -138,7 +138,6 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
     // Total (global) number of edges (cell-cell connections) in the graph
     const SCOTCH_Num edgeglbnbr = MPI::sum(edgelocnbr);
-
 
     for (uint proc = 0; proc < num_processes; ++proc)
     {
@@ -226,20 +225,21 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
 
   // Resize vector to hold cell partition indices (ugly to handle vertlocnbr = 0 case)
-  int _cell_dummy = 0;
-  int* _cell_partition = 0;
+  std::vector<SCOTCH_Num> _cell_partition(vertlocnbr);
+  SCOTCH_Num _cell_dummy = 0;
+  SCOTCH_Num* __cell_partition = 0;
   cell_partition.resize(vertlocnbr);
   if (vertlocnbr > 0)
-    _cell_partition = reinterpret_cast<int*>(&cell_partition[0]);
+    __cell_partition = &_cell_partition[0];
   else
-    _cell_partition = &_cell_dummy;
+    __cell_partition = &_cell_dummy;
 
   // Reset SCOTCH random number generator to produce deterministic partitions
   SCOTCH_randomReset();
 
   // Partition graph
   info("Start SCOTCH partitioning.");
-  if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition))
+  if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, __cell_partition))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -250,6 +250,10 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
+
+  // Copy partition
+  cell_partition.resize(_cell_partition.size());
+  std::copy(_cell_partition.begin(), _cell_partition.end(), cell_partition.begin());
 }
 //-----------------------------------------------------------------------------
 #else

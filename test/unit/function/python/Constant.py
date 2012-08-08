@@ -69,8 +69,6 @@ class Constants(unittest.TestCase):
           e0_values = e0.compute_vertex_values(mesh)
           e1_values = e1.compute_vertex_values(mesh)
 
-          print e0_values
-
           self.assertTrue(all(e0_values==1))
           self.assertTrue(all(e1_values[:mesh.num_vertices()]==1))
           self.assertTrue(all(e1_values[mesh.num_vertices():mesh.num_vertices()*2]==2))

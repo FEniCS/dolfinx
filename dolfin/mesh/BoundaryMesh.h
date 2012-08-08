@@ -18,7 +18,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2010-02-08
+// Last changed: 2012-06-25
 
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
@@ -31,6 +31,9 @@ namespace dolfin
 {
 
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
+  /// The cells of the boundary mesh (facets of the original mesh) are
+  /// oriented to produce outward pointing normals relative to the
+  /// original mesh.
 
   class BoundaryMesh : public Mesh
   {
@@ -39,8 +42,19 @@ namespace dolfin
     /// Create an empty boundary mesh
     BoundaryMesh();
 
-    /// Create boundary mesh from given mesh
-    BoundaryMesh(const Mesh& mesh);
+    /// Create boundary mesh from given mesh.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         Another _Mesh_ object.
+    ///     order (bool)
+    ///         Optional argument which can be used to control whether
+    ///         or not the boundary mesh should be ordered according
+    ///         to the UFC ordering convention. If set to false, the
+    ///         boundary mesh will be ordered with right-oriented
+    ///         facets (outward-pointing unit normals). The default
+    ///         value is true.
+    BoundaryMesh(const Mesh& mesh, bool order=true);
 
     /// Destructor
     ~BoundaryMesh();

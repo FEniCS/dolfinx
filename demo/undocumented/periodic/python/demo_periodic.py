@@ -31,12 +31,6 @@
 
 from dolfin import *
 
-# Periodic BCs don't work with Epetra
-if parameters["linear_algebra_backend"] == "Epetra":
-    print "Sorry, this demo does not work with the Epetra backend"
-    import sys
-    sys.exit(0)
-
 # Create mesh and finite element
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)

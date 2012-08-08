@@ -543,12 +543,13 @@ const std::vector<TYPE>&  ARG_NAME
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
 TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(BoundaryCondition)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
+TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericVector)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(Parameters)
 

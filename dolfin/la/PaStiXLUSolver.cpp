@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+// Necessary since pastix.h does not include it
+#include <stdint.h>
+
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/NoDeleter.h"
 #include "dolfin/common/types.h"
@@ -53,6 +56,13 @@ Parameters PaStiXLUSolver::default_parameters()
   // Number of threads per MPI process
   p.add<uint>("num_threads");
 
+  // max = 300 good with 1 thread on laptop
+  // min, max = 180, 340 good with 2 thread on laptop
+
+  // Min/max block size for BLAS
+  p.add("min_block_size", 180);
+  p.add("max_block_size", 340);
+
   // Check matrix for consistency
   p.add("check_matrix", false);
 
@@ -60,14 +70,13 @@ Parameters PaStiXLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
-  : A(reference_to_no_delete_pointer(A)), id(0)
+  : A(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A)
-  : A(A), id(0)
+PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -79,7 +88,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
 
-  int    iparm[IPARM_SIZE];
+  pastix_int_t iparm[IPARM_SIZE];
   double dparm[DPARM_SIZE];
   for (int i = 0; i < IPARM_SIZE; i++)
     iparm[i] = 0;
@@ -89,27 +98,55 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Set default parameters
   pastix_initParam(iparm, dparm);
 
-  // PaStiX object
-  pastix_data_t* pastix_data = NULL;
+  // LU or Cholesky
+  const bool symmetric = parameters["symmetric_operator"];
+  if (symmetric)
+  {
+    iparm[IPARM_SYM] = API_SYM_YES;
+    iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
+  }
+  else
+  {
+    iparm[IPARM_SYM] = API_SYM_NO;
+    iparm[IPARM_FACTORIZATION] = API_FACT_LU;
+  }
 
-  // Matrix data in compressed sparse column format
+  // Do not renumber
+  //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
+
+  // Block sizes (affects performance)
+  const uint min_block_size = parameters["min_block_size"];
+  iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
+  const uint max_block_size = parameters["max_block_size"];
+  iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
+  //iparm[IPARM_ABS] = API_YES;
+
+  // Matrix data in compressed sparse column format (C indexing)
   std::vector<double> vals;
-  std::vector<uint> rows, col_ptr, local_to_global_cols;
-  A->csc(vals, rows, col_ptr, local_to_global_cols, false);
+  std::vector<pastix_int_t> rows, col_ptr, local_to_global_cols;
+  A->csc(vals, rows, col_ptr, local_to_global_cols, symmetric);
 
-  int* _col_ptr = reinterpret_cast<int*>(&col_ptr[0]);
-  int* _rows = reinterpret_cast<int*>(&rows[0]);
-  int* _local_to_global_cols = reinterpret_cast<int*>(&local_to_global_cols[0]);
-  double* _vals = &vals[0];
+  dolfin_assert(local_to_global_cols.size() > 0);
 
-  const uint n = col_ptr.size() - 1;
+  const std::vector<pastix_int_t> local_to_global_cols_ref = local_to_global_cols;
+
+  pastix_int_t* _col_ptr = col_ptr.data();
+  pastix_int_t* _rows = rows.data();
+  pastix_int_t* _local_to_global_cols = local_to_global_cols.data();
+
+  const pastix_int_t n = col_ptr.size() - 1;
 
   // Check matrix
   if (parameters["check_matrix"])
   {
-    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, API_SYM_YES, API_YES,
-		                     n, &_col_ptr, &_rows, &_vals, &_local_to_global_cols, 1);
+    double* _vals = vals.data();
+    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_YES,
+  		                   n, &_col_ptr, &_rows, &_vals,
+                         &_local_to_global_cols, 1);
   }
+
+  // PaStiX object
+  pastix_data_t* pastix_data = NULL;
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
@@ -126,19 +163,6 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
 
-
-  // LU or Cholesky
-  if (parameters["symmetric_operator"])
-  {
-    iparm[IPARM_SYM] = API_SYM_YES;
-    iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
-  }
-  else
-  {
-    iparm[IPARM_SYM] = API_SYM_NO;
-    iparm[IPARM_FACTORIZATION] = API_FACT_LU;
-  }
-
   // Graph (matrix) distributed
   if (MPI::num_processes() > 1)
     iparm[IPARM_GRAPHDIST] = API_YES;
@@ -146,64 +170,56 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_GRAPHDIST] = API_NO;
 
   dolfin_assert(local_to_global_cols.size() > 0);
-  std::vector<int> perm(local_to_global_cols.size());
-  std::vector<int> invp(local_to_global_cols.size());
+  std::vector<pastix_int_t> perm(local_to_global_cols.size());
+  std::vector<pastix_int_t> invp(local_to_global_cols.size());
+
+  //for (uint i = 0; i < local_to_global_cols.size(); ++i)
+  //{
+  //  perm[i] = i + 1;
+  //  invp[i] = i + 1;
+  //}
 
   // Number of RHS vectors
-  const int nrhs = 1;
+  const pastix_int_t nrhs = 1;
 
   // Re-order
   iparm[IPARM_START_TASK] = API_TASK_ORDERING;
   iparm[IPARM_END_TASK]   = API_TASK_BLEND;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
-            _local_to_global_cols,
-            &perm[0], &invp[0],
-            NULL, nrhs, iparm, dparm);
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
+            _local_to_global_cols, perm.data(), invp.data(), NULL, nrhs,
+            iparm, dparm);
 
   // Factorise
   iparm[IPARM_START_TASK] = API_TASK_NUMFACT;
   iparm[IPARM_END_TASK]   = API_TASK_NUMFACT;
-  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, _vals,
-            _local_to_global_cols,
-            &perm[0], &invp[0],
-            NULL, nrhs, iparm, dparm);
-
-  // Get local (to process) dofs
-  const uint ncol2 = pastix_getLocalNodeNbr(&pastix_data);
-  std::vector<uint> solver_local_to_global(ncol2);
-  int* _loc2glob = reinterpret_cast<int*>(&solver_local_to_global[0]);
-  pastix_getLocalNodeLst(&pastix_data, _loc2glob) ;
-
-  // Perform shift
-  for (uint i = 0; i < ncol2; ++i)
-    _loc2glob[i]--;
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
+            _local_to_global_cols, perm.data(), invp.data(), NULL, nrhs,
+            iparm, dparm);
 
   // Get RHS data for this process
-  std::vector<double> _b(ncol2);
-  b.gather(_b, solver_local_to_global);
-  double* b_ptr = &_b[0];
+  std::vector<double> _b;
+  std::vector<uint> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  b.gather(_b, idx);
 
   // Solve
   iparm[IPARM_START_TASK] = API_TASK_SOLVE;
   iparm[IPARM_END_TASK] = API_TASK_SOLVE;
-  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
-            _local_to_global_cols,
-            perm.data(), invp.data(),
-            b_ptr, nrhs, iparm, dparm);
-
-  // FIXME: Use pastix getLocalUnknownNbr?
+  d_dpastix(&pastix_data, mpi_comm, n, _col_ptr, _rows, vals.data(),
+            _local_to_global_cols, perm.data(), invp.data(),
+            _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
   assert(b.size() == x.size());
-  x.set(_b.data(), ncol2, solver_local_to_global.data());
+  x.set(_b.data(), local_to_global_cols_ref.size(), idx.data());
   x.apply("insert");
 
   // Clean up
   iparm[IPARM_START_TASK] = API_TASK_CLEAN;
   iparm[IPARM_END_TASK] = API_TASK_CLEAN;
-  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL, NULL,
+  d_dpastix(&pastix_data, mpi_comm, n, NULL, NULL, NULL,
+            _local_to_global_cols,
             perm.data(), invp.data(),
-            NULL, nrhs, iparm, dparm);
+            _b.data(), nrhs, iparm, dparm);
 
   return 1;
 }

@@ -26,17 +26,27 @@
 #ifdef HAS_TRILINOS
 
 #include <string>
+#include <vector>
 #include <boost/shared_ptr.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
 
+
 // Trilinos forward declarations
+class Epetra_MultiVector;
 class Epetra_RowMatrix;
 class Ifpack_Preconditioner;
 namespace ML_Epetra
 {
   class MultiLevelPreconditioner;
+}
+namespace Teuchos
+{
+  class ParameterList;
 }
 
 namespace dolfin
@@ -45,6 +55,7 @@ namespace dolfin
   // Forward declarations
   class EpetraKrylovSolver;
   class EpetraMatrix;
+  class GenericVector;
 
   /// This class is a wrapper for configuring Epetra preconditioners. It does
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
@@ -62,6 +73,17 @@ namespace dolfin
 
     /// Set the precondtioner and matrix used in preconditioner
     virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
+
+    /// Set the Trilonos preconditioner parameters list
+    void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
+
+    /// Set the Trilonos preconditioner parameters list (for use from Python)
+    void set_parameters(Teuchos::RCP<Teuchos::ParameterList> list);
+
+    /// Set basis for the null space of the operator. Setting this
+    /// is critical to the performance of some preconditioners, e.g. ML.
+    /// The vectors spanning the null space are copied.
+    void set_null_space(const std::vector<const GenericVector*>& null_space);
 
     /// Return preconditioner name
     std::string name() const;
@@ -88,6 +110,16 @@ namespace dolfin
 
     // Available named preconditionersdescriptions
     static const std::vector<std::pair<std::string, std::string> >_preconditioners_descr;
+
+    // Parameter list
+    boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+
+    // Teuchos::ParameterList pointer, used when initialized with a
+    // Teuchos::RCP shared_ptr
+    Teuchos::RCP<const Teuchos::ParameterList> parameter_ref_keeper;
+
+    // Vectors spanning the null space
+    boost::shared_ptr<Epetra_MultiVector> _null_space;
 
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
     boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;

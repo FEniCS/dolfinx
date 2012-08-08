@@ -199,7 +199,7 @@ and then extract the left and right-hand sides using the UFL functions
          - g_L*v*ds(1) - g_R*v*ds(3)
          - f*v*dx(0) - f*v*dx(1))
 
-    # Separete left and right hand sides of equation
+    # Separate left and right hand sides of equation
     a, L = lhs(F), rhs(F)
 
     # Solve problem

@@ -66,7 +66,7 @@ namespace dolfin
     ///         The coordinates in domain H.
     ///     unnamed (_Array_ <double>)
     ///         The coordinates in domain G.
-    virtual void map(const Array<double>& x, Array<double>&) const;
+    virtual void map(const Array<double>& x, Array<double>& y) const;
 
     /// Snap coordinate to boundary of subdomain
     ///

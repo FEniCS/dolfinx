@@ -54,7 +54,6 @@ namespace dolfin
   // function
   class FunctionSpace;
   class Function;
-  class FunctionPlotData;
 
   // la
   class GenericVector;

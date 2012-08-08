@@ -28,6 +28,9 @@
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
 
+#include <boost/serialization/map.hpp>
+#include <dolfin/common/tuple_serialization.h>
+
 namespace dolfin
 {
 
@@ -140,29 +143,39 @@ namespace dolfin
     /// Rebuild mapping between dofs
     void rebuild();
 
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
+    /// Compute dof pairs (master dof, slave dof)
+    void compute_dof_pairs(std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+
   private:
 
     // Apply boundary conditions, common method
-    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
+    void apply(GenericMatrix* A, GenericVector* b,
+               const GenericVector* x) const;
+    void parallel_apply(GenericMatrix* A, GenericVector* b,
+                        const GenericVector* x) const;
 
-    // Extract dof pairs for sub space and append to list
-    void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<uint, uint> >& dof_pairs);
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
+    // Extract dof pairs for subspace and append to vector
+    void extract_dof_pairs(const FunctionSpace& V,
+      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;
 
-    // Number of dof pairs
-    uint num_dof_pairs;
-
-    // Array of master dofs (size num_dof_pairs)
+    // Array of master dofs (size = num_dof_pairs)
     std::vector<uint> master_dofs;
 
-    // Array of slave dofs (size num_dof_pairs)
+    // Owners of master dofs in parallel (size = num_dof_pairs)
+    std::vector<uint> master_owners;
+
+    // Array of slave dofs (size = num_dof_pairs)
     std::vector<uint> slave_dofs;
 
-    // Right-hand side values, used for zeroing entries in right-hand side (size num_dof_pairs)
-    mutable std::vector<double> rhs_values_master;
-    mutable std::vector<double> rhs_values_slave;
+    // Owners of slave dofs in parallel (size = num_dof_pairs)
+    std::vector<uint> slave_owners;
 
   };
 

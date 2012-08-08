@@ -87,6 +87,8 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   check_c_source_runs("
 /* Test program pastix */
 
+#define MPICH_IGNORE_CXX_SEEK 1
+#include <stdint.h>
 #include <mpi.h>
 #include <pastix.h>
 

@@ -1,4 +1,13 @@
 1.1.0 [not yet released]
+ - Expression string parsing now understand C++ namespace such as std::cosh
+ - Fix bug in Expression so one can pass min, max
+ - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble
+ - Fix bug where the reference count of Py_None was not increased
+ - Fix bug in reading TimeSeries of size smaller than 3
+ - Improve code design for Mesh FooIterators to avoid dubious down cast
+ - Bug fix in destruction of PETSc user preconditioners
+ - Add CellVolume(mesh) convenience wrapper to Python interface for UFL function
+ - Fix bug in producing outward pointing normals of BoundaryMesh
  - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs are not handled correctly
  - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
  - Add check that sample points for TimeSeries are monotone

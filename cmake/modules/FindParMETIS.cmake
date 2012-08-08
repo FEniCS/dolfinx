@@ -50,10 +50,13 @@ if (MPI_FOUND)
     DOC "Directory where the METIS library is located"
   )
 
-  set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
+  set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
+  if (METIS_LIBRARY)
+    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
+  endif()
 
   # Try compiling and running test program
-  if (PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY AND METIS_LIBRARY)
+  if (PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
 
     # Set flags for building test program
     set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS} ${MPI_INCLUDE_PATH})
@@ -62,6 +65,7 @@ if (MPI_FOUND)
     # Build and run test program
     include(CheckCXXSourceRuns)
     check_cxx_source_runs("
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <parmetis.h>
 

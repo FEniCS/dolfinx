@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Andre Massing, 2009.
+// Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2011-11-15
+// Last changed: 2012-06-12
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -64,35 +65,6 @@ MeshEntity::~MeshEntity()
 {
   // Do nothing
 }
-//-----------------------------------------------------------------------------
-/*
-bool MeshEntity::operator==(const MeshEntity& another) const
-{
-  return (_mesh == another._mesh && _dim == another._dim && _index == another._index);
-}
-//-----------------------------------------------------------------------------
-bool MeshEntity::operator!=(const MeshEntity& another) const
-{
- return !operator==(another);
-}
-//-----------------------------------------------------------------------------
-*/
-dolfin::uint MeshEntity::num_entities(uint dim) const
-{
-  return _mesh->topology()(_dim, dim).size(_index);
-}
-//-----------------------------------------------------------------------------
-const dolfin::uint* MeshEntity::entities(uint dim) const
-{
-  return _mesh->topology()(_dim, dim)(_index);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint MeshEntity::mesh_id() const
-{
-  return _mesh->id();
-}
-
-
 //-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
 {

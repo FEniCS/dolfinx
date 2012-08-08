@@ -46,30 +46,30 @@ print 'Maximum real deflection is', max_D
 # Demonstrate some visualization
 
 # Cannot do plot(w) first and then grab viz object!
-import time
-#viz_w = plot(w,
+# import time
+# viz_w = plot(w,
 #            wireframe=False,
 #            title='Scaled membrane deflection',
 #            rescale=False,
 #            axes=True,
 #            )
 
-#viz_w.elevate(-65) # tilt camera -65 degrees (latitude dir)
-#viz_w.set_min_max(0, 0.5*max_w)
-#viz_w.update(w)    # bring settings above into action
-#viz_w.write_png('membrane_deflection.png')
-#viz_w.write_ps('membrane_deflection', format='eps')
+# viz_w.elevate(-65) # tilt camera -65 degrees (latitude dir)
+# viz_w.set_min_max(0, 0.5*max_w)
+# viz_w.update(w)    # bring settings above into action
+# viz_w.write_png('membrane_deflection.png')
+# viz_w.write_ps('membrane_deflection', format='eps')
 
-#f = interpolate(f, V)
-#viz_f = plot(f, title='Scaled pressure')
-#viz_f.elevate(-65)
-#viz_f.update(f)
-#viz_f.write_png('pressure.png')
-#viz_f.write_ps('pressure', format='eps')
+# f = interpolate(f, V)
+# viz_f = plot(f, title='Scaled pressure')
+# viz_f.elevate(-65)
+# viz_f.update(f)
+# viz_f.write_png('pressure.png')
+# viz_f.write_ps('pressure', format='eps')
 
 #viz_m = plot(mesh, title='Finite element mesh')
 
 #time.sleep(15)
 
 # Should be at the end
-#interactive()
+# interactive()

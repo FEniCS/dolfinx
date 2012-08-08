@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2009-09-29
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 //
 // This demo program solves a hyperelastic problem
 
@@ -143,6 +143,7 @@ int main()
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

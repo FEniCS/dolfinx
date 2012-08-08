@@ -177,17 +177,18 @@ problem is solved:
     Function u(V);
     solve(a == L, u, bc);
 
-The solution is then plotted to the screen and written to a file in VTK
-format:
+The solution is then written to a file in VTK format and plotted to
+the screen:
 
 .. code-block:: c++
-
-    // Plot solution
-    plot(u);
 
     // Save solution in VTK format
     File file("biharmonic.pvd");
     file << u;
+
+    // Plot solution
+    plot(u);
+    interactive();
 
     return 0;
   }

@@ -74,7 +74,8 @@ namespace dolfin
                          const MeshFunction<uint> *interior_facet_domains=NULL,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
   private:
 

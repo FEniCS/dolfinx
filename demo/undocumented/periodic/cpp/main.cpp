@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-07-11
-// Last changed: 2012-04-23
+// Last changed: 2012-07-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -26,19 +26,14 @@
 // at y = 0, 1 and periodic boundary conditions at x = 0, 1.
 
 #include <dolfin.h>
+#include <dolfin/fem/AssemblerTools.h>
 #include "Poisson.h"
 
 using namespace dolfin;
 
 int main()
 {
-  // Periodic BCs don't work with Epetra
-  const std::string backend = parameters["linear_algebra_backend"];
-  if (backend == "Epetra")
-  {
-    info("Sorry, this demo does not work with the Epetra backend");
-    return 0;
-  }
+  parameters["linear_algebra_backend"] = "Epetra";
 
   // Source term
   class Source : public Expression
@@ -47,8 +42,8 @@ int main()
 
     void eval(Array<double>& values, const Array<double>& x) const
     {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
+      const double dx = x[0] - 0.5;
+      const double dy = x[1] - 0.5;
       values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 
@@ -103,18 +98,20 @@ int main()
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
-  bcs.push_back(&bc0); bcs.push_back(&bc1);
+  bcs.push_back(&bc0);
+  bcs.push_back(&bc1);
 
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("periodic.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
+  interactive();
 
   return 0;
 }

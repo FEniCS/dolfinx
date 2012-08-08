@@ -71,12 +71,13 @@ public:
   /// Create a MeshPrimitive from a given MeshEntityIterator
   MeshPrimitive(MeshEntityIterator entity)
     : index(entity->index()), _mesh(&(entity->mesh())) {}
-  
+
   /// Create a MeshPrimitive from a given SubsetIterator
   MeshPrimitive(SubsetIterator entity)
     : index(entity->index()), _mesh(&(entity->mesh())) {}
 
-  Id id() const { return index;}
+  Id id() const
+  { return index;}
 
   // *Not* required by the CGAL primitive concept, but added for
   // efficieny easons. Explanation: We use a modified AABB_tree, in
@@ -98,7 +99,8 @@ public:
     return VertexIterator(MeshPrimitive<PrimitiveTrait>::getEntity(*this))->point();
   }
 
-  Datum datum() const { return PrimitiveTraits<Primitive,K>::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
+  Datum datum() const
+  { return PrimitiveTraits<Primitive,K>::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
 
 };
 

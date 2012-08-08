@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-07
-// Last changed: 2010-01-27
+// Last changed: 2012-07-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -130,12 +130,13 @@ int main()
   LUSolver solver;
   solver.solve(A, *u.vector(), b);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
+  interactive();
 
   return 0;
 }

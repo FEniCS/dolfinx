@@ -22,7 +22,6 @@
 
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "marking.h"
 

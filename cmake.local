@@ -7,12 +7,16 @@
 # This is useful to be able to run demos from within the source tree
 # without needing to specify an installation directory.
 
+# Number of processes to use during build
+: ${PROCS:=3}
+
 CMAKE_EXTRA_ARGS=$@
 
-INSTALLDIR=`pwd`"/local"
+INSTALLDIR=$PWD/local
+BUILDDIR=$PWD/build
 
-mkdir -p build
-cd build
+mkdir -p $BUILDDIR
+cd $BUILDDIR
 
 cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_TESTING=true \
@@ -21,5 +25,4 @@ cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       $CMAKE_EXTRA_ARGS \
       ..
 
-make -j3
-make install -j3
+make -j$PROCS && make install -j$PROCS

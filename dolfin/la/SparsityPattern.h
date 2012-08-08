@@ -62,6 +62,9 @@ namespace dolfin
     /// Insert non-zero entries
     void insert(const std::vector<const std::vector<uint>* >& entries);
 
+    /// Add edges (vertex = [index, owning process])
+    void add_edges(const std::pair<uint, uint>& vertex, const std::vector<uint>& edges);
+
     /// Return rank
     uint rank() const;
 
@@ -83,6 +86,9 @@ namespace dolfin
 
     /// Fill vector with number of nonzeros in local_range for dimension 0
     void num_local_nonzeros(std::vector<uint>& num_nonzeros) const;
+
+    /// Fill vector with edges for given vertex
+    void get_edges(uint vertex, std::vector<uint>& edges) const;
 
     /// Finalize sparsity pattern
     void apply();

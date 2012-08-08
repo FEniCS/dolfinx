@@ -28,6 +28,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -356,6 +357,17 @@ DofMap* DofMap::collapse(boost::unordered_map<uint, uint>& collapsed_map,
   return new DofMap(collapsed_map, *this, mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
+void DofMap::set(GenericVector& x, double value) const
+{
+  std::vector<std::vector<uint> >::const_iterator cell_dofs;
+  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+  {
+    std::vector<double> _value(cell_dofs->size(), value);
+    x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
+  }
+  x.apply("add");
+}
+//-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             uint& offset,
                                             const std::vector<uint>& component,
@@ -463,12 +475,15 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
 //-----------------------------------------------------------------------------
 void DofMap::renumber(const std::vector<uint>& renumbering_map)
 {
+  // FIXME: Need to handle/invalidate sub-dofmaps
+
+  dolfin_assert(MPI::num_processes() == 1);
   dolfin_assert(global_dimension() == renumbering_map.size());
 
   // Update or build ufc-to-dofmap
   if (ufc_map_to_dofmap.empty())
   {
-    for (uint i = 0; i < _dofmap.size(); ++i)
+    for (uint i = 0; i < global_dimension(); ++i)
       ufc_map_to_dofmap[i] = renumbering_map[i];
   }
   else

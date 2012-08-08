@@ -28,7 +28,6 @@
 %include "dolfin/la/GenericMatrix.h"
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/GenericVector.h"
-%include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/PETScObject.h"
 %include "dolfin/la/PETScBaseMatrix.h"
 %include "dolfin/la/uBLASFactory.h"

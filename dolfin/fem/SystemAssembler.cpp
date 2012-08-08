@@ -47,11 +47,12 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   std::vector<const DirichletBC*> bcs;
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -59,12 +60,13 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const DirichletBC& bc,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -72,10 +74,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const std::vector<const DirichletBC*>& bcs,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -87,7 +90,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const GenericVector* x0,
                                bool reset_sparsity,
                                bool add_values,
-                               bool finalize_tensor)
+                               bool finalize_tensor,
+                               bool keep_diagonal)
 {
   // Set timer
   Timer timer("Assemble system");
@@ -99,8 +103,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    if (a.cell_domains_shared_ptr().get() ||
-        L.cell_domains_shared_ptr().get())
+    if (a.cell_domains_shared_ptr().get() || L.cell_domains_shared_ptr().get())
     {
       warning("Ignoring cell domains defined as part of form in system assembler.");
     }
@@ -139,9 +142,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Check that forms share a function space
   if (*a.function_space(1) != *L.function_space(0))
+  {
     dolfin_error("SystemAssembler.cpp",
 		 "assemble system",
 		 "expected forms (a, L) to share a FunctionSpace");
+  }
 
   // FIXME: This may update coefficients twice. Checked for shared coefficients
 
@@ -159,8 +164,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(b, L, reset_sparsity, add_values);
+  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values, keep_diagonal);
+  AssemblerTools::init_global_tensor(b, L, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // Allocate data
   Scratch data(a, L);
@@ -297,6 +305,16 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     A_exterior_facet_integral = A_ufc.exterior_facet_integrals[0].get();
   if (b_ufc.form.num_exterior_facet_domains() > 0)
     b_exterior_facet_integral = b_ufc.exterior_facet_integrals[0].get();
+
+  // If using external facet integrals
+  if (A_ufc.form.num_exterior_facet_domains() > 0 ||
+      b_ufc.form.num_exterior_facet_domains() > 0)
+  {
+    // Compute facets and facet - cell connectivity if not already computed
+    const uint D = mesh.topology().dim();
+    mesh.init(D - 1);
+    mesh.init(D - 1, D);
+  }
 
   // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());

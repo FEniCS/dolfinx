@@ -21,8 +21,10 @@ square.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Benjamin Kehlet 2012
+#
 # First added:  2008-11-17
-# Last changed: 2008-11-17
+# Last changed: 2012-07-04
 
 from dolfin import *
 from numpy import *
@@ -30,10 +32,6 @@ from numpy import *
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
-
-#Set to False if you do not want to create movies
-#(default should be True since you probably want to :)
-create_movies = False
 
 sphere = UnitSphere(20)
 cube = UnitCube(20, 20, 20)
@@ -47,7 +45,7 @@ t = -0.61
 
 # Scale and move the circle.
 x *= 0.7
-x[:] += t
+x += t
 
 intersection = MeshFunction("uint", cube, cube.topology().dim())
 _first = True
@@ -67,29 +65,22 @@ while t < 1.4 :
 
     # Plot intersection
     if _first:
-        p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
+        p = plot(intersection, rescale=True, wireframe=False, axes=True, scalarbar=False)
         p.elevate(-50)
         p.azimuth(40)
-        p.update(intersection)
+        p.update()
         _first = False
-        interactive()
 
     else:
         plot(intersection)
 
-    p.update(intersection)
-    if create_movies:
-      p.write_png()
-
+        
     #Propagate sphere along the line t(1,1,1).
     x[:,0] += dt
     x[:,1] += dt
     x[:,2] += dt
 
     t += dt
-
-if create_movies:
-  p.movie("sphere_cube_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()

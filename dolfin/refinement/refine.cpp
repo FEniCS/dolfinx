@@ -21,7 +21,6 @@
 // Last changed: 2011-04-07
 
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"

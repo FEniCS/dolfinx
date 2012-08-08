@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-11
-// Last changed: 2010-11-29
+// Last changed: 2012-06-28
 //
 // If run without command-line arguments, this benchmark iterates from
 // zero to MAX_NUM_THREADS. If a command-line argument --num_threads n
@@ -35,47 +35,66 @@
 
 using namespace dolfin;
 
-double bench(std::string form, const Mesh& mesh)
+class PoissonFactory
 {
-  dolfin::uint num_threads = parameters["num_threads"];
-  info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
+  public:
 
-  // Create form
-  boost::shared_ptr<FunctionSpace> V, W0, W1, W2, W3, W4;
-  boost::shared_ptr<Form> a;
-  boost::shared_ptr<Function> w0, w1, w2, w3, w4;
-  if (form == "Poisson")
+  static boost::shared_ptr<Form> a(const Mesh& mesh, bool renumber)
   {
-    V.reset(new Poisson::FunctionSpace(mesh));
-    a.reset(new Poisson::BilinearForm(V, V));
+    // Create function space
+    boost::shared_ptr<FunctionSpace> _V(new Poisson::FunctionSpace(mesh));
+    boost::shared_ptr<Form> _a(new Poisson::BilinearForm(_V, _V));;
+    return _a;
   }
-  else if (form == "NavierStokes")
+
+};
+
+class NavierStokesFactory
+{
+  public:
+
+  static boost::shared_ptr<Form> a(const Mesh& mesh, bool renumber)
   {
-    V.reset(new NavierStokes::FunctionSpace(mesh));
-    W0.reset(new NavierStokes::Form_0_FunctionSpace_2(mesh));
-    W1.reset(new NavierStokes::Form_0_FunctionSpace_3(mesh));
-    W2.reset(new NavierStokes::Form_0_FunctionSpace_4(mesh));
-    W3.reset(new NavierStokes::Form_0_FunctionSpace_5(mesh));
-    W4.reset(new NavierStokes::Form_0_FunctionSpace_6(mesh));
-    a.reset(new NavierStokes::BilinearForm(*V, *V));
-    w0.reset(new Function(*W0));
-    w1.reset(new Function(*W1));
-    w2.reset(new Function(*W2));
-    w3.reset(new Function(*W3));
-    w4.reset(new Function(*W4));
+    boost::shared_ptr<FunctionSpace> _V(new NavierStokes::FunctionSpace(mesh));
+
+    boost::shared_ptr<FunctionSpace> W0(new NavierStokes::Form_0_FunctionSpace_2(mesh));
+    boost::shared_ptr<FunctionSpace> W1(new NavierStokes::Form_0_FunctionSpace_3(mesh));
+    boost::shared_ptr<FunctionSpace> W2(new NavierStokes::Form_0_FunctionSpace_4(mesh));
+    boost::shared_ptr<FunctionSpace> W3(new NavierStokes::Form_0_FunctionSpace_5(mesh));
+    boost::shared_ptr<FunctionSpace> W4(new NavierStokes::Form_0_FunctionSpace_6(mesh));
+
+    boost::shared_ptr<Function> w0(new Function(W0));
+    boost::shared_ptr<Function> w1(new Function(W1));
+    boost::shared_ptr<Function> w2(new Function(W2));
+    boost::shared_ptr<Function> w3(new Function(W3));
+    boost::shared_ptr<Function> w4(new Function(W4));
+
+    boost::shared_ptr<Form> a(new NavierStokes::BilinearForm(_V, _V));
+
     a->set_coefficient(0, w0);
     a->set_coefficient(1, w1);
     a->set_coefficient(2, w2);
     a->set_coefficient(3, w3);
     a->set_coefficient(4, w4);
+
+    return a;
   }
+};
+
+double bench(std::string form, boost::shared_ptr<const Form> a)
+{
+  dolfin::uint num_threads = parameters["num_threads"];
+  info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
 
   // Create STL matrix
   //STLMatrix A;
   Matrix A;
 
   // Intialise matrix
-  AssemblerTools::init_global_tensor(A, *a, true, false);
+  typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+  typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
+  std::vector<MasterSlavePair> periodic_dof_pairs;
+  AssemblerTools::init_global_tensor(A, *a, periodic_dof_pairs, true, false, false);
 
   // Assemble
   Timer timer("Total time");
@@ -108,16 +127,18 @@ int main(int argc, char* argv[])
   old_mesh.color("vertex");
   Mesh mesh = old_mesh.renumber_by_color();
 
+  const bool renumber = true;
+
   // Test cases
-  std::vector<std::string> forms;
-  forms.push_back("Poisson");
-  forms.push_back("NavierStokes");
+  std::vector<std::pair<std::string, boost::shared_ptr<const Form> > > forms;
+  forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh, renumber)));
+  forms.push_back(std::make_pair("NavierStokes", NavierStokesFactory::a(mesh, renumber)));
 
   // If parameter num_threads has been set, just run once
   if (parameters["num_threads"].change_count() > 0)
   {
     for (unsigned int i = 0; i < forms.size(); i++)
-      bench(forms[i], mesh);
+      bench(forms[i].first, forms[i].second);
   }
 
   // Otherwise, iterate from 1 to MAX_NUM_THREADS
@@ -136,17 +157,17 @@ int main(int argc, char* argv[])
       for (unsigned int i = 0; i < forms.size(); i++)
       {
         // Run test case
-        const double t = bench(forms[i], mesh);
+        const double t = bench(forms[i].first, forms[i].second);
 
         // Store results and scale to get speedups
         std::stringstream s;
         s << num_threads << " threads";
-        timings(s.str(), forms[i]) = t;
-        speedups(s.str(), forms[i]) = timings.get_value("0 threads", forms[i]) / t;
+        timings(s.str(), forms[i].first) = t;
+        speedups(s.str(), forms[i].first) = timings.get_value("0 threads", forms[i].first) / t;
         if (num_threads == 0)
-          speedups(s.str(), "(rel 1 thread " + forms[i] + ")") = "-";
+          speedups(s.str(), "(rel 1 thread " + forms[i].first + ")") = "-";
         else
-          speedups(s.str(),  "(rel 1 thread " + forms[i] + ")") = timings.get_value("1 threads", forms[i]) / t;
+          speedups(s.str(),  "(rel 1 thread " + forms[i].first + ")") = timings.get_value("1 threads", forms[i].first) / t;
       }
     }
 

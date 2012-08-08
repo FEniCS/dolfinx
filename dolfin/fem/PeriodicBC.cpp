@@ -74,32 +74,59 @@ struct lt_coordinate
 
 
 // FIXME: Change this to boost::unordered_map
+
 // Mapping from coordinates to dof pairs
-typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
+// coordinate_map maps a coordinate to a pair of (master dof, slave dof)
+// and each master dof/slave dof is a pair of the degree of freedom
+// index AND its parallel owner.
+typedef std::pair<int, int> dof_data;
+typedef std::pair<dof_data, dof_data> dof_pair;
+typedef std::map<std::vector<double>, dof_pair, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
 
-//-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(const FunctionSpace& V,
-                       const SubDomain& sub_domain)
-  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
-    rhs_values_master(0), rhs_values_slave(0)
+// To apply periodic BCs in parallel, we'll need to reduce the coordinate
+// map onto each processor, and have that apply the BCs. This function
+// below provides the reduction operator used in the MPI reduce.
+struct merge_coordinate_map
 {
-  not_working_in_parallel("Periodic boundary conditions");
+  coordinate_map operator() (coordinate_map x, coordinate_map y)
+  {
+    coordinate_map z;
+    for (coordinate_iterator it = x.begin(); it != x.end(); ++it)
+      z[it->first] = it->second;
 
-  // Build mapping
+    for (coordinate_iterator it = y.begin(); it != y.end(); ++it)
+    {
+      coordinate_iterator match = z.find(it->first);
+      if (match != z.end())
+      {
+        // Copy the degree of freedom indices and their parallel owners
+        match->second.first.first   = std::max(it->second.first.first, match->second.first.first);
+        match->second.first.second  = std::max(it->second.first.second, match->second.first.second);
+        match->second.second.first  = std::max(it->second.second.first, match->second.second.first);
+        match->second.second.second = std::max(it->second.second.second, match->second.second.second);
+      }
+      else
+        z[it->first] = it->second;
+    }
+
+    return z;
+  }
+};
+
+//-----------------------------------------------------------------------------
+PeriodicBC::PeriodicBC(const FunctionSpace& V, const SubDomain& sub_domain)
+  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
+{
+  // Build mapping between dofs
   rebuild();
 }
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
-  : BoundaryCondition(V), sub_domain(sub_domain),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
-    rhs_values_master(0), rhs_values_slave(0)
+  : BoundaryCondition(V), sub_domain(sub_domain)
 {
-  not_working_in_parallel("Periodic boundary conditions");
-
-  // Build mapping
+  // Build mapping between dofs
   rebuild();
 }
 //-----------------------------------------------------------------------------
@@ -128,8 +155,7 @@ void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
   apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A,
-                       GenericVector& b,
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x) const
 {
   apply(&A, &b, &x);
@@ -142,30 +168,51 @@ void PeriodicBC::rebuild()
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
   // Build list of dof pairs
-  std::vector<std::pair<uint, uint> > dof_pairs;
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
   extract_dof_pairs(*_function_space, dof_pairs);
 
   // Resize arrays
-  num_dof_pairs = dof_pairs.size();
+  const uint num_dof_pairs = dof_pairs.size();
   master_dofs.resize(num_dof_pairs);
   slave_dofs.resize(num_dof_pairs);
-  rhs_values_master.resize(num_dof_pairs);
-  rhs_values_slave.resize(num_dof_pairs);
+  if (MPI::num_processes() > 1)
+  {
+    master_owners.resize(num_dof_pairs);
+    slave_owners.resize(num_dof_pairs);
+  }
 
   // Store master and slave dofs
   for (uint i = 0; i < dof_pairs.size(); ++i)
   {
-    master_dofs[i] = dof_pairs[i].first;
-    slave_dofs[i] = dof_pairs[i].second;
+    master_dofs[i] = dof_pairs[i].first.first;
+    slave_dofs[i]  = dof_pairs[i].second.first;
   }
-  std::fill(rhs_values_master.begin(), rhs_values_master.end(), 0.0);
-  std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
+
+  if (MPI::num_processes() > 1)
+  {
+    // Store master and slave dofs
+    master_owners.resize(num_dof_pairs);
+    slave_owners.resize(num_dof_pairs);
+    for (uint i = 0; i < dof_pairs.size(); ++i)
+    {
+      master_owners[i] = dof_pairs[i].first.second;
+      slave_owners[i]  = dof_pairs[i].second.second;
+      dolfin_assert(master_owners[i] < MPI::num_processes());
+      dolfin_assert(slave_owners[i] < MPI::num_processes());
+    }
+  }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix* A,
-                       GenericVector* b,
+void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
                        const GenericVector* x) const
 {
+  if (MPI::num_processes() > 1)
+  {
+    parallel_apply(A, b, x);
+    return;
+  }
+
+  const uint num_dof_pairs = master_dofs.size();
   dolfin_assert(num_dof_pairs > 0);
 
   log(PROGRESS, "Applying periodic boundary conditions to linear system.");
@@ -190,7 +237,7 @@ void PeriodicBC::apply(GenericMatrix* A,
     if (b)
     {
       double value;
-      b->get(&value, 1, &slave_dofs[i]);
+      b->get_local(&value, 1, &slave_dofs[i]);
       b->add(&value, 1, &master_dofs[i]);
       b->apply("add");
     }
@@ -205,7 +252,7 @@ void PeriodicBC::apply(GenericMatrix* A,
 
     // Insert 1 and -1
     uint cols[2];
-    double vals[2] = {1.0, -1.0};
+    const double vals[2] = {1.0, -1.0};
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
       const uint row = slave_dofs[i];
@@ -217,15 +264,15 @@ void PeriodicBC::apply(GenericMatrix* A,
   }
 
   // Modify boundary values for nonlinear problems
+  std::vector<double> rhs_values_slave(num_dof_pairs, 0.0);
   if (x)
   {
-    x->get(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
-    x->get(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
+    std::vector<double> rhs_values_master(num_dof_pairs);
+    x->get_local(&rhs_values_master[0], num_dof_pairs, &master_dofs[0]);
+    x->get_local(&rhs_values_slave[0],  num_dof_pairs, &slave_dofs[0]);
     for (uint i = 0; i < num_dof_pairs; i++)
       rhs_values_slave[i] = rhs_values_master[i] - rhs_values_slave[i];
   }
-  else
-    std::fill(rhs_values_slave.begin(), rhs_values_slave.end(), 0.0);
 
   // Zero slave rows in right-hand side
   if (b)
@@ -235,31 +282,43 @@ void PeriodicBC::apply(GenericMatrix* A,
   }
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
-                                   std::vector<std::pair<uint, uint> >& dof_pairs)
+void PeriodicBC::compute_dof_pairs(
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
 {
-  dolfin_assert(function_space.element());
+  dof_pairs.clear();
 
+  // Get function space
+  dolfin_assert(function_space());
+  const FunctionSpace& V = *function_space();
+
+  // Compute pairs
+  extract_dof_pairs(V, dof_pairs);
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
+   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
+{
   // Call recursively for subspaces, should work for arbitrary nesting
-  const uint num_sub_spaces = function_space.element()->num_sub_elements();
+  dolfin_assert(V.element());
+  const uint num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
     for (uint i = 0; i < num_sub_spaces; ++i)
     {
       cout << "Extracting matching degrees of freedom for sub space " << i << "." << endl;
-      extract_dof_pairs((*function_space[i]), dof_pairs);
+      extract_dof_pairs((*V[i]), dof_pairs);
     }
     return;
   }
 
   // Assuming we have a non-mixed element
-  dolfin_assert(function_space.element()->num_sub_elements() == 0);
+  dolfin_assert(V.element()->num_sub_elements() == 0);
 
   // Get mesh and dofmap
-  dolfin_assert(function_space.mesh());
-  dolfin_assert(function_space.dofmap());
-  const Mesh& mesh = *function_space.mesh();
-  const GenericDofMap& dofmap = *function_space.dofmap();
+  dolfin_assert(V.mesh());
+  dolfin_assert(V.dofmap());
+  const Mesh& mesh = *V.mesh();
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Get dimensions
   const uint tdim = mesh.topology().dim();
@@ -290,7 +349,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell (there may be two, but pick first) and local facet index
-    Cell cell(mesh, facet->entities(tdim)[0]);
+    const Cell cell(mesh, facet->entities(tdim)[0]);
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs and coordinates on cell
@@ -306,50 +365,59 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = cell_dofs[local_dof];
-      for (uint j = 0; j < gdim; ++j)
-        x[j] = data.coordinates[local_dof][j];
 
-      // Set y = x
-      y.assign(x.begin(), x.end());
-
-      // Map coordinate from H to G
-      sub_domain->map(_x, _y);
-
-      // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = facet->num_entities(tdim) == 1;
-      if (sub_domain->inside(_x, on_boundary))
+      // Only handle dofs that are owned by this process
+      if (global_dof >= (int) dofmap.ownership_range().first && global_dof < (int) dofmap.ownership_range().second)
       {
-        // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(x);
-        if (it != coordinate_dof_pairs.end())
-        {
-          // Exists from before, so set dof associated with x
-          it->second.first = global_dof;
-        }
-        else
-        {
-          // Doesn't exist, so create new pair (with illegal second value)
-          std::pair<int, int> dofs(global_dof, -1);
-          coordinate_dof_pairs[x] = dofs;
-        }
-      }
-      else if (sub_domain->inside(_y, on_boundary))
-      {
-        // Copy coordinate to std::vector
-        x.assign(y.begin(), y.end());
+        std::copy(data.coordinates[local_dof].begin(),
+                  data.coordinates[local_dof].end(), x.begin());
 
-        // Check if coordinate exists from before
-        coordinate_iterator it = coordinate_dof_pairs.find(x);
-        if (it != coordinate_dof_pairs.end())
+        // Set y = x
+        y.assign(x.begin(), x.end());
+
+        // Map coordinate from H to G
+        sub_domain->map(_x, _y);
+
+        // Check if coordinate is inside the domain G or in H
+        const bool on_boundary = (facet->num_entities(tdim) == 1);
+        if (sub_domain->inside(_x, on_boundary))
         {
-          // Exists from before, so set dof associated with y
-          it->second.second = global_dof;
+          // Check if coordinate exists from before
+          coordinate_iterator it = coordinate_dof_pairs.find(x);
+          if (it != coordinate_dof_pairs.end())
+          {
+            // Exists from before, so set dof associated with x
+            it->second.first = dof_data(global_dof, MPI::process_number());
+          }
+          else
+          {
+            // Doesn't exist, so create new pair (with illegal second value)
+            dof_data g_dofs(global_dof, MPI::process_number());
+            dof_data l_dofs(-1, -1);
+            dof_pair pair(g_dofs, l_dofs);
+            coordinate_dof_pairs[x] = pair;
+          }
         }
-        else
+        else if (sub_domain->inside(_y, on_boundary))
         {
-          // Doesn't exist, so create new pair (with illegal first value)
-          std::pair<int, int> dofs(-1, global_dof);
-          coordinate_dof_pairs[x] = dofs;
+          // Copy coordinate to std::vector
+          x.assign(y.begin(), y.end());
+
+          // Check if coordinate exists from before
+          coordinate_iterator it = coordinate_dof_pairs.find(x);
+          if (it != coordinate_dof_pairs.end())
+          {
+            // Exists from before, so set dof associated with y
+            it->second.second = dof_data(global_dof, MPI::process_number());
+          }
+          else
+          {
+            // Doesn't exist, so create new pair (with illegal first value)
+            dof_data g_dofs(-1, -1);
+            dof_data l_dofs(global_dof, MPI::process_number());
+            dof_pair pair(g_dofs, l_dofs);
+            coordinate_dof_pairs[x] = pair;
+          }
         }
       }
     }
@@ -357,11 +425,19 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
     p++;
   }
 
+  #ifdef HAS_MPI
+  coordinate_map final_coordinate_dof_pairs
+      = MPI::all_reduce(coordinate_dof_pairs, merge_coordinate_map());
+  #else
+  coordinate_map final_coordinate_dof_pairs = coordinate_dof_pairs;
+  #endif
+
   // Fill up list of dof pairs
-  for (coordinate_iterator it = coordinate_dof_pairs.begin(); it != coordinate_dof_pairs.end(); ++it)
+  for (coordinate_iterator it = final_coordinate_dof_pairs.begin();
+                                it != final_coordinate_dof_pairs.end(); ++it)
   {
     // Check dofs
-    if (it->second.first == -1 || it->second.second == -1)
+    if (it->second.first.first == -1 || it->second.second.first == -1)
     {
       cout << "At coordinate: x =";
       for (uint j = 0; j < gdim; ++j)
@@ -372,8 +448,252 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
                    "Could not find a pair of matching degrees of freedom");
     }
 
+    if (it->second.first.second >= (int) MPI::num_processes() || it->second.first.second < 0)
+    {
+      cout << "At coordinate: x =";
+      for (uint j = 0; j < gdim; ++j)
+        cout << " " << it->first[j];
+      cout << endl;
+      cout << "degree of freedom: " << it->second.first.first << endl;
+      cout << "master owner: " << it->second.first.second << endl;
+      dolfin_error("PeriodicBC.cpp",
+                   "apply periodic boundary condition",
+                   "Invalid master owner");
+    }
+
+    if (it->second.second.second >= (int) MPI::num_processes() || it->second.second.second < 0)
+    {
+      cout << "At coordinate: x =";
+      for (uint j = 0; j < gdim; ++j)
+        cout << " " << it->first[j];
+      cout << endl;
+      cout << "degree of freedom: " << it->second.second.first << endl;
+      cout << "slave owner: " << it->second.second.second << endl;
+      dolfin_error("PeriodicBC.cpp",
+                   "apply periodic boundary condition",
+                   "Invalid slave owner");
+    }
+
     // Store dofs
     dof_pairs.push_back(it->second);
+  }
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
+                                const GenericVector* x) const
+{
+  const uint num_dof_pairs = master_dofs.size();
+  dolfin_assert(num_dof_pairs > 0);
+
+  log(PROGRESS, "Applying periodic boundary conditions to linear system.");
+
+  // Check arguments
+  check_arguments(A, b, x);
+
+  // Add the slave equations to its corresponding master equation
+  if (A)
+  {
+    // Data for a row -- master dof, cols, vals
+    typedef boost::tuples::tuple<uint, std::vector<uint>, std::vector<double> > row_type;
+
+    // All rows to be sent to a particular process
+    typedef std::vector<row_type> rows_type;
+
+    // Which processor should the row data be sent to?
+    typedef std::map<uint, rows_type> row_map_type;
+
+    row_map_type row_map;
+    const std::pair<uint, uint> local_range = A->local_range(0);
+    std::set<uint> communicating_processors;
+
+    for (uint i = 0; i < num_dof_pairs; i++)
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+      {
+        std::vector<uint> columns;
+        std::vector<double> values;
+        A->getrow(slave_dofs[i], columns, values);
+        row_type row = row_type(master_dofs[i], columns, values);
+
+        uint master_owner = master_owners[i];
+
+        if (row_map.find(master_owner) == row_map.end())
+        {
+          rows_type rows_list; rows_list.push_back(row);
+          row_map[master_owner] = rows_list;
+        }
+        else
+          row_map[master_owner].push_back(row);
+
+        communicating_processors.insert(master_owner);
+      }
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
+      {
+        uint slave_owner = slave_owners[i];
+        communicating_processors.insert(slave_owner);
+      }
+    }
+
+    row_map_type received_rows;
+    MPI::distribute(communicating_processors, row_map, received_rows);
+
+    for (row_map_type::const_iterator proc_it = received_rows.begin(); proc_it != received_rows.end(); ++proc_it)
+    {
+      rows_type rows = proc_it->second;
+      for (rows_type::const_iterator row_it = rows.begin(); row_it != rows.end(); ++row_it)
+      {
+        row_type row = *row_it;
+        uint master_dof = row.get<0>();
+        std::vector<uint> columns = row.get<1>();
+        std::vector<double> values = row.get<2>();
+        A->add(&values[0], 1, &master_dof, columns.size(), &columns[0]);
+      }
+    }
+
+    A->apply("add"); // effect the adding on of the slave rows
+  }
+
+  if (A) // now set the slave rows
+  {
+    A->zero(num_dof_pairs, &slave_dofs[0]);
+    A->apply("insert");
+
+    // Insert 1 and -1 in the master and slave column of each slave row
+    uint cols[2];
+    const double vals[2] = {1.0, -1.0};
+    const std::pair<uint, uint> local_range = A->local_range(0);
+    for (uint i = 0; i < num_dof_pairs; ++i)
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+      {
+        const uint row = slave_dofs[i];
+        cols[0] = master_dofs[i];
+        cols[1] = slave_dofs[i];
+        A->set(vals, 1, &row, 2, cols);
+      }
+    }
+
+    A->apply("insert");
+  }
+
+  // Modify boundary values for nonlinear problems.
+  // This doesn't change x, it only changes what the slave
+  // entries of b will be set to.
+  std::vector<double> rhs_values_slave(num_dof_pairs, 0.0);
+  if (x)
+  {
+    typedef boost::tuples::tuple<uint, double> x_type; // dof index, value
+    typedef std::vector<x_type> xs_type; // all x-information to be sent to a particular process
+    typedef std::map<uint, xs_type> x_map_type; // processor to send it to
+
+    std::set<uint> communicating_processors;
+    x_map_type x_map;
+    const std::pair<uint, uint> local_range = x->local_range();
+    for (uint i = 0; i < num_dof_pairs; ++i)
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+      {
+        double value;
+        x->get_local(&value, 1, &slave_dofs[i]);
+        x_type data = x_type(i, value);
+        uint master_owner = master_owners[i];
+        if (x_map.find(master_owner) == x_map.end())
+        {
+          xs_type x_list; x_list.push_back(data);
+          x_map[master_owner] = x_list;
+        }
+        else
+          x_map[master_owner].push_back(data);
+
+        communicating_processors.insert(master_owner);
+      }
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
+      {
+        uint slave_owner = slave_owners[i];
+        communicating_processors.insert(slave_owner);
+      }
+    }
+
+    x_map_type received_x;
+    MPI::distribute(communicating_processors, x_map, received_x);
+    for (x_map_type::const_iterator proc_it = received_x.begin(); proc_it != received_x.end(); ++proc_it)
+    {
+      xs_type xs = proc_it->second;
+      for (xs_type::const_iterator x_it = xs.begin(); x_it != xs.end(); ++x_it)
+      {
+        const uint dof_idx = x_it->get<0>();
+        const double slave_value = x_it->get<1>();
+        double master_value;
+        x->get_local(&master_value, 1, &master_dofs[dof_idx]);
+        rhs_values_slave[dof_idx] = master_value - slave_value;
+      }
+    }
+  }
+
+  // Add the slave equations to the master equations, then set the slave
+  // rows to the appropriate values.
+  if (b)
+  {
+    typedef boost::tuples::tuple<uint, double> vec_type; // master dof, value that should be added
+    typedef std::vector<vec_type> vecs_type; // all vec_types that should be sent to a particular process
+    typedef std::map<uint, vecs_type> vec_map_type; // which processor should the vec_data be sent to?
+
+    vec_map_type vec_map;
+    const std::pair<uint, uint> local_range = b->local_range();
+    std::set<uint> communicating_processors;
+    for (uint i = 0; i < num_dof_pairs; i++)
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+      {
+        double value;
+        b->get_local(&value, 1, &slave_dofs[i]);
+        vec_type data = vec_type(master_dofs[i], value);
+
+        uint master_owner = master_owners[i];
+        if (vec_map.find(master_owner) == vec_map.end())
+        {
+          vecs_type list; list.push_back(data);
+          vec_map[master_owner] = list;
+        }
+        else
+          vec_map[master_owner].push_back(data);
+
+        communicating_processors.insert(master_owner);
+      }
+      else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
+      {
+        const uint slave_owner = slave_owners[i];
+        communicating_processors.insert(slave_owner);
+      }
+    }
+
+    vec_map_type received_vecs;
+    MPI::distribute(communicating_processors, vec_map, received_vecs);
+
+    for (vec_map_type::const_iterator proc_it = received_vecs.begin();
+            proc_it != received_vecs.end(); ++proc_it)
+    {
+      vecs_type vecs = proc_it->second;
+      for (vecs_type::const_iterator vec_it = vecs.begin(); vec_it != vecs.end(); ++vec_it)
+      {
+        const uint master_dof   = vec_it->get<0>();
+        const double value      = vec_it->get<1>();
+        b->add(&value, 1, &master_dof);
+      }
+    }
+
+    b->apply("add"); // effect the adding on of the slave rows
+  }
+
+  if (b) // now zero the slave rows
+  {
+    const std::pair<uint, uint> local_range = b->local_range();
+    for (uint i = 0; i < num_dof_pairs; i++)
+    {
+      if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
+        b->set(&rhs_values_slave[i], 1, &slave_dofs[i]);
+    }
+    b->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------

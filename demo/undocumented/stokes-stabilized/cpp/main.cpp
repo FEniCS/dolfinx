@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2011-06-30
+// Last changed: 2011-07-05
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -105,13 +105,16 @@ int main()
   Function u = w[0];
   Function p = w[1];
 
-  // Plot solution
-  plot(u);
-  plot(p);
-
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");
   ufile_pvd << u;
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
+
+  // Plot solution
+  plot(u);
+  plot(p);
+  interactive();
+
+  return 0;
 }
