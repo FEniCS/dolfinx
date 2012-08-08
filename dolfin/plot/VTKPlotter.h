@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-07-27
+// Last changed: 2012-08-11
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -192,7 +192,7 @@ namespace dolfin
     void update();
 
     // These functions are kept for backward compatibility with Viper
-    // They issue a warDeprecated update function
+    // TODO: Clean up this and deprecate these functions.
     void update(boost::shared_ptr<const Mesh> mesh);
     void update(boost::shared_ptr<const Function> function);
     void update(boost::shared_ptr<const ExpressionWrapper> expression);
@@ -235,12 +235,18 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-    // The cache of plotter objects
-    // Used when calling interactive()
-    // (which should have effect on all plot windows)
-    static std::list<VTKPlotter*> plotter_cache;
+    // Make all plot windows interactive
+    static void all_interactive();
 
   private:
+
+    // The pool of plotter objects. Objects register
+    // themselves in the list when created and remove themselves when
+    // destroyed. 
+    // Used when calling interactive() (which should have effect on
+    // all plot windows)
+    static boost::shared_ptr<std::list<VTKPlotter*> > all_plotters;
+
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
@@ -275,6 +281,11 @@ namespace dolfin
     static int hardcopy_counter;
 
     bool no_plot;
+
+    // Keep a shared_ptr to the list of plotter to ensure that the
+    // list is not destroyed before the last VTKPlotter object is
+    // destroyed.
+    boost::shared_ptr<std::list<VTKPlotter*> > all_plotters_local_copy;
   };
 
 }
