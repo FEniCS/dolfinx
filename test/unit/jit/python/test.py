@@ -40,6 +40,35 @@ class JIT(unittest.TestCase):
 
             self.assertAlmostEqual(M1, 1.0)
             self.assertAlmostEqual(M2, 1.0)
+    
+    def test_compile_extension_module(self):
+        
+        if not has_linear_algebra_backend("PETSc"):
+            return
+        
+        from numpy import arange, exp
+        code = """
+        namespace dolfin {
+        
+          void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec) 
+          {
+            boost::shared_ptr<Vec> x = vec->vec();
+            assert(x);
+            VecExp(*x);
+          }
+        }
+        """
+        for module_name in ["mypetscmodule", ""]:
+            ext_module = compile_extension_module(\
+                code, module_name=module_name,\
+                additional_system_headers=["petscvec.h"])
+            vec = PETScVector(10)
+            np_vec = vec.array()
+            np_vec[:] = arange(len(np_vec))
+            vec.set_local(np_vec)
+            ext_module.PETSc_exp(vec)
+            np_vec[:] = exp(np_vec)
+            self.assertTrue((np_vec == vec.array()).all())
 
 if __name__ == "__main__":
     print ""

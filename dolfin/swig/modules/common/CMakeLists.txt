@@ -27,10 +27,7 @@ set(CMAKE_SWIG_FLAGS
   )
 
 # Get all SWIG interface files
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/interface_files.txt DOLFIN_SWIG_INTERFACE_FILES )
-
-# and the DOLFIN header files
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/headers.txt SWIG_KERNEL_MODULES)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/dependencies.txt DOLFIN_SWIG_DEPENDENCIES )
 
 # This prevents swig being run unnecessarily
 set_source_files_properties(module.i PROPERTIES SWIG_MODULE_NAME ${SWIG_MODULE_NAME})
@@ -42,7 +39,7 @@ set_source_files_properties(module.i PROPERTIES CPLUSPLUS ON)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # Tell CMake which SWIG interface files should be checked for changes when recompile
-set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS ${DOLFIN_SWIG_INTERFACE_FILES} ${SWIG_KERNEL_MODULES})
+set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS ${DOLFIN_SWIG_DEPENDENCIES})
 
 # Tell CMake to run SWIG on module.i and to link against libdolfin
 swig_add_module(${SWIG_MODULE_NAME} python module.i)
