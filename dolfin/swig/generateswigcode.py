@@ -28,7 +28,6 @@ import re
 import glob
 import time
 import sys
-from collections import OrderedDict
 
 from dolfin_utils.cppparser import *
 
