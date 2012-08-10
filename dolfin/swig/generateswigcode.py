@@ -155,6 +155,15 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # submodule it is included in
     dolfin_type_def = OrderedDict()
 
+    # Add UFC Function
+    # FIXME: ufc inheritance is not used for now. The ufc module information
+    # FIXME: is globally imported in shared_ptr_classes.i
+    dolfin_type_def["ufc::function"] = dict(\
+        module="",
+        submodule="",
+        header="ufc.h",
+        bases=set(), derived=set())
+
     # dict mapping submodules to included files
     submodule_files = {}
 
@@ -244,17 +253,19 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # Build class hierarchy (We need to import all base and derived classes)
     # First extract all bases to a type
     for dolfin_type in dolfin_type_def:
-        # Recursively add base classes
+
+        # Recursively add base and derived classes
         if dolfin_type_def[dolfin_type]["bases"]:
-            
+
             new_bases = set()
             add_bases(dolfin_type_def[dolfin_type]["bases"], new_bases)
             dolfin_type_def[dolfin_type]["bases"] = list(new_bases)
 
+        if dolfin_type_def[dolfin_type]["derived"]:
             new_derived = set()
             add_derived(dolfin_type_def[dolfin_type]["derived"], new_derived)
             dolfin_type_def[dolfin_type]["derived"] = list(new_derived)
-        
+            
     # Collect used dolfin types in each module
     used_dolfin_types = dict((module, set()) for module in module_info)
 
