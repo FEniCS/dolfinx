@@ -398,7 +398,11 @@ bool HDF5File::exists(const std::string& dataset_name){
   dolfin_assert(status != HDF5_FAIL);
 
   // disable error reporting
-  status = H5Eset_auto(H5E_DEFAULT,NULL);
+  herr_t (*old_func)(void*);
+  void *old_client_data;
+  H5Eget_auto(&old_func, &old_client_data);
+
+  status = H5Eset_auto(NULL, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
   //try to open dataset - returns HDF5_FAIL if non-existent
@@ -408,7 +412,7 @@ bool HDF5File::exists(const std::string& dataset_name){
     H5Dclose(dset_id);
 
   //re-enable error reporting
-  status = H5Eset_auto(H5E_DEFAULT,(void *)H5Eprint);
+  status = H5Eset_auto(old_func, old_client_data);
   dolfin_assert(status != HDF5_FAIL);
 
   status = H5Fclose(file_id);
@@ -489,14 +493,14 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
   int slen = H5Tget_size(filetype);
   slen++;
 
-  hid_t space_id = H5Aget_space(attr_id);
+  //  hid_t space_id = H5Aget_space(attr_id);
   hid_t memtype = H5Tcopy (H5T_C_S1);
   
   status=H5Tset_size(memtype,slen);
   dolfin_assert(status != HDF5_FAIL);
 
-  char str[slen];
-  status=H5Aread(attr_id, memtype, str);
+  std::vector<char> str(slen);
+  status=H5Aread(attr_id, memtype, &str[0]);
 
   status = H5Aclose(attr_id);
   dolfin_assert(status != HDF5_FAIL);
@@ -507,6 +511,6 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::string(str);
+  return std::string(&str[0]);
 }
 //-----------------------------------------------------------------------------
