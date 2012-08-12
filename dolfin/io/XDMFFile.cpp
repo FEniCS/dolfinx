@@ -331,7 +331,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s<< filename_data << ":/Mesh/Topology_" << std::hex << mesh.toplogy_hash();
+    s<< filename_data << ":/Mesh/Topology_" << std::hex << mesh.topology_hash();
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");

@@ -25,6 +25,7 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 
+#define H5_USE_16_API
 #include <hdf5.h>
 
 #include <dolfin/common/types.h>
@@ -192,7 +193,7 @@ void HDF5File::operator>> (GenericVector& input)
   status=H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  group_id = H5Gopen(file_id,"/Vector",H5P_DEFAULT);
+  group_id = H5Gopen(file_id,"/Vector");
   dolfin_assert(group_id != HDF5_FAIL);
 
   // count how many datasets in the /Vector directory
@@ -206,7 +207,7 @@ void HDF5File::operator>> (GenericVector& input)
   s << "/Vector/" << (num_obj - 1);
 
   // open the dataset collectively
-  dset_id = H5Dopen(file_id, s.str().c_str(),H5P_DEFAULT);
+  dset_id = H5Dopen(file_id, s.str().c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // create a file dataspace independently
@@ -282,22 +283,19 @@ void HDF5File::create()
 
   // create subgroups suitable for storing different types of data.
   // VertexVector - values for visualisation
-  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT, 
-		       H5P_DEFAULT, H5P_DEFAULT);
+  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
 
   // Vector - for checkpointing etc
-  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT, 
-		       H5P_DEFAULT, H5P_DEFAULT);
+  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   assert(status != HDF5_FAIL);
 
   // Mesh
-  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT, 
-		       H5P_DEFAULT, H5P_DEFAULT);
+  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
@@ -350,7 +348,7 @@ void HDF5File::write(T& data, const std::pair<uint, uint>& range,
   assert(filespace != HDF5_FAIL);
 
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
-                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                      H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
   
   status = H5Sclose(filespace);
@@ -400,17 +398,17 @@ bool HDF5File::exists(const std::string& dataset_name){
   dolfin_assert(status != HDF5_FAIL);
 
   // disable error reporting
-  status = H5Eset_auto(H5E_DEFAULT,NULL,NULL);
+  status = H5Eset_auto(H5E_DEFAULT,NULL);
   dolfin_assert(status != HDF5_FAIL);
 
   //try to open dataset - returns HDF5_FAIL if non-existent
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
 
   if(dset_id!=HDF5_FAIL)
     H5Dclose(dset_id);
 
   //re-enable error reporting
-  status = H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)H5Eprint,stderr);
+  status = H5Eset_auto(H5E_DEFAULT,(void *)H5Eprint);
   dolfin_assert(status != HDF5_FAIL);
 
   status = H5Fclose(file_id);
@@ -440,7 +438,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // add string attribute
@@ -448,7 +446,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Tset_size (datatype_id, attribute_value.size());
   hid_t dataspaces_id = H5Screate (H5S_SCALAR);
   hid_t attribute_id = H5Acreate (dset_id, attribute_name.c_str(), datatype_id,
-				  dataspaces_id, H5P_DEFAULT, H5P_DEFAULT);
+				  dataspaces_id, H5P_DEFAULT);
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
   dolfin_assert(status != HDF5_FAIL);
 
@@ -483,7 +481,7 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str(),H5P_DEFAULT);
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
