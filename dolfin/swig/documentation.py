@@ -57,7 +57,7 @@ cpp_to_python = {
 "uint": "int",
 "dolfin::uint": "int",
 "uint*": "numpy.array(int)",
-"dolfin::uint": "numpy.array(int)",
+"dolfin::uint*": "numpy.array(int)",
 
 "double": "float",
 "double*": "numpy.array(float)",

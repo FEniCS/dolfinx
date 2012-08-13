@@ -205,9 +205,15 @@
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical classes
 //-----------------------------------------------------------------------------
+#ifdef FEMMODULE // Conditional template instiantiation for FEM module
 %template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
 %template (HierarchicalLinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::LinearVariationalProblem>;
 %template (HierarchicalNonlinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>;
 %template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+#endif
+#ifdef IOMODULE // Conditional template instiantiation for IO module
+%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+
+#endif

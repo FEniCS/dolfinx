@@ -22,9 +22,48 @@
 // The PyDOLFIN extension module for the io module
 %module(package="dolfin.cpp.io", directors="1") io
 
+// Define module name for conditional includes
+#define IOMODULE
+
 %{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_IO
+
+// Include types from dependent modules
+
+// #include types from common submodule of module common
+#include "dolfin/common/types.h"
+#include "dolfin/common/Array.h"
+#include "dolfin/common/Variable.h"
+#include "dolfin/common/Hierarchical.h"
+
+// #include types from parameter submodule of module common
+#include "dolfin/parameter/Parameter.h"
+#include "dolfin/parameter/Parameters.h"
+
+// #include types from mesh submodule of module mesh
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshFunction.h"
+
+// #include types from function submodule of module function
+#include "dolfin/function/GenericFunction.h"
+#include "dolfin/function/Expression.h"
+#include "dolfin/function/Function.h"
+#include "dolfin/function/FunctionSpace.h"
+
+// #include types from fem submodule of module fem
+#include "dolfin/fem/BoundaryCondition.h"
+#include "dolfin/fem/DirichletBC.h"
+
+// Include types from present module io
+
+// #include types from plot submodule
+#include "dolfin/plot/plot.h"
+#include "dolfin/plot/VTKPlotter.h"
+
+// #include types from io submodule
+#include "dolfin/io/File.h"
+
+// NumPy includes
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_IO
 #include <numpy/arrayobject.h>
 %}
 
@@ -36,23 +75,34 @@ import_array();
 // Typemaps, shared_ptr declarations, exceptions, version
 %include "dolfin/swig/globalincludes.i"
 
-// Import types from other combined modules
-%include "dolfin/swig/common/local_imports.i"
-%include "dolfin/swig/parameter/local_imports.i"
-%include "dolfin/swig/log/local_imports.i"
-%include "dolfin/swig/la/local_imports.i"
-%include "dolfin/swig/nls/local_imports.i"
-%include "dolfin/swig/intersection/local_imports.i"
-%include "dolfin/swig/mesh/local_imports.i"
-%include "dolfin/swig/generation/local_imports.i"
-%include "dolfin/swig/refinement/local_imports.i"
-%include "dolfin/swig/function/local_imports.i"
-%include "dolfin/swig/graph/local_imports.i"
-%include "dolfin/swig/math/local_imports.i"
-%include "dolfin/swig/quadrature/local_imports.i"
-%include "dolfin/swig/ale/local_imports.i"
-%include "dolfin/swig/fem/local_imports.i"
-%include "dolfin/swig/adaptivity/local_imports.i"
+// %import types from submodule common of SWIG module common
+%include "dolfin/swig/common/pre.i"
+%import(module="common") "dolfin/common/types.h"
+%import(module="common") "dolfin/common/Array.h"
+%import(module="common") "dolfin/common/Variable.h"
+%import(module="common") "dolfin/common/Hierarchical.h"
+
+// %import types from submodule parameter of SWIG module common
+%include "dolfin/swig/parameter/pre.i"
+%import(module="common") "dolfin/parameter/Parameter.h"
+%import(module="common") "dolfin/parameter/Parameters.h"
+
+// %import types from submodule mesh of SWIG module mesh
+%include "dolfin/swig/mesh/pre.i"
+%import(module="mesh") "dolfin/mesh/Mesh.h"
+%import(module="mesh") "dolfin/mesh/MeshFunction.h"
+
+// %import types from submodule function of SWIG module function
+%include "dolfin/swig/function/pre.i"
+%import(module="function") "dolfin/function/GenericFunction.h"
+%import(module="function") "dolfin/function/Expression.h"
+%import(module="function") "dolfin/function/Function.h"
+%import(module="function") "dolfin/function/FunctionSpace.h"
+
+// %import types from submodule fem of SWIG module fem
+%include "dolfin/swig/fem/pre.i"
+%import(module="fem") "dolfin/fem/BoundaryCondition.h"
+%import(module="fem") "dolfin/fem/DirichletBC.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
@@ -60,7 +110,11 @@ import_array();
 %include "dolfin/swig/plot/docstrings.i"
 %include "dolfin/swig/io/docstrings.i"
 
-// Include generated include files for the DOLFIN headers for this module
-%include "dolfin/swig/plot/includes.i"
-%include "dolfin/swig/io/includes.i"
+// %include types from submodule plot
+%include "dolfin/plot/plot.h"
+%include "dolfin/plot/VTKPlotter.h"
+
+// %include types from submodule io
+%include "dolfin/io/File.h"
+%include "dolfin/swig/io/post.i"
 
