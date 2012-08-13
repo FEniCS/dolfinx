@@ -244,6 +244,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   absolute_residual = solver->TrueResidual();
   relative_residual = solver->ScaledResidual();
 
+  // Return number of iterations
   return solver->NumIters();
 }
 //-----------------------------------------------------------------------------
