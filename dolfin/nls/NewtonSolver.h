@@ -58,7 +58,8 @@ namespace dolfin
     ///         The linear solver.
     ///     factory (_LinearAlgebraFactory_)
     ///         The factory.
-    NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
+    NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
+                 LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
