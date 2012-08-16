@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-08-15
-# Last changed: 2012-08-15
+# Last changed: 2012-08-16
 #
 # The bilinear form a(u, v) and linear form L(v) for a cG(1)
 # discretization of the time-dependent heat equation.
@@ -38,6 +38,14 @@ dt = Measure("cell")
 def Dt(u):
     return u.dx(0)
 
+# Define tensor_product
+# FIXME: Add to UFL
+from ufl import FiniteElementBase
+def tensor_product(*args):
+    if not all(isinstance(arg, FiniteElementBase) for arg in args):
+        raise RuntimeError, "Expecting arguments of tensor_product operator to be finite elements."
+    return TensorProductElement(*args)
+
 # Trial and test spaces for space discretization
 Uh = FiniteElement("Lagrange", triangle, 1)
 Vh = FiniteElement("Lagrange", triangle, 1)
@@ -49,8 +57,8 @@ Vk = FiniteElement("DG", interval, 0)
 
 # Trial and test spaces for space-time discretization
 # FIXME: Consider short-hand for this. Marie is not convinced about **
-U = TensorProductElement(Uk, Uh)
-V = TensorProductElement(Vk, Vh)
+U = tensor_product(Uk, Uh)
+V = tensor_product(Vk, Vh)
 
 # Trial and test functions
 u = TrialFunction(U)
@@ -77,4 +85,3 @@ parameters["format"] = "dolfin"
 # Compile forms
 compile_form_kronecker(a, prefix="Heat_2D", parameters=parameters)
 compile_form_kronecker(L, prefix="Heat_2D_rhs", parameters=parameters)
-
