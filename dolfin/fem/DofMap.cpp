@@ -318,8 +318,8 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
       coordinates.shape()[1] != geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    coordinates.resize(extents[cell_dimension(ufc_cell.index)]
-		       [geometric_dimension()]);
+    const uint cell_dim = cell_dimension(ufc_cell.index);
+    coordinates.resize(extents[cell_dim][geometric_dimension()]);
   }
 
   // Set vertex coordinates
@@ -364,6 +364,31 @@ void DofMap::set(GenericVector& x, double value) const
   {
     std::vector<double> _value(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
+  }
+  x.apply("add");
+}
+//-----------------------------------------------------------------------------
+void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
+{
+  std::vector<double> values;
+  boost::multi_array<double, 2> coordinates;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Get local-to-global map
+    const std::vector<uint>& dofs = cell_dofs(cell->index());
+
+    // Tabulate dof coordinates
+    tabulate_coordinates(coordinates, *cell);
+    dolfin_assert(coordinates.shape()[0] == dofs.size());
+    dolfin_assert(component < coordinates.shape()[1]);
+
+    // Copy coordinate (it may be possible to avoid this)
+    values.resize(dofs.size());
+    for (uint i = 0; i < coordinates.shape()[0]; ++i)
+      values[i] = coordinates[i][component];
+
+    // Set x[component] values in vector
+    x.set(values.data(), dofs.size(), dofs.data());
   }
   x.apply("add");
 }
