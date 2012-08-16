@@ -364,7 +364,13 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK 5.8 HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
+  if (VTK_FOUND AND "${VTK_VERSION}" VERSION_LESS "5.8")
+    message(WARNING "Unable to find VTK (>= ${VTK_VERSION})")
+  else()
+    message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
+  endif()
 endif()
 
 #------------------------------------------------------------------------------
