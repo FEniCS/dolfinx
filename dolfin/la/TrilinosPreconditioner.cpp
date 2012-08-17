@@ -256,6 +256,7 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   // Set null space
   if(_null_space)
   {
+    mlist.set("null space: add default vectors", false);
     mlist.set("null space: type", "pre-computed");
     mlist.set("null space: dimension", _null_space->NumVectors());
     mlist.set("null space: vectors", _null_space->Values());

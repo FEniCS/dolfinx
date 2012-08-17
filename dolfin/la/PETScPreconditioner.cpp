@@ -215,7 +215,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     {
       PCHYPRESetType(pc, "euclid");
       const uint ilu_level = parameters("ilu")["fill_level"];
-      PetscOptionsSetValue("-pc_hypre_euclid_levels", boost::lexical_cast<std::string>(ilu_level).c_str());
+      PetscOptionsSetValue("-pc_hypre_euclid_levels",
+                          boost::lexical_cast<std::string>(ilu_level).c_str());
     }
     else
     {
@@ -230,16 +231,34 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "For performance, installation of HYPRE is recommended.");
     #endif
   }
-  else if (type == "amg_ml")
+  else if (type == "amg_ml" || type == "ml_amg")
   {
     #if PETSC_HAVE_ML
     PCSetType(pc, PCML);
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-      PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-      PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-      #else
-      PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-      #endif
+
+    PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
+    //PetscOptionsSetValue("-pc_mg_smoothup",
+    //                      boost::lexical_cast<std::string>(1).c_str());
+    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
+    //                      boost::lexical_cast<std::string>(128).c_str());
+    //PetscOptionsSetValue("-pc_ml_maxNlevels",
+    //                      boost::lexical_cast<std::string>(4).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_Threshold",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_PrintLevel",
+    //                      boost::lexical_cast<std::string>(6).c_str());
+
+
+
+      //#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
+      //PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+      //PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+      //#else
+      //PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+      //#endif
+
     #else
     warning("PETSc has not been compiled with the ML library for   "
             "algerbraic multigrid. Default PETSc solver will be used. "
