@@ -49,7 +49,7 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor tensor layout
+    /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
@@ -205,4 +205,5 @@ namespace dolfin
   };
 
 }
+
 #endif

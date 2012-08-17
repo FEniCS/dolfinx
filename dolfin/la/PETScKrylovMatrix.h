@@ -63,7 +63,7 @@ namespace dolfin
     /// Resize virtual matrix
     void resize(uint m, uint n);
 
-    /// Compute product y = Ax
+    /// Compute matrix-vector product y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const = 0;
 
     /// Return informal string representation (pretty-print)

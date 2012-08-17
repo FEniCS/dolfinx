@@ -70,5 +70,7 @@
 #include <dolfin/la/solve.h>
 #include <dolfin/la/BlockVector.h>
 #include <dolfin/la/BlockMatrix.h>
+#include <dolfin/la/TensorProductVector.h>
+#include <dolfin/la/TensorProductMatrix.h>
 
 #endif

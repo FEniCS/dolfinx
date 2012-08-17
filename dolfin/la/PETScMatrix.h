@@ -68,7 +68,7 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor using sparsity pattern
+    /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
@@ -107,22 +107,29 @@ namespace dolfin
     { PETScBaseMatrix::resize(y, dim); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, uint m, const uint* rows, uint n,
+                     const uint* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
+    virtual void getrow(uint row,
+                        std::vector<uint>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values);
+    virtual void setrow(uint row,
+                        const std::vector<uint>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
