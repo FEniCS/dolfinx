@@ -34,11 +34,11 @@
 namespace dolfin
 {
 
-  class Mesh;
-  class SubDomain;
   class Form;
   class GenericMatrix;
   class GenericVector;
+  class Mesh;
+  class SubDomain;
 
   /// This class specifies the interface for setting periodic boundary
   /// conditions for partial differential equations,
@@ -140,13 +140,27 @@ namespace dolfin
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
+    /// Return shared pointer to subdomain
+    ///
+    /// *Returns*
+    ///     _SubDomain_
+    ///         Shared pointer to subdomain.
+    boost::shared_ptr<const SubDomain> sub_domain() const;
+
     /// Rebuild mapping between dofs
     void rebuild();
 
     // FIXME: This should find only pairs for which this process owns
     //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
+    std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >
+        compute_dof_pairs() const;
+
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
+    /// Compute dof pairs (master dof, slave dof)
     void compute_dof_pairs(std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+
 
   private:
 
@@ -163,7 +177,7 @@ namespace dolfin
       std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
     // The subdomain
-    boost::shared_ptr<const SubDomain> sub_domain;
+    boost::shared_ptr<const SubDomain> _sub_domain;
 
     // Array of master dofs (size = num_dof_pairs)
     std::vector<uint> master_dofs;

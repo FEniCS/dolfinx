@@ -61,7 +61,7 @@
 					 std::string method="topological");
 
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,
-				       const SubDomain&);
+                                       const SubDomain&);
 
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,

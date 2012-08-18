@@ -101,10 +101,14 @@ struct merge_coordinate_map
       if (match != z.end())
       {
         // Copy the degree of freedom indices and their parallel owners
-        match->second.first.first   = std::max(it->second.first.first, match->second.first.first);
-        match->second.first.second  = std::max(it->second.first.second, match->second.first.second);
-        match->second.second.first  = std::max(it->second.second.first, match->second.second.first);
-        match->second.second.second = std::max(it->second.second.second, match->second.second.second);
+        match->second.first.first
+          = std::max(it->second.first.first, match->second.first.first);
+        match->second.first.second
+          = std::max(it->second.first.second, match->second.first.second);
+        match->second.second.first
+          = std::max(it->second.second.first, match->second.second.first);
+        match->second.second.second
+          = std::max(it->second.second.second, match->second.second.second);
       }
       else
         z[it->first] = it->second;
@@ -113,10 +117,10 @@ struct merge_coordinate_map
     return z;
   }
 };
-
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V, const SubDomain& sub_domain)
-  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
+  : BoundaryCondition(V),
+    _sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   // Build mapping between dofs
   rebuild();
@@ -124,7 +128,7 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V, const SubDomain& sub_domain)
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
-  : BoundaryCondition(V), sub_domain(sub_domain)
+  : BoundaryCondition(V), _sub_domain(sub_domain)
 {
   // Build mapping between dofs
   rebuild();
@@ -159,6 +163,11 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x) const
 {
   apply(&A, &b, &x);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const SubDomain> PeriodicBC::sub_domain() const
+{
+  return _sub_domain;
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
@@ -282,6 +291,14 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >
+     PeriodicBC::compute_dof_pairs() const
+{
+  std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
+  compute_dof_pairs(dof_pairs);
+  return dof_pairs;
+}
+//-----------------------------------------------------------------------------
 void PeriodicBC::compute_dof_pairs(
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const
 {
@@ -325,7 +342,8 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
   const uint gdim = mesh.geometry().dim();
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = gdim;
+  dolfin_assert(_sub_domain);
+  _sub_domain->_geometric_dimension = gdim;
 
   // Make sure we have the facet - cell connectivity
   mesh.init(tdim - 1, tdim);
@@ -343,6 +361,9 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
 
   // Mapping from coordinates to dof pairs
   coordinate_map coordinate_dof_pairs;
+
+  // MPI process number
+  const uint process_number = MPI::process_number();
 
   // Iterate over all facets of the mesh (not only the boundary)
   Progress p("Applying periodic boundary conditions", mesh.size(tdim - 1));
@@ -376,29 +397,29 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
         y.assign(x.begin(), x.end());
 
         // Map coordinate from H to G
-        sub_domain->map(_x, _y);
+        _sub_domain->map(_x, _y);
 
         // Check if coordinate is inside the domain G or in H
         const bool on_boundary = (facet->num_entities(tdim) == 1);
-        if (sub_domain->inside(_x, on_boundary))
+        if (_sub_domain->inside(_x, on_boundary))
         {
           // Check if coordinate exists from before
           coordinate_iterator it = coordinate_dof_pairs.find(x);
           if (it != coordinate_dof_pairs.end())
           {
             // Exists from before, so set dof associated with x
-            it->second.first = dof_data(global_dof, MPI::process_number());
+            it->second.first = dof_data(global_dof, process_number);
           }
           else
           {
             // Doesn't exist, so create new pair (with illegal second value)
-            dof_data g_dofs(global_dof, MPI::process_number());
+            dof_data g_dofs(global_dof, process_number);
             dof_data l_dofs(-1, -1);
             dof_pair pair(g_dofs, l_dofs);
             coordinate_dof_pairs[x] = pair;
           }
         }
-        else if (sub_domain->inside(_y, on_boundary))
+        else if (_sub_domain->inside(_y, on_boundary))
         {
           // Copy coordinate to std::vector
           x.assign(y.begin(), y.end());
@@ -408,13 +429,13 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
           if (it != coordinate_dof_pairs.end())
           {
             // Exists from before, so set dof associated with y
-            it->second.second = dof_data(global_dof, MPI::process_number());
+            it->second.second = dof_data(global_dof, process_number);
           }
           else
           {
             // Doesn't exist, so create new pair (with illegal first value)
             dof_data g_dofs(-1, -1);
-            dof_data l_dofs(global_dof, MPI::process_number());
+            dof_data l_dofs(global_dof, process_number);
             dof_pair pair(g_dofs, l_dofs);
             coordinate_dof_pairs[x] = pair;
           }
