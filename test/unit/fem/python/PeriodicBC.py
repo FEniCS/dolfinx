@@ -62,7 +62,7 @@ class PeriodicBCTest(unittest.TestCase):
         V = FunctionSpace(mesh, "Lagrange", 1)
         VV = V*V
 
-        pbc = PeriodicBoundary()
+        pbc = PeriodicBoundary2()
         bc  = PeriodicBC(VV, pbc)
 
     def test_director_lifetime(self):
