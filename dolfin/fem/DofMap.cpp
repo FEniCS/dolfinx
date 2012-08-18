@@ -86,7 +86,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                _ownership_range(0, 0), _is_view(true),
                _distributed(distributed)
 {
-  // Ownership range is set to zero since dofmap is a view
+  // NOTE: Ownership range is set to zero since dofmap is a view
 
   dolfin_assert(!component.empty());
 
@@ -281,7 +281,7 @@ std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
   {
     dolfin_error("DofMap.cpp",
                  "access ownership range of degree of freedom mapping",
-                 "Cannot determine ownership range for submaps");
+                 "Cannot determine ownership range for sub-dofmaps");
   }
 
   return _ownership_range;

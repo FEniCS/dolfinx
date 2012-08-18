@@ -22,6 +22,7 @@
 // Last changed: 2011-11-14
 
 #include <map>
+#include <utility>
 #include <vector>
 #include <boost/unordered_map.hpp>
 
@@ -172,13 +173,11 @@ boost::shared_ptr<const SubDomain> PeriodicBC::sub_domain() const
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
 {
-  dolfin_assert(_function_space);
-
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
   // Build list of dof pairs
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
-  extract_dof_pairs(*_function_space, dof_pairs);
+  compute_dof_pairs(dof_pairs);
 
   // Resize arrays
   const uint num_dof_pairs = dof_pairs.size();
@@ -328,8 +327,13 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     return;
   }
 
-  // Assuming we have a non-mixed element
+  // We should have a non-mixed element by now
   dolfin_assert(V.element()->num_sub_elements() == 0);
+
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->dofmap());
+  const std::pair<uint, uint> ownership_range
+      = _function_space->dofmap()->ownership_range();
 
   // Get mesh and dofmap
   dolfin_assert(V.mesh());
@@ -388,7 +392,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
       const int global_dof = cell_dofs[local_dof];
 
       // Only handle dofs that are owned by this process
-      if (global_dof >= (int) dofmap.ownership_range().first && global_dof < (int) dofmap.ownership_range().second)
+      if (global_dof >= (int) ownership_range.first && global_dof < (int) ownership_range.second)
       {
         std::copy(data.coordinates[local_dof].begin(),
                   data.coordinates[local_dof].end(), x.begin());

@@ -15,15 +15,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007
+// Modified by Garth N. Wells 2007-2012
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-21
+// Last changed: 2012-08-18
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"

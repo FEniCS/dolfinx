@@ -41,7 +41,7 @@ class PeriodicBoundary3(SubDomain):
         y[1] = x[1]
         y[2] = x[2]
 
-class DirichletBCTest(unittest.TestCase):
+class PeriodicBCTest(unittest.TestCase):
 
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
@@ -54,6 +54,16 @@ class DirichletBCTest(unittest.TestCase):
         # Uncomment if/when PeriodicBC gets a copy constructor
         #bc1 = PeriodicBC(bc0)
         #self.assertTrue(bc0.function_space() == bc1.function_space())
+
+    def test_instantiation_mixed_element(self):
+        """ A rudimentary test for instantiation with mixed elements"""
+
+        mesh = UnitSquare(8, 8)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        VV = V*V
+
+        pbc = PeriodicBoundary()
+        bc  = PeriodicBC(VV, pbc)
 
     def test_director_lifetime(self):
         """Test for problems with objects with directors going out
