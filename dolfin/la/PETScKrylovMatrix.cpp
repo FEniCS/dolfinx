@@ -79,7 +79,8 @@ void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)
     MatGetSize(*A, &_m, &_m);
     MatGetLocalSize(*A, &_m_local, &_n_local);
 
-    if (static_cast<int>(m) == _m && static_cast<int>(n) == _n && m_local == _m_local && n_local == _n_local )
+    if (static_cast<int>(m) == _m && static_cast<int>(n) == _n &&
+        m_local == _m_local && n_local == _n_local)
       return;
     else
       A.reset(new Mat, PETScMatrixDeleter());

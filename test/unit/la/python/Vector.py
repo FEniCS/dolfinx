@@ -362,7 +362,8 @@ class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
     backend    = "STL"
 
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+
+    # Turn off DOLFIN output
     set_log_active(False)
 
     print ""

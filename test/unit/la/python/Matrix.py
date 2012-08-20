@@ -284,7 +284,8 @@ if has_linear_algebra_backend("Epetra"):
 #    backend    = "STL"
 
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+
+    # Turn off DOLFIN output
     set_log_active(False)
 
     print ""

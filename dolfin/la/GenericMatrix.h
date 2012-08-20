@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Jansson 2006.
-// Modified by Anders Logg 2006-2011
+// Modified by Johan Jansson 2006
+// Modified by Anders Logg 2006-2012
 // Modified by Ola Skavhaug 2007-2008
 // Modified by Kent-Andre Mardal 2008
 // Modified by Martin Alnæs 2008
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2006-04-24
-// Last changed: 2011-11-25
+// Last changed: 2012-08-20
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -99,9 +99,13 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel
-    /// case, size and layout are important.
+    /// Resize vector y such that is it compatible with the linear
+    /// system Ax = b. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
     virtual void resize(GenericVector& y, uint dim) const = 0;
 
     /// Get block of values

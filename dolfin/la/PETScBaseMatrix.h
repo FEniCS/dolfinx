@@ -89,6 +89,7 @@ namespace dolfin
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;
+
   };
 
 }

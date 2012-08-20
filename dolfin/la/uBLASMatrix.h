@@ -22,7 +22,7 @@
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-07-05
-// Last changed: 2012-03-15
+// Last changed: 2012-08-20
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -110,9 +110,13 @@ namespace dolfin
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
+    /// Resize vector y such that is it compatible with the linear
+    /// system Ax = b. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
     virtual void resize(GenericVector& y, uint dim) const;
 
     /// Get block of values

@@ -44,7 +44,8 @@ class solveTest(unittest.TestCase):
         self.assertAlmostEqual(x.norm("l2"), 1.0)
 
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+
+    # Turn off DOLFIN output
     set_log_active(False)
 
     print ""

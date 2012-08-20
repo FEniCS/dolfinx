@@ -319,8 +319,8 @@ if MPI.num_processes() == 1:
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
             backend    = "PETScCusp"
 
-
 if __name__ == "__main__":
+
     # Turn off DOLFIN output
     set_log_active(False);
 
