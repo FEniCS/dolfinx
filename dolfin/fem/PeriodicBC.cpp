@@ -290,8 +290,8 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >
-     PeriodicBC::compute_dof_pairs() const
+std::vector<std::pair<std::pair<dolfin::uint, dolfin::uint>,
+    std::pair<dolfin::uint, dolfin::uint> > > PeriodicBC::compute_dof_pairs() const
 {
   std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > dof_pairs;
   compute_dof_pairs(dof_pairs);
