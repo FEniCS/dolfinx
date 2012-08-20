@@ -6,7 +6,7 @@
 #  PETSC_LIBRARIES    - libraries for PETSc
 #  PETSC_DIR          - directory where PETSc is built
 #  PETSC_ARCH         - architecture for which PETSc is built
-#  PETSC_CUSP_FOUND   - PETSc has Cusp support 
+#  PETSC_CUSP_FOUND   - PETSc has Cusp support
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -148,7 +148,7 @@ show :
   petsc_get_variable(PETSC_LIB_BASIC PETSC_LIB_BASIC)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
- 
+
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
 
@@ -179,10 +179,10 @@ if (FOUND_PETSC_CONF)
   set(CMAKE_REQUIRED_LIBRARIES ${PETSC_LIBRARIES})
 
   # Add MPI variables if MPI has been found
-  if (MPI_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
 
   # Run PETSc test program
