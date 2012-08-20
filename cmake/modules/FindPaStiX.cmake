@@ -24,18 +24,20 @@ find_library(RT_LIBRARY rt
   DOC "The RT library"
   )
 
-# Check for hwloc header
+# Check for rt header
 find_library(RT_LIBRARY rt
   DOC "The RT library"
   )
 
 # Check for hwloc header
-find_path(HWLOC_INCLUDE_DIRS pastix.h
+find_path(HWLOC_INCLUDE_DIRS hwloc.h
+  HINTS ${HWLOC_DIR} $ENV{HWLOC_DIR} ${HWLOC_DIR}/include $ENV{HWLOC_DIR}/include
   DOC "Directory where the hwloc header is located"
  )
 
 # Check for hwloc library
 find_library(HWLOC_LIBRARY hwloc
+  HINTS ${HWLOC_DIR} $ENV{HWLOC_DIR} ${HWLOC_DIR}/lib $ENV{HWLOC_DIR}/lib
   DOC "The hwloc library"
   )
 
@@ -45,6 +47,7 @@ find_package(BLAS)
 
 # Collect libraries
 set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
+#set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
 
 find_program(GFORTRAN_EXECUTABLE gfortran)
 if (GFORTRAN_EXECUTABLE)
