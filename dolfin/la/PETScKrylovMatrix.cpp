@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andy R. Terrel, 2005.
+// Modified by Andy R. Terrel 2005
 //
 // First added:  2005-01-17
 // Last changed: 2010-08-28
@@ -52,6 +52,7 @@ namespace dolfin
     return 0;
   }
 }
+
 //-----------------------------------------------------------------------------
 PETScKrylovMatrix::PETScKrylovMatrix()
 {
@@ -61,11 +62,6 @@ PETScKrylovMatrix::PETScKrylovMatrix()
 PETScKrylovMatrix::PETScKrylovMatrix(dolfin::uint m, dolfin::uint n)
 {
   resize(m, n);
-}
-//-----------------------------------------------------------------------------
-PETScKrylovMatrix::~PETScKrylovMatrix()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)

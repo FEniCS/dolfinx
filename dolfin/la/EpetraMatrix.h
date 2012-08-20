@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008, 2009.
+// Modified by Anders Logg 2008-2012
+// Modified by Garth N. Wells 2008, 2009
 //
 // First added:  2008-04-21
-// Last changed: 2009-09-08
+// Last changed: 2012-08-20
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -98,9 +98,13 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
+    /// Resize vector y such that is it compatible with the linear
+    /// system Ax = b. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
     virtual void resize(GenericVector& y, uint dim) const;
 
     /// Get block of values

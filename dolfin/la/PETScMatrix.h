@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2006-2009.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Fredrik Valdmanis, 2011.
+// Modified by Andy R. Terrel 2005
+// Modified by Garth N. Wells 2006-2009
+// Modified by Kent-Andre Mardal 2008
+// Modified by Ola Skavhaug 2008
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004-01-01
-// Last changed: 2011-09-29
+// Last changed: 2012-08-20
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -100,9 +100,13 @@ namespace dolfin
     /// Resize matrix to M x N
     //virtual void resize(uint M, uint N);
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
+    /// Resize vector y such that is it compatible with the linear
+    /// system Ax = b. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
     void resize(GenericVector& y, uint dim) const
     { PETScBaseMatrix::resize(y, dim); }
 
