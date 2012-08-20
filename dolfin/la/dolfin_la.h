@@ -13,6 +13,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericLUSolver.h>
+#include <dolfin/la/GenericKrylovMatrix.h>
 
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>

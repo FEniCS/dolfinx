@@ -91,7 +91,6 @@ if has_linear_algebra_backend("PETSc"):
                     # Make ordinary matrix vector product
                     self.A.mult(x, y)
 
-
             class MatrixFreeKrylovMatrix(PETScKrylovMatrix) :
                 def __init__(self, a_L, u, bc):
                     self.a_L = a_L
@@ -139,6 +138,7 @@ if has_linear_algebra_backend("PETSc"):
             self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 if __name__ == "__main__":
+
     # Turn of DOLFIN output
     set_log_active(False)
 
