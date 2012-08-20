@@ -22,6 +22,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <boost/filesystem.hpp>
 
@@ -84,6 +85,7 @@ void HDF5File::operator<<(const Mesh& mesh)
   // Also may be called to just save a mesh to .h5
 
   // if no existing file, create...
+  // FIXME: better way to check? MPI safe?
   if(boost::filesystem::file_size(filename.c_str())==0)
     create();
 
@@ -117,12 +119,12 @@ void HDF5File::operator<<(const Mesh& mesh)
   }
 
   std::stringstream s;
-  s << "/Mesh/Coordinates_" << std::hex << mesh.coordinates_hash();
+  s << "/Mesh/Coordinates_" << std::setfill('0') << std::hex << std::setw(8) << mesh.coordinates_hash();
   if(!exists(s.str()))
     write(vtx_coords[0], vertex_range, s.str(), 3); //xyz coords
 
   s.str("");
-  s << "/Mesh/Topology_" << std::hex << mesh.topology_hash();
+  s << "/Mesh/Topology_" << std::setfill('0') << std::hex << std::setw(8) << mesh.topology_hash();
   if(!exists(s.str()))
     {
       write(topo_data[0], topo_range, s.str(), cell_dim + 1); //connectivity
