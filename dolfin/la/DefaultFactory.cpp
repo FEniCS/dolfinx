@@ -52,6 +52,11 @@ boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
   return factory().create_layout(rank);
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericKrylovMatrix> DefaultFactory::create_krylov_matrix() const
+{
+  return factory().create_krylov_matrix();
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver>
   DefaultFactory::create_lu_solver(std::string method) const
 {

@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2007-11-30
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
@@ -27,6 +27,9 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+
+// Included here so we can define dummy class below
+#include "GenericKrylovMatrix.h"
 
 namespace dolfin
 {
@@ -39,7 +42,7 @@ namespace dolfin
 
   class LinearAlgebraFactory
   {
-    public:
+  public:
 
     /// Constructor
     LinearAlgebraFactory() {}
@@ -59,18 +62,21 @@ namespace dolfin
     /// Create empty tensor layout
     virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
 
+    /// Create empty Krylov matrix
+    virtual boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const = 0;
+
     /// Create LU solver
     virtual boost::shared_ptr<GenericLUSolver>
-      create_lu_solver(std::string method) const = 0;
+    create_lu_solver(std::string method) const = 0;
 
     /// Create Krylov solver
     virtual boost::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(std::string method, std::string preconditioner) const = 0;
+    create_krylov_solver(std::string method, std::string preconditioner) const = 0;
 
     /// Return a list of available LU solver methods.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-      lu_solver_methods() const
+    lu_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
@@ -79,7 +85,7 @@ namespace dolfin
     /// Return a list of available Krylov solver methods.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-      krylov_solver_methods() const
+    krylov_solver_methods() const
     {
       std::vector<std::pair<std::string, std::string> > methods;
       return methods;
@@ -88,11 +94,27 @@ namespace dolfin
     /// Return a list of available preconditioners.
     /// This function should be overloaded by subclass if non-empty.
     virtual std::vector<std::pair<std::string, std::string> >
-      krylov_solver_preconditioners() const
+    krylov_solver_preconditioners() const
     {
       std::vector<std::pair<std::string, std::string> > preconditioners;
       return preconditioners;
     }
+
+  protected:
+
+    // Dummy class that can be returned for linear algebra backends
+    // that do not support the GenericKrylovMatrix interface
+    class NotImplementedKrylovMatrix : public GenericKrylovMatrix
+    {
+    public:
+
+      void mult(const GenericVector& x, GenericVector& y) const
+      { dolfin_not_implemented(); }
+
+      std::string str(bool verbose) const
+      { dolfin_not_implemented(); return ""; }
+
+    };
 
   };
 

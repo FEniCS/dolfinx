@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2008
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2007-12-06
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
@@ -76,6 +76,16 @@ namespace dolfin
         sparsity = true;
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
       return pattern;
+    }
+
+    /// Create empty Krylov matrix
+    boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const
+    {
+      dolfin_error("uBLASFactory.h",
+                   "create Krylov matrix",
+                   "Not supported by uBLAS linear algebra backend");
+      boost::shared_ptr<GenericKrylovMatrix> A(new NotImplementedKrylovMatrix);
+      return A;
     }
 
     /// Create LU solver

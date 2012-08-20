@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2007-11-30
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifdef HAS_PETSC
 
@@ -56,6 +56,9 @@ namespace dolfin
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
+
+    /// Create empty Krylov matrix
+    boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;

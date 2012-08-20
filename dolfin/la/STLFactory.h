@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 // Modified by Garth N. Wells 2012
 //
 // First added:  2008-05-21
-// Last changed: 2012-02-22
+// Last changed: 2012-08-20
 
 #ifndef __DOLFIN_STL_FACTORY_H
 #define __DOLFIN_STL_FACTORY_H
@@ -64,10 +64,20 @@ namespace dolfin
     }
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
+    boost::shared_ptr<TensorLayout> create_layout(uint rank) const
     {
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
+    }
+
+    /// Create empty Krylov matrix
+    boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const
+    {
+      dolfin_error("STLFactory.h",
+                   "create Krylov matrix",
+                   "Not supported by STL linear algebra backend");
+      boost::shared_ptr<GenericKrylovMatrix> A(new NotImplementedKrylovMatrix);
+      return A;
     }
 
     /// Create LU solver

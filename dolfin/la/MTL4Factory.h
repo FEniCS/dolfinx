@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 //
 // First added:  2008-07-06
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifdef HAS_MTL4
 
@@ -71,6 +71,16 @@ namespace dolfin
     {
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
+    }
+
+    /// Create empty Krylov matrix
+    boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const
+    {
+      dolfin_error("MTL4Factory.h",
+                   "create Krylov matrix",
+                   "Not supported by MTL4 linear algebra backend");
+      boost::shared_ptr<GenericKrylovMatrix> A(new NotImplementedKrylovMatrix);
+      return A;
     }
 
     /// Create LU solver

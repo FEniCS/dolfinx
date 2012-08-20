@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-17
-// Last changed: 2012-08-17
+// Last changed: 2012-08-20
 
 #ifndef __LINEAR_TIME_DEPENDENT_PROBLEM_H
 #define __LINEAR_TIME_DEPENDENT_PROBLEM_H
@@ -24,8 +24,17 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Hierarchical.h>
 
+// FIXME: Temporary fix
+#include "Form.h"
+
 namespace dolfin
 {
+
+  // FIXME: Temporary fix
+  typedef Form TensorProductForm;
+
+  // Forward declarations
+  class BoundaryCondition;
 
   /// This class represents a linear time-dependent variational problem:
   ///
@@ -42,8 +51,8 @@ namespace dolfin
 
     /// Create linear variational problem without boundary conditions
     LinearTimeDependentProblem(const TensorProductForm& a,
-                             const TensorProductForm& L,
-                             Function& u);
+                               const TensorProductForm& L,
+                               Function& u);
 
     /// Create linear variational problem with a single boundary condition
     LinearTimeDependentProblem(const TensorProductForm& a,

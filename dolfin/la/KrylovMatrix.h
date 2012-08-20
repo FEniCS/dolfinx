@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,37 +18,45 @@
 // First added:  2012-08-20
 // Last changed: 2012-08-20
 
-#ifndef __GENERIC_KRYLOV_MATRIX_H
-#define __GENERIC_KRYLOV_MATRIX_H
+#ifndef __KRYLOV_MATRIX_H
+#define __KRYLOV_MATRIX_H
 
-#include <dolfin/common/Variable.h>
+#include <boost/shared_ptr.hpp>
+#include "GenericKrylovMatrix.h"
 
 namespace dolfin
 {
 
-  class GenericVector;
-
-  /// This class defines a common interface for linear operators
-  /// defined by their action (matrix-vector multiplication), which is
-  /// useful for the definition of matrix-free linear systems.
+  /// This class provides the default DOLFIN Krylov matrix interface
+  /// for definition of linear systems based on their action
+  /// (matrix-vector multiplication). The linear algebra backend is
+  /// decided at run-time based on the present value of the
+  /// "linear_algebra_backend" parameter.
   ///
-  /// This class is used internally by DOLFIN to define a class
-  /// hierarchy of linear algebra independent Krylov matrix
-  /// interfaces. Users should not interface to this class directly
-  /// but instead use the _KrylovMatrix_ class.
+  /// To define a matrix-free matrix, users need to inherit from this
+  /// class and overload the function mult(x, y) which defines the
+  /// action of the matrix on the vector x as y = Ax.
 
-  class GenericKrylovMatrix : public Variable
+  class KrylovMatrix : public GenericKrylovMatrix
   {
   public:
 
+    /// Create a Krylov matrix of dimensions M x N
+    KrylovMatrix(uint M, uint N);
+
     /// Destructor
-    virtual ~GenericKrylovMatrix() {}
+    virtual ~KrylovMatrix() {}
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose) const = 0;
+    virtual std::string str(bool verbose) const;
+
+  private:
+
+    // Pointer to concrete implementation
+    boost::shared_ptr<GenericKrylovMatrix> _A;
 
   };
 

@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-17
-// Last changed: 2012-08-17
+// Last changed: 2012-08-20
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
-#include "TensorProductForm.h"
+//#include "TensorProductForm.h"
 #include "LinearTimeDependentProblem.h"
 
 using namespace dolfin;
