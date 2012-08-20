@@ -20,22 +20,24 @@ find_library(PASTIX_LIBRARY pastix
   )
 
 # Check for rt library
-find_library(RT_LIBRARY rt
-  DOC "The RT library"
-  )
+#find_library(RT_LIBRARY rt
+#  DOC "The RT library"
+#  )
+
+# Check for rt header
+#find_library(RT_LIBRARY rt
+#  DOC "The RT library"
+#  )
 
 # Check for hwloc header
-find_library(RT_LIBRARY rt
-  DOC "The RT library"
-  )
-
-# Check for hwloc header
-find_path(HWLOC_INCLUDE_DIRS pastix.h
+find_path(HWLOC_INCLUDE_DIRS hwloc.h
+  HINTS ${HWLOC_DIR} $ENV{HWLOC_DIR} ${HWLOC_DIR}/include $ENV{HWLOC_DIR}/include
   DOC "Directory where the hwloc header is located"
  )
 
 # Check for hwloc library
 find_library(HWLOC_LIBRARY hwloc
+  HINTS ${HWLOC_DIR} $ENV{HWLOC_DIR} ${HWLOC_DIR}/lib $ENV{HWLOC_DIR}/lib
   DOC "The hwloc library"
   )
 
@@ -44,7 +46,8 @@ set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(BLAS)
 
 # Collect libraries
-set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
+#set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
 
 find_program(GFORTRAN_EXECUTABLE gfortran)
 if (GFORTRAN_EXECUTABLE)
@@ -70,10 +73,10 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   set(CMAKE_REQUIRED_LIBRARIES ${PASTIX_LIBRARIES})
 
   # Add MPI variables if MPI has been found
-  if (MPI_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
 
   # Add SCOTCH variables if SCOTCH has been found
