@@ -28,6 +28,7 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include "PETScBaseMatrix.h"
+#include "GenericKrylovMatrix.h"
 
 namespace dolfin
 {
@@ -39,25 +40,23 @@ namespace dolfin
   // defined in terms of the action (matrix-vector product) of a
   // linear operator.
 
-  class PETScKrylovMatrix : public PETScBaseMatrix
+  class PETScKrylovMatrix : public PETScBaseMatrix, public GenericKrylovMatrix
   {
   public:
 
     /// Constructor
     PETScKrylovMatrix();
 
-    // FIXME: Remove?
-    /// Create a virtual matrix matching the given vectors
-    PETScKrylovMatrix(uint m, uint n);
+    //--- Implementation of the GenericKrylovMatrix interface ---
 
-    // FIXME: Remove?
-    /// Resize virtual matrix
-    void resize(uint m, uint n);
+    /// Resize matrix
+    virtual void resize(uint M, uint N);
 
-    //--- Implementation of the GenericTensor interface ---
+    /// Return size of given dimension
+    virtual uint size(uint dim) const;
 
     /// Compute matrix-vector product y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
+    virtual void mult(const GenericVector& x, GenericVector& y) const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;

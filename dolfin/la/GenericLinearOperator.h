@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-20
+// Last changed: 2012-08-21
 
 #ifndef __GENERIC_LINEAR_OPERATOR_H
 #define __GENERIC_LINEAR_OPERATOR_H
@@ -38,7 +38,9 @@ namespace dolfin
     // Destructor
     virtual ~GenericLinearOperator() {}
 
-    // FIXME: No functions yet
+    /// Matrix-vector product, y = Ax. The y vector must either be zero-sized
+    /// or have correct size and parallel layout.
+    virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
 
   };
 

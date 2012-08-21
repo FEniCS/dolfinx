@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-20
+// Last changed: 2012-08-21
 
 #include "DefaultFactory.h"
 #include "KrylovMatrix.h"
@@ -28,6 +28,19 @@ KrylovMatrix::KrylovMatrix(uint M, uint N)
 {
   DefaultFactory factory;
   _A = factory.create_krylov_matrix();
+  dolfin_assert(_A);
+}
+//-----------------------------------------------------------------------------
+void KrylovMatrix::resize(uint M, uint N)
+{
+  dolfin_assert(_A);
+  _A->resize(M, N);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint KrylovMatrix::size(uint dim) const
+{
+  dolfin_assert(_A);
+  return _A->size(dim);
 }
 //-----------------------------------------------------------------------------
 std::string KrylovMatrix::str(bool verbose) const

@@ -14,6 +14,7 @@
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericLUSolver.h>
 #include <dolfin/la/GenericKrylovMatrix.h>
+#include <dolfin/la/GenericLinearOperator.h>
 
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
@@ -73,5 +74,6 @@
 #include <dolfin/la/BlockMatrix.h>
 #include <dolfin/la/TensorProductVector.h>
 #include <dolfin/la/TensorProductMatrix.h>
+#include <dolfin/la/KrylovMatrix.h>
 
 #endif

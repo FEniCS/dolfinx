@@ -59,12 +59,12 @@ PETScKrylovMatrix::PETScKrylovMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix(dolfin::uint m, dolfin::uint n)
+dolfin::uint PETScKrylovMatrix::size(uint dim) const
 {
-  resize(m, n);
+  return PETScBaseMatrix::size(dim);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)
+void PETScKrylovMatrix::resize(uint m, uint n)
 {
   // Compute local range
   const std::pair<uint, uint> row_range    = MPI::local_range(m);
@@ -92,13 +92,22 @@ void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)
   MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovMatrix::mult(const GenericVector& x, GenericVector& y) const
+{
+  // FIXME: Not implemented
+  dolfin_not_implemented();
+}
+//-----------------------------------------------------------------------------
 std::string PETScKrylovMatrix::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
     warning("Verbose output for PETScKrylovMatrix not implemented.");
   else
-    s << "<PETScKrylovMatrix of size " << size(0) << " x " << size(1) << ">";
+    s << "<PETScKrylovMatrix of size "
+      << PETScBaseMatrix::size(0)
+      << " x "
+      << PETScBaseMatrix::size(1) << ">";
 
   return s.str();
 }

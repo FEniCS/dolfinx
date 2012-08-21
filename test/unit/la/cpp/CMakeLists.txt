@@ -34,6 +34,8 @@ include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 add_executable(test_Vector Vector.cpp)
+add_executable(test_KrylovMatrix KrylovMatrix.cpp)
 
 # Target libraries
 target_link_libraries(test_Vector ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_KrylovMatrix ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

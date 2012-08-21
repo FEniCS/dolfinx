@@ -28,7 +28,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/log/LogStream.h>
-#include "GenericMatrix.h"
+#include "GenericLinearOperator.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
 #include "DefaultFactory.h"
@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::solve(const GenericMatrix& A,
+dolfin::uint dolfin::solve(const GenericLinearOperator& A,
                            GenericVector& x,
                            const GenericVector& b,
                            std::string method,
@@ -177,7 +177,7 @@ bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
   return false;
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A,
+double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {

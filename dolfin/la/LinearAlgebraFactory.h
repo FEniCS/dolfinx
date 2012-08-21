@@ -108,6 +108,12 @@ namespace dolfin
     {
     public:
 
+      void resize(uint M, uint N)
+      {}
+
+      uint size(uint dim) const
+      { return 0; }
+
       void mult(const GenericVector& x, GenericVector& y) const
       { dolfin_not_implemented(); }
 

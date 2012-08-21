@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-20
+// Last changed: 2012-08-21
 
 #ifndef __GENERIC_KRYLOV_MATRIX_H
 #define __GENERIC_KRYLOV_MATRIX_H
@@ -44,6 +44,12 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericKrylovMatrix() {}
+
+    /// Resize matrix
+    virtual void resize(uint M, uint N) = 0;
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
