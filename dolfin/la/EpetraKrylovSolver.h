@@ -44,7 +44,7 @@ namespace dolfin
   class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
-  class EpetraKrylovMatrix;
+  class EpetraLinearOperator;
   class EpetraUserPreconditioner;
   class TrilinosPreconditioner;
 

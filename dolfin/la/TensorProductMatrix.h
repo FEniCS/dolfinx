@@ -44,7 +44,7 @@ namespace dolfin
   ///
   /// where a is a _TensorProductVector_ with elements a_jln.
 
-  // FIXME: Either inherit from PETScKrylovMatrix or a common interface
+  // FIXME: Either inherit from PETScLinearOperator or a common interface
 
   class TensorProductMatrix
   {

@@ -11,44 +11,40 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
+// // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
 // Last changed: 2012-08-21
 
-#ifndef __KRYLOV_MATRIX_H
-#define __KRYLOV_MATRIX_H
+#ifndef __LINEAR_OPERATOR_H
+#define __LINEAR_OPERATOR_H
 
 #include <boost/shared_ptr.hpp>
-#include "GenericKrylovMatrix.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
 
-  /// This class provides the default DOLFIN Krylov matrix interface
-  /// for definition of linear systems based on their action
-  /// (matrix-vector multiplication). The linear algebra backend is
-  /// decided at run-time based on the present value of the
-  /// "linear_algebra_backend" parameter.
+  /// This class defines an interface for linear operators defined
+  /// only in terms of their action (matrix-vector product) and can be
+  /// used for matrix-free solution of linear systems. The linear
+  /// algebra backend is decided at run-time based on the present
+  /// value of the "linear_algebra_backend" parameter.
   ///
-  /// To define a matrix-free matrix, users need to inherit from this
+  /// To define a linear operator, users need to inherit from this
   /// class and overload the function mult(x, y) which defines the
   /// action of the matrix on the vector x as y = Ax.
 
-  class KrylovMatrix : public GenericKrylovMatrix
+  class LinearOperator : public GenericLinearOperator
   {
   public:
 
     /// Create a Krylov matrix of dimensions M x N
-    KrylovMatrix(uint M, uint N);
+    LinearOperator(uint M, uint N);
 
     /// Destructor
-    virtual ~KrylovMatrix() {}
-
-    /// Resize matrix
-    void resize(uint M, uint N);
+    virtual ~LinearOperator() {}
 
     /// Return size of given dimension
     uint size(uint dim) const;
@@ -62,7 +58,7 @@ namespace dolfin
   private:
 
     // Pointer to concrete implementation
-    boost::shared_ptr<GenericKrylovMatrix> _A;
+    boost::shared_ptr<GenericLinearOperator> _A;
 
   };
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2010 Anders Logg and Garth N. Wells
+// Copyright (C) 2005-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,42 +15,39 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andy R. Terrel, 2005.
+// Modified by Andy R. Terrel 2005
 //
 // First added:  2005-01-17
-// Last changed: 2010-08-28
+// Last changed: 2012-08-21
 
-#ifndef __PETSC_KRYLOV_MATRIX_H
-#define __PETSC_KRYLOV_MATRIX_H
+#ifndef __PETSC_LINEAR_OPERATOR_H
+#define __PETSC_LINEAR_OPERATOR_H
 
 #ifdef HAS_PETSC
 
 #include <string>
 #include <dolfin/common/types.h>
 #include "PETScBaseMatrix.h"
-#include "GenericKrylovMatrix.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
 
   class PETScVector;
 
-  // This is the PETSc version of the _GenericKrylovMatrix_
+  // This is the PETSc version of the _GenericLinearOperator_
   // (matrix-free) interface for the solution of linear systems
   // defined in terms of the action (matrix-vector product) of a
   // linear operator.
 
-  class PETScKrylovMatrix : public PETScBaseMatrix, public GenericKrylovMatrix
+  class PETScLinearOperator : public PETScBaseMatrix, public GenericLinearOperator
   {
   public:
 
     /// Constructor
-    PETScKrylovMatrix();
+    PETScLinearOperator();
 
-    //--- Implementation of the GenericKrylovMatrix interface ---
-
-    /// Resize matrix
-    virtual void resize(uint M, uint N);
+    //--- Implementation of the GenericLinearOperator interface ---
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;

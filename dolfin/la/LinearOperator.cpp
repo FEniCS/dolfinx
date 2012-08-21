@@ -19,31 +19,25 @@
 // Last changed: 2012-08-21
 
 #include "DefaultFactory.h"
-#include "KrylovMatrix.h"
+#include "LinearOperator.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-KrylovMatrix::KrylovMatrix(uint M, uint N)
+LinearOperator::LinearOperator(uint M, uint N)
 {
   DefaultFactory factory;
-  _A = factory.create_krylov_matrix();
+  _A = factory.create_linear_operator();
   dolfin_assert(_A);
 }
 //-----------------------------------------------------------------------------
-void KrylovMatrix::resize(uint M, uint N)
-{
-  dolfin_assert(_A);
-  _A->resize(M, N);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint KrylovMatrix::size(uint dim) const
+dolfin::uint LinearOperator::size(uint dim) const
 {
   dolfin_assert(_A);
   return _A->size(dim);
 }
 //-----------------------------------------------------------------------------
-std::string KrylovMatrix::str(bool verbose) const
+std::string LinearOperator::str(bool verbose) const
 {
   return "FIXME";
 }

@@ -13,7 +13,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericLUSolver.h>
-#include <dolfin/la/GenericKrylovMatrix.h>
 #include <dolfin/la/GenericLinearOperator.h>
 
 #include <dolfin/la/PETScObject.h>
@@ -21,9 +20,9 @@
 #include <dolfin/la/uBLASFactory.h>
 
 #include <dolfin/la/uBLASMatrix.h>
-#include <dolfin/la/uBLASKrylovMatrix.h>
+#include <dolfin/la/uBLASLinearOperator.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScKrylovMatrix.h>
+#include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/EpetraLUSolver.h>
 #include <dolfin/la/EpetraKrylovSolver.h>
@@ -74,6 +73,6 @@
 #include <dolfin/la/BlockMatrix.h>
 #include <dolfin/la/TensorProductVector.h>
 #include <dolfin/la/TensorProductMatrix.h>
-#include <dolfin/la/KrylovMatrix.h>
+#include <dolfin/la/LinearOperator.h>
 
 #endif

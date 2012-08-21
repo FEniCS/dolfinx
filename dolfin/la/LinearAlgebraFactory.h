@@ -27,9 +27,10 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 // Included here so we can define dummy class below
-#include "GenericKrylovMatrix.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
@@ -63,7 +64,7 @@ namespace dolfin
     virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
 
     /// Create empty Krylov matrix
-    virtual boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const = 0;
+    virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
 
     /// Create LU solver
     virtual boost::shared_ptr<GenericLUSolver>
@@ -103,13 +104,10 @@ namespace dolfin
   protected:
 
     // Dummy class that can be returned for linear algebra backends
-    // that do not support the GenericKrylovMatrix interface
-    class NotImplementedKrylovMatrix : public GenericKrylovMatrix
+    // that do not support the GenericLinearOperator interface
+    class NotImplementedLinearOperator : public GenericLinearOperator
     {
     public:
-
-      void resize(uint M, uint N)
-      {}
 
       uint size(uint dim) const
       { return 0; }

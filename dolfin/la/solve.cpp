@@ -181,7 +181,7 @@ double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::shared_ptr<GenericVector> y = A.factory().create_vector();
+  boost::shared_ptr<GenericVector> y = x.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");

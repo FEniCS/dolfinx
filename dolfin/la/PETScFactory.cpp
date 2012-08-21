@@ -26,7 +26,7 @@
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "PETScKrylovMatrix.h"
+#include "PETScLinearOperator.h"
 #include "PETScFactory.h"
 
 using namespace dolfin;
@@ -62,9 +62,9 @@ boost::shared_ptr<TensorLayout> PETScFactory::create_layout(uint rank) const
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericKrylovMatrix> PETScFactory::create_krylov_matrix() const
+boost::shared_ptr<GenericLinearOperator> PETScFactory::create_linear_operator() const
 {
-  boost::shared_ptr<GenericKrylovMatrix> A(new PETScKrylovMatrix);
+  boost::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------

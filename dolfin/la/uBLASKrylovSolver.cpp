@@ -114,7 +114,8 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericLinearOperator& A, GenericVec
   return solve(x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x,
+dolfin::uint uBLASKrylovSolver::solve(const uBLASLinearOperator& A,
+                                      uBLASVector& x,
                                       const uBLASVector& b)
 {
   return solve_krylov(A, x, b, A);

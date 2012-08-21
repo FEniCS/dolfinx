@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2012-08-20
+// Last changed: 2012-08-21
 
 #ifndef __DEFAULT_FACTORY_H
 #define __DEFAULT_FACTORY_H
@@ -55,7 +55,7 @@ namespace dolfin
     virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
 
     /// Create empty Krylov matrix
-    virtual boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const;
+    virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
     virtual boost::shared_ptr<dolfin::GenericLUSolver>

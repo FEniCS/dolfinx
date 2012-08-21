@@ -78,9 +78,9 @@ boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(uint rank) const
   return pattern;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericKrylovMatrix> EpetraFactory::create_krylov_matrix() const
+boost::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
 {
-  boost::shared_ptr<GenericKrylovMatrix> A(new NotImplementedKrylovMatrix);
+  boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
   return A;
 }
 //-----------------------------------------------------------------------------

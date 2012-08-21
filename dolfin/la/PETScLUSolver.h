@@ -37,7 +37,7 @@ namespace dolfin
   /// Forward declarations
   class GenericLinearOperator;
   class GenericVector;
-  class PETScKrylovMatrix;
+  class PETScLinearOperator;
   class PETScMatrix;
   class PETScVector;
 

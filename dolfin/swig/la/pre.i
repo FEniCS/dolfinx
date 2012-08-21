@@ -248,8 +248,8 @@
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::PETScUserPreconditioner;
-%feature("director") dolfin::PETScKrylovMatrix;
-%feature("director") dolfin::uBLASKrylovMatrix;
+%feature("director") dolfin::PETScLinearOperator;
+%feature("director") dolfin::uBLASLinearOperator;
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector

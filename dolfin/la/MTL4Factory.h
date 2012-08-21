@@ -74,12 +74,12 @@ namespace dolfin
     }
 
     /// Create empty Krylov matrix
-    boost::shared_ptr<GenericKrylovMatrix> create_krylov_matrix() const
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
       dolfin_error("MTL4Factory.h",
                    "create Krylov matrix",
                    "Not supported by MTL4 linear algebra backend");
-      boost::shared_ptr<GenericKrylovMatrix> A(new NotImplementedKrylovMatrix);
+      boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
       return A;
     }
 

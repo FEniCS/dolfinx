@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Garth N. Wells
+// Copyright (C) 2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,15 +21,21 @@
 #ifndef __GENERIC_LINEAR_OPERATOR_H
 #define __GENERIC_LINEAR_OPERATOR_H
 
-#include <dolfin/log/log.h>
-
 namespace dolfin
 {
 
+  // Forward declarations
+  class GenericVector;
+  class LinearAlgebraFactory;
+
   /// This class defines a common interface for linear operators,
   /// including actual matrices (class _GenericMatrix_) and linear
-  /// operators only defined in terms of their action on vectors
-  /// (class _GenericKrylovMatrix_).
+  /// operators only defined in terms of their action on vectors.
+  ///
+  /// This class is used internally by DOLFIN to define a class
+  /// hierarchy of backend independent linear operators and solvers.
+  /// Users should not interface to this class directly but instead
+  /// use the _LinearOperator_ class.
 
   class GenericLinearOperator
   {
@@ -38,9 +44,14 @@ namespace dolfin
     // Destructor
     virtual ~GenericLinearOperator() {}
 
-    /// Matrix-vector product, y = Ax. The y vector must either be zero-sized
-    /// or have correct size and parallel layout.
+    /// Return size of given dimension
+    virtual uint size(uint dim) const = 0;
+
+    /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
+
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose) const = 0;
 
   };
 

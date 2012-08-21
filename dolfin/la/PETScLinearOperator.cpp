@@ -30,7 +30,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
-#include "PETScKrylovMatrix.h"
+#include "PETScLinearOperator.h"
 
 using namespace dolfin;
 
@@ -48,23 +48,25 @@ namespace dolfin
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
     PETScVector xx(_x), yy(_y);
-    ((PETScKrylovMatrix*) ctx)->mult(xx, yy);
+    ((PETScLinearOperator*) ctx)->mult(xx, yy);
     return 0;
   }
 }
 
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix()
+PETScLinearOperator::PETScLinearOperator()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovMatrix::size(uint dim) const
+dolfin::uint PETScLinearOperator::size(uint dim) const
 {
   return PETScBaseMatrix::size(dim);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::resize(uint m, uint n)
+
+/*
+void PETScLinearOperator::resize(uint m, uint n)
 {
   // Compute local range
   const std::pair<uint, uint> row_range    = MPI::local_range(m);
@@ -91,20 +93,23 @@ void PETScKrylovMatrix::resize(uint m, uint n)
   MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, m, n, (void*) this, A.get());
   MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
 }
+*/
+
+
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::mult(const GenericVector& x, GenericVector& y) const
+void PETScLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
   // FIXME: Not implemented
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-std::string PETScKrylovMatrix::str(bool verbose) const
+std::string PETScLinearOperator::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    warning("Verbose output for PETScKrylovMatrix not implemented.");
+    warning("Verbose output for PETScLinearOperator not implemented.");
   else
-    s << "<PETScKrylovMatrix of size "
+    s << "<PETScLinearOperator of size "
       << PETScBaseMatrix::size(0)
       << " x "
       << PETScBaseMatrix::size(1) << ">";

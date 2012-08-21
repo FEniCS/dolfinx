@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-30
-// Last changed: 2009-09-08
+// Last changed: 2012-08-21
 
-#ifndef __UBLAS_KRYLOV_MATRIX_H
-#define __UBLAS_KRYLOV_MATRIX_H
+#ifndef __UBLAS_LINEAR_OPERATOR_H
+#define __UBLAS_LINEAR_OPERATOR_H
 
 #include <dolfin/common/types.h>
 #include "ublas.h"
@@ -36,31 +36,39 @@ namespace dolfin
   /// overload the mult() function to specify a linear system only in
   /// terms of its action.
 
-  class uBLASKrylovMatrix
+  class uBLASLinearOperator
   {
   public:
 
     /// Constructor
-    uBLASKrylovMatrix() : AA(0), ej(0), Aj(0) {};
+    uBLASLinearOperator() : AA(0), ej(0), Aj(0) {};
 
     /// Destructor
-    virtual ~uBLASKrylovMatrix() {};
+    virtual ~uBLASLinearOperator() {};
 
-    /// Return number of rows (dim = 0) or columns (dim = 1)
-    virtual uint size(uint dim) const = 0;
-
+    // FIXME: How should this be handled?
     /// Compute product y = Ax
     virtual void mult(const uBLASVector& x, uBLASVector& y) const = 0;
 
-    /// Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
-    void solve(uBLASVector& x, const uBLASVector& b);
+    //--- Implementation of the GenericLinearOperator interface ---
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const = 0;
+
+    /// Compute matrix-vector product y = Ax
+    virtual void mult(const GenericVector& x, GenericVector& y) const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose) const;
+    virtual std::string str(bool verbose) const;
+
+    //--- Misc functions ---
+
+    // Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
+    void solve(uBLASVector& x, const uBLASVector& b);
 
   private:
 
-    // Temporary data for LU factorization of a uBLASKrylovMatrix
+    // Temporary data for LU factorization of a uBLASLinearOperator
     uBLASMatrix<ublas_dense_matrix>* AA;
     uBLASVector* ej;
     uBLASVector* Aj;

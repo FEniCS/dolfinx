@@ -16,16 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-07-07
-// Last changed: 2009-08-10
+// Last changed: 2012-08-21
 
 #include "uBLASVector.h"
 #include "uBLASSparseMatrix.h"
-#include "uBLASKrylovMatrix.h"
+#include "uBLASLinearOperator.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
+void uBLASLinearOperator::solve(uBLASVector& x, const uBLASVector& b)
 {
   // The linear system is solved by computing a dense copy of the matrix,
   // obtained through multiplication with unit vectors.
@@ -78,17 +78,17 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
  (*AA).solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::string uBLASKrylovMatrix::str(bool verbose) const
+std::string uBLASLinearOperator::str(bool verbose) const
 {
   std::stringstream s;
 
   if (verbose)
   {
-    warning("Verbose output for uBLASKrylovMatrix not implemented.");
+    warning("Verbose output for uBLASLinearOperator not implemented.");
   }
   else
   {
-    s << "<uBLASKrylovMatrix of size " << size(0) << " x " << size(1) << ">";
+    s << "<uBLASLinearOperator of size " << size(0) << " x " << size(1) << ">";
   }
 
   return s.str();

@@ -29,7 +29,7 @@
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
-#include "uBLASKrylovMatrix.h"
+#include "uBLASLinearOperator.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "uBLASPreconditioner.h"
@@ -90,7 +90,7 @@ namespace dolfin
     uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
-    uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
+    uint solve(const uBLASLinearOperator& A, uBLASVector& x, const uBLASVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();

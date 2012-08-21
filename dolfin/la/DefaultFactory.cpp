@@ -52,9 +52,9 @@ boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
   return factory().create_layout(rank);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericKrylovMatrix> DefaultFactory::create_krylov_matrix() const
+boost::shared_ptr<GenericLinearOperator> DefaultFactory::create_linear_operator() const
 {
-  return factory().create_krylov_matrix();
+  return factory().create_linear_operator();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver>

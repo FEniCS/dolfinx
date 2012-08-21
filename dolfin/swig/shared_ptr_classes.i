@@ -168,7 +168,7 @@
 
 #ifdef HAS_PETSC
 %shared_ptr(dolfin::PETScBaseMatrix)
-%shared_ptr(dolfin::PETScKrylovMatrix)
+%shared_ptr(dolfin::PETScLinearOperator)
 %shared_ptr(dolfin::PETScKrylovSolver)
 %shared_ptr(dolfin::PETScLUSolver)
 %shared_ptr(dolfin::PETScMatrix)

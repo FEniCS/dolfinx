@@ -36,7 +36,7 @@ namespace dolfin
   class GenericVector;
   class GenericLinearOperator;
   class uBLASVector;
-  class uBLASKrylovMatrix;
+  class uBLASLinearOperator;
   template<typename Mat> class uBLASMatrix;
 
   /// This class implements the direct solution (LU factorization) of
