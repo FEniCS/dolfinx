@@ -345,9 +345,9 @@ endif()
 
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc)
+  find_package(PETSc 3.2)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc)
+    find_package(SLEPc 3.2)
   endif()
 endif()
 

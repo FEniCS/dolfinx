@@ -7,6 +7,7 @@
 #  PETSC_DIR          - directory where PETSc is built
 #  PETSC_ARCH         - architecture for which PETSc is built
 #  PETSC_CUSP_FOUND   - PETSc has Cusp support
+#  PETSC_VERSION      - version for PETSc
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -185,6 +186,48 @@ if (FOUND_PETSC_CONF)
     set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
 
+  # Check PETSc version
+  set(PETSC_CONFIG_TEST_VERSION_CPP
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/petsc_config_test_version.cpp")
+  file(WRITE ${PETSC_CONFIG_TEST_VERSION_CPP} "
+#include <iostream>
+#include \"petscversion.h\"
+
+int main() {
+  std::cout << PETSC_VERSION_MAJOR << \".\"
+	    << PETSC_VERSION_MINOR << \".\"
+	    << PETSC_VERSION_SUBMINOR;
+  return 0;
+}
+")
+
+  try_run(
+    PETSC_CONFIG_TEST_VERSION_EXITCODE
+    PETSC_CONFIG_TEST_VERSION_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PETSC_CONFIG_TEST_VERSION_CPP}
+    CMAKE_FLAGS
+      "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+    COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE OUTPUT
+    )
+
+  if (PETSC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    set(PETSC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    mark_as_advanced(PETSC_VERSION)
+  endif()
+
+  if (PETSc_FIND_VERSION)
+    # Check if version found is >= required version
+    if (NOT "${PETSC_VERSION}" VERSION_LESS "${PETSc_FIND_VERSION}")
+      set(PETSC_VERSION_OK TRUE)
+    endif()
+  else()
+    # No specific version requested
+    set(PETSC_VERSION_OK TRUE)
+  endif()
+  mark_as_advanced(PETSC_VERSION_OK)
+
   # Run PETSc test program
   include(CheckCXXSourceRuns)
   check_cxx_source_runs("
@@ -240,4 +283,5 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
   "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-  PETSC_LIBRARIES PETSC_DIR PETSC_INCLUDE_DIRS PETSC_TEST_RUNS)
+  PETSC_LIBRARIES PETSC_DIR PETSC_INCLUDE_DIRS PETSC_TEST_RUNS
+  PETSC_VERSION PETSC_VERSION_OK)
