@@ -42,7 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-set(ScotchPT_FOUND 0)
+set(SCOTCH_FOUND FALSE)
 
 message(STATUS "Checking for package 'SCOTCH-PT'")
 
@@ -52,19 +52,6 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
-
-# Check for library
-#find_library(SCOTCH_LIBRARY
-#  NAMES scotch
-#  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-#  DOC "The SCOTCH library"
-#  )
-
-#find_library(SCOTCHERR_LIBRARY
-#  NAMES scotcherr
-#  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-#  DOC "The SCOTCH-ERROR library"
-#  )
 
 # Check for ptscotch
 find_library(PTSCOTCH_LIBRARY
@@ -259,7 +246,8 @@ int main() {
 endif()
 
 # Standard package handling
-include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SCOTCH
-  "SCOTCH could not be found. Be sure to set SCOTCH_DIR."
-  SCOTCH_LIBRARIES SCOTCH_INCLUDE_DIRS SCOTCH_TEST_RUNS)
+                                  "SCOTCH could not be found. Be sure to set SCOTCH_DIR."
+                                  SCOTCH_LIBRARIES
+                                  SCOTCH_INCLUDE_DIRS
+                                  SCOTCH_TEST_RUNS)
