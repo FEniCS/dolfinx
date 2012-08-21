@@ -31,6 +31,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <vector>
 #include "GenericTensor.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
@@ -40,7 +41,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor
+  class GenericMatrix : public GenericTensor, public GenericLinearOperator
   {
   public:
 

@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2009-2011
+// Modified by Anders Logg 2009-2012
 //
 // First added:  2008-08-26
-// Last changed: 2011-11-11
+// Last changed: 2012-08-20
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -26,12 +26,13 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
+#include "GenericLinearOperator.h"
+#include "GenericMatrix.h"
 
 namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
   class GenericVector;
 
   /// This class provides a general solver for linear systems Ax = b.
@@ -41,11 +42,11 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericMatrix> A) = 0;
+    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
-    virtual void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                               const boost::shared_ptr<const GenericMatrix> P)
+    virtual void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                               const boost::shared_ptr<const GenericLinearOperator> P)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
@@ -53,10 +54,12 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+    virtual uint solve(const GenericLinearOperator& A,
+                       GenericVector& x,
+                       const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
-                   "solve linear systtem",
+                   "solve linear system",
                    "Not supported by current linear algebra backend. Consider using solve(x, b)");
       return 0;
     }
@@ -65,9 +68,55 @@ namespace dolfin
     virtual uint solve(GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
-                   "solve linear systtem",
+                   "solve linear system",
                    "Not supported by current linear algebra backend. Consider using solve(x, b)");
       return 0;
+    }
+
+  protected:
+
+    // Down-cast GenericLinearOperator to GenericMatrix when an actual
+    // matrix is required, not only a linear operator. This is the
+    // const reference version of the down-cast.
+    static const GenericMatrix& require_matrix(const GenericLinearOperator& A)
+    {
+      // Try to dynamic cast to a GenericMatrix
+      try
+      {
+        return dynamic_cast<const GenericMatrix&>(A);
+      }
+      catch (std::exception& e)
+      {
+        dolfin_error("GenericLinearSolver.h",
+                     "use linear operator as a matrix (real matrix required, not Krylov matrix)",
+                     "%s", e.what());
+      }
+
+      // Return something to keep the compiler happy. Code will never be reached.
+      return dynamic_cast<const GenericMatrix&>(A);
+    }
+
+    // Down-cast GenericLinearOperator to GenericMatrix when an actual
+    // matrix is required, not only a linear operator. This is the
+    // const reference version of the down-cast.
+    static const boost::shared_ptr<const GenericMatrix>
+    require_matrix(const boost::shared_ptr<const GenericLinearOperator> A)
+    {
+      // Try to down cast shared pointer
+      boost::shared_ptr<const GenericMatrix> _A
+        = boost::dynamic_pointer_cast<const GenericMatrix>(A);
+
+      // Check results. Note the difference from the down_cast
+      // functions in GenericTensor in that we check the return value
+      // here and throw an error if the cast fails.
+      if (!_A)
+      {
+        dolfin_error("GenericLinearSolver.h",
+                     "use linear operator as a matrix (real matrix required, not Krylov matrix)",
+                     "Dynamic cast failed");
+      }
+
+      return _A;
     }
 
   };

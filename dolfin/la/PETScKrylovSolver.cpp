@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2005-2012.
+// Modified by Anders Logg 2005-2012
 // Modified by Garth N. Wells 2005-2010
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-12-02
-// Last changed: 2012-05-07
+// Last changed: 2012-08-20
 
 #ifdef HAS_PETSC
 
@@ -179,7 +179,7 @@ PETScKrylovSolver::~PETScKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
@@ -189,11 +189,13 @@ void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatr
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                      const boost::shared_ptr<const GenericMatrix> P)
+void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                                      const boost::shared_ptr<const GenericLinearOperator> P)
 {
-  boost::shared_ptr<const PETScBaseMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
-  boost::shared_ptr<const PETScBaseMatrix> _P = GenericTensor::down_cast<const PETScMatrix>(P);
+  boost::shared_ptr<const PETScBaseMatrix> _A
+    = GenericTensor::down_cast<const PETScMatrix>(require_matrix(A));
+  boost::shared_ptr<const PETScBaseMatrix> _P
+    = GenericTensor::down_cast<const PETScMatrix>(require_matrix(P));
   set_operators(_A, _P);
 }
 //-----------------------------------------------------------------------------
@@ -223,11 +225,13 @@ dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solve(x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
+                                      GenericVector& x,
                                       const GenericVector& b)
 {
   //check_dimensions(A, x, b);
-  return solve(A.down_cast<PETScBaseMatrix>(), x.down_cast<PETScVector>(),
+  return solve(require_matrix(A).down_cast<PETScBaseMatrix>(),
+               x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------

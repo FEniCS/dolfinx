@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2008
-// Last changed: 2012-05-07
+// Last changed: 2012-08-21
 
 #ifdef HAS_TRILINOS
 
@@ -41,7 +41,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "GenericMatrix.h"
+#include "GenericLinearOperator.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
 #include "TrilinosPreconditioner.h"
@@ -134,21 +134,21 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                       const boost::shared_ptr<const GenericMatrix> P)
+void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                                       const boost::shared_ptr<const GenericLinearOperator> P)
 {
-  this->A = GenericTensor::down_cast<const EpetraMatrix>(A);
-  this->P = GenericTensor::down_cast<const EpetraMatrix>(P);
+  this->A = GenericTensor::down_cast<const EpetraMatrix>(require_matrix(A));
+  this->P = GenericTensor::down_cast<const EpetraMatrix>(require_matrix(P));
   dolfin_assert(this->A);
   dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& EpetraKrylovSolver::get_operator() const
+const GenericLinearOperator& EpetraKrylovSolver::get_operator() const
 {
   if (!A)
   {
@@ -248,10 +248,12 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   return solver->NumIters();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint EpetraKrylovSolver::solve(const GenericLinearOperator& A,
+                                       GenericVector& x,
                                        const GenericVector& b)
 {
-  return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
+  return solve(require_matrix(A).down_cast<EpetraMatrix>(),
+               x.down_cast<EpetraVector>(),
                b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------

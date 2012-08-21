@@ -35,7 +35,7 @@ class Epetra_LinearProblem;
 namespace dolfin
 {
   /// Forward declarations
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
@@ -52,23 +52,23 @@ namespace dolfin
     EpetraLUSolver(std::string method="default");
 
     /// Constructor
-    EpetraLUSolver(boost::shared_ptr<const GenericMatrix> A,
+    EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
                    std::string method="default");
 
     /// Destructor
     ~EpetraLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Get operator (matrix)
-    const GenericMatrix& get_operator() const;
+    const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);

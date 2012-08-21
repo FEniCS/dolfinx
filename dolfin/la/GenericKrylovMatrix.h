@@ -22,6 +22,7 @@
 #define __GENERIC_KRYLOV_MATRIX_H
 
 #include <dolfin/common/Variable.h>
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
@@ -37,7 +38,7 @@ namespace dolfin
   /// interfaces. Users should not interface to this class directly
   /// but instead use the _KrylovMatrix_ class.
 
-  class GenericKrylovMatrix : public Variable
+  class GenericKrylovMatrix : public Variable, public GenericLinearOperator
   {
   public:
 

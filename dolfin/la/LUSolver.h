@@ -17,11 +17,11 @@
 //
 // Modified by Ola Skavhaug 2008
 // Modified by Dag Lindbo 2008
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 // Modified by Kent-Andre Mardal 2008
 //
 // First added:  2007-07-03
-// Last changed: 2011-10-06
+// Last changed: 2012-08-20
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -34,7 +34,7 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
 
   /// LU solver for the built-in LA backends.
@@ -47,20 +47,20 @@ namespace dolfin
     LUSolver(std::string method= "default");
 
     /// Constructor
-    LUSolver(boost::shared_ptr<const GenericMatrix> A,
+    LUSolver(boost::shared_ptr<const GenericLinearOperator> A,
              std::string method="default");
 
     /// Destructor
     ~LUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()
