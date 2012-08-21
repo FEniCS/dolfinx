@@ -257,7 +257,7 @@ if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
-    find_package(ScotchPT)
+    find_package(SCOTCH)
   endif()
 endif()
 
