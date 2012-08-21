@@ -177,8 +177,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
 
   // Renumbering
-  //const bool renumber = parameters["renumber"];
-  const bool renumber = false;
+  const bool renumber = parameters["renumber"];
   if (!renumber)
   {
     iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
