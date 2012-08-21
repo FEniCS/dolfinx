@@ -80,23 +80,23 @@ if has_linear_algebra_backend("PETSc"):
                 print "FIXME: Matrix free test does not work in parallel, skipping"
                 return
 
-            class KrylovMatrix(PETScKrylovMatrix):
+            class LinearOperator(PETScLinearOperator):
                 def __init__(self, A):
                     self.A = A
 
-                    PETScKrylovMatrix.__init__(self, A.size(0), A.size(1))
+                    PETScLinearOperator.__init__(self, A.size(0), A.size(1))
 
                 def mult(self, x, y):
 
                     # Make ordinary matrix vector product
                     self.A.mult(x, y)
 
-            class MatrixFreeKrylovMatrix(PETScKrylovMatrix) :
+            class MatrixFreeLinearOperator(PETScLinearOperator) :
                 def __init__(self, a_L, u, bc):
                     self.a_L = a_L
                     self.u = u
                     self.bc = bc
-                    PETScKrylovMatrix.__init__(self, A.size(0), A.size(1))
+                    PETScLinearOperator.__init__(self, A.size(0), A.size(1))
 
                 def mult(self, x, y):
                     # Update Function
@@ -131,10 +131,10 @@ if has_linear_algebra_backend("PETSc"):
             # Matrix free solve
             my_prec = IdentityPreconditioner()
             solver = PETScKrylovSolver("gmres", my_prec)
-            solver.solve(KrylovMatrix(A), x_petsc, b_petsc)
+            solver.solve(LinearOperator(A), x_petsc, b_petsc)
             self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
-            solver.solve(MatrixFreeKrylovMatrix(a_L, u1, bc), x_petsc, b_petsc)
+            solver.solve(MatrixFreeLinearOperator(a_L, u1, bc), x_petsc, b_petsc)
             self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 if __name__ == "__main__":

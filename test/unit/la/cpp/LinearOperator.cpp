@@ -18,7 +18,7 @@
 // First added:  2012-08-21
 // Last changed: 2012-08-21
 //
-// Unit tests for matrix-free linear solvers (KrylovMatrix)
+// Unit tests for matrix-free linear solvers (LinearOperator)
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
@@ -27,18 +27,18 @@
 
 using namespace dolfin;
 
-class TestKrylovMatrix : public CppUnit::TestFixture
+class TestLinearOperator : public CppUnit::TestFixture
 {
-  CPPUNIT_TEST_SUITE(TestKrylovMatrix);
-  CPPUNIT_TEST(test_krylov_matrix);
+  CPPUNIT_TEST_SUITE(TestLinearOperator);
+  CPPUNIT_TEST(test_linear_operator);
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
-  void test_krylov_matrix()
+  void test_linear_operator()
   {
-    // Define Krylov matrix
-    class MyMatrix : public KrylovMatrix
+    // Define linear operator
+    class MyMatrix : public LinearOperator
     {
     public:
 
@@ -47,7 +47,7 @@ public:
         V(new ReactionDiffusionAction::FunctionSpace(mesh)),
         a_action(new ReactionDiffusionAction::LinearForm(V)),
         u(new Function(V)),
-        KrylovMatrix(V->dim(), V->dim())
+        LinearOperator(V->dim(), V->dim())
       {
         a_action->set_coefficient("u", u);
       }
@@ -77,7 +77,7 @@ public:
 
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TestKrylovMatrix);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestLinearOperator);
 
 int main()
 {
