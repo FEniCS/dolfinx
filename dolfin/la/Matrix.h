@@ -176,10 +176,10 @@ namespace dolfin
     virtual GenericMatrix* instance()
     { return matrix.get(); }
 
-    virtual boost::shared_ptr<const GenericTensor> shared_instance() const
+    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return matrix; }
 
-    virtual boost::shared_ptr<GenericTensor> shared_instance()
+    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
     { return matrix; }
 
     //--- Special Matrix functions ---

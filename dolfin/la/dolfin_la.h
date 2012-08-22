@@ -7,6 +7,8 @@
 
 #include <dolfin/la/ublas.h>
 
+#include <dolfin/la/LinearAlgebraObject.h>
+
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericSparsityPattern.h>

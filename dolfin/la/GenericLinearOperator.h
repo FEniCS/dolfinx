@@ -21,6 +21,8 @@
 #ifndef __GENERIC_LINEAR_OPERATOR_H
 #define __GENERIC_LINEAR_OPERATOR_H
 
+#include "LinearAlgebraObject.h"
+
 namespace dolfin
 {
 
@@ -37,7 +39,7 @@ namespace dolfin
   /// Users should not interface to this class directly but instead
   /// use the _LinearOperator_ class.
 
-  class GenericLinearOperator
+  class GenericLinearOperator : public virtual LinearAlgebraObject
   {
   public:
 
