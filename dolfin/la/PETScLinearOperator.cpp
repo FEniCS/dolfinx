@@ -36,7 +36,7 @@ using namespace dolfin;
 
 // Mult function
 
-// FIXME: Add an explanation of how this this function works
+// FIXME: Add an explanation of how this function works
 namespace dolfin
 {
   int usermult(Mat A, Vec x, Vec y)

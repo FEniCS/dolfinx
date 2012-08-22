@@ -93,9 +93,9 @@ dolfin::uint MTL4Matrix::size(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::resize(GenericVector& y, uint dim) const
+void MTL4Matrix::resize(GenericVector& z, uint dim) const
 {
-  y.resize(size(dim));
+  z.resize(size(dim));
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n,

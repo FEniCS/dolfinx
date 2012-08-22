@@ -90,14 +90,14 @@ namespace dolfin
       return A;
     }
 
-    /// Resize vector y such that is it compatible with the linear
-    /// system Ax = b. In the parallel case, both size and layout are
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (uint)
-    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
-    virtual void resize(GenericVector& y, uint dim) const
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values

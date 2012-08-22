@@ -98,14 +98,14 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
-    /// Resize vector y such that is it compatible with the linear
-    /// system Ax = b. In the parallel case, both size and layout are
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (uint)
-    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
-    virtual void resize(GenericVector& y, uint dim) const;
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;

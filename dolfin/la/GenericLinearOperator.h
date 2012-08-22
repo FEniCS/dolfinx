@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 #ifndef __GENERIC_LINEAR_OPERATOR_H
 #define __GENERIC_LINEAR_OPERATOR_H

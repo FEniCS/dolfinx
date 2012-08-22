@@ -22,7 +22,7 @@
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004-01-01
-// Last changed: 2012-08-20
+// Last changed: 2012-08-22
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -100,15 +100,15 @@ namespace dolfin
     /// Resize matrix to M x N
     //virtual void resize(uint M, uint N);
 
-    /// Resize vector y such that is it compatible with the linear
-    /// system Ax = b. In the parallel case, both size and layout are
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
     ///     dim (uint)
-    ///         The dimension (axis): dim = 0 --> b, dim = 1 --> x
-    void resize(GenericVector& y, uint dim) const
-    { PETScBaseMatrix::resize(y, dim); }
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const
+    { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n,
