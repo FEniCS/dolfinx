@@ -75,6 +75,13 @@ namespace dolfin
 
   protected:
 
+    // Developer note: The functions here provide similar
+    // functionality as the down_cast functions in the
+    // LinearAlgebraObject base class. The difference is that they
+    // specifically complain that a matrix is required, which gives a
+    // user a more informative error message from solvers that don't
+    // support matrix-free representation of linear operators.
+
     // Down-cast GenericLinearOperator to GenericMatrix when an actual
     // matrix is required, not only a linear operator. This is the
     // const reference version of the down-cast.
