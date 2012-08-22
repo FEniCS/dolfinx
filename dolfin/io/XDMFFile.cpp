@@ -20,6 +20,7 @@
 // First added:  2012-05-28
 // Last changed: 2012-08-03
 
+#ifdef HAS_HDF5
 #include <ostream>
 #include <sstream>
 #include <vector>
@@ -57,6 +58,14 @@ void XDMFFile::operator<<(const Function& u)
   operator << (ut);
 }
 //----------------------------------------------------------------------------
+
+void XDMFFile::write_cell_function(const std::pair<const Function*, double> ut)
+{
+  // Save a Cell-centred function to XDMF/HDF files for visualisation
+
+}
+
+//----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 {
   // Save a Function to XDMF/HDF files for visualisation.
@@ -73,12 +82,11 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const Function &u = *(ut.first);
   const double time_step = ut.second;
 
-  Timer hdf5timer("HDF5 + XDMF Output (mesh + data)");
+  Timer hdf5timer("Write XDMF (mesh+data) vertex");
 
   u.update();
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
-  std::string sig = u.function_space()->element()->signature();
   const uint vrank = u.value_rank();
   const uint vsize = u.value_size();
   uint vsize_io=vsize; //output size may be padded 2D -> 3D for paraview
@@ -88,11 +96,17 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   {
     dolfin_error("XDMFFile.cpp",
                 "write data to XDMF file",
-                "Outout of tensors with rank > 1 not yet supported");
+                "Output of tensors with rank > 1 not yet supported");
   }
 
   const uint cell_dim = mesh.topology().dim();
-  // error if cell_dim==1 - 1D Interval not supported
+  if(cell_dim==1) 
+    {
+      dolfin_error("XDMFFile.cpp",
+		   "write data to XDMF file",
+		   "Output of 1D datasets not supported");
+    }
+  
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
@@ -106,7 +120,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   if(vsize  > 1)
   {
     std::vector<double> tmp;
-    tmp.reserve(num_local_vertices);
+    tmp.reserve(vsize*num_local_vertices);
     for(uint i = 0; i < num_local_vertices; i++)
       {
 	for(uint j = 0; j < vsize; j++)
@@ -126,19 +140,15 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
-
-  std::stringstream mc_name;
-  mc_name << "/Mesh/Coordinates_" << std::hex << mesh.coordinates_hash();
-
-  std::stringstream mt_name;
-  mt_name << "/Mesh/Topology_" << std::hex << mesh.topology_hash();
+  std::string mc_name=h5file.mesh_coords_dataset_name(mesh);
+  std::string mt_name=h5file.mesh_topo_dataset_name(mesh);
 
   if(counter == 0)
     {
       h5file.create();
       h5file << mesh;
     } 
-  else if( !h5file.exists(mc_name.str()) || !h5file.exists(mt_name.str()) )
+  else if( !h5file.exists(mc_name) || !h5file.exists(mt_name) )
     {
       h5file << mesh;
     }
@@ -238,7 +248,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
     
     s.str("");
-    s << filename_data << ":" << mt_name.str();
+    s << filename_data << ":" << mt_name;
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     // Grid/Geometry
@@ -253,7 +263,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
     
     s.str("");
-    s << filename_data << ":" << mc_name.str();
+    s << filename_data << ":" << mc_name;
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     // Grid/Attribute - actual data
@@ -298,6 +308,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
   // Create a new HDF5 file and save the mesh in it.
   HDF5File h5file(filename_data);
+
   h5file.create();
   h5file << mesh;
 
@@ -331,7 +342,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s<< filename_data << ":/Mesh/Topology_" << std::hex << mesh.topology_hash();
+    s<< filename_data << ":" << h5file.mesh_topo_dataset_name(mesh);
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -344,8 +355,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s << filename_data << ":/Mesh/Coordinates_" 
-      << std::hex << mesh.coordinates_hash();
+    s << filename_data << ":" << h5file.mesh_coords_dataset_name(mesh);
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     xml_doc.save_file(filename.c_str(), "  ");
@@ -362,3 +372,4 @@ std::string XDMFFile::HDF5Filename() const
   return fname;
 }
 //----------------------------------------------------------------------------
+#endif

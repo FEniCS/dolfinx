@@ -23,6 +23,7 @@
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
 
+#ifdef HAS_HDF5
 #include <string>
 #include <utility>
 #include <boost/shared_ptr.hpp>
@@ -63,9 +64,12 @@ namespace dolfin
     /// Save Function + time stamp to file
     /// data in .h5, xml description in .xdmf
     ///
-    void operator<<(const std::pair<const Function*, double> u);
+    void operator<<(const std::pair<const Function*, double> ut);
 
   private:
+
+    /// Write out a cell-centred function
+    void write_cell_function(const std::pair<const Function*, double> ut);
 
     /// change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;
@@ -73,4 +77,5 @@ namespace dolfin
   };
 
 }
+#endif
 #endif

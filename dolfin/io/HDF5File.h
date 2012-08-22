@@ -23,6 +23,8 @@
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
 
+#ifdef HAS_HDF5
+
 #include <string>
 #include <utility>
 #include "dolfin/common/types.h"
@@ -100,9 +102,13 @@ namespace dolfin
     std::string get_attribute(const std::string& dataset_name,
 			      const std::string& attribute_name);
 
+    std::string mesh_coords_dataset_name(const Mesh& mesh);
+    std::string mesh_topo_dataset_name(const Mesh& mesh);
+
     // Friend
     friend class XDMFFile;
   };
 
 }
+#endif
 #endif

@@ -20,6 +20,8 @@
 // First added:  2012-06-01
 // Last changed: 2012-08-02
 
+#ifdef HAS_HDF5
+
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -119,12 +121,12 @@ void HDF5File::operator<<(const Mesh& mesh)
   }
 
   std::stringstream s;
-  s << "/Mesh/Coordinates_" << std::setfill('0') << std::hex << std::setw(8) << mesh.coordinates_hash();
+  s << mesh_coords_dataset_name(mesh);
   if(!exists(s.str()))
     write(vtx_coords[0], vertex_range, s.str(), 3); //xyz coords
 
   s.str("");
-  s << "/Mesh/Topology_" << std::setfill('0') << std::hex << std::setw(8) << mesh.topology_hash();
+  s << mesh_topo_dataset_name(mesh);
   if(!exists(s.str()))
     {
       write(topo_data[0], topo_range, s.str(), cell_dim + 1); //connectivity
@@ -515,4 +517,23 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
 
   return std::string(&str[0]);
 }
+
 //-----------------------------------------------------------------------------
+std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
+{
+  std::stringstream mc_name;
+  mc_name << "/Mesh/Coordinates_" << std::setfill('0') 
+	  << std::hex << std::setw(8) << mesh.coordinates_hash();
+  return mc_name.str();
+}
+
+//-----------------------------------------------------------------------------
+std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh)
+{
+  std::stringstream mc_name;
+  mc_name << "/Mesh/Topology_" << std::setfill('0') 
+	  << std::hex << std::setw(8) << mesh.topology_hash();
+  return mc_name.str();
+}
+
+#endif
