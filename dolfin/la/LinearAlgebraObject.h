@@ -114,6 +114,43 @@ namespace dolfin
 
   };
 
+  /// Cast object to its derived class, if possible (non-const version).
+  /// An error is thrown if the cast is unsuccessful.
+  template<typename Y, typename X> Y& as_type(X& x)
+  {
+    try
+    {
+      return dynamic_cast<Y&>(*x.instance());
+    }
+    catch (std::exception& e)
+    {
+      dolfin_error("LinearAlgebraObject.h",
+                   "down-cast linear algebra object to requested type",
+                   "%s", e.what());
+    }
+
+    // Return something to keep the compiler happy, code will not be reached
+    return dynamic_cast<Y&>(*x.instance());
+  }
+
+  /// Cast shared pointer object to its derived class, if possible.
+  /// Caller must check for success (returns null if cast fails).
+  template<typename Y, typename X>
+  static boost::shared_ptr<Y> as_type(const boost::shared_ptr<X> x)
+  {
+    // Try to down cast shared pointer
+    boost::shared_ptr<Y> y = boost::dynamic_pointer_cast<Y>(x);
+
+    // If down cast fails, try to get shared ptr instance to unwrapped object
+    if (!y)
+    {
+      // Try to get instance to unwrapped object and cast
+      if (x->shared_instance())
+        y = boost::dynamic_pointer_cast<Y>(x->shared_instance());
+    }
+    return y;
+  }
+
 }
 
 #endif

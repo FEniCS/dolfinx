@@ -76,7 +76,7 @@ namespace dolfin
   protected:
 
     // Developer note: The functions here provide similar
-    // functionality as the down_cast functions in the
+    // functionality as the as_type functions in the
     // LinearAlgebraObject base class. The difference is that they
     // specifically complain that a matrix is required, which gives a
     // user a more informative error message from solvers that don't
@@ -113,9 +113,9 @@ namespace dolfin
       boost::shared_ptr<const GenericMatrix> _A
         = boost::dynamic_pointer_cast<const GenericMatrix>(A);
 
-      // Check results. Note the difference from the down_cast
-      // functions in GenericTensor in that we check the return value
-      // here and throw an error if the cast fails.
+      // Check results. Note the difference from the as_type functions
+      // in LinearAlgebraObject in that we check the return value here
+      // and throw an error if the cast fails.
       if (!_A)
       {
         dolfin_error("GenericLinearSolver.h",

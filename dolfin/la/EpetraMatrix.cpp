@@ -224,7 +224,7 @@ void EpetraMatrix::resize(GenericVector& z, uint dim) const
   }
 
   // Reset vector with new map
-  EpetraVector& _z = z.down_cast<EpetraVector>();
+  EpetraVector& _z = as_type<EpetraVector>(z);
   _z.reset(*map);
 }
 //-----------------------------------------------------------------------------
@@ -333,7 +333,7 @@ void EpetraMatrix::add(const double* block,
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
-  const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
+  const EpetraMatrix* AA = &as_type<const EpetraMatrix>(A);
   if (!AA->mat()->Filled())
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -548,8 +548,8 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert(A);
-  const EpetraVector& x = x_.down_cast<EpetraVector>();
-  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
+  const EpetraVector& x = as_type<const EpetraVector>(x_);
+  EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
   if (x.size() != size(1))
   {
@@ -585,8 +585,8 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert(A);
-  const EpetraVector& x = x_.down_cast<EpetraVector>();
-  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
+  const EpetraVector& x = as_type<const EpetraVector>(x_);
+  EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
   if (x.size() != size(0))
   {
@@ -710,7 +710,7 @@ const EpetraMatrix& EpetraMatrix::operator/= (double a)
 //-----------------------------------------------------------------------------
 const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 {
-  *this = A.down_cast<EpetraMatrix>();
+  *this = as_type<const EpetraMatrix>(A);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -724,4 +724,5 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
+
 #endif

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2008
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 #ifdef HAS_TRILINOS
 
@@ -134,7 +134,7 @@ EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
   parameters = default_parameters();
 
   // Set operator
-  this->A = GenericTensor::down_cast<const EpetraMatrix>(require_matrix(A));
+  this->A = as_type<const EpetraMatrix>(require_matrix(A));
   dolfin_assert(this->A);
 
   // Choose method
@@ -163,7 +163,7 @@ void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOpe
 {
   dolfin_assert(linear_problem);
 
-  this->A = GenericTensor::down_cast<const EpetraMatrix>(require_matrix(A));
+  this->A = as_type<const EpetraMatrix>(require_matrix(A));
   dolfin_assert(this->A);
   linear_problem->SetOperator(this->A->mat().get());
 
@@ -193,8 +193,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
          A->size(0), A->size(1), method.c_str());
 
   // Downcast vector
-  EpetraVector& _x = x.down_cast<EpetraVector>();
-  const EpetraVector& _b = b.down_cast<EpetraVector>();
+  EpetraVector& _x = as_type<EpetraVector>(x);
+  const EpetraVector& _b = as_type<const EpetraVector>(b);
 
   // Get operator matrix
   const Epetra_RowMatrix* A = linear_problem->GetMatrix();
@@ -263,9 +263,9 @@ dolfin::uint EpetraLUSolver::solve(const GenericLinearOperator& A,
                                    GenericVector& x,
                                    const GenericVector& b)
 {
-  return solve(require_matrix(A).down_cast<EpetraMatrix>(),
-               x.down_cast<EpetraVector>(),
-               b.down_cast<EpetraVector>());
+  return solve(as_type<const EpetraMatrix>(require_matrix(A)),
+               as_type<EpetraVector>(x),
+               as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,

@@ -192,11 +192,8 @@ void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatr
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
                                       const boost::shared_ptr<const GenericLinearOperator> P)
 {
-  boost::shared_ptr<const PETScBaseMatrix> _A
-    = GenericTensor::down_cast<const PETScMatrix>(require_matrix(A));
-  boost::shared_ptr<const PETScBaseMatrix> _P
-    = GenericTensor::down_cast<const PETScMatrix>(require_matrix(P));
-  set_operators(_A, _P);
+  set_operators(as_type<const PETScBaseMatrix>(A),
+                as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
@@ -222,7 +219,7 @@ const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   //check_dimensions(*A, x, b);
-  return solve(x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
@@ -230,9 +227,9 @@ dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
                                       const GenericVector& b)
 {
   //check_dimensions(A, x, b);
-  return solve(require_matrix(A).down_cast<PETScBaseMatrix>(),
-               x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
+  return solve(as_type<const PETScBaseMatrix>(A),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)

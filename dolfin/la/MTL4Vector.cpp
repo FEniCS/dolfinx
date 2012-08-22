@@ -198,7 +198,7 @@ void MTL4Vector::gather(GenericVector& x, const std::vector<uint>& indices) cons
   dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
-  mtl4_vector& _x = x.down_cast<MTL4Vector>().vec();
+  mtl4_vector& _x = as_type<MTL4Vector>(x).vec();
   for (uint i = 0; i < _size; i++)
     _x[i] = this->x[ indices[i] ];
 }
@@ -234,12 +234,12 @@ double MTL4Vector::inner(const GenericVector& v) const
 {
   // Developers note: The literal template arguments refers to the number
   // of levels of loop unrolling that is done at compile time.
-  return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec());
+  return mtl::dot<6>(x, as_type<const MTL4Vector>(v).vec());
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::axpy(double a, const GenericVector& v)
 {
-  x += a*v.down_cast<MTL4Vector>().vec();
+  x += a*as_type<const MTL4Vector>(v).vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::abs()
@@ -255,7 +255,7 @@ GenericLinearAlgebraFactory& MTL4Vector::factory() const
 //-----------------------------------------------------------------------------
 const GenericVector& MTL4Vector::operator= (const GenericVector& v)
 {
-  *this = v.down_cast<MTL4Vector>();
+  *this = as_type<const MTL4Vector>(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -286,7 +286,7 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  const mtl4_vector& _y = y.down_cast<MTL4Vector>().vec();
+  const mtl4_vector& _y = as_type<const MTL4Vector>(y).vec();
   for (uint i = 0; i < size(); ++i)
     x[i] *= _y[i];
   return *this;
@@ -307,7 +307,7 @@ const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
 {
-  x += v.down_cast<MTL4Vector>().vec();
+  x += as_type<const MTL4Vector>(v).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -320,7 +320,7 @@ const MTL4Vector& MTL4Vector::operator+= (double a)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
 {
-  x -= v.down_cast<MTL4Vector>().vec();
+  x -= as_type<const MTL4Vector>(v).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------

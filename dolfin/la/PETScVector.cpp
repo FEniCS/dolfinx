@@ -17,11 +17,11 @@
 //
 // Modified by Garth N. Wells 2005-2010
 // Modified by Martin Sandve Alnes 2008
-// Modified by Johannes Ring, 2011.
-// Modified by Fredrik Valdmanis, 2011-2012
+// Modified by Johannes Ring 2011.
+// Modified by Fredrik Valdmanis 2011-2012
 //
 // First added:  2004
-// Last changed: 2012-03-15
+// Last changed: 2012-08-22
 
 #ifdef HAS_PETSC
 
@@ -43,8 +43,8 @@ using namespace dolfin;
 
 const std::map<std::string, NormType> PETScVector::norm_types
 = boost::assign::map_list_of("l1",   NORM_1)
-("l2",   NORM_2)
-("linf", NORM_INFINITY);
+  ("l2",   NORM_2)
+  ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
@@ -424,7 +424,7 @@ bool PETScVector::owns_index(uint i) const
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
 {
-  *this = v.down_cast<PETScVector>();
+  *this = as_type<const PETScVector>(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -509,7 +509,7 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
   dolfin_assert(x);
 
-  const PETScVector& v = y.down_cast<PETScVector>();
+  const PETScVector& v = as_type<const PETScVector>(y);
   dolfin_assert(v.x);
 
   if (size() != v.size())
@@ -537,7 +537,7 @@ double PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
-  const PETScVector& _y = y.down_cast<PETScVector>();
+  const PETScVector& _y = as_type<const PETScVector>(y);
   dolfin_assert(_y.x);
 
   double a;
@@ -549,7 +549,7 @@ void PETScVector::axpy(double a, const GenericVector& y)
 {
   dolfin_assert(x);
 
-  const PETScVector& _y = y.down_cast<PETScVector>();
+  const PETScVector& _y = as_type<const PETScVector>(y);
   dolfin_assert(_y.x);
 
   if (size() != _y.size())
@@ -701,7 +701,7 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   dolfin_assert(x);
 
   // Down cast to a PETScVector
-  PETScVector& _y = y.down_cast<PETScVector>();
+  PETScVector& _y = as_type<PETScVector>(y);
 
   // Check that y is a local vector
   const VecType petsc_type;

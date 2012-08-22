@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Dag Lindbo 2008
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008-05-16
-// Last changed: 2011-10-19
+// Last changed: 2012-08-22
 
 #ifdef HAS_MTL4
 
@@ -82,8 +82,8 @@ void ITLKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> 
 void ITLKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                     const boost::shared_ptr<const GenericMatrix> P)
 {
-  this->A = GenericTensor::down_cast<const MTL4Matrix>(A);
-  this->A = GenericTensor::down_cast<const MTL4Matrix>(P);
+  this->A = as_type<const MTL4Matrix>(A);
+  this->A = as_type<const MTL4Matrix>(P);
   dolfin_assert(this->A);
   dolfin_assert(this->P);
 }
@@ -101,7 +101,7 @@ const GenericMatrix& ITLKrylovSolver::get_operator() const
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+  return solve(as_type<MTL4Vector>(x), as_type<const MTL4Vector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
@@ -196,11 +196,11 @@ dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
 }
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                const GenericVector& b)
+                                    const GenericVector& b)
 {
   boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
   set_operator(_A);
-  return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+  return solve(as_type<MTL4Vector>(x), as_type<const MTL4Vector>(b));
 }
 //-----------------------------------------------------------------------------
 std::string ITLKrylovSolver::str(bool verbose) const

@@ -168,7 +168,7 @@ PETScLUSolver::~PETScLUSolver()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
-  this->A = GenericTensor::down_cast<const PETScMatrix>(require_matrix(A));
+  this->A = as_type<const PETScMatrix>(require_matrix(A));
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
@@ -195,8 +195,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   dolfin_assert(A);
 
   // Downcast matrix and vectors
-  const PETScVector& _b = b.down_cast<PETScVector>();
-  PETScVector& _x = x.down_cast<PETScVector>();
+  const PETScVector& _b = as_type<const PETScVector>(b);
+  PETScVector& _x = as_type<PETScVector>(x);
 
   // Check dimensions
   if (A->size(0) != b.size())
@@ -241,9 +241,9 @@ dolfin::uint PETScLUSolver::solve(const GenericLinearOperator& A,
                                   GenericVector& x,
                                   const GenericVector& b)
 {
-  return solve(require_matrix(A).down_cast<PETScMatrix>(),
-               x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
+  return solve(as_type<const PETScMatrix>(require_matrix(A)),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,

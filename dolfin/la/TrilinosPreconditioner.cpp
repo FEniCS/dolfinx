@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2010-02-25
-// Last changed: 2011-11-11
+// Last changed: 2012-08-22
 
 #ifdef HAS_TRILINOS
 
@@ -198,7 +198,7 @@ void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVecto
     dolfin_assert(null_space[i]);
 
     // Get Epetra vector
-    const EpetraVector& v = null_space[i]->down_cast<EpetraVector>();
+    const EpetraVector& v = as_type<const EpetraVector>(*null_space[i]);
     dolfin_assert(v.vec());
 
     // Initialise null space multivector on first pass

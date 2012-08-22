@@ -259,7 +259,7 @@ void PETScMatrix::add(const double* block, uint m, const uint* rows,
 void PETScMatrix::axpy(double a, const GenericMatrix& A,
                        bool same_nonzero_pattern)
 {
-  const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
+  const PETScMatrix* AA = &as_type<const PETScMatrix>(A);
   dolfin_assert(this->A);
   dolfin_assert(AA->mat());
   if (same_nonzero_pattern)
@@ -359,8 +359,8 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
   dolfin_assert(A);
 
-  const PETScVector& xx = x.down_cast<PETScVector>();
-  PETScVector& yy = y.down_cast<PETScVector>();
+  const PETScVector& xx = as_type<const PETScVector>(x);
+  PETScVector& yy = as_type<PETScVector>(y);
 
   if (size(1) != xx.size())
   {
@@ -387,8 +387,8 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 {
   dolfin_assert(A);
 
-  const PETScVector& xx = x.down_cast<PETScVector>();
-  PETScVector& yy = y.down_cast<PETScVector>();
+  const PETScVector& xx = as_type<const PETScVector>(x);
+  PETScVector& yy = as_type<PETScVector>(y);
 
   if (size(0) != xx.size())
   {
@@ -478,7 +478,7 @@ const PETScMatrix& PETScMatrix::operator/= (double a)
 //-----------------------------------------------------------------------------
 const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 {
-  *this = A.down_cast<PETScMatrix>();
+  *this = as_type<const PETScMatrix>(A);
   return *this;
 }
 //-----------------------------------------------------------------------------

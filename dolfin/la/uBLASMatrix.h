@@ -186,7 +186,7 @@ namespace dolfin
     void solve(uBLASVector& x, const uBLASVector& b) const;
 
     /// Solve Ax = b in-place using uBLAS(A is destroyed)
-    void solveInPlace(uBLASVector& x, const uBLASVector& b);
+    void solve_in_place(uBLASVector& x, const uBLASVector& b);
 
     /// Compute inverse of matrix
     void invert();
@@ -208,7 +208,7 @@ namespace dolfin
 
     /// General uBLAS LU solver which accepts both vector and matrix right-hand sides
     template<typename B>
-    void solveInPlace(B& X);
+    void solve_in_place(B& X);
 
     // uBLAS matrix object
     Mat A;
@@ -379,11 +379,11 @@ namespace dolfin
     x.vec().assign(b.vec());
 
     // Solve
-    Atemp.solveInPlace(x.vec());
+    Atemp.solve_in_place(x.vec());
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::solveInPlace(uBLASVector& x, const uBLASVector& b)
+  void uBLASMatrix<Mat>::solve_in_place(uBLASVector& x, const uBLASVector& b)
   {
     const uint M = A.size1();
     dolfin_assert(M == b.size());
@@ -394,7 +394,7 @@ namespace dolfin
     x.vec().assign(b.vec());
 
     // Solve
-    solveInPlace(x.vec());
+    solve_in_place(x.vec());
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
@@ -408,7 +408,7 @@ namespace dolfin
     X.assign(ublas::identity_matrix<double>(M));
 
     // Solve
-    solveInPlace(X);
+    solve_in_place(X);
     A.assign_temporary(X);
   }
   //---------------------------------------------------------------------------
@@ -462,9 +462,8 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y) const
   {
-
-    const uBLASVector& xx = x.down_cast<uBLASVector>();
-    uBLASVector& yy = y.down_cast<uBLASVector>();
+    const uBLASVector& xx = as_type<const uBLASVector>(x);
+    uBLASVector& yy = as_type<uBLASVector>(y);
 
     if (size(1) != xx.size())
     {
@@ -473,18 +472,18 @@ namespace dolfin
                    "Non-matching dimensions for matrix-vector product");
     }
 
-  // Resize RHS if empty
-  if (yy.size() == 0)
-  {
-    resize(yy, 0);
-  }
+    // Resize RHS if empty
+    if (yy.size() == 0)
+    {
+      resize(yy, 0);
+    }
 
-  if (size(0) != yy.size())
-  {
-    dolfin_error("uBLASMatrix.cpp",
-                 "compute matrix-vector product with uBLAS matrix",
-                 "Vector for matrix-vector result has wrong size");
-  }
+    if (size(0) != yy.size())
+    {
+      dolfin_error("uBLASMatrix.cpp",
+                   "compute matrix-vector product with uBLAS matrix",
+                   "Vector for matrix-vector result has wrong size");
+    }
 
     ublas::axpy_prod(A, xx.vec(), yy.vec(), true);
   }
@@ -514,7 +513,7 @@ namespace dolfin
   template <typename Mat>
   const GenericMatrix& uBLASMatrix<Mat>::operator= (const GenericMatrix& A)
   {
-    *this = A.down_cast< uBLASMatrix<Mat> >();
+    *this = as_type<const uBLASMatrix<Mat> >(A);
     return *this;
   }
   //-----------------------------------------------------------------------------
@@ -636,7 +635,7 @@ namespace dolfin
                    "Dimensions don't match");
     }
 
-    this->A += (a)*(A.down_cast<uBLASMatrix>().mat());
+    this->A += (a)*(as_type<const uBLASMatrix>(A).mat());
   }
   //---------------------------------------------------------------------------
   template <>
@@ -654,11 +653,14 @@ namespace dolfin
     dolfin_error("GenericMatrix.h",
                  "return pointers to underlying matrix data",
                  "Not implemented for this uBLAS matrix type");
-    return boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+    return boost::tuples::tuple<const std::size_t*,
+                                const std::size_t*,
+                                const double*,
+                                int>(0, 0, 0, 0);
   }
   //---------------------------------------------------------------------------
   template<typename Mat> template<typename B>
-  void uBLASMatrix<Mat>::solveInPlace(B& X)
+  void uBLASMatrix<Mat>::solve_in_place(B& X)
   {
     const uint M = A.size1();
     dolfin_assert(M == A.size2());

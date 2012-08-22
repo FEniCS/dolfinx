@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2008-07-06
-// Last changed: 2012-03-15
+// Last changed: 2012-08-22
 
 #ifdef HAS_MTL4
 
@@ -147,7 +147,7 @@ void MTL4Matrix::axpy(double a, const GenericMatrix& A,
   }
 
   // Do we need to check for same sparsity pattern?
-  this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
+  this->A += (a)*(as_type<const MTL4Matrix>(A).mat());
 }
 //-----------------------------------------------------------------------------
 double MTL4Matrix::norm(std::string norm_type) const
@@ -246,13 +246,13 @@ void MTL4Matrix::zero(uint m, const uint* rows)
 void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert_no_inserter();
-  Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
+  as_type<MTL4Vector>(Ax_).vec() = A*as_type<const MTL4Vector>(x_).vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert_no_inserter();
-  Ax_.down_cast<MTL4Vector>().vec() = trans(this->A)*x_.down_cast<MTL4Vector>().vec();
+  as_type<MTL4Vector>(Ax_).vec() = trans(this->A)*as_type<const MTL4Vector>(x_).vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
@@ -327,7 +327,7 @@ const MTL4Matrix& MTL4Matrix::operator/= (double a)
 //-----------------------------------------------------------------------------
 const GenericMatrix& MTL4Matrix::operator= (const GenericMatrix& A)
 {
-  *this = A.down_cast<MTL4Matrix>();
+  *this = as_type<const MTL4Matrix>(A);
   return *this;
 }
 //-----------------------------------------------------------------------------

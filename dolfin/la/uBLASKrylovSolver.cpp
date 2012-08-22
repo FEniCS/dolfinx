@@ -93,25 +93,28 @@ dolfin::uint uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(A);
   boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _A
-    = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(require_matrix(A));
+    = as_type<const uBLASMatrix<ublas_sparse_matrix> >(require_matrix(A));
   dolfin_assert(_A);
 
   dolfin_assert(P);
   boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _P
-    = GenericTensor::down_cast<const uBLASMatrix<ublas_sparse_matrix> >(require_matrix(P));
+    = as_type<const uBLASMatrix<ublas_sparse_matrix> >(require_matrix(P));
   dolfin_assert(_P);
 
-  return solve_krylov(*_A, x.down_cast<uBLASVector>(),
-                      b.down_cast<uBLASVector>(), *_P);
+  return solve_krylov(*_A,
+                      as_type<uBLASVector>(x),
+                      as_type<const uBLASVector>(b),
+                      *_P);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
+dolfin::uint uBLASKrylovSolver::solve(const GenericLinearOperator& A,
+                                      GenericVector& x,
                                       const GenericVector& b)
 {
   // Set operator
   boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
   set_operator(_A);
-  return solve(x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
+  return solve(as_type<uBLASVector>(x), as_type<const uBLASVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASLinearOperator& A,

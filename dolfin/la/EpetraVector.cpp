@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2008-04-21
-// Last changed: 2012-03-15
+// Last changed: 2012-08-22
 
 #ifdef HAS_TRILINOS
 
@@ -475,7 +475,7 @@ void EpetraVector::gather(GenericVector& y,
   dolfin_assert(x);
 
   // Down cast to an EpetraVector
-  EpetraVector& _y = y.down_cast<EpetraVector>();
+  EpetraVector& _y = as_type<EpetraVector>(y);
 
   // Create serial communicator
   EpetraFactory& f = EpetraFactory::instance();
@@ -548,7 +548,7 @@ double EpetraVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
-  const EpetraVector& v = y.down_cast<EpetraVector>();
+  const EpetraVector& v = as_type<const EpetraVector>(y);
   if (!v.x)
   {
     dolfin_error("EpetraVector.cpp",
@@ -572,7 +572,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 {
   dolfin_assert(x);
 
-  const EpetraVector& _y = y.down_cast<EpetraVector>();
+  const EpetraVector& _y = as_type<const EpetraVector>(y);
   if (!_y.x)
   {
     dolfin_error("EpetraVector.cpp",
@@ -609,7 +609,7 @@ GenericLinearAlgebraFactory& EpetraVector::factory() const
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const GenericVector& v)
 {
-  *this = v.down_cast<EpetraVector>();
+  *this = as_type<const EpetraVector>(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -709,7 +709,7 @@ const EpetraVector& EpetraVector::operator*= (double a)
 const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
 {
   dolfin_assert(x);
-  const EpetraVector& v = y.down_cast<EpetraVector>();
+  const EpetraVector& v = as_type<const EpetraVector>(y);
 
   if (!v.x)
   {
