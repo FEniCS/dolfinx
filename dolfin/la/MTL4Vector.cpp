@@ -248,7 +248,7 @@ void MTL4Vector::abs()
     x[i] = std::abs(x[i]);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& MTL4Vector::factory() const
+GenericLinearAlgebraFactory& MTL4Vector::factory() const
 {
   return MTL4Factory::instance();
 }

@@ -33,7 +33,7 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "TensorLayout.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 // Forwad declarations
 class Epetra_MpiComm;
@@ -44,14 +44,14 @@ namespace dolfin
 
   class GenericLinearSolver;
 
-  class EpetraFactory : public LinearAlgebraFactory
+  class EpetraFactory : public GenericLinearAlgebraFactory
   {
   public:
 
     /// Destructor
     virtual ~EpetraFactory();
 
-    /// --- LinearAlgebraFactory interface
+    /// --- GenericLinearAlgebraFactory interface
 
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const;

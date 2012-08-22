@@ -28,12 +28,12 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "TensorLayout.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
 
-  class PETScCuspFactory : public LinearAlgebraFactory
+  class PETScCuspFactory : public GenericLinearAlgebraFactory
   {
   public:
 

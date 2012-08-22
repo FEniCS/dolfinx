@@ -33,12 +33,12 @@
 #include "MTL4Vector.h"
 #include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
 
-  class MTL4Factory : public LinearAlgebraFactory
+  class MTL4Factory : public GenericLinearAlgebraFactory
   {
   public:
 

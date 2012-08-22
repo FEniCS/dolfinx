@@ -18,10 +18,10 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2007-11-30
-// Last changed: 2012-08-20
+// Last changed: 2012-08-22
 
-#ifndef __LINEAR_ALGEBRA_FACTORY_H
-#define __LINEAR_ALGEBRA_FACTORY_H
+#ifndef __GENERIC_LINEAR_ALGEBRA_FACTORY_H
+#define __GENERIC_LINEAR_ALGEBRA_FACTORY_H
 
 #include <string>
 #include <vector>
@@ -41,15 +41,15 @@ namespace dolfin
   class GenericVector;
   class TensorLayout;
 
-  class LinearAlgebraFactory
+  class GenericLinearAlgebraFactory
   {
   public:
 
     /// Constructor
-    LinearAlgebraFactory() {}
+    GenericLinearAlgebraFactory() {}
 
     /// Destructor
-    virtual ~LinearAlgebraFactory() {}
+    virtual ~GenericLinearAlgebraFactory() {}
 
     /// Create empty matrix
     virtual boost::shared_ptr<GenericMatrix> create_matrix() const = 0;

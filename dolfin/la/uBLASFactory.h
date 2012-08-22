@@ -32,7 +32,7 @@
 #include "uBLASVector.h"
 #include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
@@ -40,7 +40,7 @@ namespace dolfin
   class GenericLinearSolver;
 
   template<typename Mat = ublas_sparse_matrix>
-  class uBLASFactory : public LinearAlgebraFactory
+  class uBLASFactory : public GenericLinearAlgebraFactory
   {
   public:
 

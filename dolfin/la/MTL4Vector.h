@@ -193,7 +193,7 @@ namespace dolfin
     { return x.address_data(); }
 
     //--- Special functions ---
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special MTL4 functions ---
 

@@ -602,7 +602,7 @@ void EpetraVector::abs()
   x->Abs(*x);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& EpetraVector::factory() const
+GenericLinearAlgebraFactory& EpetraVector::factory() const
 {
   return EpetraFactory::instance();
 }

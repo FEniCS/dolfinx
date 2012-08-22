@@ -24,7 +24,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
 #include "AssemblerTools.h"
 #include "assemble.h"

@@ -294,7 +294,7 @@ void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::v
     (*ins)[row][columns[i] ] = values[i];
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& MTL4Matrix::factory() const
+GenericLinearAlgebraFactory& MTL4Matrix::factory() const
 {
   return MTL4Factory::instance();
 }

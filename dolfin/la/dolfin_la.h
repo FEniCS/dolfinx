@@ -46,7 +46,7 @@
 
 #include <dolfin/la/SparsityPattern.h>
 
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>

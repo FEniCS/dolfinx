@@ -672,7 +672,7 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
     set(&values[i], 1, &row, 1, &columns[i]);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& EpetraMatrix::factory() const
+GenericLinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
 }

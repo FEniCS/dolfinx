@@ -235,7 +235,7 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const
+    virtual GenericLinearAlgebraFactory& factory() const
     { return vector->factory(); }
 
     //--- Special functions, intended for library use only ---

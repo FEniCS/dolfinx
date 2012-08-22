@@ -36,7 +36,7 @@ namespace dolfin
 {
 
   class TensorLayout;
-  class LinearAlgebraFactory;
+  class GenericLinearAlgebraFactory;
 
   /// This class defines a common interface for arbitrary rank tensors.
 
@@ -93,7 +93,7 @@ namespace dolfin
     //--- Special functions, downcasting to concrete types ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const = 0;
+    virtual GenericLinearAlgebraFactory& factory() const = 0;
 
     /// Cast a GenericTensor to its derived class (const version)
     template<typename T> const T& down_cast() const

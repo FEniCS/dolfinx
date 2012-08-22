@@ -30,7 +30,7 @@
 #include <dolfin/log/LogStream.h>
 #include "GenericLinearOperator.h"
 #include "GenericVector.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 #include "DefaultFactory.h"
 #include "LinearSolver.h"
 #include "solve.h"

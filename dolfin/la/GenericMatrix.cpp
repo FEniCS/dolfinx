@@ -24,7 +24,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include "GenericSparsityPattern.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 #include "TensorLayout.h"
 #include "GenericMatrix.h"
 

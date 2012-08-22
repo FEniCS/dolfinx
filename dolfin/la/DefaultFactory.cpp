@@ -88,7 +88,7 @@ std::vector<std::pair<std::string, std::string> >
   return factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& DefaultFactory::factory()
+GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "uBLAS";

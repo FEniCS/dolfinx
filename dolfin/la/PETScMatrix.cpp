@@ -539,7 +539,7 @@ std::string PETScMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& PETScMatrix::factory() const
+GenericLinearAlgebraFactory& PETScMatrix::factory() const
 {
   if (!_use_gpu)
     return PETScFactory::instance();

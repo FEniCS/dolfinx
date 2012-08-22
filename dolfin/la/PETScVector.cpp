@@ -872,7 +872,7 @@ void PETScVector::reset()
   ghost_global_to_local.clear();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& PETScVector::factory() const
+GenericLinearAlgebraFactory& PETScVector::factory() const
 {
   if (!_use_gpu)
     return PETScFactory::instance();

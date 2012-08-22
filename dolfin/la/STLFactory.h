@@ -26,7 +26,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 #include "STLMatrix.h"
 #include "STLVector.h"
 #include "TensorLayout.h"
@@ -35,7 +35,7 @@
 namespace dolfin
 {
 
-  class STLFactory: public LinearAlgebraFactory
+  class STLFactory: public GenericLinearAlgebraFactory
   {
   public:
 

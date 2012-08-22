@@ -26,7 +26,7 @@ namespace dolfin
 
   // Forward declarations
   class GenericVector;
-  class LinearAlgebraFactory;
+  class GenericLinearAlgebraFactory;
 
   /// This class defines a common interface for linear operators,
   /// including actual matrices (class _GenericMatrix_) and linear

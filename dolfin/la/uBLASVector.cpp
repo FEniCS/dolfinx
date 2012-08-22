@@ -35,7 +35,7 @@
 #include <dolfin/common/Array.h>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 #ifdef HAS_PETSC
 #include "PETScVector.h"
@@ -399,7 +399,7 @@ std::string uBLASVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& uBLASVector::factory() const
+GenericLinearAlgebraFactory& uBLASVector::factory() const
 {
   return uBLASFactory<>::instance();
 }

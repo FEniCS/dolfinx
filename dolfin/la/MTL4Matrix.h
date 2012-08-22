@@ -144,7 +144,7 @@ namespace dolfin
 
     //--- Special functions ---
 
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special MTL4 functions ---
 

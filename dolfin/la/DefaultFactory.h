@@ -24,12 +24,12 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
 
-  class DefaultFactory : public LinearAlgebraFactory
+  class DefaultFactory : public GenericLinearAlgebraFactory
   {
 
     class GenericLinearSolver;
@@ -78,7 +78,7 @@ namespace dolfin
       krylov_solver_preconditioners() const;
 
     /// Return instance of default backend
-    static LinearAlgebraFactory& factory();
+    static GenericLinearAlgebraFactory& factory();
 
   };
 

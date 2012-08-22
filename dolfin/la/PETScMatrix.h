@@ -159,7 +159,7 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special PETScFunctions ---
 
