@@ -36,7 +36,8 @@ namespace dolfin
   {
   public:
 
-    /// Cast a LinearAlgebraObject to its derived class (const version)
+    /// Cast object to its derived class, if possible (const version).
+    /// An error is thrown if the cast is unsuccessful.
     template<typename T> const T& down_cast() const
     {
       try
@@ -46,15 +47,16 @@ namespace dolfin
       catch (std::exception& e)
       {
         dolfin_error("LinearAlgebraObject.h",
-                     "down-cast tensor to requested type",
+                     "down-cast linear algebra object to requested type",
                      "%s", e.what());
       }
 
-      // Return something to keep the compiler happy. Code will never be reached.
+      // Return something to keep the compiler happy, code will not be reached
       return dynamic_cast<const T&>(*instance());
     }
 
-    /// Cast a LinearAlgebraObject to its derived class (non-const version)
+    /// Cast object to its derived class, if possible (non-const version).
+    /// An error is thrown if the cast is unsuccessful.
     template<typename T> T& down_cast()
     {
       try
@@ -64,16 +66,16 @@ namespace dolfin
       catch (std::exception& e)
       {
         dolfin_error("LinearAlgebraObject.h",
-                     "down-cast tensor to requested type",
+                     "down-cast linear algebra object to requested type",
                      "%s", e.what());
       }
 
-      // Return something to keep the compiler happy. Code will never be reached.
+      // Return something to keep the compiler happy, code will not be reached
       return dynamic_cast<T&>(*instance());
     }
 
-    /// Cast a LinearAlgebraObject shared ptr to its derived class. Caller
-    /// must check for success (returns null if cast fails).
+    /// Cast shared pointer object to its derived class, if possible.
+    /// Caller must check for success (returns null if cast fails).
     template<typename X, typename Y>
     static boost::shared_ptr<X> down_cast(const boost::shared_ptr<Y> A)
     {
@@ -90,7 +92,7 @@ namespace dolfin
       return _A;
     }
 
-    /// Check whether the LinearAlgebraObject instance matches a specific type
+    /// Check whether the object matches a specific type
     template<typename T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
 
@@ -106,7 +108,7 @@ namespace dolfin
     virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return boost::shared_ptr<const LinearAlgebraObject>(); }
 
-    /// Return concrete shared ptr instance / unwrap
+    /// Return concrete shared ptr instance / unwrap (non-const version)
     virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
     { return boost::shared_ptr<LinearAlgebraObject>(); }
 

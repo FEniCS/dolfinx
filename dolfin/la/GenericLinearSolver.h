@@ -92,7 +92,7 @@ namespace dolfin
                      "%s", e.what());
       }
 
-      // Return something to keep the compiler happy. Code will never be reached.
+      // Return something to keep the compiler happy, code will not be reached
       return dynamic_cast<const GenericMatrix&>(A);
     }
 
