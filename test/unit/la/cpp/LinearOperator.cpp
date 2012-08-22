@@ -38,16 +38,14 @@ public:
   void test_linear_operator()
   {
     // Define linear operator
-    class MyMatrix : public LinearOperator
+    class MyLinearOperator : public LinearOperator
     {
     public:
 
-      MyMatrix() :
-        mesh(new UnitSquare(8, 8)),
-        V(new ReactionDiffusionAction::FunctionSpace(mesh)),
-        a_action(new ReactionDiffusionAction::LinearForm(V)),
-        u(new Function(V)),
-        LinearOperator(V->dim(), V->dim())
+      MyLinearOperator(const Form& action, uint dim)
+        : action(action),
+          LinearOperator(action.function_space(0)->dim(),
+                         action.function_space(0)->dim())
       {
         a_action->set_coefficient("u", u);
       }
@@ -55,17 +53,23 @@ public:
       void mult(const GenericVector& x, GenericVector& y) const
       {
         *u->vector() = x;
-        assemble(y, *a_action);
+        assemble(y, a_action);
       }
 
     private:
 
-      boost::shared_ptr<Mesh> mesh;
-      boost::shared_ptr<FunctionSpace> V;
-      boost::shared_ptr<Form> a_action;
-      boost::shared_ptr<Function> u;
+      const Form& action;
 
     };
+
+    // Create function space and forms
+    UnitSquare mesh(8, 8);
+    ReactionDiffusionAction::FunctionSpace V(mesh);
+    ReactionDiffusionAction::LinearForm a_action(V);
+    Function u(V);
+
+    // Create linear operator
+    MyLinearOperator A(a_action);
 
     // Solve linear system
     MyMatrix A;
