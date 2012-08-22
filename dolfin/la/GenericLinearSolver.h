@@ -88,7 +88,7 @@ namespace dolfin
       catch (std::exception& e)
       {
         dolfin_error("GenericLinearSolver.h",
-                     "use linear operator as a matrix (real matrix required, not Krylov matrix)",
+                     "use linear operator as a matrix (real matrix required)",
                      "%s", e.what());
       }
 

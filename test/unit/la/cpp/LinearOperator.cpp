@@ -42,37 +42,36 @@ public:
     {
     public:
 
-      MyLinearOperator(const Form& action, uint dim)
-        : action(action),
-          LinearOperator(action.function_space(0)->dim(),
-                         action.function_space(0)->dim())
+      MyLinearOperator()
+        : mesh(8, 8), V(mesh), action(V), u(V)
       {
-        a_action->set_coefficient("u", u);
+        action.u = u;
+      }
+
+      uint size(uint dim) const
+      {
+        return V.dim();
       }
 
       void mult(const GenericVector& x, GenericVector& y) const
       {
-        *u->vector() = x;
-        assemble(y, a_action);
+        //*u->vector() = x;
+        //assemble(y, a_action);
       }
 
     private:
 
-      const Form& action;
+      UnitSquare mesh;
+      ReactionDiffusionAction::FunctionSpace V;
+      ReactionDiffusionAction::LinearForm action;
+      Function u;
 
     };
 
-    // Create function space and forms
-    UnitSquare mesh(8, 8);
-    ReactionDiffusionAction::FunctionSpace V(mesh);
-    ReactionDiffusionAction::LinearForm a_action(V);
-    Function u(V);
-
     // Create linear operator
-    MyLinearOperator A(a_action);
+    MyLinearOperator A;
 
     // Solve linear system
-    MyMatrix A;
     Vector x;
     Vector b(A.size(0));
     b = 1.0;

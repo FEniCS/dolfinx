@@ -173,13 +173,13 @@ namespace dolfin
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                            const double*, int> data() const
+                                 const double*, int> data() const
     {
       dolfin_error("GenericMatrix.h",
                    "return pointers to underlying matrix data",
                    "Not implemented by current linear algebra backend");
       return boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                               const double*, int>(0, 0, 0, 0);
+                                  const double*, int>(0, 0, 0, 0);
     }
 
     //--- Convenience functions ---

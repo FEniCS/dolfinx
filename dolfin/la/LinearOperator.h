@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -34,20 +34,22 @@ namespace dolfin
   ///
   /// To define a linear operator, users need to inherit from this
   /// class and overload the function mult(x, y) which defines the
-  /// action of the matrix on the vector x as y = Ax.
+  /// action of the matrix on the vector x as y = Ax. Users also need
+  /// to overload the function size(dim) function to return the size
+  /// of the matrix.
 
   class LinearOperator : public GenericLinearOperator
   {
   public:
 
-    /// Create a Krylov matrix of dimensions M x N
-    LinearOperator(uint M, uint N);
+    /// Constructor
+    LinearOperator();
 
     /// Destructor
     virtual ~LinearOperator() {}
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    virtual uint size(uint dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
