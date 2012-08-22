@@ -236,7 +236,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #if PETSC_HAVE_ML
     PCSetType(pc, PCML);
 
-    PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
+    //PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
     //PetscOptionsSetValue("-pc_mg_smoothup",
     //                      boost::lexical_cast<std::string>(1).c_str());
     //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
