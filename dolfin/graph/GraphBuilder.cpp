@@ -46,6 +46,19 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   const uint n = dofmap0.global_dimension();
   Graph graph(n);
 
+  /*
+  // Build graph
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+
+    std::vector<uint>::const_iterator node;
+    for (node = dofs0.begin(); node != dofs0.end(); ++node)
+      graph[*node].insert(dofs1.begin(), dofs1.end());
+  }
+  */
+
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
