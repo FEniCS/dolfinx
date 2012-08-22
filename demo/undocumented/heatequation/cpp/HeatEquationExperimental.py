@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-08-15
-# Last changed: 2012-08-16
+# Last changed: 2012-08-22
 #
 # The bilinear form a(u, v) and linear form L(v) for a cG(1)
 # discretization of the time-dependent heat equation.
@@ -30,16 +30,18 @@ from ufl import *
 from ffc import *
 
 # Define dt
-# FIXME: perhaps add to global UFL namespace
+# FIXME: perhaps add to global UFL namespace (trivial)
 dt = Measure("cell")
 
-# Define Dt
-# FIXME: perhaps add to global UFL namespace
+# Define Dt and grad
+# FIXME: perhaps add to global UFL namespace (requires design)
 def Dt(u):
     return u.dx(0)
+def grad(u):
+    return as_vector((u.dx(1), u.dx(2)))
 
 # Define tensor_product
-# FIXME: Add to UFL
+# FIXME: Add to UFL (easy)
 from ufl import FiniteElementBase
 def tensor_product(*args):
     if not all(isinstance(arg, FiniteElementBase) for arg in args):
@@ -51,12 +53,11 @@ Uh = FiniteElement("Lagrange", triangle, 1)
 Vh = FiniteElement("Lagrange", triangle, 1)
 
 # Trial and test spaces for time discretization
-# FIXME: Awaiting temporal 1D basis function generator
-Uk = FiniteElement("CG", interval, 1)
-Vk = FiniteElement("DG", interval, 0)
+Uk = FiniteElement("Lobatto", interval, 1)
+Vk = FiniteElement("Radau", interval, 0)
 
 # Trial and test spaces for space-time discretization
-# FIXME: Consider short-hand for this. Marie is not convinced about **
+# FIXME: Consider short-hand for this (requires design)
 U = tensor_product(Uk, Uh)
 V = tensor_product(Vk, Vh)
 
@@ -65,18 +66,17 @@ u = TrialFunction(U)
 v = TestFunction(V)
 
 # Heat conductivity and source term
-kappa = Coefficient(U)
-f = Coefficient(U)
+kappa = Coefficient(Uh)
+
+# FIXME: Non-separable coefficients must be handled. (non-trivial)
+f = Coefficient(Uh)
 
 # Define product measure
-# FIXME: Multiplication of form with measure should be allowed
+# FIXME: Multiplication of form with measure should be allowed (easy)
 dxdt = dx*dt
 
 # Bilinear and linear forms
-# FIXME: More handlers need to be implemented for Kronecker transform
-#a = Dt(u)*v*dxdt + kappa*dot(grad(u), grad(v))*dxdt
-a = Dt(u)*v*dxdt + sum(kappa*u.dx(i)*v.dx(i)
-                       for i in range(1, Uh.cell().d))*dxdt
+a = Dt(u)*v*dxdt + kappa*dot(grad(u), grad(v))*dxdt
 L = f*v*dxdt
 
 parameters = default_parameters()

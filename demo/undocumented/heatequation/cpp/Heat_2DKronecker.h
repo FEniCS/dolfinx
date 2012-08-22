@@ -16,7 +16,7 @@ class KroneckerForm_0 : public dolfin::TensorProductForm
 
     // Constructor
     KroneckerForm_0(boost::shared_ptr<const dolfin::TensorProductFunctionSpace> V1, boost::shared_ptr<const dolfin::TensorProductFunctionSpace> V0)
-     : dolfin::TensorProductForm(2, 1, 2, 2)
+     : dolfin::TensorProductForm(2, 1, 2, 3)
     {
       // Store function spaces
       _function_spaces[0] = V0;
@@ -25,8 +25,10 @@ class KroneckerForm_0 : public dolfin::TensorProductForm
       // Create forms in flattened structure (a0, a1, b0, b1, c0, c1) etc.
       _forms[0] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_0(V1->extract_factor_space(0),V0->extract_factor_space(0)));
       _forms[2] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_2(V1->extract_factor_space(0),V0->extract_factor_space(0)));
+      _forms[4] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_4(V1->extract_factor_space(0),V0->extract_factor_space(0)));
       _forms[1] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_1(V1->extract_factor_space(1),V0->extract_factor_space(1)));
       _forms[3] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_3(V1->extract_factor_space(1),V0->extract_factor_space(1)));
+      _forms[5] = boost::shared_ptr<dolfin::Form>(new Heat_2D::Form_5(V1->extract_factor_space(1),V0->extract_factor_space(1)));
 
     }
 
