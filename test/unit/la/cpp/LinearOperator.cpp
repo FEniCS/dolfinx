@@ -55,8 +55,8 @@ public:
 
       void mult(const GenericVector& x, GenericVector& y) const
       {
-        //*u->vector() = x;
-        //assemble(y, a_action);
+        *u.vector() = x;
+        assemble(y, action);
       }
 
     private:
@@ -64,7 +64,7 @@ public:
       UnitSquare mesh;
       ReactionDiffusionAction::FunctionSpace V;
       ReactionDiffusionAction::LinearForm action;
-      Function u;
+      mutable Function u;
 
     };
 

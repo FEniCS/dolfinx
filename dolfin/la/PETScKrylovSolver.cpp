@@ -250,13 +250,14 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   dolfin_assert(_ksp);
 
   // Check dimensions
-  const uint N = A->size(1);
   const uint M = A->size(0);
-  if (N != b.size())
+  const uint N = A->size(1);
+  if (A->size(0) != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",
-                 "solve linear system using PETSc Krylov solver",
-                 "Non-matching dimensions for linear system");
+                 "unable to solve linear system with PETSc Krylov solver",
+                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 A->size(0), b.size());
   }
 
   // Write a message
@@ -348,19 +349,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A,
 {
   dolfin_debug("check");
 
-  // Check dimensions
-  const uint N = A.size(1);
-  if (N != b.size())
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "solve linear system using PETSc Krylov solver",
-                 "Non-matching dimensions for linear system");
-  }
-
   // Set operator
   boost::shared_ptr<const PETScBaseMatrix> _A(&A, NoDeleter());
   set_operator(_A);
 
+  // Call solve
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
