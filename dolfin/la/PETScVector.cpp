@@ -235,9 +235,6 @@ void PETScVector::resize(std::pair<uint, uint> range,
   const bool _distributed = distributed();
 
   // Re-initialise vector
-
-  dolfin_debug("Calling __init");
-
   _init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------

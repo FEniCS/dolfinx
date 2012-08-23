@@ -44,8 +44,6 @@ dolfin::uint dolfin::solve(const GenericLinearOperator& A,
                            std::string method,
                            std::string preconditioner)
 {
-  dolfin_debug("check");
-
   Timer timer("Solving linear system");
   LinearSolver solver(method, preconditioner);
   return solver.solve(A, x, b);

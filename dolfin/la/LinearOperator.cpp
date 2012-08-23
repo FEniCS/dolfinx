@@ -37,6 +37,6 @@ LinearOperator::LinearOperator(uint M, uint N)
 //-----------------------------------------------------------------------------
 std::string LinearOperator::str(bool verbose) const
 {
-  return "FIXME";
+  return "<User-defined linear operator>";
 }
 //-----------------------------------------------------------------------------

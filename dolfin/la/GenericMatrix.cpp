@@ -102,8 +102,6 @@ void GenericMatrix::compress()
   // Access sparsity pattern
   GenericSparsityPattern& new_sparsity_pattern = *(new_layout->sparsity_pattern());
 
-  dolfin_debug("check");
-
   // Retrieve global and local matrix info
   std::vector<uint> global_dimensions(2);
   global_dimensions[0] = size(0);

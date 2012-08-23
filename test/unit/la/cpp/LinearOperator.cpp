@@ -96,11 +96,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(TestLinearOperator);
 
 int main()
 {
-  // FIXME: Testing
-  set_log_level(DBG);
-
-  TestLinearOperator test;
-  test.test_linear_operator();
-
   DOLFIN_TEST;
 }

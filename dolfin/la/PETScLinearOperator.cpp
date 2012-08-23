@@ -68,7 +68,6 @@ PETScLinearOperator::PETScLinearOperator()
 //-----------------------------------------------------------------------------
 void PETScLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
-  // FIXME: Not implemented
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
@@ -76,12 +75,17 @@ std::string PETScLinearOperator::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
+  {
     warning("Verbose output for PETScLinearOperator not implemented.");
+    s << str(false);
+  }
   else
+  {
     s << "<PETScLinearOperator of size "
       << PETScBaseMatrix::size(0)
       << " x "
       << PETScBaseMatrix::size(1) << ">";
+  }
 
   return s.str();
 }
@@ -98,8 +102,6 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
 //-----------------------------------------------------------------------------
 void PETScLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
 {
-  cout << "Initializing PETScLinearOperator" << endl;
-
   // Store wrapper
   _wrapper = wrapper;
 

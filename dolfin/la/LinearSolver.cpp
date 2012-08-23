@@ -136,8 +136,6 @@ dolfin::uint LinearSolver::solve(const GenericLinearOperator& A,
                                  GenericVector& x,
                                  const GenericVector& b)
 {
-  dolfin_debug("check");
-
   dolfin_assert(solver);
   //check_dimensions(A, x, b);
 
