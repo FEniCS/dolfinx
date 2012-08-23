@@ -209,9 +209,14 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization timer REQUIRED)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization REQUIRED)
 else()
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1  timer REQUIRED)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
+endif()
+
+# Boost timer was not a separat Boost component until version 1.48
+if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
+  find_package(Boost 1.36 COMPONENTS timer REQUIRED)
 endif()
 
 # Check for required packages
@@ -378,7 +383,7 @@ if (DOLFIN_ENABLE_VTK)
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.8")
       set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= ${VTK_VERSION})")
+      message(WARNING "Unable to find VTK (>= 5.8)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
