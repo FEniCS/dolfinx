@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 
 #include "DefaultFactory.h"
 #include "LinearOperator.h"
@@ -24,11 +24,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearOperator::LinearOperator()
+LinearOperator::LinearOperator(uint M, uint N)
 {
+  // Create concrete implementation
   DefaultFactory factory;
   _A = factory.create_linear_operator();
   dolfin_assert(_A);
+
+  // Initialize implementation
+  _A->init(M, N, this);
 }
 //-----------------------------------------------------------------------------
 std::string LinearOperator::str(bool verbose) const

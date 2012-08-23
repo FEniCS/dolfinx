@@ -42,38 +42,39 @@ public:
     {
     public:
 
-      MyLinearOperator()
-        : mesh(8, 8), V(mesh), action(V), u(V)
+      MyLinearOperator(Form& action)
+        : action(action),
+          LinearOperator(action.function_space(0)->dim(),
+                         action.function_space(0)->dim())
       {
-        action.u = u;
-      }
-
-      uint size(uint dim) const
-      {
-        return V.dim();
+        // Do nothing
       }
 
       void mult(const GenericVector& x, GenericVector& y) const
       {
-        *u.vector() = x;
+        //*u.vector() = x;
         assemble(y, action);
       }
 
     private:
 
-      UnitSquare mesh;
-      ReactionDiffusionAction::FunctionSpace V;
-      ReactionDiffusionAction::LinearForm action;
-      mutable Function u;
+      Form& action;
 
     };
 
+    // Create form action
+    UnitSquare mesh(8, 8);
+    ReactionDiffusionAction::FunctionSpace V(mesh);
+    ReactionDiffusionAction::LinearForm action(V);
+    Function u(V);
+    action.u = u;
+
     // Create linear operator
-    MyLinearOperator A;
+    MyLinearOperator A(action);
 
     // Solve linear system
     Vector x;
-    Vector b(A.size(0));
+    Vector b(V.dim());
     b = 1.0;
     solve(A, x, b, "gmres");
   }

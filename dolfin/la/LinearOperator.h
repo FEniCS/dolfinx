@@ -34,22 +34,17 @@ namespace dolfin
   ///
   /// To define a linear operator, users need to inherit from this
   /// class and overload the function mult(x, y) which defines the
-  /// action of the matrix on the vector x as y = Ax. Users also need
-  /// to overload the function size(dim) function to return the size
-  /// of the matrix.
+  /// action of the matrix on the vector x as y = Ax.
 
   class LinearOperator : public GenericLinearOperator
   {
   public:
 
-    /// Constructor
-    LinearOperator();
+    /// Create linear operator of dimensions M x N
+    LinearOperator(uint M, uint N);
 
     /// Destructor
     virtual ~LinearOperator() {}
-
-    /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
