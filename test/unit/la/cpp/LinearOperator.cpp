@@ -66,6 +66,9 @@ public:
 
     };
 
+    parameters["linear_algebra_backend"] = "uBLAS";
+
+
     // Compute reference value by solving ordinary linear system
     UnitSquare mesh(8, 8);
     ReactionDiffusion::FunctionSpace V(mesh);

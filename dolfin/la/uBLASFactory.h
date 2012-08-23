@@ -81,10 +81,7 @@ namespace dolfin
     /// Create empty Krylov matrix
     boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
-      dolfin_error("uBLASFactory.h",
-                   "create Krylov matrix",
-                   "Not supported by uBLAS linear algebra backend");
-      boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+      boost::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
       return A;
     }
 

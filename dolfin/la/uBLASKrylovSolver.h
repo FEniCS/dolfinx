@@ -89,9 +89,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
-    /// Solve linear system Ax = b and return number of iterations (virtual matrix)
-    uint solve(const uBLASLinearOperator& A, uBLASVector& x, const uBLASVector& b);
-
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
@@ -104,9 +101,11 @@ namespace dolfin
   private:
 
     /// Select solver and solve linear system Ax = b and return number of iterations
-    template<typename Mat>
-    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b,
-                      const Mat& P);
+    template<typename MatA, typename MatP>
+    uint solve_krylov(const MatA& A,
+                      uBLASVector& x,
+                      const uBLASVector& b,
+                      const MatP& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
@@ -150,11 +149,11 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of template functions
   //---------------------------------------------------------------------------
-  template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
+  template<typename MatA, typename MatP>
+  dolfin::uint uBLASKrylovSolver::solve_krylov(const MatA& A,
                                                uBLASVector& x,
                                                const uBLASVector& b,
-                                               const Mat& P)
+                                               const MatP& P)
   {
     // Check dimensions
     uint M = A.size(0);
@@ -388,7 +387,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A, uBLASVector& x,
+  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A,
+                                                uBLASVector& x,
                                                 const uBLASVector& b,
                                                 bool& converged) const
   {

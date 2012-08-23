@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,44 +16,36 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-30
-// Last changed: 2012-08-21
+// Last changed: 2012-08-23
 
 #ifndef __UBLAS_LINEAR_OPERATOR_H
 #define __UBLAS_LINEAR_OPERATOR_H
 
+#include <string>
 #include <dolfin/common/types.h>
-#include "ublas.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
 
   class uBLASVector;
-  template<typename Mat> class uBLASMatrix;
 
-  /// This class provides an interface for matrices that define linear
-  /// systems for the uBLASKrylovSolver. This interface is implemented
-  /// by the classes uBLASSparseMatrix and DenseMatrix. Users may also
-  /// overload the mult() function to specify a linear system only in
-  /// terms of its action.
+  // This is the uBLAS version of the _GenericLinearOperator_
+  // (matrix-free) interface for the solution of linear systems
+  // defined in terms of the action (matrix-vector product) of a
+  // linear operator.
 
-  class uBLASLinearOperator
+  class uBLASLinearOperator : public GenericLinearOperator
   {
   public:
 
     /// Constructor
-    uBLASLinearOperator() : AA(0), ej(0), Aj(0) {};
-
-    /// Destructor
-    virtual ~uBLASLinearOperator() {};
-
-    // FIXME: How should this be handled?
-    /// Compute product y = Ax
-    virtual void mult(const uBLASVector& x, uBLASVector& y) const = 0;
-
-    //--- Implementation of the GenericLinearOperator interface ---
+    uBLASLinearOperator();
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
+    uint size(uint dim) const;
+
+    //--- Implementation of the GenericLinearOperator interface ---
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -61,17 +53,22 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
-    //--- Misc functions ---
+    /// Return pointer to wrapper (const version)
+    virtual const GenericLinearOperator* wrapper() const;
 
-    // Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
-    void solve(uBLASVector& x, const uBLASVector& b);
+    /// Return pointer to wrapper (const version)
+    virtual GenericLinearOperator* wrapper();
 
-  private:
+  protected:
 
-    // Temporary data for LU factorization of a uBLASLinearOperator
-    uBLASMatrix<ublas_dense_matrix>* AA;
-    uBLASVector* ej;
-    uBLASVector* Aj;
+    // Initialization
+    void init(uint M, uint N, GenericLinearOperator* wrapper);
+
+    // Pointer to wrapper
+    GenericLinearOperator* _wrapper;
+
+    // Dimensions
+    uint M, N;
 
   };
 

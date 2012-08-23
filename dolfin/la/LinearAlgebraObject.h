@@ -21,6 +21,7 @@
 #ifndef __LINEAR_ALGEBRA_OBJECT_H
 #define __LINEAR_ALGEBRA_OBJECT_H
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

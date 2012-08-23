@@ -119,7 +119,7 @@ namespace dolfin
       if (!_A)
       {
         dolfin_error("GenericLinearSolver.h",
-                     "use linear operator as a matrix (real matrix required, not Krylov matrix)",
+                     "use linear operator as a matrix (real matrix required)",
                      "Dynamic cast failed");
       }
 

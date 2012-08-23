@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,66 +16,37 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-07-07
-// Last changed: 2012-08-21
+// Last changed: 2012-08-23
 
-#include "uBLASVector.h"
-#include "uBLASSparseMatrix.h"
 #include "uBLASLinearOperator.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void uBLASLinearOperator::solve(uBLASVector& x, const uBLASVector& b)
+uBLASLinearOperator::uBLASLinearOperator() : _wrapper(0), M(0), N(0)
 {
-  // The linear system is solved by computing a dense copy of the matrix,
-  // obtained through multiplication with unit vectors.
-
-  // Check dimensions
-  const uint M  = size(0);
-  const uint N  = size(1);
-  dolfin_assert(M == N);
-  dolfin_assert(M == b.size());
-
-  // Initialize temporary data if not already done
-  if (!AA)
-  {
-    AA = new uBLASMatrix<ublas_dense_matrix>(M, N);
-    ej = new uBLASVector(N);
-    Aj = new uBLASVector(M);
-  }
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint uBLASLinearOperator::size(uint dim) const
+{
+  if (dim == 0)
+    return M;
+  else if (dim == 1)
+    return N;
   else
   {
-    AA->resize(M, N);
-    ej->resize(N);
-    Aj->resize(N);
+    dolfin_error("uBLASLinearOperator.h",
+                 "return size of uBLASLinearOperator",
+                 "Illegal dimension (%d)", dim);
   }
 
-  // Get underlying uBLAS vectors
-  ublas_vector& _ej = ej->vec();
-  ublas_vector& _Aj = Aj->vec();
-  ublas_dense_matrix& _AA = AA->mat();
-
-  // Reset unit vector
-  _ej *= 0.0;
-
-  // Compute columns of matrix
-  for (uint j = 0; j < N; j++)
-  {
-    (_ej)(j) = 1.0;
-
-    // Compute product Aj = Aej
-    mult(*ej, *Aj);
-
-    // Set column of A
-    column(_AA, j) = _Aj;
-
-    (_ej)(j) = 0.0;
-  }
-
-  // Solve linear system
-  warning("UmfpackLUSolver no longer solves dense matrices. This function will be removed and probably added to uBLASKrylovSolver.");
-  warning("The uBLASKrylovSolver LU solver has been modified and has not yet been well tested. Please verify your results.");
- (*AA).solve(x, b);
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void uBLASLinearOperator::mult(const GenericVector& x, GenericVector& y) const
+{
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 std::string uBLASLinearOperator::str(bool verbose) const
@@ -85,12 +56,30 @@ std::string uBLASLinearOperator::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for uBLASLinearOperator not implemented.");
+    s << str(false);
   }
   else
   {
-    s << "<uBLASLinearOperator of size " << size(0) << " x " << size(1) << ">";
+    s << "<uBLASLinearOperator>";
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+const GenericLinearOperator* uBLASLinearOperator::wrapper() const
+{
+  return _wrapper;
+}
+//-----------------------------------------------------------------------------
+GenericLinearOperator* uBLASLinearOperator::wrapper()
+{
+  return _wrapper;
+}
+//-----------------------------------------------------------------------------
+void uBLASLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
+{
+  // Set dimensions
+  this->M = M;
+  this->N = N;
 }
 //-----------------------------------------------------------------------------

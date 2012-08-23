@@ -61,7 +61,7 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScLinearOperator::PETScLinearOperator()
+PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
 {
   // Do nothing
 }
