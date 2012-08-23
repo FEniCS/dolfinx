@@ -65,9 +65,9 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Downgrading may occur due to collecting the values 
   // to vertices using compute_vertex_values()
   // 
-  // Creates an HDF5 file for storing Mesh and Vertex Values, 
+  // Creates an HDF5 file for storing Mesh and Vertex/Cell Values, 
   // and an associated XDMF file for metadata.
-  // Subsequent calls will store additional Vertex Values 
+  // Subsequent calls will store additional Vertex/Cell Values 
   // in the same HDF5 file, and update the XDMF metadata
   // to represent a time series.
 
@@ -99,13 +99,13 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   else
     data_centre="Node"; // usual case - vertex-centred data
 
-  // Tensors of rank > 1 not yet supported
-  if (vrank > 1) {
+  // Tensors of rank > 2 not supported
+  if (vrank > 2) {
     dolfin_error("XDMFFile.cpp",
 		 "write data to XDMF file",
-		 "Output of tensors with rank > 1 not yet supported");
+		 "Output of tensors with rank > 2 not yet supported");
   }
-  
+
   if(cell_dim==1) {
     dolfin_error("XDMFFile.cpp",
 		 "write data to XDMF file",
@@ -136,19 +136,31 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const uint off = MPI::global_offset(num_local_entities, true);
   const std::pair<uint,uint> data_range(off, off + num_local_entities);
 
-  // Need to interleave the values (e.g. if not scalar field)
-  if(vsize  > 1) {
+  // Need to interleave the values (e.g. if vector or tensor field)
+  // Also pad 2D vectors and tensors to 3D.
+
+  if(vrank>0) {
     std::vector<double> tmp;
     tmp.reserve(vsize*num_local_entities);
     for(uint i = 0; i < num_local_entities; i++) {
-      for(uint j = 0; j < vsize; j++)
+      for(uint j = 0; j < vsize; j++) {
 	tmp.push_back(data_values[i + j*num_local_entities]);
-      if(vsize==2) tmp.push_back(0.0);
+	if(j==1 && vsize==4) tmp.push_back(0.0);
+      }
+      if(vsize==2)    // 2D->3D vector
+	tmp.push_back(0.0);
+      if(vsize==4) {  // 2D->3D tensor
+	tmp.push_back(0.0);
+	tmp.push_back(0.0);
+	tmp.push_back(0.0);
+	tmp.push_back(0.0);
+      }
     }
     data_values.resize(tmp.size()); // 2D->3D padding increases size
     std::copy(tmp.begin(), tmp.end(), data_values.begin());
+    if(vsize==2) vsize_io=3;
+    if(vsize==4) vsize_io=9;
   }
-  if(vsize==2) vsize_io=3;
 
   // Initialise HDF5 file and save mesh
   std::string filename_data(HDF5Filename());
@@ -194,9 +206,6 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf.append_attribute("xmlns:xi")="http://www.w3.org/2001/XInclude";
 
       pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
-
-
-      //      /Xdmf/Domain/Geometry
 
       //     /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
 
@@ -283,11 +292,16 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     pugi::xml_node xdmf_vals=xdmf_grid.append_child("Attribute");
     xdmf_vals.append_attribute("Name")=u.name().c_str();
-    if(vsize_io==1)
+
+    if(vrank==0)
       xdmf_vals.append_attribute("AttributeType")="Scalar";
-    else
+    else if(vrank==1)
       xdmf_vals.append_attribute("AttributeType")="Vector";
+    else if(vrank==2)
+      xdmf_vals.append_attribute("AttributeType")="Tensor";
+
     xdmf_vals.append_attribute("Center")=data_centre.c_str(); // "Node" or "Cell"
+
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
