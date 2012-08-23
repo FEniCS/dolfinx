@@ -424,6 +424,11 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_near_nullspace(std::vector<const GenericVector*> nullspace)
 {
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
+  dolfin_error("PETScMatrix.cpp",
+               "set approximate null space for PETSc matrix",
+               "This is supported by PETSc version > 3.2");
+  #else
   warning("PETScMatrix::set_near_nullspace is experimental and is likely to be re-named or moved in the future.");
 
   dolfin_assert(nullspace.size() > 0);
@@ -453,6 +458,7 @@ void PETScMatrix::set_near_nullspace(std::vector<const GenericVector*> nullspace
 
   // Set null space that is used by some preconditioners
   MatSetNearNullSpace(*(this->A), *petsc_nullspace);
+  #endif
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
