@@ -29,6 +29,7 @@
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -58,14 +59,6 @@ void XDMFFile::operator<<(const Function& u)
   operator << (ut);
 }
 //----------------------------------------------------------------------------
-
-void XDMFFile::write_cell_function(const std::pair<const Function*, double> ut)
-{
-  // Save a Cell-centred function to XDMF/HDF files for visualisation
-
-}
-
-//----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 {
   // Save a Function to XDMF/HDF files for visualisation.
@@ -87,78 +80,98 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   u.update();
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
+  dolfin_assert(u.function_space()->dofmap());
+  const GenericDofMap& dofmap= *u.function_space()->dofmap();
+
   const uint vrank = u.value_rank();
   const uint vsize = u.value_size();
+  const uint cell_dim = mesh.topology().dim();
   uint vsize_io=vsize; //output size may be padded 2D -> 3D for paraview
 
-  // Tensors of rank > 1 not yet supported
-  if (vrank > 1)
-  {
-    dolfin_error("XDMFFile.cpp",
-                "write data to XDMF file",
-                "Output of tensors with rank > 1 not yet supported");
-  }
+  // test for cell-centred data
+  uint cell_based_dim = 1;
+  for (uint i = 0; i < vrank; i++)
+    cell_based_dim *= cell_dim;
 
-  const uint cell_dim = mesh.topology().dim();
-  if(cell_dim==1) 
-    {
-      dolfin_error("XDMFFile.cpp",
-		   "write data to XDMF file",
-		   "Output of 1D datasets not supported");
-    }
+  std::string data_centre;
+  if (dofmap.max_cell_dimension() == cell_based_dim)
+    data_centre="Cell";
+  else
+    data_centre="Node"; // usual case - vertex-centred data
+
+  // Tensors of rank > 1 not yet supported
+  if (vrank > 1) {
+    dolfin_error("XDMFFile.cpp",
+		 "write data to XDMF file",
+		 "Output of tensors with rank > 1 not yet supported");
+  }
+  
+  if(cell_dim==1) {
+    dolfin_error("XDMFFile.cpp",
+		 "write data to XDMF file",
+		 "Output of 1D datasets not supported");
+  }
   
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
-  // Compute vertex values
-  std::vector<double> vtx_values;
-  u.compute_vertex_values(vtx_values, mesh);
+  std::vector<double> data_values;
+  uint num_local_entities=0;
+
+  if(data_centre=="Node") {
+
+    num_local_entities=num_local_vertices;
+    u.compute_vertex_values(data_values, mesh);
+
+  } else if(data_centre=="Cell") {
+
+    num_local_entities=num_local_cells;
+    const GenericVector& v = *u.vector();
+    v.get_local(data_values);
+
+  }
+
+  const uint off = MPI::global_offset(num_local_entities, true);
+  const std::pair<uint,uint> data_range(off, off + num_local_entities);
 
   // Need to interleave the values (e.g. if not scalar field)
-  if(vsize  > 1)
-  {
+  if(vsize  > 1) {
     std::vector<double> tmp;
-    tmp.reserve(vsize*num_local_vertices);
-    for(uint i = 0; i < num_local_vertices; i++)
-      {
-	for(uint j = 0; j < vsize; j++)
-	  tmp.push_back(vtx_values[i + j*num_local_vertices]);
-	if(vsize==2) tmp.push_back(0.0);
-      }
-    vtx_values.resize(tmp.size()); // 2D->3D padding increases size
-    std::copy(tmp.begin(), tmp.end(), vtx_values.begin());
+    tmp.reserve(vsize*num_local_entities);
+    for(uint i = 0; i < num_local_entities; i++) {
+      for(uint j = 0; j < vsize; j++)
+	tmp.push_back(data_values[i + j*num_local_entities]);
+      if(vsize==2) tmp.push_back(0.0);
+    }
+    data_values.resize(tmp.size()); // 2D->3D padding increases size
+    std::copy(tmp.begin(), tmp.end(), data_values.begin());
   }
   if(vsize==2) vsize_io=3;
 
-  // Get offset and size of local vertex usage in global terms
-  const uint off = MPI::global_offset(num_local_vertices, true);
-  std::pair<uint,uint> vertex_range(off, off + num_local_vertices);
-
+  // Initialise HDF5 file and save mesh
   std::string filename_data(HDF5Filename());
 
-  // Create HDF5 file and save data and coords
   HDF5File h5file(filename_data);
   std::string mc_name=h5file.mesh_coords_dataset_name(mesh);
   std::string mt_name=h5file.mesh_topo_dataset_name(mesh);
 
-  if(counter == 0)
-    {
-      h5file.create();
-      h5file << mesh;
-    } 
-  else if( !h5file.exists(mc_name) || !h5file.exists(mt_name) )
-    {
-      h5file << mesh;
-    }
-  // Vertex values are saved in the hdf5 'folder' /VertexVector
+  if(counter == 0) {
+    h5file.create();
+    h5file << mesh;
+  } 
+  else if( !h5file.exists(mc_name) || !h5file.exists(mt_name) ) {
+    h5file << mesh;
+  }
+
+  // Vertex values are saved in the hdf5 'folder' /DataVector
   // as distinct from /Vector which is used for solution vectors.
 
-  // Save actual vertex values to HDF5 file
+  // Save actual data values to HDF5 file
   std::stringstream s("");
-  s << "/VertexVector/" << counter;
-  h5file.write(vtx_values[0], vertex_range, s.str().c_str(), vsize_io);
+  s << "/DataVector/" << counter;
+  h5file.write(data_values[0], data_range, s.str().c_str(), vsize_io);
 
   // remove path from filename_data
   std::size_t lastslash=filename_data.rfind('/');
@@ -274,14 +287,18 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_vals.append_attribute("AttributeType")="Scalar";
     else
       xdmf_vals.append_attribute("AttributeType")="Vector";
-    xdmf_vals.append_attribute("Center")="Node";
+    xdmf_vals.append_attribute("Center")=data_centre.c_str(); // "Node" or "Cell"
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
-    s << num_global_vertices << " " << vsize_io;
+    if(data_centre=="Node") {
+      s << num_global_vertices << " " << vsize_io;
+    } else if(data_centre=="Cell") {
+      s << num_global_cells << " " << vsize_io;
+    }
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
-    s<< filename_data << ":/VertexVector/" << counter;
+    s<< filename_data << ":/DataVector/" << counter;
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     xml_doc.save_file(filename.c_str(), "  ");

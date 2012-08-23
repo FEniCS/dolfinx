@@ -286,8 +286,8 @@ void HDF5File::create()
   dolfin_assert(file_id != HDF5_FAIL);
 
   // create subgroups suitable for storing different types of data.
-  // VertexVector - values for visualisation
-  group_id = H5Gcreate(file_id, "/VertexVector", H5P_DEFAULT);
+  // DataVector - values for visualisation
+  group_id = H5Gcreate(file_id, "/DataVector", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
