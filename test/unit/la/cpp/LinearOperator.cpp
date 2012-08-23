@@ -68,7 +68,6 @@ public:
 
     parameters["linear_algebra_backend"] = "uBLAS";
 
-
     // Compute reference value by solving ordinary linear system
     UnitSquare mesh(8, 8);
     ReactionDiffusion::FunctionSpace V(mesh);
@@ -78,7 +77,7 @@ public:
     Vector b(V.dim());
     b = 1.0;
     assemble(A, a);
-    solve(A, x, b, "gmres");
+    solve(A, x, b, "gmres", "none");
     const double norm_ref = norm(x, "l2");
 
     // Solve using linear operator defined by form action
@@ -86,7 +85,7 @@ public:
     Function u(V);
     action.u = u;
     MyLinearOperator O(action, u);
-    solve(O, x, b, "gmres");
+    solve(O, x, b, "gmres", "none");
     const double norm_action = norm(x, "l2");
 
     // Check results

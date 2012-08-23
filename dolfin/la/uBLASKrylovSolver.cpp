@@ -22,6 +22,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/log/LogStream.h>
 #include "uBLASILUPreconditioner.h"
 #include "uBLASDummyPreconditioner.h"
 #include "uBLASKrylovSolver.h"
@@ -64,7 +65,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
   parameters = default_parameters();
 
   // Select and create default preconditioner
-  select_preconditioner(method);
+  select_preconditioner(preconditioner);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
@@ -143,8 +144,16 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericLinearOperator& A,
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
 {
+  dolfin::cout << "PC: " << preconditioner << dolfin::endl;
+
   if (preconditioner == "none")
+  {
+    dolfin::cout << "CHECK: Using dummy" << dolfin::endl;
+
     pc.reset(new uBLASDummyPreconditioner());
+
+
+  }
   else if (preconditioner == "ilu")
     pc.reset(new uBLASILUPreconditioner(parameters));
   else if (preconditioner == "default")

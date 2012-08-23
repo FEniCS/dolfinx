@@ -23,6 +23,7 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
+#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "DefaultFactory.h"
@@ -80,6 +81,9 @@ Parameters KrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 {
+  cout << "CHECK1:" << preconditioner << endl;
+
+
   // Initialize solver
   init(method, preconditioner);
 }
@@ -88,6 +92,8 @@ KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
                            std::string method,
                            std::string preconditioner)
 {
+  cout << "CHECK2:" << preconditioner << endl;
+
   // Initialize solver
   init(method, preconditioner);
 
