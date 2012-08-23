@@ -38,6 +38,11 @@
 #include "PETScVector.h"
 #include "PETScKrylovSolver.h"
 
+
+// FIXME: Testing
+#include "PETScLinearOperator.h"
+#include "LinearOperator.h"
+
 using namespace dolfin;
 
 // Utility function
@@ -226,6 +231,13 @@ dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
                                       GenericVector& x,
                                       const GenericVector& b)
 {
+  dolfin_debug("check");
+  cout << "GenericLinearOperator: " << has_type<GenericLinearOperator>(A) << endl;
+  //cout << "PETScKrylovMatrix: " << has_type<PETScKrylovMatrix>(A) << endl;
+  cout << "LinearOperator: " << has_type<LinearOperator>(A) << endl;
+  cout << "PETScLinearOperator: " << has_type<PETScLinearOperator>(A) << endl;
+  cout << "PETScBaseMatrix: " << has_type<PETScBaseMatrix>(A) << endl;
+
   //check_dimensions(A, x, b);
   return solve(as_type<const PETScBaseMatrix>(A),
                as_type<PETScVector>(x),
@@ -330,9 +342,12 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A, PETScVector& x,
+dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A,
+                                      PETScVector& x,
                                       const PETScVector& b)
 {
+  dolfin_debug("check");
+
   // Check dimensions
   const uint N = A.size(1);
   if (N != b.size())

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-22
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 
 #ifndef __LINEAR_ALGEBRA_OBJECT_H
 #define __LINEAR_ALGEBRA_OBJECT_H
@@ -92,10 +92,6 @@ namespace dolfin
       return _A;
     }
 
-    /// Check whether the object matches a specific type
-    template<typename T> bool has_type() const
-    { return bool(dynamic_cast<const T*>(instance())); }
-
     /// Return concrete instance / unwrap (const version)
     virtual const LinearAlgebraObject* instance() const
     { return this; }
@@ -116,7 +112,8 @@ namespace dolfin
 
   /// Cast object to its derived class, if possible (non-const version).
   /// An error is thrown if the cast is unsuccessful.
-  template<typename Y, typename X> Y& as_type(X& x)
+  template<typename Y, typename X>
+  Y& as_type(X& x)
   {
     try
     {
@@ -136,7 +133,7 @@ namespace dolfin
   /// Cast shared pointer object to its derived class, if possible.
   /// Caller must check for success (returns null if cast fails).
   template<typename Y, typename X>
-  static boost::shared_ptr<Y> as_type(const boost::shared_ptr<X> x)
+  boost::shared_ptr<Y> as_type(const boost::shared_ptr<X> x)
   {
     // Try to down cast shared pointer
     boost::shared_ptr<Y> y = boost::dynamic_pointer_cast<Y>(x);
@@ -149,6 +146,13 @@ namespace dolfin
         y = boost::dynamic_pointer_cast<Y>(x->shared_instance());
     }
     return y;
+  }
+
+  /// Check whether the object matches a specific type
+  template<typename Y, typename X>
+  bool has_type(const X& x)
+  {
+    return bool(dynamic_cast<const Y*>(x.instance()));
   }
 
 }
