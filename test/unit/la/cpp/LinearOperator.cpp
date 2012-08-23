@@ -66,30 +66,38 @@ public:
 
     };
 
-    parameters["linear_algebra_backend"] = "uBLAS";
+    // Iterate over backends supporting linear operators
+    std::vector<std::string> backends;
+    backends.push_back("PETSc");
+    backends.push_back("uBLAS");
+    for (uint i = 0; i < backends.size(); i++)
+    {
+      // Set linear algebra backend
+      parameters["linear_algebra_backend"] = backends[i];
 
-    // Compute reference value by solving ordinary linear system
-    UnitSquare mesh(8, 8);
-    ReactionDiffusion::FunctionSpace V(mesh);
-    ReactionDiffusion::BilinearForm a(V, V);
-    Matrix A;
-    Vector x;
-    Vector b(V.dim());
-    b = 1.0;
-    assemble(A, a);
-    solve(A, x, b, "gmres", "none");
-    const double norm_ref = norm(x, "l2");
+      // Compute reference value by solving ordinary linear system
+      UnitSquare mesh(8, 8);
+      ReactionDiffusion::FunctionSpace V(mesh);
+      ReactionDiffusion::BilinearForm a(V, V);
+      Matrix A;
+      Vector x;
+      Vector b(V.dim());
+      b = 1.0;
+      assemble(A, a);
+      solve(A, x, b, "gmres", "none");
+      const double norm_ref = norm(x, "l2");
 
-    // Solve using linear operator defined by form action
-    ReactionDiffusionAction::LinearForm action(V);
-    Function u(V);
-    action.u = u;
-    MyLinearOperator O(action, u);
-    solve(O, x, b, "gmres", "none");
-    const double norm_action = norm(x, "l2");
+      // Solve using linear operator defined by form action
+      ReactionDiffusionAction::LinearForm action(V);
+      Function u(V);
+      action.u = u;
+      MyLinearOperator O(action, u);
+      solve(O, x, b, "gmres", "none");
+      const double norm_action = norm(x, "l2");
 
-    // Check results
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(norm_ref, norm_action, 1e-10);
+      // Check results
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(norm_ref, norm_action, 1e-10);
+    }
   }
 
 };

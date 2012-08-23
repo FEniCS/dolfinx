@@ -144,16 +144,8 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericLinearOperator& A,
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
 {
-  dolfin::cout << "PC: " << preconditioner << dolfin::endl;
-
   if (preconditioner == "none")
-  {
-    dolfin::cout << "CHECK: Using dummy" << dolfin::endl;
-
     pc.reset(new uBLASDummyPreconditioner());
-
-
-  }
   else if (preconditioner == "ilu")
     pc.reset(new uBLASILUPreconditioner(parameters));
   else if (preconditioner == "default")

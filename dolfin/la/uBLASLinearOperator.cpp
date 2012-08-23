@@ -46,7 +46,8 @@ dolfin::uint uBLASLinearOperator::size(uint dim) const
 //-----------------------------------------------------------------------------
 void uBLASLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
-  dolfin_not_implemented();
+  dolfin_assert(_wrapper);
+  _wrapper->mult(x, y);
 }
 //-----------------------------------------------------------------------------
 std::string uBLASLinearOperator::str(bool verbose) const
@@ -66,20 +67,13 @@ std::string uBLASLinearOperator::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const GenericLinearOperator* uBLASLinearOperator::wrapper() const
-{
-  return _wrapper;
-}
-//-----------------------------------------------------------------------------
-GenericLinearOperator* uBLASLinearOperator::wrapper()
-{
-  return _wrapper;
-}
-//-----------------------------------------------------------------------------
 void uBLASLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
 {
-  // Set dimensions
+  // Store dimensions
   this->M = M;
   this->N = N;
+
+  // Store wrapper
+  _wrapper = wrapper;
 }
 //-----------------------------------------------------------------------------

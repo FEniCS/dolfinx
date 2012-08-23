@@ -52,14 +52,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
-    /// Return pointer to wrapper (const version)
-    virtual const GenericLinearOperator* wrapper() const
-    { return 0; }
-
-    /// Return pointer to wrapper (const version)
-    virtual GenericLinearOperator* wrapper()
-    { return 0; }
-
   protected:
 
     friend class LinearOperator;
