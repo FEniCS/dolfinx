@@ -246,6 +246,8 @@ dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
+  cout << endl;
+
   dolfin_assert(A);
   dolfin_assert(_ksp);
 
@@ -260,6 +262,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
                  A->size(0), b.size());
   }
 
+  dolfin_debug("check");
+
   // Write a message
   const bool report = parameters["report"];
   if (report && dolfin::MPI::process_number() == 0)
@@ -271,6 +275,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     A->resize(x, 1);
     x.zero();
   }
+
+  dolfin_debug("check");
 
   // Set some PETSc-specific options
   set_petsc_options();
@@ -294,6 +300,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     preconditioner_set = true;
   }
 
+  dolfin_debug("check");
+
   // Check whether we need a work-around for a bug in PETSc-stable.
   // This has been fixed in PETSc-dev, see
   // https://bugs.launchpad.net/dolfin/+bug/988494
@@ -303,6 +311,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
   }
 
+  dolfin_debug("check");
+
   // Solve linear system
   if (MPI::process_number() == 0)
   {
@@ -310,6 +320,8 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
         A->size(0), A->size(1));
   }
   KSPSolve(*_ksp, *b.vec(), *x.vec());
+
+  dolfin_debug("check");
 
   // Get the number of iterations
   int num_iterations = 0;

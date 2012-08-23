@@ -42,41 +42,52 @@ public:
     {
     public:
 
-      MyLinearOperator(Form& action)
-        : action(action),
-          LinearOperator(action.function_space(0)->dim(),
-                         action.function_space(0)->dim())
+      MyLinearOperator(Form& action, Function& u)
+        : action(action), u(u),
+          LinearOperator(u.function_space()->dim(),
+                         u.function_space()->dim())
       {
         // Do nothing
       }
 
       void mult(const GenericVector& x, GenericVector& y) const
       {
-        //*u.vector() = x;
-        assemble(y, action);
+        // Update coefficient vector
+        *u.vector() = x;
+
+        // Assemble action
+        assemble(y, action, false);
       }
 
     private:
 
       Form& action;
+      Function& u;
 
     };
 
-    // Create form action
+    // Compute reference value by solving ordinary linear system
     UnitSquare mesh(8, 8);
-    ReactionDiffusionAction::FunctionSpace V(mesh);
-    ReactionDiffusionAction::LinearForm action(V);
-    Function u(V);
-    action.u = u;
-
-    // Create linear operator
-    MyLinearOperator A(action);
-
-    // Solve linear system
+    ReactionDiffusion::FunctionSpace V(mesh);
+    ReactionDiffusion::BilinearForm a(V, V);
+    Matrix A;
     Vector x;
     Vector b(V.dim());
     b = 1.0;
+    assemble(A, a);
     solve(A, x, b, "gmres");
+    const double norm_ref = norm(x, "l2");
+
+    // Solve using linear operator defined by form action
+    ReactionDiffusionAction::LinearForm action(V);
+    Function u(V);
+    action.u = u;
+    MyLinearOperator O(action, u);
+    solve(O, x, b, "gmres");
+    const double norm_action = norm(x, "l2");
+
+    // Check results
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(norm_ref, norm_action, 1e-10);
   }
 
 };
@@ -87,6 +98,9 @@ int main()
 {
   // FIXME: Testing
   set_log_level(DBG);
+
+  TestLinearOperator test;
+  test.test_linear_operator();
 
   DOLFIN_TEST;
 }

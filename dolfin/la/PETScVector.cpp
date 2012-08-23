@@ -223,7 +223,7 @@ void PETScVector::resize(std::pair<uint, uint> range)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<uint, uint> range,
-    const std::vector<uint>& ghost_indices)
+                         const std::vector<uint>& ghost_indices)
 {
   // FIXME: Can this check be made robust? Need to avoid parallel lock-up.
   //        Cannot just check size because range may change.
@@ -235,6 +235,9 @@ void PETScVector::resize(std::pair<uint, uint> range,
   const bool _distributed = distributed();
 
   // Re-initialise vector
+
+  dolfin_debug("Calling __init");
+
   _init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
@@ -803,7 +806,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<uint, uint> range,
-                       const std::vector<uint>& ghost_indices, bool distributed)
+                        const std::vector<uint>& ghost_indices, bool distributed)
 {
   // Create vector
   if (x && !x.unique())
