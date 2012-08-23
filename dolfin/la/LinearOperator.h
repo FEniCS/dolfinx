@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -56,6 +56,22 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    //--- Special functions, intended for library use only ---
+
+    /// Return concrete instance / unwrap (const version)
+    virtual const GenericLinearOperator* instance() const
+    { return _A.get() ; }
+
+    /// Return concrete instance / unwrap (non-const version)
+    virtual GenericLinearOperator* instance()
+    { return _A.get(); }
+
+    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
+    { return _A; }
+
+    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
+    { return _A; }
 
   private:
 

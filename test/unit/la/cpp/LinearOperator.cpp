@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-21
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 //
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
@@ -75,7 +75,7 @@ public:
     Vector x;
     Vector b(A.size(0));
     b = 1.0;
-    solve(A, x, b);
+    solve(A, x, b, "gmres");
   }
 
 };
@@ -84,5 +84,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION(TestLinearOperator);
 
 int main()
 {
+  // FIXME: Testing
+  set_log_level(DBG);
+
   DOLFIN_TEST;
 }
