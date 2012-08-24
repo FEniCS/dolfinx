@@ -34,8 +34,6 @@ L = Constant(1)*dx
 # Backends supporting the LinearOperator interface
 backends = ["PETSc", "uBLAS"]
 
-#backends = ["PETSc"]
-
 class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
@@ -51,8 +49,6 @@ class TestLinearOperator(unittest.TestCase):
                                         u.function_space().dim())
 
             def mult(self, x, y):
-
-                print x
 
                 # Update coefficient vector
                 self.u.vector()[:] = x
@@ -87,10 +83,6 @@ class TestLinearOperator(unittest.TestCase):
             norm_action = norm(x, "l2")
 
 if __name__ == "__main__":
-
-    # FIXME: Turn this off later when working
-    # Turn off DOLFIN output
-    #set_log_active(False)
 
     print ""
     print "Testing DOLFIN la/LinearOperator (matrix-free) interface"
