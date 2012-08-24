@@ -60,24 +60,22 @@ void VTKPlottableGenericFunction::init_pipeline()
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
 
+  VTKPlottableMesh::init_pipeline();
+
   switch (_function->value_rank())
   {
     // Setup pipeline for scalar functions
   case 0:
     {
-      if (_mesh->topology().dim() < 3)
+      if (mesh()->topology().dim() < 3)
       {
         // In 1D and 2D, we warp the mesh according to the scalar values
-        _warpscalar->SetInput(_grid);
-
-        _geometryFilter->SetInput(_warpscalar->GetOutput());
+        insert_filter(_warpscalar);
       }
       else
       {
         // In 3D, we just show the scalar values as colors on the mesh
-        _geometryFilter->SetInput(_grid);
       }
-      _geometryFilter->Update();
     }
     break;
 
@@ -86,9 +84,7 @@ void VTKPlottableGenericFunction::init_pipeline()
   case 1:
     {
       // Setup pipeline for warp visualization
-      _warpvector->SetInput(_grid);
-      _geometryFilter->SetInput(_warpvector->GetOutput());
-      _geometryFilter->Update();
+      insert_filter(_warpvector);
 
       // Setup pipeline for glyph visualization
       vtkSmartPointer<vtkArrowSource> arrow =
@@ -102,7 +98,7 @@ void VTKPlottableGenericFunction::init_pipeline()
       // Create the glyph object, set source (the arrow) and input (the grid) and
       // adjust various parameters
       _glyphs->SetSourceConnection(arrow->GetOutputPort());
-      _glyphs->SetInput(_grid);
+      _glyphs->SetInput(grid());
       _glyphs->SetVectorModeToUseVector();
       _glyphs->SetScaleModeToScaleByVector();
       _glyphs->SetColorModeToColorByVector();
@@ -168,7 +164,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 
   // Update the values on the mesh
   std::vector<double> vertex_values;
-  _function->compute_vertex_values(vertex_values, *_mesh);
+  _function->compute_vertex_values(vertex_values, *mesh);
   setPointValues(vertex_values.size(), &vertex_values[0]);
 
   // If this is the first render of this plot and/or the rescale parameter is
@@ -182,7 +178,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
     // Compute the scale factor for scalar warping
     double range[2];
     update_range(range);
-    double* bounds = _grid->GetBounds();
+    double* bounds = grid()->GetBounds();
     double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
 
     // Set the default warp such that the max warp is one fourth of the longest
@@ -203,11 +199,10 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() co
   if (_function->value_rank() == 1 && _mode != "warp")
   {
     return _glyphs->GetOutputPort();
-    // Otherwise return the geometryfilter's output
   }
   else
   {
-    return _geometryFilter->GetOutputPort();
+    return VTKPlottableMesh::get_output();
   }
 }
 //----------------------------------------------------------------------------

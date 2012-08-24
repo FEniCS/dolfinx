@@ -213,5 +213,22 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   return _vertexLabelActor;
 }
 //----------------------------------------------------------------------------
+boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
+{
+  return _mesh;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkPointSet> VTKPlottableMesh::grid() const
+{
+  return _grid;
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filter)
+{
+  filter->SetInput(_grid);
+  _geometryFilter->SetInput(filter->GetOutput());
+  _geometryFilter->Update();
+}
+//----------------------------------------------------------------------------
 
 #endif

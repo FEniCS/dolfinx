@@ -32,6 +32,7 @@
 #include <vtkPointData.h>
 #include <vtkCellData.h>
 #include <vtkVectorNorm.h>
+#include <vtkPointSetAlgorithm.h>
 
 #include "GenericVTKPlottable.h"
 
@@ -84,6 +85,14 @@ namespace dolfin
     template <class T>
     void setCellValues(uint size, const T* indata);
 
+    boost::shared_ptr<const Mesh> mesh() const;
+
+    vtkSmartPointer<vtkPointSet> grid() const;
+
+    void insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filter);
+
+  private:
+
     // The VTK grid constructed from the DOLFIN mesh
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
 
@@ -98,10 +107,6 @@ namespace dolfin
 
     // The dimension of the facets
     const uint _entity_dim;
-
-  private:
-
-    std::vector<uint> _entity_map;
 
   };
 
