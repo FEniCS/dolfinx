@@ -29,6 +29,7 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/CellType.h>
 #include "VTKPlottableMesh.h"
 
 using namespace dolfin;
@@ -86,16 +87,17 @@ void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
   const uint *connectivity = _mesh->cells();
-  uint spatial_dim = _mesh->topology().dim();
+  const uint spatial_dim = _mesh->topology().dim();
+  const uint vertices_per_cell = _mesh->type().num_vertices(spatial_dim);
 
   for (uint i = 0; i < _mesh->num_cells(); ++i)
   {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
-    // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim+1);
-    for(uint j = 0; j <= spatial_dim; ++j) {
-      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
+    // (nv x cell_number + idx_offset)
+    cells->InsertNextCell(vertices_per_cell);
+    for(uint j = 0; j < vertices_per_cell; ++j) {
+      cells->InsertCellPoint(connectivity[i*vertices_per_cell + j]);
     }
   }
   // Free unused memory in cell array
