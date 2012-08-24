@@ -657,16 +657,26 @@ void VTKPlotter::update()
     double range[2];
 
     if (parameters["autorange"])
+    {
       _plottable->update_range(range);
+
+      // Round small values to zero
+      const double diff = range[1]-range[0];
+      if (diff != 0 && std::abs(range[0]/diff) < 1e-3)
+        range[0] = 0;
+      else if (diff != 0 && std::abs(range[1]/diff) < 1e-3)
+        range[1] = 0;
+    }
     else
     {
       range[0] = parameters["range_min"];
       range[1] = parameters["range_max"];
     }
 
-    vtk_pipeline->_lut->SetRange(range);
-    vtk_pipeline->_lut->Build();
     vtk_pipeline->_mapper->SetScalarRange(range);
+    // Not required, the mapper controls the range.
+    //vtk_pipeline->_lut->SetRange(range);
+    //vtk_pipeline->_lut->Build();
   }
 
   // Set the mapper's connection on each plot. This must be done since the
