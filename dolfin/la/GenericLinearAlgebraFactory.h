@@ -63,7 +63,7 @@ namespace dolfin
     /// Create empty tensor layout
     virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
 
-    /// Create empty Krylov matrix
+    /// Create empty linear operator
     virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
 
     /// Create LU solver

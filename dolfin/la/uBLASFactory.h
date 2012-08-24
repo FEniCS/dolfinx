@@ -78,7 +78,7 @@ namespace dolfin
       return pattern;
     }
 
-    /// Create empty Krylov matrix
+    /// Create empty linear operator
     boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
     {
       boost::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
