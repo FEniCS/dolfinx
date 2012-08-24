@@ -27,6 +27,11 @@
 
 #include <vtkUnstructuredGrid.h>
 #include <vtkGeometryFilter.h>
+#include <vtkFloatArray.h>
+#include <vtkCellArray.h>
+#include <vtkPointData.h>
+#include <vtkCellData.h>
+#include <vtkVectorNorm.h>
 
 #include "GenericVTKPlottable.h"
 
@@ -42,6 +47,8 @@ namespace dolfin
   class VTKPlottableMesh : public GenericVTKPlottable
   {
   public:
+
+    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint entity_dim);
 
     explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
 
@@ -69,6 +76,14 @@ namespace dolfin
 
   protected:
 
+    /// Set scalar values on the mesh
+    template <class T>
+    void setPointValues(uint size, const T* indata);
+
+    /// Set scalar values on the mesh
+    template <class T>
+    void setCellValues(uint size, const T* indata);
+
     // The VTK grid constructed from the DOLFIN mesh
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
 
@@ -81,10 +96,107 @@ namespace dolfin
     // The label actor
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;
 
+    // The dimension of the facets
+    const uint _entity_dim;
+
+  private:
+
+    std::vector<uint> _entity_map;
+
   };
 
+  //---------------------------------------------------------------------------
+  // Implementation of VTKPlottableMeshFunction
+  //---------------------------------------------------------------------------
+  template <class T>
+  void VTKPlottableMesh::setPointValues(uint size, const T* indata)
+  {
+    const uint num_vertices = _mesh->num_vertices();
+    const uint num_components = size / num_vertices;
+
+    dolfin_assert(num_components > 0 && num_components <= 3);
+    dolfin_assert(num_vertices*num_components == size);
+
+    vtkSmartPointer<vtkFloatArray> values =
+      vtkSmartPointer<vtkFloatArray>::New();
+    if (num_components == 1)
+    {
+      values->SetNumberOfValues(num_vertices);
+      for (uint i = 0; i < num_vertices; ++i)
+      {
+        values->SetValue(i, (double)indata[i]);
+      }
+      _grid->GetPointData()->SetScalars(values);
+    }
+    else
+    {
+      // NOTE: Allocation must be done in this order!
+      // Note also that the number of VTK vector components must always be 3
+      // regardless of the function vector value dimension
+      values->SetNumberOfComponents(3);
+      values->SetNumberOfTuples(num_vertices);
+      for (uint i = 0; i < num_vertices; ++i)
+      {
+        // The entries in "vertex_values" must be copied to "vectors". Viewing
+        // these arrays as matrices, the transpose of vertex values should be copied,
+        // since DOLFIN and VTK store vector function values differently
+        for (uint d = 0; d < num_components; d++)
+        {
+          values->SetValue(3*i+d, indata[i+num_vertices*d]);
+        }
+        for (uint d = num_components; d < 3; d++)
+        {
+          values->SetValue(3*i+d, 0.0);
+        }
+      }
+      _grid->GetPointData()->SetVectors(values);
+
+      // Compute norms of vector data
+      vtkSmartPointer<vtkVectorNorm> norms =
+        vtkSmartPointer<vtkVectorNorm>::New();
+      norms->SetInput(_grid);
+      norms->SetAttributeModeToUsePointData();
+      //NOTE: This update is necessary to actually compute the norms
+      norms->Update();
+
+      // Attach vector norms as scalar point data in the VTK grid
+      _grid->GetPointData()->SetScalars(
+          norms->GetOutput()->GetPointData()->GetScalars());
+    }
+  }
+  //----------------------------------------------------------------------------
+  template <class T>
+  void VTKPlottableMesh::setCellValues(uint size, const T* indata)
+  {
+    const uint num_entities = _mesh->num_entities(_entity_dim);
+    dolfin_assert(num_entities == size);
+
+    vtkSmartPointer<vtkFloatArray> values =
+      vtkSmartPointer<vtkFloatArray>::New();
+    values->SetNumberOfValues(num_entities);
+
+    if (_entity_dim == 0 || _entity_dim == _mesh->topology().dim())
+    {
+      for (uint i = 0; i < num_entities; ++i)
+      {
+        values->SetValue(i, (float)indata[i]);
+      }
+    }
+    else
+    {
+      //initMappedEntities();
+      for (uint i = 0; i < num_entities; ++i)
+      {
+        //values->SetValue(i, (double)indata[_mapping[i]]);
+      }
+    }
+
+    _grid->GetCellData()->SetScalars(values);
+  }
+  //----------------------------------------------------------------------------
 }
 
 #endif
 
 #endif
+

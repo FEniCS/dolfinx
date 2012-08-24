@@ -53,12 +53,6 @@ namespace dolfin
 
   private:
 
-    // Update vertex values
-    void update_vertices();
-
-    // Update cell values
-    void update_cells();
-
     // The mesh function
     boost::shared_ptr<const MeshFunction<T> > _mesh_function;
 
@@ -89,13 +83,19 @@ namespace dolfin
 
     if (_mesh_function->dim() == 0)
     {
-      // Vertex valued mesh function
-      update_vertices();
+      // Mesh function over vertices
+
+      // FIXME: The technique used for vertex valued mesh functions at the
+      // moment leads to colors interpolated over the facets/cells. We need to
+      // find a way to turn off interpolation (possibly using vtkImageActor?)
+
+      setPointValues(_mesh_function->size(), _mesh_function->values());
     }
     else if (_mesh_function->dim() == _mesh->topology().dim())
     {
-      // Cell valued
-      update_cells();
+      // Mesh function over cells
+
+      setCellValues(_mesh_function->size(), _mesh_function->values());
     }
     else
     {
@@ -103,60 +103,6 @@ namespace dolfin
                    "plot mesh function",
                    "Only able to plot vertex and cell valued mesh functions");
     }
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
-  void VTKPlottableMeshFunction<T>::update_vertices()
-  {
-    dolfin_assert(_mesh_function->dim() == 0);
-
-    // Update vertex/point data
-
-    // FIXME: The technique used for vertex valued mesh functions at the
-    // moment leads to colors interpolated over the facets/cells. We need to
-    // find a way to turn off interpolation (possibly using vtkImageActor?)
-
-    // Make VTK float array and allocate storage for mesh function values
-    uint num_vertices = _mesh->num_vertices();
-    vtkSmartPointer<vtkFloatArray> values =
-      vtkSmartPointer<vtkFloatArray>::New();
-    values->SetNumberOfValues(num_vertices);
-
-    // Iterate the mesh function and convert the value at each vertex to double
-    T value;
-    for (uint i = 0; i < num_vertices; ++i)
-    {
-      value = (*_mesh_function)[i];
-      values->SetValue(i, (double) value);
-    }
-
-    // Attach scalar values as point data in the VTK grid
-    _grid->GetPointData()->SetScalars(values);
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
-  void VTKPlottableMeshFunction<T>::update_cells()
-  {
-    dolfin_assert(_mesh_function->dim() == _mesh->topology().dim());
-
-    // Update cell data
-
-    // Make VTK float array and allocate storage for mesh function values
-    uint num_cells = _mesh->num_cells();
-    vtkSmartPointer<vtkFloatArray> values =
-      vtkSmartPointer<vtkFloatArray>::New();
-    values->SetNumberOfValues(num_cells);
-
-    // Iterate the mesh function and convert the value at each vertex to double
-    T value;
-    for (uint i = 0; i < num_cells; ++i)
-    {
-      value = (*_mesh_function)[i];
-      values->SetValue(i, (double) value);
-    }
-
-    // Attach scalar values as point data in the VTK grid
-    _grid->GetCellData()->SetScalars(values);
   }
   //----------------------------------------------------------------------------
 

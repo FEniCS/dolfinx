@@ -18,15 +18,11 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 #ifdef HAS_VTK
 
-#include <vtkCellArray.h>
 #include <vtkArrowSource.h>
-#include <vtkFloatArray.h>
-#include <vtkPointData.h>
-#include <vtkVectorNorm.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/Expression.h>
@@ -170,18 +166,10 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
   // Update the mesh
   VTKPlottableMesh::update(mesh, parameters, frame_counter);
 
-  // Update function values
-  switch(_function->value_rank())
-  {
-  case 0:
-    update_scalar();
-    break;
-  case 1:
-    update_vector();
-    break;
-  default:
-    break;
-  }
+  // Update the values on the mesh
+  std::vector<double> vertex_values;
+  _function->compute_vertex_values(vertex_values, *_mesh);
+  setPointValues(vertex_values.size(), &vertex_values[0]);
 
   // If this is the first render of this plot and/or the rescale parameter is
   // set, we read get the min/max values of the data and process them
@@ -221,86 +209,6 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() co
   {
     return _geometryFilter->GetOutputPort();
   }
-}
-//----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update_scalar()
-{
-  dolfin_assert(_function->value_rank() == 0);
-
-  // Update scalar point data
-
-  // Make VTK float array and allocate storage for function values
-  uint num_vertices = _mesh->num_vertices();
-  vtkSmartPointer<vtkFloatArray> scalars =
-    vtkSmartPointer<vtkFloatArray>::New();
-  scalars->SetNumberOfValues(num_vertices);
-
-  // Evaluate DOLFIN function and copy values to the VTK array
-  std::vector<double> vertex_values(num_vertices);
-  _function->compute_vertex_values(vertex_values, *_mesh);
-
-  for (uint i = 0; i < num_vertices; ++i)
-    scalars->SetValue(i, vertex_values[i]);
-
-  // Attach scalar values as point data in the VTK grid
-  _grid->GetPointData()->SetScalars(scalars);
-}
-//----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update_vector()
-{
-  dolfin_assert(_function->value_rank() == 1);
-
-  // Update vector and scalar point data
-
-  // Make VTK float array and allocate storage for function vector values
-  uint num_vertices = _mesh->num_vertices();
-  uint num_components = _function->value_dimension(0);
-  vtkSmartPointer<vtkFloatArray> vectors
-    = vtkSmartPointer<vtkFloatArray>::New();
-
-  // NOTE: Allocation must be done in this order!
-  // Note also that the number of VTK vector components must always be 3
-  // regardless of the function vector value dimension
-  vectors->SetNumberOfComponents(3);
-  vectors->SetNumberOfTuples(num_vertices);
-
-  // Evaluate DOLFIN function and copy values to the VTK array
-  // The entries in "vertex_values" must be copied to "vectors". Viewing
-  // these arrays as matrices, the transpose of vertex values should be copied,
-  // since DOLFIN and VTK store vector function values differently
-  std::vector<double> vertex_values(num_vertices*num_components);
-  _function->compute_vertex_values(vertex_values, *_mesh);
-
-  for (uint i = 0; i < num_vertices; ++i)
-  {
-    vectors->SetValue(3*i,     vertex_values[i]);
-    vectors->SetValue(3*i + 1, vertex_values[i + num_vertices]);
-
-    // If the DOLFIN function vector value dimension is 2, pad with a 0
-    if (num_components == 2)
-    {
-      vectors->SetValue(3*i + 2, 0.0);
-      // else, add the last entry in the value vector
-    }
-    else
-    {
-      vectors->SetValue(3*i + 2, vertex_values[i + num_vertices*2]);
-    }
-  }
-  // Attach vectors as vector point data in the VTK grid
-  _grid->GetPointData()->SetVectors(vectors);
-
-  // Compute norms of vector data
-  vtkSmartPointer<vtkVectorNorm> norms =
-    vtkSmartPointer<vtkVectorNorm>::New();
-  norms->SetInput(_grid);
-  norms->SetAttributeModeToUsePointData();
-  //NOTE: This update is necessary to actually compute the norms
-  norms->Update();
-
-  // Attach vector norms as scalar point data in the VTK grid
-  _grid->GetPointData()->SetScalars(
-      norms->GetOutput()->GetPointData()->GetScalars());
 }
 //----------------------------------------------------------------------------
 

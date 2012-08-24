@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 #ifdef HAS_VTK
 
@@ -37,10 +37,20 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
+VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint entity_dim) :
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
+  _mesh(mesh),
+  _entity_dim(entity_dim)
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
 VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
-  _mesh(mesh)
+  _mesh(mesh),
+  _entity_dim(mesh->topology().dim())
 {
   // Do nothing
 }
