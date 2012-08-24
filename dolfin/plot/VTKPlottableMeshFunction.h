@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-08-21
+// Last changed: 2012-08-23
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -72,7 +72,7 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   template <typename T>
-    void VTKPlottableMeshFunction<T>::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
+  void VTKPlottableMeshFunction<T>::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
   {
     if (var)
     {

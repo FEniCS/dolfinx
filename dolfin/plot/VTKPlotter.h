@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-21
+// Last changed: 2012-08-23
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -90,7 +90,7 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
-  ///  rescale        Boolean     False           Enable/disable recomputation
+  ///  rescale        Boolean     True            Enable/disable recomputation
   ///                                             of the scalar to color mapping
   ///                                             on every iteration when performing
   ///                                             repeated/animated plots of the same
@@ -179,10 +179,9 @@ namespace dolfin
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
-      p.add("autorange", true);
-      p.add("range_min", 0.0);
-      p.add("range_max", 1.0);
-      p.add("rescale", false);
+      p.add<double>("range_min");
+      p.add<double>("range_max");
+      p.add("rescale", true);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
       p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);

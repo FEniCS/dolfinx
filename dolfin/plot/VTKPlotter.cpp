@@ -715,26 +715,27 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
   {
     double range[2];
 
-    if (parameters["autorange"])
+    const Parameter &range_min = parameters["range_min"];
+    const Parameter &range_max = parameters["range_max"];
+
+    if (!range_min.is_set() || !range_max.is_set())
     {
       _plottable->update_range(range);
 
-      // Round small values to zero
+      // Round small values (<5% of range) to zero
       const double diff = range[1]-range[0];
-      if (diff != 0 && std::abs(range[0]/diff) < 1e-3)
+      if (diff != 0 && std::abs(range[0]/diff) < 0.05)
         range[0] = 0;
-      else if (diff != 0 && std::abs(range[1]/diff) < 1e-3)
+      else if (diff != 0 && std::abs(range[1]/diff) < 0.05)
         range[1] = 0;
 
       // Round endpoints to 2 significant digits (away from center)
       round_significant_digits(range[0], std::floor, 2);
       round_significant_digits(range[1], std::ceil,  2);
     }
-    else
-    {
-      range[0] = parameters["range_min"];
-      range[1] = parameters["range_max"];
-    }
+
+    if (range_min.is_set()) range[0] = range_min;
+    if (range_max.is_set()) range[1] = range_max;
 
     vtk_pipeline->_mapper->SetScalarRange(range);
     // Not required, the mapper controls the range.
