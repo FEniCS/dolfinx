@@ -250,6 +250,7 @@
 %feature("director") dolfin::PETScUserPreconditioner;
 %feature("director") dolfin::PETScLinearOperator;
 %feature("director") dolfin::uBLASLinearOperator;
+%feature("director") dolfin::LinearOperator;
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector

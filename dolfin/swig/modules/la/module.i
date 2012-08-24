@@ -45,12 +45,14 @@
 
 // #include types from la submodule
 #include "dolfin/la/ublas.h"
+#include "dolfin/la/LinearAlgebraObject.h"
 #include "dolfin/la/GenericTensor.h"
 #include "dolfin/la/GenericMatrix.h"
 #include "dolfin/la/GenericSparsityPattern.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/la/GenericLinearSolver.h"
 #include "dolfin/la/GenericLUSolver.h"
+#include "dolfin/la/GenericLinearOperator.h"
 #include "dolfin/la/PETScObject.h"
 #include "dolfin/la/PETScBaseMatrix.h"
 #include "dolfin/la/uBLASFactory.h"
@@ -102,6 +104,9 @@
 #include "dolfin/la/solve.h"
 #include "dolfin/la/BlockVector.h"
 #include "dolfin/la/BlockMatrix.h"
+#include "dolfin/la/TensorProductVector.h"
+#include "dolfin/la/TensorProductMatrix.h"
+#include "dolfin/la/LinearOperator.h"
 
 // #include types from nls submodule
 #include "dolfin/nls/NonlinearProblem.h"
@@ -143,12 +148,14 @@ import_array();
 // %include types from submodule la
 %include "dolfin/swig/la/pre.i"
 %include "dolfin/la/ublas.h"
+%include "dolfin/la/LinearAlgebraObject.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/GenericVector.h"
 %include "dolfin/la/GenericLinearSolver.h"
 %include "dolfin/la/GenericLUSolver.h"
+%include "dolfin/la/GenericLinearOperator.h"
 %include "dolfin/la/PETScObject.h"
 %include "dolfin/la/PETScBaseMatrix.h"
 %include "dolfin/la/uBLASFactory.h"
@@ -200,6 +207,9 @@ import_array();
 %include "dolfin/la/solve.h"
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
+%include "dolfin/la/TensorProductVector.h"
+%include "dolfin/la/TensorProductMatrix.h"
+%include "dolfin/la/LinearOperator.h"
 %include "dolfin/swig/la/post.i"
 
 // %include types from submodule nls
