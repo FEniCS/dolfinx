@@ -218,6 +218,9 @@ namespace dolfin
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
 
+    /// Get size of the screen
+    void get_screen_size(int& width, int& height);
+
     /// Set the position of the plot window on the screen
     void set_window_position(int x, int y);
 

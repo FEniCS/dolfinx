@@ -441,10 +441,16 @@ void VTKPlotter::init()
   int width, height;
   get_window_size(width, height);
 
-  // FIXME: This approach might need some tweaking. It tiles the winows in a
-  // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
-  // windows
-  set_window_position((num_old_plots%2)*width, (num_old_plots/2)*height);
+  int swidth, sheight;
+  get_screen_size(swidth, sheight);
+
+  // Tile windows horizontally across screen
+  int num_rows = swidth/width;
+  int num_cols = sheight/height;
+  int row = num_old_plots % num_rows;
+  int col = (num_old_plots / num_rows) % num_cols;
+
+  set_window_position(row*width, col*height);
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -584,6 +590,19 @@ void VTKPlotter::get_window_size(int& width, int& height)
   dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_interactor);
   vtk_pipeline->_interactor->GetSize(width, height);
+  // FIXME: Get correct sizes for window decoration
+  width += 6;
+  height += 30;
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::get_screen_size(int& width, int& height)
+{
+  dolfin_assert(vtk_pipeline);
+  dolfin_assert(vtk_pipeline->_renderWindow);
+  int *size = vtk_pipeline->_renderWindow->GetScreenSize();
+  width = size[0];
+  height = size[1];
+  // delete size or not?
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_window_position(int x, int y)
