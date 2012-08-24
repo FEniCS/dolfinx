@@ -45,6 +45,7 @@ namespace dolfin
   class GenericVTKPlottable;
   class Mesh;
   class PrivateVTKPipeline;
+  class PrivateVTKInteractorStyle;
   template<typename T> class Array;
   template<typename T> class MeshFunction;
 
@@ -211,8 +212,9 @@ namespace dolfin
 
     void start_eventloop();
 
-    /// Save plot to PNG file (file suffix appended automatically)
-    void write_png(std::string filename);
+    /// Save plot to PNG file (file suffix appended automatically, filename
+    /// optionally built from prefix)
+    void write_png(std::string filename="");
 
     /// Get size of the plot window
     void get_window_size(int& width, int& height);
@@ -247,6 +249,8 @@ namespace dolfin
     // all plot windows)
     static boost::shared_ptr<std::list<VTKPlotter*> > all_plotters;
 
+    // Allow the interactor style full access to the plotter
+    friend class PrivateVTKInteractorStyle;
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
@@ -258,10 +262,8 @@ namespace dolfin
     // Return the hover-over help text
     std::string get_helptext();
 
-    // Keypress callback
-    void keypressCallback(vtkObject* caller,
-                          long unsigned int eventId,
-                          void* callData);
+    // Keypress callback; return true if handled
+    bool keypressCallback(std::string key);
 
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;

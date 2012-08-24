@@ -61,6 +61,7 @@
 #include <vtkPoints.h>
 #include <vtkPolyLine.h>
 #include <vtkCylinderSource.h>
+#include <vtkObjectFactory.h>
 
 #include <boost/filesystem.hpp>
 
@@ -70,6 +71,28 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 namespace dolfin
 {
+//----------------------------------------------------------------------------
+  class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
+  {
+    // Create a new style instead of observer callbacks, so that we can
+    // intercept keypresses (like q/e) reliably.
+  public:
+
+    PrivateVTKInteractorStyle() : _plotter(NULL) {}
+
+    static PrivateVTKInteractorStyle* New();
+    vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera);
+
+    virtual void OnKeyPress() {
+      if (!_plotter->keypressCallback(Interactor->GetKeySym()))
+        vtkInteractorStyleTrackballCamera::OnKeyPress();
+    }
+
+    // A reference to the parent plotter
+    VTKPlotter *_plotter;
+  };
+  vtkStandardNewMacro(PrivateVTKInteractorStyle);
+//----------------------------------------------------------------------------
   class PrivateVTKPipeline
   {
   public:
@@ -107,7 +130,7 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
 
-    PrivateVTKPipeline()
+    PrivateVTKPipeline(VTKPlotter *parent)
     {
       // Initialize objects
       _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -133,8 +156,9 @@ namespace dolfin
       _renderWindow->AddRenderer(_renderer);
 
       // Set up interactorstyle and connect interactor
-      vtkSmartPointer<vtkInteractorStyleTrackballCamera> style
-	= vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+      vtkSmartPointer<PrivateVTKInteractorStyle> style =
+        vtkSmartPointer<PrivateVTKInteractorStyle>::New();
+      style->_plotter = parent;
       _interactor->SetRenderWindow(_renderWindow);
       _interactor->SetInteractorStyle(style);
 
@@ -155,11 +179,12 @@ namespace dolfin
       labelprop->BoldOff();
     }
   };
-}
+//----------------------------------------------------------------------------
+} // namespace dolfin
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(mesh->id()),
   _toggle_vertex_labels(false)
@@ -173,7 +198,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableGenericFunction(function))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(function->id()),
   _toggle_vertex_labels(false)
@@ -186,7 +211,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableGenericFunction(expression->expression(), expression->mesh()))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(expression->id()),
   _toggle_vertex_labels(false)
@@ -201,7 +226,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableGenericFunction(expression, mesh))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(expression->id()),
   _toggle_vertex_labels(false)
@@ -212,7 +237,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(bc->id()),
   _toggle_vertex_labels(false)
@@ -236,7 +261,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableMeshFunction<uint>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(mesh_function->id()),
   _toggle_vertex_labels(false)
@@ -250,7 +275,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<int>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(mesh_function->id()),
   _toggle_vertex_labels(false)
@@ -263,7 +288,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<double>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(mesh_function->id()),
   _toggle_vertex_labels(false)
@@ -276,7 +301,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<bool>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
   _id(mesh_function->id()),
   _toggle_vertex_labels(false)
@@ -327,10 +352,6 @@ void VTKPlotter::interactive(bool enter_eventloop)
     return;
 
   dolfin_assert(vtk_pipeline);
-
-  // Add keypress callback function
-  vtk_pipeline->_interactor->AddObserver(vtkCommand::KeyPressEvent, this,
-                                         &VTKPlotter::keypressCallback);
 
   // These must be declared outside the if test to not go out of scope
   // before the interaction starts
@@ -446,68 +467,64 @@ std::string VTKPlotter::get_helptext()
   return text.str();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::keypressCallback(vtkObject* caller,
-                                  long unsigned int eventId,
-                                  void* callData)
+bool VTKPlotter::keypressCallback(std::string key)
 {
-  vtkSmartPointer<vtkRenderWindowInteractor> iren
-    = static_cast<vtkRenderWindowInteractor*>(caller);
-
-  switch (iren->GetKeyCode())
+  // Save plot to file
+  if (key == "h")
   {
-    // Save plot to file
-    case 'h':
-    {
-      // We construct a filename from the given prefix and static counter.
-      // If a file with that filename exists, the counter is incremented
-      // until a unique filename is found. That filename is then passed
-      // to the hardcopy function.
-      std::stringstream filename;
-      filename << std::string(parameters["prefix"]);
-      filename << hardcopy_counter;
-      while (boost::filesystem::exists(filename.str() + ".png")) {
-        hardcopy_counter++;
-        filename.str("");
-        filename << std::string(parameters["prefix"]);
-        filename << hardcopy_counter;
-      }
-      write_png(filename.str());
-      break;
-    }
-    case 'i':
-    {
-      // Check if label actor is present. If not get from plottable. If it
-      // is, toggle off
-      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-
-      // Check for excistance of labels
-      if (!vtk_pipeline->_renderer->HasViewProp(labels))
-        vtk_pipeline->_renderer->AddActor(labels);
-
-      // Turn on or off dependent on present state
-      if (_toggle_vertex_labels)
-      {
-        labels->VisibilityOff();
-        _toggle_vertex_labels = false;
-      }
-      else
-      {
-        labels->VisibilityOn();
-        _toggle_vertex_labels = true;
-      }
-
-      vtk_pipeline->_renderWindow->Render();
-      break;
-    }
-    default:
-      break;
+    write_png();
+    return true;
   }
+
+  // Toggle vertex labels
+  if (key == "i")
+  {
+    // Check if label actor is present. If not get from plottable. If it
+    // is, toggle off
+    vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
+
+    // Check for existence of labels
+    if (!vtk_pipeline->_renderer->HasViewProp(labels))
+      vtk_pipeline->_renderer->AddActor(labels);
+
+    // Turn on or off dependent on present state
+    _toggle_vertex_labels = !_toggle_vertex_labels;
+    labels->SetVisibility(_toggle_vertex_labels);
+
+    vtk_pipeline->_renderWindow->Render();
+    return true;
+  }
+
+  // Something
+  if (key == "Up")
+  {
+    std::cout << "Up arrow pressed." << std::endl;
+  }
+
+  // Not handled
+  return false;
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::write_png(std::string filename)
 {
   dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_renderWindow);
+
+  if (filename.empty()) {
+    // We construct a filename from the given prefix and static counter.
+    // If a file with that filename exists, the counter is incremented
+    // until a unique filename is found.
+    std::stringstream filenamebuilder;
+    filenamebuilder << std::string(parameters["prefix"]);
+    filenamebuilder << hardcopy_counter;
+    while (boost::filesystem::exists(filenamebuilder.str() + ".png")) {
+      hardcopy_counter++;
+      filenamebuilder.str("");
+      filenamebuilder << std::string(parameters["prefix"]);
+      filenamebuilder << hardcopy_counter;
+    }
+    filename = filenamebuilder.str();
+  }
 
   info("Saving plot to file: %s.png", filename.c_str());
 
