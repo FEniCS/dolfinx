@@ -456,14 +456,14 @@ std::string VTKPlotter::get_helptext()
   text << "\t Right mouse button (or scroolwheel): Zoom \n";
   text << "\t Middle mouse button (or left+right): Translate figure\n\n";
   text << "Keyboard control:\n";
-  text << "\t R: Reset zoom\n";
-  text << "\t W: View figure as wireframe\n";
-  text << "\t S: View figure with solid surface\n";
-  text << "\t F: Fly to the point currently under the mouse pointer\n";
-  text << "\t P: Add bounding box\n";
-  text << "\t I: Toggle vertex indices on/off\n";
-  text << "\t H: Save plot to file\n";
-  text << "\t E/Q: Exit\n";
+  text << "\t r: Reset zoom\n";
+  text << "\t w: View figure as wireframe\n";
+  text << "\t s: View figure with solid surface\n";
+  text << "\t f: Fly to the point currently under the mouse pointer\n";
+  text << "\t p: Add bounding box\n";
+  text << "\t i: Toggle vertex indices on/off\n";
+  text << "\t h: Save plot to file\n";
+  text << "\t e/q: Exit\n";
   return text.str();
 }
 //----------------------------------------------------------------------------
