@@ -182,6 +182,18 @@ namespace dolfin
 //----------------------------------------------------------------------------
 } // namespace dolfin
 //----------------------------------------------------------------------------
+namespace {
+  void round_significant_digits(double &x, double (*rounding)(double), int num_significant_digits)
+  {
+    if (x != 0.0)
+    {
+      const int num_digits = std::log10(std::abs(x))+1;
+      const double reduction_factor = std::pow(10, num_digits-num_significant_digits);
+      x = rounding(x/reduction_factor)*reduction_factor;
+    }
+  }
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
@@ -666,6 +678,10 @@ void VTKPlotter::update()
         range[0] = 0;
       else if (diff != 0 && std::abs(range[1]/diff) < 1e-3)
         range[1] = 0;
+
+      // Round endpoints to 2 significant digits (away from center)
+      round_significant_digits(range[0], std::floor, 2);
+      round_significant_digits(range[1], std::ceil,  2);
     }
     else
     {
