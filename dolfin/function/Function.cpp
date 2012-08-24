@@ -313,19 +313,33 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
+  dolfin_assert(_function_space->mesh()->num_cells()>0);
+
   const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
+  int id = 0;
   const double* _x = x.data();
   const Point point(mesh.geometry().dim(), _x);
-  int id = mesh.intersected_cell(point);
+
+  if (mesh.num_cells() > 1)
+    id = mesh.intersected_cell(point);
+  else 
+  {
+    const Cell cell(mesh, 0);
+    id = cell.intersects(point) ? 0 : -1;
+  }
 
   // If not found, use the closest cell
   if (id == -1)
   {
     if (allow_extrapolation)
     {
-      id = mesh.closest_cell(point);
+      if (mesh.num_cells() > 1)
+	id = mesh.closest_cell(point);
+      else
+	id = 0;
+      
       cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
     }
     else

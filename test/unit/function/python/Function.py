@@ -67,6 +67,32 @@ class Interpolate(unittest.TestCase):
         self.assertEqual(x.max(), 1)
         self.assertEqual(x.min(), 1)
 
+    def test_extrapolation(self):
+        f0 = Function(V)
+        self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
+
+        if MPI.num_processes() == 1:
+            mesh1 = UnitSquare(3,3)
+            V1 = FunctionSpace(mesh1, "CG", 1)
+            
+            parameters["allow_extrapolation"] = True
+            f1 = Function(V1)
+            f1.vector()[:] = 1.0
+            self.assertAlmostEqual(f1(0.,-1), 1.0)
+        
+            mesh2 = UnitTriangle()
+            V2 = FunctionSpace(mesh2, "CG", 1)
+
+            parameters["allow_extrapolation"] = False
+            f2 = Function(V2)
+            self.assertRaises(RuntimeError, f2.__call__, (0.,-1.))
+
+            parameters["allow_extrapolation"] = True
+            f3 = Function(V2)
+            f3.vector()[:] = 1.0
+
+            self.assertAlmostEqual(f3(0.,-1), 1.0)
+
     def test_interpolation_jit_rank1(self):
         f = Expression(("1.0", "1.0", "1.0"))
         w = interpolate(f, W)
