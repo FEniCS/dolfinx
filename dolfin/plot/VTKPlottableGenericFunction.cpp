@@ -41,8 +41,7 @@ using namespace dolfin;
 VTKPlottableGenericFunction::VTKPlottableGenericFunction(
     boost::shared_ptr<const Function> function) :
   VTKPlottableMesh(function->function_space()->mesh()),
-  _function(function),
-  warp_vector_mode(false)
+  _function(function)
 {
   // Do nothing
 }
@@ -51,8 +50,7 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(
     boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
   VTKPlottableMesh(mesh),
-  _function(expression),
-  warp_vector_mode(false)
+  _function(expression)
 {
   // Do nothing
 }
@@ -156,17 +154,6 @@ void VTKPlottableGenericFunction::update(const Parameters& parameters, int frame
     // axis of the mesh.
     _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
   }
-
-  const std::string mode = parameters["mode"];
-  if (mode == "warp")
-    warp_vector_mode = true;
-  else
-  {
-    if (mode != "auto")
-      warning("Unrecognized mode \"" + mode + "\", using default (glyphs).");
-
-    warp_vector_mode = false;
-  }
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])
@@ -178,7 +165,7 @@ void VTKPlottableGenericFunction::update_range(double range[2])
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() const
 {
   // In the 3D glyph case, return the glyphs' output
-  if (_function->value_rank() == 1 && !warp_vector_mode)
+  if (_function->value_rank() == 1 && _mode != "warp")
   {
     return _glyphs->GetOutputPort();
     // Otherwise return the geometryfilter's output

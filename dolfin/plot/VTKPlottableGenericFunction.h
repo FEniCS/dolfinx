@@ -90,9 +90,8 @@ namespace dolfin
     // The glyph filter
     vtkSmartPointer<vtkGlyph3D> _glyphs;
 
-    // Warp vector mode? FIXME: This is horrible, we must be able to avoid this somehow
-    bool warp_vector_mode;
-
+    // Mode flag
+    std::string _mode;
   };
 
 }

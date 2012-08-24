@@ -160,8 +160,12 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
+      std::set<std::string> allowed_modes;
+      allowed_modes.insert("auto");
+      allowed_modes.insert("warp");
+
       Parameters p("vtk_plotter");
-      p.add("mode", "auto");
+      p.add("mode", "auto", allowed_modes);
       p.add("interactive", false);
       p.add("wireframe", false);
       p.add("title", "Plot");
@@ -173,8 +177,8 @@ namespace dolfin
       p.add("rescale", false);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
-      p.add("window_width", 600);
-      p.add("window_height", 400);
+      p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);
+      p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
       return p;
     }
 
