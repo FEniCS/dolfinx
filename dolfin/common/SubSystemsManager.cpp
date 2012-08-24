@@ -77,22 +77,16 @@ void SubSystemsManager::init_mpi()
   if( MPI::Is_initialized() )
     return;
 
-  // Initialise MPI and take responsibility
-  MPI::Init();
+  // Init MPI with highest level of thread support and take responsibility
+  char* c;
+  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else
   // Do nothing
   #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_mpi_threaded()
-{
-  char* c;
-  init_mpi_threaded(0, &c, MPI_THREAD_MULTIPLE);
-}
-//-----------------------------------------------------------------------------
-int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
-                                         int required_level)
+int SubSystemsManager::init_mpi(int argc, char* argv[], int required_thread_level)
 {
   #ifdef HAS_MPI
   if (MPI::Is_initialized())
@@ -100,9 +94,11 @@ int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
 
   // Initialise MPI and take responsibility
   int provided = -1;
-  MPI_Init_thread(&argc, &argv, required_level, &provided);
+  std::cout << "Calling threaded MPI init" << std::endl;
+  MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
+  /*
   switch (provided)
     {
     case MPI_THREAD_SINGLE:
@@ -120,6 +116,7 @@ int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
     default:
       printf("MPI_Init_thread level = ???\n");
     }
+  */
 
   return provided;
   #else
