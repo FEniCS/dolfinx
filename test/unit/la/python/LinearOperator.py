@@ -34,6 +34,8 @@ L = Constant(1)*dx
 # Backends supporting the LinearOperator interface
 backends = ["PETSc", "uBLAS"]
 
+#backends = ["PETSc"]
+
 class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
@@ -56,7 +58,7 @@ class TestLinearOperator(unittest.TestCase):
                 self.u.vector()[:] = x[:]
 
                 # Assemble action
-                assemble(self.action, tensor=y, reset_sparsity=False)
+                assemble(self.a_action, tensor=y, reset_sparsity=False)
 
         # Iterate over backends supporting linear operators
         for backend in backends:
