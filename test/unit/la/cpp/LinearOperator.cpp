@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-21
-// Last changed: 2012-08-23
+// Last changed: 2012-08-24
 //
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
@@ -26,6 +26,9 @@
 #include "forms/ReactionDiffusionAction.h"
 
 using namespace dolfin;
+
+// Backends supporting the LinearOperator interface
+std::vector<std::string> backends;
 
 class TestLinearOperator : public CppUnit::TestFixture
 {
@@ -42,8 +45,8 @@ public:
     {
     public:
 
-      MyLinearOperator(Form& action, Function& u)
-        : action(action), u(u),
+      MyLinearOperator(Form& a_action, Function& u)
+        : a_action(a_action), u(u),
           LinearOperator(u.function_space()->dim(),
                          u.function_space()->dim())
       {
@@ -56,20 +59,17 @@ public:
         *u.vector() = x;
 
         // Assemble action
-        assemble(y, action, false);
+        assemble(y, a_action, false);
       }
 
     private:
 
-      Form& action;
+      Form& a_action;
       Function& u;
 
     };
 
     // Iterate over backends supporting linear operators
-    std::vector<std::string> backends;
-    backends.push_back("PETSc");
-    backends.push_back("uBLAS");
     for (uint i = 0; i < backends.size(); i++)
     {
       // Set linear algebra backend
@@ -88,10 +88,10 @@ public:
       const double norm_ref = norm(x, "l2");
 
       // Solve using linear operator defined by form action
-      ReactionDiffusionAction::LinearForm action(V);
+      ReactionDiffusionAction::LinearForm a_action(V);
       Function u(V);
-      action.u = u;
-      MyLinearOperator O(action, u);
+      a_action.u = u;
+      MyLinearOperator O(a_action, u);
       solve(O, x, b, "gmres", "none");
       const double norm_action = norm(x, "l2");
 
@@ -106,5 +106,9 @@ CPPUNIT_TEST_SUITE_REGISTRATION(TestLinearOperator);
 
 int main()
 {
+  // Add backends supporting the LinearOperator interface
+  backends.push_back("PETSc");
+  backends.push_back("uBLAS");
+
   DOLFIN_TEST;
 }
