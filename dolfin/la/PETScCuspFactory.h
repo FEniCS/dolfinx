@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13
-// Last changed: 2012-02-29
+// Last changed: 2012-08-24
 
 #ifdef HAS_PETSC_CUSP
 
@@ -51,6 +51,9 @@ namespace dolfin
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
+
+    /// Create empty Krylov matrix
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;

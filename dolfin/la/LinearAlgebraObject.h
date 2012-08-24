@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-22
-// Last changed: 2012-08-23
+// Last changed: 2012-08-24
 
 #ifndef __LINEAR_ALGEBRA_OBJECT_H
 #define __LINEAR_ALGEBRA_OBJECT_H
@@ -31,9 +31,7 @@ namespace dolfin
   /// objects. In particular, it provides casting mechanisms between
   /// different types.
 
-  // FIXME: Might be that inheritance from Variable needs to be virtual
-
-  class LinearAlgebraObject : public Variable
+  class LinearAlgebraObject : public virtual Variable
   {
   public:
 

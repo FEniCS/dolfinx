@@ -101,12 +101,13 @@
 }
 
 //-----------------------------------------------------------------------------
-// Ignore low level interface from GenericTensor class
+// Ignore low level interface
 //-----------------------------------------------------------------------------
+%ignore dolfin::LinearAlgebraObject::instance;
 %ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
-%ignore dolfin::GenericTensor::instance;
+%ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
 %ignore dolfin::uBLASVector::operator ()(uint i) const;

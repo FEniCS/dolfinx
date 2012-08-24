@@ -495,7 +495,10 @@ def regenerate_swig_interface(module_to_submodules, excludes):
 if __name__ == "__main__":
     # Generate all docstrings
     # FIXME: Might be integratable into write_module_code?
-    generate_docstrings()
+    import sys
+
+    if "no-docs" not in sys.argv:
+        generate_docstrings()
 
     # User defined definition of SWIG modules.
     # NOTE: Order of modules are important, but not order of submodules
