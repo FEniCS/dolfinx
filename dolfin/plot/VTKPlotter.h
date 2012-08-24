@@ -107,7 +107,7 @@ namespace dolfin
   ///                                             in pixels
   ///  window_height  Integer     400             The height of the plotting window
   ///                                             in pixels
-  ///  key            String      ""              Key to the plot window, used to
+  ///  key            String                      Key to the plot window, used to
   ///                                             decide if a new plotter should be
   ///                                             created or a current one updated
   ///                                             when called through the static
@@ -187,7 +187,8 @@ namespace dolfin
       p.add("helptext", true);
       p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);
       p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
-      p.add("key", "");
+
+      p.add<std::string>("key");
       return p;
     }
 

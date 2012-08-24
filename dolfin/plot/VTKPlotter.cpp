@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 
 
 #include <dolfin/common/Array.h>
@@ -131,7 +131,7 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
 
-    PrivateVTKPipeline(VTKPlotter *parent)
+    void init(VTKPlotter *parent, const Parameters &parameters)
     {
       // Initialize objects
       _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -170,8 +170,8 @@ namespace dolfin
       _actor->GetProperty()->SetPointSize(3);   // should be parameter?
       //_actor->GetProperty()->SetLineWidth(1);
 
-      // FIXME: Take this as parameter
-      _renderWindow->SetSize(600, 400);
+      // Set window stuff
+      _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
       _scalarBar->SetTextPositionToPrecedeScalarBar();
 
       // Set the look of scalar bar labels
@@ -200,7 +200,7 @@ namespace {
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh)),
   _toggle_vertex_labels(false)
@@ -213,7 +213,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableGenericFunction(function))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*function)),
   _toggle_vertex_labels(false)
@@ -227,7 +227,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableGenericFunction(expression, mesh))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*expression)),
   _toggle_vertex_labels(false)
@@ -240,7 +240,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableGenericFunction(wrapper->expression(), wrapper->mesh()))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*wrapper->expression())),
   _toggle_vertex_labels(false)
@@ -251,7 +251,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*bc)),
   _toggle_vertex_labels(false)
@@ -275,7 +275,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableMeshFunction<uint>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
@@ -289,7 +289,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<int>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
@@ -302,7 +302,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<double>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
@@ -315,7 +315,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<bool>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
+  vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
@@ -432,6 +432,9 @@ void VTKPlotter::init()
   all_plotters_local_copy = all_plotters;
   log(TRACE, "Size of plotter pool is %d.", all_plotters->size());
 
+  // Initialise PrivateVTKPipeline
+  dolfin_assert(vtk_pipeline);
+  vtk_pipeline->init(this, parameters);
 
   // Adjust window position to not completely overlap previous plots
   dolfin::uint num_old_plots = VTKPlotter::all_plotters->size()-1;
@@ -447,8 +450,6 @@ void VTKPlotter::init()
   // This is the part from the Poly data mapper and out, including actor,
   // renderer, renderwindow and interaction. It also takes care of the scalar
   // bar and other decorations.
-
-  dolfin_assert(vtk_pipeline);
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline();

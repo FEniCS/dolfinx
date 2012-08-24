@@ -82,7 +82,7 @@ namespace dolfin
 
     VTKPlottableMesh::update(reference_to_no_delete_pointer(_mesh_function->mesh()), parameters, frame_counter);
 
-    setCellValues(_mesh_function->size(), _mesh_function->values());
+    setCellValues(_mesh_function->size(), _mesh_function->values(), parameters);
   }
   //----------------------------------------------------------------------------
 

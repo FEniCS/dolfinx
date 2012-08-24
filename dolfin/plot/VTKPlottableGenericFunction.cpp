@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-22
+// Last changed: 2012-08-23
 
 #ifdef HAS_VTK
 
@@ -165,7 +165,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
   // Update the values on the mesh
   std::vector<double> vertex_values;
   _function->compute_vertex_values(vertex_values, *mesh);
-  setPointValues(vertex_values.size(), &vertex_values[0]);
+  setPointValues(vertex_values.size(), &vertex_values[0], parameters);
 
   // If this is the first render of this plot and/or the rescale parameter is
   // set, we read get the min/max values of the data and process them

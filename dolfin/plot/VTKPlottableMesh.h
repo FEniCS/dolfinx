@@ -79,11 +79,11 @@ namespace dolfin
 
     /// Set scalar values on the mesh
     template <class T>
-    void setPointValues(uint size, const T* indata);
+    void setPointValues(uint size, const T *indata, const Parameters &parameters);
 
     /// Set scalar values on the mesh
     template <class T>
-    void setCellValues(uint size, const T* indata);
+    void setCellValues(uint size, const T *indata, const Parameters &parameters);
 
     boost::shared_ptr<const Mesh> mesh() const;
 
@@ -114,7 +114,7 @@ namespace dolfin
   // Implementation of VTKPlottableMeshFunction
   //---------------------------------------------------------------------------
   template <class T>
-  void VTKPlottableMesh::setPointValues(uint size, const T* indata)
+  void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
   {
     const uint num_vertices = _mesh->num_vertices();
     const uint num_components = size / num_vertices;
@@ -171,7 +171,7 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   template <class T>
-  void VTKPlottableMesh::setCellValues(uint size, const T* indata)
+  void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameters &parameters)
   {
     const uint num_entities = _mesh->num_entities(_entity_dim);
     dolfin_assert(num_entities == size);

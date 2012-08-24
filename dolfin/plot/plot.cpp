@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-08-21
+// Last changed: 2012-08-23
 
 #include <cstdlib>
 #include <sstream>
@@ -80,9 +80,10 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
                                           std::string key)
 {
   // Get plotter from cache. Key given as parameter takes precedence.
-  if (parameters->has_parameter("key"))
+  const Parameter *param_key = parameters->find_parameter("key");
+  if (param_key && param_key->is_set())
   {
-    key = (std::string)(*parameters)["key"];
+    key = (std::string)*param_key;
   }
 
   boost::shared_ptr<VTKPlotter> plotter = get_plotter(t, key);
