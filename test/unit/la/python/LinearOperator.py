@@ -55,7 +55,7 @@ class TestLinearOperator(unittest.TestCase):
                 print x
 
                 # Update coefficient vector
-                self.u.vector()[:] = x[:]
+                self.u.vector()[:] = x
 
                 # Assemble action
                 assemble(self.a_action, tensor=y, reset_sparsity=False)

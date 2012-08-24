@@ -249,9 +249,17 @@
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::PETScUserPreconditioner;
+
 %feature("director") dolfin::PETScLinearOperator;
+%feature("nodirector") dolfin::PETScLinearOperator::str;
+%feature("nodirector") dolfin::PETScLinearOperator::wrapper;
+
 %feature("director") dolfin::uBLASLinearOperator;
+%feature("nodirector") dolfin::uBLASLinearOperator::str;
+
 %feature("director") dolfin::LinearOperator;
+%feature("nodirector") dolfin::LinearOperator::instance;
+%feature("nodirector") dolfin::LinearOperator::shared_instance;
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::GenericVector
