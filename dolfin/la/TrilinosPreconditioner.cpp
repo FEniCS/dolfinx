@@ -230,8 +230,8 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
 {
 
   Teuchos::ParameterList mlist;
+  ML_Epetra::SetDefaults("SA", mlist);
 
-  //ML_Epetra::SetDefaults("SA", mlist);
   //ML_Epetra::SetDefaults("DD", mlist);
   //mlist.set("increasing or decreasing", "decreasing");
   //mlist.set("aggregation: type", "ParMETIS");
@@ -260,6 +260,8 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
     mlist.set("null space: type", "pre-computed");
     mlist.set("null space: dimension", _null_space->NumVectors());
     mlist.set("null space: vectors", _null_space->Values());
+
+    //mlist.set("PDE equations", 3);
   }
 
   // Create preconditioner

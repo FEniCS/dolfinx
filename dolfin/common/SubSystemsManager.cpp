@@ -85,6 +85,12 @@ void SubSystemsManager::init_mpi()
   #endif
 }
 //-----------------------------------------------------------------------------
+void SubSystemsManager::init_mpi_threaded()
+{
+  char* c;
+  init_mpi_threaded(0, &c, MPI_THREAD_MULTIPLE);
+}
+//-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
                                          int required_level)
 {
