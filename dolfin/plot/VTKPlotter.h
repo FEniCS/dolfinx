@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet 2012
+// Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-11
+// Last changed: 2012-08-21
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -106,6 +107,13 @@ namespace dolfin
   ///                                             in pixels
   ///  window_height  Integer     400             The height of the plotting window
   ///                                             in pixels
+  ///  key            String      ""              Key to the plot window, used to
+  ///                                             decide if a new plotter should be
+  ///                                             created or a current one updated
+  ///                                             when called through the static
+  ///                                             plot() interface (in plot.h).
+  ///                                             If not set, the object's unique
+  ///                                             id is used.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -179,6 +187,7 @@ namespace dolfin
       p.add("helptext", true);
       p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);
       p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
+      p.add("key", "");
       return p;
     }
 
@@ -191,25 +200,10 @@ namespace dolfin
       return p;
     }
 
-    // This function should be private, but is available
-    // to keep backward compatibilty with Viper
-    // Update all VTK structures
-    void update();
-
-    // These functions are kept for backward compatibility with Viper
-    // TODO: Clean up this and deprecate these functions.
-    void update(boost::shared_ptr<const Mesh> mesh);
-    void update(boost::shared_ptr<const Function> function);
-    void update(boost::shared_ptr<const ExpressionWrapper> expression);
-    void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
-    void update(boost::shared_ptr<const DirichletBC> bc);
-    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+    bool is_compatible(boost::shared_ptr<const Variable> variable) const;
 
     /// Plot the object
-    void plot();
+    void plot(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
 
     /// Make the current plot interactive
     void interactive(bool enter_eventloop = true);
@@ -226,9 +220,14 @@ namespace dolfin
     /// Set the position of the plot window on the screen
     void set_window_position(int x, int y);
 
-    /// Return unique ID of the object to plot
-    uint id() const
-    { return _id; }
+    /// Return key (i.e., plotter id) of the object to plot
+    const std::string& key() const;
+
+    /// Set the key (plotter id)
+    void set_key(std::string key);
+
+    /// Return default key (plotter id) of a Variable (object to plot).
+    static std::string to_key(const Variable &var);
 
     /// Camera control
     void azimuth(double angle);
@@ -246,6 +245,8 @@ namespace dolfin
 
   private:
 
+    void update(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
+
     // The pool of plotter objects. Objects register
     // themselves in the list when created and remove themselves when
     // destroyed. 
@@ -261,7 +262,7 @@ namespace dolfin
     void init();
 
     // Set the title parameter from the name and label of the Variable to plot
-    void set_title(const std::string& name, const std::string& label);
+    void set_title_from(const Variable &variable);
 
     // Return the hover-over help text
     std::string get_helptext();
@@ -277,8 +278,8 @@ namespace dolfin
     // The number of plotted frames
     uint _frame_counter;
 
-    // The unique ID (inherited from Variable) for the object to plot
-    uint _id;
+    // The window id (derived from Variable::id unless overridden by user)
+    std::string _key;
 
     // Flag to set the state of vertex labels
     bool _toggle_vertex_labels;

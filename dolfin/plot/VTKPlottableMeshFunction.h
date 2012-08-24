@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-21
-// Last changed: 2012-06-26
+// Last changed: 2012-08-21
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -45,7 +47,9 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Update the plottable data
-    void update(const Parameters& parameters, int frame_counter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+
+    bool is_compatible(const Variable &var) const { return dynamic_cast<const MeshFunction<T>*>(&var); }
 
   private:
 
@@ -73,9 +77,15 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   template <typename T>
-    void VTKPlottableMeshFunction<T>::update(const Parameters& parameters, int frame_counter)
+    void VTKPlottableMeshFunction<T>::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
   {
-    VTKPlottableMesh::update(parameters, frame_counter);
+    if (var)
+    {
+      _mesh_function = boost::dynamic_pointer_cast<const MeshFunction<T> >(var);
+    }
+    dolfin_assert(_mesh_function);
+
+    VTKPlottableMesh::update(reference_to_no_delete_pointer(_mesh_function->mesh()), parameters, frame_counter);
 
     if (_mesh_function->dim() == 0)
     {

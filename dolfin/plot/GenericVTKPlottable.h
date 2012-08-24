@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-25
+// Last changed: 2012-08-21
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -42,8 +44,12 @@ namespace dolfin
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline() = 0;
 
-    /// Update the plottable data
-    virtual void update(const Parameters& parameters, int framecounter) = 0;
+    /// Update the plottable data. The variable may be empty, or it may be a
+    /// new variable to plot. is_compatible(var) must be true.
+    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter) = 0;
+
+    /// Return whether this plottable is compatible with the variable
+    virtual bool is_compatible(const Variable &var) const =0;
 
     /// Update the scalar range of the plottable data
     virtual void update_range(double range[2]) = 0;

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-08-21
 
 #ifdef HAS_VTK
 
@@ -34,6 +36,7 @@
 
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableGenericFunction.h"
+#include "ExpressionWrapper.h"
 
 using namespace dolfin;
 
@@ -118,10 +121,54 @@ void VTKPlottableGenericFunction::init_pipeline()
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update(const Parameters& parameters, int frame_counter)
+bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
 {
+  const GenericFunction *function(dynamic_cast<const Function*>(&var));
+  const ExpressionWrapper *wrapper(dynamic_cast<const ExpressionWrapper*>(&var));
+  const Mesh *mesh(NULL);
+
+  if (function)
+  {
+    mesh = static_cast<const Function*>(function)->function_space()->mesh().get();
+  }
+  else if (wrapper)
+  {
+    function = wrapper->expression().get();
+    mesh = wrapper->mesh().get();
+  }
+  else
+  {
+    return false;
+  }
+  if (function->value_rank() > 1 || (function->value_rank() == 0) != !_glyphs->GetInput())
+  {
+    return false;
+  }
+  return VTKPlottableMesh::is_compatible(*mesh);
+}
+//----------------------------------------------------------------------------
+void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
+{
+  boost::shared_ptr<const Mesh> mesh;
+  if (var)
+  {
+    boost::shared_ptr<const Function> function(boost::dynamic_pointer_cast<const Function>(var));
+    boost::shared_ptr<const ExpressionWrapper> wrapper(boost::dynamic_pointer_cast<const ExpressionWrapper>(var));
+    dolfin_assert(function || wrapper);
+    if (function)
+    {
+      mesh = function->function_space()->mesh();
+      _function = function;
+    }
+    else
+    {
+      mesh = wrapper->mesh();
+      _function = wrapper->expression();
+    }
+  }
+
   // Update the mesh
-  VTKPlottableMesh::update(parameters, frame_counter);
+  VTKPlottableMesh::update(mesh, parameters, frame_counter);
 
   // Update function values
   switch(_function->value_rank())

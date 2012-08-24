@@ -50,16 +50,16 @@ static std::list<boost::shared_ptr<VTKPlotter> > stored_plotters;
 //-----------------------------------------------------------------------------
 // Template function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created.
-template <typename T>
-boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
+template <class T>
+boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t, std::string key)
 {
-  log(TRACE, "Looking for cached VTKPlotter.");
+  log(TRACE, "Looking for cached VTKPlotter [%s].", key.c_str());
 
   for (std::list<boost::shared_ptr<VTKPlotter> >::iterator it = stored_plotters.begin(); it != stored_plotters.end(); it++)
   {
-    if ( (*it)->id() == t->id() )
+    if ( (*it)->key() == key && (*it)->is_compatible(t) )
     {
-      log(TRACE, "Found cached VTKPlotter.");
+      log(TRACE, "Found compatible cached VTKPlotter.");
       return *it;
     }
   }
@@ -67,24 +67,31 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const T> t)
   // No previous plotter found, so create a new one
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
   boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
+  plotter->set_key(key);
   stored_plotters.push_back(plotter);
 
   return plotter;
 }
 //-----------------------------------------------------------------------------
 // Template function for plotting objects
-template <typename T>
+template <class T>
 boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const T> t,
-					  boost::shared_ptr<const Parameters> parameters)
+					  boost::shared_ptr<const Parameters> parameters,
+                                          std::string key)
 {
-  // Get plotter from cache
-  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t);
+  // Get plotter from cache. Key given as parameter takes precedence.
+  if (parameters->has_parameter("key"))
+  {
+    key = (std::string)(*parameters)["key"];
+  }
+
+  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t, key);
 
   // Set plotter parameters
   plotter->parameters.update(*parameters);
 
   // Plot
-  plotter->plot();
+  plotter->plot(t);
 
   return plotter;
 }
@@ -122,8 +129,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const Function& function,
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Function> function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  dolfin_assert(function->function_space()->mesh());
-  return plot_object(function, parameters);
+  return plot_object(function, parameters, VTKPlotter::to_key(*function));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
@@ -155,7 +161,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
 {
   boost::shared_ptr<const ExpressionWrapper>
     e(new ExpressionWrapper(expression, mesh));
-  return plot_object(e, parameters);
+  return plot_object(e, parameters, VTKPlotter::to_key(*expression));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Mesh& mesh,
@@ -180,7 +186,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const Mesh& mesh,
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Mesh> mesh,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(mesh, parameters);
+  return plot_object(mesh, parameters, VTKPlotter::to_key(*mesh));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc,
@@ -205,7 +211,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc,
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> bc,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(bc, parameters);
+  return plot_object(bc, parameters, VTKPlotter::to_key(*bc));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_function,
@@ -230,7 +236,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_functi
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<uint> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(mesh_function, parameters);
+  return plot_object(mesh_function, parameters, VTKPlotter::to_key(*mesh_function));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<int>& mesh_function,
@@ -255,7 +261,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<int>& mesh_functio
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(mesh_function, parameters);
+  return plot_object(mesh_function, parameters, VTKPlotter::to_key(*mesh_function));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<double>& mesh_function,
@@ -280,7 +286,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<double>& mesh_func
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(mesh_function, parameters);
+  return plot_object(mesh_function, parameters, VTKPlotter::to_key(*mesh_function));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<bool>& mesh_function,
@@ -305,7 +311,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<bool>& mesh_functi
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(mesh_function, parameters);
+  return plot_object(mesh_function, parameters, VTKPlotter::to_key(*mesh_function));
 }
 //-----------------------------------------------------------------------------
 void dolfin::interactive()

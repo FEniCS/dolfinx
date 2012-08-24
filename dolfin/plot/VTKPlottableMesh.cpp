@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-08-21
 
 #ifdef HAS_VTK
 
@@ -52,9 +54,14 @@ void VTKPlottableMesh::init_pipeline()
 }
 
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
+void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
 {
+  if (var)
+  {
+    _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
+  }
   dolfin_assert(_grid);
+  dolfin_assert(_mesh);
 
   Timer t("Construct VTK grid");
 

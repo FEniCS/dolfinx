@@ -17,9 +17,10 @@
 //
 // Modified by Benjamin Kehlet 2012
 // Modified by Garth N. Wells 2012
+// Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-11
+// Last changed: 2012-08-21
 
 
 #include <dolfin/common/Array.h>
@@ -198,12 +199,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(mesh->id()),
+  _key(to_key(*mesh)),
   _toggle_vertex_labels(false)
 {
-
   parameters = default_mesh_parameters();
-  set_title(mesh->name(), mesh->label());
+  set_title_from(*mesh);
   init();
 }
 //----------------------------------------------------------------------------
@@ -212,25 +212,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
         new VTKPlottableGenericFunction(function))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(function->id()),
+  _key(to_key(*function)),
   _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
-  set_title(function->name(), function->label());
-  init();
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableGenericFunction(expression->expression(), expression->mesh()))),
-  vtk_pipeline(new PrivateVTKPipeline(this)),
-  _frame_counter(0),
-  _id(expression->id()),
-  _toggle_vertex_labels(false)
-{
-  parameters = default_parameters();
-  set_title(expression->expression()->name(),
-            expression->expression()->label());
+  set_title_from(*function);
   init();
 }
 //----------------------------------------------------------------------------
@@ -240,18 +226,31 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     new VTKPlottableGenericFunction(expression, mesh))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(expression->id()),
+  _key(to_key(*expression)),
   _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
-  set_title(expression->name(), expression->label());
+  set_title_from(*expression);
+  init();
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+    new VTKPlottableGenericFunction(wrapper->expression(), wrapper->mesh()))),
+  vtk_pipeline(new PrivateVTKPipeline(this)),
+  _frame_counter(0),
+  _key(to_key(*wrapper->expression())),
+  _toggle_vertex_labels(false)
+{
+  parameters = default_parameters();
+  set_title_from(*wrapper->expression());
   init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(bc->id()),
+  _key(to_key(*bc)),
   _toggle_vertex_labels(false)
 {
   dolfin_error("VTKPlotter.cpp",
@@ -266,7 +265,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
     = boost::shared_ptr<VTKPlottableMesh>(new VTKPlottableGenericFunction(f));
 
   parameters = default_parameters();
-  set_title(bc->name(), bc->label());
+  set_title_from(*bc);
   init();
 }
 //----------------------------------------------------------------------------
@@ -275,12 +274,12 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
         new VTKPlottableMeshFunction<uint>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(mesh_function->id()),
+  _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
 {
   // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
-  set_title(mesh_function->name(), mesh_function->label());
+  set_title_from(*mesh_function);
   init();
 }
 //----------------------------------------------------------------------------
@@ -289,11 +288,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
     new VTKPlottableMeshFunction<int>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(mesh_function->id()),
+  _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
-  set_title(mesh_function->name(), mesh_function->label());
+  set_title_from(*mesh_function);
   init();
 }
 //----------------------------------------------------------------------------
@@ -302,11 +301,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
     new VTKPlottableMeshFunction<double>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(mesh_function->id()),
+  _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
-  set_title(mesh_function->name(), mesh_function->label());
+  set_title_from(*mesh_function);
   init();
 }
 //----------------------------------------------------------------------------
@@ -315,11 +314,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
     new VTKPlottableMeshFunction<bool>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline(this)),
   _frame_counter(0),
-  _id(mesh_function->id()),
+  _key(to_key(*mesh_function)),
   _toggle_vertex_labels(false)
 {
   parameters = default_parameters();
-  set_title(mesh_function->name(), mesh_function->label());
+  set_title_from(*mesh_function);
   init();
 }
 //----------------------------------------------------------------------------
@@ -337,7 +336,7 @@ VTKPlotter::~VTKPlotter()
   dolfin_assert(false);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::plot()
+void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
 {
   // Abort if DOLFIN_NOPLOT is set to a nonzero value.
   if (no_plot)
@@ -346,7 +345,7 @@ void VTKPlotter::plot()
     return;
   }
 
-  update();
+  update(variable);
 
   vtk_pipeline->_renderWindow->Render();
 
@@ -452,10 +451,28 @@ void VTKPlotter::init()
   _plottable->init_pipeline();
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::set_title(const std::string& name, const std::string& label)
+const std::string& VTKPlotter::key() const
 {
+  return _key;
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_key(std::string key)
+{
+  _key = key;
+}
+//----------------------------------------------------------------------------
+std::string VTKPlotter::to_key(const Variable &var)
+{
+  std::stringstream s;
+  s << var.id() << "@@";
+  return s.str();
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::set_title_from(const Variable &variable)
+{
+
   std::stringstream title;
-  title <<"Plot of \"" << name << "\" (" << label << ")";
+  title << "Plot of \"" << variable.name() << "\"" << " (" << variable.label() << ")";
   parameters["title"] =  title.str();
 }
 //----------------------------------------------------------------------------
@@ -648,8 +665,15 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtk_pipeline->polygon_actor->GetProperty()->SetLineWidth(1);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::update()
+void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
 {
+  if (!is_compatible(variable))
+  {
+    dolfin_error("VTKPlotter.cpp",
+                 "plot()",
+                 "The plottable is not compatible with the data");
+  }
+
   // Process some parameters
   if (parameters["wireframe"])
     vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
@@ -660,7 +684,7 @@ void VTKPlotter::update()
   vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
 
   // Update the plottable data
-  _plottable->update(parameters, _frame_counter);
+  _plottable->update(variable, parameters, _frame_counter);
 
   // If this is the first render of this plot and/or the rescale parameter
   // is set, we read get the min/max values of the data and process them
@@ -700,16 +724,11 @@ void VTKPlotter::update()
   // the input may hence also have changed
   vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
 }
-
-void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){ update(); }
-void VTKPlotter::update(boost::shared_ptr<const Function> function) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function) { update(); }
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){ update(); }
+//----------------------------------------------------------------------------
+bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
+{
+  return (!variable || _plottable->is_compatible(*variable));
+}
 //----------------------------------------------------------------------------
 void VTKPlotter::all_interactive()
 {
@@ -734,21 +753,19 @@ void VTKPlotter::all_interactive()
 
 
 #include "VTKPlotter.h"
-#include "ExpressionWrapper.h"
 namespace dolfin { class PrivateVTKPipeline{}; }
 
 using namespace dolfin;
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _id(mesh->id())                                    { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _id(function->id())                        { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : _id(expression->id())           { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _key(to_key(*mesh))                                    { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _key(to_key(*function))                        { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                                          { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init(); }
+		       boost::shared_ptr<const Mesh> mesh) : _key(to_key(*expression))                              { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _key(to_key(*bc))                                 { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _key(to_key(*mesh_function))   { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _key(to_key(*mesh_function))    { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _key(to_key(*mesh_function)) { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _key(to_key(*mesh_function))   { init(); }
 VTKPlotter::~VTKPlotter(){}
 
 // (Ab)use init() to issue a warning.
@@ -761,19 +778,10 @@ void VTKPlotter::init()
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
 }
 
-void VTKPlotter::update(){}
-void VTKPlotter::update(boost::shared_ptr<const Mesh> mesh){}
-void VTKPlotter::update(boost::shared_ptr<const Function> function){}
-void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression){}
-void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh){}
-void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc){}
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function){}
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function){}
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){}
-void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){}
+void VTKPlotter::update(boost::shared_ptr<const Variable>) {}
 
 
-void VTKPlotter::plot               () {}
+void VTKPlotter::plot               (boost::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive        (bool ){}
 void VTKPlotter::start_eventloop    (){}
 void VTKPlotter::write_png          (std::string){}
@@ -784,7 +792,7 @@ void VTKPlotter::elevate            (double){}
 void VTKPlotter::dolly              (double){}
 void VTKPlotter::set_viewangle      (double){}
 void VTKPlotter::set_min_max        (double, double){}
-void VTKPlotter::add_polygon(const Array<double>&){}
+void VTKPlotter::add_polygon        (const Array<double>&){}
 
 void VTKPlotter::all_interactive() {}
 

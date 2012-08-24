@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-08-21
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -49,7 +51,9 @@ namespace dolfin
     void init_pipeline();
 
     /// Update the plottable data
-    void update(const Parameters& parameters, int frame_counter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+
+    bool is_compatible(const Variable &var) const { return dynamic_cast<const Mesh*>(&var); }
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);

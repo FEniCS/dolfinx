@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-08-21
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -62,7 +64,11 @@ namespace dolfin
     void init_pipeline();
 
     /// Update the plottable data
-    void update(const Parameters& parameters, int framecounter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
+
+    /// Check if the plotter is compatible with a given variable (same-rank
+    /// function on same mesh for example)
+    bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
