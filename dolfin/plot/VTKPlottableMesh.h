@@ -175,20 +175,9 @@ namespace dolfin
       vtkSmartPointer<vtkFloatArray>::New();
     values->SetNumberOfValues(num_entities);
 
-    if (_entity_dim == 0 || _entity_dim == _mesh->topology().dim())
+    for (uint i = 0; i < num_entities; ++i)
     {
-      for (uint i = 0; i < num_entities; ++i)
-      {
-        values->SetValue(i, (float)indata[i]);
-      }
-    }
-    else
-    {
-      //initMappedEntities();
-      for (uint i = 0; i < num_entities; ++i)
-      {
-        //values->SetValue(i, (double)indata[_mapping[i]]);
-      }
+      values->SetValue(i, (float)indata[i]);
     }
 
     _grid->GetCellData()->SetScalars(values);

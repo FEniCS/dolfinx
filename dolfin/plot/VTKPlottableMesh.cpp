@@ -77,7 +77,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
 
   // Construct VTK point array from DOLFIN mesh vertices
 
-  // Create pint array
+  // Create point array
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
 
@@ -103,20 +103,34 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const uint *connectivity = _mesh->cells();
-  const uint spatial_dim = _mesh->topology().dim();
-  const uint vertices_per_cell = _mesh->type().num_vertices(spatial_dim);
+  const MeshTopology &topo = _mesh->topology();
+  const uint *connectivity = topo(_entity_dim, 0)();
+  const uint vertices_per_entity = _mesh->type().num_vertices(_entity_dim);
+  const uint num_entities = topo.size(_entity_dim);
 
-  for (uint i = 0; i < _mesh->num_cells(); ++i)
+  if (_entity_dim > 0)
   {
-    // Insert all vertex indices for a given cell. For a simplex cell in nD,
-    // n+1 indices are inserted. The connectivity array must be indexed at
-    // (nv x cell_number + idx_offset)
-    cells->InsertNextCell(vertices_per_cell);
-    for(uint j = 0; j < vertices_per_cell; ++j) {
-      cells->InsertCellPoint(connectivity[i*vertices_per_cell + j]);
+    for (uint i = 0; i < num_entities; ++i)
+    {
+      // Insert all vertex indices for a given cell. For a simplex cell in nD,
+      // n+1 indices are inserted. The connectivity array must be indexed at
+      // (nv x cell_number + idx_offset)
+      cells->InsertNextCell(vertices_per_entity);
+      for(uint j = 0; j < vertices_per_entity; ++j) {
+        cells->InsertCellPoint(connectivity[i*vertices_per_entity + j]);
+      }
     }
   }
+  else
+  {
+    for (uint i = 0; i < num_entities; ++i)
+    {
+      // Cells equals vertices, connectivity is NULL
+      cells->InsertNextCell(1);
+      cells->InsertCellPoint(i);
+    }
+  }
+
   // Free unused memory in cell array
   // (automatically allocated during cell insertion)
   cells->Squeeze();
@@ -124,8 +138,11 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // Insert points, vertex labels and cells in VTK unstructured grid
   _grid->SetPoints(points);
   _grid->GetPointData()->AddArray(labels);
-  switch (spatial_dim)
+  switch (_entity_dim)
   {
+    case 0:
+      _grid->SetCells(VTK_VERTEX, cells);
+      break;
     case 1:
       _grid->SetCells(VTK_LINE, cells);
       break;
@@ -136,7 +153,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
       _grid->SetCells(VTK_TETRA, cells);
       break;
     default:
-      // Should never be reached
+      dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
       break;
   }
   

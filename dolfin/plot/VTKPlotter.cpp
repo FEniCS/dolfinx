@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-21
+// Last changed: 2012-08-22
 
 
 #include <dolfin/common/Array.h>
@@ -165,7 +165,10 @@ namespace dolfin
 
       // Set some properties that affect the look of things
       _renderer->SetBackground(1, 1, 1);
+      _lut->SetNanColor(0.0, 0.0, 0.0, 0.1);
       _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
+      _actor->GetProperty()->SetPointSize(3);   // should be parameter?
+      //_actor->GetProperty()->SetLineWidth(1);
 
       // FIXME: Take this as parameter
       _renderWindow->SetSize(600, 400);

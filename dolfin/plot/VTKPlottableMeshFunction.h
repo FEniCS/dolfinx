@@ -64,7 +64,8 @@ namespace dolfin
   template <typename T>
   VTKPlottableMeshFunction<T>::VTKPlottableMeshFunction(
       boost::shared_ptr<const MeshFunction<T> > mesh_function) :
-    VTKPlottableMesh(reference_to_no_delete_pointer(mesh_function->mesh())),
+    VTKPlottableMesh(reference_to_no_delete_pointer(mesh_function->mesh()),
+                     mesh_function->dim()),
     _mesh_function(mesh_function)
   {
     // Do nothing
@@ -81,28 +82,7 @@ namespace dolfin
 
     VTKPlottableMesh::update(reference_to_no_delete_pointer(_mesh_function->mesh()), parameters, frame_counter);
 
-    if (_mesh_function->dim() == 0)
-    {
-      // Mesh function over vertices
-
-      // FIXME: The technique used for vertex valued mesh functions at the
-      // moment leads to colors interpolated over the facets/cells. We need to
-      // find a way to turn off interpolation (possibly using vtkImageActor?)
-
-      setPointValues(_mesh_function->size(), _mesh_function->values());
-    }
-    else if (_mesh_function->dim() == _mesh->topology().dim())
-    {
-      // Mesh function over cells
-
-      setCellValues(_mesh_function->size(), _mesh_function->values());
-    }
-    else
-    {
-      dolfin_error("VTKPlottableMeshFunction.h",
-                   "plot mesh function",
-                   "Only able to plot vertex and cell valued mesh functions");
-    }
+    setCellValues(_mesh_function->size(), _mesh_function->values());
   }
   //----------------------------------------------------------------------------
 
