@@ -59,3 +59,8 @@ Compute renumbering (map[old] -> new) using King algorithm
 Compute renumbering (map[old] -> new) using minimum degree algorithm
 ";
 
+// Documentation extracted from: (module=graph, header=SCOTCH.h)
+%feature("docstring")  dolfin::SCOTCH "
+This class proivdes an interface to SCOTCH-PT (parallel version)
+";
+

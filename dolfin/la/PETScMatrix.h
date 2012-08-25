@@ -154,7 +154,7 @@ namespace dolfin
 
     /// Set (approximate) null space of the matrix. This is used by
     /// some preconditioners.
-    void set_near_nullspace(std::vector<const GenericVector*> nullspace);
+    void set_near_nullspace(const std::vector<const GenericVector*> nullspace);
 
     /// Return norm of matrix
     double norm(std::string norm_type) const;

@@ -72,7 +72,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 // The typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &
+%typecheck(SWIG_TYPECHECK_POINTER) CONST_VECTOR std::vector<CONST dolfin::TYPE *>
 {
   $1 = PyList_Check($input) ? 1 : 0;
 }
@@ -80,7 +80,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 // The std::vector<Type*> typemap
 //-----------------------------------------------------------------------------
-%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> & (
+%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> (
 std::vector<CONST dolfin::TYPE *> tmp_vec,
 SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared,
 dolfin::TYPE * arg)
@@ -99,9 +99,7 @@ dolfin::TYPE * arg)
     py_item = PyList_GetItem($input,i);
     res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE *), 0);
     if (SWIG_IsOK(res))
-    {
       tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
-    }
     else
     {
       // If failed with normal pointer conversion then
@@ -110,24 +108,20 @@ dolfin::TYPE * arg)
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res))
       {
-	if (itemp)
-	{
-	  tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
-	  tmp_vec.push_back(tempshared.get());
-	}
-	// If we need to release memory
-	if (newmem & SWIG_CAST_NEW_MEMORY)
-	{
-	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-	}
+        if (itemp)
+        {
+          tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
+          tmp_vec.push_back(tempshared.get());
+        }
+        // If we need to release memory
+        if (newmem & SWIG_CAST_NEW_MEMORY)
+          delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
       }
       else
-      {
-	SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-      }
+        SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
     }
   }
-  $1 = &tmp_vec;
+  $1 = tmp_vec;
 }
 
 
@@ -172,16 +166,12 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
 	        delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
       }
       else
-      {
         SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
-      }
     }
     $1 = tmp_vec;
   }
   else
-  {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
-  }
 }
 
 //-----------------------------------------------------------------------------

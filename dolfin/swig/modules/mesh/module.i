@@ -112,6 +112,7 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/GraphBuilder.h"
 #include "dolfin/graph/BoostGraphRenumbering.h"
+#include "dolfin/graph/SCOTCH.h"
 
 // #include types from ale submodule
 #include "dolfin/ale/ALE.h"
@@ -225,6 +226,7 @@ import_array();
 %include "dolfin/graph/Graph.h"
 %include "dolfin/graph/GraphBuilder.h"
 %include "dolfin/graph/BoostGraphRenumbering.h"
+%include "dolfin/graph/SCOTCH.h"
 %include "dolfin/swig/graph/post.i"
 
 // %include types from submodule ale

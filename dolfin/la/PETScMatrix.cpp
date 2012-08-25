@@ -422,7 +422,7 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(std::vector<const GenericVector*> nullspace)
+void PETScMatrix::set_near_nullspace(const std::vector<const GenericVector*> nullspace)
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
   dolfin_error("PETScMatrix.cpp",

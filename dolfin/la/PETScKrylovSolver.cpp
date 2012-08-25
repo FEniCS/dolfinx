@@ -322,6 +322,10 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
       warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
   }
 
+  PC pc;
+  KSPGetPC(*_ksp, &pc);
+  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+
   // Report results
   if (report && dolfin::MPI::process_number() == 0)
     write_report(num_iterations, reason);

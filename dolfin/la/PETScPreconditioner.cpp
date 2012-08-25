@@ -26,6 +26,8 @@
 #include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
+#include <petscpcmg.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/dolfin_log.h>
@@ -234,15 +236,67 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   else if (type == "amg_ml" || type == "ml_amg")
   {
     #if PETSC_HAVE_ML
+
     PCSetType(pc, PCML);
 
-    //PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
+    //PCMGSetLevels(pc, 3, PETSC_NULL);
+    //PCMGSetCycleType(pc, PC_MG_CYCLE_W);
+
+    // -- PETSC general multigrid options
+
+    // multiplicative or additive
+    //PetscOptionsSetValue("-pc_mg_type", "additive");
+
+    //PetscOptionsSetValue("-mg_levels",
+    //                      boost::lexical_cast<std::string>(3).c_str());
+
     //PetscOptionsSetValue("-pc_mg_smoothup",
     //                      boost::lexical_cast<std::string>(1).c_str());
-    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
-    //                      boost::lexical_cast<std::string>(128).c_str());
+    //PetscOptionsSetValue("-pc_mg_smoothdown",
+    //                      boost::lexical_cast<std::string>(1).c_str());
+
+    //PetscOptionsSetValue("-pc_mg_cycles",
+    //                      boost::lexical_cast<std::string>(1).c_str());
+
+    // Chebychev
+    //PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
+
+    //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+    //PetscOptionsSetValue("-mg_levels_ksp_initial_guess_nonzero", "1");
+
+    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
+    //                      "0.0,1.1");
+
+    //PetscOptionsSetValue("-mg_levels_ksp_max_it",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    // Smoother preconditioner
+    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+
+    //PetscOptionsSetValue("-mg_levels_pc_sor_its",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    //PetscOptionsSetValue("-mg_levels_pc_sor_lits",
+    //                      boost::lexical_cast<std::string>(6).c_str());
+
+    //PetscOptionsSetValue("-mg_levels_pc_sor_omega",
+    //                      boost::lexical_cast<std::string>(0.8).c_str());
+
+    //PetscOptionsSetValue("-pc_mg_monitor",
+    //                      boost::lexical_cast<std::string>(1).c_str());
+
+    // -- ML-specific options
+
     //PetscOptionsSetValue("-pc_ml_maxNlevels",
     //                      boost::lexical_cast<std::string>(4).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
+
+
+    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
+    //                      boost::lexical_cast<std::string>(128).c_str());
 
     //PetscOptionsSetValue("-pc_ml_Threshold",
     //                      boost::lexical_cast<std::string>(2).c_str());
@@ -251,13 +305,24 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //                      boost::lexical_cast<std::string>(6).c_str());
 
 
+    // Make sure options are set
+    //PCSetFromOptions(pc);
 
-      //#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-      //PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-      //PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-      //#else
-      //PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-      //#endif
+    // Make sure the data structures have been constructed
+    //std::cout << "!!! Set-up Create ksp" << std::endl;
+    //KSPSetUp(*solver.ksp());
+    //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+    //std::cout << "!!! End view" << std::endl;
+
+    //K
+    //PCMGGetSmoother(PC pc,PetscInt l,KSP *ksp)
+
+    //#if PETSC_VERSIOsyN_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
+    //PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+    //PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+    //#else
+    //PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+    //#endif
 
     #else
     warning("PETSc has not been compiled with the ML library for   "
@@ -270,9 +335,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Select method and overlap
     PCSetType(pc, _methods.find("additive_schwarz")->second);
     PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
-
-    // Make sure the data structures have been constructed
-    KSPSetUp(*solver.ksp());
 
     // Get sub-solvers and set sub-solver parameters
     KSP* sub_ksps;

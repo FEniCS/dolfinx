@@ -67,6 +67,13 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
+{
+  std::vector<uint> permutation, inverse_permutation;
+  compute_renumbering(graph, permutation, inverse_permutation);
+  return permutation;
+}
+//-----------------------------------------------------------------------------
 void SCOTCH::compute_renumbering(const Graph& graph,
                                  std::vector<uint>& permutation,
                                  std::vector<uint>& inverse_permutation)

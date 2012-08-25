@@ -43,6 +43,9 @@ namespace dolfin
                                   const LocalMeshData& mesh_data);
 
     // Compute graph re-numbering
+    static std::vector<uint> compute_renumbering(const Graph& graph);
+
+    // Compute graph re-numbering
     static void compute_renumbering(const Graph& graph,
                                     std::vector<uint>& permutation,
                                     std::vector<uint>& inverse_permutation);

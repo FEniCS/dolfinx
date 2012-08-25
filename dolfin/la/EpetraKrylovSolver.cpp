@@ -82,6 +82,7 @@ Parameters EpetraKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("epetra_krylov_solver");
+  p.add("monitor_interval", 1);
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -203,7 +204,10 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Set output level
   if (parameters["monitor_convergence"])
-    solver->SetAztecOption(AZ_output, 1);
+  {
+    const uint interval = parameters["monitor_interval"];
+    solver->SetAztecOption(AZ_output, interval);
+  }
   else
     solver->SetAztecOption(AZ_output, AZ_none);
 

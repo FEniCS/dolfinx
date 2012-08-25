@@ -189,7 +189,7 @@ void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList>
   parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*>& null_space)
+void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*> null_space)
 {
   // Loop over vectors spanning the null space and copy into a
   // Epetra_MultiVector
