@@ -33,8 +33,6 @@ using namespace dolfin;
 
 int main()
 {
-  parameters["linear_algebra_backend"] = "Epetra";
-
   // Source term
   class Source : public Expression
   {
