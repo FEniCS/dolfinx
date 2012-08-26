@@ -337,6 +337,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
 
     // Get sub-solvers and set sub-solver parameters
+    /*
     KSP* sub_ksps;
     int num_local(0), first(0);
     PCASMGetSubKSP(pc, &num_local, &first, &sub_ksps);
@@ -359,6 +360,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 		//                      parameters["divergence_limit"],
 		//                      100);
     //KSPMonitorSet(sub_ksps[0], KSPMonitorTrueResidualNorm, 0, 0);
+    */
   }
   else if (type != "default")
   {
