@@ -72,17 +72,17 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   set(CMAKE_REQUIRED_INCLUDES  ${PASTIX_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${PASTIX_LIBRARIES})
 
+ # Add SCOTCH variables if SCOTCH has been found                                                                                                                                                       
+  if (SCOTCH_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${SCOTCH_INCLUDE_DIRS})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARIES})
+  endif()
+
   # Add MPI variables if MPI has been found
   if (MPI_C_FOUND)
     set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-  endif()
-
-  # Add SCOTCH variables if SCOTCH has been found
-  if (SCOTCH_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${SCOTCH_INCLUDE_DIRS})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARIES})
   endif()
 
   # Build and run test program
