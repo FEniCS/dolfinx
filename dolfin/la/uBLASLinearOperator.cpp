@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2006 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,46 +15,65 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells
-//
-// First added:  2003-02-06
-// Last changed: 2006-10-23
+// First added:  2006-07-07
+// Last changed: 2012-08-23
 
-#include <dolfin/log/dolfin_log.h>
-#include "Quadrature.h"
+#include "uBLASLinearOperator.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Quadrature::Quadrature(unsigned int n, double m) : points(n), weights(n, 0), m(m)
+uBLASLinearOperator::uBLASLinearOperator() : _wrapper(0), M(0), N(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Quadrature::~Quadrature()
+dolfin::uint uBLASLinearOperator::size(uint dim) const
 {
-  // Do nothing
+  if (dim == 0)
+    return M;
+  else if (dim == 1)
+    return N;
+  else
+  {
+    dolfin_error("uBLASLinearOperator.h",
+                 "return size of uBLASLinearOperator",
+                 "Illegal dimension (%d)", dim);
+  }
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
-int Quadrature::size() const
+void uBLASLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
-  return points.size();
+  dolfin_assert(_wrapper);
+  _wrapper->mult(x, y);
 }
 //-----------------------------------------------------------------------------
-double Quadrature::point(unsigned int i) const
+std::string uBLASLinearOperator::str(bool verbose) const
 {
-  dolfin_assert(i < points.size());
-  return points[i];
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for uBLASLinearOperator not implemented.");
+    s << str(false);
+  }
+  else
+  {
+    s << "<uBLASLinearOperator>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
-double Quadrature::weight(unsigned int i) const
+void uBLASLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
 {
-  dolfin_assert(i < points.size());
-  return weights[i];
-}
-//-----------------------------------------------------------------------------
-double Quadrature::measure() const
-{
-  return m;
+  // Store dimensions
+  this->M = M;
+  this->N = N;
+
+  // Store wrapper
+  _wrapper = wrapper;
 }
 //-----------------------------------------------------------------------------

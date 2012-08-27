@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008, 2009.
+// Modified by Garth N. Wells 2008, 2009
+// Modified by Anders Logg 2012
 //
 // First added:  2008-07-06
-// Last changed: 2009-09-08
+// Last changed: 2012-08-20
 
 #ifdef HAS_MTL4
 
@@ -86,10 +87,14 @@ namespace dolfin
     /// Resize matrix to M x N
     virtual void resize(uint M, uint N);
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
-    virtual void resize(GenericVector& y, uint dim) const;
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
@@ -139,7 +144,7 @@ namespace dolfin
 
     //--- Special functions ---
 
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special MTL4 functions ---
 

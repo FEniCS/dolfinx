@@ -155,10 +155,13 @@
 %shared_ptr(dolfin::GenericTensor)
 %shared_ptr(dolfin::GenericVector)
 %shared_ptr(dolfin::GenericMatrix)
+%shared_ptr(dolfin::GenericLinearOperator)
+%shared_ptr(dolfin::LinearAlgebraObject)
 %shared_ptr(dolfin::Scalar)
 
 %shared_ptr(dolfin::Matrix)
 %shared_ptr(dolfin::Vector)
+%shared_ptr(dolfin::LinearOperator)
 
 %shared_ptr(dolfin::STLMatrix)
 %shared_ptr(dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >)
@@ -168,7 +171,7 @@
 
 #ifdef HAS_PETSC
 %shared_ptr(dolfin::PETScBaseMatrix)
-%shared_ptr(dolfin::PETScKrylovMatrix)
+%shared_ptr(dolfin::PETScLinearOperator)
 %shared_ptr(dolfin::PETScKrylovSolver)
 %shared_ptr(dolfin::PETScLUSolver)
 %shared_ptr(dolfin::PETScMatrix)
@@ -205,6 +208,7 @@
 %shared_ptr(dolfin::CholmodCholeskySolver)
 
 %shared_ptr(dolfin::uBLASKrylovSolver)
+%shared_ptr(dolfin::uBLASLinearOperator)
 
 %shared_ptr(dolfin::LinearSolver)
 %shared_ptr(dolfin::GenericLinearSolver)

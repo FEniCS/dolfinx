@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andy R. Terrel, 2005.
+// Modified by Andy R. Terrel 2005
 //
 // First added:  2005-01-17
 // Last changed: 2010-08-28
@@ -30,80 +30,107 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include "PETScVector.h"
-#include "PETScKrylovMatrix.h"
+#include "PETScLinearOperator.h"
 
 using namespace dolfin;
 
-// Mult function
-
-// FIXME: Add an explanation of how this this function works
+// Callback function for PETSc mult function
 namespace dolfin
 {
   int usermult(Mat A, Vec x, Vec y)
   {
-    // Wrap x and y in a shared_ptr
+    // Wrap PETSc Vec as dolfin::PETScVector
     boost::shared_ptr<Vec> _x(&x, NoDeleter());
     boost::shared_ptr<Vec> _y(&y, NoDeleter());
+    PETScVector __x(_x);
+    PETScVector __y(_y);
 
+    // Extract pointer to PETScLinearOperator
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    PETScVector xx(_x), yy(_y);
-    ((PETScKrylovMatrix*) ctx)->mult(xx, yy);
+    PETScLinearOperator* _A = ((PETScLinearOperator*) ctx);
+
+    // Call user-defined mult function through wrapper
+    dolfin_assert(_A);
+    GenericLinearOperator* wrapper = _A->wrapper();
+    dolfin_assert(wrapper);
+    wrapper->mult(__x, __y);
+
     return 0;
   }
 }
+
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix()
+PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix(dolfin::uint m, dolfin::uint n)
+void PETScLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
-  resize(m, n);
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::~PETScKrylovMatrix()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)
-{
-  // Compute local range
-  const std::pair<uint, uint> row_range    = MPI::local_range(m);
-  const std::pair<uint, uint> column_range = MPI::local_range(n);
-  const int m_local = row_range.second - row_range.first;
-  const int n_local = column_range.second - column_range.first;
-
-  if (A)
-  {
-    // Get size and local size of existing matrix
-    int _m(0), _n(0), _m_local(0), _n_local(0);
-    MatGetSize(*A, &_m, &_m);
-    MatGetLocalSize(*A, &_m_local, &_n_local);
-
-    if (static_cast<int>(m) == _m && static_cast<int>(n) == _n && m_local == _m_local && n_local == _n_local )
-      return;
-    else
-      A.reset(new Mat, PETScMatrixDeleter());
-  }
-  else
-    A.reset(new Mat, PETScMatrixDeleter());
-
-  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, m, n, (void*) this, A.get());
-  MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
-}
-//-----------------------------------------------------------------------------
-std::string PETScKrylovMatrix::str(bool verbose) const
+std::string PETScLinearOperator::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-    warning("Verbose output for PETScKrylovMatrix not implemented.");
+  {
+    warning("Verbose output for PETScLinearOperator not implemented.");
+    s << str(false);
+  }
   else
-    s << "<PETScKrylovMatrix of size " << size(0) << " x " << size(1) << ">";
+  {
+    s << "<PETScLinearOperator of size "
+      << PETScBaseMatrix::size(0)
+      << " x "
+      << PETScBaseMatrix::size(1) << ">";
+  }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+const GenericLinearOperator* PETScLinearOperator::wrapper() const
+{
+  return _wrapper;
+}
+//-----------------------------------------------------------------------------
+GenericLinearOperator* PETScLinearOperator::wrapper()
+{
+  return _wrapper;
+}
+//-----------------------------------------------------------------------------
+void PETScLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
+{
+  // Store wrapper
+  _wrapper = wrapper;
+
+  // Compute local range
+  const std::pair<uint, uint> row_range    = MPI::local_range(M);
+  const std::pair<uint, uint> column_range = MPI::local_range(N);
+  const int m_local = row_range.second - row_range.first;
+  const int n_local = column_range.second - column_range.first;
+
+  // Check whether matrix has already been initialized and dimensions match
+  if (A)
+  {
+    // Get size and local size of existing matrix
+    int _M(0), _N(0), _m_local(0), _n_local(0);
+    MatGetSize(*A, &_M, &_N);
+    MatGetLocalSize(*A, &_m_local, &_n_local);
+
+    // Check whether size already matches
+    if (static_cast<int>(M) == _M &&
+        static_cast<int>(N) == _N &&
+        m_local == _m_local &&
+        n_local == _n_local)
+      return;
+  }
+
+  // Initialize PETSc matrix
+  A.reset(new Mat, PETScMatrixDeleter());
+  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this, A.get());
+  MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
 

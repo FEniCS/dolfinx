@@ -15,12 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2012
+//
 // First added:  2008-08-15
-// Last changed: 2011-11-15
+// Last changed: 2012-08-21
 
 #include <cstring>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/dolfin_log.h>
 #include "LUSolver.h"
@@ -43,7 +45,7 @@ CholmodCholeskySolver::CholmodCholeskySolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A)
+CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A)
                                : _A(A)
 {
   // Set parameter values
@@ -57,7 +59,7 @@ CholmodCholeskySolver::~CholmodCholeskySolver()
 //-----------------------------------------------------------------------------
 //=============================================================================
 #ifdef HAS_CHOLMOD
-dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
+dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                           GenericVector& x,
                                           const GenericVector& b)
 {
@@ -73,15 +75,18 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
+dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
+  // Need matrix data
+  const GenericMatrix& _A = require_matrix(A);
+
   // Check dimensions and get number of non-zeroes
   boost::tuples::tuple<const std::size_t*,
                        const std::size_t*,
-                       const double*, int> data = A.data();
-  const uint M = A.size(0);
+                       const double*, int> data = _A.data();
+  const uint M = _A.size(0);
   const uint nnz = boost::tuples::get<3>(data);
-  dolfin_assert(A.size(0) == A.size(1));
+  dolfin_assert(_A.size(0) == _A.size(1));
 
   dolfin_assert(nnz >= M);
 

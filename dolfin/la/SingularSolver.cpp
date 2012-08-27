@@ -25,7 +25,7 @@
 #include "GenericMatrix.h"
 #include "GenericSparsityPattern.h"
 #include "GenericVector.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 #include "TensorLayout.h"
 #include "SingularSolver.h"
 

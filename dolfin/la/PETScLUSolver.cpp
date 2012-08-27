@@ -166,9 +166,9 @@ PETScLUSolver::~PETScLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
-  this->A = GenericTensor::down_cast<const PETScMatrix>(A);
+  this->A = as_type<const PETScMatrix>(require_matrix(A));
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& PETScLUSolver::get_operator() const
+const GenericLinearOperator& PETScLUSolver::get_operator() const
 {
   if (!A)
   {
@@ -195,8 +195,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   dolfin_assert(A);
 
   // Downcast matrix and vectors
-  const PETScVector& _b = b.down_cast<PETScVector>();
-  PETScVector& _x = x.down_cast<PETScVector>();
+  const PETScVector& _b = as_type<const PETScVector>(b);
+  PETScVector& _x = as_type<PETScVector>(x);
 
   // Check dimensions
   if (A->size(0) != b.size())
@@ -237,11 +237,13 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint PETScLUSolver::solve(const GenericLinearOperator& A,
+                                  GenericVector& x,
                                   const GenericVector& b)
 {
-  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
+  return solve(as_type<const PETScMatrix>(require_matrix(A)),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,

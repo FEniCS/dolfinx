@@ -65,7 +65,7 @@ equations of the form :math:`F(x) = 0`.
   *Arguments*
       solver (:py:class:`GenericLinearSolver`)
           The linear solver.
-      factory (:py:class:`LinearAlgebraFactory`)
+      factory (:py:class:`GenericLinearAlgebraFactory`)
           The factory.
 ";
 

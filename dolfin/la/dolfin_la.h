@@ -7,6 +7,9 @@
 
 #include <dolfin/la/ublas.h>
 
+#include <dolfin/la/LinearAlgebraObject.h>
+#include <dolfin/la/GenericLinearOperator.h>
+
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericSparsityPattern.h>
@@ -19,9 +22,9 @@
 #include <dolfin/la/uBLASFactory.h>
 
 #include <dolfin/la/uBLASMatrix.h>
-#include <dolfin/la/uBLASKrylovMatrix.h>
+#include <dolfin/la/uBLASLinearOperator.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScKrylovMatrix.h>
+#include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/EpetraLUSolver.h>
 #include <dolfin/la/EpetraKrylovSolver.h>
@@ -45,7 +48,7 @@
 
 #include <dolfin/la/SparsityPattern.h>
 
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
@@ -70,5 +73,8 @@
 #include <dolfin/la/solve.h>
 #include <dolfin/la/BlockVector.h>
 #include <dolfin/la/BlockMatrix.h>
+#include <dolfin/la/TensorProductVector.h>
+#include <dolfin/la/TensorProductMatrix.h>
+#include <dolfin/la/LinearOperator.h>
 
 #endif

@@ -33,11 +33,11 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
 
   /// Solve linear system Ax = b
-  uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
+  uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
              std::string method = "lu",
              std::string preconditioner = "none");
 
@@ -87,7 +87,7 @@ namespace dolfin
   std::vector<std::pair<std::string, std::string> > krylov_solver_preconditioners();
 
   /// Compute residual ||Ax - b||
-  double residual(const GenericMatrix& A, const GenericVector& x,
+  double residual(const GenericLinearOperator& A, const GenericVector& x,
                   const GenericVector& b);
 
   /// Compute norm of vector. Valid norm types are "l2", "l1" and "linf".

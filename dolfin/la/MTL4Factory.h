@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 //
 // First added:  2008-07-06
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifdef HAS_MTL4
 
@@ -33,12 +33,12 @@
 #include "MTL4Vector.h"
 #include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
 
-  class MTL4Factory : public LinearAlgebraFactory
+  class MTL4Factory : public GenericLinearAlgebraFactory
   {
   public:
 
@@ -71,6 +71,16 @@ namespace dolfin
     {
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;
+    }
+
+    /// Create empty linear operator
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    {
+      dolfin_error("MTL4Factory.h",
+                   "create linear operator",
+                   "Not supported by MTL4 linear algebra backend");
+      boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+      return A;
     }
 
     /// Create LU solver

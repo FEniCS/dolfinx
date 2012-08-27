@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-13 
-// Last changed: 2012-02-29
+// Last changed: 2012-08-24
 
 #ifdef HAS_PETSC_CUSP
 
@@ -24,6 +24,7 @@
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
+#include "PETScLinearOperator.h"
 #include "PETScCuspFactory.h"
 
 using namespace dolfin;
@@ -57,6 +58,12 @@ boost::shared_ptr<TensorLayout> PETScCuspFactory::create_layout(uint rank) const
     sparsity = true;
   boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericLinearOperator> PETScCuspFactory::create_linear_operator() const
+{
+  boost::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
+  return A;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver> PETScCuspFactory::create_lu_solver(std::string method) const

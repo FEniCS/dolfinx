@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Anders Logg
+// Copyright (C) 2008-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-17
-// Last changed: 2011-10-19
+// Last changed: 2012-08-21
 
 #ifndef __DEFAULT_FACTORY_H
 #define __DEFAULT_FACTORY_H
@@ -24,12 +24,12 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
 
-  class DefaultFactory : public LinearAlgebraFactory
+  class DefaultFactory : public GenericLinearAlgebraFactory
   {
 
     class GenericLinearSolver;
@@ -43,16 +43,19 @@ namespace dolfin
     virtual ~DefaultFactory() {}
 
     /// Create empty matrix
-    virtual boost::shared_ptr<dolfin::GenericMatrix> create_matrix() const;
+    virtual boost::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector (global)
-    virtual boost::shared_ptr<dolfin::GenericVector> create_vector() const;
+    virtual boost::shared_ptr<GenericVector> create_vector() const;
 
     /// Create empty vector (local)
-    virtual boost::shared_ptr<dolfin::GenericVector> create_local_vector() const;
+    virtual boost::shared_ptr<GenericVector> create_local_vector() const;
 
     /// Create empty tensor layout
     virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
+
+    /// Create empty linear operator
+    virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
     virtual boost::shared_ptr<dolfin::GenericLUSolver>
@@ -75,7 +78,7 @@ namespace dolfin
       krylov_solver_preconditioners() const;
 
     /// Return instance of default backend
-    static LinearAlgebraFactory& factory();
+    static GenericLinearAlgebraFactory& factory();
 
   };
 

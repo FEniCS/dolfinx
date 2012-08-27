@@ -52,6 +52,11 @@ boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
   return factory().create_layout(rank);
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericLinearOperator> DefaultFactory::create_linear_operator() const
+{
+  return factory().create_linear_operator();
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver>
   DefaultFactory::create_lu_solver(std::string method) const
 {
@@ -83,7 +88,7 @@ std::vector<std::pair<std::string, std::string> >
   return factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& DefaultFactory::factory()
+GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "uBLAS";

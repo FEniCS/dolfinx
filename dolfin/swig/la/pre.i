@@ -101,12 +101,13 @@
 }
 
 //-----------------------------------------------------------------------------
-// Ignore low level interface from GenericTensor class
+// Ignore low level interface
 //-----------------------------------------------------------------------------
+%ignore dolfin::LinearAlgebraObject::instance;
 %ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
-%ignore dolfin::GenericTensor::instance;
+%ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
 %ignore dolfin::uBLASVector::operator ()(uint i) const;
@@ -248,8 +249,32 @@
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::PETScUserPreconditioner;
-%feature("director") dolfin::PETScKrylovMatrix;
-%feature("director") dolfin::uBLASKrylovMatrix;
+
+%feature("director") dolfin::PETScLinearOperator;
+%feature("nodirector") dolfin::PETScLinearOperator::str;
+%feature("nodirector") dolfin::PETScLinearOperator::wrapper;
+
+%feature("director") dolfin::uBLASLinearOperator;
+%feature("nodirector") dolfin::uBLASLinearOperator::str;
+
+%feature("director") dolfin::LinearOperator;
+%feature("nodirector") dolfin::LinearOperator::instance;
+%feature("nodirector") dolfin::LinearOperator::shared_instance;
+
+//-----------------------------------------------------------------------------
+// Director typemaps for dolfin::GenericVector
+//-----------------------------------------------------------------------------
+%typemap(directorin, fragment="NoDelete") dolfin::GenericVector& {
+  // Director in dolfin::GenericVector&
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+}
+
+%typemap(directorin, fragment="NoDelete") const dolfin::GenericVector& {
+  // Director in const dolfin::GenericVector&
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
+}
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector
@@ -264,4 +289,19 @@
   // Director in const dolfin::PETScVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
+}
+
+//-----------------------------------------------------------------------------
+// Director typemaps for dolfin::uBLASVector
+//-----------------------------------------------------------------------------
+%typemap(directorin, fragment="NoDelete") dolfin::uBLASVector& {
+  // Director in dolfin::uBLASVector&
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
+}
+
+%typemap(directorin, fragment="NoDelete") const dolfin::uBLASVector& {
+  // Director in const dolfin::uBLASVector&
+  SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
+  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
 }
