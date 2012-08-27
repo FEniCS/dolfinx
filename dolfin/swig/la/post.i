@@ -247,7 +247,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         if isinstance(indices, (int, integer)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
-            return as_type(_get_vector_sub_vector(self, indices))
+            return as_backend_type(_get_vector_sub_vector(self, indices))
         else:
             raise TypeError, "expected an int, slice, list or numpy array of integers"
 
@@ -466,9 +466,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         if isinstance(indices[0], int):
             if isinstance(indices[1], int):
                 return _get_matrix_single_item(self,indices[0],indices[1])
-            return as_type(_get_matrix_sub_vector(self,indices[0], indices[1], True))
+            return as_backend_type(_get_matrix_sub_vector(self,indices[0], indices[1], True))
         elif isinstance(indices[1],int):
-            return as_type(_get_matrix_sub_vector(self,indices[1], indices[0], False))
+            return as_backend_type(_get_matrix_sub_vector(self,indices[1], indices[0], False))
         else:
             same_indices = id(indices[0]) == id(indices[1])
 
@@ -479,9 +479,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                     same_indices = (indices[0] == indices[1]).all()
 
             if same_indices:
-                return as_type(_get_matrix_sub_matrix(self, indices[0], None))
+                return as_backend_type(_get_matrix_sub_matrix(self, indices[0], None))
             else:
-                return as_type(_get_matrix_sub_matrix(self, indices[0], indices[1]))
+                return as_backend_type(_get_matrix_sub_matrix(self, indices[0], indices[1]))
 
     def __setitem__(self, indices, values):
         from numpy import ndarray, isscalar
@@ -566,7 +566,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
-                raise TypeError, "Provide a Vector which can be as_typeed to ''"%vector_type.__name__
+                raise TypeError, "Provide a Vector which can be as_backend_typeed to ''"%vector_type.__name__
             if type(other) == Vector:
                 ret = Vector()
             else:
@@ -696,18 +696,18 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 // Macro with code for down casting GenericTensors
 // ---------------------------------------------------------------------------
-%define AS_TYPE_MACRO(TENSOR_TYPE)
+%define AS_BACKEND_TYPE_MACRO(TENSOR_TYPE)
 %inline %{
 bool _has_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::has_type<dolfin::TENSOR_TYPE>(*tensor); }
 
-boost::shared_ptr<dolfin::TENSOR_TYPE> _as_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+boost::shared_ptr<dolfin::TENSOR_TYPE> _as_backend_type_ ## TENSOR_TYPE(const boost::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::TENSOR_TYPE>(tensor); }
 %}
 
 %pythoncode %{
 _has_type_map[TENSOR_TYPE] = _has_type_ ## TENSOR_TYPE
-_as_type_map[TENSOR_TYPE] = _as_type_ ## TENSOR_TYPE
+_as_backend_type_map[TENSOR_TYPE] = _as_backend_type_ ## TENSOR_TYPE
 %}
 
 %enddef
@@ -719,11 +719,11 @@ LA_VEC_DATA_ACCESS(uBLASVector)
 LA_VEC_DATA_ACCESS(Vector)
 
 // ---------------------------------------------------------------------------
-// Define Python lookup maps for as_typeing
+// Define Python lookup maps for as_backend_typeing
 // ---------------------------------------------------------------------------
 %pythoncode %{
 _has_type_map = {}
-_as_type_map = {}
+_as_backend_type_map = {}
 # A map with matrix types as keys and list of possible vector types as values
 _matrix_vector_mul_map = {}
 %}
@@ -731,28 +731,28 @@ _matrix_vector_mul_map = {}
 // ---------------------------------------------------------------------------
 // Run the downcast macro
 // ---------------------------------------------------------------------------
-AS_TYPE_MACRO(uBLASVector)
+AS_BACKEND_TYPE_MACRO(uBLASVector)
 
 // NOTE: Silly SWIG force us to describe the type explicit for uBLASMatrices
 %inline %{
 bool _has_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(*tensor); }
 
-boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > > _as_backend_type_uBLASDenseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> > >(tensor); }
 
 bool _has_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor > tensor)
 { return dolfin::has_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(*tensor); }
 
-const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
+const boost::shared_ptr<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > > _as_backend_type_uBLASSparseMatrix(const boost::shared_ptr<dolfin::GenericTensor> tensor)
 { return dolfin::as_type<dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> > >(tensor); }
 %}
 
 %pythoncode %{
 _has_type_map[uBLASDenseMatrix] = _has_type_uBLASDenseMatrix
-_as_type_map[uBLASDenseMatrix] = _as_type_uBLASDenseMatrix
+_as_backend_type_map[uBLASDenseMatrix] = _as_backend_type_uBLASDenseMatrix
 _has_type_map[uBLASSparseMatrix] = _has_type_uBLASSparseMatrix
-_as_type_map[uBLASSparseMatrix] = _as_type_uBLASSparseMatrix
+_as_backend_type_map[uBLASSparseMatrix] = _as_backend_type_uBLASSparseMatrix
 %}
 
 // ---------------------------------------------------------------------------
@@ -767,8 +767,8 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 // Run backend specific macros
 // ---------------------------------------------------------------------------
 #ifdef HAS_PETSC
-AS_TYPE_MACRO(PETScVector)
-AS_TYPE_MACRO(PETScMatrix)
+AS_BACKEND_TYPE_MACRO(PETScVector)
+AS_BACKEND_TYPE_MACRO(PETScMatrix)
 
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
@@ -784,8 +784,8 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #include <Epetra_FEVector.h>
 %}
 
-AS_TYPE_MACRO(EpetraVector)
-AS_TYPE_MACRO(EpetraMatrix)
+AS_BACKEND_TYPE_MACRO(EpetraVector)
+AS_BACKEND_TYPE_MACRO(EpetraMatrix)
 
 %pythoncode %{
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
@@ -857,8 +857,8 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 #ifdef HAS_MTL4
 LA_VEC_DATA_ACCESS(MTL4Vector)
 
-AS_TYPE_MACRO(MTL4Vector)
-AS_TYPE_MACRO(MTL4Matrix)
+AS_BACKEND_TYPE_MACRO(MTL4Vector)
+AS_BACKEND_TYPE_MACRO(MTL4Matrix)
 
 %pythoncode %{
 _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
@@ -866,7 +866,7 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 #endif
 
 // ---------------------------------------------------------------------------
-// Dynamic wrappers for GenericTensor::as_type and GenericTensor::has_type,
+// Dynamic wrappers for GenericTensor::as_backend_type and GenericTensor::has_type,
 // using dict of tensor types to select from C++ template instantiations
 // ---------------------------------------------------------------------------
 %pythoncode %{
@@ -887,14 +887,14 @@ def has_type(tensor, subclass):
     assert subclass in _has_type_map
     return bool(_has_type_map[subclass](tensor))
 
-def as_type(tensor, subclass=None):
+def as_backend_type(tensor, subclass=None):
     "Cast tensor to the given subclass, passing the wrong class is an error."
-    global _as_type_map
-    assert _as_type_map
+    global _as_backend_type_map
+    assert _as_backend_type_map
     if subclass is None:
         subclass = get_tensor_type(tensor)
-    assert subclass in _as_type_map
-    ret = _as_type_map[subclass](tensor)
+    assert subclass in _as_backend_type_map
+    ret = _as_backend_type_map[subclass](tensor)
 
     # Store the tensor to avoid garbage collection
     ret._org_upcasted_tensor = tensor

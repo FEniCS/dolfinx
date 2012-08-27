@@ -237,8 +237,8 @@ class DataTester:
         self.assertRaises(RuntimeError, write_data, cols)
         self.assertRaises(RuntimeError, write_data, values)
 
-        # Test for down_casted Matrix
-        A = down_cast(A)
+        # Test for as_backend_typeed Matrix
+        A = as_backend_type(A)
         rows, cols, values = A.data()
         for row in xrange(A.size(0)):
             for k in xrange(rows[row], rows[row+1]):
@@ -252,7 +252,7 @@ class DataNotWorkingTester:
         A, B = self.assemble_matrices()
         self.assertRaises(RuntimeError, A.data)
 
-        A = down_cast(A)
+        A = as_backend_type(A)
         self.assertRaises(RuntimeError, A.data)
 
 if MPI.num_processes() == 1:

@@ -317,8 +317,8 @@ class DataTester:
             data[0] = 1
         self.assertRaises(RuntimeError, write_data, data)
 
-        # Test for down_casted Vector
-        v = down_cast(v)
+        # Test for as_backend_typeed Vector
+        v = as_backend_type(v)
         data = v.data()
         self.assertTrue((data==array).all())
 
@@ -328,7 +328,7 @@ class DataNotWorkingTester:
         v = Vector(301)
         self.assertRaises(RuntimeError, v.data)
 
-        v = down_cast(v)
+        v = as_backend_type(v)
         def no_attribute():
             v.data()
         self.assertRaises(AttributeError,no_attribute)

@@ -54,7 +54,7 @@ if has_linear_algebra_backend("PETSc"):
             direct_norm = x.norm("l2")
 
             # Get solution vector
-            x_petsc = down_cast(x)
+            x_petsc = as_backend_type(x)
 
             for prec, descr in krylov_solver_preconditioners():
                 if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi", "hypre_amg"]:
@@ -64,13 +64,13 @@ if has_linear_algebra_backend("PETSc"):
 
                 # With simple interface
                 solver = PETScKrylovSolver("gmres", prec)
-                solver.solve(A, x_petsc, down_cast(b))
+                solver.solve(A, x_petsc, as_backend_type(b))
                 self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 
                 # With PETScPreconditioner interface
                 solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
-                solver.solve(A, x_petsc, down_cast(b))
+                solver.solve(A, x_petsc, as_backend_type(b))
                 self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
         def test_matrix_free(self):
@@ -121,8 +121,8 @@ if has_linear_algebra_backend("PETSc"):
 
             direct_norm = x.norm("l2")
 
-            x_petsc = down_cast(x)
-            b_petsc = down_cast(b)
+            x_petsc = as_backend_type(x)
+            b_petsc = as_backend_type(b)
 
             solver = PETScKrylovSolver("gmres")
             solver.solve(A, x_petsc, b_petsc)
