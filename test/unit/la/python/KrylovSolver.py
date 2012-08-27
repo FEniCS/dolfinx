@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2012
+#
 # First added:  2012-02-21
-# Last changed: 2012-02-21
+# Last changed: 2012-08-27
 
 import unittest
 from dolfin import *
@@ -72,70 +74,6 @@ if has_linear_algebra_backend("PETSc"):
                 solver = PETScKrylovSolver("gmres", PETScPreconditioner(prec))
                 solver.solve(A, x_petsc, as_backend_type(b))
                 self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
-
-        def test_matrix_free(self):
-            "Test matrix free Krylov solver"
-
-            if MPI.num_processes() > 1:
-                print "FIXME: Matrix free test does not work in parallel, skipping"
-                return
-
-            class LinearOperator(PETScLinearOperator):
-                def __init__(self, A):
-                    self.A = A
-
-                    PETScLinearOperator.__init__(self, A.size(0), A.size(1))
-
-                def mult(self, x, y):
-
-                    # Make ordinary matrix vector product
-                    self.A.mult(x, y)
-
-            class MatrixFreeLinearOperator(PETScLinearOperator) :
-                def __init__(self, a_L, u, bc):
-                    self.a_L = a_L
-                    self.u = u
-                    self.bc = bc
-                    PETScLinearOperator.__init__(self, A.size(0), A.size(1))
-
-                def mult(self, x, y):
-                    # Update Function
-                    self.u.vector()[:] = x
-
-                    # Assemble matrix vector product
-                    assemble(self.a_L, tensor=y, reset_sparsity=False)
-
-                    # Apply Boundary conditions
-                    self.bc.apply(y)
-
-            class IdentityPreconditioner(PETScUserPreconditioner):
-                def __init__(self) :
-                    PETScUserPreconditioner.__init__(self)
-
-                def solve(self, x, b):
-                    x[:] = b
-
-            tmp = Function(V)
-            x = tmp.vector()
-            solve(A, x, b)
-
-            direct_norm = x.norm("l2")
-
-            x_petsc = as_backend_type(x)
-            b_petsc = as_backend_type(b)
-
-            solver = PETScKrylovSolver("gmres")
-            solver.solve(A, x_petsc, b_petsc)
-            self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
-
-            # Matrix free solve
-            my_prec = IdentityPreconditioner()
-            solver = PETScKrylovSolver("gmres", my_prec)
-            solver.solve(LinearOperator(A), x_petsc, b_petsc)
-            self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
-
-            solver.solve(MatrixFreeLinearOperator(a_L, u1, bc), x_petsc, b_petsc)
-            self.assertAlmostEqual(x_petsc.norm("l2"), direct_norm, 5)
 
 if __name__ == "__main__":
 
