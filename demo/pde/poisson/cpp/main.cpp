@@ -68,7 +68,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(4, 4);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition
@@ -92,9 +92,11 @@ int main()
   File file("poisson.pvd");
   file << u;
 
+  cout << "Solution norm: " << u.vector()->norm("l2") << endl;
+
   // Plot solution
-  plot(u);
-  interactive();
+  //plot(u);
+  //interactive();
 
   return 0;
 }

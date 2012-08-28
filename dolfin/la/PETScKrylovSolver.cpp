@@ -38,6 +38,8 @@
 #include "PETScVector.h"
 #include "PETScKrylovSolver.h"
 
+#include <dolfin/common/timing.h>
+
 using namespace dolfin;
 
 // Utility function
@@ -295,7 +297,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
         A->size(0), A->size(1));
   }
+
+  PetscLogBegin();
+
+  tic();
   KSPSolve(*_ksp, *b.vec(), *x.vec());
+  std::cout << "Solve time: " << toc() << std::endl;
+
+  PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
+  //KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
   int num_iterations = 0;

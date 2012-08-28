@@ -27,6 +27,8 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/graph/BoostGraphRenumbering.h>
+#include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -94,7 +96,7 @@ void DofMapBuilder::build_distributed(DofMap& dofmap,
   compute_ownership(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
                     shared_dof_processes, dofmap, global_dofs, mesh);
 
-  // Renumber dofs owned dofs and received new numbering for unowned shared dofs
+  // Renumber owned dofs and receive new numbering for unowned shared dofs
   parallel_renumber(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
                     shared_dof_processes, dofmap, mesh);
 }
@@ -165,7 +167,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Decide ownership of shared dofs
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  //const uint max_recv = MPI::max(send_buffer.size());
   std::vector<uint> recv_buffer;
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
@@ -275,6 +276,91 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Clear some data
   dofmap._off_process_owner.clear();
 
+  // Build vector of owned dofs
+  const std::vector<uint> my_dofs(owned_dofs.begin(), owned_dofs.end());
+
+  cout << "Num cells: " << mesh.num_cells() << endl;
+  cout << "Local of map dim: " << old_dofmap.size() << endl;
+  cout << "my dofs dim: " << my_dofs.size() << endl;
+  cout << "Number of owned dofs: " << owned_dofs.size() << endl;
+
+
+  // Create contiguous local numbering for locally owned dofs
+  uint my_counter = 0;
+  boost::unordered_map<uint, uint> my_old_to_new_dof_index;
+  for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, my_counter++)
+    my_old_to_new_dof_index[*owned_dof] = my_counter;
+
+  // Build local graph based on old dof map with contiguous numbering
+  //std::vector<std::vector<uint> > graph(old_dofmap.size());
+  Graph graph(owned_dofs.size());
+  for (uint cell = 0; cell < old_dofmap.size(); ++cell)
+  {
+    //cout << "Cell index: " << cell << endl;
+    const std::vector<uint>& dofs0 = dofmap.cell_dofs(cell);
+    const std::vector<uint>& dofs1 = dofmap.cell_dofs(cell);
+
+    std::vector<uint>::const_iterator node0, node1;
+    for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+    {
+      //cout << "Loop 0: " << *node0 << endl;
+      boost::unordered_map<uint, uint>::const_iterator _node0 = my_old_to_new_dof_index.find(*node0);
+      if (_node0 != my_old_to_new_dof_index.end())
+      {
+        const uint local_node0 = _node0->second;
+        //cout << "if 0: " << local_node0 << endl;
+        dolfin_assert(local_node0 < graph.size());
+        for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+        {
+          //cout << "Loop 1: " << *node1 << endl;
+          boost::unordered_map<uint, uint>::const_iterator _node1 = my_old_to_new_dof_index.find(*node1);
+          if (_node1 != my_old_to_new_dof_index.end())
+          {
+            const uint local_node1 = _node1->second;
+            //cout << "Insert: " << local_node0 << ", " << local_node1 << endl;
+            graph[local_node0].insert(local_node1);
+          }
+        }
+      }
+    }
+  }
+
+  /*
+  for (uint i = 0; i < graph.size(); ++i)
+  {
+    cout << "Row: " << i << endl;
+    for (uint j = 0; j < graph[i].size(); ++j)
+      cout << "  Col: " << j << ", " << graph[i][j] << endl;
+  }
+  */
+
+
+  //cout << "(0) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
+  //  << ", " <<  *std::min_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
+
+  // Reorder dofs
+  const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
+  //cout << "Remap: " << endl;
+  //for (uint i = 0; i < dof_remap.size(); ++i)
+  //  cout << dof_remap[i] << endl;
+
+  cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
+    << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
+  std::set<uint> tmp(dof_remap.begin(), dof_remap.end());
+  cout << "Duplicate test: " << tmp.size() << ", " <<  dof_remap.size() << endl;
+
+  /*
+  // Build local sparsity graph
+  cout << "Build graph: " << MPI::process_number() << endl;
+  const Graph graph = GraphBuilder::local_graph(mesh, dofmap, dofmap);
+  cout << "Build reordering map: " << MPI::process_number() << endl;
+  const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
+  cout << "End build reordering map: " << MPI::process_number() << endl;
+
+  cout << "Owned dof min/max: " << *(std::min_element(owned_dofs.begin(), owned_dofs.end()))
+     << ", " << *(std::max_element(owned_dofs.begin(), owned_dofs.end()))  << endl;
+  */
+
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
 
@@ -285,23 +371,24 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, counter++)
   {
     // Set new dof number
-    old_to_new_dof_index[*owned_dof] = process_offset + counter;
+    //old_to_new_dof_index[*owned_dof] = process_offset + counter;
+    old_to_new_dof_index[*owned_dof] = process_offset + dof_remap[counter];
 
     // Update UFC-to-renumbered map for new number
-    dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + counter;
+    //dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + counter;
+    dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + dof_remap[counter];
 
     // If this dof is shared and owned, buffer old and new index for sending
     if (shared_owned_dofs.find(*owned_dof) != shared_owned_dofs.end())
     {
       send_buffer.push_back(*owned_dof);
-      send_buffer.push_back(process_offset + counter);
+      send_buffer.push_back(process_offset + dof_remap[counter]);
     }
   }
 
   // Exchange new dof numbers for dofs that are shared
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
-  //const uint max_recv = MPI::max(send_buffer.size());
   std::vector<uint> recv_buffer;
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
@@ -330,8 +417,10 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     }
   }
 
-  // Insert the shared-dof-to-process mapping into the dofmap, renumbering as necessary
-  for (vec_map::const_iterator it = shared_dof_processes.begin(); it != shared_dof_processes.end(); ++it)
+  // Insert the shared-dof-to-process mapping into the dofmap, renumbering
+  // as necessary
+  for (vec_map::const_iterator it = shared_dof_processes.begin();
+            it != shared_dof_processes.end(); ++it)
   {
     boost::unordered_map<uint, uint>::const_iterator new_index = old_to_new_dof_index.find(it->first);
     if (new_index == old_to_new_dof_index.end())
