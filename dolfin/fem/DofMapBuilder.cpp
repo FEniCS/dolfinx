@@ -325,24 +325,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     }
   }
 
-  /*
-  for (uint i = 0; i < graph.size(); ++i)
-  {
-    cout << "Row: " << i << endl;
-    for (uint j = 0; j < graph[i].size(); ++j)
-      cout << "  Col: " << j << ", " << graph[i][j] << endl;
-  }
-  */
-
-
-  //cout << "(0) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
-  //  << ", " <<  *std::min_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
-
   // Reorder dofs
   const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
-  //cout << "Remap: " << endl;
-  //for (uint i = 0; i < dof_remap.size(); ++i)
-  //  cout << dof_remap[i] << endl;
 
   cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
     << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
@@ -350,15 +334,9 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   cout << "Duplicate test: " << tmp.size() << ", " <<  dof_remap.size() << endl;
 
   /*
-  // Build local sparsity graph
-  cout << "Build graph: " << MPI::process_number() << endl;
-  const Graph graph = GraphBuilder::local_graph(mesh, dofmap, dofmap);
-  cout << "Build reordering map: " << MPI::process_number() << endl;
-  const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
-  cout << "End build reordering map: " << MPI::process_number() << endl;
-
-  cout << "Owned dof min/max: " << *(std::min_element(owned_dofs.begin(), owned_dofs.end()))
-     << ", " << *(std::max_element(owned_dofs.begin(), owned_dofs.end()))  << endl;
+  std::vector<uint> dof_remap(owned_dofs.size());
+  for (uint i = 0; i < dof_remap.size(); ++i)
+    dof_remap[i] = i;
   */
 
   // Map from old to new index for dofs

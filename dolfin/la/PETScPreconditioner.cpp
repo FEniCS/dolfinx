@@ -250,16 +250,16 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-mg_levels",
     //                      boost::lexical_cast<std::string>(3).c_str());
 
-    //PetscOptionsSetValue("-pc_mg_smoothup",
-    //                      boost::lexical_cast<std::string>(1).c_str());
-    //PetscOptionsSetValue("-pc_mg_smoothdown",
-    //                      boost::lexical_cast<std::string>(1).c_str());
+    PetscOptionsSetValue("-pc_mg_smoothup",
+                          boost::lexical_cast<std::string>(1).c_str());
+    PetscOptionsSetValue("-pc_mg_smoothdown",
+                          boost::lexical_cast<std::string>(1).c_str());
 
     //PetscOptionsSetValue("-pc_mg_cycles",
     //                      boost::lexical_cast<std::string>(1).c_str());
 
     // Chebychev
-    //PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
+    PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
 
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     //PetscOptionsSetValue("-mg_levels_ksp_initial_guess_nonzero", "1");
@@ -267,16 +267,16 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
     //                      "0.0,1.1");
 
-    //PetscOptionsSetValue("-mg_levels_ksp_max_it",
-    //                      boost::lexical_cast<std::string>(2).c_str());
+    PetscOptionsSetValue("-mg_levels_ksp_max_it",
+                          boost::lexical_cast<std::string>(2).c_str());
 
     // Smoother preconditioner
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
-    //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
 
-    //PetscOptionsSetValue("-mg_levels_pc_sor_its",
-    //                      boost::lexical_cast<std::string>(2).c_str());
+    PetscOptionsSetValue("-mg_levels_pc_sor_its",
+                          boost::lexical_cast<std::string>(1).c_str());
 
     //PetscOptionsSetValue("-mg_levels_pc_sor_lits",
     //                      boost::lexical_cast<std::string>(6).c_str());
@@ -290,9 +290,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // -- ML-specific options
 
     //PetscOptionsSetValue("-pc_ml_maxNlevels",
-    //                      boost::lexical_cast<std::string>(4).c_str());
+    //                      boost::lexical_cast<std::string>(3).c_str());
 
-    //PetscOptionsSetValue("-pc_ml_CoarsenScheme", "METIS");
+    PetscOptionsSetValue("-pc_ml_CoarsenScheme", "Uncoupled");
 
 
     //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
@@ -306,12 +306,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
 
     // Make sure options are set
-    //PCSetFromOptions(pc);
+    PCSetFromOptions(pc);
 
     // Make sure the data structures have been constructed
     //std::cout << "!!! Set-up Create ksp" << std::endl;
-    //KSPSetUp(*solver.ksp());
-    //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+    KSPSetUp(*solver.ksp());
+    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
     //std::cout << "!!! End view" << std::endl;
 
     //K

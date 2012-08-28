@@ -24,6 +24,8 @@
 
 #ifdef HAS_PETSC
 
+#include <petsclog.h>
+
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -291,12 +293,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
   }
 
+  KSPSetNormType(*_ksp,KSP_NORM_UNPRECONDITIONED);
+
   // Solve linear system
   if (MPI::process_number() == 0)
   {
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
         A->size(0), A->size(1));
   }
+
 
   PetscLogBegin();
 
@@ -305,7 +310,6 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   std::cout << "Solve time: " << toc() << std::endl;
 
   PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
-  //KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
   int num_iterations = 0;
