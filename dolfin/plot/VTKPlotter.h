@@ -272,7 +272,7 @@ namespace dolfin
     std::string get_helptext();
 
     // Keypress callback; return true if handled
-    bool keypressCallback(std::string key);
+    bool keypressCallback(std::string key, int modifiers);
 
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
@@ -284,9 +284,6 @@ namespace dolfin
 
     // The window id (derived from Variable::id unless overridden by user)
     std::string _key;
-
-    // Flag to set the state of vertex labels
-    bool _toggle_vertex_labels;
 
     // Counter for the automatically named hardcopies
     static int hardcopy_counter;

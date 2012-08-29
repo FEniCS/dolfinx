@@ -79,15 +79,21 @@ namespace dolfin
     // Create a new style instead of observer callbacks, so that we can
     // intercept keypresses (like q/e) reliably.
   public:
+    static const int SHIFT   = 1;
+    static const int ALT     = 2;
+    static const int CONTROL = 4;
 
     PrivateVTKInteractorStyle() : _plotter(NULL) {}
 
     static PrivateVTKInteractorStyle* New();
     vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera);
 
-    virtual void OnKeyPress() {
-      if (!_plotter->keypressCallback(Interactor->GetKeySym()))
-        vtkInteractorStyleTrackballCamera::OnKeyPress();
+    virtual void OnChar() {
+      const int modifiers = (SHIFT   * Interactor->GetShiftKey() +
+                             ALT     * Interactor->GetAltKey() +
+                             CONTROL * Interactor->GetControlKey());
+      if (!_plotter->keypressCallback(Interactor->GetKeySym(), modifiers))
+        vtkInteractorStyleTrackballCamera::OnChar();
     }
 
     // A reference to the parent plotter
@@ -203,8 +209,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*mesh))
 {
   parameters = default_mesh_parameters();
   set_title_from(*mesh);
@@ -216,8 +221,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
         new VTKPlottableGenericFunction(function))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*function)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*function))
 {
   parameters = default_parameters();
   set_title_from(*function);
@@ -230,8 +234,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     new VTKPlottableGenericFunction(expression, mesh))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*expression)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*expression))
 {
   parameters = default_parameters();
   set_title_from(*expression);
@@ -243,8 +246,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
     new VTKPlottableGenericFunction(wrapper->expression(), wrapper->mesh()))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*wrapper->expression())),
-  _toggle_vertex_labels(false)
+  _key(to_key(*wrapper->expression()))
 {
   parameters = default_parameters();
   set_title_from(*wrapper->expression());
@@ -256,8 +258,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
     new VTKPlottableDirichletBC(bc))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*bc)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*bc))
 {
   parameters = default_parameters();
   set_title_from(*bc);
@@ -269,8 +270,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
         new VTKPlottableMeshFunction<uint>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*mesh_function))
 {
   // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
@@ -283,8 +283,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
     new VTKPlottableMeshFunction<int>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*mesh_function))
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
@@ -296,8 +295,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
     new VTKPlottableMeshFunction<double>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*mesh_function))
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
@@ -309,8 +307,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
     new VTKPlottableMeshFunction<bool>(mesh_function))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _toggle_vertex_labels(false)
+  _key(to_key(*mesh_function))
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
@@ -498,38 +495,60 @@ std::string VTKPlotter::get_helptext()
   return text.str();
 }
 //----------------------------------------------------------------------------
-bool VTKPlotter::keypressCallback(std::string key)
+bool VTKPlotter::keypressCallback(std::string key, int modifiers)
 {
-  // Save plot to file
-  if (key == "h")
+  std::cout << "Keypress: " << key << '|' << modifiers << std::endl;
+
+  if (key.size() != 1)
   {
-    write_png();
-    return true;
+    return false;
   }
 
-  // Toggle vertex labels
-  if (key == "i")
+  if (!modifiers)
   {
-    // Check if label actor is present. If not get from plottable. If it
-    // is, toggle off
-    vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
+    switch (key[0])
+    {
+    case 's': // Consume
+      return true;
 
-    // Check for existence of labels
-    if (!vtk_pipeline->_renderer->HasViewProp(labels))
-      vtk_pipeline->_renderer->AddActor(labels);
+    case 'h': // Save plot to file
+      write_png();
+      return true;
 
-    // Turn on or off dependent on present state
-    _toggle_vertex_labels = !_toggle_vertex_labels;
-    labels->SetVisibility(_toggle_vertex_labels);
+    case 'i': // Toggle vertex labels
+      {
+        // Check if label actor is present. If not get from plottable. If it
+        // is, toggle off
+        vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
 
-    vtk_pipeline->_renderWindow->Render();
-    return true;
+        // Check for existence of labels
+        if (!vtk_pipeline->_renderer->HasViewProp(labels))
+          vtk_pipeline->_renderer->AddActor(labels);
+
+        // Turn on or off dependent on present state
+        labels->SetVisibility(!labels->GetVisibility());
+
+        vtk_pipeline->_renderWindow->Render();
+        return true;
+      }
+    case 'w':
+      {
+        const int cur_rep = vtk_pipeline->_actor->GetProperty()->GetRepresentation();
+        int new_rep;
+        switch (cur_rep)
+        {
+        case VTK_SURFACE:   new_rep = VTK_WIREFRAME; break;
+        case VTK_WIREFRAME: new_rep = VTK_POINTS;    break;
+        case VTK_POINTS:    new_rep = VTK_SURFACE;   break;
+        }
+        vtk_pipeline->_actor->GetProperty()->SetRepresentation(new_rep);
+        vtk_pipeline->_renderWindow->Render();
+        return true;
+      }
+    }
   }
 
-  // Something
-  if (key == "Up")
   {
-    std::cout << "Up arrow pressed." << std::endl;
   }
 
   // Not handled
