@@ -128,9 +128,6 @@ namespace dolfin
     /// Return set of all processes that share dofs with the current process.
     virtual const std::set<uint>& neighbours() const = 0;
 
-    /// Re-number based on provided re-numbering map
-    virtual void renumber(const std::vector<uint>& renumbering_map) = 0;
-
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 

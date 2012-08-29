@@ -363,6 +363,11 @@ class Assembly(unittest.TestCase):
 
         if MPI.num_processes() == 1:
 
+            # NOTE: This test is not robust as it relies on specific
+            #       DOF order, which cannot be guaranteed
+            reorder_dofs = parameters["reorder_dofs"]
+            parameters["reorder_dofs"] = False
+
             # Load reference mesh (just a simple tetrahedron)
             mesh = Mesh("tetrahedron.xml.gz");
 
@@ -392,6 +397,8 @@ class Assembly(unittest.TestCase):
             self.assertAlmostEqual(C.norm("frobenius"), 0.0)
             D = M - M0
             self.assertAlmostEqual(D.norm("frobenius"), 0.0)
+
+            parameters["reorder_dofs"] = reorder_dofs
 
 if __name__ == "__main__":
     print ""

@@ -319,13 +319,6 @@ namespace dolfin
     const std::vector<std::vector<uint> >& data() const
     { return _dofmap; }
 
-    /// Renumber dofs
-    ///
-    /// *Arguments*
-    ///     renumbering_map (std::vector<uint>)
-    ///         The map of dofs to be renumbered.
-    void renumber(const std::vector<uint>& renumbering_map);
-
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*
@@ -356,6 +349,9 @@ namespace dolfin
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
+
+    // Re-order dofs
+    void reorder(const std::vector<uint>& reordering_map);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<uint> > _dofmap;
