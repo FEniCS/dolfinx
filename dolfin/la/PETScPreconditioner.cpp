@@ -239,6 +239,48 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
     PCSetType(pc, PCML);
 
+    // Set ML parameters before set-up. These can only be set via the
+    // PETSc parameters system.
+
+    // Maximum number of levels
+    //PetscOptionsSetValue("-pc_ml_maxNlevels",
+    //                      boost::lexical_cast<std::string>(3).c_str());
+
+    // Aggregation scheme
+    PetscOptionsSetValue("-pc_ml_CoarsenScheme", "Uncoupled");
+
+
+    // Aggregation damping factor
+    PetscOptionsSetValue("-pc_ml_DampingFactor",
+                          boost::lexical_cast<std::string>(1.4).c_str());
+
+    // Maximum coarse level problem size
+    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
+    //                      boost::lexical_cast<std::string>(128).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_Threshold",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_PrintLevel",
+    //                      boost::lexical_cast<std::string>(6).c_str());
+
+    // Make sure options are set
+    PCSetFromOptions(pc);
+
+    // Build preconditioner
+    KSPSetUp(*solver.ksp());
+    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+
+    // Get number of multigrid levels
+    int num_levels;
+    PCMGGetLevels(pc, &num_levels);
+
+    KSP ksp_mg;
+    PCMGGetSmoother(pc, 1, &ksp_mg);
+    KSPSetType(ksp_mg, KSPCHEBYSHEV);
+
+    // Set post-ML construction parameters
+
     //PCMGSetLevels(pc, 3, PETSC_NULL);
     //PCMGSetCycleType(pc, PC_MG_CYCLE_W);
 
@@ -278,6 +320,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PetscOptionsSetValue("-mg_levels_pc_sor_its",
                           boost::lexical_cast<std::string>(1).c_str());
 
+
     //PetscOptionsSetValue("-mg_levels_pc_sor_lits",
     //                      boost::lexical_cast<std::string>(6).c_str());
 
@@ -287,32 +330,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-pc_mg_monitor",
     //                      boost::lexical_cast<std::string>(1).c_str());
 
-    // -- ML-specific options
-
-    //PetscOptionsSetValue("-pc_ml_maxNlevels",
-    //                      boost::lexical_cast<std::string>(3).c_str());
-
-    PetscOptionsSetValue("-pc_ml_CoarsenScheme", "Uncoupled");
-
-
-    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
-    //                      boost::lexical_cast<std::string>(128).c_str());
-
-    //PetscOptionsSetValue("-pc_ml_Threshold",
-    //                      boost::lexical_cast<std::string>(2).c_str());
-
-    //PetscOptionsSetValue("-pc_ml_PrintLevel",
-    //                      boost::lexical_cast<std::string>(6).c_str());
-
-
     // Make sure options are set
     PCSetFromOptions(pc);
 
-    // Make sure the data structures have been constructed
-    //std::cout << "!!! Set-up Create ksp" << std::endl;
-    KSPSetUp(*solver.ksp());
+    // View
+    cout << "********************************************" << endl;
     PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
-    //std::cout << "!!! End view" << std::endl;
 
     //K
     //PCMGGetSmoother(PC pc,PetscInt l,KSP *ksp)
