@@ -92,8 +92,6 @@ int main()
   File file("poisson.pvd");
   file << u;
 
-  cout << "Solution norm: " << u.vector()->norm("l2") << endl;
-
   // Plot solution
   plot(u);
   interactive();

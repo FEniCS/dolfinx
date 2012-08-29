@@ -301,11 +301,12 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Build vector of owned dofs
   const std::vector<uint> my_dofs(owned_dofs.begin(), owned_dofs.end());
 
+  /*
   cout << "Num cells: " << mesh.num_cells() << endl;
   cout << "Local of map dim: " << old_dofmap.size() << endl;
   cout << "my dofs dim: " << my_dofs.size() << endl;
   cout << "Number of owned dofs: " << owned_dofs.size() << endl;
-
+  */
 
   // Create contiguous local numbering for locally owned dofs
   uint my_counter = 0;
@@ -343,10 +344,10 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Reorder dofs
   const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
 
-  cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
-    << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
-  std::set<uint> tmp(dof_remap.begin(), dof_remap.end());
-  cout << "Duplicate test: " << tmp.size() << ", " <<  dof_remap.size() << endl;
+  //cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
+  //  << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
+  //std::set<uint> tmp(dof_remap.begin(), dof_remap.end());
+  //cout << "Duplicate test: " << tmp.size() << ", " <<  dof_remap.size() << endl;
 
   /*
   std::vector<uint> dof_remap(owned_dofs.size());
