@@ -43,7 +43,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                          const UFCMesh& ufc_mesh, bool distributed)
+                          const UFCMesh& ufc_mesh,
+                          bool reorder, bool distributed)
 {
   // Start timer for dofmap initialization
   Timer t0("Init dofmap");
@@ -81,7 +82,28 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
     build_distributed(dofmap, global_dofs, dolfin_mesh);
   }
   else
+  {
+    if (reorder)
+    {
+      // Build graph
+      Graph graph(dofmap.global_dimension());
+      for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+      {
+        const std::vector<uint>& dofs0 = dofmap.cell_dofs(cell->index());
+        const std::vector<uint>& dofs1 = dofmap.cell_dofs(cell->index());
+        std::vector<uint>::const_iterator node;
+        for (node = dofs0.begin(); node != dofs0.end(); ++node)
+          graph[*node].insert(dofs1.begin(), dofs1.end());
+      }
+
+      // Reorder graph
+      const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
+
+      // Reorder dof map
+      dofmap.reorder(dof_remap);
+    }
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
+  }
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_distributed(DofMap& dofmap,
@@ -292,32 +314,25 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     my_old_to_new_dof_index[*owned_dof] = my_counter;
 
   // Build local graph based on old dof map with contiguous numbering
-  //std::vector<std::vector<uint> > graph(old_dofmap.size());
   Graph graph(owned_dofs.size());
   for (uint cell = 0; cell < old_dofmap.size(); ++cell)
   {
-    //cout << "Cell index: " << cell << endl;
     const std::vector<uint>& dofs0 = dofmap.cell_dofs(cell);
     const std::vector<uint>& dofs1 = dofmap.cell_dofs(cell);
-
     std::vector<uint>::const_iterator node0, node1;
     for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
     {
-      //cout << "Loop 0: " << *node0 << endl;
       boost::unordered_map<uint, uint>::const_iterator _node0 = my_old_to_new_dof_index.find(*node0);
       if (_node0 != my_old_to_new_dof_index.end())
       {
         const uint local_node0 = _node0->second;
-        //cout << "if 0: " << local_node0 << endl;
         dolfin_assert(local_node0 < graph.size());
         for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         {
-          //cout << "Loop 1: " << *node1 << endl;
           boost::unordered_map<uint, uint>::const_iterator _node1 = my_old_to_new_dof_index.find(*node1);
           if (_node1 != my_old_to_new_dof_index.end())
           {
             const uint local_node1 = _node1->second;
-            //cout << "Insert: " << local_node0 << ", " << local_node1 << endl;
             graph[local_node0].insert(local_node1);
           }
         }

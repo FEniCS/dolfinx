@@ -252,7 +252,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
     // Aggregation damping factor
     PetscOptionsSetValue("-pc_ml_DampingFactor",
-                          boost::lexical_cast<std::string>(1.4).c_str());
+                          boost::lexical_cast<std::string>(1.2).c_str());
 
     // Maximum coarse level problem size
     //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
@@ -264,20 +264,44 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-pc_ml_PrintLevel",
     //                      boost::lexical_cast<std::string>(6).c_str());
 
+    // ---
+    // Chebychev
+    PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
+
+    //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+    //PetscOptionsSetValue("-mg_levels_ksp_initial_guess_nonzero", "1");
+
+    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
+    //                      "0.0,1.1");
+
+    PetscOptionsSetValue("-mg_levels_ksp_max_it",
+                          boost::lexical_cast<std::string>(2).c_str());
+
+    // Smoother preconditioner
+    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+
+    PetscOptionsSetValue("-mg_levels_pc_sor_its",
+                          boost::lexical_cast<std::string>(1).c_str());
+
+    // -----
+
     // Make sure options are set
     PCSetFromOptions(pc);
 
     // Build preconditioner
+    //for (int i = 1; i < num_levels; ++i)
     KSPSetUp(*solver.ksp());
     PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 
     // Get number of multigrid levels
-    int num_levels;
-    PCMGGetLevels(pc, &num_levels);
+    //int num_levels;
+    //PCMGGetLevels(pc, &num_levels);
 
-    KSP ksp_mg;
-    PCMGGetSmoother(pc, 1, &ksp_mg);
-    KSPSetType(ksp_mg, KSPCHEBYSHEV);
+    //KSP ksp_mg;
+    //PCMGGetSmoother(pc, 1, &ksp_mg);
+    //KSPSetType(ksp_mg, KSPCHEBYSHEV);
 
     // Set post-ML construction parameters
 
@@ -313,12 +337,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                           boost::lexical_cast<std::string>(2).c_str());
 
     // Smoother preconditioner
-    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    PetscOptionsSetValue("-mg_levels_pc_type", "none");
     //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
-    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
 
-    PetscOptionsSetValue("-mg_levels_pc_sor_its",
-                          boost::lexical_cast<std::string>(1).c_str());
+    //PetscOptionsSetValue("-mg_levels_pc_sor_its",
+    //                      boost::lexical_cast<std::string>(1).c_str());
 
 
     //PetscOptionsSetValue("-mg_levels_pc_sor_lits",
