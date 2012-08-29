@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-23
+// Last changed: 2012-08-27
 
 
 #include <dolfin/common/Array.h>
@@ -36,6 +36,7 @@
 #include "VTKPlottableGenericFunction.h"
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableMeshFunction.h"
+#include "VTKPlottableDirichletBC.h"
 #include "VTKPlotter.h"
 
 #ifdef HAS_VTK
@@ -251,22 +252,13 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+    new VTKPlottableDirichletBC(bc))),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*bc)),
   _toggle_vertex_labels(false)
 {
-  dolfin_error("VTKPlotter.cpp",
-               "create plotter for Dirichlet B.C.",
-               "Plotting of boundary conditions is not yet implemented");
-
-  // FIXME: There is something wrong with the below code. The function is not
-  // plotted, only an empty plotting window is shown.
-  boost::shared_ptr<Function> f(new Function(bc->function_space()));
-  bc->apply(*f->vector());
-  _plottable
-    = boost::shared_ptr<VTKPlottableMesh>(new VTKPlottableGenericFunction(f));
-
   parameters = default_parameters();
   set_title_from(*bc);
   init();
@@ -458,7 +450,7 @@ void VTKPlotter::init()
   // bar and other decorations.
 
   // Let the plottable initialize its part of the pipeline
-  _plottable->init_pipeline();
+  _plottable->init_pipeline(parameters);
 }
 //----------------------------------------------------------------------------
 const std::string& VTKPlotter::key() const

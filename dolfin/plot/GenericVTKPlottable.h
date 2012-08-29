@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-27
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -28,6 +28,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkAlgorithmOutput.h>
 #include <vtkActor2D.h>
+
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -42,7 +44,7 @@ namespace dolfin
   public:
 
     /// Initialize the parts of the pipeline that this class controls
-    virtual void init_pipeline() = 0;
+    virtual void init_pipeline(const Parameters& parameters) = 0;
 
     /// Update the plottable data. The variable may be empty, or it may be a
     /// new variable to plot. is_compatible(var) must be true.

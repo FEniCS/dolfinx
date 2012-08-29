@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-27
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -29,6 +29,8 @@
 #include <vtkWarpScalar.h>
 #include <vtkWarpVector.h>
 #include <vtkGlyph3D.h>
+
+#include <dolfin/common/Variable.h>
 
 #include "VTKPlottableMesh.h"
 
@@ -61,7 +63,7 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline();
+    void init_pipeline(const Parameters &parameters);
 
     /// Update the plottable data
     void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
@@ -76,7 +78,7 @@ namespace dolfin
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
-  private:
+  protected:
 
     // Update scalar values
     void update_scalar();

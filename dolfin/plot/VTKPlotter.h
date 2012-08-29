@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-23
+// Last changed: 2012-08-27
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -171,6 +171,7 @@ namespace dolfin
       std::set<std::string> allowed_modes;
       allowed_modes.insert("auto");
       allowed_modes.insert("warp");
+      allowed_modes.insert("off");
 
       Parameters p("vtk_plotter");
       p.add("mode", "auto", allowed_modes);

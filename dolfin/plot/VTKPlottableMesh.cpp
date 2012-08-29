@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-22
+// Last changed: 2012-08-27
 
 #ifdef HAS_VTK
 
@@ -55,14 +55,18 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::init_pipeline()
+void VTKPlottableMesh::init_pipeline(const Parameters &parameters)
 {
   dolfin_assert(_geometryFilter);
 
   _geometryFilter->SetInput(_grid);
   _geometryFilter->Update();
 }
-
+//----------------------------------------------------------------------------
+bool VTKPlottableMesh::is_compatible(const Variable &var) const
+{
+  return dynamic_cast<const Mesh*>(&var);
+}
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
 {

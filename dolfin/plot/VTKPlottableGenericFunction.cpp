@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-23
+// Last changed: 2012-08-27
 
 #ifdef HAS_VTK
 
@@ -54,13 +54,13 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::init_pipeline()
+void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
 {
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
 
-  VTKPlottableMesh::init_pipeline();
+  VTKPlottableMesh::init_pipeline(parameters);
 
   switch (_function->value_rank())
   {
@@ -70,7 +70,10 @@ void VTKPlottableGenericFunction::init_pipeline()
       if (mesh()->topology().dim() < 3)
       {
         // In 1D and 2D, we warp the mesh according to the scalar values
-        insert_filter(_warpscalar);
+        if ((std::string)parameters["mode"] != "off")
+        {
+          insert_filter(_warpscalar);
+        }
       }
       else
       {
@@ -84,7 +87,10 @@ void VTKPlottableGenericFunction::init_pipeline()
   case 1:
     {
       // Setup pipeline for warp visualization
-      insert_filter(_warpvector);
+      if ((std::string)parameters["mode"] != "off")
+      {
+        insert_filter(_warpvector);
+      }
 
       // Setup pipeline for glyph visualization
       vtkSmartPointer<vtkArrowSource> arrow =

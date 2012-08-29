@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-21
+// Last changed: 2012-08-27
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -33,6 +33,8 @@
 #include <vtkCellData.h>
 #include <vtkVectorNorm.h>
 #include <vtkPointSetAlgorithm.h>
+
+#include <dolfin/mesh/Mesh.h>
 
 #include "GenericVTKPlottable.h"
 
@@ -56,12 +58,12 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline();
+    void init_pipeline(const Parameters &parameters);
 
     /// Update the plottable data
     void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
 
-    bool is_compatible(const Variable &var) const { return dynamic_cast<const Mesh*>(&var); }
+    bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
