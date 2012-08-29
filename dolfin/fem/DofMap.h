@@ -200,20 +200,6 @@ namespace dolfin
       return _dofmap[cell_index];
     }
 
-    /// Tabulate the local-to-global mapping of dofs on a cell
-    ///
-    /// *Arguments*
-    ///     dofs (uint)
-    ///         Degrees of freedom on a cell.
-    ///     cell (_Cell_)
-    ///         The cell.
-    void tabulate_dofs(uint* dofs, const Cell& cell) const
-    {
-      const uint cell_index = cell.index();
-      dolfin_assert(cell_index < _dofmap.size());
-      std::copy(_dofmap[cell_index].begin(), _dofmap[cell_index].end(), dofs);
-    }
-
     /// Tabulate local-local facet dofs
     ///
     /// *Arguments*

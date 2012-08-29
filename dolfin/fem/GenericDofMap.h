@@ -83,9 +83,6 @@ namespace dolfin
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<unsigned int>& cell_dofs(uint cell_index) const = 0;
 
-    /// Tabulate the local-to-global mapping of dofs on a cell
-    virtual void tabulate_dofs(uint* dofs, const Cell& cell) const = 0;
-
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(uint* dofs, uint local_facet) const = 0;
 
