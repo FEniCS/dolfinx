@@ -91,8 +91,8 @@ int main()
   Function u = w[0];
 
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }
