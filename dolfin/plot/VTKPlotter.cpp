@@ -526,17 +526,23 @@ std::string VTKPlotter::get_helptext()
   std::stringstream text;
 
   text << "Mouse control:\n";
-  text << "  Left button: Rotate figure\n";
-  text << "  Right button (or scroolwheel): Zoom \n";
-  text << "  Middle button (or left+right): Translate figure\n\n";
+  text << "   Left button: Rotate figure\n";
+  text << "   Right button (or scroolwheel): Zoom \n";
+  text << "   Middle button (or left+right): Translate figure\n";
+  text << "\n";
   text << "Keyboard control:\n";
-  text << "  r: Reset zoom\n";
-  text << "  w: Toggle wireframe/point/surface view\n";
-  text << "  f: Fly to the point currently under the mouse pointer\n";
-  text << "  p: Add bounding box\n";
-  text << "  i: Toggle vertex indices on/off\n";
-  text << "  h: Save plot to file\n";
-  text << "  q: Exit\n";
+  text << "   r: Reset zoom\n";
+  text << "   w: Toggle wireframe/point/surface view\n";
+  text << "   f: Fly to the point currently under the mouse pointer\n";
+  text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
+  text << "   p: Add bounding box\n";
+  text << "   v: Toggle vertex indices on/off\n";
+  text << "   h: Save plot to file\n";
+  text << "   q: Continue\n";
+  text << "\n";
+  text << "Window control:\n";
+  text << " C-w: Close plot window\n";
+  text << " C-q: Close all plot windows\n";
   return text.str();
 }
 //----------------------------------------------------------------------------
@@ -560,14 +566,11 @@ bool VTKPlotter::keypressCallback()
 
   switch (modifiers + key[0])
   {
-  case 's': // Consume
-    return true;
-
   case 'h': // Save plot to file
     write_png();
     return true;
 
-  case 'l': // Toggle vertex labels
+  case 'v': // Toggle vertex labels
     {
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
@@ -600,6 +603,21 @@ bool VTKPlotter::keypressCallback()
       }
       vtk_pipeline->_actor->GetProperty()->SetRepresentation(new_rep);
       vtk_pipeline->_renderWindow->Render();
+      return true;
+    }
+
+  case 's':
+    {
+      vtkSmartPointer<vtkCamera> camera = vtk_pipeline->_renderer->GetActiveCamera();
+      foreach (VTKPlotter *plotter, *all_plotters)
+      {
+        if (plotter != this)
+        {
+          vtkSmartPointer<vtkCamera> other_cam = plotter->vtk_pipeline->_renderer->GetActiveCamera();
+          other_cam->ShallowCopy(camera);
+          plotter->vtk_pipeline->_renderWindow->Render();
+        }
+      }
       return true;
     }
 
