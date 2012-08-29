@@ -29,11 +29,13 @@ import glob
 import time
 import sys
 
+# Add local site-packages to path
+sys.path.append(os.path.abspath("site-packages"))
+
 from dolfin_utils.cppparser import *
 
 # Local imports
 from codesnippets import *
-from documentation import generate_docstrings
 
 # Create time info for labeling generated code
 _local_time = time.localtime()
@@ -47,13 +49,15 @@ copyright_form_swig = dict(comment = r"//", holder="Johan Hake")
 # reg exp pattern
 _header_pattern = re.compile("#include +<(dolfin/\w+/\w+\.h)>")
 
+swig_path = os.path.abspath(os.path.join("dolfin", "swig"))
+
 def extract_module_header_files(submodule, excludes):
     """
     Extract header files for a submodule
     """
 
     # Read dolfin submodule include file
-    code = open(os.path.join(os.path.pardir, submodule, \
+    code = open(os.path.join("dolfin", submodule, \
                              "dolfin_%s.h" % submodule)).read()
 
     # Extract all headers
@@ -73,7 +77,7 @@ def generate_submodule_info(module_to_submodules, excludes):
     # Extract original modules from dolfin.h
     # NOTE: We need these, in particular the order
     original_submodules = []
-    f = open(os.path.join(os.path.pardir, "dolfin.h"))
+    f = open(os.path.join("dolfin", "dolfin.h"))
     for line in f:
         if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
             module = line.split("/")[1]
@@ -83,7 +87,7 @@ def generate_submodule_info(module_to_submodules, excludes):
     # Check that the directory structure of the combined modules
     # corresponds to the above dict
     module_dirs = []
-    for module_dir in glob.glob("modules/*"):
+    for module_dir in glob.glob(os.path.join(swig_path, "modules","*")):
         module_dirs.append(module_dir.split(os.path.sep)[-1])
     
     # Some sanity checks
@@ -115,9 +119,9 @@ def generate_submodule_info(module_to_submodules, excludes):
                 submodule_info[submodule] = dict(\
                     module=module,
                     has_pre=os.path.isfile(\
-                        os.path.join(submodule, "pre.i")),
+                        os.path.join(swig_path, submodule, "pre.i")),
                     has_post=os.path.isfile(\
-                        os.path.join(submodule, "post.i")),
+                        os.path.join(swig_path, submodule, "post.i")),
                     headers=extract_module_header_files(submodule, excludes))
                 break
         else:
@@ -182,7 +186,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
             for header_file in submodule_info[submodule]["headers"]:
 
                 # Read code
-                code = open("../../%s" % header_file).read()
+                code = open(header_file).read()
 
                 try:
                     # Extract type info
@@ -400,7 +404,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
     module_form["headers"] =    "\n".join(headers_includes)
     
     # Open file
-    module_file = open(os.path.join("modules", module, "module.i"), "w")
+    module_file = open(os.path.join(swig_path, "modules", module, "module.i"), "w")
     module_file.write(copyright_statement%(copyright_form_swig))
 
     # Write the generated code
@@ -418,7 +422,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
                               "../../exceptions.i", "../../version.i",
                               "../../forwarddeclarations.i"])
                  
-    dependency_file = open(os.path.join("modules", module,
+    dependency_file = open(os.path.join(swig_path, "modules", module,
                                         "dependencies.txt"), "w")
     dependency_file.write(";".join(sorted(file_dependencies)))
 
@@ -427,7 +431,8 @@ def generate_runtime_config_file(dolfin_type_def, module_to_submodules,
     # Extract all shared_ptr stored classes and store them in a pyton module
     # and place that under dolfin.compilemodeuls.sharedptrclasses.py
     shared_ptr_classes = re.findall("%shared_ptr\(dolfin::(.+)\)", \
-                                    open("shared_ptr_classes.i").read())
+                                    open(os.path.join(swig_path, \
+                                        "shared_ptr_classes.i")).read())
 
     def repr_ordered_dict(data):
         """
@@ -463,8 +468,7 @@ submodule_info = %s
 ''' % (repr(shared_ptr_classes), repr_ordered_dict(dolfin_type_def),\
        repr_ordered_dict(module_to_submodules), repr_ordered_dict(submodule_info))
     
-    par = os.path.pardir
-    open(os.path.join(par, par, "site-packages", "dolfin", \
+    open(os.path.join("site-packages", "dolfin", \
                       "compilemodules", "swigimportinfo.py"), "w").write(\
         runtime_file)
 
@@ -493,13 +497,7 @@ def regenerate_swig_interface(module_to_submodules, excludes):
     
 
 if __name__ == "__main__":
-    # Generate all docstrings
-    # FIXME: Might be integratable into write_module_code?
-    import sys
-
-    if "no-docs" not in sys.argv:
-        generate_docstrings()
-
+    
     # User defined definition of SWIG modules.
     # NOTE: Order of modules are important, but not order of submodules
     module_to_submodules = OrderedDict([\
