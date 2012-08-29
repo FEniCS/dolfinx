@@ -22,6 +22,8 @@
 // First added:  2012-05-23
 // Last changed: 2012-08-28
 
+#include <QApplication>
+#include <QVTKWidget.h>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -73,6 +75,19 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 namespace dolfin
 {
+  QApplication *app()
+  {
+    if (!qApp)
+    {
+      int *argc = new int[1];     *argc = 0;
+      char *dummy = new char[1];  *dummy = '\0';
+      char **argv = new char*[1]; *argv = dummy;
+      new QApplication(*argc,argv);
+      std::cout << "Created qApp, " << qApp << std::endl;
+    }
+    return qApp;
+  }
+
 //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
   {
@@ -104,6 +119,7 @@ namespace dolfin
   class PrivateVTKPipeline
   {
   public:
+    boost::scoped_ptr<QVTKWidget> widget;
 
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;
@@ -122,9 +138,6 @@ namespace dolfin
 
     // The render window
     vtkSmartPointer<vtkRenderWindow> _renderWindow;
-
-    // The render window interactor for interactive sessions
-    vtkSmartPointer<vtkRenderWindowInteractor> _interactor;
 
     // The scalar bar that gives the viewer the mapping from color to
     // scalar value
@@ -153,8 +166,6 @@ namespace dolfin
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 
-      _interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-
       // Connect the parts
       _mapper->SetLookupTable(_lut);
       _scalarBar->SetLookupTable(_lut);
@@ -167,8 +178,14 @@ namespace dolfin
       vtkSmartPointer<PrivateVTKInteractorStyle> style =
         vtkSmartPointer<PrivateVTKInteractorStyle>::New();
       style->_plotter = parent;
-      _interactor->SetRenderWindow(_renderWindow);
-      _interactor->SetInteractorStyle(style);
+
+      // Set up widget -- make sure the QApplication exists first
+      app();
+      widget.reset(new QVTKWidget());
+      widget->GetInteractor()->SetInteractorStyle(style);
+      widget->resize(600,400);
+
+      _renderWindow->SetInteractor(widget->GetInteractor());
 
       // Set some properties that affect the look of things
       _renderer->SetBackground(1, 1, 1);
@@ -178,8 +195,11 @@ namespace dolfin
       //_actor->GetProperty()->SetLineWidth(1);
 
       // Set window stuff
-      _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
+      //_renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
       _scalarBar->SetTextPositionToPrecedeScalarBar();
+
+      widget->SetRenderWindow(_renderWindow);
+      widget->show();
 
       // Set the look of scalar bar labels
       vtkSmartPointer<vtkTextProperty> labelprop
@@ -208,7 +228,7 @@ namespace dolfin
       balloonRep->GetFrameProperty()->SetOpacity(0.7);
 
       // Set up the actual widget that makes the help text pop up
-      balloonwidget->SetInteractor(_interactor);
+      balloonwidget->SetInteractor(widget->GetInteractor());
       balloonwidget->SetRepresentation(balloonRep);
       balloonwidget->AddBalloon(helptextActor, text.c_str(), NULL);
       balloonwidget->EnabledOn();
@@ -222,8 +242,6 @@ namespace dolfin
 
       std::cout << "Pipeline destroyed\n";
       //_renderWindow->SetPosition(1000,1000);
-      _interactor->Disable();
-      _renderWindow->Finalize();
 
       helptextActor = NULL;
       balloonRep = NULL;
@@ -231,7 +249,6 @@ namespace dolfin
 
       _renderer = NULL;
       _renderWindow = NULL;
-      _interactor = NULL;
     }
 
   };
@@ -407,8 +424,8 @@ void VTKPlotter::interactive(bool enter_eventloop)
   }
 
   // Initialize and start the mouse interaction
-  vtk_pipeline->_interactor->Initialize();
-  vtk_pipeline->_renderWindow->Render();
+  //vtk_pipeline->widget->GetInteractor()->Initialize();
+  //vtk_pipeline->_renderWindow->Render();
 
   if (enter_eventloop)
     start_eventloop();
@@ -417,7 +434,7 @@ void VTKPlotter::interactive(bool enter_eventloop)
 void VTKPlotter::start_eventloop()
 {
   if (!no_plot)
-    vtk_pipeline->_interactor->Start();
+    app()->exec();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
@@ -566,10 +583,16 @@ bool VTKPlotter::keypressCallback(std::string key, int modifiers)
         vtk_pipeline->_renderWindow->Render();
         return true;
       }
-    }
-  }
 
-  {
+    case 'x':
+      vtk_pipeline->widget->hide();
+      return true;
+
+    case 'q':
+      app()->quit();
+      return true;
+    }
+
   }
 
   // Not handled
@@ -620,8 +643,8 @@ void VTKPlotter::write_png(std::string filename)
 void VTKPlotter::get_window_size(int& width, int& height)
 {
   dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->_interactor);
-  vtk_pipeline->_interactor->GetSize(width, height);
+  dolfin_assert(vtk_pipeline->widget->GetInteractor());
+  vtk_pipeline->widget->GetInteractor()->GetSize(width, height);
   // FIXME: Get correct sizes for window decoration
   width += 6;
   height += 30;

@@ -199,6 +199,24 @@ if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
 
 endif()
 
+# Qt4
+if (DOLFIN_ENABLE_QT AND QT_FOUND)
+  include(${QT_USE_FILE})
+
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QT4")
+  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${QT_INCLUDE_DIRS})
+
+  # Loop over libs and get full path
+  foreach (lib ${QT_LIBRARIES})
+    find_library(QT_LIB_${lib} ${lib} HINTS ${QT_LIBRARY_DIRS})
+    if (QT_LIB_${lib})
+      list(APPEND DOLFIN_QT_LIBRARIES ${QT_LIB_${lib}})
+    endif()
+  endforeach()
+
+  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_QT_LIBRARIES})
+endif()
+
 # VTK
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   include(${VTK_USE_FILE})
@@ -225,6 +243,10 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
       vtkViews
       vtkCharts
       )
+  endif()
+
+  if (DOLFIN_ENABLE_QT AND QT_FOUND)
+    list(APPEND VTK_LIBRARIES QVTK)
   endif()
 
   # Loop over libs and get full path
