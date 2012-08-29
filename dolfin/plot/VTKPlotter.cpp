@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-27
+// Last changed: 2012-08-28
 
 
 #include <dolfin/common/Array.h>
@@ -189,6 +189,51 @@ namespace dolfin
       labelprop->ItalicOff();
       labelprop->BoldOff();
     }
+
+    void set_helptext(std::string text)
+    {
+      // Add help text actor
+      helptextActor->SetPosition(10,10);
+      helptextActor->SetInput("Help ");
+      helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+      helptextActor->GetTextProperty()->SetFontSize(16);
+      helptextActor->GetTextProperty()->SetFontFamilyToCourier();
+      _renderer->AddActor2D(helptextActor);
+
+      // Set up the representation for the hover-over help text box
+      balloonRep->SetOffset(5,5);
+      balloonRep->GetTextProperty()->SetFontSize(14);
+      balloonRep->GetTextProperty()->BoldOff();
+      balloonRep->GetTextProperty()->SetFontFamilyToCourier();
+      balloonRep->GetFrameProperty()->SetOpacity(0.7);
+
+      // Set up the actual widget that makes the help text pop up
+      balloonwidget->SetInteractor(_interactor);
+      balloonwidget->SetRepresentation(balloonRep);
+      balloonwidget->AddBalloon(helptextActor, text.c_str(), NULL);
+      balloonwidget->EnabledOn();
+    }
+
+    ~PrivateVTKPipeline()
+    {
+      // Note: VTK (current 5.6.1) seems to very picky about the order of
+      // destruction. This destructor tries to impose an order on the most
+      // important stuff.
+
+      std::cout << "Pipeline destroyed\n";
+      //_renderWindow->SetPosition(1000,1000);
+      _interactor->Disable();
+      _renderWindow->Finalize();
+
+      helptextActor = NULL;
+      balloonRep = NULL;
+      balloonwidget = NULL;
+
+      _renderer = NULL;
+      _renderWindow = NULL;
+      _interactor = NULL;
+    }
+
   };
 //----------------------------------------------------------------------------
 } // namespace dolfin
@@ -356,36 +401,13 @@ void VTKPlotter::interactive(bool enter_eventloop)
 
   dolfin_assert(vtk_pipeline);
 
-  // These must be declared outside the if test to not go out of scope
-  // before the interaction starts
-
-
   if (parameters["helptext"])
   {
-    // Add help text actor
-    vtk_pipeline->helptextActor->SetPosition(10,10);
-    vtk_pipeline->helptextActor->SetInput("Help ");
-    vtk_pipeline->helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-    vtk_pipeline->helptextActor->GetTextProperty()->SetFontSize(20);
-    vtk_pipeline->_renderer->AddActor2D(vtk_pipeline->helptextActor);
-
-    // Set up the representation for the hover-over help text box
-    vtk_pipeline->balloonRep->SetOffset(5,5);
-    vtk_pipeline->balloonRep->GetTextProperty()->SetFontSize(18);
-    vtk_pipeline->balloonRep->GetTextProperty()->BoldOff();
-    vtk_pipeline->balloonRep->GetFrameProperty()->SetOpacity(0.7);
-
-    // Set up the actual widget that makes the help text pop up
-    vtk_pipeline->balloonwidget->SetInteractor(vtk_pipeline->_interactor);
-    vtk_pipeline->balloonwidget->SetRepresentation(vtk_pipeline->balloonRep);
-    vtk_pipeline->balloonwidget->AddBalloon(vtk_pipeline->helptextActor,
-                              get_helptext().c_str(),NULL);
-    vtk_pipeline->balloonwidget->EnabledOn();
+    vtk_pipeline->set_helptext(get_helptext());
   }
 
   // Initialize and start the mouse interaction
   vtk_pipeline->_interactor->Initialize();
-
   vtk_pipeline->_renderWindow->Render();
 
   if (enter_eventloop)
@@ -480,18 +502,17 @@ std::string VTKPlotter::get_helptext()
   std::stringstream text;
 
   text << "Mouse control:\n";
-  text << "\t Left mouse button: Rotate figure\n";
-  text << "\t Right mouse button (or scroolwheel): Zoom \n";
-  text << "\t Middle mouse button (or left+right): Translate figure\n\n";
+  text << "  Left button: Rotate figure\n";
+  text << "  Right button (or scroolwheel): Zoom \n";
+  text << "  Middle button (or left+right): Translate figure\n\n";
   text << "Keyboard control:\n";
-  text << "\t r: Reset zoom\n";
-  text << "\t w: View figure as wireframe\n";
-  text << "\t s: View figure with solid surface\n";
-  text << "\t f: Fly to the point currently under the mouse pointer\n";
-  text << "\t p: Add bounding box\n";
-  text << "\t i: Toggle vertex indices on/off\n";
-  text << "\t h: Save plot to file\n";
-  text << "\t e/q: Exit\n";
+  text << "  r: Reset zoom\n";
+  text << "  w: Toggle wireframe/point/surface view\n";
+  text << "  f: Fly to the point currently under the mouse pointer\n";
+  text << "  p: Add bounding box\n";
+  text << "  i: Toggle vertex indices on/off\n";
+  text << "  h: Save plot to file\n";
+  text << "  q: Exit\n";
   return text.str();
 }
 //----------------------------------------------------------------------------
