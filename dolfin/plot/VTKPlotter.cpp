@@ -20,9 +20,10 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-28
+// Last changed: 2012-08-29
 
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QVTKWidget.h>
 
 #include <dolfin/common/Array.h>
@@ -79,35 +80,36 @@ namespace dolfin
   {
     if (!qApp)
     {
-      int *argc = new int[1];     *argc = 0;
-      char *dummy = new char[1];  *dummy = '\0';
-      char **argv = new char*[1]; *argv = dummy;
-      new QApplication(*argc,argv);
+      static int dummy_argc = 0;
+      static char dummy_argv0 = '\0';
+      static char *dummy_argv0_ptr = &dummy_argv0;
+      new QApplication(dummy_argc, &dummy_argv0_ptr);
       std::cout << "Created qApp, " << qApp << std::endl;
     }
     return qApp;
   }
-
 //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
   {
     // Create a new style instead of observer callbacks, so that we can
     // intercept keypresses (like q/e) reliably.
   public:
-    static const int SHIFT   = 1;
-    static const int ALT     = 2;
-    static const int CONTROL = 4;
-
     PrivateVTKInteractorStyle() : _plotter(NULL) {}
 
     static PrivateVTKInteractorStyle* New();
     vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera);
 
-    virtual void OnChar() {
-      const int modifiers = (SHIFT   * Interactor->GetShiftKey() +
-                             ALT     * Interactor->GetAltKey() +
-                             CONTROL * Interactor->GetControlKey());
-      if (!_plotter->keypressCallback(Interactor->GetKeySym(), modifiers))
+    virtual void OnKeyPress()
+    {
+      // Only call keypressCallback for non-ascii, to avoid calling twice
+      std::string keysym = Interactor->GetKeySym();
+      if (keysym.size() == 1 || !_plotter->keypressCallback())
+        vtkInteractorStyleTrackballCamera::OnKeyPress();
+    }
+
+    virtual void OnChar()
+    {
+      if (!_plotter->keypressCallback())
         vtkInteractorStyleTrackballCamera::OnChar();
     }
 
@@ -183,7 +185,7 @@ namespace dolfin
       app();
       widget.reset(new QVTKWidget());
       widget->GetInteractor()->SetInteractorStyle(style);
-      widget->resize(600,400);
+      style->SetCurrentRenderer(_renderer);
 
       _renderWindow->SetInteractor(widget->GetInteractor());
 
@@ -195,11 +197,12 @@ namespace dolfin
       //_actor->GetProperty()->SetLineWidth(1);
 
       // Set window stuff
-      //_renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
       _scalarBar->SetTextPositionToPrecedeScalarBar();
 
       widget->SetRenderWindow(_renderWindow);
+      widget->resize(parameters["window_width"], parameters["window_height"]);
       widget->show();
+      
 
       // Set the look of scalar bar labels
       vtkSmartPointer<vtkTextProperty> labelprop
@@ -242,6 +245,8 @@ namespace dolfin
 
       std::cout << "Pipeline destroyed\n";
       //_renderWindow->SetPosition(1000,1000);
+
+      widget.reset(NULL);
 
       helptextActor = NULL;
       balloonRep = NULL;
@@ -424,7 +429,7 @@ void VTKPlotter::interactive(bool enter_eventloop)
   }
 
   // Initialize and start the mouse interaction
-  //vtk_pipeline->widget->GetInteractor()->Initialize();
+  vtk_pipeline->widget->GetInteractor()->Initialize();
   //vtk_pipeline->_renderWindow->Render();
 
   if (enter_eventloop)
@@ -433,8 +438,9 @@ void VTKPlotter::interactive(bool enter_eventloop)
 //----------------------------------------------------------------------------
 void VTKPlotter::start_eventloop()
 {
-  if (!no_plot)
+  if (!no_plot) {
     app()->exec();
+  }
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
@@ -466,6 +472,7 @@ void VTKPlotter::init()
 
   // Adjust window position to not completely overlap previous plots
   dolfin::uint num_old_plots = VTKPlotter::all_plotters->size()-1;
+
   int width, height;
   get_window_size(width, height);
 
@@ -533,8 +540,17 @@ std::string VTKPlotter::get_helptext()
   return text.str();
 }
 //----------------------------------------------------------------------------
-bool VTKPlotter::keypressCallback(std::string key, int modifiers)
+bool VTKPlotter::keypressCallback()
 {
+  static const int SHIFT   = 0x100; // Preserve the low word so a char can be added
+  static const int ALT     = 0x200;
+  static const int CONTROL = 0x300;
+
+  const std::string key = vtk_pipeline->widget->GetInteractor()->GetKeySym();
+  const int modifiers = (SHIFT   * !!vtk_pipeline->widget->GetInteractor()->GetShiftKey() +
+                         ALT     * !!vtk_pipeline->widget->GetInteractor()->GetAltKey()   +
+                         CONTROL * !!vtk_pipeline->widget->GetInteractor()->GetControlKey());
+
   std::cout << "Keypress: " << key << '|' << modifiers << std::endl;
 
   if (key.size() != 1)
@@ -542,57 +558,66 @@ bool VTKPlotter::keypressCallback(std::string key, int modifiers)
     return false;
   }
 
-  if (!modifiers)
+  switch (modifiers + key[0])
   {
-    switch (key[0])
+  case 's': // Consume
+    return true;
+
+  case 'h': // Save plot to file
+    write_png();
+    return true;
+
+  case 'l': // Toggle vertex labels
     {
-    case 's': // Consume
-      return true;
+      // Check if label actor is present. If not get from plottable. If it
+      // is, toggle off
+      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
 
-    case 'h': // Save plot to file
-      write_png();
-      return true;
-
-    case 'i': // Toggle vertex labels
+      // Check for existence of labels
+      if (!vtk_pipeline->_renderer->HasViewProp(labels))
       {
-        // Check if label actor is present. If not get from plottable. If it
-        // is, toggle off
-        vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
-
-        // Check for existence of labels
-        if (!vtk_pipeline->_renderer->HasViewProp(labels))
-          vtk_pipeline->_renderer->AddActor(labels);
-
+        // Always start visible
+        vtk_pipeline->_renderer->AddActor(labels);
+      }
+      else
+      {
         // Turn on or off dependent on present state
         labels->SetVisibility(!labels->GetVisibility());
-
-        vtk_pipeline->_renderWindow->Render();
-        return true;
-      }
-    case 'w':
-      {
-        const int cur_rep = vtk_pipeline->_actor->GetProperty()->GetRepresentation();
-        int new_rep;
-        switch (cur_rep)
-        {
-        case VTK_SURFACE:   new_rep = VTK_WIREFRAME; break;
-        case VTK_WIREFRAME: new_rep = VTK_POINTS;    break;
-        case VTK_POINTS:    new_rep = VTK_SURFACE;   break;
-        }
-        vtk_pipeline->_actor->GetProperty()->SetRepresentation(new_rep);
-        vtk_pipeline->_renderWindow->Render();
-        return true;
       }
 
-    case 'x':
-      vtk_pipeline->widget->hide();
+      vtk_pipeline->_renderWindow->Render();
       return true;
-
-    case 'q':
-      app()->quit();
+    }
+  case 'w':
+    {
+      const int cur_rep = vtk_pipeline->_actor->GetProperty()->GetRepresentation();
+      int new_rep;
+      switch (cur_rep)
+      {
+      case VTK_SURFACE:   new_rep = VTK_WIREFRAME; break;
+      case VTK_WIREFRAME: new_rep = VTK_POINTS;    break;
+      case VTK_POINTS:    new_rep = VTK_SURFACE;   break;
+      }
+      vtk_pipeline->_actor->GetProperty()->SetRepresentation(new_rep);
+      vtk_pipeline->_renderWindow->Render();
       return true;
     }
 
+  case CONTROL + 'w':
+    vtk_pipeline->widget->close();
+    all_plotters->remove(this);
+    return true;
+
+  case CONTROL + 'q':
+    foreach (VTKPlotter *plotter, *all_plotters)
+    {
+      plotter->vtk_pipeline->widget->close();
+    }
+    all_plotters->clear();
+    // FALL THROUGH
+  case 'q':
+    app()->quit();
+    return true;
   }
 
   // Not handled
@@ -643,28 +668,26 @@ void VTKPlotter::write_png(std::string filename)
 void VTKPlotter::get_window_size(int& width, int& height)
 {
   dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->widget->GetInteractor());
-  vtk_pipeline->widget->GetInteractor()->GetSize(width, height);
-  // FIXME: Get correct sizes for window decoration
-  width += 6;
-  height += 30;
+  dolfin_assert(vtk_pipeline->widget);
+  QSize size = vtk_pipeline->widget->frameSize();
+  width = size.width();
+  height = size.height();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::get_screen_size(int& width, int& height)
 {
   dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->_renderWindow);
-  int *size = vtk_pipeline->_renderWindow->GetScreenSize();
-  width = size[0];
-  height = size[1];
-  // delete size or not?
+  dolfin_assert(vtk_pipeline->widget);
+  QRect geom = QApplication::desktop()->availableGeometry();
+  width = geom.width();
+  height = geom.height();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_window_position(int x, int y)
 {
   dolfin_assert(vtk_pipeline);
   dolfin_assert(vtk_pipeline->_renderWindow);
-  vtk_pipeline->_renderWindow->SetPosition(x, y);
+  vtk_pipeline->widget->move(x, y);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::azimuth(double angle)

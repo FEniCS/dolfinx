@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-27
+// Last changed: 2012-08-29
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -272,7 +272,7 @@ namespace dolfin
     std::string get_helptext();
 
     // Keypress callback; return true if handled
-    bool keypressCallback(std::string key, int modifiers);
+    bool keypressCallback();
 
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
