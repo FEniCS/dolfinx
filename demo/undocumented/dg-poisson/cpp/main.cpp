@@ -59,9 +59,6 @@ int main()
   // Create mesh
   UnitSquare mesh(24, 24);
 
-  // Use uBLAS
-  parameters["linear_algebra_backend"] = "uBLAS";
-
   // Create functions
   Source f;
 

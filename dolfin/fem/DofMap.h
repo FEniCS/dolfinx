@@ -233,10 +233,22 @@ namespace dolfin
 
     /// Create a copy of the dof map
     ///
+    /// *Returns*
+    ///     DofMap
+    ///         The Dofmap copy.
+    boost::shared_ptr<GenericDofMap> copy() const;
+
+    /// Create a copy of the dof map
+    ///
     /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The object to be copied.
-    DofMap* copy(const Mesh& mesh) const;
+    ///     new_mesh (_Mesh_)
+    ///         The new mesh to build the dof map on.
+    ///
+    /// *Returns*
+    ///     DofMap
+    ///         The new Dofmap copy.
+    boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const;
+
 
     /// Extract subdofmap component
     ///
@@ -335,9 +347,6 @@ namespace dolfin
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
-
-    // Re-order dofs
-    void reorder(const std::vector<uint>& reordering_map);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<uint> > _dofmap;

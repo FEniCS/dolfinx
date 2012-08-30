@@ -95,7 +95,10 @@ namespace dolfin
                                       const Cell& cell) const = 0;
 
     /// Create a copy of the dof map
-    virtual GenericDofMap* copy(const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
+
+    /// Build a new dof map on new mesh
+    virtual boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,

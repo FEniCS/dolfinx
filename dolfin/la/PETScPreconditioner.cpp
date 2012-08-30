@@ -252,7 +252,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
     // Aggregation damping factor
     PetscOptionsSetValue("-pc_ml_DampingFactor",
-                          boost::lexical_cast<std::string>(1.2).c_str());
+                          boost::lexical_cast<std::string>(1.6).c_str());
 
     // Maximum coarse level problem size
     //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
@@ -279,21 +279,26 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
     // Smoother preconditioner
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
-    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
-    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
 
-    PetscOptionsSetValue("-mg_levels_pc_sor_its",
+    PetscOptionsSetValue("-mg_levels_1_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
                           boost::lexical_cast<std::string>(1).c_str());
+
+    PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_2_pc_sor_its",
+			 boost::lexical_cast<std::string>(1).c_str());
 
     // -----
 
     // Make sure options are set
-    PCSetFromOptions(pc);
+    //PCSetFromOptions(pc);
 
     // Build preconditioner
     //for (int i = 1; i < num_levels; ++i)
-    KSPSetUp(*solver.ksp());
-    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+    //KSPSetUp(*solver.ksp());
+    //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 
     // Get number of multigrid levels
     //int num_levels;
@@ -316,16 +321,16 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-mg_levels",
     //                      boost::lexical_cast<std::string>(3).c_str());
 
-    PetscOptionsSetValue("-pc_mg_smoothup",
-                          boost::lexical_cast<std::string>(1).c_str());
-    PetscOptionsSetValue("-pc_mg_smoothdown",
-                          boost::lexical_cast<std::string>(1).c_str());
+    //PetscOptionsSetValue("-pc_mg_smoothup",
+    //                      boost::lexical_cast<std::string>(1).c_str());
+    //PetscOptionsSetValue("-pc_mg_smoothdown",
+    //                      boost::lexical_cast<std::string>(1).c_str());
 
     //PetscOptionsSetValue("-pc_mg_cycles",
     //                      boost::lexical_cast<std::string>(1).c_str());
 
     // Chebychev
-    PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
+    //PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
 
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     //PetscOptionsSetValue("-mg_levels_ksp_initial_guess_nonzero", "1");
@@ -333,11 +338,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
     //                      "0.0,1.1");
 
-    PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(2).c_str());
+    //PetscOptionsSetValue("-mg_levels_ksp_max_it",
+    //                      boost::lexical_cast<std::string>(3).c_str());
 
     // Smoother preconditioner
-    PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
     //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
 
@@ -357,9 +364,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Make sure options are set
     PCSetFromOptions(pc);
 
-    // View
-    cout << "********************************************" << endl;
-    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+
+    // Make sure the data structures have been constructed
+    //std::cout << "!!! Set-up Create ksp" << std::endl;
+    KSPSetUp(*solver.ksp());
+    //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+    //std::cout << "!!! End view" << std::endl;
 
     //K
     //PCMGGetSmoother(PC pc,PetscInt l,KSP *ksp)

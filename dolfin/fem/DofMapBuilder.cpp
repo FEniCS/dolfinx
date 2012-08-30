@@ -100,7 +100,16 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
       const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
 
       // Reorder dof map
-      dofmap.reorder(dof_remap);
+      dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
+      for (uint i = 0; i < dofmap.global_dimension(); ++i)
+        dofmap.ufc_map_to_dofmap[i] = dof_remap[i];
+
+      // Re-number dofs for cell
+      std::vector<std::vector<uint> >::iterator cell_map;
+      std::vector<uint>::iterator dof;
+      for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
+        for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
+          *dof = dof_remap[*dof];
     }
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
   }
