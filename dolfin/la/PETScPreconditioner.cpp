@@ -283,7 +283,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //                      "0.0,1.1");
 
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(2).c_str());
+                          boost::lexical_cast<std::string>(3).c_str());
 
     // Smoother preconditioner
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
@@ -292,13 +292,15 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
 
     // Level 1
+    PetscOptionsSetValue("-mg_levels_1_ksp_type", "chebyshev");
     PetscOptionsSetValue("-mg_levels_1_ksp_max_it",
                           boost::lexical_cast<std::string>(1).c_str());
     PetscOptionsSetValue("-mg_levels_1_pc_type", "sor");
     PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
-                          boost::lexical_cast<std::string>(1).c_str());
+                          boost::lexical_cast<std::string>(2).c_str());
 
     // Level 2
+    PetscOptionsSetValue("-mg_levels_2_ksp_type", "chebyshev");
     PetscOptionsSetValue("-mg_levels_2_ksp_max_it",
                           boost::lexical_cast<std::string>(1).c_str());
     PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
