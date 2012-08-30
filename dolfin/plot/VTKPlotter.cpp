@@ -245,6 +245,12 @@ namespace dolfin
       return _renderer;
     }
 
+    void scale_points(double factor)
+    {
+      double cur_size = _actor->GetProperty()->GetPointSize();
+      _actor->GetProperty()->SetPointSize(cur_size*factor);
+    }
+
     void set_helptext(std::string text)
     {
       // Add help text actor
@@ -723,6 +729,7 @@ std::string VTKPlotter::get_helptext()
   text << "   p: Toggle bounding box\n";
   text << "   v: Toggle vertex indices\n";
   text << "   w: Toggle wireframe/point/surface view\n";
+  text << "  +-: Resize points\n";
   text << "   h: Save plot to file\n";
   text << "   q: Continue\n";
   text << "\n";
@@ -746,6 +753,20 @@ bool VTKPlotter::keypressCallback()
                          CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
 
   std::cout << "Keypress: " << key << '|' << modifiers << std::endl;
+
+  if (key == "plus")
+  {
+    vtk_pipeline->scale_points(1.25);
+    vtk_pipeline->render();
+    return true;
+  }
+  if (key == "minus")
+  {
+    vtk_pipeline->scale_points(1.0/1.25);
+    vtk_pipeline->render();
+    return true;
+  }
+
 
   if (key.size() != 1)
   {
