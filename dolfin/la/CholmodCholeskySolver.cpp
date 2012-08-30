@@ -135,18 +135,18 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
 //-----------------------------------------------------------------------------
 #else
 // ============================================================================
-dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
+dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                           GenericVector& x,
                                           const GenericVector& b)
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
   UmfpackLUSolver solver(_A);
   return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
+dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
   dolfin_error("CholdmodCholeskySolver.cpp",
                "perform factorization using CHOLMOD Cholesky solver",
