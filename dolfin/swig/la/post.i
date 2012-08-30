@@ -433,8 +433,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         """
         Return arrays to underlaying compresssed row/column storage data
 
-        This method is only available for the uBLAS and MTL4 linear algebra
-        backends.
+        This method is only available for the uBLAS linear algebra
+        backend.
 
         *Arguments*
             deepcopy
@@ -656,7 +656,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
 // that are able to return a pointer to the underlaying contigious data
-// only used for the uBLAS and MTL4 backends
+// only used for the uBLAS backend
 // ---------------------------------------------------------------------------
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)
 %feature("docstring") dolfin::VEC_TYPE::_data "Missing docstring";
@@ -673,8 +673,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         """
         Return an array to underlaying data
 
-        This method is only available for the uBLAS and MTL4 linear algebra
-        backends.
+        This method is only available for the uBLAS linear algebra
+        backend.
 
         *Arguments*
             deepcopy
@@ -852,17 +852,6 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
         return v
 %}
 }
-#endif
-
-#ifdef HAS_MTL4
-LA_VEC_DATA_ACCESS(MTL4Vector)
-
-AS_BACKEND_TYPE_MACRO(MTL4Vector)
-AS_BACKEND_TYPE_MACRO(MTL4Matrix)
-
-%pythoncode %{
-_matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
-%}
 #endif
 
 // ---------------------------------------------------------------------------

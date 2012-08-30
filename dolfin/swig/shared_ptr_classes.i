@@ -185,12 +185,6 @@
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif
 
-#ifdef HAS_MTL4
-%shared_ptr(dolfin::ITLKrylovSolver)
-%shared_ptr(dolfin::MTL4Matrix)
-%shared_ptr(dolfin::MTL4Vector)
-#endif
-
 #ifdef HAS_TRILINOS
 %shared_ptr(dolfin::EpetraKrylovSolver)
 %shared_ptr(dolfin::EpetraLUSolver)
