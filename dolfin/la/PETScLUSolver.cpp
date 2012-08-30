@@ -232,6 +232,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   //PetscOptionsSetValue("-mat_pastix_verbose", "2");
 
   // Solve linear system
+  KSPView(*_ksp, PETSC_VIEWER_STDOUT_WORLD);
+
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
 
   return 1;

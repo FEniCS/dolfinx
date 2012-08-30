@@ -96,8 +96,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
           graph[*node].insert(dofs1.begin(), dofs1.end());
       }
 
-      // Reorder graph
-      const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
+      // Reorder graph (reverse Cuthill-McKee)
+      const std::vector<uint> dof_remap
+          = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
 
       // Reorder dof map
       dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
@@ -332,14 +333,16 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     std::vector<uint>::const_iterator node0, node1;
     for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
     {
-      boost::unordered_map<uint, uint>::const_iterator _node0 = my_old_to_new_dof_index.find(*node0);
+      boost::unordered_map<uint, uint>::const_iterator _node0
+          = my_old_to_new_dof_index.find(*node0);
       if (_node0 != my_old_to_new_dof_index.end())
       {
         const uint local_node0 = _node0->second;
         dolfin_assert(local_node0 < graph.size());
         for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         {
-          boost::unordered_map<uint, uint>::const_iterator _node1 = my_old_to_new_dof_index.find(*node1);
+          boost::unordered_map<uint, uint>::const_iterator
+                _node1 = my_old_to_new_dof_index.find(*node1);
           if (_node1 != my_old_to_new_dof_index.end())
           {
             const uint local_node1 = _node1->second;
@@ -351,7 +354,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Reorder dofs
-  const std::vector<uint> dof_remap = BoostGraphRenumbering::compute_king(graph);
+  const std::vector<uint> dof_remap
+      = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
 
   //cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
   //  << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;

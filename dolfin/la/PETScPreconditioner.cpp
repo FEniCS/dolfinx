@@ -97,6 +97,9 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("petsc_preconditioner");
 
+  // General parameters
+  p.add("view", false);
+
   // Hypre/ParaSails parameters
   Parameters p_parasails("parasails");
   p_parasails.add<double>("threshold");
@@ -246,17 +249,16 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-pc_ml_maxNlevels",
     //                      boost::lexical_cast<std::string>(3).c_str());
 
-    // Aggregation scheme
+    // Aggregation scheme (Uncoupled, Coupled, . . .)
     PetscOptionsSetValue("-pc_ml_CoarsenScheme", "Uncoupled");
 
-
     // Aggregation damping factor
-    PetscOptionsSetValue("-pc_ml_DampingFactor",
-                          boost::lexical_cast<std::string>(1.6).c_str());
+    //PetscOptionsSetValue("-pc_ml_DampingFactor",
+    //                      boost::lexical_cast<std::string>(1.4).c_str());
 
     // Maximum coarse level problem size
-    //PetscOptionsSetValue("-pc_ml_maxCoarseSize",
-    //                      boost::lexical_cast<std::string>(128).c_str());
+    PetscOptionsSetValue("-pc_ml_maxCoarseSize",
+                          boost::lexical_cast<std::string>(1024).c_str());
 
     //PetscOptionsSetValue("-pc_ml_Threshold",
     //                      boost::lexical_cast<std::string>(2).c_str());
@@ -265,6 +267,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //                      boost::lexical_cast<std::string>(6).c_str());
 
     // ---
+
+    // Coarse level solver
+    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
+    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
+    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
+
     // Chebychev
     PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
 
@@ -282,10 +290,17 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
     //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
 
+
+    // Level 1
+    PetscOptionsSetValue("-mg_levels_1_ksp_max_it",
+                          boost::lexical_cast<std::string>(1).c_str());
     PetscOptionsSetValue("-mg_levels_1_pc_type", "sor");
     PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
                           boost::lexical_cast<std::string>(1).c_str());
 
+    // Level 2
+    PetscOptionsSetValue("-mg_levels_2_ksp_max_it",
+                          boost::lexical_cast<std::string>(1).c_str());
     PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
     PetscOptionsSetValue("-mg_levels_2_pc_sor_its",
 			 boost::lexical_cast<std::string>(1).c_str());
@@ -364,12 +379,27 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Make sure options are set
     PCSetFromOptions(pc);
 
-
-    // Make sure the data structures have been constructed
-    //std::cout << "!!! Set-up Create ksp" << std::endl;
+    // Set up
     KSPSetUp(*solver.ksp());
-    //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
-    //std::cout << "!!! End view" << std::endl;
+
+    // Get coarse grid solver
+    //KSP ksp_coarse;
+    //PCMGGetCoarseSolve(pc, &ksp_coarse);
+    //KSPView(ksp_coarse, PETSC_VIEWER_STDOUT_WORLD);
+    //PC pc_coarse;
+    //KSPGetPC(ksp_coarse, &pc_coarse);
+    //PCFactorSetMatSolverPackage(pc_coarse, MATSOLVERMUMPS);
+
+    //PCSetUp(pc_coarse);
+
+    //PCView(pc_coarse, PETSC_VIEWER_STDOUT_WORLD);
+
+
+    // Print preconditioner information
+    //if ((bool) parameters["view"] == true);
+    //  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+
+    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 
     //K
     //PCMGGetSmoother(PC pc,PetscInt l,KSP *ksp)
