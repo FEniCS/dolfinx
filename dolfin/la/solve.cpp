@@ -253,14 +253,6 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
 #endif
   }
-  else if (backend == "MTL4")
-  {
-#ifdef HAS_MTL4
-    return true;
-#else
-    return false;
-#endif
-  }
   else if (backend == "STL")
   {
     return true;
@@ -314,10 +306,6 @@ std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backend
   #ifdef HAS_TRILINOS
   backends.push_back(std::make_pair("Epetra", "Powerful MPI parallel linear algebra"
 				    " library" + default_backend["Epetra"]));
-  #endif
-  #ifdef HAS_MTL4
-  backends.push_back(std::make_pair("MTL4", "Template based basic linear algebra"
-				   " backend"));
   #endif
 
   return backends;

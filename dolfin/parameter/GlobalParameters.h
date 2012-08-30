@@ -98,7 +98,7 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
-      
+
       #endif
       #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");
@@ -108,9 +108,6 @@ namespace dolfin
         #ifndef HAS_PETSC
         default_backend = "Epetra";
         #endif
-      #endif
-      #ifdef HAS_MTL4
-      allowed_backends.insert("MTL4");
       #endif
       p.add("linear_algebra_backend",
             default_backend,

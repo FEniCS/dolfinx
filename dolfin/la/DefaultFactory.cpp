@@ -25,7 +25,6 @@
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include "EpetraFactory.h"
-#include "MTL4Factory.h"
 #include "STLFactory.h"
 #include "DefaultFactory.h"
 
@@ -130,16 +129,6 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "Trilinos linear algebra backend is not available");
-    #endif
-  }
-  else if (backend == "MTL4")
-  {
-    #ifdef HAS_MTL4
-    return MTL4Factory::instance();
-    #else
-    dolfin_error("DefaultFactory.cpp",
-                 "access linear algebra backend",
-                 "MTL4 linear algebra backend is not available");
     #endif
   }
   else if (backend == "STL")
