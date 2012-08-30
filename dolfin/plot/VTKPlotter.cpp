@@ -218,8 +218,7 @@ namespace dolfin
       _renderer->SetBackground(1, 1, 1);
       _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
       _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
-      _actor->GetProperty()->SetPointSize(3);   // should be parameter?
-      //_actor->GetProperty()->SetLineWidth(1);
+      _actor->GetProperty()->SetPointSize(4);   // should be parameter?
 
       // Set window stuff
       _scalarBar->SetTextPositionToPrecedeScalarBar();
@@ -695,11 +694,12 @@ std::string VTKPlotter::get_helptext()
   text << "\n";
   text << "Keyboard control:\n";
   text << "   r: Reset zoom\n";
-  text << "   w: Toggle wireframe/point/surface view\n";
   text << "   f: Fly to the point currently under the mouse pointer\n";
   text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
-  text << "   p: Add bounding box\n";
-  text << "   v: Toggle vertex indices on/off\n";
+  text << "   m: Toggle mesh overlay\n";
+  text << "   p: Toggle bounding box\n";
+  text << "   v: Toggle vertex indices\n";
+  text << "   w: Toggle wireframe/point/surface view\n";
   text << "   h: Save plot to file\n";
   text << "   q: Continue\n";
   text << "\n";
@@ -734,6 +734,18 @@ bool VTKPlotter::keypressCallback()
   case 'h': // Save plot to file
     write_png();
     return true;
+
+  case 'm': // Toggle (secondary) mesh
+    {
+      vtkSmartPointer<vtkActor> mesh_actor = _plottable->get_mesh_actor();
+      bool added = vtk_pipeline->add_actor(mesh_actor);
+      if (!added)
+      {
+        mesh_actor->SetVisibility(!mesh_actor->GetVisibility());
+      }
+      vtk_pipeline->render();
+      return true;
+    }
 
   case 'v': // Toggle vertex labels
     {

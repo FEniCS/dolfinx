@@ -81,7 +81,13 @@ namespace dolfin
     /// Get an actor for showing vertex labels
     vtkSmartPointer<vtkActor2D> get_vertex_label_actor();
 
+    /// Get an actor for showing the mesh
+    vtkSmartPointer<vtkActor> get_mesh_actor();
+
   protected:
+
+    // Build the grid from mesh
+    void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim);
 
     /// Set scalar values on the mesh
     template <class T>
@@ -99,8 +105,11 @@ namespace dolfin
 
   private:
 
-    // The VTK grid constructed from the DOLFIN mesh
+    // The possibly lower-dimensional VTK grid constructed from the DOLFIN mesh
     vtkSmartPointer<vtkUnstructuredGrid> _grid;
+
+    // The full-dimensional VTK grid constructed from the DOLFIN mesh
+    vtkSmartPointer<vtkUnstructuredGrid> _full_grid;
 
     // The geometry filter
     vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
@@ -110,6 +119,9 @@ namespace dolfin
 
     // The label actor
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;
+
+    // The mesh actor
+    vtkSmartPointer<vtkActor> _meshActor;
 
     // The dimension of the facets
     const uint _entity_dim;

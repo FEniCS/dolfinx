@@ -27,6 +27,7 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkAlgorithmOutput.h>
+#include <vtkActor.h>
 #include <vtkActor2D.h>
 
 #include <dolfin/common/Variable.h>
@@ -72,6 +73,15 @@ namespace dolfin
           " VTK plottable type.");
       // Return empty actor to have something (invisible) to render
       return vtkSmartPointer<vtkActor2D>::New();
+    }
+
+    /// Get an actor for showing the mesh
+    virtual vtkSmartPointer<vtkActor> get_mesh_actor()
+    {
+      warning("Plotting of mesh is not implemented by the current"
+          " VTK plottable type.");
+      // Return empty actor to have something (invisible) to render
+      return vtkSmartPointer<vtkActor>::New();
     }
 
   };

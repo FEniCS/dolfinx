@@ -28,6 +28,8 @@
 #include <vtkPointSetToLabelHierarchy.h>
 #include <vtkTextProperty.h>
 #include <vtkLabelPlacementMapper.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
@@ -39,6 +41,7 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint entity_dim) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
   _mesh(mesh),
   _entity_dim(entity_dim)
@@ -48,6 +51,7 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint enti
 //----------------------------------------------------------------------------
 VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
   _mesh(mesh),
   _entity_dim(mesh->topology().dim())
@@ -105,11 +109,14 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
     _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
   }
   dolfin_assert(_grid);
+  dolfin_assert(_full_grid);
   dolfin_assert(_mesh);
 
   Timer t("VTK construct grid");
 
+  //
   // Construct VTK point array from DOLFIN mesh vertices
+  //
 
   // Create point array
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
@@ -134,6 +141,28 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
     labels->SetValue(vertex->index(), label.str().c_str());
   }
 
+  // Insert points, vertex labels and cells in VTK unstructured grid
+  _full_grid->SetPoints(points);
+  _full_grid->GetPointData()->AddArray(labels);
+
+  //
+  // Construct VTK cells from DOLFIN facets
+  //
+
+  build_grid_cells(_full_grid, dim());
+  if (_entity_dim == dim())
+  {
+    _grid->ShallowCopy(_full_grid);
+  }
+  else
+  {
+    _grid->SetPoints(points);
+    build_grid_cells(_grid, _entity_dim);
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim)
+{
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
@@ -169,22 +198,19 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // (automatically allocated during cell insertion)
   cells->Squeeze();
 
-  // Insert points, vertex labels and cells in VTK unstructured grid
-  _grid->SetPoints(points);
-  _grid->GetPointData()->AddArray(labels);
   switch (_entity_dim)
   {
     case 0:
-      _grid->SetCells(VTK_VERTEX, cells);
+      grid->SetCells(VTK_VERTEX, cells);
       break;
     case 1:
-      _grid->SetCells(VTK_LINE, cells);
+      grid->SetCells(VTK_LINE, cells);
       break;
     case 2:
-      _grid->SetCells(VTK_TRIANGLE, cells);
+      grid->SetCells(VTK_TRIANGLE, cells);
       break;
     case 3:
-      _grid->SetCells(VTK_TETRA, cells);
+      grid->SetCells(VTK_TETRA, cells);
       break;
     default:
       dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
@@ -215,7 +241,9 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
 {
   // Return actor if already created
   if (_vertexLabelActor)
+  {
     return _vertexLabelActor;
+  }
 
   // We create the actor on the first call to the method
 
@@ -227,7 +255,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   // Generate the label hierarchy.
   vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter
     = vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
-  pointSetToLabelHierarchyFilter->SetInput(_grid);
+  pointSetToLabelHierarchyFilter->SetInput(_full_grid);
   pointSetToLabelHierarchyFilter->SetLabelArrayName("indices"); // This name must match the one set in "update"
   // NOTE: One may set an integer array with priorites on the hierarchy filter.
   // These priorities will indicate which labels will be shown when there is
@@ -245,6 +273,29 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
   _vertexLabelActor->SetMapper(labelMapper);
 
   return _vertexLabelActor;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
+{
+  if (!_meshActor)
+  {
+    vtkSmartPointer<vtkGeometryFilter> geomfilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    geomfilter->SetInput(_full_grid);
+    geomfilter->Update();
+
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(geomfilter->GetOutputPort());
+
+    _meshActor = vtkSmartPointer<vtkActor>::New();
+    _meshActor->SetMapper(mapper);
+    _meshActor->GetProperty()->SetRepresentationToWireframe();
+    _meshActor->GetProperty()->SetColor(0.7, 0.7, 0.3);
+    _meshActor->GetProperty()->SetOpacity(0.3);
+    std::cout << _meshActor->GetProperty()->GetLineWidth() << std::endl;
+    _meshActor->GetProperty()->SetLineWidth(1.5);
+
+  }
+  return _meshActor;
 }
 //----------------------------------------------------------------------------
 boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
