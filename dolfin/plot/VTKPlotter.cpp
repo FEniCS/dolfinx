@@ -67,6 +67,7 @@
 #include <vtkPolyLine.h>
 #include <vtkCylinderSource.h>
 #include <vtkObjectFactory.h>
+#include <vtkDepthSortPolyData.h>
 
 #include <boost/filesystem.hpp>
 
@@ -123,6 +124,9 @@ namespace dolfin
   public:
     boost::scoped_ptr<QVTKWidget> widget;
 
+    // The depth sorting filter
+    vtkSmartPointer<vtkDepthSortPolyData> _depthSort;
+
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;
 
@@ -159,6 +163,8 @@ namespace dolfin
       _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
       _lut = vtkSmartPointer<vtkLookupTable>::New();
       _mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+      _depthSort = vtkSmartPointer<vtkDepthSortPolyData>::New();
+
       _actor = vtkSmartPointer<vtkActor>::New();
       polygon_actor = vtkSmartPointer<vtkActor>::New();
       helptextActor = vtkSmartPointer<vtkTextActor>::New();
@@ -175,6 +181,10 @@ namespace dolfin
       _renderer->AddActor(_actor);
       _renderer->AddActor(polygon_actor);
       _renderWindow->AddRenderer(_renderer);
+
+      // Connect the depth-sort filter
+      _depthSort->SetCamera(_renderer->GetActiveCamera());
+      _mapper->SetInputConnection(_depthSort->GetOutputPort());
 
       // Set up interactorstyle and connect interactor
       vtkSmartPointer<PrivateVTKInteractorStyle> style =
@@ -614,7 +624,7 @@ bool VTKPlotter::keypressCallback()
         if (plotter != this)
         {
           vtkSmartPointer<vtkCamera> other_cam = plotter->vtk_pipeline->_renderer->GetActiveCamera();
-          other_cam->ShallowCopy(camera);
+          other_cam->DeepCopy(camera);
           plotter->vtk_pipeline->_renderWindow->Render();
         }
       }
@@ -842,7 +852,11 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
   // the input may hence also have changed
-  vtk_pipeline->_mapper->SetInputConnection(_plottable->get_output());
+  vtk_pipeline->_depthSort->SetInputConnection(_plottable->get_output());
+  if (_frame_counter == 0)
+  {
+    vtk_pipeline->_renderer->ResetCamera();
+  }
 }
 //----------------------------------------------------------------------------
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
