@@ -74,7 +74,12 @@
 #include <vtkDepthSortPolyData.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
 
+#ifdef foreach
+#undef foreach
+#endif
+#define foreach BOOST_FOREACH
 
 using namespace dolfin;
 
@@ -556,16 +561,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
-  {
-    if (*it == this)
-    {
-      all_plotters->erase(it);
-      return;
-    }
-  }
-  // Plotter not found. This point should never be reached.
-  dolfin_assert(false);
+  all_plotters->remove(this);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
@@ -593,8 +589,6 @@ void VTKPlotter::interactive(bool enter_eventloop)
   // Abort if DOLFIN_NOPLOT is set to a nonzero value
   if (no_plot)
     return;
-
-  dolfin_assert(vtk_pipeline);
 
   if (parameters["helptext"])
   {
@@ -761,12 +755,12 @@ bool VTKPlotter::keypressCallback()
   case CONTROL + SHIFT + 's':
     {
       vtkCamera* camera = vtk_pipeline->get_camera();
-      for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
+      foreach (VTKPlotter *other, *all_plotters)
       {
-        if (*it != this)
+        if (other != this)
         {
-          (*it)->vtk_pipeline->get_camera()->DeepCopy(camera);
-          (*it)->vtk_pipeline->render();
+          other->vtk_pipeline->get_camera()->DeepCopy(camera);
+          other->vtk_pipeline->render();
         }
       }
       return true;
@@ -778,9 +772,9 @@ bool VTKPlotter::keypressCallback()
     return true;
 
   case CONTROL + 'q':
-    for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
+    foreach (VTKPlotter *plotter, *all_plotters)
     {
-      (*it)->vtk_pipeline->close_window();
+      plotter->vtk_pipeline->close_window();
     }
     all_plotters->clear();
     // FALL THROUGH
@@ -965,9 +959,11 @@ void VTKPlotter::all_interactive()
   else
   {
     // Prepare interactiveness on every plotter but the first
-    std::list<VTKPlotter*>::iterator it;
-    for (it = all_plotters->begin(), it++; it != all_plotters->end(); it++)
-      (*it)->interactive(false);
+    foreach (VTKPlotter *plotter, *all_plotters)
+    {
+      if (plotter != *all_plotters->begin())
+        plotter->interactive(false);
+    }
 
     // Start the vtk eventloop on the first plotter
     (*all_plotters->begin())->interactive(true);
