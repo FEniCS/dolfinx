@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -63,13 +63,17 @@ namespace dolfin
     /// Update the plottable data
     void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
 
+    /// Return true if depth sort is required
+    virtual bool requires_depthsort() const;
+
+    /// Return whether this plottable is compatible with the variable
     bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
 
     /// Return geometric dimension
-    virtual uint dim();
+    virtual uint dim() const;
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;

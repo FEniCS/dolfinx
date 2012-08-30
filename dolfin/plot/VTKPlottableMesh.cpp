@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifdef HAS_VTK
 
@@ -63,6 +63,36 @@ void VTKPlottableMesh::init_pipeline(const Parameters &parameters)
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
+bool VTKPlottableMesh::requires_depthsort() const
+{
+  if (_entity_dim < 2 || dim() < 3)
+  {
+    return false;
+  }
+
+  vtkFloatArray *pointdata = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
+  if (pointdata && pointdata->GetNumberOfComponents() == 1)
+  {
+    for (uint i = 0; i < pointdata->GetNumberOfTuples(); i++)
+    {
+      if (isnan(pointdata->GetValue(i)))
+        return true;
+    }
+  }
+
+  vtkFloatArray *celldata = dynamic_cast<vtkFloatArray*>(_grid->GetCellData()->GetScalars());
+  if (celldata && celldata->GetNumberOfComponents() == 1)
+  {
+    for (uint i = 0; i < celldata->GetNumberOfTuples(); i++)
+    {
+      if (isnan(celldata->GetValue(i)))
+        return true;
+    }
+  }
+
+  return false;
+}
+//----------------------------------------------------------------------------
 bool VTKPlottableMesh::is_compatible(const Variable &var) const
 {
   return dynamic_cast<const Mesh*>(&var);
@@ -77,7 +107,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   dolfin_assert(_grid);
   dolfin_assert(_mesh);
 
-  Timer t("Construct VTK grid");
+  Timer t("VTK construct grid");
 
   // Construct VTK point array from DOLFIN mesh vertices
 
@@ -171,7 +201,7 @@ void VTKPlottableMesh::update_range(double range[2])
   _grid->GetScalarRange(range);
 }
 //----------------------------------------------------------------------------
-dolfin::uint VTKPlottableMesh::dim()
+dolfin::uint VTKPlottableMesh::dim() const
 {
   return _mesh->topology().dim();
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-27
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifndef __VTK_PLOTTABLE_DIRICHLETBC_H
 #define __VTK_PLOTTABLE_DIRICHLETBC_H

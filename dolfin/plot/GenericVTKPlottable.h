@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -57,7 +57,10 @@ namespace dolfin
     virtual void update_range(double range[2]) = 0;
 
     /// Return geometric dimension
-    virtual uint dim() = 0;
+    virtual uint dim() const = 0;
+
+    /// Return true if depth sorting is required
+    virtual bool requires_depthsort() const = 0;
 
     /// Return data to visualize
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;

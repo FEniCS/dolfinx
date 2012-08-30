@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifdef HAS_VTK
 
@@ -82,11 +82,18 @@ void VTKPlottableDirichletBC::update(boost::shared_ptr<const Variable> var, cons
   // We passed in the Function to begin with, so the const_case is safe
   GenericVector &vec = *const_cast<GenericVector*>(func->vector().get());
 
-  // Set the function data to all NaNs
+  double unset_value = 0.0;
+  if (func->value_rank() == 0)
+  {
+    unset_value = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  // Set the function data to all-undefined (zero for vectors, NaN for scalars)
   std::vector<double> data(vec.local_size());
-  std::fill(data.begin(), data.end(), std::numeric_limits<double>::quiet_NaN());
+  std::fill(data.begin(), data.end(), unset_value);
   vec.set_local(data);
 
+  // Apply the BC
   _bc->apply(vec);
 
   VTKPlottableGenericFunction::update(func, parameters, framecounter);

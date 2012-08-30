@@ -190,9 +190,8 @@ namespace dolfin
       _renderer->AddActor(_actor);
       _renderWindow->AddRenderer(_renderer);
 
-      // Connect the depth-sort filter
+      // Connect the depth-sort filter to the camera
       _depthSort->SetCamera(_renderer->GetActiveCamera());
-      _mapper->SetInputConnection(_depthSort->GetOutputPort());
 
       // Set up interactorstyle and connect interactor
       vtkSmartPointer<PrivateVTKInteractorStyle> style =
@@ -355,6 +354,7 @@ namespace dolfin
 
     void render()
     {
+      Timer timer("VTK render");
       _renderWindow->Render();
     }
 
@@ -404,10 +404,20 @@ namespace dolfin
       return false;
     }
 
-    void set_input_connection(vtkSmartPointer<vtkAlgorithmOutput> output, uint frame_counter)
+    void set_input(const GenericVTKPlottable &plottable, bool reset_camera)
     {
-      _depthSort->SetInputConnection(output);
-      if (frame_counter == 0)
+      if (plottable.requires_depthsort())
+      {
+        std::cout << "Depth sort\n";
+        _depthSort->SetInputConnection(plottable.get_output());
+        _mapper->SetInputConnection(_depthSort->GetOutputPort());
+      }
+      else
+      {
+        _mapper->SetInputConnection(plottable.get_output());
+      }
+
+      if (reset_camera)
       {
         _renderer->ResetCamera();
       }
@@ -420,7 +430,6 @@ namespace dolfin
       // important stuff.
 
       std::cout << "Pipeline destroyed\n";
-      //_renderWindow->SetPosition(1000,1000);
 
 #ifdef HAS_QT4
       widget.reset(NULL);
@@ -901,6 +910,8 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
                  "The plottable is not compatible with the data");
   }
 
+  Timer timer("VTK update");
+
   // Process some parameters
   if (parameters["wireframe"])
     vtk_pipeline->cycle_representation(VTK_WIREFRAME);
@@ -944,7 +955,7 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
   // the input may hence also have changed
-  vtk_pipeline->set_input_connection(_plottable->get_output(), _frame_counter);
+  vtk_pipeline->set_input(*_plottable, _frame_counter==0);
 }
 //----------------------------------------------------------------------------
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
