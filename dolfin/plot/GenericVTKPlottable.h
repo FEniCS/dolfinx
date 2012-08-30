@@ -67,9 +67,18 @@ namespace dolfin
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
 
     /// Get an actor for showing vertex labels
-    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor()
+    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>)
     {
       warning("Plotting of vertex labels is not implemented by the current"
+          " VTK plottable type.");
+      // Return empty actor to have something (invisible) to render
+      return vtkSmartPointer<vtkActor2D>::New();
+    }
+
+    /// Get an actor for showing cell labels
+    virtual vtkSmartPointer<vtkActor2D> get_cell_label_actor(vtkSmartPointer<vtkRenderer>)
+    {
+      warning("Plotting of cell labels is not implemented by the current"
           " VTK plottable type.");
       // Return empty actor to have something (invisible) to render
       return vtkSmartPointer<vtkActor2D>::New();

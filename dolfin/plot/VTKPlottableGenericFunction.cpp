@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-30
 
 #ifdef HAS_VTK
 

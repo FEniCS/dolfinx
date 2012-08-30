@@ -38,6 +38,8 @@
 
 #include "GenericVTKPlottable.h"
 
+class vtkIdFilter;
+
 namespace dolfin
 {
 
@@ -79,12 +81,18 @@ namespace dolfin
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
     /// Get an actor for showing vertex labels
-    vtkSmartPointer<vtkActor2D> get_vertex_label_actor();
+    vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);
+
+    /// Get an actor for showing cell labels
+    vtkSmartPointer<vtkActor2D> get_cell_label_actor(vtkSmartPointer<vtkRenderer>);
 
     /// Get an actor for showing the mesh
     vtkSmartPointer<vtkActor> get_mesh_actor();
 
   protected:
+
+    // Create label filter
+    void build_id_filter();
 
     // Build the grid from mesh
     void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim);
@@ -117,8 +125,10 @@ namespace dolfin
     // The mesh to visualize
     boost::shared_ptr<const Mesh> _mesh;
 
-    // The label actor
+    // The label actors
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;
+    vtkSmartPointer<vtkActor2D> _cellLabelActor;
+    vtkSmartPointer<vtkIdFilter> _idFilter;
 
     // The mesh actor
     vtkSmartPointer<vtkActor> _meshActor;

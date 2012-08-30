@@ -30,6 +30,11 @@
 #include <vtkLabelPlacementMapper.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkIdFilter.h>
+#include <vtkLabeledDataMapper.h>
+#include <vtkCellCenters.h>
+#include <vtkSelectVisiblePoints.h>
+#include <vtkRenderer.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
@@ -122,28 +127,16 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->SetNumberOfPoints(_mesh->num_vertices());
 
-  // Create array to hold index labels
-  vtkSmartPointer<vtkStringArray> labels = vtkSmartPointer<vtkStringArray>::New();
-  std::stringstream label;
-  labels->SetNumberOfValues(_mesh->num_vertices());
-  labels->SetName("indices");
-
-  // Iterate vertices and add to point and label array
+  // Iterate vertices and add to point array
   Point p;
   for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
   {
     p = vertex->point();
     points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
-
-    // Reset label, convert integer index to string and add to array
-    label.str("");
-    label << vertex->index();
-    labels->SetValue(vertex->index(), label.str().c_str());
   }
 
   // Insert points, vertex labels and cells in VTK unstructured grid
   _full_grid->SetPoints(points);
-  _full_grid->GetPointData()->AddArray(labels);
 
   //
   // Construct VTK cells from DOLFIN facets
@@ -237,42 +230,78 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
   return _geometryFilter->GetOutputPort();
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
+void VTKPlottableMesh::build_id_filter()
+{
+  if (!_idFilter)
+  {
+    _idFilter = vtkSmartPointer<vtkIdFilter>::New();
+    if (_entity_dim == dim() || _entity_dim == 0)
+    {
+      // Kludge to get to the unwarped mesh in relevant cases
+      _idFilter->SetInputConnection(get_mesh_actor()->GetMapper()->GetInputConnection(0,0));
+    }
+    else
+    {
+      _idFilter->SetInputConnection(_geometryFilter->GetOutputPort());
+    }
+    _idFilter->PointIdsOn();
+    _idFilter->CellIdsOn();
+    _idFilter->FieldDataOn();
+  }
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
   // Return actor if already created
-  if (_vertexLabelActor)
+  if (!_vertexLabelActor)
   {
-    return _vertexLabelActor;
+    build_id_filter();
+
+    vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
+    vis->SetInputConnection(_idFilter->GetOutputPort());
+    //vis->SetTolerance(1e-6);
+    vis->SetRenderer(renderer);
+    //vis->SelectionWindowOn();
+    //vis->SetSelection(0, 0.3, 0, 0.3);
+
+    vtkSmartPointer<vtkLabeledDataMapper> ldm = vtkSmartPointer<vtkLabeledDataMapper>::New();
+    ldm->SetInputConnection(vis->GetOutputPort());
+    ldm->SetLabelModeToLabelFieldData();
+    ldm->GetLabelTextProperty()->SetColor(0.0, 0.0, 0.0);
+    ldm->GetLabelTextProperty()->ItalicOff();
+    ldm->GetLabelTextProperty()->ShadowOff();
+
+    _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
+    _vertexLabelActor->SetMapper(ldm);
+  }
+  return _vertexLabelActor;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
+{
+  if (!_cellLabelActor)
+  {
+    build_id_filter();
+
+    vtkSmartPointer<vtkCellCenters> cc = vtkSmartPointer<vtkCellCenters>::New();
+    cc->SetInputConnection(_idFilter->GetOutputPort());
+
+    vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
+    //vis->SetTolerance(1e-6);
+    vis->SetInputConnection(cc->GetOutputPort());
+    vis->SetRenderer(renderer);
+
+    vtkSmartPointer<vtkLabeledDataMapper> ldm = vtkSmartPointer<vtkLabeledDataMapper>::New();
+    ldm->SetInputConnection(vis->GetOutputPort());
+    ldm->SetLabelModeToLabelFieldData();
+    ldm->GetLabelTextProperty()->SetColor(0.3, 0.3, 0.0);
+    ldm->GetLabelTextProperty()->ShadowOff();
+
+    _cellLabelActor = vtkSmartPointer<vtkActor2D>::New();
+    _cellLabelActor->SetMapper(ldm);
   }
 
-  // We create the actor on the first call to the method
-
-  // TODO: Should we use vtkLabeledDataMapper here instead? Together with
-  // vtkSelectVisiblePoints to only label visible points, and use vtkCellCenters
-  // to generate points at the center of cells to label cells. See
-  // http://www.vtk.org/doc/release/5.8/html/a01117.html
-
-  // Generate the label hierarchy.
-  vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter
-    = vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
-  pointSetToLabelHierarchyFilter->SetInput(_full_grid);
-  pointSetToLabelHierarchyFilter->SetLabelArrayName("indices"); // This name must match the one set in "update"
-  // NOTE: One may set an integer array with priorites on the hierarchy filter.
-  // These priorities will indicate which labels will be shown when there is
-  // limited space.
-  //pointSetToLabelHierarchyFilter->SetPriorityArrayName("priorities");
-  pointSetToLabelHierarchyFilter->GetTextProperty()->SetColor(0, 0, 0);
-  pointSetToLabelHierarchyFilter->Update();
-
-  // Create a mapper and actor for the labels.
-  vtkSmartPointer<vtkLabelPlacementMapper> labelMapper
-    = vtkSmartPointer<vtkLabelPlacementMapper>::New();
-  labelMapper->SetInputConnection(
-    pointSetToLabelHierarchyFilter->GetOutputPort());
-  _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
-  _vertexLabelActor->SetMapper(labelMapper);
-
-  return _vertexLabelActor;
+  return _cellLabelActor;
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
@@ -290,9 +319,8 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
     _meshActor->SetMapper(mapper);
     _meshActor->GetProperty()->SetRepresentationToWireframe();
     _meshActor->GetProperty()->SetColor(0.7, 0.7, 0.3);
-    _meshActor->GetProperty()->SetOpacity(0.3);
-    std::cout << _meshActor->GetProperty()->GetLineWidth() << std::endl;
-    _meshActor->GetProperty()->SetLineWidth(1.5);
+    _meshActor->GetProperty()->SetOpacity(0.5);
+    vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
   }
   return _meshActor;

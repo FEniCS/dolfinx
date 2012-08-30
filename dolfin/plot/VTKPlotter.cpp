@@ -169,6 +169,8 @@ namespace dolfin
 
     void init(VTKPlotter *parent, const Parameters &parameters)
     {
+      vtkMapper::GlobalImmediateModeRenderingOn();
+
       // Initialize objects
       _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
       _lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -216,7 +218,6 @@ namespace dolfin
 
       // Set some properties that affect the look of things
       _renderer->SetBackground(1, 1, 1);
-      _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
       _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
       _actor->GetProperty()->SetPointSize(4);   // should be parameter?
 
@@ -237,6 +238,11 @@ namespace dolfin
     vtkRenderWindowInteractor* get_interactor()
     {
       return _renderWindow->GetInteractor();
+    }
+
+    vtkSmartPointer<vtkRenderer> get_renderer()
+    {
+      return _renderer;
     }
 
     void set_helptext(std::string text)
@@ -393,7 +399,7 @@ namespace dolfin
 #endif
     }
 
-    bool add_actor(vtkSmartPointer<vtkProp> actor)
+    bool add_actor(vtkSmartPointer<vtkActor> actor)
     {
       if (!_renderer->HasViewProp(actor))
       {
@@ -403,8 +409,25 @@ namespace dolfin
       return false;
     }
 
+    bool add_actor(vtkSmartPointer<vtkActor2D> actor)
+    {
+      if (!_renderer->HasViewProp(actor))
+      {
+        _renderer->AddActor2D(actor);
+        return true;
+      }
+      return false;
+    }
+
     void set_input(const GenericVTKPlottable &plottable, bool reset_camera)
     {
+      const bool depthsort = plottable.requires_depthsort();
+      if (plottable.dim() < 3 || depthsort)
+      {
+        // In 3D, only set this when necessary. It makes the visibility test
+        // for cell/vertex labels ineffective.
+        _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
+      }
       if (plottable.requires_depthsort())
       {
         std::cout << "Depth sort\n";
@@ -751,7 +774,7 @@ bool VTKPlotter::keypressCallback()
     {
       // Check if label actor is present. If not get from plottable. If it
       // is, toggle off
-      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
+      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
       bool added = vtk_pipeline->add_actor(labels);
       if (!added)
@@ -763,6 +786,24 @@ bool VTKPlotter::keypressCallback()
       vtk_pipeline->render();
       return true;
     }
+
+  case 'c': // Toggle cell labels
+    {
+      // Check if label actor is present. If not get from plottable. If it
+      // is, toggle off
+      vtkSmartPointer<vtkActor2D> labels = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());
+
+      bool added = vtk_pipeline->add_actor(labels);
+      if (!added)
+      {
+        // Turn on or off dependent on present state
+        labels->SetVisibility(!labels->GetVisibility());
+      }
+
+      vtk_pipeline->render();
+      return true;
+    }
+
   case 'w':
     {
       vtk_pipeline->cycle_representation();
