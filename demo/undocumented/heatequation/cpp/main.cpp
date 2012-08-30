@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-16
-// Last changed: 2012-08-16
+// Last changed: 2012-08-30
 //
 // This demo program solves the heat equation
 //
@@ -76,6 +76,9 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  // Temporary until this works
+  return 0;
+
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Heat_2D::Form_0::TrialSpace V(mesh);

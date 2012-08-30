@@ -69,9 +69,9 @@ A, b = assemble_system(a, L, bc)
 U = Function(V)
 
 # Fetch underlying epetra objects
-A_epetra = down_cast(A).mat()
-b_epetra = down_cast(b).vec()
-x_epetra = down_cast(U.vector()).vec()
+A_epetra = as_backend_type(A).mat()
+b_epetra = as_backend_type(b).vec()
+x_epetra = as_backend_type(U.vector()).vec()
 
 # Sets up the parameters for ML using a python dictionary
 MLList = {"max levels"        : 3,
