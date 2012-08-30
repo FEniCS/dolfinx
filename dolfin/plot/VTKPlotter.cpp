@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-29
+// Last changed: 2012-08-30
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -81,20 +81,6 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 namespace dolfin
 {
-#ifdef HAS_QT4
-  QApplication *app()
-  {
-    if (!qApp)
-    {
-      static int dummy_argc = 0;
-      static char dummy_argv0 = '\0';
-      static char *dummy_argv0_ptr = &dummy_argv0;
-      new QApplication(dummy_argc, &dummy_argv0_ptr);
-      std::cout << "Created qApp, " << qApp << std::endl;
-    }
-    return qApp;
-  }
-#endif
 //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
   {
@@ -125,10 +111,9 @@ namespace dolfin
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle);
 //----------------------------------------------------------------------------
-  class PrivateVTKPipeline_QT
+  class PrivateVTKPipeline
   {
-  public:
-    boost::scoped_ptr<QVTKWidget> widget;
+  protected:
 
     // The depth sorting filter
     vtkSmartPointer<vtkDepthSortPolyData> _depthSort;
@@ -141,9 +126,6 @@ namespace dolfin
 
     // The main actor
     vtkSmartPointer<vtkActor> _actor;
-
-    // The actor for polygons
-    vtkSmartPointer<vtkActor> polygon_actor;
 
     // The renderer
     vtkSmartPointer<vtkRenderer> _renderer;
@@ -162,6 +144,23 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
+#ifdef HAS_QT4
+    boost::scoped_ptr<QVTKWidget> widget;
+
+    static void create_qApp()
+    {
+      if (!qApp)
+      {
+        static int dummy_argc = 0;
+        static char dummy_argv0 = '\0';
+        static char *dummy_argv0_ptr = &dummy_argv0;
+        new QApplication(dummy_argc, &dummy_argv0_ptr);
+        std::cout << "Created qApp, " << qApp << std::endl;
+      }
+    }
+#endif
+
+  public:
 
     void init(VTKPlotter *parent, const Parameters &parameters)
     {
@@ -172,7 +171,6 @@ namespace dolfin
       _depthSort = vtkSmartPointer<vtkDepthSortPolyData>::New();
 
       _actor = vtkSmartPointer<vtkActor>::New();
-      polygon_actor = vtkSmartPointer<vtkActor>::New();
       helptextActor = vtkSmartPointer<vtkTextActor>::New();
       balloonRep = vtkSmartPointer<vtkBalloonRepresentation>::New();
       balloonwidget = vtkSmartPointer<vtkBalloonWidget>::New();
@@ -185,7 +183,6 @@ namespace dolfin
       _scalarBar->SetLookupTable(_lut);
       _actor->SetMapper(_mapper);
       _renderer->AddActor(_actor);
-      _renderer->AddActor(polygon_actor);
       _renderWindow->AddRenderer(_renderer);
 
       // Connect the depth-sort filter
@@ -197,13 +194,21 @@ namespace dolfin
         vtkSmartPointer<PrivateVTKInteractorStyle>::New();
       style->_plotter = parent;
 
-      // Set up widget -- make sure the QApplication exists first
-      app();
+#ifdef HAS_QT4
+      // Set up widget -- make sure a QApplication exists first
+      create_qApp();
       widget.reset(new QVTKWidget());
-      widget->GetInteractor()->SetInteractorStyle(style);
-      style->SetCurrentRenderer(_renderer);
-
       _renderWindow->SetInteractor(widget->GetInteractor());
+
+      widget->SetRenderWindow(_renderWindow);
+      widget->resize(parameters["window_width"], parameters["window_height"]);
+      widget->show();
+#else
+      _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
+      _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
+#endif
+      _renderWindow->GetInteractor()->SetInteractorStyle(style);
+      style->SetCurrentRenderer(_renderer);
 
       // Set some properties that affect the look of things
       _renderer->SetBackground(1, 1, 1);
@@ -215,10 +220,6 @@ namespace dolfin
       // Set window stuff
       _scalarBar->SetTextPositionToPrecedeScalarBar();
 
-      widget->SetRenderWindow(_renderWindow);
-      widget->resize(parameters["window_width"], parameters["window_height"]);
-      widget->show();
-
       // Set the look of scalar bar labels
       vtkSmartPointer<vtkTextProperty> labelprop
 	= _scalarBar->GetLabelTextProperty();
@@ -226,6 +227,13 @@ namespace dolfin
       labelprop->SetFontSize(20);
       labelprop->ItalicOff();
       labelprop->BoldOff();
+      if (parameters["scalarbar"])
+        _renderer->AddActor(_scalarBar);
+    }
+
+    vtkRenderWindowInteractor* get_interactor()
+    {
+      return _renderWindow->GetInteractor();
     }
 
     void set_helptext(std::string text)
@@ -246,13 +254,161 @@ namespace dolfin
       balloonRep->GetFrameProperty()->SetOpacity(0.7);
 
       // Set up the actual widget that makes the help text pop up
-      balloonwidget->SetInteractor(widget->GetInteractor());
+      balloonwidget->SetInteractor(get_interactor());
       balloonwidget->SetRepresentation(balloonRep);
       balloonwidget->AddBalloon(helptextActor, text.c_str(), NULL);
       balloonwidget->EnabledOn();
     }
 
-    ~PrivateVTKPipeline_QT()
+    void set_window_title(std::string title)
+    {
+#ifdef HAS_QT4
+      widget->setWindowTitle(title.c_str());
+#else
+      _renderWindow->SetWindowName(title.c_str());
+#endif
+    }
+
+    void close_window()
+    {
+#ifdef HAS_QT4
+      widget->close();
+#else
+      warning("Window close not implemented on VTK event loop");
+#endif
+    }
+
+    void start_interaction(bool enter_eventloop=true)
+    {
+      get_interactor()->Initialize();
+      render();
+      if (enter_eventloop)
+      {
+#ifdef HAS_QT4
+        qApp->exec();
+#else
+        get_interactor()->Start();
+#endif
+      }
+    }
+
+    void stop_interaction()
+    {
+#ifdef HAS_QT4
+      qApp->quit();
+#else
+      get_interactor()->TerminateApp();
+#endif
+    }
+
+    void write_png(std::string filename)
+    {
+      // FIXME: Remove help-text-actor before hardcopying.
+
+      // Create window to image filter and PNG writer
+      vtkSmartPointer<vtkWindowToImageFilter> w2i =
+        vtkSmartPointer<vtkWindowToImageFilter>::New();
+      vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+
+      w2i->SetInput(_renderWindow);
+      w2i->Update();
+      writer->SetInputConnection(w2i->GetOutputPort());
+      writer->SetFileName((filename + ".png").c_str());
+      render();
+      writer->Modified();
+      writer->Write();
+    }
+
+    vtkCamera* get_camera()
+    {
+      return _renderer->GetActiveCamera();
+    }
+
+    void set_scalar_range(double *range)
+    {
+      _mapper->SetScalarRange(range);
+      // Not required, the mapper controls the range.
+      //_lut->SetRange(range);
+      //_lut->Build();
+    }
+
+    void cycle_representation(int new_rep=0)
+    {
+      if (!new_rep)
+      {
+        const int cur_rep = _actor->GetProperty()->GetRepresentation();
+        switch (cur_rep)
+        {
+        case VTK_SURFACE:   new_rep = VTK_WIREFRAME; break;
+        case VTK_WIREFRAME: new_rep = VTK_POINTS;    break;
+        default:
+        case VTK_POINTS:    new_rep = VTK_SURFACE;   break;
+        }
+      }
+      _actor->GetProperty()->SetRepresentation(new_rep);
+    }
+
+    void render()
+    {
+      _renderWindow->Render();
+    }
+
+    void get_window_size(int& width, int& height)
+    {
+#ifdef HAS_QT4
+      QSize size = widget->frameSize();
+      width = size.width();
+      height = size.height();
+#else
+      get_interactor()->GetSize(width, height);
+      // Guess window decoration (frame) size
+      width += 6;
+      height += 30;
+#endif
+    }
+    //----------------------------------------------------------------------------
+    void get_screen_size(int& width, int& height)
+    {
+#ifdef HAS_QT4
+      QRect geom = QApplication::desktop()->availableGeometry();
+      width = geom.width();
+      height = geom.height();
+#else
+      int *size = _renderWindow->GetScreenSize();
+      width = size[0];
+      height = size[1];
+#endif
+    }
+    //----------------------------------------------------------------------------
+    void set_window_position(int x, int y)
+    {
+#ifdef HAS_QT4
+      widget->move(x, y);
+#else
+      _renderWindow->SetPosition(x, y);
+#endif
+    }
+
+    bool add_actor(vtkSmartPointer<vtkProp> actor)
+    {
+      if (!_renderer->HasViewProp(actor))
+      {
+        _renderer->AddActor(actor);
+        return true;
+      }
+      return false;
+    }
+
+    void set_input_connection(vtkSmartPointer<vtkAlgorithmOutput> output, uint frame_counter)
+    {
+      _depthSort->SetInputConnection(output);
+      if (frame_counter == 0)
+      {
+        _renderer->ResetCamera();
+      }
+    }
+
+    ~PrivateVTKPipeline()
     {
       // Note: VTK (current 5.6.1) seems to very picky about the order of
       // destruction. This destructor tries to impose an order on the most
@@ -261,7 +417,9 @@ namespace dolfin
       std::cout << "Pipeline destroyed\n";
       //_renderWindow->SetPosition(1000,1000);
 
+#ifdef HAS_QT4
       widget.reset(NULL);
+#endif
 
       helptextActor = NULL;
       balloonRep = NULL;
@@ -272,11 +430,6 @@ namespace dolfin
     }
 
   };
-#ifdef HAS_QT4
-  class PrivateVTKPipeline : public PrivateVTKPipeline_QT {};
-#else
-  class PrivateVTKPipeline : public PrivateVTKPipeline_VTK {};
-#endif
 //----------------------------------------------------------------------------
 } // namespace dolfin
 //----------------------------------------------------------------------------
@@ -426,7 +579,7 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
 
   update(variable);
 
-  vtk_pipeline->_renderWindow->Render();
+  vtk_pipeline->render();
 
   _frame_counter++;
 
@@ -448,19 +601,7 @@ void VTKPlotter::interactive(bool enter_eventloop)
     vtk_pipeline->set_helptext(get_helptext());
   }
 
-  // Initialize and start the mouse interaction
-  vtk_pipeline->widget->GetInteractor()->Initialize();
-  //vtk_pipeline->_renderWindow->Render();
-
-  if (enter_eventloop)
-    start_eventloop();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::start_eventloop()
-{
-  if (!no_plot) {
-    app()->exec();
-  }
+  vtk_pipeline->start_interaction(enter_eventloop);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
@@ -486,7 +627,11 @@ void VTKPlotter::init()
   all_plotters_local_copy = all_plotters;
   log(TRACE, "Size of plotter pool is %d.", all_plotters->size());
 
-  // Initialise PrivateVTKPipeline
+  // We first initialize the part of the pipeline that the plotter controls.
+  // This is the part from the Poly data mapper and out, including actor,
+  // renderer, renderwindow and interaction. It also takes care of the scalar
+  // bar and other decorations.
+
   dolfin_assert(vtk_pipeline);
   vtk_pipeline->init(this, parameters);
 
@@ -494,10 +639,10 @@ void VTKPlotter::init()
   dolfin::uint num_old_plots = VTKPlotter::all_plotters->size()-1;
 
   int width, height;
-  get_window_size(width, height);
+  vtk_pipeline->get_window_size(width, height);
 
   int swidth, sheight;
-  get_screen_size(swidth, sheight);
+  vtk_pipeline->get_screen_size(swidth, sheight);
 
   // Tile windows horizontally across screen
   int num_rows = swidth/width;
@@ -505,12 +650,7 @@ void VTKPlotter::init()
   int row = num_old_plots % num_rows;
   int col = (num_old_plots / num_rows) % num_cols;
 
-  set_window_position(row*width, col*height);
-
-  // We first initialize the part of the pipeline that the plotter controls.
-  // This is the part from the Poly data mapper and out, including actor,
-  // renderer, renderwindow and interaction. It also takes care of the scalar
-  // bar and other decorations.
+  vtk_pipeline->set_window_position(row*width, col*height);
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline(parameters);
@@ -560,9 +700,11 @@ std::string VTKPlotter::get_helptext()
   text << "   h: Save plot to file\n";
   text << "   q: Continue\n";
   text << "\n";
+#ifdef HAS_QT4
   text << "Window control:\n";
   text << " C-w: Close plot window\n";
   text << " C-q: Close all plot windows\n";
+#endif
   return text.str();
 }
 //----------------------------------------------------------------------------
@@ -572,10 +714,10 @@ bool VTKPlotter::keypressCallback()
   static const int ALT     = 0x200;
   static const int CONTROL = 0x300;
 
-  const std::string key = vtk_pipeline->widget->GetInteractor()->GetKeySym();
-  const int modifiers = (SHIFT   * !!vtk_pipeline->widget->GetInteractor()->GetShiftKey() +
-                         ALT     * !!vtk_pipeline->widget->GetInteractor()->GetAltKey()   +
-                         CONTROL * !!vtk_pipeline->widget->GetInteractor()->GetControlKey());
+  const std::string key = vtk_pipeline->get_interactor()->GetKeySym();
+  const int modifiers = (SHIFT   * !!vtk_pipeline->get_interactor()->GetShiftKey() +
+                         ALT     * !!vtk_pipeline->get_interactor()->GetAltKey()   +
+                         CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
 
   std::cout << "Keypress: " << key << '|' << modifiers << std::endl;
 
@@ -596,33 +738,20 @@ bool VTKPlotter::keypressCallback()
       // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor();
 
-      // Check for existence of labels
-      if (!vtk_pipeline->_renderer->HasViewProp(labels))
-      {
-        // Always start visible
-        vtk_pipeline->_renderer->AddActor(labels);
-      }
-      else
+      bool added = vtk_pipeline->add_actor(labels);
+      if (!added)
       {
         // Turn on or off dependent on present state
         labels->SetVisibility(!labels->GetVisibility());
       }
 
-      vtk_pipeline->_renderWindow->Render();
+      vtk_pipeline->render();
       return true;
     }
   case 'w':
     {
-      const int cur_rep = vtk_pipeline->_actor->GetProperty()->GetRepresentation();
-      int new_rep;
-      switch (cur_rep)
-      {
-      case VTK_SURFACE:   new_rep = VTK_WIREFRAME; break;
-      case VTK_WIREFRAME: new_rep = VTK_POINTS;    break;
-      case VTK_POINTS:    new_rep = VTK_SURFACE;   break;
-      }
-      vtk_pipeline->_actor->GetProperty()->SetRepresentation(new_rep);
-      vtk_pipeline->_renderWindow->Render();
+      vtk_pipeline->cycle_representation();
+      vtk_pipeline->render();
       return true;
     }
 
@@ -631,33 +760,32 @@ bool VTKPlotter::keypressCallback()
   case SHIFT + 's':
   case CONTROL + SHIFT + 's':
     {
-      vtkSmartPointer<vtkCamera> camera = vtk_pipeline->_renderer->GetActiveCamera();
+      vtkCamera* camera = vtk_pipeline->get_camera();
       for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
       {
         if (*it != this)
         {
-          vtkSmartPointer<vtkCamera> other_cam = (*it)->vtk_pipeline->_renderer->GetActiveCamera();
-          other_cam->DeepCopy(camera);
-          (*it)->vtk_pipeline->_renderWindow->Render();
+          (*it)->vtk_pipeline->get_camera()->DeepCopy(camera);
+          (*it)->vtk_pipeline->render();
         }
       }
       return true;
     }
 
   case CONTROL + 'w':
-    vtk_pipeline->widget->close();
+    vtk_pipeline->close_window();
     all_plotters->remove(this);
     return true;
 
   case CONTROL + 'q':
     for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
     {
-      (*it)->vtk_pipeline->widget->close();
+      (*it)->vtk_pipeline->close_window();
     }
     all_plotters->clear();
     // FALL THROUGH
   case 'q':
-    app()->quit();
+    vtk_pipeline->stop_interaction();
     return true;
   }
 
@@ -668,7 +796,6 @@ bool VTKPlotter::keypressCallback()
 void VTKPlotter::write_png(std::string filename)
 {
   dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->_renderWindow);
 
   if (filename.empty()) {
     // We construct a filename from the given prefix and static counter.
@@ -689,66 +816,27 @@ void VTKPlotter::write_png(std::string filename)
   info("Saving plot to file: %s.png", filename.c_str());
 
   update();
-
-  // FIXME: Remove help-text-actor before hardcopying.
-
-  // Create window to image filter and PNG writer
-  vtkSmartPointer<vtkWindowToImageFilter> w2i =
-    vtkSmartPointer<vtkWindowToImageFilter>::New();
-  vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
-
-  w2i->SetInput(vtk_pipeline->_renderWindow);
-  w2i->Update();
-  writer->SetInputConnection(w2i->GetOutputPort());
-  writer->SetFileName((filename + ".png").c_str());
-  vtk_pipeline->_renderWindow->Render();
-  writer->Modified();
-  writer->Write();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::get_window_size(int& width, int& height)
-{
-  dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->widget);
-  QSize size = vtk_pipeline->widget->frameSize();
-  width = size.width();
-  height = size.height();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::get_screen_size(int& width, int& height)
-{
-  dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->widget);
-  QRect geom = QApplication::desktop()->availableGeometry();
-  width = geom.width();
-  height = geom.height();
-}
-//----------------------------------------------------------------------------
-void VTKPlotter::set_window_position(int x, int y)
-{
-  dolfin_assert(vtk_pipeline);
-  dolfin_assert(vtk_pipeline->_renderWindow);
-  vtk_pipeline->widget->move(x, y);
+  vtk_pipeline->write_png(filename);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::azimuth(double angle)
 {
-  vtk_pipeline->_renderer->GetActiveCamera()->Azimuth(angle);
+  vtk_pipeline->get_camera()->Azimuth(angle);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::elevate(double angle)
 {
-  vtk_pipeline->_renderer->GetActiveCamera()->Elevation(angle);
+  vtk_pipeline->get_camera()->Elevation(angle);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::dolly(double value)
 {
-  vtk_pipeline->_renderer->GetActiveCamera()->Dolly(value);
+  vtk_pipeline->get_camera()->Dolly(value);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_viewangle(double angle)
 {
-  vtk_pipeline->_renderer->GetActiveCamera()->SetViewAngle(angle);
+  vtk_pipeline->get_camera()->SetViewAngle(angle);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_min_max(double min, double max)
@@ -799,12 +887,15 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(extract->GetOutputPort());
 
-  vtk_pipeline->polygon_actor->SetMapper(mapper);
+  vtkSmartPointer<vtkActor> polygon_actor = vtkSmartPointer<vtkActor>::New();
+  polygon_actor->SetMapper(mapper);
 
   mapper->SetInputConnection(extract->GetOutputPort());
 
-  vtk_pipeline->polygon_actor->GetProperty()->SetColor(0, 0, 1);
-  vtk_pipeline->polygon_actor->GetProperty()->SetLineWidth(1);
+  polygon_actor->GetProperty()->SetColor(0, 0, 1);
+  polygon_actor->GetProperty()->SetLineWidth(1);
+
+  vtk_pipeline->add_actor(polygon_actor);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
@@ -818,12 +909,9 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
 
   // Process some parameters
   if (parameters["wireframe"])
-    vtk_pipeline->_actor->GetProperty()->SetRepresentationToWireframe();
+    vtk_pipeline->cycle_representation(VTK_WIREFRAME);
 
-  if (parameters["scalarbar"])
-    vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
-
-  vtk_pipeline->widget->setWindowTitle(std::string(parameters["title"]).c_str());
+  vtk_pipeline->set_window_title(parameters["title"]);
 
   // Update the plottable data
   _plottable->update(variable, parameters, _frame_counter);
@@ -856,20 +944,13 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
     if (range_min.is_set()) range[0] = range_min;
     if (range_max.is_set()) range[1] = range_max;
 
-    vtk_pipeline->_mapper->SetScalarRange(range);
-    // Not required, the mapper controls the range.
-    //vtk_pipeline->_lut->SetRange(range);
-    //vtk_pipeline->_lut->Build();
+    vtk_pipeline->set_scalar_range(range);
   }
 
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
   // the input may hence also have changed
-  vtk_pipeline->_depthSort->SetInputConnection(_plottable->get_output());
-  if (_frame_counter == 0)
-  {
-    vtk_pipeline->_renderer->ResetCamera();
-  }
+  vtk_pipeline->set_input_connection(_plottable->get_output(), _frame_counter);
 }
 //----------------------------------------------------------------------------
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
@@ -883,13 +964,13 @@ void VTKPlotter::all_interactive()
     warning("No plots have been shown yet. Ignoring call to interactive().");
   else
   {
-    // Prepare interactiveness on every plotter
+    // Prepare interactiveness on every plotter but the first
     std::list<VTKPlotter*>::iterator it;
-    for (it = all_plotters->begin(); it != all_plotters->end(); it++)
+    for (it = all_plotters->begin(), it++; it != all_plotters->end(); it++)
       (*it)->interactive(false);
 
-    // Start the vtk eventloop on one of the plotter objects
-    (*all_plotters->begin())->start_eventloop();
+    // Start the vtk eventloop on the first plotter
+    (*all_plotters->begin())->interactive(true);
   }
 }
 
@@ -927,13 +1008,9 @@ void VTKPlotter::init()
 
 void VTKPlotter::update(boost::shared_ptr<const Variable>) {}
 
-
 void VTKPlotter::plot               (boost::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive        (bool ){}
-void VTKPlotter::start_eventloop    (){}
 void VTKPlotter::write_png          (std::string){}
-void VTKPlotter::get_window_size    (int&, int&){}
-void VTKPlotter::set_window_position(int, int){}
 void VTKPlotter::azimuth            (double) {}
 void VTKPlotter::elevate            (double){}
 void VTKPlotter::dolly              (double){}

@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-29
+// Last changed: 2012-08-30
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -209,20 +209,9 @@ namespace dolfin
     /// Make the current plot interactive
     void interactive(bool enter_eventloop = true);
 
-    void start_eventloop();
-
     /// Save plot to PNG file (file suffix appended automatically, filename
     /// optionally built from prefix)
     void write_png(std::string filename="");
-
-    /// Get size of the plot window
-    void get_window_size(int& width, int& height);
-
-    /// Get size of the screen
-    void get_screen_size(int& width, int& height);
-
-    /// Set the position of the plot window on the screen
-    void set_window_position(int x, int y);
 
     /// Return key (i.e., plotter id) of the object to plot
     const std::string& key() const;
