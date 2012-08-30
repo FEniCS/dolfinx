@@ -22,10 +22,6 @@
 // First added:  2012-05-23
 // Last changed: 2012-08-29
 
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QVTKWidget.h>
-
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -41,6 +37,14 @@
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
 #include "VTKPlotter.h"
+
+#ifdef HAS_QT4
+
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QVTKWidget.h>
+
+#endif
 
 #ifdef HAS_VTK
 
@@ -77,6 +81,7 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 namespace dolfin
 {
+#ifdef HAS_QT4
   QApplication *app()
   {
     if (!qApp)
@@ -89,6 +94,7 @@ namespace dolfin
     }
     return qApp;
   }
+#endif
 //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
   {
@@ -119,7 +125,7 @@ namespace dolfin
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle);
 //----------------------------------------------------------------------------
-  class PrivateVTKPipeline
+  class PrivateVTKPipeline_QT
   {
   public:
     boost::scoped_ptr<QVTKWidget> widget;
@@ -201,7 +207,7 @@ namespace dolfin
 
       // Set some properties that affect the look of things
       _renderer->SetBackground(1, 1, 1);
-      _lut->SetNanColor(0.0, 0.0, 0.0, 0.1);
+      _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
       _actor->GetProperty()->SetColor(0, 0, 1); //Only used for meshes
       _actor->GetProperty()->SetPointSize(3);   // should be parameter?
       //_actor->GetProperty()->SetLineWidth(1);
@@ -212,7 +218,6 @@ namespace dolfin
       widget->SetRenderWindow(_renderWindow);
       widget->resize(parameters["window_width"], parameters["window_height"]);
       widget->show();
-      
 
       // Set the look of scalar bar labels
       vtkSmartPointer<vtkTextProperty> labelprop
@@ -247,7 +252,7 @@ namespace dolfin
       balloonwidget->EnabledOn();
     }
 
-    ~PrivateVTKPipeline()
+    ~PrivateVTKPipeline_QT()
     {
       // Note: VTK (current 5.6.1) seems to very picky about the order of
       // destruction. This destructor tries to impose an order on the most
@@ -267,6 +272,11 @@ namespace dolfin
     }
 
   };
+#ifdef HAS_QT4
+  class PrivateVTKPipeline : public PrivateVTKPipeline_QT {};
+#else
+  class PrivateVTKPipeline : public PrivateVTKPipeline_VTK {};
+#endif
 //----------------------------------------------------------------------------
 } // namespace dolfin
 //----------------------------------------------------------------------------
@@ -574,7 +584,7 @@ bool VTKPlotter::keypressCallback()
     return false;
   }
 
-  switch (modifiers + key[0])
+  switch (modifiers + tolower(key[0]))
   {
   case 'h': // Save plot to file
     write_png();
@@ -617,15 +627,18 @@ bool VTKPlotter::keypressCallback()
     }
 
   case 's':
+  case CONTROL + 's':
+  case SHIFT + 's':
+  case CONTROL + SHIFT + 's':
     {
       vtkSmartPointer<vtkCamera> camera = vtk_pipeline->_renderer->GetActiveCamera();
-      foreach (VTKPlotter *plotter, *all_plotters)
+      for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
       {
-        if (plotter != this)
+        if (*it != this)
         {
-          vtkSmartPointer<vtkCamera> other_cam = plotter->vtk_pipeline->_renderer->GetActiveCamera();
+          vtkSmartPointer<vtkCamera> other_cam = (*it)->vtk_pipeline->_renderer->GetActiveCamera();
           other_cam->DeepCopy(camera);
-          plotter->vtk_pipeline->_renderWindow->Render();
+          (*it)->vtk_pipeline->_renderWindow->Render();
         }
       }
       return true;
@@ -637,9 +650,9 @@ bool VTKPlotter::keypressCallback()
     return true;
 
   case CONTROL + 'q':
-    foreach (VTKPlotter *plotter, *all_plotters)
+    for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
     {
-      plotter->vtk_pipeline->widget->close();
+      (*it)->vtk_pipeline->widget->close();
     }
     all_plotters->clear();
     // FALL THROUGH
@@ -810,7 +823,7 @@ void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
   if (parameters["scalarbar"])
     vtk_pipeline->_renderer->AddActor(vtk_pipeline->_scalarBar);
 
-  vtk_pipeline->_renderWindow->SetWindowName(std::string(parameters["title"]).c_str());
+  vtk_pipeline->widget->setWindowTitle(std::string(parameters["title"]).c_str());
 
   // Update the plottable data
   _plottable->update(variable, parameters, _frame_counter);
