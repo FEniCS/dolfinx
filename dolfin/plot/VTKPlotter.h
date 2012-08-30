@@ -114,6 +114,10 @@ namespace dolfin
   ///                                             plot() interface (in plot.h).
   ///                                             If not set, the object's unique
   ///                                             id is used.
+  ///  hide_below     Double                      If set, the values above/below the
+  ///  hide_above                                 limits are hidden. Can be used for
+  ///                                             example to show only true (==1.0)
+  ///                                             values in MeshFunctions.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -189,6 +193,8 @@ namespace dolfin
       p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
 
       p.add<std::string>("key");
+      p.add<double>("hide_below");
+      p.add<double>("hide_above");
       return p;
     }
 

@@ -203,6 +203,26 @@ namespace dolfin
       values->SetValue(i, (float)indata[i]);
     }
 
+    const Parameter &param_hide_below = parameters["hide_below"];
+    const Parameter &param_hide_above = parameters["hide_above"];
+    if (param_hide_below.is_set() || param_hide_above.is_set())
+    {
+      float hide_above =  std::numeric_limits<float>::infinity();
+      float hide_below = -std::numeric_limits<float>::infinity();
+      if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
+      if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
+
+      for (uint i = 0; i < num_entities; i++)
+      {
+        float val = values->GetValue(i);
+
+        if (val < hide_below || val > hide_above)
+        {
+          values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
+        }
+      }
+    }
+
     _grid->GetCellData()->SetScalars(values);
   }
   //----------------------------------------------------------------------------
