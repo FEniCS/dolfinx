@@ -1,4 +1,9 @@
 1.1.0 [not yet released]
+ - Add new interface LinearOperator for matrix-free linear systems
+ - Remove MTL4 linear algebra backend
+ - Rename down_cast --> as_type in C++ / as_backend_type in Python
+ - Remove KrylovMatrix interface
+ - Remove quadrature classes
  - Expression string parsing now understand C++ namespace such as std::cosh
  - Fix bug in Expression so one can pass min, max
  - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble
