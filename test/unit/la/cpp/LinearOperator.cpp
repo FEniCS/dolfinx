@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-21
-// Last changed: 2012-08-28
+// Last changed: 2012-08-30
 //
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
@@ -70,7 +70,7 @@ public:
     };
 
     // Iterate over backends supporting linear operators
-    for (uint i = 0; i < backends.size(); i++)
+    for (dolfin::uint i = 0; i < backends.size(); i++)
     {
       // Set linear algebra backend
       parameters["linear_algebra_backend"] = backends[i];
