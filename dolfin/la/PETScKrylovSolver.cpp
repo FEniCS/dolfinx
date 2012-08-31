@@ -136,7 +136,6 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScPreconditioner& preconditioner)
   : preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
-
 {
   // Set parameter values
   parameters = default_parameters();
@@ -145,9 +144,8 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScPreconditioner> preconditioner)
-  : preconditioner(preconditioner),
-    preconditioner_set(false)
+  boost::shared_ptr<PETScPreconditioner> preconditioner)
+  : preconditioner(preconditioner), preconditioner_set(false)
 
 {
   // Set parameter values
@@ -167,7 +165,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScUserPreconditioner> preconditioner)
+  boost::shared_ptr<PETScUserPreconditioner> preconditioner)
   : pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
@@ -319,15 +317,13 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   const bool profile_performance = parameters["profile"];
   if (profile_performance)
-    PetscLogBegin();
-
-  // Solve
-  KSPSolve(*_ksp, *b.vec(), *x.vec());
-
-  if (profile_performance)
   {
+    PetscLogBegin();
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
     PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
   }
+  else
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
   int num_iterations = 0;
