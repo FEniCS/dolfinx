@@ -95,7 +95,9 @@ class ErrorControlTest(unittest.TestCase):
         reference = 1.0 # FIXME
         self.assertAlmostEqual(indicators.sum(), reference)
 
-    def xtest_adaptive_solve(self):
+    def test_adaptive_solve(self):
+
+        parameters["reorder_dofs"] = True
 
         if MPI.num_processes() > 1:
             return

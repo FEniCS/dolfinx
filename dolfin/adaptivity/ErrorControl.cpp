@@ -373,20 +373,22 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   dolfin_assert(_a_R_dT);
   // Compute the facet residual for each local facet number
-  for (int local_facet = 0; local_facet < (dim + 1); local_facet++)
+  for (int local_facet = 0; local_facet <= dim; local_facet++)
   {
-    // Construct "cone function" for this local facet number by
-    // setting the "right" degree of freedom equal to one on each
-    // cell. (Requires dof-ordering knowledge.)
+    // Construct "cone" function on this facet. NB: makes assumption
+    // on _local_ dof numbering for DG_dim.
     dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
+    const uint local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
+    dolfin_assert(_cell_cone->function_space());
+    dolfin_assert(_cell_cone->function_space()->dofmap());
+    const GenericDofMap& cone_dofmap(*(_cell_cone->function_space()->dofmap()));
     for (uint k = 0; k < num_cells; k++)
-      facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
-    dolfin_assert(_cell_cone->vector());
+      facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
 
-    // Attach cell cone  to _a_R_dT and _L_R_dT
+    // Attach cell cone to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, _cell_cone);
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, _cell_cone);
 
