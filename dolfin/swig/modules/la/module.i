@@ -102,6 +102,7 @@
 #include "dolfin/la/solve.h"
 #include "dolfin/la/BlockVector.h"
 #include "dolfin/la/BlockMatrix.h"
+#include "dolfin/la/TAOLinearBoundSolver.h"
 
 // #include types from nls submodule
 #include "dolfin/nls/NonlinearProblem.h"
@@ -200,6 +201,7 @@ import_array();
 %include "dolfin/la/solve.h"
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
+%include "dolfin/la/TAOLinearBoundSolver.h"
 %include "dolfin/swig/la/post.i"
 
 // %include types from submodule nls
