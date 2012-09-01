@@ -18,7 +18,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-09-12
+// Last changed: 2012-07-30
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -26,7 +26,10 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
+#include "AssemblerTools.h"
 #include "assemble.h"
+#include "DirichletBC.h"
+#include "PeriodicBC.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -113,8 +116,32 @@ void LinearVariationalSolver::solve()
   }
   else
   {
+    // Check for any periodic bcs
+    typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+    typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
+    std::vector<MasterSlavePair> dof_pairs;
+    for (uint i = 0; i < bcs.size(); i++)
+    {
+      dolfin_assert(bcs[i]);
+      const PeriodicBC* _bc = dynamic_cast<const PeriodicBC*>(bcs[i].get());
+      if (_bc)
+      {
+        if (!dof_pairs.empty())
+        {
+          dolfin_error("LinearVariationalSolver.cpp",
+                       "extract periodic boundary conditions in linear variational solver",
+                       "Cannot have more than one PeriodicBC object");
+        }
+        _bc->compute_dof_pairs(dof_pairs);
+      }
+    }
+
+
+    // Intialise matrix, taking into account periodic dofs
+    AssemblerTools::init_global_tensor(*A, *a, dof_pairs, true, false, false);
+
     // Assemble linear system
-    assemble(*A, *a);
+    assemble(*A, *a, false);
     if (L->ufc_form())
       assemble(*b, *L);
     else

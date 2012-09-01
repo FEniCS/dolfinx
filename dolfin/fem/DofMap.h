@@ -43,6 +43,7 @@
 namespace dolfin
 {
 
+  class GenericVector;
   class UFC;
   class UFCMesh;
 
@@ -199,20 +200,6 @@ namespace dolfin
       return _dofmap[cell_index];
     }
 
-    /// Tabulate the local-to-global mapping of dofs on a cell
-    ///
-    /// *Arguments*
-    ///     dofs (uint)
-    ///         Degrees of freedom on a cell.
-    ///     cell (_Cell_)
-    ///         The cell.
-    void tabulate_dofs(uint* dofs, const Cell& cell) const
-    {
-      const uint cell_index = cell.index();
-      dolfin_assert(cell_index < _dofmap.size());
-      std::copy(_dofmap[cell_index].begin(), _dofmap[cell_index].end(), dofs);
-    }
-
     /// Tabulate local-local facet dofs
     ///
     /// *Arguments*
@@ -246,10 +233,22 @@ namespace dolfin
 
     /// Create a copy of the dof map
     ///
+    /// *Returns*
+    ///     DofMap
+    ///         The Dofmap copy.
+    boost::shared_ptr<GenericDofMap> copy() const;
+
+    /// Create a copy of the dof map
+    ///
     /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The object to be copied.
-    DofMap* copy(const Mesh& mesh) const;
+    ///     new_mesh (_Mesh_)
+    ///         The new mesh to build the dof map on.
+    ///
+    /// *Returns*
+    ///     DofMap
+    ///         The new Dofmap copy.
+    boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const;
+
 
     /// Extract subdofmap component
     ///
@@ -279,6 +278,29 @@ namespace dolfin
     DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                      const Mesh& mesh) const;
 
+    /// Set dof entries in vector to a specified value. Parallel layout
+    /// of vector must be consistent with dof map range.
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to set.
+    ///     value (double)
+    ///         The value to set.
+    void set(GenericVector& x, double value) const;
+
+    /// Set dof entries in vector to the x[i] coordinate of the dof
+    /// spatial coordinate. Parallel layout of vector must be consistent
+    /// with dof map range.
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to set.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     component (uint)
+    ///         The coordinate index.
+    void set_x(GenericVector& x, const Mesh& mesh, uint component) const;
+
     /// Return the set of dof indices
     ///
     /// *Returns*
@@ -294,13 +316,6 @@ namespace dolfin
     ///         The local-to-global map for each cell.
     const std::vector<std::vector<uint> >& data() const
     { return _dofmap; }
-
-    /// Renumber dofs
-    ///
-    /// *Arguments*
-    ///     renumbering_map (std::vector<uint>)
-    ///         The map of dofs to be renumbered.
-    void renumber(const std::vector<uint>& renumbering_map);
 
     /// Return informal string representation (pretty-print)
     ///

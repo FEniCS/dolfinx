@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <dolfin/common/types.h>
+#include "Graph.h"
 
 namespace dolfin
 {
@@ -40,6 +41,14 @@ namespace dolfin
     // Compute cell partition
     static void compute_partition(std::vector<uint>& cell_partition,
                                   const LocalMeshData& mesh_data);
+
+    // Compute graph re-numbering
+    static std::vector<uint> compute_renumbering(const Graph& graph);
+
+    // Compute graph re-numbering
+    static void compute_renumbering(const Graph& graph,
+                                    std::vector<uint>& permutation,
+                                    std::vector<uint>& inverse_permutation);
 
   private:
 

@@ -28,8 +28,8 @@ class DofMapTest(unittest.TestCase):
 
     def setUp(self):
         self.mesh = UnitSquare(4, 4)
-        self.V = FunctionSpace(self.mesh, "CG", 1)
-        self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
+        self.V = FunctionSpace(self.mesh, "Lagrange", 1)
+        self.Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
         self.W = self.V*self.Q
 
     def test_tabulate_coord(self):
@@ -55,19 +55,14 @@ class DofMapTest(unittest.TestCase):
 
     def test_tabulate_dofs(self):
 
-        dofs0 = numpy.zeros(3, dtype="I")
-        dofs1 = numpy.zeros(3, dtype="I")
-        dofs2 = numpy.zeros(3, dtype="I")
-        dofs3 = numpy.zeros(6, dtype="I")
-
         for i, cell in enumerate(cells(self.mesh)):
 
-            self.W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
+            dofs0 = self.W.sub(0).dofmap().cell_dofs(cell.index())
 
             L = self.W.sub(1)
-            L.sub(0).dofmap().tabulate_dofs(dofs1, cell)
-            L.sub(1).dofmap().tabulate_dofs(dofs2, cell)
-            L.dofmap().tabulate_dofs(dofs3, cell)
+            dofs1 = L.sub(0).dofmap().cell_dofs(cell.index())
+            dofs2 = L.sub(1).dofmap().cell_dofs(cell.index())
+            dofs3 = L.dofmap().cell_dofs(cell.index())
 
             self.assertTrue(numpy.array_equal(dofs0, \
                                 self.W.sub(0).dofmap().cell_dofs(i)))

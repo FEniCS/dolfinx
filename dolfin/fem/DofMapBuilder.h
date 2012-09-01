@@ -61,7 +61,8 @@ namespace dolfin
   public:
 
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh, bool distributed);
+                      const UFCMesh& ufc_mesh, bool reorder,
+                      bool distributed);
 
 
   private:

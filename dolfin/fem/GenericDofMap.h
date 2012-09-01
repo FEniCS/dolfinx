@@ -42,6 +42,7 @@ namespace dolfin
 {
 
   class Cell;
+  class GenericVector;
   class Mesh;
   template<typename T> class Set;
 
@@ -82,9 +83,6 @@ namespace dolfin
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<unsigned int>& cell_dofs(uint cell_index) const = 0;
 
-    /// Tabulate the local-to-global mapping of dofs on a cell
-    virtual void tabulate_dofs(uint* dofs, const Cell& cell) const = 0;
-
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(uint* dofs, uint local_facet) const = 0;
 
@@ -97,7 +95,10 @@ namespace dolfin
                                       const Cell& cell) const = 0;
 
     /// Create a copy of the dof map
-    virtual GenericDofMap* copy(const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
+
+    /// Build a new dof map on new mesh
+    virtual boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,
@@ -106,6 +107,16 @@ namespace dolfin
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
     virtual GenericDofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                                     const Mesh& mesh) const = 0;
+
+    /// Set dof entries in vector to a specified value. Parallel layout
+    /// of vector must be consistent with dof map range.
+    virtual void set(GenericVector& x, double value) const = 0;
+
+    /// Set dof entries in vector to the x[i] coordinate of the dof
+    /// spatial coordinate. Parallel layout of vector must be consistent
+    /// with dof map range.
+    virtual void set_x(GenericVector& x, const Mesh& mesh,
+                       uint component) const = 0;
 
     /// Return the set of dof indices
     virtual boost::unordered_set<uint> dofs() const = 0;
@@ -116,9 +127,6 @@ namespace dolfin
 
     /// Return set of all processes that share dofs with the current process.
     virtual const std::set<uint>& neighbours() const = 0;
-
-    /// Re-number based on provided re-numbering map
-    virtual void renumber(const std::vector<uint>& renumbering_map) = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

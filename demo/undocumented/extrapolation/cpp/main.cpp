@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-08
-// Last changed: 2010-02-08
+// Last changed: 2012-07-05
 //
 // This program demonstrates extrapolation of a P1 function to a P2
 // function on the same mesh. This is useful for postprocessing a
@@ -60,6 +60,8 @@ int main()
   // Plot approximations
   plot(z1, "z1");
   plot(z2, "z2");
+  interactive();
+
 
   return 0;
 }

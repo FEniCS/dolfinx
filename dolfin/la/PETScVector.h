@@ -19,9 +19,10 @@
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Alnæs, 2008.
+// Modified by Fredrik Valdmanis, 2011.
 //
 // First added:  2004-01-01
-// Last changed: 2011-01-14
+// Last changed: 2011-09-29
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -79,10 +80,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string type="global");
+    explicit PETScVector(std::string type="global", bool use_gpu=false);
 
     /// Create vector of size N
-    PETScVector(uint N, std::string type="global");
+    PETScVector(uint N, std::string type="global", bool use_gpu=false);
 
     /// Create vector
     PETScVector(const GenericSparsityPattern& sparsity_pattern);
@@ -256,6 +257,9 @@ namespace dolfin
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
+
+    // PETSc vector architechture
+    const bool _use_gpu;
 
   };
 

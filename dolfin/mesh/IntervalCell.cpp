@@ -26,6 +26,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
+#include "MeshEntity.h"
 #include "MeshGeometry.h"
 #include "IntervalCell.h"
 

@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2011
 //
 // First added:  2010
-// Last changed: 2011-06-23
+// Last changed: 2012-07-05
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -89,9 +89,10 @@ int main()
 
   // Extract subfunction
   Function u = w[0];
-  
+
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

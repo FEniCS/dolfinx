@@ -31,7 +31,7 @@ W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Eval(unittest.TestCase):
 
-     def testArbitraryEval(self):
+     def test_arbitraryEval(self):
           class F0(Expression):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -83,7 +83,7 @@ class Eval(unittest.TestCase):
                self.assertRaises(TypeError, g, [0,0,0,0])
                self.assertRaises(TypeError, g, Point(0,0))
 
-     def testUflEval(self):
+     def test_ufl_eval(self):
           class F0(Expression):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -120,7 +120,7 @@ class Eval(unittest.TestCase):
           self.assertEqual(dot(v0,v0)(x), sum(v**2 for v in v0(*x)))
           self.assertEqual(dot(v0,v0)(x), 98)
 
-     def testOverLoadAndCallBack(self):
+     def test_overload_and_call_back(self):
           class F0(Expression):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -145,7 +145,7 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(s1, ref)
           self.assertAlmostEqual(s2, ref)
 
-     def testWrongEval(self):
+     def test_wrong_eval(self):
           # Test wrong evaluation
           class F0(Expression):
                def eval(self, values, x):
@@ -163,7 +163,7 @@ class Eval(unittest.TestCase):
                self.assertRaises(TypeError, f, zeros(3), values = zeros(4))
                self.assertRaises(TypeError, f, zeros(4), values = zeros(3))
 
-     def testNoWriteToConstArray(self):
+     def test_no_write_to_const_array(self):
           class F1(Expression):
                def eval(self, values, x):
                     x[0] = 1.0
@@ -191,7 +191,7 @@ class MeshEvaluation(unittest.TestCase):
 
 class Instantiation(unittest.TestCase):
 
-     def testWrongSubClassing(self):
+     def test_wrong_sub_classing(self):
 
           def noAttributes():
                class NoAttributes(Expression):pass
@@ -240,7 +240,7 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(RuntimeError, noDefaultValues)
           self.assertRaises(TypeError, wrongDefaultType)
 
-     def testElementInstantiation(self):
+     def test_element_instantiation(self):
           class F0(Expression):
                def eval(self, values, x):
                     values[0] = 1.0
@@ -290,7 +290,7 @@ class Instantiation(unittest.TestCase):
           f4 = F2(cell=triangle)
           self.assertTrue(isinstance(f4.ufl_element(), TensorElement))
 
-     def testExponentInit(self):
+     def test_exponent_init(self):
           e0 = Expression("1e10")
           self.assertEqual(e0(0,0,0), 1e10)
 
@@ -299,6 +299,13 @@ class Instantiation(unittest.TestCase):
 
           e2 = Expression("1e+10")
           self.assertEqual(e2(0,0,0), 1e+10)
+
+     def test_name_space_usage(self):
+          e0 = Expression("std::sin(x[0])*cos(x[1])")
+          e1 = Expression("sin(x[0])*std::cos(x[1])")
+          self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
+                                 assemble(e1*dx, mesh=mesh))
+
 
 if __name__ == "__main__":
     unittest.main()

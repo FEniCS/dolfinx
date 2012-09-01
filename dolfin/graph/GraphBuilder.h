@@ -30,6 +30,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  class GenericDofMap;
   class LocalMeshData;
   class Mesh;
 
@@ -39,6 +40,10 @@ namespace dolfin
   {
 
   public:
+
+    /// Build local graph from dofmap
+    static Graph local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
+                                               const GenericDofMap& dofmap1);
 
     /// Build local graph from mesh (general version)
     static Graph local_graph(const Mesh& mesh,

@@ -48,11 +48,13 @@ namespace dolfin
     void operator() (KSP* ksp)
     {
       if (ksp)
+      {
         #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
         KSPDestroy(*ksp);
         #else
         KSPDestroy(ksp);
         #endif
+      }
       delete ksp;
     }
   };
@@ -219,6 +221,7 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   if (parameters["num_threads"].is_set())
   {
     // Use number of threads specified for LU solver
+    // FIXME: This option is not used by PETSc 3.2
     PetscOptionsSetValue("-mat_pastix_threadnbr", parameters["num_threads"].value_str().c_str());
   }
   else

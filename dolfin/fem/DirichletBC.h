@@ -456,8 +456,10 @@ namespace dolfin
     // Possible search methods
     static const std::set<std::string> methods;
 
+  public:
     // User defined sub domain
     boost::shared_ptr<const SubDomain> _user_sub_domain;
+  private:
 
     // Boundary facets, stored as pairs (cell, local facet number)
     mutable std::vector<std::pair<uint, uint> > facets;

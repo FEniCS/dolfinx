@@ -34,8 +34,9 @@ namespace dolfin
     /// Initialise MPI
     static void init_mpi();
 
-    /// Initialise threaded version of MPI
-    static int init_mpi_threaded(int argc, char* argv[], int required_level);
+    /// Initialise MPI with required level of thread support
+    static int init_mpi(int argc, char* argv[], int required_thread_level,
+                        bool verbose=true);
 
     /// Initialize PETSc without command-line arguments
     static void init_petsc();

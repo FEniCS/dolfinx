@@ -53,9 +53,10 @@ void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_sparsity,
                          bool add_values,
-                         bool finalize_tensor)
+                         bool finalize_tensor,
+                         bool keep_diagonal)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor);
+  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -63,7 +64,8 @@ void Assembler::assemble(GenericTensor& A,
                          const SubDomain& sub_domain,
                          bool reset_sparsity,
                          bool add_values,
-                         bool finalize_tensor)
+                         bool finalize_tensor,
+                         bool keep_diagonal)
 {
   dolfin_assert(a.ufc_form());
 
@@ -90,7 +92,7 @@ void Assembler::assemble(GenericTensor& A,
   // Assemble
   assemble(A, a,
            cell_domains.get(), facet_domains.get(), facet_domains.get(),
-           reset_sparsity, add_values, finalize_tensor);
+           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -100,7 +102,8 @@ void Assembler::assemble(GenericTensor& A,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity,
                          bool add_values,
-                         bool finalize_tensor)
+                         bool finalize_tensor,
+                         bool keep_diagonal)
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -148,7 +151,8 @@ void Assembler::assemble(GenericTensor& A,
                               cell_domains,
                               exterior_facet_domains,
                               interior_facet_domains,
-                              reset_sparsity, add_values, finalize_tensor);
+                              reset_sparsity, add_values, 
+                              finalize_tensor, keep_diagonal);
     return;
   }
   #endif
@@ -166,7 +170,9 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->update();
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
+  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);

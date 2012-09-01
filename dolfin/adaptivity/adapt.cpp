@@ -22,26 +22,23 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
-
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/refinement/LocalMeshRefinement.h>
-#include <dolfin/refinement/UniformMeshRefinement.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SubSpace.h>
-#include <dolfin/function/GenericFunction.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
-#include <dolfin/plot/plot.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/SubSpace.h>
+#include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/SpecialFacetFunction.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/refinement/LocalMeshRefinement.h>
+#include <dolfin/refinement/UniformMeshRefinement.h>
 #include "ErrorControl.h"
 #include "adapt.h"
 
@@ -150,8 +147,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   dolfin_assert(space.element());
   boost::shared_ptr<const FiniteElement>
     refined_element(space.element()->create());
-  boost::shared_ptr<const GenericDofMap>
-    refined_dofmap(space.dofmap()->copy(*adapted_mesh));
+  boost::shared_ptr<const GenericDofMap> refined_dofmap(space.dofmap()->build(*adapted_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>
@@ -176,9 +172,11 @@ const dolfin::Function& dolfin::adapt(const Function& function,
 
   // Refine function space
   boost::shared_ptr<const FunctionSpace> space = function.function_space();
+  dolfin_assert(space);
   adapt(*space, adapted_mesh);
   boost::shared_ptr<const FunctionSpace>
     refined_space = space->child_shared_ptr();
+  dolfin_assert(refined_space);
 
   // Create new function on refined space and interpolate
   boost::shared_ptr<Function> refined_function(new Function(refined_space));

@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Fredrik Valdmanis, 2011
+//
 // First added:  2009-07-02
 // Last changed: 2012-03-12
 
@@ -50,7 +52,6 @@ namespace dolfin
 
       // General
       p.add("timer_prefix", "");                             // Prefix for timer tasks
-      p.add("plot_filename_prefix", "dolfin_plot_data");     // Prefix for temporary plot files
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
       p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
 
@@ -59,6 +60,9 @@ namespace dolfin
 
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
+
+      // DOF reordering
+      p.add("reorder_dofs", true);
 
       // Graph partitioner
       std::set<std::string> allowed_mesh_partitioners;
@@ -97,7 +101,10 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
-      
+
+      #endif
+      #ifdef HAS_PETSC_CUSP
+      allowed_backends.insert("PETScCusp");
       #endif
       #ifdef HAS_TRILINOS
       allowed_backends.insert("Epetra");

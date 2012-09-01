@@ -20,6 +20,9 @@
 // First added:  2010-11-16
 // Last changed: 2011-11-14
 
+// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+#include <dolfin/common/MPI.h>
+
 #include <boost/foreach.hpp>
 #include "dolfin/common/Timer.h"
 #include "dolfin/log/log.h"

@@ -21,6 +21,7 @@
 // Last changed: 2012-04-04
 
 #ifdef HAS_MPI
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <iostream>
 #endif
@@ -76,16 +77,17 @@ void SubSystemsManager::init_mpi()
   if( MPI::Is_initialized() )
     return;
 
-  // Initialise MPI and take responsibility
-  MPI::Init();
+  // Init MPI with highest level of thread support and take responsibility
+  char* c;
+  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE, false);
   singleton().control_mpi = true;
   #else
   // Do nothing
   #endif
 }
 //-----------------------------------------------------------------------------
-int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
-                                         int required_level)
+int SubSystemsManager::init_mpi(int argc, char* argv[],
+                                int required_thread_level, bool verbose)
 {
   #ifdef HAS_MPI
   if (MPI::Is_initialized())
@@ -93,26 +95,29 @@ int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
 
   // Initialise MPI and take responsibility
   int provided = -1;
-  MPI_Init_thread(&argc, &argv, required_level, &provided);
+  MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  switch (provided)
-    {
-    case MPI_THREAD_SINGLE:
-      printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
-      break;
-    case MPI_THREAD_FUNNELED:
-      printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
-      break;
-    case MPI_THREAD_SERIALIZED:
-      printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
-      break;
-    case MPI_THREAD_MULTIPLE:
-      printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
-      break;
-    default:
-      printf("MPI_Init_thread level = ???\n");
-    }
+  if (verbose)
+  {
+    switch (provided)
+      {
+      case MPI_THREAD_SINGLE:
+        printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
+        break;
+      case MPI_THREAD_FUNNELED:
+        printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
+        break;
+      case MPI_THREAD_SERIALIZED:
+        printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
+        break;
+      case MPI_THREAD_MULTIPLE:
+        printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
+        break;
+      default:
+        printf("MPI_Init_thread level = ???\n");
+      }
+  }
 
   return provided;
   #else

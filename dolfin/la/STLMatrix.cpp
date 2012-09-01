@@ -21,6 +21,7 @@
 // First added:  2007-01-17
 // Last changed: 2012-03-15
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -366,25 +367,31 @@ std::string STLMatrix::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
     for (uint i = 0; i < _local_range.second - _local_range.first; i++)
     {
-      const std::vector<uint>& rcols = codim_indices[i];
-      const std::vector<double>& rvals = _vals[i];
+      // Sort row data by colmun index
+      const uint num_entries = codim_indices[i].size();
+      std::vector<std::pair<uint, double> > data(num_entries);
+      for (uint k = 0; k < num_entries; k++)
+        data[i] = std::make_pair(codim_indices[i][k], _vals[i][k]);
+      std::sort(data.begin(), data.end());
 
+      // Set precision
       std::stringstream line;
       line << std::setiosflags(std::ios::scientific);
       line << std::setprecision(16);
 
+      // Format matrix
       line << "|";
-      for (uint k = 0; k < rcols.size(); k++)
-        line << " (" << i << ", " << rcols[k] << ", " << rvals[k] << ")";
+      std::vector<std::pair<uint, double> >::const_iterator entry;
+      for (entry = data.begin(); entry != data.end(); ++entry)
+        line << " (" << i << ", " << entry->first << ", " << entry->second << ")";
       line << " |";
 
       s << line.str().c_str() << std::endl;
     }
   }
   else
-  {
     s << "<STLMatrix of size " << size(0) << " x " << size(1) << ">";
-  }
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -407,69 +414,5 @@ dolfin::uint STLMatrix::local_nnz() const
   for (uint i = 0; i < codim_indices.size(); ++i)
     _nnz += codim_indices[i].size();
   return _nnz;
-}
-//-----------------------------------------------------------------------------
-void STLMatrix::csr(std::vector<double>& vals, std::vector<uint>& cols,
-                    std::vector<uint>& row_ptr,
-                    std::vector<uint>& local_to_global_row,
-                    bool base_one) const
-{
-  if (primary_dim != 0)
-  {
-    dolfin_error("STLMatrix.cpp",
-                 "creating compressed row storage data",
-                 "Cannot create CSR matrix from STLMatrix with column-wise storage.");
-  }
-  compressed_storage(vals, cols, row_ptr, local_to_global_row, base_one);
-}
-//-----------------------------------------------------------------------------
-void STLMatrix::csc(std::vector<double>& vals, std::vector<uint>& rows,
-                    std::vector<uint>& col_ptr,
-                    std::vector<uint>& local_to_global_col,
-                    bool base_one) const
-{
-  if (primary_dim != 1)
-  {
-    dolfin_error("STLMatrix.cpp",
-                 "creating compressed column storage data",
-                 "Cannot create CSC matrix from STLMatrix with row-wise storage.");
-  }
-  compressed_storage(vals, rows, col_ptr, local_to_global_col, base_one);
-}
-//-----------------------------------------------------------------------------
-void STLMatrix::compressed_storage(std::vector<double>& vals,
-                                   std::vector<uint>& cols,
-                                   std::vector<uint>& row_ptr,
-                                   std::vector<uint>& local_to_global_row,
-                                   bool base_one) const
-{
-  // Reset data structures
-  vals.clear();
-  cols.clear();
-  row_ptr.clear();
-  local_to_global_row.clear();
-
-  // Build CSR data structures
-  if (base_one)
-    row_ptr.push_back(1);
-  else
-    row_ptr.push_back(0);
-  for (uint local_row = 0; local_row < codim_indices.size(); ++local_row)
-  {
-    vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
-    cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
-
-    row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size());
-    local_to_global_row.push_back(_local_range.first + local_row);
-  }
-
-  // Shift to array base 1
-  if (base_one)
-  {
-    for (uint i = 0; i < local_to_global_row.size(); ++i)
-      local_to_global_row[i]++;
-    for (uint i = 0; i < cols.size(); ++i)
-      cols[i]++;
-  }
 }
 //-----------------------------------------------------------------------------

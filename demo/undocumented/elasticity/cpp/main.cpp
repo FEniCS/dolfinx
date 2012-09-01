@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2011-01-17
+// Last changed: 2012-07-05
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -173,6 +173,9 @@ int main()
   right.mark(facet_markers, 2);
   File facet_file("facet_markers.pvd");
   facet_file << facet_markers;
+
+  // Make plot windows interactive
+  interactive();
 
  return 0;
 }

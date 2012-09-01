@@ -61,7 +61,7 @@
 					 std::string method="topological");
 
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,
-				       const SubDomain&);
+                                       const SubDomain&);
 
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
@@ -205,9 +205,15 @@
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical classes
 //-----------------------------------------------------------------------------
+#ifdef FEMMODULE // Conditional template instiantiation for FEM module
 %template (HierarchicalForm) dolfin::Hierarchical<dolfin::Form>;
 %template (HierarchicalLinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::LinearVariationalProblem>;
 %template (HierarchicalNonlinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>;
 %template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+#endif
+#ifdef IOMODULE // Conditional template instiantiation for IO module
+%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+
+#endif

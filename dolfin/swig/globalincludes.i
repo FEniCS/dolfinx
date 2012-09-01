@@ -28,6 +28,11 @@
 // Global typemaps
 %include "dolfin/swig/typemaps/includes.i"
 
+// Fragments
+%fragment("NoDelete", "header") {
+%#include "dolfin/common/NoDeleter.h"
+}
+
 // Global exceptions
 %include <exception.i>
 %include "dolfin/swig/exceptions.i"

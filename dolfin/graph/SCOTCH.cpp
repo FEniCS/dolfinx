@@ -67,6 +67,115 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
+{
+  std::vector<uint> permutation, inverse_permutation;
+  compute_renumbering(graph, permutation, inverse_permutation);
+  return permutation;
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_renumbering(const Graph& graph,
+                                 std::vector<uint>& permutation,
+                                 std::vector<uint>& inverse_permutation)
+{
+  // Remove graph loops
+  Graph _graph = graph;
+  for(uint i = 0; i < _graph.size(); ++i)
+  {
+    _graph[i].set().erase(std::remove(_graph[i].set().begin(), _graph[i].set().end(), i), _graph[i].set().end());
+  }
+
+
+  // Number of local graph vertices (cells)
+  const int vertnbr = _graph.size();
+
+  // Data structures for graph input to SCOTCH (add 1 for case that graph size is zero)
+  std::vector<SCOTCH_Num> verttab;
+  verttab.reserve(vertnbr + 1);
+  std::vector<SCOTCH_Num> edgetab;
+
+  // Build local graph input for SCOTCH
+  // (number of local + ghost graph vertices (cells),
+  // number of local edges + edges connecting to ghost vertices)
+  int edgenbr = 0;
+  verttab.push_back(0);
+  Graph::const_iterator vertex;
+  for(vertex = _graph.begin(); vertex != _graph.end(); ++vertex)
+  {
+    edgenbr += vertex->size();
+    verttab.push_back(verttab.back() + vertex->size());
+    edgetab.insert(edgetab.end(), vertex->begin(), vertex->end());
+  }
+
+  // Create SCOTCH graph
+  SCOTCH_Graph scotch_graph;
+
+  // C-style array indexing
+  const int baseval = 0;
+
+  // Create SCOTCH graph and intialise
+  if (SCOTCH_graphInit(&scotch_graph) != 0)
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "renumber graph using SCOTCH",
+                 "Error initializing SCOTCH graph");
+  }
+
+  // Build SCOTCH graph
+  info("Start SCOTCH graph building.");
+  if (SCOTCH_graphBuild(&scotch_graph, baseval,
+                        vertnbr, &verttab[0], &verttab[1], NULL, NULL,
+                              edgenbr, &edgetab[0], NULL) )
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Error building SCOTCH graph");
+  }
+  info("End SCOTCH graph building.");
+
+  // Check graph data for consistency
+  if (SCOTCH_graphCheck(&scotch_graph))
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "partition mesh using SCOTCH",
+                 "Consistency error in SCOTCH graph");
+  }
+
+  // Renumbering strategy
+  SCOTCH_Strat strat;
+  SCOTCH_stratInit(&strat);
+
+  // Vector to hold permutation vectors
+  std::vector<SCOTCH_Num> permutation_indices(vertnbr);
+  std::vector<SCOTCH_Num> inverse_permutation_indices(vertnbr);
+
+  // Reset SCOTCH random number generator to produce deterministic partitions
+  SCOTCH_randomReset();
+
+  // Compute re-ordering
+  info("Start SCOTCH re-ordering.");
+  if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
+                        inverse_permutation_indices.data(), NULL, NULL, NULL))
+  {
+    dolfin_error("SCOTCH.cpp",
+                 "re-order graph using SCOTCH",
+                 "Error during re-ordering");
+  }
+  info("End SCOTCH re-ordering.");
+
+  // Clean up SCOTCH objects
+  SCOTCH_graphExit(&scotch_graph);
+  SCOTCH_stratExit(&strat);
+
+  // Copy permutation vectors
+  permutation.resize(vertnbr);
+  inverse_permutation.resize(vertnbr);
+  std::copy(permutation_indices.begin(), permutation_indices.end(),
+            permutation.begin());
+  std::copy(inverse_permutation_indices.begin(),
+            inverse_permutation_indices.end(), inverse_permutation.begin());
+}
+//-----------------------------------------------------------------------------
 void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                const std::set<uint>& ghost_vertices,
                const std::vector<uint>& global_cell_indices,
@@ -88,9 +197,9 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   const int vertlocnbr = local_graph.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
-  std::vector<int> vertloctab;
+  std::vector<SCOTCH_Num> vertloctab;
   vertloctab.reserve(local_graph.size() + 1);
-  std::vector<int> edgeloctab;
+  std::vector<SCOTCH_Num> edgeloctab;
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
@@ -112,8 +221,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
-  std::vector<uint> proccnttab;
-  const uint local_graph_size = local_graph.size();
+  std::vector<SCOTCH_Num> proccnttab;
+  const SCOTCH_Num local_graph_size = local_graph.size();
   MPI::all_gather(local_graph_size, proccnttab);
 
   // FIXME: explain this test
@@ -138,7 +247,6 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
     // Total (global) number of edges (cell-cell connections) in the graph
     const SCOTCH_Num edgeglbnbr = MPI::sum(edgelocnbr);
-
 
     for (uint proc = 0; proc < num_processes; ++proc)
     {
@@ -226,20 +334,21 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
 
   // Resize vector to hold cell partition indices (ugly to handle vertlocnbr = 0 case)
-  int _cell_dummy = 0;
-  int* _cell_partition = 0;
+  std::vector<SCOTCH_Num> _cell_partition(vertlocnbr);
+  SCOTCH_Num _cell_dummy = 0;
+  SCOTCH_Num* __cell_partition = 0;
   cell_partition.resize(vertlocnbr);
   if (vertlocnbr > 0)
-    _cell_partition = reinterpret_cast<int*>(&cell_partition[0]);
+    __cell_partition = &_cell_partition[0];
   else
-    _cell_partition = &_cell_dummy;
+    __cell_partition = &_cell_dummy;
 
   // Reset SCOTCH random number generator to produce deterministic partitions
   SCOTCH_randomReset();
 
   // Partition graph
   info("Start SCOTCH partitioning.");
-  if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition))
+  if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, __cell_partition))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -250,6 +359,10 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
+
+  // Copy partition
+  cell_partition.resize(_cell_partition.size());
+  std::copy(_cell_partition.begin(), _cell_partition.end(), cell_partition.begin());
 }
 //-----------------------------------------------------------------------------
 #else

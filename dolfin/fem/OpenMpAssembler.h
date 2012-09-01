@@ -58,7 +58,8 @@ namespace dolfin
                          const Form& a,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
   private:
 
@@ -72,7 +73,8 @@ namespace dolfin
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
     // Assemble over cells
     static void assemble_cells(GenericTensor& A,

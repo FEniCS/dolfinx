@@ -64,21 +64,26 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   boost::shared_ptr<Function> u(problem->solution());
 
   const bool reset_jacobian = parameters["reset_jacobian"];
+
   // Create nonlinear problem
-  if ((!nonlinear_problem.get()) || reset_jacobian) {
+  if (!nonlinear_problem || reset_jacobian)
+  {
     nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(problem,
                                              reference_to_no_delete_pointer(*this)));
   }
+
   // Create Newton solver and set parameters
-  if ((!newton_solver.get()) || reset_jacobian) {
+  if (newton_solver || reset_jacobian)
+  {
     // Create Newton solver and set parameters
     newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
-                                             parameters["preconditioner"]));
+                                                        parameters["preconditioner"]));
   }
   newton_solver->parameters.update(parameters("newton_solver"));
 
   // Solve nonlinear problem using Newton's method
   dolfin_assert(u->vector());
+  dolfin_assert(nonlinear_problem);
   const std::pair<uint, bool> ret
     = newton_solver->solve(*nonlinear_problem, *u->vector());
 

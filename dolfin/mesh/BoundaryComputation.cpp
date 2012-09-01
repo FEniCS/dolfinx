@@ -171,8 +171,10 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     }
   }
 
-  // Close mesh editor
-  editor.close();
+  // Close mesh editor. Note the argument order=false to prevent
+  // ordering from destroying the orientation of facets accomplished
+  // by calling reorder() below.
+  editor.close(false);
 }
 //-----------------------------------------------------------------------------
 void BoundaryComputation::reorder(std::vector<uint>& vertices,

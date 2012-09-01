@@ -65,24 +65,24 @@
   {
     if (!PyInteger_Check(in))
       return false;
-    value = static_cast<dolfin::uint>(PyInt_AS_LONG(in));
+    value = static_cast<unsigned int>(PyInt_AS_LONG(in));
     return true;
   }
 }
 
 %fragment("Py_convert_uint", "header", fragment="PyInteger_Check") {
   // A check for int and converter to uint
-  SWIGINTERNINLINE bool Py_convert_uint(PyObject* in, dolfin::uint& value)
+  SWIGINTERNINLINE bool Py_convert_uint(PyObject* in, unsigned int& value)
   {
     if (!(PyInteger_Check(in) && PyInt_AS_LONG(in)>=0))
       return false;
-    value = static_cast<dolfin::uint>(PyInt_AS_LONG(in));
+    value = static_cast<unsigned int>(PyInt_AS_LONG(in));
     return true;
   }
 }
 
 //-----------------------------------------------------------------------------
-// Typemaps for dolfin::uint and int
+// Typemaps for unsigned int and int
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -91,7 +91,11 @@
 %typemap(out, fragment=SWIG_From_frag(unsigned int)) unsigned int
 {
   // Typemap unsigned int
-  $result = SWIG_From(unsigned int)($1);
+  $result = PyInt_FromLong(static_cast< long >($1));
+  // NOTE: From SWIG 2.0.5 does this macro return a Python long, 
+  // NOTE: which we do not want
+  // NOTE: Fixed in 2.0.7, but keep the above fix for now
+  // $result = SWIG_From(unsigned int)($1);
 }
 
 //-----------------------------------------------------------------------------

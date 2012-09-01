@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-23
-// Last changed: 2011-08-23
+// Last changed: 2012-07-05
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
@@ -32,19 +32,6 @@ int main()
 {
   // Create mesh and finite element
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
-
-  /*
-  File mesh_file("mesh.xml");
-  File domain_file("markers.xml");
-  mesh_file << mesh;
-  domain_file << mesh.domains().markers(2);
-  */
-
-  /*
-  MeshValueCollection<dolfin::uint> markers(2);
-  File domain_file("markers.xml");
-  domain_file >> markers;
-  */
 
   // Define variational problem
   Constant f(0.0);
@@ -76,6 +63,7 @@ int main()
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 }

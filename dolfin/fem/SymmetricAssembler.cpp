@@ -55,21 +55,22 @@ public:
   GenericMatrix& A;
   GenericMatrix& A_asymm;
   const Form& a;
-  const std::vector<const DirichletBC*>& row_bcs;
-  const std::vector<const DirichletBC*>& col_bcs;
+  const std::vector<const DirichletBC*> row_bcs;
+  const std::vector<const DirichletBC*> col_bcs;
   const MeshFunction<uint>* cell_domains;
   const MeshFunction<uint>* exterior_facet_domains;
   const MeshFunction<uint>* interior_facet_domains;
-  bool reset_sparsity, add_values, finalize_tensor;
+  bool reset_sparsity, add_values, finalize_tensor, keep_diagonal;
 
   PImpl(GenericMatrix& _A, GenericMatrix& _A_asymm,
         const Form& _a,
-        const std::vector<const DirichletBC*>& _row_bcs,
-        const std::vector<const DirichletBC*>& _col_bcs,
+        const std::vector<const DirichletBC*> _row_bcs,
+        const std::vector<const DirichletBC*> _col_bcs,
         const MeshFunction<uint>* _cell_domains,
         const MeshFunction<uint>* _exterior_facet_domains,
         const MeshFunction<uint>* _interior_facet_domains,
-        bool _reset_sparsity, bool _add_values, bool _finalize_tensor)
+        bool _reset_sparsity, bool _add_values, bool _finalize_tensor,
+        bool _keep_diagonal)
     : A(_A), A_asymm(_A_asymm), a(_a),
       row_bcs(_row_bcs), col_bcs(_col_bcs),
       cell_domains(_cell_domains),
@@ -78,6 +79,7 @@ public:
       reset_sparsity(_reset_sparsity),
       add_values(_add_values),
       finalize_tensor(_finalize_tensor),
+      keep_diagonal(_keep_diagonal),
       mesh(_a.mesh()), ufc(_a), ufc_asymm(_a)
   {
   }
@@ -94,7 +96,7 @@ private:
   // symmetric once BCs have been applied to the rows. Returns true if any
   // columns have been moved to _asymm.
   bool make_bc_symmetric(std::vector<double>& elm_A, std::vector<double>& elm_A_asymm,
-                         const std::vector<const std::vector<uint>*>& dofs);
+                         const std::vector<const std::vector<uint>*> dofs);
 
   // These are derived from the variables above:
   const Mesh& mesh;     // = Mesh(a)
@@ -117,18 +119,19 @@ private:
 void SymmetricAssembler::assemble(GenericMatrix& A,
                                   GenericMatrix& A_asymm,
                                   const Form& a,
-                                  const std::vector<const DirichletBC*>& row_bcs,
-                                  const std::vector<const DirichletBC*>& col_bcs,
+                                  const std::vector<const DirichletBC*> row_bcs,
+                                  const std::vector<const DirichletBC*> col_bcs,
                                   const MeshFunction<uint>* cell_domains,
                                   const MeshFunction<uint>* exterior_facet_domains,
                                   const MeshFunction<uint>* interior_facet_domains,
                                   bool reset_sparsity,
                                   bool add_values,
-                                  bool finalize_tensor)
+                                  bool finalize_tensor,
+                                  bool keep_diagonal)
 {
   PImpl pImpl(A, A_asymm, a, row_bcs, col_bcs,
             cell_domains, exterior_facet_domains, interior_facet_domains,
-            reset_sparsity, add_values, finalize_tensor);
+            reset_sparsity, add_values, finalize_tensor, keep_diagonal);
   pImpl.assemble();
 }
 //-----------------------------------------------------------------------------
@@ -206,8 +209,11 @@ void SymmetricAssembler::PImpl::assemble()
     coefficients[i]->update();
 
   // Initialize global tensors
-  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
-  AssemblerTools::init_global_tensor(A_asymm, a, reset_sparsity, add_values);
+  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values, keep_diagonal);
+  AssemblerTools::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
+                                     reset_sparsity, add_values, keep_diagonal);
 
   // Get dofs that are local to this processor
   processor_dof_range = A.local_range(0);
@@ -486,11 +492,13 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(), ufc.cell0, ufc.cell1,
+    integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
+                              ufc.cell0, ufc.cell1,
                               local_facet0, local_facet1);
 
     // Apply boundary conditions
-    const bool asymm_changed = make_bc_symmetric(ufc.macro_A, ufc_asymm.macro_A, macro_dof_ptrs);
+    const bool asymm_changed = make_bc_symmetric(ufc.macro_A,
+                                            ufc_asymm.macro_A, macro_dof_ptrs);
 
     // Add entries to global tensor
     A.add(&ufc.macro_A[0], macro_dofs);
@@ -502,8 +510,8 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
 }
 //-----------------------------------------------------------------------------
 bool SymmetricAssembler::PImpl::make_bc_symmetric(std::vector<double>& local_A,
-                                                  std::vector<double>& local_A_asymm,
-                                                  const std::vector<const std::vector<uint>*>& dofs)
+                           std::vector<double>& local_A_asymm,
+                            const std::vector<const std::vector<uint>*> dofs)
 {
   // Get local dimensions
   const uint num_local_rows = dofs[0]->size();

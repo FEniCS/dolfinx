@@ -23,7 +23,6 @@
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
 
-#include <limits>
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -57,8 +56,11 @@ namespace dolfin
     /// Destructor
     ~MeshDomains();
 
-    /// Return maximal topological dimension of stored markers
-    uint dim() const;
+    /// Value used for unset entities by default when converting to MeshFunctions
+    static const unsigned int default_unset_value;
+
+    /// Return maximum topological dimension of stored markers
+    uint max_dim() const;
 
     /// Return number of marked entities of given dimension
     uint num_marked(uint dim) const;
@@ -67,8 +69,7 @@ namespace dolfin
     bool is_empty() const;
 
     /// Get subdomain markers for given dimension (shared pointer version)
-    boost::shared_ptr<MeshValueCollection<unsigned int> >
-      markers(uint dim);
+    boost::shared_ptr<MeshValueCollection<unsigned int> > markers(uint dim);
 
     /// Get subdomain markers for given dimension (const shared pointer version)
     boost::shared_ptr<const MeshValueCollection<unsigned int> >
@@ -83,7 +84,7 @@ namespace dolfin
     /// to this function.
     boost::shared_ptr<const MeshFunction<unsigned int> >
       cell_domains(const Mesh& mesh,
-            uint unset_value=std::numeric_limits<unsigned int>::max()) const;
+                   uint unset_value=MeshDomains::default_unset_value) const;
 
     /// Get facet domains. This function computes the mesh function
     /// corresponding to markers of dimension D-1. The mesh function
@@ -91,7 +92,13 @@ namespace dolfin
     /// call to this function.
     boost::shared_ptr<const MeshFunction<unsigned int> >
       facet_domains(const Mesh& mesh,
-          uint unset_value=std::numeric_limits<unsigned int>::max()) const;
+                    uint unset_value=MeshDomains::default_unset_value) const;
+
+    /// Create a mesh function corresponding to the MeshCollection 'collection'
+    static boost::shared_ptr<MeshFunction<unsigned int> >
+      mesh_function(const Mesh& mesh,
+          const MeshValueCollection<unsigned int>& collection,
+          uint unset_value=MeshDomains::default_unset_value);
 
     /// Initialize mesh domains for given topological dimension
     void init(uint dim);
@@ -100,9 +107,6 @@ namespace dolfin
     void clear();
 
   private:
-
-    // Initialize mesh function corresponding to markers
-    void init_domains(MeshFunction<uint>& mesh_function, uint unset_value) const;
 
     // Subdomain markers for each geometric dim
     std::vector<boost::shared_ptr<MeshValueCollection<uint> > > _markers;

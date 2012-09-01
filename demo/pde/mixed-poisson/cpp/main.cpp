@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
@@ -102,6 +102,7 @@ int main()
   // Plot solutions
   plot(u);
   plot(sigma);
+  interactive();
 
   return 0;
 }

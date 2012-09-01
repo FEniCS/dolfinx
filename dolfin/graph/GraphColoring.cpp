@@ -21,6 +21,9 @@
 // First added:  2011-02-21
 // Last changed: 2011-05-11
 
+// Included here to avoid a C++ problem with some MPI implementations
+#include <dolfin/common/MPI.h>
+
 #include <string>
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-30
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -110,11 +110,12 @@ int main()
   Function J(V1);
   solve(a1 == L1, J);
 
-  // Plot solution
-  plot(J);
-
   File file("current_density.pvd");
   file << J;
+
+  // Plot solution
+  plot(J);
+  interactive();
 
   return 0;
 }

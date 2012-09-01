@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-06-17
-// Last changed:
+// Last changed: 2012-07-05
 
 //
 // This program demonstrates the interpolation of functions on non-matching
@@ -66,6 +66,7 @@ int main()
   // Plot results
   plot(f0);
   plot(f1);
+  interactive();
 
   return 0;
 }

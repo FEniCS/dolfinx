@@ -15,16 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005, 2012.
 // Modified by Anders Logg 2006.
 //
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2012-05-10
 
 #ifdef HAS_PETSC
 
 #include <boost/shared_ptr.hpp>
+#include <petscversion.h>
+#if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
+#include <petsc-private/pcimpl.h>
+#else
 #include <private/pcimpl.h>
+#endif
 #include <dolfin/common/NoDeleter.h>
 #include "PETScVector.h"
 #include "PETScUserPreconditioner.h"
@@ -62,10 +67,14 @@ int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
+  // Wrap PETSc vectors in shared pointers
   boost::shared_ptr<Vec> _x(&x, NoDeleter());
   boost::shared_ptr<Vec> _y(&y, NoDeleter());
+
+  // Wrap PETSc vectors as DOLFIN PETScVectors
   PETScVector dolfinx(_x), dolfiny(_y);
 
+  // Solve
   newpc->solve(dolfiny, dolfinx);
 
   return 0;
@@ -83,7 +92,9 @@ int PETScUserPreconditioner::PCCreate(PC pc)
   pc->ops->setfromoptions      = 0;
   pc->ops->view                = 0;
   pc->ops->destroy             = 0;
-
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
+  pc->ops->reset               = 0;
+  #endif
   // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 

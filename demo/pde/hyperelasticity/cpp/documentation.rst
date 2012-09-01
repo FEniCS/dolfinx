@@ -305,6 +305,7 @@ plotted.
 
   // Plot solution
   plot(u);
+  interactive();
 
   return 0;
 

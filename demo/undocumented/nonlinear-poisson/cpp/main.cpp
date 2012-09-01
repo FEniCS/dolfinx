@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2005-2011.
 //
 // First added:  2005
-// Last changed: 2011-06-28
+// Last changed: 2012-07-05
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
@@ -103,12 +103,13 @@ int main()
   // Solve nonlinear variational problem
   solve(F == 0, u, bc, J, params);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
+  interactive();
 
   return 0;
 }

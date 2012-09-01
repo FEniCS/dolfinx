@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Andre Massing, 2009.
+// Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2011-11-15
+// Last changed: 2012-06-12
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -31,12 +32,13 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/intersection/PrimitiveIntersector.h>
+#include "Mesh.h"
 #include "Point.h"
 
 namespace dolfin
 {
 
-  class Mesh;
+  //class Mesh;
   class Point;
 
   /// A MeshEntity represents a mesh entity associated with
@@ -131,7 +133,8 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The number of incident MeshEntity objects of given dimension.
-    uint num_entities(uint dim) const;
+    uint num_entities(uint dim) const
+    { return _mesh->topology()(_dim, dim).size(_index); }
 
     /// Return array of indices for incident mesh entitites of given
     /// topological dimension
@@ -143,14 +146,16 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The index for incident mesh entities of given dimension.
-    const uint* entities(uint dim) const;
+    const uint* entities(uint dim) const
+    { return _mesh->topology()(_dim, dim)(_index); }
 
     /// Return unique mesh ID
     ///
     /// *Returns*
     ///     uint
     ///         The unique mesh ID.
-    uint mesh_id() const;
+    uint mesh_id() const
+    { return _mesh->id(); }
 
     /// Check if given entity is incident
     ///
@@ -255,6 +260,7 @@ namespace dolfin
 
     // Friends
     friend class MeshEntityIterator;
+    template<typename T> friend class MeshEntityIteratorBase;
     friend class SubsetIterator;
 
     // The mesh

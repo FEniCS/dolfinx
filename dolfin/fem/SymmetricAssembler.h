@@ -67,14 +67,15 @@ namespace dolfin
     static void assemble(GenericMatrix &A,
                          GenericMatrix &A_nonsymm,
                          const Form &a,
-                         const std::vector<const DirichletBC*> &row_bcs,
-                         const std::vector<const DirichletBC*> &col_bcs,
+                         const std::vector<const DirichletBC*> row_bcs,
+                         const std::vector<const DirichletBC*> col_bcs,
                          const MeshFunction<uint> *cell_domains=NULL,
                          const MeshFunction<uint> *exterior_facet_domains=NULL,
                          const MeshFunction<uint> *interior_facet_domains=NULL,
                          bool reset_sparsity=true,
                          bool add_values=false,
-                         bool finalize_tensor=true);
+                         bool finalize_tensor=true,
+                         bool keep_diagonal=false);
 
   private:
 

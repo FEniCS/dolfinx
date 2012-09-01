@@ -25,7 +25,7 @@
 
 #include "dolfin/common/types.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
+#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -58,21 +58,9 @@ namespace dolfin
   };
 
   /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
-
-  class FaceIterator : public MeshEntityIterator
-  {
-  public:
-
-    FaceIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
-    FaceIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
-
-    inline Face& operator*() { return *operator->(); }
-    inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }
-
-  };
+  typedef MeshEntityIteratorBase<Face> FaceIterator;
 
   /// A FaceFunction is a MeshFunction of topological dimension 2.
-
   template <typename T> class FaceFunction : public MeshFunction<T>
   {
   public:

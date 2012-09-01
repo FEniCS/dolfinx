@@ -54,6 +54,8 @@ void SparsityPattern::init(const std::vector<uint>& dims,
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
 
+  const uint _primary_dim = primary_dim();
+
   // Check that dimensions match
   dolfin_assert(dims.size() == local_range.size());
   dolfin_assert(dims.size() == off_process_owner.size());
@@ -101,6 +103,8 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
   dolfin_assert(entries[1]);
+
+  const uint _primary_dim = primary_dim();
 
   const std::vector<uint>* map_i;
   const std::vector<uint>* map_j;
@@ -168,6 +172,24 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::add_edges(const std::pair<uint, uint>& vertex,
+                                const std::vector<uint>& edges)
+{
+  const uint _primary_dim = primary_dim();
+  const uint vertex_index = vertex.first;
+
+  // Add off-process owner if vertex is not owned by this process
+  if (vertex_index < _local_range[_primary_dim].first || vertex_index >= _local_range[_primary_dim].second)
+    off_process_owner[_primary_dim].insert(vertex);
+
+  // Add edges
+  std::vector<uint> dofs0(1, vertex.first);
+  std::vector<const std::vector<uint>* > entries(2);
+  entries[0] = &dofs0;
+  entries[1] = &edges;
+  insert(entries);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
 {
   return 2;
@@ -225,8 +247,33 @@ void SparsityPattern::num_local_nonzeros(std::vector<uint>& num_nonzeros) const
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::get_edges(uint vertex, std::vector<uint>& edges) const
+{
+  dolfin_assert(vertex >= _local_range[0].first && vertex < _local_range[0].second);
+
+  const uint local_vertex = vertex - _local_range[0].first;
+  dolfin_assert(local_vertex < diagonal.size());
+  uint size = diagonal[local_vertex].size();
+  if (!off_diagonal.empty())
+  {
+    dolfin_assert(local_vertex < off_diagonal.size());
+    size += off_diagonal[local_vertex].size();
+  }
+  edges.resize(size);
+
+  std::copy(diagonal[local_vertex].begin(), diagonal[local_vertex].end(), edges.begin());
+  if (!off_diagonal.empty())
+  {
+    std::copy(off_diagonal[local_vertex].begin(),
+              off_diagonal[local_vertex].end(),
+              edges.begin() + diagonal[local_vertex].size());
+  }
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
+  const uint _primary_dim = primary_dim();
+
   uint primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
@@ -314,7 +361,7 @@ std::string SparsityPattern::str(bool verbose) const
   typedef set_type::const_iterator entry_it;
   for (uint i = 0; i < diagonal.size(); i++)
   {
-    if (_primary_dim == 0)
+    if (primary_dim() == 0)
       s << "Row " << i << ":";
     else
       s << "Col " << i << ":";

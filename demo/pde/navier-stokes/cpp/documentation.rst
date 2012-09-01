@@ -420,6 +420,7 @@ Finally, we plot the solution and the program is finished:
     // Plot solution
     plot(p1, "Pressure");
     plot(u1, "Velocity");
+    interactive();
 
     return 0;
   }

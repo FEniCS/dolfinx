@@ -92,7 +92,7 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     data.ICNTL(4) = 1;
 
-  // Matrix symmetry (0=non-symmetric/2=symmetric postitve defn/2=symmetric)
+  // Matrix symmetry (0=non-symmetric, 2=symmetric postitve defn, 2=symmetric)
   data.sym = 0;
   if (parameters["symmetric_operator"])
     data.sym = 2;

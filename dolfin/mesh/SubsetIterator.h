@@ -29,9 +29,10 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-#include "MeshFunction.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
+#include "MeshEntityIterator.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -48,8 +49,8 @@ namespace dolfin
     /// all entities that match the given label.
     SubsetIterator(const MeshFunction<unsigned int>& labels, uint label)
       : entity(labels.mesh(), labels.dim(), 0),
-	_subset(new std::vector<uint>()),
-	subset(*_subset)
+        _subset(new std::vector<uint>()),
+        subset(*_subset)
     {
       // Extract subset
       subset.clear();
@@ -64,7 +65,7 @@ namespace dolfin
       // Set iterator
       it = subset.begin();
     }
-    
+
     /// Copy Constructor
     SubsetIterator(const SubsetIterator & subset_iter)
     : entity(subset_iter.entity),_subset(subset_iter._subset),
@@ -80,7 +81,7 @@ namespace dolfin
       ++it;
       return *this;
     }
-    
+
     /// Comparison operator
     bool operator==(const SubsetIterator & sub_iter) const
     {
@@ -88,7 +89,7 @@ namespace dolfin
             == (const_cast<SubsetIterator *>(&sub_iter))->operator*()
             && it == sub_iter.it && &subset == &sub_iter.subset);
     }
-    
+
     /// Comparison operator
     bool operator!=(const SubsetIterator & sub_iter) const
     { return !operator==(sub_iter); }
@@ -123,7 +124,7 @@ namespace dolfin
 
     // Subset in shared data form
     boost::shared_ptr< std::vector<uint> > _subset;
-    
+
     //Subset reference for convenience / speed
     std::vector<uint> & subset;
 

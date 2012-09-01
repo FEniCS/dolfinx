@@ -57,7 +57,7 @@ if has_linear_algebra_backend("PETSc"):
             x_petsc = down_cast(x)
 
             for prec, descr in krylov_solver_preconditioners():
-                if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi", "amg"]:
+                if MPI.num_processes() > 1 and prec in ["ilu", "icc", "jacobi", "hypre_amg"]:
                     print "FIXME: Preconditioner '%s' does not work in parallel,"\
                           " skipping" % prec
                     continue

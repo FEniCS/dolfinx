@@ -24,6 +24,9 @@
 
 #ifdef HAS_TRILINOS
 
+// Included here to avoid a C++ problem with some MPI implementations
+#include <dolfin/common/MPI.h>
+
 #include <cstring>
 #include <iostream>
 #include <iomanip>
@@ -48,7 +51,6 @@
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
-#include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 #include "TensorLayout.h"
 #include "EpetraMatrix.h"
@@ -287,23 +289,27 @@ void EpetraMatrix::set(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
+  // This function is awkward and somewhat restrictive because of the
+  // poor support for setting off-process values in Epetra
+
   dolfin_assert(A);
 
-  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
+  // Check that all rows are local to this process
   /*
   for (uint i = 0; i < m; ++i)
   {
-    const uint row = rows[i];
-    const double* values = block + i*n;
-    const int err = A->ReplaceGlobalValues(row, n, values,
-                                           reinterpret_cast<const int*>(cols));
-    dolfin_assert(!err);
+    if (!A->MyGRID(rows[i]))
+    {
+      dolfin_error("EpetraMatrix.cpp",
+                   "set block of values for Epetra matrix",
+                   "Only values in row belonging to process can be set");
+    }
   }
   */
 
-  const int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   n, reinterpret_cast<const int*>(cols), block,
-                                   Epetra_FECrsMatrix::ROW_MAJOR);
+  const int err = A->ReplaceGlobalValues(m,
+      reinterpret_cast<const int*>(rows), n,
+      reinterpret_cast<const int*>(cols), block, Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -317,19 +323,24 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   dolfin_assert(A);
-
-  // Work around for a bug in Trilinos 10.8 (see Bug lp 864510)
-  /*
+  const std::pair<uint, uint> local_row_range = local_range(0);
   for (uint i = 0; i < m; ++i)
   {
     const uint row = rows[i];
-    const double* values = block + i*n;
-    const int err = A->SumIntoGlobalValues(row, n, values,
-                                           reinterpret_cast<const int*>(cols));
-    dolfin_assert(!err);
+    if (row >= local_row_range.first && row < local_row_range.second)
+    {
+      A->Epetra_CrsMatrix::SumIntoGlobalValues((int) row, n, block + i*n,
+                                          reinterpret_cast<const int*>(cols));
+    }
+    else
+    {
+      A->SumIntoGlobalValues(1, reinterpret_cast<const int*>(rows + i),
+                             n, reinterpret_cast<const int*>(cols), block + i*n,
+                             Epetra_FECrsMatrix::ROW_MAJOR);
+    }
   }
-  */
 
+  /*
   const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                          n, reinterpret_cast<const int*>(cols), block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
@@ -339,6 +350,7 @@ void EpetraMatrix::add(const double* block,
                  "add block of values to Epetra matrix",
                  "Did not manage to perform Epetra_FECrsMatrix::SumIntoGlobalValues");
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
@@ -397,7 +409,12 @@ void EpetraMatrix::apply(std::string mode)
   if (mode == "add")
     err = A->GlobalAssemble(true, Add);
   else if (mode == "insert")
-    err = A->GlobalAssemble(true, Insert);
+    //err = A->GlobalAssemble(true, Insert);
+    err = A->GlobalAssemble(true);
+  else if (mode == "flush")
+  {
+    // Do nothing
+  }
   else
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -525,8 +542,8 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
-  // FIXME: This can be made more efficient by eliminating creation of some
-  //        obejcts inside the loop
+  // FIXME: This can be made more efficient by eliminating creation of
+  //        some obejcts inside the loop
 
   dolfin_assert(A);
   const Epetra_CrsGraph& graph = A->Graph();
@@ -680,17 +697,6 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
 LinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
-}
-//-----------------------------------------------------------------------------
-void EpetraMatrix::init(const EpetraSparsityPattern& sparsity_pattern)
-{
-  if (A && !A.unique())
-  {
-    dolfin_error("EpetraMatrix.cpp",
-                 "initialize Epetra matrix",
-                 "More than one object points to the underlying Epetra object");
-  }
-  A.reset(new Epetra_FECrsMatrix(Copy, sparsity_pattern.pattern()));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
