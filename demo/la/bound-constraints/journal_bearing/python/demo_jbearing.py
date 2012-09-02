@@ -36,13 +36,21 @@ to solve bound constrained  problems
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  16/04/2012
-# Last changed: 16/04/2012
+# First added:  03/09/2012
+# Last changed: 03/09/2012
 
 # Begin demo
-# An example of use of the interface to TAO to solve bound constrained  problems in FEnics:
-# This is a poisson solver with bound constraints 
 #
+#  This example demonstrates use of the TAO package to
+#  solve a bound constrained minimization problem.  
+#  This example is based on the problem DPJB from the MINPACK-2 test suite.  
+#  and is the demo for bound constrained quadratic problem in the TAO package  
+#  This pressure journal 
+#  bearing problem is an example of elliptic variational problem defined over 
+#  a two dimensional rectangle.  By discretizing the domain into triangular 
+#  elements, the pressure surrounding the journal bearing is defined as the 
+#  minimum of a quadratic function whose variables are bounded below by zero
+#  
 # Corrado Maurini 
 #
 from dolfin import *
@@ -50,8 +58,7 @@ from dolfin import *
 # Create mesh and define function space
 b=10
 eps=0.1
-mesh = Rectangle(0,0,2*pi,2*b,100,100)
-plot(mesh)
+mesh = Rectangle(0,0,2*pi,2*b,100,500)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
@@ -95,11 +102,10 @@ xsol=usol.vector() # or xsol=down_cast(usol.vector())
 # Create the TAOLinearBoundSolver and solve the problem
 solver=TAOLinearBoundSolver()
 
-solver.parameters["ksp"]["absolute_tolerance"]=0.000001
-solver.parameters["ksp"]["relative_tolerance"]=0.000001
-solver.parameters["ksp"]["method"]="tfqmr"
+solver.parameters["krylov_solver"]["absolute_tolerance"]=0.000001
+solver.parameters["krylov_solver"]["relative_tolerance"]=0.000001
+solver.parameters["krylov_solver"]["method"]="tfqmr"
 solver.solve(A,xsol,b,xl,xu)
-
 
 
 # Save solution in VTK format

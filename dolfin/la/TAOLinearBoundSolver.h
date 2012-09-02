@@ -14,20 +14,23 @@
 #ifdef HAS_TAO
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/MPI.h>
+//#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
 #include <dolfin.h>
-#include <string>
+//#include <string>
 #include <map>
 #include <petscksp.h>
 #include <petscpc.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <tao.h>
 #include <taosolver.h>
-//#include <PETScObject.h>
+#include "PETScObject.h"
 
 namespace dolfin
 {
+
 
   /// Forward declarations
   class GenericMatrix;
@@ -93,65 +96,88 @@ namespace dolfin
 
     /// Solve linear system Ax = b with xl =< x <= xu 
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
-    
+        
     // Set the solver type
 	void set_solver(std::string solver);
-     
+	    	
+	// Return PETSc KSP pointer
+    boost::shared_ptr<TaoSolver> tao() const;
+	
     /// Default parameter values
     static Parameters default_parameters()
     {
       Parameters p("tao_solver");
 
-      p.add("solver","tao_tron");
-      p.add("monitor",true);
+      p.add("method","tao_tron");
+      p.add("monitor",false);
       p.add("report",true);
       p.add("fatol",1.0e-10);
       p.add("frtol",1.0e-10);
       p.add("gatol",1.0e-8);
       p.add("grtol",1.0e-8);
       p.add("gttol",0.);
+      
+      Parameters q("krylov_solver");
+      q.add("method","default");
+      q.add("nonzero_initial_guess",false);
+      q.add("gmres_restart",PETSC_DEFAULT);
+      q.add("monitor_convergence",false);
+      q.add("relative_tolerance",1.0e-10);
+      q.add("absolute_tolerance",1.0e-10);
+      q.add("divergence_limit",10.0e+7);
+      q.add("maximum_iterations",100);
+      p.add(q);
+      
       return p;
     }
     
     // Operator and vectors
     boost::shared_ptr<const PETScMatrix> A;
-    boost::shared_ptr<const PETScVector> b;
-    
+    boost::shared_ptr<const PETScVector> b;    
     
   private:
     /// Callback for changes in parameter values
     void read_parameters();
 
     // Set tolerance
-    void set_tolerances(double fatol, double frtol, double gatol, double grtol, double gttol);
+    //void set_tolerances(double fatol, double frtol, double gatol, double grtol, double gttol);
    
-    /// PETSc ksp solver pointer
-    boost::shared_ptr<KSP> ksp;
+    /// Tao solver pointer
+    boost::shared_ptr<TaoSolver> _tao;
+    
+    // Available ksp solvers
+    static const std::map<std::string, const KSPType> _ksp_methods;
+    
+    // Set options
+    void set_ksp_options();
+    
+    // Initialize KSP solver
+    void init(const std::string& method);
 
     // TAO solver pointer
-    TaoSolver tao;
+    //TaoSolver tao;
     
 };
 }
 //-----------------------------------------------------------------------------
-#undef __FUNCT__
-#define __FUNCT__ "TAOFormFunctionGradientQuadraticProblem"
+//#undef __FUNCT__
+//#define __FUNCT__ "TAOFormFunctionGradientQuadraticProblem"
 /// Computes the value of the objective function and its gradient. 
 
 PetscErrorCode TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
 
 //-----------------------------------------------------------------------------
 
-#undef __FUNCT__
-#define __FUNCT__ "TAOFormHessianQuadraticProblem"
+//#undef __FUNCT__
+//#define __FUNCT__ "TAOFormHessianQuadraticProblem"
 /// Computes the hessian of the quadratic objective function 
 /// Notice that the objective function in this problem is quadratic (therefore a constant hessian). 
 
 PetscErrorCode TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
 
 //-----------------------------------------------------------------------------
-#undef __FUNCT__
-#define __FUNCT__ "TAOMonitor"
+//#undef __FUNCT__
+//#define __FUNCT__ "TAOMonitor"
 //  Monitor the state of the solution at each iteration. The output printed to the screen is:
 //
 //	iterate 	- the current iterate number (>=0)
