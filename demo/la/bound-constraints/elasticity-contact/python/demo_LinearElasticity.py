@@ -1,109 +1,63 @@
-"""This demo program solves Poisson's equation
-
-    - div grad u(x, y) = f(x, y)
-
-on the unit square with source f given by
-
-    f(x, y) = 10*exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)
-
-and boundary conditions given by
-
-    u(x, y) = 0        for x = 0 or x = 1
-du/dn(x, y) = sin(5*x) for y = 0 or y = 1
-
-under the bound constraints 
-
-	0 <= u(x, y) <= x
-	
-This is an exemple of how to use An example of use of TAO 
-to solve bound constrained  problems
-"""
-
-# Copyright (C) 2007-2011 Anders Logg
+# An example of use of the interface to TAO to solve a contact mechanics problems in FEnics.
+# This is a 2D linear elastic beam with gravity with an unilateral contact condition with a basement (at x[0]=-1)
 #
-# This file is part of DOLFIN.
-#
-# DOLFIN is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# DOLFIN is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  16/04/2012
-# Last changed: 16/04/2012
-
-# Begin demo
-# An example of use of the interface to TAO to solve bound constrained  problems in FEnics:
-# This is a poisson solver with bound constraints 
-#
-# Corrado Maurini 
+# Corrado Maurini 12/03/2012
 #
 from dolfin import *
+# Create mesh
+mesh = Rectangle(0,0,10,1,100,10)
+# Create function space
+V = VectorFunctionSpace(mesh, "Lagrange", 1)
+# Create test and trial functions, and source term
+u, w = TrialFunction(V), TestFunction(V)
+b = Constant((.0, -0.01))
 
-# Create mesh and define function space
-b=10
-eps=0.1
-mesh = Rectangle(0,0,2*pi,2*b,100,100)
-plot(mesh)
-V = FunctionSpace(mesh, "Lagrange", 1)
+# Elasticity parameters
+E, nu = 10.0, 0.3
+mu, lmbda = E/(2.0*(1.0 + nu)), E*nu/((1.0 + nu)*(1.0 -2.0*nu))
 
-# Define Dirichlet boundary (x = 0 or x = 1)
-def boundary(x,on_boundary):
-    return on_boundary
+# Stress and strains
+def eps(u):
+    return sym(grad(u))
 
-# Define boundary condition
-u0 = Constant(0.0)
-bc = DirichletBC(V, u0, boundary)
+def sigma(epsilon):
+    return  2*mu*epsilon + lmbda*tr(epsilon)*Identity(w.cell().d)
+    
+# Weak formulation
+F = inner(sigma(eps(u)), eps(w))*dx - dot(b, w)*dx
 
-# Define variational problem
-u = TrialFunction(V)
-v = TestFunction(V)
-wq = Expression("pow(1 + eps * cos(x[0]),3)",eps=eps)
-wl = Expression("eps * sin(x[0])",eps=eps)
+# Extract bilinear and linear forms from F
+a, L = lhs(F), rhs(F)
 
-#f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-#g = Expression("sin(5*x[0])")
-a = wq*inner(grad(u), grad(v))*dx
-L = wl*v*dx #+ g*v*ds
+# Dirichlet boundary condition 
+def left_boundary(x, on_boundary):
+    return on_boundary and x[0] < DOLFIN_EPS
+    c = Constant((0.0, 0.0))
+    
+bc = DirichletBC(V, c, left_boundary)
 
 # Assemble the linear system
-A=PETScMatrix()
-b=PETScVector()
 A=assemble(a)
 b=assemble(L)
 bc.apply(A)
 bc.apply(b)
 
-# Define the upper and lower bounds
-#upperbound = interpolate(Expression("x[1]"), V) # example of non-uniform upper-bound
-upperbound = interpolate(Constant(10.), V) # example of uniform upper-bound
-lowerbound = interpolate(Constant(0.), V) # example of a uniform lower-bound
-xu=upperbound.vector() # or xu=down_cast(upperbound.vector())
-xl=lowerbound.vector() # or xl=down_cast(lowerbound.vector())
+# Define the constraints
+lowerbound = interpolate(Expression(("(-30)-x[0]","(-1.)-x[1]")), V)
+upperbound = interpolate(Expression(("(30)-x[0]","(30)-x[0]")), V)
+xu=upperbound.vector()
+xl=lowerbound.vector()
 
-# Define the function to store the solution and the related PETScVector
+# Define the function to store the solution and the related vector
 usol=Function(V);
-xsol=usol.vector() # or xsol=down_cast(usol.vector())
+xsol=usol.vector()
 
 # Create the TAOLinearBoundSolver and solve the problem
 solver=TAOLinearBoundSolver()
-
-solver.parameters["ksp"]["absolute_tolerance"]=0.000001
-solver.parameters["ksp"]["relative_tolerance"]=0.000001
-solver.parameters["ksp"]["method"]="tfqmr"
 solver.solve(A,xsol,b,xl,xu)
 
-
-
 # Save solution in VTK format
-#file = File("poisson.pvd")
-#file << usol
-# Plot solution
-plot(usol, interactive=True)
+file = File("displacement.pvd")
+file << usol
+#plot(usol, mode = "displacement",wireframe=False, title="Displacement field")
+

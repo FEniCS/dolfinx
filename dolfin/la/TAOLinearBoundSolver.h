@@ -69,7 +69,7 @@ namespace dolfin
   /// |f(X) - f(X*)| (estimated) / |f(X)| <= frtol, default = 1e-10 
   /// ||g(X)||                            <= gatol, default = 1e-8 
   /// ||g(X)|| / |f(X)|                   <= grtol, default = 1e-8 
-  /// ||g(X)|| / ||g(X0)||                <= gttol,  default = 0   
+  /// ||g(X)|| / ||g(X0)||                <= gttol, default = 0   
   ///
   /// - "krylov_solver"
   /// This parameter set contains parameters to configure the PETSc Krylov solver used by Tao

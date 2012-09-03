@@ -62,7 +62,7 @@ bc = DirichletBC(V, u0, boundary)
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("20*sin(5*x[0])")
+g = Expression("10*sin(5*x[0])")
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
@@ -75,7 +75,7 @@ bc.apply(A)
 bc.apply(b)
 
 # Define the upper and lower bounds
-upperbound = interpolate(Expression("x[1]"), V) # example of non-uniform upper-bound
+upperbound = interpolate(Expression(".1*x[1]"), V) # example of non-uniform upper-bound
 lowerbound = interpolate(Constant(0.), V) # example of a uniform lower-bound
 xu=upperbound.vector() # or xu=down_cast(upperbound.vector())
 xl=lowerbound.vector() # or xl=down_cast(lowerbound.vector())
