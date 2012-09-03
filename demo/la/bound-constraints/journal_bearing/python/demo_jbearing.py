@@ -1,22 +1,17 @@
-"""This demo program solves Poisson's equation
-
-    - div grad u(x, y) = f(x, y)
-
-on the unit square with source f given by
-
-    f(x, y) = 10*exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)
-
-and boundary conditions given by
-
-    u(x, y) = 0        for x = 0 or x = 1
-du/dn(x, y) = sin(5*x) for y = 0 or y = 1
-
-under the bound constraints 
-
-	0 <= u(x, y) <= x
-	
-This is an exemple of how to use An example of use of TAO 
-to solve bound constrained  problems
+"""
+  This example demonstrates use of the TAO package to
+  solve a bound constrained minimization problem.  
+  This example is based on the problem DPJB from the MINPACK-2 test suite.  
+  and is the demo for bound constrained quadratic problem in the TAO package  
+  This pressure journal  bearing problem is an example of elliptic variational 
+  problem defined over a two dimensional rectangle.  
+  By discretizing the domain into triangular elements, the pressure surrounding
+  the journal bearing is defined as the minimum of a quadratic function 
+  whose variables are bounded below by zero.
+  
+  For a detailed problem description see pgg 33-34 of
+  http://ftp.mcs.anl.gov/pub/tech_reports/reports/P153.pdf
+  
 """
 
 # Copyright (C) 2007-2011 Anders Logg
@@ -39,18 +34,7 @@ to solve bound constrained  problems
 # First added:  03/09/2012
 # Last changed: 03/09/2012
 
-# Begin demo
-#
-#  This example demonstrates use of the TAO package to
-#  solve a bound constrained minimization problem.  
-#  This example is based on the problem DPJB from the MINPACK-2 test suite.  
-#  and is the demo for bound constrained quadratic problem in the TAO package  
-#  This pressure journal 
-#  bearing problem is an example of elliptic variational problem defined over 
-#  a two dimensional rectangle.  By discretizing the domain into triangular 
-#  elements, the pressure surrounding the journal bearing is defined as the 
-#  minimum of a quadratic function whose variables are bounded below by zero
-#  
+# Begin demo  
 # Corrado Maurini 
 #
 from dolfin import *
@@ -75,10 +59,8 @@ v = TestFunction(V)
 wq = Expression("pow(1 + eps * cos(x[0]),3)",eps=eps)
 wl = Expression("eps * sin(x[0])",eps=eps)
 
-#f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-#g = Expression("sin(5*x[0])")
 a = wq*inner(grad(u), grad(v))*dx
-L = wl*v*dx #+ g*v*ds
+L = wl*v*dx
 
 # Assemble the linear system
 A=PETScMatrix()
@@ -89,9 +71,8 @@ bc.apply(A)
 bc.apply(b)
 
 # Define the upper and lower bounds
-#upperbound = interpolate(Expression("x[1]"), V) # example of non-uniform upper-bound
-upperbound = interpolate(Constant(10.), V) # example of uniform upper-bound
-lowerbound = interpolate(Constant(0.), V) # example of a uniform lower-bound
+upperbound = interpolate(Constant(10.), V) # set a large upper-bound, which is never reached
+lowerbound = interpolate(Constant(0.), V) 
 xu=upperbound.vector() # or xu=down_cast(upperbound.vector())
 xl=lowerbound.vector() # or xl=down_cast(lowerbound.vector())
 
@@ -99,17 +80,17 @@ xl=lowerbound.vector() # or xl=down_cast(lowerbound.vector())
 usol=Function(V);
 xsol=usol.vector() # or xsol=down_cast(usol.vector())
 
-# Create the TAOLinearBoundSolver and solve the problem
-solver=TAOLinearBoundSolver()
+# Create the TAOLinearBoundSolver 
+solver=TAOLinearBoundSolver("tao_tron")
 
+# Set some parameters
 solver.parameters["krylov_solver"]["absolute_tolerance"]=0.000001
 solver.parameters["krylov_solver"]["relative_tolerance"]=0.000001
 solver.parameters["krylov_solver"]["method"]="tfqmr"
 solver.solve(A,xsol,b,xl,xu)
 
+# Print solver parameters
+info(solver.parameters,True)
 
-# Save solution in VTK format
-#file = File("poisson.pvd")
-#file << usol
 # Plot solution
 plot(usol, interactive=True)
