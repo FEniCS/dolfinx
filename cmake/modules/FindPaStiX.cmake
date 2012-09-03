@@ -7,14 +7,14 @@
 
 # Check for PaStiX header file
 find_path(PASTIX_INCLUDE_DIRS pastix.h
-  HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include
+  HINTS ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include ${PASTIX_DIR} $ENV{PASTIX_DIR}
   PATH_SUFFIXES install
   DOC "Directory where the PaStiX header is located"
  )
 
 # Check for PaStiX library
 find_library(PASTIX_LIBRARY pastix
-  HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib
+  HINTS ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib ${PASTIX_DIR} $ENV{PASTIX_DIR}
   PATH_SUFFIXES install
   DOC "The PaStiX library"
   )
@@ -72,7 +72,7 @@ if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
   set(CMAKE_REQUIRED_INCLUDES  ${PASTIX_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${PASTIX_LIBRARIES})
 
- # Add SCOTCH variables if SCOTCH has been found                                                                                                                                                       
+ # Add SCOTCH variables if SCOTCH has been found
   if (SCOTCH_FOUND)
     set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${SCOTCH_INCLUDE_DIRS})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARIES})
