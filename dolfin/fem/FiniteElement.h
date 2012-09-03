@@ -39,7 +39,7 @@ namespace dolfin
     FiniteElement(boost::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
-    ~FiniteElement() {}
+    virtual ~FiniteElement() {}
 
     //--- Direct wrappers for ufc::finite_element ---
 
