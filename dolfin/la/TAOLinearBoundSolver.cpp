@@ -11,16 +11,18 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin.h>
-#include <dolfin/parameter/GlobalParameters.h>
-//#include "petscdm.h"
+#include "GenericMatrix.h"
+#include "GenericVector.h"
+#include "KrylovSolver.h"
+#include "PETScBaseMatrix.h"
+#include "PETScMatrix.h"
+#include "PETScVector.h"
 #include "petscksp.h"
 #include "petscvec.h" 
 #include "petscmat.h"
 #include "tao.h"
 #include "taosolver.h"
 #include "TAOLinearBoundSolver.h"
-#include "PETScKrylovSolver.h"
 
 #include <dolfin/common/timing.h>
 
@@ -57,13 +59,6 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method)
 {
   // Set parameter values
   parameters = default_parameters();
-  
-  // Set up solver environment
-  //if (dolfin::MPI::num_processes() > 1)
-  //  TaoCreate(PETSC_COMM_WORLD, _tao.get());
-  //else
-  //  TaoCreate(PETSC_COMM_SELF, _tao.get());
-
   init(method);  
 }
 //-----------------------------------------------------------------------------
@@ -71,14 +66,6 @@ TAOLinearBoundSolver::~TAOLinearBoundSolver()
 {
   // Do nothing
 }
-//{
-//  // Destroy solver environment
-//  if (tao)
-//  {
-//    TaoDestroy(&tao);
-//    
-//  }
-//}
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                       const boost::shared_ptr<const GenericVector> b)
@@ -238,10 +225,10 @@ void TAOLinearBoundSolver::set_ksp_options()
                    parameters("krylov_solver")["divergence_limit"],
                    parameters("krylov_solver")["maximum_iterations"]);
 }
-//-----------------------------------------------------------------------------
-//
-//
-//-----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+// Auxiliary functions required by Tao to assemble gradient and hessian of the goal functional 
+// This is implemented only for a quadratic functional (the hessian is constant)
+//-------------------------------------------------------------------------------------------
 PetscErrorCode TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr)
 { 
    PetscReal 				 AXX, bX;
@@ -276,7 +263,9 @@ PetscErrorCode TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *H
    return 0;
 }
 
-//-----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+// Auxiliary function to set the output of the TaoMonitor 
+//-------------------------------------------------------------------------------------------
 PetscErrorCode TAOMonitor(TaoSolver tao, void *ctx)
 {
   PetscInt its;

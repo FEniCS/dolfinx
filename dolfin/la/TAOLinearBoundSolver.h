@@ -14,11 +14,8 @@
 #ifdef HAS_TAO
 
 #include <dolfin/log/dolfin_log.h>
-//#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
-#include <dolfin.h>
-//#include <string>
 #include <map>
 #include <petscksp.h>
 #include <petscpc.h>
@@ -74,6 +71,9 @@ namespace dolfin
   /// ||g(X)|| / |f(X)|                   <= grtol, default = 1e-8 
   /// ||g(X)|| / ||g(X0)||                <= gttol,  default = 0   
   ///
+  /// - "krylov_solver"
+  /// This parameter set contains parameters to configure the PETSc Krylov solver used by Tao
+  /// 
    class TAOLinearBoundSolver : public Variable
   {
   public:
@@ -120,7 +120,7 @@ namespace dolfin
       Parameters q("krylov_solver");
       q.add("method","default");
       q.add("nonzero_initial_guess",false);
-      q.add("gmres_restart",PETSC_DEFAULT);
+      q.add("gmres_restart",30);
       q.add("monitor_convergence",false);
       q.add("relative_tolerance",1.0e-10);
       q.add("absolute_tolerance",1.0e-10);
