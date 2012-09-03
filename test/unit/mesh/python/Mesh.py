@@ -229,5 +229,28 @@ if MPI.num_processes() == 1:
         def testIntersectMesh3D(self):
             pass
 
+        def testIntersectedCellWithSingleCellMesh(self):
+            mesh = UnitTriangle()
+
+            point = Point(0.3, 0.3)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, 0)
+
+            point = Point(1.2, 1.2)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, -1)
+
+        def testClosestCellWithSingleCellMesh(self):
+            mesh = UnitTriangle()
+
+            point = Point(0.3, 0.3)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+            point = Point(1.2, 1.2)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

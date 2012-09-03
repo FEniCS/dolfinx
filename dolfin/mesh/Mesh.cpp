@@ -390,8 +390,18 @@ void Mesh::intersected_cells(const Mesh& another_mesh,
 }
 //-----------------------------------------------------------------------------
 int Mesh::intersected_cell(const Point& point) const
-{
-  return _intersection_operator.any_intersected_entity(point);
+{   
+  // CGAL exits with an assertion error whilst performing
+  // the intersection query if num_cells() == 1
+  int id = 0;
+  if (num_cells() > 1)
+    id = _intersection_operator.any_intersected_entity(point);
+  else
+  {
+    const Cell cell(*this, 0);
+    id = cell.intersects(point) ? 0 : -1;
+  }
+  return id;
 }
 //-----------------------------------------------------------------------------
 Point Mesh::closest_point(const Point& point) const
@@ -401,7 +411,14 @@ Point Mesh::closest_point(const Point& point) const
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::closest_cell(const Point & point) const
 {
-  return _intersection_operator.closest_cell(point);
+  // CGAL exits with an assertion error whilst performing
+  // the closest cell query if num_cells() == 1
+  dolfin::uint id = 0;
+  if (num_cells() > 1)
+    id = _intersection_operator.closest_cell(point);
+  else
+    id = 0;
+  return id;
 }
 //-----------------------------------------------------------------------------
 std::pair<Point,dolfin::uint>
