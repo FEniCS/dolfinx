@@ -97,8 +97,6 @@ class ErrorControlTest(unittest.TestCase):
 
     def test_adaptive_solve(self):
 
-        parameters["reorder_dofs"] = True
-
         if MPI.num_processes() > 1:
             return
 

@@ -29,6 +29,7 @@
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
@@ -176,7 +177,8 @@ void ErrorControl::compute_extrapolation(const Function& z,
   apply_bcs_to_extrapolation(bcs);
 }
 //-----------------------------------------------------------------------------
-void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
+void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
+                                      const Function& u)
 {
   // Create Function for the strong cell residual (R_T)
   dolfin_assert(_a_R_T);
@@ -210,17 +212,32 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   _Pi_E_z_h->interpolate(*_Ez_h);
 
   // Attach coefficients to error indicator form
+  dolfin_assert(_eta_T);
   _eta_T->set_coefficient(0, _Ez_h);
   _eta_T->set_coefficient(1, _R_T);
   _eta_T->set_coefficient(2, _R_dT);
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  dolfin_assert(_eta_T);
-  assemble(indicators, *_eta_T);
+  Vector x(indicators.mesh().num_cells());
+  assemble(x, *_eta_T);
 
   // Take absolute value of indicators
-  indicators.abs();
+  x.abs();
+
+  // Convert vector x to indicator mesh function
+  dolfin_assert(_eta_T->function_space(0));
+  dolfin_assert(_eta_T->function_space(0)->dofmap());
+  const GenericDofMap& dofmap(*_eta_T->function_space(0)->dofmap());
+  const Mesh& mesh(indicators.mesh());
+
+  // Convert DG_0 vector to mesh function over cells
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    dolfin_assert(dofs.size() == 1);
+    indicators[cell->index()] = x[dofs[0]];
+  }
 }
 
 //-----------------------------------------------------------------------------
