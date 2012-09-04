@@ -154,6 +154,12 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
 endif()
 
+# Set system include flags to get around CMake bug on OSX
+# See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+endif()
+
 #------------------------------------------------------------------------------
 # Enable Fortran if available. Used for some configuration tests (e.g. BLAS)
 
