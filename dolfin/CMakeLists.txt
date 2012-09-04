@@ -185,7 +185,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
 
   # FIXME: Is this linker flag required?
   #list(APPEND DOLFIN_LINK_FLAGS ${MPI_CXX_LINK_FLAGS})
-
 endif()
 
 # OpenMP
@@ -202,6 +201,10 @@ endif()
 # VTK
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   include(${VTK_USE_FILE})
+
+  if (APPLE)
+    set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -Wno-deprecated")
+  endif()
 
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
