@@ -13,16 +13,17 @@
 #include <dolfin/common/NoDeleter.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "KrylovSolver.h"
 #include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
+#include "PETScKrylovSolver.h"
+#include "PETScPreconditioner.h"
+#include "TAOLinearBoundSolver.h"
 #include "petscksp.h"
 #include "petscvec.h" 
 #include "petscmat.h"
 #include "tao.h"
 #include "taosolver.h"
-#include "TAOLinearBoundSolver.h"
 
 #include <dolfin/common/timing.h>
 
@@ -51,9 +52,34 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
                               ("gmres",      KSPGMRES)
                               ("minres",     KSPMINRES)
                               ("tfqmr",      KSPTFQMR)
-                              ("richardson", KSPRICHARDSON)
+                             ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
-
+//-----------------------------------------------------------------------------
+// Mapping from method string to description
+const std::vector<std::pair<std::string, std::string> >
+  TAOLinearBoundSolver::_methods_descr = boost::assign::pair_list_of
+    ("default",    "default Tao method")
+    ("tao_blmvm",  "Limited memory variable metric method for bound constrained minimization")
+    ("tao_tron",   "Newton Trust Region method for bound constrained minimization")
+    ("tao_gpcg",   "Newton Trust Region method for quadratic bound constrained minimization");
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+TAOLinearBoundSolver::methods()
+{
+  return TAOLinearBoundSolver::_methods_descr;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> > 
+TAOLinearBoundSolver::krylov_solvers()
+{
+  return PETScKrylovSolver::methods();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::string> >
+TAOLinearBoundSolver::preconditioners()
+{
+  return PETScPreconditioner::preconditioners();
+}
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method)
 {
@@ -168,7 +194,9 @@ void TAOLinearBoundSolver::read_parameters()
 {
   set_solver(parameters["method"]);
   TaoSetTolerances(*_tao, parameters["fatol"],parameters["frtol"],parameters["gatol"],parameters["grtol"],parameters["gttol"]);
-  set_ksp_options();
+  krylov_solver->set_petsc_options()
+  preconditioner->set(*krylov_solver)
+   //set_ksp_options();
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::init(const std::string& method)
@@ -192,7 +220,13 @@ void TAOLinearBoundSolver::init(const std::string& method)
   
   // Set solver type
   set_solver(method);
-}
+
+  KSP tao_ksp;
+  TaoGetKSP(*_tao, &tao_ksp);
+  //_ksp = reference_to_no_delete_pointer(tao_ksp);
+  PETScKrylovSolver PKS(reference_to_no_delete_pointer(tao_ksp));
+  krylov_solver=reference_to_no_delete_pointer(PKS);
+}   
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_ksp_options()
 {

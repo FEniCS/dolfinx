@@ -34,6 +34,8 @@ namespace dolfin
   class GenericVector;
   class PETScMatrix;
   class PETScVector;
+  class PETScPreconditioner;
+  class PETScKrylovSolver;
 
   /// This class provides bound constrained solver for a linear system defined by PETSc matrices and vectors:
   ///
@@ -102,7 +104,16 @@ namespace dolfin
 	    	
 	// Return PETSc KSP pointer
     boost::shared_ptr<TaoSolver> tao() const;
-	
+    
+    /// Return a list of available Tao solver methods
+    static std::vector<std::pair<std::string, std::string> > methods();
+    
+    /// Return a list of available krylov solvers
+    static std::vector<std::pair<std::string, std::string> > krylov_solvers();
+
+    /// Return a list of available preconditioners
+    static std::vector<std::pair<std::string, std::string> > preconditioners();
+    
     /// Default parameter values
     static Parameters default_parameters()
     {
@@ -131,31 +142,44 @@ namespace dolfin
       return p;
     }
     
-    // Operator and vectors
+    // Operator (the matrix) and vectors
     boost::shared_ptr<const PETScMatrix> A;
-    boost::shared_ptr<const PETScVector> b;    
-    
+    boost::shared_ptr<const PETScVector> b;   
+    boost::shared_ptr<PETScKrylovSolver> krylov_solver;
+
+
   private:
-    /// Callback for changes in parameter values
+    
+    // Callback for changes in parameter values
     void read_parameters();
 
     // Set tolerance
     //void set_tolerances(double fatol, double frtol, double gatol, double grtol, double gttol);
-   
-    /// Tao solver pointer
-    boost::shared_ptr<TaoSolver> _tao;
+
+    // Available ksp solvers 
+    static const std::map<std::string, const KSPType> _ksp_methods;
+
+    // Available tao solvers descriptions
+    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
     
     // Available ksp solvers
-    static const std::map<std::string, const KSPType> _ksp_methods;
+    //static const std::map<std::string, const KSPType> _ksp_methods;
     
     // Set options
     void set_ksp_options();
     
-    // Initialize KSP solver
-    void init(const std::string& method);
+    // Initialize TAO solver
+    void init(const std::string& method); 
+    
+    // Petsc preconditioner
+    boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    // TAO solver pointer
-    //TaoSolver tao;
+    // Petsc krylov solver
+    //boost::shared_ptr<KSP> _ksp;
+    
+    // Tao solver pointer
+    boost::shared_ptr<TaoSolver> _tao;
+    // TaoSolver tao;
     
 };
 }
