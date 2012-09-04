@@ -74,7 +74,7 @@ namespace dolfin
   /// - "krylov_solver"
   /// This parameter set contains parameters to configure the PETSc Krylov solver used by Tao
   /// 
-   class TAOLinearBoundSolver : public Variable
+   class TAOLinearBoundSolver : public Variable, public PETScObject
   {
   public:
     /// Create TAO bound constrained solver 
