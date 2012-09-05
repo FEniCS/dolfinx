@@ -13,7 +13,6 @@
 #include <dolfin/common/NoDeleter.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "PETScKrylovSolver.h"
@@ -103,7 +102,7 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method,
    
    // Some preconditioners may lead to errors because not compatible with TAO.
    if (pc_type != "default")
-   PetscPrintf(PETSC_COMM_WORLD,"Warning: some preconditioners may be not applicable to TAO and generate errors. Needs testing.")
+   PetscPrintf(PETSC_COMM_WORLD,"Warning: some preconditioners may be not applicable to TAO and generate errors. Needs testing.");
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
