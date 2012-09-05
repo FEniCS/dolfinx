@@ -1,8 +1,8 @@
 //
 // Created by Corrado Maurini, 2012.
 //
-// First added:  
-// Last changed: 2012-12-03
+// First added:  2012-12-03
+// Last changed: 
 //
 // For an example of the implementation in C++ classes of a PETSc non-linear solve (snes), 
 // see the libmesh interface : http://libmesh.sourceforge.net/doxygen/petsc__nonlinear__solver_8C_source.php
@@ -83,9 +83,9 @@ namespace dolfin
   {
   public:
     /// Create TAO bound constrained solver 
-    TAOLinearBoundSolver(std::string method = "default",
-                         std::string ksp_type = "default", 
-                         std::string pc_type = "default");
+    TAOLinearBoundSolver(std::string method   = "default" ,
+                         std::string ksp_type = "default" , 
+                         std::string pc_type  = "default" );
 
     /// Destructor
     ~TAOLinearBoundSolver();
@@ -124,7 +124,7 @@ namespace dolfin
     {
       Parameters p("tao_solver");
 
-      p.add("monitor",false);
+      p.add("monitor_convergence",false);
       p.add("report",true);
       p.add("function_absolute_tol",1.0e-10);
       p.add("function_relative_tol",1.0e-10);
@@ -139,7 +139,7 @@ namespace dolfin
       return p;
     }
     
-    // Operator (the matrix) and vectors
+    // Operator (the matrix) and the vector
     boost::shared_ptr<const PETScMatrix> A;
     boost::shared_ptr<const PETScVector> b;   
 
@@ -172,26 +172,18 @@ namespace dolfin
     // Tao solver pointer
     boost::shared_ptr<TaoSolver> _tao;
     
-    bool preconditioner_set;
-
-    
-};
-}
+    bool preconditioner_set;   
+  };
 //-----------------------------------------------------------------------------
-//#undef __FUNCT__
-//#define __FUNCT__ "TAOFormFunctionGradientQuadraticProblem"
 /// Computes the value of the objective function and its gradient. 
 
-PetscErrorCode TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
+PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
 
 //-----------------------------------------------------------------------------
-
-//#undef __FUNCT__
-//#define __FUNCT__ "TAOFormHessianQuadraticProblem"
 /// Computes the hessian of the quadratic objective function 
 /// Notice that the objective function in this problem is quadratic (therefore a constant hessian). 
 
-PetscErrorCode TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
+PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
 
 //-----------------------------------------------------------------------------
 //#undef __FUNCT__
@@ -203,9 +195,9 @@ PetscErrorCode TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *H
 //	gnorm 	- the square of the gradient norm, duality gap, or other measure indicating distance from optimality.
 //	cnorm 	- the infeasibility of the current solution with regard to the constraints.
 //	xdiff 	- the step length or trust region radius of the most recent iterate. 
-PetscErrorCode TAOMonitor(TaoSolver tao, void *ctx);
-
+PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx);
 //-----------------------------------------------------------------------------
+}
 #endif
 
 #endif
