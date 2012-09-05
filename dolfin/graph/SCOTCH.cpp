@@ -386,5 +386,23 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
+{
+  dolfin_error("SCOTCH.cpp",
+               "re-order graph using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
+  std::vector<uint> x;
+  return x;
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_renumbering(const Graph& graph,
+                                 std::vector<uint>& permutation,
+                                 std::vector<uint>& inverse_permutation)
+{
+  dolfin_error("SCOTCH.cpp",
+               "re-order graph using SCOTCH",
+               "DOLFIN has been configured without support for SCOTCH");
+}
+//-----------------------------------------------------------------------------
 
 #endif

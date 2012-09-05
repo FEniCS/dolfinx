@@ -93,6 +93,33 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph
   return map;
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const std::vector<std::vector<uint> >& graph)
+{
+  // Typedef for Boost undirected graph
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
+
+  // Graph size
+  const uint n = graph.size();
+
+  // Build Boost graph
+  UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
+
+  // Renumber graph
+  std::vector<uint> inv_perm(n);
+  boost::king_ordering(boost_graph, inv_perm.rbegin());
+
+  // Boost vertex -> index map
+  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
+
+  // Build old-to-new vertex map
+  std::vector<dolfin::uint> map(n);
+  for (uint i = 0; i < n; ++i)
+    map[boost_index_map[inv_perm[i]]] = i;
+
+  return map;
+}
+//-----------------------------------------------------------------------------
 std::vector<dolfin::uint>
   BoostGraphRenumbering::compute_minimum_degree(const Graph& graph, const int delta)
 {
@@ -126,15 +153,15 @@ std::vector<dolfin::uint>
   return map;
 }
 //-----------------------------------------------------------------------------
-template<typename T>
-T BoostGraphRenumbering::build_undirected_graph(const Graph& graph)
+template<typename T, typename X>
+T BoostGraphRenumbering::build_undirected_graph(const X& graph)
 {
   // Graph size
   const uint n = graph.size();
 
   // Build Boost graph
   T boost_graph(n);
-  std::vector<graph_set_type>::const_iterator vertex;
+  typename X::const_iterator vertex;
   graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
@@ -149,15 +176,15 @@ T BoostGraphRenumbering::build_undirected_graph(const Graph& graph)
   return boost_graph;
 }
 //-----------------------------------------------------------------------------
-template<typename T>
-T BoostGraphRenumbering::build_directed_graph(const Graph& graph)
+template<typename T, typename X>
+T BoostGraphRenumbering::build_directed_graph(const X& graph)
 {
   // Graph size
   const uint n = graph.size();
 
   // Build Boost graph
   T boost_graph(n);
-  std::vector<graph_set_type>::const_iterator vertex;
+  typename X::const_iterator vertex;
   graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {

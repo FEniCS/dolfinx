@@ -110,12 +110,6 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-# Disable strict checks that fail for inlcuded 3rd party libraries
-CHECK_CXX_COMPILER_FLAG(-Wno-long-long HAVE_DISABLE_PEDANTIC_CHECKS)
-if (HAVE_DISABLE_PEDANTIC_CHECKS)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wno-long-long ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-endif()
-
 CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
 if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
@@ -155,8 +149,14 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Disable some warnings for Intel compilers
-if(${CMAKE_CXX_COMPILER} MATCHES "icpc")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
+endif()
+
+# Set system include flags to get around CMake bug on OSX
+# See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 endif()
 
 #------------------------------------------------------------------------------

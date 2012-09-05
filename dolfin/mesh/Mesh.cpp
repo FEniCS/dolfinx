@@ -362,25 +362,69 @@ Mesh::color(std::vector<uint> coloring_type) const
 void Mesh::intersected_cells(const Point& point,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(point, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(point, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    if (cell.intersects(point))
+      cells.insert(0);
+
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<Point>& points,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(points, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(points, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
+    {
+      if (cell.intersects(*p))
+	cells.insert(0);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const MeshEntity & entity,
                              std::vector<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entity, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(entity, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0); 
+    if (cell.intersects(entity))
+      cells.push_back(0);
+  }    
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entities, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(entities, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0); 
+    for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); 
+	 entity != entities.end(); ++entity)
+    {
+      if (cell.intersects(*entity))
+	cells.insert(0);
+    }
+  }    
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const Mesh& another_mesh,
@@ -390,8 +434,14 @@ void Mesh::intersected_cells(const Mesh& another_mesh,
 }
 //-----------------------------------------------------------------------------
 int Mesh::intersected_cell(const Point& point) const
-{
-  return _intersection_operator.any_intersected_entity(point);
+{   
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    return  _intersection_operator.any_intersected_entity(point);
+
+  // Num cells == 1
+  const Cell cell(*this, 0);
+  return cell.intersects(point) ? 0 : -1;
 }
 //-----------------------------------------------------------------------------
 Point Mesh::closest_point(const Point& point) const
@@ -401,7 +451,13 @@ Point Mesh::closest_point(const Point& point) const
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::closest_cell(const Point & point) const
 {
-  return _intersection_operator.closest_cell(point);
+  // CGAL exits with an assertion error whilst performing
+  // the closest cell query if num_cells() == 1
+  if (num_cells() > 1)
+    return _intersection_operator.closest_cell(point);
+
+  // Num cells == 1
+  return 0;
 }
 //-----------------------------------------------------------------------------
 std::pair<Point,dolfin::uint>

@@ -27,7 +27,7 @@
 
 //-----------------------------------------------------------------------------
 void dolfin::mark(dolfin::MeshFunction<bool>& markers,
-                  const dolfin::Vector& indicators,
+                  const dolfin::MeshFunction<double>& indicators,
                   const std::string strategy,
                   const double fraction)
 {
@@ -56,7 +56,7 @@ void dolfin::mark(dolfin::MeshFunction<bool>& markers,
 }
 //-----------------------------------------------------------------------------
 void dolfin::dorfler_mark(dolfin::MeshFunction<bool>& markers,
-                          const dolfin::Vector& indicators,
+                          const dolfin::MeshFunction<double>& indicators,
                           const double fraction)
 {
   // Extract mesh
@@ -65,17 +65,20 @@ void dolfin::dorfler_mark(dolfin::MeshFunction<bool>& markers,
   // Initialize marker mesh function
   markers.set_all(false);
 
-  // Compute sum of error indicators
-  const double eta_T_H = indicators.sum();
+  // Sort cell indices by indicators and compute sum of error
+  // indicators
+  std::map<double, uint> sorted_cells;
+  std::map<double, uint>::reverse_iterator it;
+  double eta_T_H = 0;
+  for (dolfin::uint i = 0; i < mesh.num_cells(); i++)
+  {
+    const double value = indicators[i];
+    eta_T_H += value;
+    sorted_cells[value] = i;
+  }
 
   // Determine stopping criterion for marking
   const double stop = fraction*eta_T_H;
-
-  // Sort cell indices by indicators
-  std::map<double, uint> sorted_cells;
-  std::map<double, uint>::reverse_iterator it;
-  for (dolfin::uint i = 0; i < mesh.num_cells(); i++)
-    sorted_cells[indicators[i]] = i;
 
   // Mark using Dorfler algorithm
   double eta_A = 0.0;
