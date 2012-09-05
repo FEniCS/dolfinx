@@ -79,7 +79,7 @@ void SubSystemsManager::init_mpi()
 
   // Init MPI with highest level of thread support and take responsibility
   char* c;
-  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE, false);
+  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else
   // Do nothing
@@ -87,7 +87,7 @@ void SubSystemsManager::init_mpi()
 }
 //-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi(int argc, char* argv[],
-                                int required_thread_level, bool verbose)
+                                int required_thread_level)
 {
   #ifdef HAS_MPI
   if (MPI::Is_initialized())
@@ -98,7 +98,8 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  if (verbose)
+  const bool print_thread_support = dolfin::parameters["print_mpi_thread_support_level"];
+  if (print_thread_support)
   {
     switch (provided)
       {
@@ -115,7 +116,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
         printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
         break;
       default:
-        printf("MPI_Init_thread level = ???\n");
+        printf("MPI_Init_thread level = unkown\n");
       }
   }
 
@@ -127,7 +128,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-#ifdef HAS_PETSC
+  #ifdef HAS_PETSC
   if ( singleton().petsc_initialized )
     return;
 
@@ -140,11 +141,11 @@ void SubSystemsManager::init_petsc()
 
   // Initialize PETSc
   init_petsc(argc, argv);
-#else
+  #else
   dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
@@ -178,12 +179,14 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
   if (mpi_initialized() and !mpi_init_status)
+  {
     singleton().control_mpi = false;
-#else
-  dolfin_error("SubSystemsManager.cpp",
+    #else
+    dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-#endif
+    #endif
+  }
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize()

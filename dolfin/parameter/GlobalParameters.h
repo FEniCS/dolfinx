@@ -64,6 +64,9 @@ namespace dolfin
       // DOF reordering
       p.add("reorder_dofs", true);
 
+      // Print the level of thread support provided by the MPI library
+      p.add("print_mpi_thread_support_level", false);
+
       // Graph partitioner
       std::set<std::string> allowed_mesh_partitioners;
       std::string default_mesh_partitioner("ParMETIS");
