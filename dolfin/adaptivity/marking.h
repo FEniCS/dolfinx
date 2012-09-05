@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-11
-// Last changed: 2011-09-20
+// Last changed: 2012-09-03
 
 #ifndef __MARKING_H
 #define __MARKING_H
@@ -35,7 +35,7 @@ namespace dolfin
   ///     markers (_MeshFunction_ <bool>)
   ///         the cell markers (to be computed)
   ///
-  ///     indicators (_Vector_)
+  ///     indicators (_MeshFunction_ <double>)
   ///         error indicators (one per cell)
   ///
   ///     strategy (std::string)
@@ -43,8 +43,10 @@ namespace dolfin
   ///
   ///     fraction (double)
   ///         the marking fraction
-  void mark(MeshFunction<bool>& markers, const Vector& indicators,
-            const std::string strategy, const double fraction);
+  void mark(MeshFunction<bool>& markers,
+            const dolfin::MeshFunction<double>& indicators,
+            const std::string strategy,
+            const double fraction);
 
   /// Mark cells using Dorfler marking
   ///
@@ -52,12 +54,13 @@ namespace dolfin
   ///     markers (_MeshFunction_ <bool>)
   ///         the cell markers (to be computed)
   ///
-  ///     indicators (_Vector_)
+  ///     indicators (_MeshFunction_ <double>)
   ///         error indicators (one per cell)
   ///
   ///     fraction (double)
   ///         the marking fraction
-  void dorfler_mark(MeshFunction<bool>& markers, const Vector& indicators,
+  void dorfler_mark(MeshFunction<bool>& markers,
+                    const dolfin::MeshFunction<double>& indicators,
                     const double fraction);
 
 }

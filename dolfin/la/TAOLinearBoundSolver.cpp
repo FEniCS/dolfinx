@@ -81,11 +81,15 @@ TAOLinearBoundSolver::preconditioners()
   return PETScPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
-TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method)
+TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method, std::string ksp_type, std::string pc_type) 
+        : preconditioner(new PETScPreconditioner(pc_type)), preconditioner_set(false) 
 {
   // Set parameter values
   parameters = default_parameters();
   init(method);  
+  // Set ksp type
+  if (ksp_type != "default");
+  KSPSetType(*_ksp, _ksp_methods.find(ksp_type)->second);
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
@@ -127,6 +131,13 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
   set_operators(_A,_b);
   dolfin_assert(A->mat());
   dolfin_assert(b->vec());
+   
+  // Set preconditioner
+  if (preconditioner && !preconditioner_set)
+  {
+    preconditioner->set(*krylov_solver);
+    preconditioner_set = true;
+  }
   
   // Set initial vector  
   dolfin_assert(*_tao)
@@ -192,20 +203,28 @@ boost::shared_ptr<TaoSolver> TAOLinearBoundSolver::tao() const
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::read_parameters()
 {
-  set_solver(parameters["method"]);
-  TaoSetTolerances(*_tao, parameters["fatol"],parameters["frtol"],parameters["gatol"],parameters["grtol"],parameters["gttol"]);
-  krylov_solver->set_petsc_options()
-  preconditioner->set(*krylov_solver)
-   //set_ksp_options();
+  // Set tao method
+  TaoSetTolerances(*_tao, 
+                            parameters["function_absolute_tol"],
+                            parameters["function_relative_tol"],
+                            parameters["gradient_absolute_tol"],
+                            parameters["gradient_relative_tol"],
+                            parameters["gradient_t_tol"]
+                   );
+  // Set krylov solver parameters
+  (krylov_solver->parameters).update(parameters("krylov_solver"));
+  set_ksp_options();
+  // Set preconditioner for the krylov solver
+  preconditioner->set(*krylov_solver);
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::init(const std::string& method)
 {
   // Check that nobody else shares this solver
-  if (_tao && !_tao.unique())
+  if ((_tao && !_tao.unique()) || (krylov_solver && !krylov_solver.unique()) || (_ksp && !_ksp.unique()) )
   {
     dolfin_error("TAOLinearBoundSolver.cpp",
-                 "initialize PETSc Krylov solver",
+                 "initialize TAO solver",
                  "More than one object points to the underlying PETSc object");
   }
 
@@ -218,49 +237,45 @@ void TAOLinearBoundSolver::init(const std::string& method)
   else
     TaoCreate(PETSC_COMM_SELF, _tao.get());
   
-  // Set solver type
+  // Set tao solver
   set_solver(method);
+  
+  // Obtain the ksp from tao 
+  KSP ksp;
+  TaoGetKSP(*_tao, &ksp);
+  _ksp = reference_to_no_delete_pointer(ksp);
+  
+  //create a PETScKrylovSolver related to tao
+  PETScKrylovSolver dolfin_ksp(_ksp);
+  krylov_solver = reference_to_no_delete_pointer(dolfin_ksp);
+}    
 
-  KSP tao_ksp;
-  TaoGetKSP(*_tao, &tao_ksp);
-  //_ksp = reference_to_no_delete_pointer(tao_ksp);
-  PETScKrylovSolver PKS(reference_to_no_delete_pointer(tao_ksp));
-  krylov_solver=reference_to_no_delete_pointer(PKS);
-}   
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_ksp_options()
-{
-  // Get TAO KSP solver
-  KSP tao_ksp;
-  TaoGetKSP(*_tao,&tao_ksp);
-  
-  // Set Type
-  const std::string& method= parameters("krylov_solver")["method"];
-  if (method != "default")
-    KSPSetType(tao_ksp, _ksp_methods.find(method)->second);
-  
+// This function in taken from the private function PETScKrylovSolver::set_petsc_options(), friendship could be added
+{  
   // GMRES restart parameter
-  KSPGMRESSetRestart(tao_ksp, parameters("krylov_solver")["gmres_restart"]);
+  KSPGMRESSetRestart(*_ksp, parameters("krylov_solver")("gmres")["restart"]);
 
   // Non-zero initial guess
   const bool nonzero_guess = parameters("krylov_solver")["nonzero_initial_guess"];
   if (nonzero_guess)
-    KSPSetInitialGuessNonzero(tao_ksp, PETSC_TRUE);
+    KSPSetInitialGuessNonzero(*_ksp, PETSC_TRUE);
   else
-    KSPSetInitialGuessNonzero(tao_ksp, PETSC_FALSE);
+    KSPSetInitialGuessNonzero(*_ksp, PETSC_FALSE);
 
   if (parameters("krylov_solver")["monitor_convergence"])
-    KSPMonitorSet(tao_ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
     
   // Set tolerances
-  KSPSetTolerances(tao_ksp,
+  KSPSetTolerances(*_ksp,
                    parameters("krylov_solver")["relative_tolerance"],
                    parameters("krylov_solver")["absolute_tolerance"],
                    parameters("krylov_solver")["divergence_limit"],
                    parameters("krylov_solver")["maximum_iterations"]);
 }
 //-------------------------------------------------------------------------------------------
-// Auxiliary functions required by Tao to assemble gradient and hessian of the goal functional 
+// Auxiliary non-member functions required by Tao to assemble gradient and hessian of the goal functional 
 // This is implemented only for a quadratic functional (the hessian is constant)
 //-------------------------------------------------------------------------------------------
 PetscErrorCode TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr)

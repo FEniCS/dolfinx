@@ -24,6 +24,7 @@
 #include <tao.h>
 #include <taosolver.h>
 #include "PETScObject.h"
+#include "KrylovSolver.h"
 
 namespace dolfin
 {
@@ -80,7 +81,8 @@ namespace dolfin
   {
   public:
     /// Create TAO bound constrained solver 
-    TAOLinearBoundSolver(std::string method="default");
+    
+    TAOLinearBoundSolver(std::string method="default", std::string ksp_type="default", std::string pc_type="default");
 
     /// Destructor
     ~TAOLinearBoundSolver();
@@ -119,25 +121,18 @@ namespace dolfin
     {
       Parameters p("tao_solver");
 
-      p.add("method","tao_tron");
       p.add("monitor",false);
       p.add("report",true);
-      p.add("fatol",1.0e-10);
-      p.add("frtol",1.0e-10);
-      p.add("gatol",1.0e-8);
-      p.add("grtol",1.0e-8);
+      p.add("function_absolute_tol",1.0e-10);
+      p.add("function_relative_tol",1.0e-10);
+      p.add("gradient_absolute_tol",1.0e-8);
+      p.add("gradient_relative_tol",1.0e-8);
       p.add("gttol",0.);
       
-      Parameters q("krylov_solver");
-      q.add("method","default");
-      q.add("nonzero_initial_guess",false);
-      q.add("gmres_restart",30);
-      q.add("monitor_convergence",false);
-      q.add("relative_tolerance",1.0e-10);
-      q.add("absolute_tolerance",1.0e-10);
-      q.add("divergence_limit",10.0e+7);
-      q.add("maximum_iterations",100);
-      p.add(q);
+      Parameters ksp("krylov_solver");
+      ksp = KrylovSolver::default_parameters();
+      p.add(ksp);
+      
       
       return p;
     }
@@ -175,11 +170,13 @@ namespace dolfin
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
     // Petsc krylov solver
-    //boost::shared_ptr<KSP> _ksp;
+    boost::shared_ptr<KSP> _ksp;
     
     // Tao solver pointer
     boost::shared_ptr<TaoSolver> _tao;
-    // TaoSolver tao;
+    
+    bool preconditioner_set;
+
     
 };
 }
