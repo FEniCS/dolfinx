@@ -37,6 +37,7 @@ namespace dolfin
   class PETScVector;
   class PETScPreconditioner;
   class PETScKrylovSolver;
+  class PETScKSPDeleter;
 
   /// This class provides bound constrained solver for a linear system defined by PETSc matrices and vectors:
   ///
@@ -49,10 +50,11 @@ namespace dolfin
   /// - "solver"
   ///
   /// This parameter controls the type of minimization algorithm used by TAO .
-  /// Possible values for bound constrained solvers are
+  /// Possible values for bound constrained solvers are:
   ///	tao_tron	- Newton Trust Region method for bound constrained minimization
-  ///	tao_gpcg	- Newton Trust Region method for quadratic bound constrained minimization
+  ///	tao_gpcg	- Gradient Projection Conjugate Gradient for quadratic bound constrained minimization
   ///   tao_blmvm	- Limited memory variable metric method for bound constrained minimization + tao_pounders - Model-based algorithm pounder extended for nonlinear least squares
+  ///   The method "tao_gpcg" is set to default
   ///
   ///  - "monitor"
   /// This parameter controls the visualization of the convergence tests at each iteration of the solver. 
@@ -81,8 +83,9 @@ namespace dolfin
   {
   public:
     /// Create TAO bound constrained solver 
-    
-    TAOLinearBoundSolver(std::string method="default", std::string ksp_type="default", std::string pc_type="default");
+    TAOLinearBoundSolver(std::string method = "default",
+                         std::string ksp_type = "default", 
+                         std::string pc_type = "default");
 
     /// Destructor
     ~TAOLinearBoundSolver();
@@ -127,12 +130,11 @@ namespace dolfin
       p.add("function_relative_tol",1.0e-10);
       p.add("gradient_absolute_tol",1.0e-8);
       p.add("gradient_relative_tol",1.0e-8);
-      p.add("gttol",0.);
+      p.add("gradient_t_tol",0.);
       
       Parameters ksp("krylov_solver");
       ksp = KrylovSolver::default_parameters();
       p.add(ksp);
-      
       
       return p;
     }
@@ -140,8 +142,6 @@ namespace dolfin
     // Operator (the matrix) and vectors
     boost::shared_ptr<const PETScMatrix> A;
     boost::shared_ptr<const PETScVector> b;   
-    boost::shared_ptr<PETScKrylovSolver> krylov_solver;
-
 
   private:
     
@@ -169,9 +169,6 @@ namespace dolfin
     // Petsc preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    // Petsc krylov solver
-    boost::shared_ptr<KSP> _ksp;
-    
     // Tao solver pointer
     boost::shared_ptr<TaoSolver> _tao;
     

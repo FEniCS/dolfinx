@@ -38,7 +38,7 @@
 #include "petscksp.h"
 #include "petscvec.h" 
 #include "petscmat.h"
-#include "TAOLinearBoundSolver.h"
+//#include "TAOLinearBoundSolver.h"
 
 static  char help[]=
 "This example  solve with TAO a Poisson equation assembled with FEniCS";
@@ -155,9 +155,9 @@ int main(int argc, char **argv)
   
   
   /* The TAO code begins here */
-  TAOSolver TAOLinearBoundSolver;
-  TaoSolver.solve(A, x, b, xl, xu);
-  plot(usol);
-   return 0;
+  TAOLinearBoundSolver TAOSolver;
+  TAOSolver.solve(A, x, b, xl, xu);
+  //plot(usol);
+  return 0;
 }
 

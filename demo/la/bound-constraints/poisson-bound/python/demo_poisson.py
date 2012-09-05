@@ -93,4 +93,4 @@ solver.solve(A,xsol,b,xl,xu)
 #file = File("poisson.pvd")
 #file << usol
 # Plot solution
-plot(usol, interactive=True)
+plot(usol)#, interactive=True)
