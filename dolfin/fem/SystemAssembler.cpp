@@ -159,7 +159,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         interior_facet_domains = L.interior_facet_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh));
+      if (mesh.domains().facet_domains(mesh))
         warning("Ignoring interior facet domains defined as part of mesh in system assembler.");
     }
     else
