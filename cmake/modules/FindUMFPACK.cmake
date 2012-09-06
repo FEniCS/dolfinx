@@ -28,6 +28,15 @@ find_library(UMFPACK_LIBRARY umfpack
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
+#  Check for SUITESPARSE library on Apple
+if (APPLE)
+  find_library(SUITESPARSE_LIBRARY SuiteSparse
+    PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
+    DOC "The SUITESPARSE library"
+  )
+  mark_as_advanced(SUITESPARSE_LIBRARY)
+endif()
+
 # Collect libraries
 if (AMD_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${AMD_LIBRARIES})
@@ -37,6 +46,10 @@ if (BLAS_FOUND)
 endif()
 if (CHOLMOD_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${CHOLMOD_LIBRARIES})
+endif()
+
+if (SUITESPARSE_LIBRARY)
+  set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${SUITESPARSE_LIBRARY})
 endif()
 
 find_program(GFORTRAN_EXECUTABLE gfortran)
