@@ -103,33 +103,67 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    if (a.cell_domains_shared_ptr().get() || L.cell_domains_shared_ptr().get())
+    if (a.cell_domains_shared_ptr() || L.cell_domains_shared_ptr())
     {
-      warning("Ignoring cell domains defined as part of form in system assembler.");
+      if (a.cell_domains_shared_ptr() && L.cell_domains_shared_ptr())
+      {
+        if (a.cell_domains_shared_ptr() != L.cell_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
+      }
+      else if (a.cell_domains_shared_ptr())
+        cell_domains = a.cell_domains_shared_ptr().get();
+      else
+        cell_domains = L.cell_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh).get());
+        warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
-    cell_domains = mesh.domains().cell_domains(mesh).get();
+    else
+      cell_domains = mesh.domains().cell_domains(mesh).get();
   }
 
   // Get exterior facet domains
   if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
-    if (a.exterior_facet_domains_shared_ptr().get() ||
-        L.exterior_facet_domains_shared_ptr().get())
+    if (a.exterior_facet_domains_shared_ptr() || L.exterior_facet_domains_shared_ptr())
     {
-      warning("Ignoring exterior facet domains defined as part of form in system assembler.");
+      if (a.exterior_facet_domains_shared_ptr() && L.exterior_facet_domains_shared_ptr())
+      {
+        if (a.exterior_facet_domains_shared_ptr() != L.exterior_facet_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
+      }
+      else if (a.exterior_facet_domains_shared_ptr())
+        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+      else
+        exterior_facet_domains = L.exterior_facet_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh).get());
+        warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
     }
-    exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
+    else
+      exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
   // Get interior facet domains
   if (!interior_facet_domains || interior_facet_domains->empty())
   {
-    if (a.interior_facet_domains_shared_ptr().get() ||
-        L.interior_facet_domains_shared_ptr().get())
+    if (a.interior_facet_domains_shared_ptr() || L.interior_facet_domains_shared_ptr())
     {
-      warning("Ignoring interior facet domains defined as part of form in system assembler.");
+      if (a.interior_facet_domains_shared_ptr() && L.interior_facet_domains_shared_ptr())
+      {
+        if (a.interior_facet_domains_shared_ptr() != L.interior_facet_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
+      }
+      else if (a.interior_facet_domains_shared_ptr())
+        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+      else
+        interior_facet_domains = L.interior_facet_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh));
+        warning("Ignoring interior facet domains defined as part of mesh in system assembler.");
     }
-    interior_facet_domains = mesh.domains().facet_domains(mesh).get();
+    else
+      interior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
   // Check forms
