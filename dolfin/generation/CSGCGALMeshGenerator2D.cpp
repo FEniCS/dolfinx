@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-05-10
-// Last changed: 2012-08-08
+// Last changed: 2012-09-06
 
 #include <vector>
 #include <cmath>
@@ -404,7 +406,18 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   const uint gdim = cdt.finite_vertices_begin()->point().dimension();
   const uint tdim = cdt.dimension();
   const uint num_vertices = cdt.number_of_vertices();
-  const uint num_cells = cdt.number_of_faces();
+
+  // Count valid cells
+  unsigned int num_cells = 0;
+  CDT::Finite_faces_iterator cgal_cell;
+  for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
+  {
+    // Add cell if it is in the domain
+    if (cgal_cell->is_in_domain())
+    {
+      num_cells++;
+    }
+  }
 
   // Create a MeshEditor and open
   dolfin::MeshEditor mesh_editor;
@@ -431,10 +444,10 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     // Attach index to vertex and increment
     cgal_vertex->info() = vertex_index++;
   }
+  dolfin_assert(vertex_index == num_vertices);
 
   // Add cells to mesh
   unsigned int cell_index = 0;
-  CDT::Finite_faces_iterator cgal_cell;
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
@@ -446,6 +459,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            cgal_cell->vertex(2)->info());
     }
   }
+  dolfin_assert(cell_index == num_cells);
 
   // Close mesh editor
   mesh_editor.close();

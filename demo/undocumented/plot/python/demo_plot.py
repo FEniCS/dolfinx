@@ -19,6 +19,7 @@
 #
 # Modified by Fredrik Valdmanis 2012
 # Modified by Benjamin Kehlet 2012
+# Modified by Joachim B Haga 2012
 #
 # First added:  2007-05-29
 # Last changed: 2012-08-31
