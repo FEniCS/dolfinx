@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Garth N. Wells
+// Copyright (C) 2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,47 +15,44 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
 // Modified by Johannes Ring, 2012
 //
-// First added:  2012-01-05
+// First added:  2012-04-11
 // Last changed: 2012-05-03
 
-#ifndef __DOLFIN_POLYGONALMESHGENERATOR_H
-#define __DOLFIN_POLYGONALMESHGENERATOR_H
+#ifndef __CSG_GEOMETRY_H
+#define __CSG_GEOMETRY_H
 
-#ifdef HAS_CGAL
-
-#include <vector>
-#include <dolfin/mesh/Point.h>
+#include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
-  class Mesh;
 
-  /// Polygonal mesh generator that uses CGAL
+  /// Geometry described by Constructive Solid Geometry (CSG)
 
-  class PolygonalMeshGenerator
+  class CSGGeometry : public Variable
   {
   public:
 
-    /// Generate mesh of a polygonal domain described by domain vertices
-    static void generate(Mesh& mesh, const std::vector<Point>& vertices,
-                         double cell_size);
+    /// Constructor
+    CSGGeometry();
 
-    /// Generate mesh of a domain described by a CGAL polygon
-    template <typename T>
-    static void generate(Mesh& mesh, const T& polygon, double cell_size);
+    /// Destructor
+    virtual ~CSGGeometry();
 
-  private:
+    /// Return dimension of geometry
+    virtual uint dim() const = 0;
 
-    // Check that input polygon is convex
-    template <typename T>
-    static bool is_convex(const std::vector<T>& vertices);
+    /// Informal string representation
+    virtual std::string str(bool verbose) const = 0;
 
+    enum Type { Box, Sphere, Cone, Tetrahedron, Circle, Ellipse, Rectangle, Polygon, Union, Intersection, Difference };
+    virtual Type getType() const = 0;
   };
 
 }
 
-#endif
 #endif
