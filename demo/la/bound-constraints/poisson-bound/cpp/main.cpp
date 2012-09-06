@@ -64,7 +64,7 @@ class dUdN : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = sin(5*x[0]);
+    values[0] = 10*sin(5*x[0]);
   }
 };
 
@@ -96,14 +96,10 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = .2*sin(x[0]);
+    values[0] = .1*x[1];
   }
 
 };
-
-/* User-defined routines */
-//static PetscErrorCode Monitor(TaoSolver, void*);
-//static PetscErrorCode ConvergenceTest(TaoSolver, void*);
 
 int main(int argc, char **argv)
 { 
@@ -132,16 +128,13 @@ int main(int argc, char **argv)
 
   PETScVector& x = (*usol.vector()).down_cast<PETScVector>(); //Create the PetscVector associated to the function
   PETScMatrix A;
-  PETScVector b;//ierr = VecCopy(x,*UP.vec()); CHKERRQ(ierr);
+  PETScVector b;
   
   assemble(A, a);
   assemble(b, L);
   bc.apply(A);
   bc.apply(b);
-  
-  //PETScVector xl=x;
-  //PETScVector xu=x;
-  
+    
   // Interpolate expression into V0
   UpperBound xu_exp;
   Function xu_f(V);
@@ -152,12 +145,12 @@ int main(int argc, char **argv)
   Function xl_f(V);
   xl_f.interpolate(xl_exp);  
   PETScVector& xl = (*xl_f.vector()).down_cast<PETScVector>(); //Create the PetscVector associated to the function
-  
-  
+    
   /* The TAO code begins here */
-  TAOLinearBoundSolver TAOSolver;
+  TAOLinearBoundSolver TAOSolver("tao_gpcg");
   TAOSolver.solve(A, x, b, xl, xu);
-  //plot(usol);
+  plot(usol);
+  interactive();
   return 0;
 }
 

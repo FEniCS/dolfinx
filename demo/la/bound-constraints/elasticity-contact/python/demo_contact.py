@@ -35,7 +35,7 @@ F = inner(sigma(eps(u)), eps(w))*dx - dot(b, w)*dx
 a, L = lhs(F), rhs(F)
 
 # Boundary condition (null horizontal displacement of the center)
-tol=0.001
+tol=mesh.hmin()/4
 def center(x):
     return x[0]**2+x[1]**2 < tol**2
 bc = DirichletBC(V.sub(0), 0., center,method="pointwise")
@@ -53,10 +53,10 @@ u_max = interpolate(constraint_u, V)
 usol=Function(V)
 
 # Create the TAOLinearBoundSolver
-solver=TAOLinearBoundSolver("tao_tron","gmres")
+solver=TAOLinearBoundSolver("tao_gpcg","gmres")
 
 #Set some parameters
-solver.parameters["monitor_convergence"]=True
+solver.parameters["monitor_convergence"]=False
 solver.parameters["report"]=True
 solver.parameters["krylov_solver"]["absolute_tolerance"] = 1e-8
 solver.parameters["krylov_solver"]["relative_tolerance"] = 1e-8
@@ -71,16 +71,17 @@ delta=project(usol-u_min,V)
 
 class ContactZone(SubDomain):
     def inside(self, x, on_boundary):
-        return (delta(x))[1] < 0.001 and on_boundary
+        return (delta(x))[1] < 0.0001 and on_boundary
 
 sub_domains = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
 sub_domains.set_all = 0
 contact_zone = ContactZone()
 contact_zone.mark(sub_domains,5)
 dsb = ds[sub_domains]
-one = interpolate(Constant(1.),FunctionSpace(mesh,'CG',1))
-area = assemble(one*dsb(5))
+one = interpolate(Constant(1.),FunctionSpace(mesh,'DG',0))
+area = assemble(one*dsb(5),mesh=mesh)
 print "The contact area is ", area
+
 
 # Save solution in VTK format
 file = File("displacement.pvd")

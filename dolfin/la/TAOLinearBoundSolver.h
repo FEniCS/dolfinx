@@ -53,7 +53,8 @@ namespace dolfin
   /// Possible values for bound constrained solvers are:
   ///	tao_tron	- Newton Trust Region method for bound constrained minimization
   ///	tao_gpcg	- Gradient Projection Conjugate Gradient for quadratic bound constrained minimization
-  ///   tao_blmvm	- Limited memory variable metric method for bound constrained minimization + tao_pounders - Model-based algorithm pounder extended for nonlinear least squares
+  ///   tao_bqpip   - Interior Point Newton Algorithm"
+  //    tao_blmvm	- Limited memory variable metric method for bound constrained minimization + tao_pounders - Model-based algorithm pounder extended for nonlinear least squares
   ///   The method "tao_gpcg" is set to default
   ///
   ///  - "monitor"
@@ -105,9 +106,9 @@ namespace dolfin
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
         
     // Set the solver type
-	void set_solver(std::string solver);
+	void set_solver(const std::string&);
 	    	
-	// Return PETSc KSP pointer
+	// Return TAO solver pointer
     boost::shared_ptr<TaoSolver> tao() const;
     
     /// Return a list of available Tao solver methods
@@ -124,13 +125,14 @@ namespace dolfin
     {
       Parameters p("tao_solver");
 
-      p.add("monitor_convergence",false);
-      p.add("report",true);
-      p.add("function_absolute_tol",1.0e-10);
-      p.add("function_relative_tol",1.0e-10);
-      p.add("gradient_absolute_tol",1.0e-8);
-      p.add("gradient_relative_tol",1.0e-8);
-      p.add("gradient_t_tol",0.);
+      p.add("monitor_convergence"    , false   );
+      p.add("report"                 , false   );
+      p.add("function_absolute_tol"  , 1.0e-10 );
+      p.add("function_relative_tol"  , 1.0e-10 );
+      p.add("gradient_absolute_tol"  , 1.0e-8  );
+      p.add("gradient_relative_tol"  , 1.0e-8  );
+      p.add("gradient_t_tol"         , 0.      );
+      p.add("error_on_nonconvergence", true    );
       
       Parameters ksp("krylov_solver");
       ksp = KrylovSolver::default_parameters();
@@ -139,26 +141,24 @@ namespace dolfin
       return p;
     }
     
-    // Operator (the matrix) and the vector
-    boost::shared_ptr<const PETScMatrix> A;
-    boost::shared_ptr<const PETScVector> b;   
+    // Return Matrix shared pointer
+    boost::shared_ptr<const PETScMatrix> get_matrix() const;
+
+    // Return load vector shared pointer
+    boost::shared_ptr<const PETScVector> get_vector() const;
+
 
   private:
     
+        
     // Callback for changes in parameter values
     void read_parameters();
-
-    // Set tolerance
-    //void set_tolerances(double fatol, double frtol, double gatol, double grtol, double gttol);
 
     // Available ksp solvers 
     static const std::map<std::string, const KSPType> _ksp_methods;
 
     // Available tao solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
-    
-    // Available ksp solvers
-    //static const std::map<std::string, const KSPType> _ksp_methods;
     
     // Set options
     void set_ksp_options();
@@ -171,6 +171,10 @@ namespace dolfin
 
     // Tao solver pointer
     boost::shared_ptr<TaoSolver> _tao;
+    
+    // Operator (the matrix) and the vector
+    boost::shared_ptr<const PETScMatrix> A;
+    boost::shared_ptr<const PETScVector> b;   
     
     bool preconditioner_set;   
   };
@@ -186,8 +190,6 @@ PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, P
 PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
 
 //-----------------------------------------------------------------------------
-//#undef __FUNCT__
-//#define __FUNCT__ "TAOMonitor"
 //  Monitor the state of the solution at each iteration. The output printed to the screen is:
 //
 //	iterate 	- the current iterate number (>=0)

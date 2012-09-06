@@ -46,7 +46,7 @@ to solve bound constrained  problems
 # Corrado Maurini 
 #
 from dolfin import *
-
+set_log_level(PROGRESS)
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
@@ -85,12 +85,11 @@ usol=Function(V);
 xsol=usol.vector() # or xsol=down_cast(usol.vector())
 
 # Create the TAOLinearBoundSolver and solve the problem
-solver=TAOLinearBoundSolver()
+solver = TAOLinearBoundSolver("tao_blmvm","tfqmr","bjacobi")
+solver.parameters["monitor_convergence"]=True
+solver.parameters["report"]=True
 solver.solve(A,xsol,b,xl,xu)
 
-
-# Save solution in VTK format
-#file = File("poisson.pvd")
-#file << usol
 # Plot solution
-plot(usol)#, interactive=True)
+plot(usol)
+#interactive()
