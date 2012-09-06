@@ -90,6 +90,7 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
+  ///  axes           Boolean     False           Show axes
   ///  rescale        Boolean     True            Enable/disable recomputation
   ///                                             of the scalar to color mapping
   ///                                             on every iteration when performing
@@ -184,6 +185,7 @@ namespace dolfin
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
+      p.add("axes", false);
       p.add<double>("range_min");
       p.add<double>("range_max");
       p.add("rescale", true);
@@ -266,6 +268,9 @@ namespace dolfin
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
     void init();
+
+    // Has init been called
+    bool _initialized;
 
     // Set the title parameter from the name and label of the Variable to plot
     void set_title_from(const Variable &variable);

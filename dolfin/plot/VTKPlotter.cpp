@@ -72,6 +72,8 @@
 #include <vtkCylinderSource.h>
 #include <vtkObjectFactory.h>
 #include <vtkDepthSortPolyData.h>
+#include <vtkAxesActor.h>
+#include <vtkCaptionActor2D.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -166,8 +168,7 @@ namespace dolfin
 #endif
 
   public:
-
-    void init(VTKPlotter *parent, const Parameters &parameters)
+    PrivateVTKPipeline()
     {
       vtkMapper::GlobalImmediateModeRenderingOn();
 
@@ -184,7 +185,10 @@ namespace dolfin
 
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+    }
 
+    void init(VTKPlotter *parent, const Parameters &parameters)
+    {
       // Connect the parts
       _mapper->SetLookupTable(_lut);
       _scalarBar->SetLookupTable(_lut);
@@ -233,6 +237,25 @@ namespace dolfin
       labelprop->BoldOff();
       if (parameters["scalarbar"])
         _renderer->AddActor(_scalarBar);
+
+      if (parameters["axes"])
+      {
+        vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+        //axes->SetShaftTypeToCylinder();
+        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
+        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
+        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
+        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
+        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
+        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
+        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+        _renderer->AddActor(axes);
+      }
     }
 
     vtkRenderWindowInteractor* get_interactor()
@@ -495,22 +518,22 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
   _plottable(CreateVTKPlottable(mesh)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh))
+  _key(to_key(*mesh)),
+  _initialized(false)
 {
   parameters = default_mesh_parameters();
   set_title_from(*mesh);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
   _plottable(CreateVTKPlottable(function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*function))
+  _key(to_key(*function)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*function);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
@@ -518,78 +541,78 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
   _plottable(CreateVTKPlottable(expression, mesh)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*expression))
+  _key(to_key(*expression)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*expression);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
   _plottable(CreateVTKPlottable(wrapper)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*wrapper->expression()))
+  _key(to_key(*wrapper->expression())),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*wrapper->expression());
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   _plottable(CreateVTKPlottable(bc)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*bc))
+  _key(to_key(*bc)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*bc);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
   _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function))
+  _key(to_key(*mesh_function)),
+  _initialized(false)
 {
   // FIXME: A different lookuptable should be set when plotting MeshFunctions
   parameters = default_parameters();
   set_title_from(*mesh_function);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
   _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function))
+  _key(to_key(*mesh_function)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
   _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function))
+  _key(to_key(*mesh_function)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
   _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh_function))
+  _key(to_key(*mesh_function)),
+  _initialized(false)
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
-  init();
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
@@ -599,6 +622,8 @@ VTKPlotter::~VTKPlotter()
 //----------------------------------------------------------------------------
 void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
 {
+  init();
+
   // Abort if DOLFIN_NOPLOT is set to a nonzero value.
   if (no_plot)
   {
@@ -618,6 +643,7 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive(bool enter_eventloop)
 {
+  init();
 
   // Abort if DOLFIN_NOPLOT is set to a nonzero value, or if 'Q' has been pressed.
   if (no_plot || run_to_end)
@@ -635,6 +661,12 @@ void VTKPlotter::interactive(bool enter_eventloop)
 //----------------------------------------------------------------------------
 void VTKPlotter::init()
 {
+  if (_initialized)
+  {
+    return;
+  }
+  _initialized = true;
+
   // Check if environment variable DOLFIN_NOPLOT is set to a nonzero value
   {
     char *noplot_env;
@@ -876,8 +908,6 @@ bool VTKPlotter::keypressCallback()
 //----------------------------------------------------------------------------
 void VTKPlotter::write_png(std::string filename)
 {
-  dolfin_assert(vtk_pipeline);
-
   if (filename.empty()) {
     // We construct a filename from the given prefix and static counter.
     // If a file with that filename exists, the counter is incremented
