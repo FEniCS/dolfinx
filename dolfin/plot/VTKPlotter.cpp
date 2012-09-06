@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -100,8 +100,8 @@ namespace dolfin
     virtual void OnKeyPress()
     {
       // Only call keypressCallback for non-ascii, to avoid calling twice
-      std::string keysym = Interactor->GetKeySym();
-      if (keysym.size() == 1 || !_plotter->keypressCallback())
+      const char key = Interactor->GetKeyCode();
+      if (key || !_plotter->keypressCallback())
         vtkInteractorStyleTrackballCamera::OnKeyPress();
     }
 
@@ -245,10 +245,12 @@ namespace dolfin
       return _renderer;
     }
 
-    void scale_points(double factor)
+    void scale_points_lines(double factor)
     {
-      double cur_size = _actor->GetProperty()->GetPointSize();
-      _actor->GetProperty()->SetPointSize(cur_size*factor);
+      const double pt_size = _actor->GetProperty()->GetPointSize();
+      const double l_width = _actor->GetProperty()->GetLineWidth();
+      _actor->GetProperty()->SetPointSize(pt_size*factor);
+      _actor->GetProperty()->SetLineWidth(l_width*factor);
     }
 
     void set_helptext(std::string text)
@@ -300,6 +302,7 @@ namespace dolfin
       if (enter_eventloop)
       {
 #ifdef HAS_QT4
+        widget->show(); // Make sure it's shown, FIXME: how can it be hidden?
         qApp->exec();
 #else
         get_interactor()->Start();
@@ -432,9 +435,10 @@ namespace dolfin
       {
         // In 3D, only set this when necessary. It makes the visibility test
         // for cell/vertex labels ineffective.
+        std::cout << "NaN color set!\n";
         _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
       }
-      if (plottable.requires_depthsort())
+      if (depthsort)
       {
         std::cout << "Depth sort\n";
         _depthSort->SetInputConnection(plottable.get_output());
@@ -610,7 +614,7 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
     return;
   }
 
-  update(variable);
+  update_pipeline(variable);
 
   vtk_pipeline->render();
 
@@ -623,9 +627,11 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
 void VTKPlotter::interactive(bool enter_eventloop)
 {
 
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value
-  if (no_plot)
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value, or if 'Q' has been pressed.
+  if (no_plot || run_to_end)
+  {
     return;
+  }
 
   if (parameters["helptext"])
   {
@@ -729,9 +735,10 @@ std::string VTKPlotter::get_helptext()
   text << "   p: Toggle bounding box\n";
   text << "   v: Toggle vertex indices\n";
   text << "   w: Toggle wireframe/point/surface view\n";
-  text << "  +-: Resize points\n";
+  text << "  +-: Resize points and lines\n";
   text << "   h: Save plot to file\n";
   text << "   q: Continue\n";
+  text << "   Q: Continue to end\n";
   text << "\n";
 #ifdef HAS_QT4
   text << "Window control:\n";
@@ -747,34 +754,31 @@ bool VTKPlotter::keypressCallback()
   static const int ALT     = 0x200;
   static const int CONTROL = 0x300;
 
-  const std::string key = vtk_pipeline->get_interactor()->GetKeySym();
-  const int modifiers = (SHIFT   * !!vtk_pipeline->get_interactor()->GetShiftKey() +
-                         ALT     * !!vtk_pipeline->get_interactor()->GetAltKey()   +
-                         CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
+  std::string keysym = vtk_pipeline->get_interactor()->GetKeySym();
+  char key = vtk_pipeline->get_interactor()->GetKeyCode();
+  int modifiers = (SHIFT   * !!vtk_pipeline->get_interactor()->GetShiftKey() +
+                   ALT     * !!vtk_pipeline->get_interactor()->GetAltKey()   +
+                   CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
 
-  std::cout << "Keypress: " << key << '|' << modifiers << std::endl;
+  std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
 
-  if (key == "plus")
+  if (key && tolower(key) == key)
   {
-    vtk_pipeline->scale_points(1.25);
+    // Things like '+', '&' which are not really shifted
+    modifiers &= ~SHIFT;
+  }
+
+  switch (modifiers + tolower(key))
+  {
+  case '+':
+    vtk_pipeline->scale_points_lines(1.2);
     vtk_pipeline->render();
     return true;
-  }
-  if (key == "minus")
-  {
-    vtk_pipeline->scale_points(1.0/1.25);
+  case '-':
+    vtk_pipeline->scale_points_lines(1.0/1.2);
     vtk_pipeline->render();
     return true;
-  }
 
-
-  if (key.size() != 1)
-  {
-    return false;
-  }
-
-  switch (modifiers + tolower(key[0]))
-  {
   case 'h': // Save plot to file
     write_png();
     return true;
@@ -836,6 +840,7 @@ bool VTKPlotter::keypressCallback()
   case CONTROL + 's':
   case SHIFT + 's':
   case CONTROL + SHIFT + 's':
+    // shift/control may be mouse-interaction modifiers
     {
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *all_plotters)
@@ -860,7 +865,14 @@ bool VTKPlotter::keypressCallback()
       plotter->vtk_pipeline->close_window();
     }
     all_plotters->clear();
-    // FALL THROUGH
+    vtk_pipeline->stop_interaction();
+    return true;
+
+  case SHIFT + 'q':
+    run_to_end = true;
+    vtk_pipeline->stop_interaction();
+    return true;
+
   case 'q':
     vtk_pipeline->stop_interaction();
     return true;
@@ -892,7 +904,7 @@ void VTKPlotter::write_png(std::string filename)
 
   info("Saving plot to file: %s.png", filename.c_str());
 
-  update();
+  update_pipeline();
   vtk_pipeline->write_png(filename);
 }
 //----------------------------------------------------------------------------
@@ -975,7 +987,7 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtk_pipeline->add_actor(polygon_actor);
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::update(boost::shared_ptr<const Variable> variable)
+void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
 {
   if (!is_compatible(variable))
   {
@@ -1087,8 +1099,6 @@ void VTKPlotter::init()
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
 }
 
-void VTKPlotter::update(boost::shared_ptr<const Variable>) {}
-
 void VTKPlotter::plot               (boost::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive        (bool ){}
 void VTKPlotter::write_png          (std::string){}
@@ -1106,3 +1116,4 @@ void VTKPlotter::all_interactive() {}
 // Define the static members
 boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::all_plotters;
 int VTKPlotter::hardcopy_counter = 0;
+bool VTKPlotter::run_to_end = false;

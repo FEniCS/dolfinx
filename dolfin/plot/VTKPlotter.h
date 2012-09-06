@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -212,6 +212,13 @@ namespace dolfin
     /// Plot the object
     void plot(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
 
+    // FIXME: Deprecated? What should it do?
+    void update(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>())
+    {
+      warning("VTKPlotter::update is deprecated, use ::plot instead");
+      plot(variable);
+    }
+
     /// Make the current plot interactive
     void interactive(bool enter_eventloop = true);
 
@@ -244,7 +251,7 @@ namespace dolfin
 
   private:
 
-    void update(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
+    void update_pipeline(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
 
     // The pool of plotter objects. Objects register
     // themselves in the list when created and remove themselves when
@@ -289,6 +296,9 @@ namespace dolfin
     // list is not destroyed before the last VTKPlotter object is
     // destroyed.
     boost::shared_ptr<std::list<VTKPlotter*> > all_plotters_local_copy;
+
+    // Usually false, but if true ('Q' keyboard binding) then all event loops are skipped.
+    static bool run_to_end;
   };
 
 }
