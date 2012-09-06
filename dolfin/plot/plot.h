@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2007-05-02
-// Last changed: 2012-08-31
+// Last changed: 2012-09-06
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -28,6 +30,7 @@
 namespace dolfin
 {
 
+  class CSGGeometry;
   class DirichletBC;
   class Function;
   class Expression;
@@ -37,6 +40,10 @@ namespace dolfin
   class VTKPlotter;
 
   /// Simple built-in plot commands for plotting functions and meshes.
+
+  /// Make the current plots interactive. If really is set, the interactive
+  /// mode is entered even if 'Q' has been pressed.
+  void interactive(bool really=false);
 
   /// Plot function
   boost::shared_ptr<VTKPlotter> plot(const Function& function,
@@ -165,7 +172,7 @@ namespace dolfin
   /// Plot boolean-valued mesh function (shared_ptr version)
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 				     std::string title="MeshFunction<bool>");
-  
+
   /// Plot boolean-valued mesh function (parameter version)
   boost::shared_ptr<VTKPlotter> plot(const MeshFunction<bool>& mesh_function,
 				     const Parameters& parameters);
@@ -174,9 +181,21 @@ namespace dolfin
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 				     boost::shared_ptr<const Parameters> parameters);
 
-  /// Make the current plots interactive. If really is set, the interactive
-  /// mode is entered even if 'Q' has been pressed.
-  void interactive(bool really=false);
+  /// Plot CSG geometry
+  boost::shared_ptr<VTKPlotter> plot(const CSGGeometry& geometry,
+				     std::string title="CSG Geometry");
+
+  /// Plot CSG geometry (shared_ptr version)
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const CSGGeometry> geometry,
+				     std::string title="CSG Geometry");
+
+  /// Plot CSG geometry (parameter version)
+  boost::shared_ptr<VTKPlotter> plot(const CSGGeometry& geometry,
+				     const Parameters& parameters);
+
+  /// Plot CSG geometry (parameter, shared_ptr version)
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const CSGGeometry> geometry,
+				     boost::shared_ptr<const Parameters> parameters);
 
 }
 

@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-31
+// Last changed: 2012-09-04
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -166,6 +166,9 @@ namespace dolfin
 
     /// Create plotter for a boolean valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+
+    /// Create plotter for a CSG object (unmeshed).
+    explicit VTKPlotter(boost::shared_ptr<const CSGGeometry> geom);
 
     /// Destructor
     ~VTKPlotter();

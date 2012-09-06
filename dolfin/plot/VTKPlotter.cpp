@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-31
+// Last changed: 2012-09-06
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -31,11 +31,13 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/generation/CSGGeometry.h>
 #include "ExpressionWrapper.h"
 #include "VTKPlottableGenericFunction.h"
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
+#include "VTKPlottableCSGGeometry.h"
 #include "VTKPlotter.h"
 
 #ifdef HAS_QT4
@@ -628,6 +630,17 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 {
   parameters = default_parameters();
   set_title_from(*mesh_function);
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(boost::shared_ptr<const CSGGeometry> geometry) :
+  _plottable(CreateVTKPlottable(geometry)),
+  vtk_pipeline(new PrivateVTKPipeline()),
+  _frame_counter(0),
+  _key(to_key(*geometry)),
+  _initialized(false)
+{
+  parameters = default_mesh_parameters();
+  set_title_from(*geometry);
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
