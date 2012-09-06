@@ -776,23 +776,30 @@ bool VTKPlotter::keypressCallback()
 {
   static const int SHIFT   = 0x100; // Preserve the low word so a char can be added
   static const int ALT     = 0x200;
-  static const int CONTROL = 0x300;
+  static const int CONTROL = 0x400;
 
+  // Note: ALT key doesn't seem to be usable as a modifier.
   std::string keysym = vtk_pipeline->get_interactor()->GetKeySym();
   char key = vtk_pipeline->get_interactor()->GetKeyCode();
   int modifiers = (SHIFT   * !!vtk_pipeline->get_interactor()->GetShiftKey() +
                    ALT     * !!vtk_pipeline->get_interactor()->GetAltKey()   +
                    CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
+  if (keysym.size() == 1)
+  {
+    // Fix for things like shift+control+q which isn't sent correctly
+    key = keysym[0];
+  }
 
-  std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
-
-  if (key && tolower(key) == key)
+  key = tolower(key);
+  if (key && key == toupper(key))
   {
     // Things like '+', '&' which are not really shifted
     modifiers &= ~SHIFT;
   }
 
-  switch (modifiers + tolower(key))
+  std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
+
+  switch (modifiers + key)
   {
   case '+':
     vtk_pipeline->scale_points_lines(1.2);
@@ -896,6 +903,9 @@ bool VTKPlotter::keypressCallback()
     run_to_end = true;
     vtk_pipeline->stop_interaction();
     return true;
+
+  case SHIFT + CONTROL + 'q':
+    dolfin_error("VTKPlotter", "continue execution", "Aborted by user");
 
   case 'q':
     vtk_pipeline->stop_interaction();
@@ -1071,12 +1081,17 @@ bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
   return (!variable || _plottable->is_compatible(*variable));
 }
 //----------------------------------------------------------------------------
-void VTKPlotter::all_interactive()
+void VTKPlotter::all_interactive(bool really)
 {
   if (all_plotters.get() == NULL || all_plotters->size() == 0)
     warning("No plots have been shown yet. Ignoring call to interactive().");
   else
   {
+    if (really)
+    {
+      run_to_end = false;
+    }
+
     // Prepare interactiveness on every plotter but the first
     foreach (VTKPlotter *plotter, *all_plotters)
     {

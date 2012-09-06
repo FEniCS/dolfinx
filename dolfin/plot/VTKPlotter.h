@@ -248,8 +248,9 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-    // Make all plot windows interactive
-    static void all_interactive();
+    // Make all plot windows interactive. If really is set, the interactive
+    // mode is entered even if 'Q' has been pressed.
+    static void all_interactive(bool really=false);
 
   private:
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-05-02
-// Last changed: 2012-08-11
+// Last changed: 2012-08-31
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -174,8 +174,9 @@ namespace dolfin
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 				     boost::shared_ptr<const Parameters> parameters);
 
-  /// Make the current plot interactive
-  void interactive();
+  /// Make the current plots interactive. If really is set, the interactive
+  /// mode is entered even if 'Q' has been pressed.
+  void interactive(bool really=false);
 
 }
 

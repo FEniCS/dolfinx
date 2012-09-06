@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-08-23
+// Last changed: 2012-08-31
 
 #include <cstdlib>
 #include <sstream>
@@ -315,8 +315,8 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot_object(mesh_function, parameters, VTKPlotter::to_key(*mesh_function));
 }
 //-----------------------------------------------------------------------------
-void dolfin::interactive()
+void dolfin::interactive(bool really)
 {
-  VTKPlotter::all_interactive();
+  VTKPlotter::all_interactive(really);
 }
 //-----------------------------------------------------------------------------
