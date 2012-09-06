@@ -144,6 +144,8 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
+    vtkSmartPointer<vtkAxesActor> _axesActor;
+
     // Note: VTK (current 5.6.1) seems to very picky about the order
     // of destruction. It seg faults if the objects are destroyed
     // first (probably before the renderer).
@@ -162,7 +164,6 @@ namespace dolfin
         static char dummy_argv0 = '\0';
         static char *dummy_argv0_ptr = &dummy_argv0;
         new QApplication(dummy_argc, &dummy_argv0_ptr);
-        std::cout << "Created qApp, " << qApp << std::endl;
       }
     }
 #endif
@@ -185,6 +186,8 @@ namespace dolfin
 
       _renderer = vtkSmartPointer<vtkRenderer>::New();
       _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+
+      _axesActor = vtkSmartPointer<vtkAxesActor>::New();
     }
 
     void init(VTKPlotter *parent, const Parameters &parameters)
@@ -212,7 +215,6 @@ namespace dolfin
 
       widget->SetRenderWindow(_renderWindow);
       widget->resize(parameters["window_width"], parameters["window_height"]);
-      widget->show();
 #else
       _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
       _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
@@ -240,21 +242,20 @@ namespace dolfin
 
       if (parameters["axes"])
       {
-        vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
-        //axes->SetShaftTypeToCylinder();
-        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
-        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
-        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(14);
-        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
-        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
-        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ItalicOff();
-        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
-        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
-        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
-        axes->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
-        axes->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
-        axes->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
-        _renderer->AddActor(axes);
+      //axes->SetShaftTypeToCylinder();
+      _axesActor->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(12);
+      _axesActor->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(12);
+      _axesActor->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(12);
+      _axesActor->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->BoldOff();
+      _axesActor->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->BoldOff();
+      _axesActor->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->BoldOff();
+      _axesActor->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+      _axesActor->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+      _axesActor->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->SetColor(0.0, 0.0, 0.0);
+      _axesActor->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+      _axesActor->GetYAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+      _axesActor->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
+        _renderer->AddActor(_axesActor);
       }
     }
 
@@ -318,6 +319,18 @@ namespace dolfin
 #endif
     }
 
+    bool resurrect_window()
+    {
+#ifdef HAS_QT4
+      if (widget->isHidden())
+      {
+        widget->show();
+        return true;
+      }
+#endif
+      return false;
+    }
+
     void start_interaction(bool enter_eventloop=true)
     {
       get_interactor()->Initialize();
@@ -325,7 +338,6 @@ namespace dolfin
       if (enter_eventloop)
       {
 #ifdef HAS_QT4
-        widget->show(); // Make sure it's shown, FIXME: how can it be hidden?
         qApp->exec();
 #else
         get_interactor()->Start();
@@ -369,8 +381,8 @@ namespace dolfin
     {
       _mapper->SetScalarRange(range);
       // Not required, the mapper controls the range.
-      //_lut->SetRange(range);
-      //_lut->Build();
+      _lut->SetRange(range);
+      _lut->Build();
     }
 
     void cycle_representation(int new_rep=0)
@@ -422,10 +434,11 @@ namespace dolfin
 #endif
     }
     //----------------------------------------------------------------------------
-    void set_window_position(int x, int y)
+    void place_window(int x, int y)
     {
 #ifdef HAS_QT4
       widget->move(x, y);
+      widget->show();
 #else
       _renderWindow->SetPosition(x, y);
 #endif
@@ -458,7 +471,6 @@ namespace dolfin
       {
         // In 3D, only set this when necessary. It makes the visibility test
         // for cell/vertex labels ineffective.
-        std::cout << "NaN color set!\n";
         _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
       }
       if (depthsort)
@@ -474,7 +486,10 @@ namespace dolfin
 
       if (reset_camera)
       {
+        // vtkAxesActor messes up the bounding box, disable it while setting camera
+        _axesActor->SetVisibility(false);
         _renderer->ResetCamera();
+        _axesActor->SetVisibility(true);
       }
     }
 
@@ -617,7 +632,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  all_plotters->remove(this);
+  active_plotters->remove(this);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
@@ -629,6 +644,11 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
   {
     warning("Environment variable DOLFIN_NOPLOT set: Plotting disabled.");
     return;
+  }
+
+  if (vtk_pipeline->resurrect_window())
+  {
+    active_plotters->push_back(this);
   }
 
   update_pipeline(variable);
@@ -674,19 +694,12 @@ void VTKPlotter::init()
     no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
   }
 
-  // Create plotter pool if needed (ie. this is the first plotter object)
-  if (all_plotters.get() == NULL)
-  {
-    log(TRACE, "Creating global VTKPlotter pool");
-    all_plotters.reset(new std::list<VTKPlotter*>);
-  }
-
   // Add plotter to pool
-  all_plotters->push_back(this);
+  active_plotters->push_back(this);
 
   // Add a local shared_ptr to the pool. See comment in VTKPlotter.h
-  all_plotters_local_copy = all_plotters;
-  log(TRACE, "Size of plotter pool is %d.", all_plotters->size());
+  active_plotters_local_copy = active_plotters;
+  log(TRACE, "Size of plotter pool is %d.", active_plotters->size());
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -696,22 +709,26 @@ void VTKPlotter::init()
   dolfin_assert(vtk_pipeline);
   vtk_pipeline->init(this, parameters);
 
-  // Adjust window position to not completely overlap previous plots
-  dolfin::uint num_old_plots = VTKPlotter::all_plotters->size()-1;
+  // Adjust window position to not completely overlap previous plots.
+  dolfin::uint num_old_plots = active_plotters->size()-1;
 
-  int width, height;
-  vtk_pipeline->get_window_size(width, height);
+  int row=0, col=0, width=0, height=0;
+  if (num_old_plots > 0)
+  {
+    // Get the size of a window that's already decorated, otherwise the frame
+    // size may be not include all decoration (on X)
+    (*active_plotters->begin())->vtk_pipeline->get_window_size(width, height);
 
-  int swidth, sheight;
-  vtk_pipeline->get_screen_size(swidth, sheight);
+    int swidth, sheight;
+    vtk_pipeline->get_screen_size(swidth, sheight);
 
-  // Tile windows horizontally across screen
-  int num_rows = swidth/width;
-  int num_cols = sheight/height;
-  int row = num_old_plots % num_rows;
-  int col = (num_old_plots / num_rows) % num_cols;
-
-  vtk_pipeline->set_window_position(row*width, col*height);
+    // Tile windows horizontally across screen
+    int num_rows = swidth/width;
+    int num_cols = sheight/height;
+    row = num_old_plots % num_rows;
+    col = (num_old_plots / num_rows) % num_cols;
+  }
+  vtk_pipeline->place_window(row*width, col*height);
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline(parameters);
@@ -828,8 +845,7 @@ bool VTKPlotter::keypressCallback()
 
   case 'v': // Toggle vertex labels
     {
-      // Check if label actor is present. If not get from plottable. If it
-      // is, toggle off
+      // Check if label actor is present. If not get from plottable.
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
       bool added = vtk_pipeline->add_actor(labels);
@@ -874,7 +890,7 @@ bool VTKPlotter::keypressCallback()
     // shift/control may be mouse-interaction modifiers
     {
       vtkCamera* camera = vtk_pipeline->get_camera();
-      foreach (VTKPlotter *other, *all_plotters)
+      foreach (VTKPlotter *other, *active_plotters)
       {
         if (other != this)
         {
@@ -887,15 +903,15 @@ bool VTKPlotter::keypressCallback()
 
   case CONTROL + 'w':
     vtk_pipeline->close_window();
-    all_plotters->remove(this);
+    active_plotters->remove(this);
     return true;
 
   case CONTROL + 'q':
-    foreach (VTKPlotter *plotter, *all_plotters)
+    foreach (VTKPlotter *plotter, *active_plotters)
     {
       plotter->vtk_pipeline->close_window();
     }
-    all_plotters->clear();
+    active_plotters->clear();
     vtk_pipeline->stop_interaction();
     return true;
 
@@ -1083,7 +1099,7 @@ bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
 //----------------------------------------------------------------------------
 void VTKPlotter::all_interactive(bool really)
 {
-  if (all_plotters.get() == NULL || all_plotters->size() == 0)
+  if (active_plotters->size() == 0)
     warning("No plots have been shown yet. Ignoring call to interactive().");
   else
   {
@@ -1093,14 +1109,14 @@ void VTKPlotter::all_interactive(bool really)
     }
 
     // Prepare interactiveness on every plotter but the first
-    foreach (VTKPlotter *plotter, *all_plotters)
+    foreach (VTKPlotter *plotter, *active_plotters)
     {
-      if (plotter != *all_plotters->begin())
+      if (plotter != *active_plotters->begin())
         plotter->interactive(false);
     }
 
     // Start the vtk eventloop on the first plotter
-    (*all_plotters->begin())->interactive(true);
+    (*active_plotters->begin())->interactive(true);
   }
 }
 
@@ -1151,6 +1167,6 @@ void VTKPlotter::all_interactive() {}
 #endif
 
 // Define the static members
-boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::all_plotters;
+boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;

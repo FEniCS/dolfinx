@@ -261,7 +261,7 @@ namespace dolfin
     // destroyed. 
     // Used when calling interactive() (which should have effect on
     // all plot windows)
-    static boost::shared_ptr<std::list<VTKPlotter*> > all_plotters;
+    static boost::shared_ptr<std::list<VTKPlotter*> > active_plotters;
 
     // Allow the interactor style full access to the plotter
     friend class PrivateVTKInteractorStyle;
@@ -301,7 +301,7 @@ namespace dolfin
     // Keep a shared_ptr to the list of plotter to ensure that the
     // list is not destroyed before the last VTKPlotter object is
     // destroyed.
-    boost::shared_ptr<std::list<VTKPlotter*> > all_plotters_local_copy;
+    boost::shared_ptr<std::list<VTKPlotter*> > active_plotters_local_copy;
 
     // Usually false, but if true ('Q' keyboard binding) then all event loops are skipped.
     static bool run_to_end;

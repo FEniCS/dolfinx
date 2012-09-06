@@ -259,7 +259,10 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
 
     vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
     vis->SetInputConnection(_idFilter->GetOutputPort());
-    //vis->SetTolerance(1e-6);
+    // If the tolerance is too high, too many labels are visible (especially at
+    // a distance).  If set too low, some labels are invisible. There isn't a
+    // "correct" value, it should really depend on distance and resolution.
+    vis->SetTolerance(1e-4);
     vis->SetRenderer(renderer);
     //vis->SelectionWindowOn();
     //vis->SetSelection(0, 0.3, 0, 0.3);
@@ -287,7 +290,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPoint
     cc->SetInputConnection(_idFilter->GetOutputPort());
 
     vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
-    //vis->SetTolerance(1e-6);
+    vis->SetTolerance(1e-4); // See comment for vertex labels
     vis->SetInputConnection(cc->GetOutputPort());
     vis->SetRenderer(renderer);
 

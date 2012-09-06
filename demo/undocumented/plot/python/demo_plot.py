@@ -21,7 +21,7 @@
 # Modified by Benjamin Kehlet 2012
 #
 # First added:  2007-05-29
-# Last changed: 2012-06-25
+# Last changed: 2012-08-31
 
 from dolfin import *
 import os.path
@@ -33,10 +33,7 @@ import sys
 mesh = Mesh(os.path.join(os.path.pardir, "dolfin-2.xml.gz"))
 
 # Decide which demos to run
-try:
-    demos = [int(sys.argv[-1])]
-except:
-    demos = [0, 1, 2]
+demos = map(int, sys.argv[1:]) or [0, 1, 2]
 
 # Have some fun with the mesh
 if 0 in demos:
