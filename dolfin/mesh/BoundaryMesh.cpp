@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009.
+// Modified by Joachim B Haga 2012.
 //
 // First added:  2006-06-21
-// Last changed: 2012-06-25
+// Last changed: 2012-09-05
 
 #include <iostream>
 
 #include <dolfin/log/log.h>
+#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryComputation.h"
 #include "BoundaryMesh.h"
 
@@ -42,6 +44,17 @@ BoundaryMesh::BoundaryMesh(const Mesh& mesh, bool order) : Mesh()
   // Order mesh if requested
   if (order)
     this->order();
+}
+//-----------------------------------------------------------------------------
+BoundaryMesh::BoundaryMesh(const CSGGeometry& geometry) : Mesh()
+{
+  CSGMeshGenerator::generate(*this, geometry);
+}
+//-----------------------------------------------------------------------------
+BoundaryMesh::BoundaryMesh(boost::shared_ptr<const CSGGeometry> geometry) : Mesh()
+{
+  assert(geometry);
+  CSGMeshGenerator::generate(*this, *geometry);
 }
 //-----------------------------------------------------------------------------
 BoundaryMesh::~BoundaryMesh()
