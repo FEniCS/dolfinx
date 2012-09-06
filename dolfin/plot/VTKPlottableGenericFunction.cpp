@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #ifdef HAS_VTK
 
@@ -37,19 +37,17 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(
-    boost::shared_ptr<const Function> function) :
-  VTKPlottableMesh(function->function_space()->mesh()),
-  _function(function)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Function> function)
+  : VTKPlottableMesh(function->function_space()->mesh()),
+    _function(function)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKPlottableGenericFunction::VTKPlottableGenericFunction(
-    boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh) :
-  VTKPlottableMesh(mesh),
-  _function(expression)
+VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
+                                                         boost::shared_ptr<const Mesh> mesh)
+  : VTKPlottableMesh(mesh),
+    _function(expression)
 {
   // Do nothing
 }
@@ -212,5 +210,20 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() co
   }
 }
 //----------------------------------------------------------------------------
+VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
+{
+  return new VTKPlottableGenericFunction(function);
+}
+//----------------------------------------------------------------------------
+VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper> wrapper)
+{
+  return CreateVTKPlottable(wrapper->expression(), wrapper->mesh());
+}
+//----------------------------------------------------------------------------
+VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
+                                                        boost::shared_ptr<const Mesh> mesh)
+{
+  return new VTKPlottableGenericFunction(expr, mesh);
+}
 
 #endif

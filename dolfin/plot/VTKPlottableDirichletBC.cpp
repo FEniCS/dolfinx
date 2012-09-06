@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #ifdef HAS_VTK
 
@@ -99,5 +99,9 @@ void VTKPlottableDirichletBC::update(boost::shared_ptr<const Variable> var, cons
   VTKPlottableGenericFunction::update(func, parameters, framecounter);
 }
 //----------------------------------------------------------------------------
+VTKPlottableDirichletBC *dolfin::CreateVTKPlottable(boost::shared_ptr<const DirichletBC> bc)
+{
+  return new VTKPlottableDirichletBC(bc);
+}
 
 #endif

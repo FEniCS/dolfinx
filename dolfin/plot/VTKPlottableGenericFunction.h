@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-27
+// Last changed: 2012-08-31
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -39,6 +39,7 @@ namespace dolfin
 
   // Forward declarations
   class Expression;
+  class ExpressionWrapper;
   class Function;
   class GenericFunction;
   class GenericVTKPlottable;
@@ -101,6 +102,10 @@ namespace dolfin
     // Mode flag
     std::string _mode;
   };
+
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Function>);
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper>);
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Expression>, boost::shared_ptr<const Mesh>);
 
 }
 

@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #ifdef HAS_VTK
 
@@ -343,5 +343,9 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
+VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
+{
+  return new VTKPlottableMesh(mesh);
+}
 
 #endif

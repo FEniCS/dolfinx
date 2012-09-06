@@ -492,7 +492,7 @@ namespace {
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(new VTKPlottableMesh(mesh))),
+  _plottable(CreateVTKPlottable(mesh)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh))
@@ -503,8 +503,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableGenericFunction(function))),
+  _plottable(CreateVTKPlottable(function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*function))
@@ -516,8 +515,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     boost::shared_ptr<const Mesh> mesh) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableGenericFunction(expression, mesh))),
+  _plottable(CreateVTKPlottable(expression, mesh)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*expression))
@@ -528,8 +526,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableGenericFunction(wrapper->expression(), wrapper->mesh()))),
+  _plottable(CreateVTKPlottable(wrapper)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*wrapper->expression()))
@@ -540,8 +537,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableDirichletBC(bc))),
+  _plottable(CreateVTKPlottable(bc)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*bc))
@@ -552,8 +548,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableMeshFunction<uint>(mesh_function))),
+  _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function))
@@ -565,8 +560,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_functio
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableMeshFunction<int>(mesh_function))),
+  _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function))
@@ -577,8 +571,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableMeshFunction<double>(mesh_function))),
+  _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function))
@@ -589,8 +582,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_funct
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-    new VTKPlottableMeshFunction<bool>(mesh_function))),
+  _plottable(CreateVTKPlottable(mesh_function)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
   _key(to_key(*mesh_function))

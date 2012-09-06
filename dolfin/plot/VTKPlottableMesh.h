@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-30
+// Last changed: 2012-08-31
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -137,6 +137,8 @@ namespace dolfin
     const uint _entity_dim;
 
   };
+
+  VTKPlottableMesh *CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh);
 
   //---------------------------------------------------------------------------
   // Implementation of VTKPlottableMeshFunction
