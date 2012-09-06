@@ -81,12 +81,11 @@ usol=Function(V);
 xsol=usol.vector() # or xsol=down_cast(usol.vector())
 
 # Create the TAOLinearBoundSolver 
-solver=TAOLinearBoundSolver("tao_tron")
+solver=TAOLinearBoundSolver("tao_gpcg")
 
 # Set some parameters
-solver.parameters["krylov_solver"]["absolute_tolerance"]=0.000001
-solver.parameters["krylov_solver"]["relative_tolerance"]=0.000001
-solver.parameters["krylov_solver"]["method"]="tfqmr"
+solver.parameters["krylov_solver"]["absolute_tolerance"]=1e-8
+solver.parameters["krylov_solver"]["relative_tolerance"]=1e-8
 solver.solve(A,xsol,b,xl,xu)
 
 # Print solver parameters
