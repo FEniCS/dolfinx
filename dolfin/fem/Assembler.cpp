@@ -151,7 +151,7 @@ void Assembler::assemble(GenericTensor& A,
                               cell_domains,
                               exterior_facet_domains,
                               interior_facet_domains,
-                              reset_sparsity, add_values, 
+                              reset_sparsity, add_values,
                               finalize_tensor, keep_diagonal);
     return;
   }

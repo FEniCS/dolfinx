@@ -115,7 +115,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         cell_domains = L.cell_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh).get());
+      if (mesh.domains().facet_domains(mesh))
         warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
     else
@@ -137,7 +137,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         exterior_facet_domains = L.exterior_facet_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh).get());
+      if (mesh.domains().facet_domains(mesh))
         warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
     }
     else

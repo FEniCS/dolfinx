@@ -222,17 +222,20 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   {
     // Use number of threads specified for LU solver
     // FIXME: This option is not used by PETSc 3.2
-    PetscOptionsSetValue("-mat_pastix_threadnbr", parameters["num_threads"].value_str().c_str());
+    PetscOptionsSetValue("-mat_pastix_threadnbr",
+                         parameters["num_threads"].value_str().c_str());
   }
   else
   {
     // Use global number of threads
-    PetscOptionsSetValue("-mat_pastix_threadnbr", dolfin::parameters["num_threads"].value_str().c_str());
+    PetscOptionsSetValue("-mat_pastix_threadnbr",
+                         dolfin::parameters["num_threads"].value_str().c_str());
   }
   //PetscOptionsSetValue("-mat_pastix_verbose", "2");
 
   // Solve linear system
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
+  KSPView(*_ksp, PETSC_VIEWER_STDOUT_WORLD);
 
   return 1;
 }

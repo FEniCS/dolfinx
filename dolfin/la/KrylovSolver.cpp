@@ -40,7 +40,7 @@ Parameters KrylovSolver::default_parameters()
   p.add("absolute_tolerance",      1.0e-15);
   p.add("divergence_limit",        1.0e4);
   p.add("maximum_iterations",      10000);
-  p.add("report",                  true); /* deprecate? */
+  p.add("report",                  true);
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);

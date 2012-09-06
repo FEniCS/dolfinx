@@ -270,14 +270,14 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(AMD)
-  find_package(BLAS)
-  find_package(UMFPACK)
+  find_package(AMD QUIET)
+  find_package(BLAS QUIET)
+  find_package(UMFPACK QUIET)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
+  find_package(CHOLMOD QUIET)
 endif()
 
 # Check for PaStiX
