@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - JIT compiled C++ code can now include a dolfin namespace.
  - Expression string parsing now understand C++ namespace such as std::cosh
  - Fix bug in Expression so one can pass min, max
  - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble
