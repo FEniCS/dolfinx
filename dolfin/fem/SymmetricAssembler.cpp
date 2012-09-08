@@ -38,7 +38,7 @@
 #include "Form.h"
 #include "UFC.h"
 #include "FiniteElement.h"
-#include "AssemblerTools.h"
+#include "AssemblerBase.h"
 #include "SymmetricAssembler.h"
 
 using namespace dolfin;
@@ -123,11 +123,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
                                   const std::vector<const DirichletBC*> col_bcs,
                                   const MeshFunction<uint>* cell_domains,
                                   const MeshFunction<uint>* exterior_facet_domains,
-                                  const MeshFunction<uint>* interior_facet_domains,
-                                  bool reset_sparsity,
-                                  bool add_values,
-                                  bool finalize_tensor,
-                                  bool keep_diagonal)
+                                  const MeshFunction<uint>* interior_facet_domains)
 {
   PImpl pImpl(A, A_asymm, a, row_bcs, col_bcs,
             cell_domains, exterior_facet_domains, interior_facet_domains,
@@ -200,7 +196,7 @@ void SymmetricAssembler::PImpl::assemble()
   }
 
   // Check form
-  AssemblerTools::check(a);
+  AssemblerBase::check(a);
 
   // Update off-process coefficients
   const std::vector<boost::shared_ptr<const GenericFunction> >
@@ -210,9 +206,9 @@ void SymmetricAssembler::PImpl::assemble()
 
   // Initialize global tensors
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
+  AssemblerBase::init_global_tensor(A, a, periodic_master_slave_dofs,
                                      reset_sparsity, add_values, keep_diagonal);
-  AssemblerTools::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
+  AssemblerBase::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
                                      reset_sparsity, add_values, keep_diagonal);
 
   // Get dofs that are local to this processor
@@ -260,7 +256,7 @@ void SymmetricAssembler::PImpl::assemble_cells()
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
-  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
+  Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -332,7 +328,7 @@ void SymmetricAssembler::PImpl::assemble_exterior_facets()
   dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"),
+  Progress p(AssemblerBase::progress_message(A.rank(), "exterior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -436,7 +432,7 @@ void SymmetricAssembler::PImpl::assemble_interior_facets()
   }
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"),
+  Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {

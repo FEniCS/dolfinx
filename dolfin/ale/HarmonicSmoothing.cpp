@@ -40,7 +40,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
-  cout << "********* Here I am" << endl;
   not_working_in_parallel("ALE::move");
 
   const uint D = mesh.topology().dim();
@@ -71,7 +70,8 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 
   // Assemble matrix
   Matrix A;
-  Assembler::assemble(A, *form, true, false, true, true);
+  Assembler assembler;
+  assembler.assemble(A, *form);
 
   // Initialize vector
   const uint N = mesh.num_vertices();
@@ -83,12 +83,9 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   const uint* dofs = vertex_map.values();
 
   // Modify matrix (insert 1 on diagonal)
-  cout << "********* Here I am (1)" << endl;
 
   A.ident(num_dofs, dofs);
   A.apply("insert");
-
-  cout << "********* Here I am (2)" << endl;
 
   // Solve system for each dimension
   std::vector<double> values(num_dofs);

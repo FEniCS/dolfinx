@@ -21,8 +21,8 @@
 // First added:  2007-01-17
 // Last changed: 2009-10-06
 
-#ifndef __ASSEMBLER_TOOLS_H
-#define __ASSEMBLER_TOOLS_H
+#ifndef __ASSEMBLER_BASE_H
+#define __ASSEMBLER_BASE_H
 
 #include <string>
 #include <utility>
@@ -39,9 +39,13 @@ namespace dolfin
   /// This class provides some common functions used in the
   /// Assembler and SystemAssembler classes.
 
-  class AssemblerTools
+  class AssemblerBase
   {
   public:
+
+    // Check form
+    AssemblerBase() : reset_sparsity(true), add_values(false),
+        finalize_tensor(true), keep_diagonal(false) {}
 
     // Check form
     static void check(const Form& a);
@@ -54,6 +58,10 @@ namespace dolfin
     // Pretty-printing for progress bar
     static std::string progress_message(uint rank, std::string integral_type);
 
+    bool reset_sparsity;
+    bool add_values;
+    bool finalize_tensor;
+    bool keep_diagonal;
   };
 
 }

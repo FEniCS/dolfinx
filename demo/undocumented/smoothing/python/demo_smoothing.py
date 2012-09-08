@@ -22,6 +22,9 @@
 
 from dolfin import *
 
+print "This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641"
+exit()
+
 # Create rectangular mesh
 mesh = Rectangle(0.0, 0.0, 2.4, 0.4, 60, 10)
 

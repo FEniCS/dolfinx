@@ -41,7 +41,7 @@
 #include "UFC.h"
 #include "FiniteElement.h"
 #include "OpenMpAssembler.h"
-#include "AssemblerTools.h"
+#include "AssemblerBase.h"
 #include "Assembler.h"
 
 #include <dolfin/la/GenericMatrix.h>
@@ -49,23 +49,13 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         bool reset_sparsity,
-                         bool add_values,
-                         bool finalize_tensor,
-                         bool keep_diagonal)
+void Assembler::assemble(GenericTensor& A, const Form& a)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, a, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         const SubDomain& sub_domain,
-                         bool reset_sparsity,
-                         bool add_values,
-                         bool finalize_tensor,
-                         bool keep_diagonal)
+void Assembler::assemble(GenericTensor& A, const Form& a,
+                         const SubDomain& sub_domain)
 {
   dolfin_assert(a.ufc_form());
 
@@ -90,20 +80,14 @@ void Assembler::assemble(GenericTensor& A,
   }
 
   // Assemble
-  assemble(A, a,
-           cell_domains.get(), facet_domains.get(), facet_domains.get(),
-           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, a, cell_domains.get(), facet_domains.get(), facet_domains.get());
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity,
-                         bool add_values,
-                         bool finalize_tensor,
-                         bool keep_diagonal)
+                         const MeshFunction<uint>* interior_facet_domains)
 {
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -147,18 +131,19 @@ void Assembler::assemble(GenericTensor& A,
   const uint num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
-    OpenMpAssembler::assemble(A, a,
-                              cell_domains,
-                              exterior_facet_domains,
-                              interior_facet_domains,
-                              reset_sparsity, add_values,
-                              finalize_tensor, keep_diagonal);
+    OpenMpAssembler assembler;
+    assembler.reset_sparsity = reset_sparsity;
+    assembler.add_values = add_values;
+    assembler.finalize_tensor = finalize_tensor;
+    assembler.keep_diagonal = keep_diagonal;
+    assembler.assemble(A, a, cell_domains, exterior_facet_domains,
+                       interior_facet_domains);
     return;
   }
   #endif
 
   // Check form
-  AssemblerTools::check(a);
+  AssemblerBase::check(a);
 
   // Create data structure for local assembly data
   UFC ufc(a);
@@ -171,8 +156,8 @@ void Assembler::assemble(GenericTensor& A,
 
   // Initialize global tensor
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
+  AssemblerBase::init_global_tensor(A, a, periodic_master_slave_dofs,
+                                    reset_sparsity, add_values, keep_diagonal);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
@@ -220,7 +205,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
-  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
+  Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -295,7 +280,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   dolfin_assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"),
+  Progress p(AssemblerBase::progress_message(A.rank(), "exterior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -395,7 +380,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"),
+  Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {

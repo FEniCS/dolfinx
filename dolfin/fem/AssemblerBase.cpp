@@ -40,14 +40,14 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
-#include "AssemblerTools.h"
+#include "AssemblerBase.h"
 
 #include <dolfin/la/TensorLayout.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void AssemblerTools::check(const Form& a)
+void AssemblerBase::check(const Form& a)
 {
   dolfin_assert(a.ufc_form());
 
@@ -62,7 +62,7 @@ void AssemblerTools::check(const Form& a)
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.num_coefficients())
   {
-    dolfin_error("AssemblerTools.cpp",
+    dolfin_error("AssemblerBase.cpp",
                  "assemble form",
                  "Incorrect number of coefficients (got %d but expecting %d)",
                  coefficients.size(), a.num_coefficients());
@@ -73,7 +73,7 @@ void AssemblerTools::check(const Form& a)
   {
     if (!coefficients[i])
     {
-      dolfin_error("AssemblerTools.cpp",
+      dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Coefficient number %d (\"%s\") has not been set",
                    i, a.coefficient_name(i).c_str());
@@ -87,7 +87,7 @@ void AssemblerTools::check(const Form& a)
     const uint fe_r = fe->value_rank();
     if (fe_r != r)
     {
-      dolfin_error("AssemblerTools.cpp",
+      dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Invalid value rank for coefficient %d (got %d but expecting %d). \
 You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
@@ -99,7 +99,7 @@ You might have forgotten to specify the value rank correctly in an Expression su
       const uint fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
       {
-        dolfin_error("AssemblerTools.cpp",
+        dolfin_error("AssemblerBase.cpp",
                      "assemble form",
                      "Invalid value dimension %d for coefficient %d (got %d but expecting %d). \
 You might have forgotten to specify the value dimension correctly in an Expression subclass", j, i, dim, fe_dim);
@@ -114,19 +114,19 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     dolfin_assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
     {
-      dolfin_error("AssemblerTools.cpp",
+      dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (intervals) does not match cell type of form");
     }
     if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
     {
-      dolfin_error("AssemblerTools.cpp",
+      dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (triangles) does not match cell type of form");
     }
     if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
     {
-      dolfin_error("AssemblerTools.cpp",
+      dolfin_error("AssemblerBase.cpp",
                    "assemble form",
                    "Mesh cell type (tetrahedra) does not match cell type of form");
     }
@@ -135,13 +135,13 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   // Check that the mesh is ordered
   if (!mesh.ordered())
   {
-    dolfin_error("AssemblerTools.cpp",
+    dolfin_error("AssemblerBase.cpp",
                  "assemble form",
                  "Mesh is not correctly ordered. Consider calling mesh.order()");
   }
 }
 //-----------------------------------------------------------------------------
-void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
+void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
           const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
           bool reset_sparsity, bool add_values, bool keep_diagonal)
 {
@@ -150,7 +150,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
   // Check that we should not add values
   if (reset_sparsity && add_values)
   {
-    dolfin_error("AssemblerTools.cpp",
+    dolfin_error("AssemblerBase.cpp",
                  "assemble form",
                  "Can not add values when the sparsity pattern is reset");
   }
@@ -228,7 +228,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
         const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
         if (pattern.primary_dim() != 0)
         {
-          dolfin_error("AssemblerTools.cpp",
+          dolfin_error("AssemblerBase.cpp",
                        "insert zero values in periodic boundary condition positions",
                        "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
         }
@@ -265,7 +265,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     {
       if (A.size(i) != dofmaps[i]->global_dimension())
       {
-        dolfin_error("AssemblerTools.cpp",
+        dolfin_error("AssemblerBase.cpp",
                      "assemble form",
                      "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
       }
@@ -276,7 +276,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     A.zero();
 }
 //-----------------------------------------------------------------------------
-std::string AssemblerTools::progress_message(uint rank,
+std::string AssemblerBase::progress_message(uint rank,
                                              std::string integral_type)
 {
   std::stringstream s;

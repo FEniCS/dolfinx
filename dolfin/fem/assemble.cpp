@@ -39,7 +39,12 @@ void dolfin::assemble(GenericTensor& A,
                       bool finalize_tensor,
                       bool keep_diagonal)
 {
-  Assembler::assemble(A, a, reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A,
@@ -50,8 +55,12 @@ void dolfin::assemble(GenericTensor& A,
                       bool finalize_tensor,
                       bool keep_diagonal)
 {
-  Assembler::assemble(A, a, sub_domain,
-                      reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, a, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A,
@@ -64,11 +73,13 @@ void dolfin::assemble(GenericTensor& A,
                       bool finalize_tensor,
                       bool keep_diagonal)
 {
-  Assembler::assemble(A, a,
-                      cell_domains,
-                      exterior_facet_domains,
-                      interior_facet_domains,
-                      reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, a, cell_domains, exterior_facet_domains,
+                      interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -80,7 +91,12 @@ void dolfin::assemble_system(GenericMatrix& A,
                              bool finalize_tensor,
                              bool keep_diagonal)
 {
-  SystemAssembler::assemble(A, b, a, L, reset_sparsity, add_values, keep_diagonal);
+  SystemAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, b, a, L);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -93,8 +109,12 @@ void dolfin::assemble_system(GenericMatrix& A,
                              bool finalize_tensor,
                              bool keep_diagonal)
 {
-  SystemAssembler::assemble(A, b, a, L, bc,
-                            reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  SystemAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, b, a, L, bc);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -107,8 +127,12 @@ void dolfin::assemble_system(GenericMatrix& A,
                              bool finalize_tensor,
                              bool keep_diagonal)
 {
-  SystemAssembler::assemble(A, b, a, L, bcs,
-                            reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  SystemAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, b, a, L, bcs);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -125,10 +149,13 @@ void dolfin::assemble_system(GenericMatrix& A,
                              bool finalize_tensor,
                              bool keep_diagonal)
 {
-  SystemAssembler::assemble(A, b, a, L, bcs,
-                            cell_domains, exterior_facet_domains,
-                            interior_facet_domains, x0,
-                            reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  SystemAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(A, b, a, L, bcs, cell_domains, exterior_facet_domains,
+                     interior_facet_domains, x0);
 }
 //-----------------------------------------------------------------------------
 void dolfin::symmetric_assemble(GenericMatrix& As,
@@ -143,9 +170,13 @@ void dolfin::symmetric_assemble(GenericMatrix& As,
                                 bool finalize_tensor,
                                 bool keep_diagonal)
 {
-  SymmetricAssembler::assemble(As, An, a, bcs, bcs,
-                               cell_domains, exterior_facet_domains, interior_facet_domains,
-                               reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  SymmetricAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(As, An, a, bcs, bcs,
+                     cell_domains, exterior_facet_domains, interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void dolfin::symmetric_assemble(GenericMatrix& As,
@@ -161,9 +192,13 @@ void dolfin::symmetric_assemble(GenericMatrix& As,
                                 bool finalize_tensor,
                                 bool keep_diagonal)
 {
-  SymmetricAssembler::assemble(As, An, a, row_bcs, col_bcs,
-                               cell_domains, exterior_facet_domains, interior_facet_domains,
-                               reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  SymmetricAssembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+  assembler.keep_diagonal = keep_diagonal;
+  assembler.assemble(As, An, a, row_bcs, col_bcs, cell_domains,
+                     exterior_facet_domains, interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
@@ -178,8 +213,13 @@ double dolfin::assemble(const Form& a,
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+
   Scalar s;
-  Assembler::assemble(s, a, reset_sparsity, add_values, finalize_tensor);
+  assembler.assemble(s, a);
   return s;
 }
 //-----------------------------------------------------------------------------
@@ -196,9 +236,12 @@ double dolfin::assemble(const Form& a,
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
   Scalar s;
-  Assembler::assemble(s, a, sub_domain,
-                      reset_sparsity, add_values, finalize_tensor);
+  assembler.assemble(s, a, sub_domain);
   return s;
 }
 //-----------------------------------------------------------------------------
@@ -217,10 +260,15 @@ double dolfin::assemble(const Form& a,
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
+
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.add_values = add_values;
+  assembler.finalize_tensor = finalize_tensor;
+
   Scalar s;
-  Assembler::assemble(s, a, cell_domains, exterior_facet_domains,
-                      interior_facet_domains,
-                      reset_sparsity, add_values, finalize_tensor);
+  assembler.assemble(s, a, cell_domains, exterior_facet_domains,
+                      interior_facet_domains);
   return s;
 }
 //-----------------------------------------------------------------------------

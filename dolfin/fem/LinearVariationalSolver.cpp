@@ -26,7 +26,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
-#include "AssemblerTools.h"
+#include "AssemblerBase.h"
 #include "assemble.h"
 #include "DirichletBC.h"
 #include "PeriodicBC.h"
@@ -138,7 +138,7 @@ void LinearVariationalSolver::solve()
 
 
     // Intialise matrix, taking into account periodic dofs
-    AssemblerTools::init_global_tensor(*A, *a, dof_pairs, true, false, false);
+    AssemblerBase::init_global_tensor(*A, *a, dof_pairs, true, false, false);
 
     // Assemble linear system
     assemble(*A, *a, false);
