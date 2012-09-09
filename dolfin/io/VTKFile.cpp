@@ -266,6 +266,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+  fp.precision(16);
 
   // Allocate memory for function values at vertices
   const uint size = num_vertices*dim;
@@ -284,17 +285,17 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
     fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   if (encoding == "ascii")
@@ -407,7 +408,7 @@ void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
   // Vertex data
   pugi::xml_node vertex_data_node = xml_node.append_child("PPoints");
   pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "Float32";
+  data_node.append_attribute("type") = "Float64";
   data_node.append_attribute("NumberOfComponents") = "3";
 
   // Cell data
@@ -488,7 +489,7 @@ void VTKFile::pvtu_write_function(uint dim, uint rank,
 
   data_node.append_attribute(rank_type.c_str()) = name.c_str();
   pugi::xml_node data_array_node = data_node.append_child("PDataArray");
-  data_array_node.append_attribute("type") = "Float32";
+  data_array_node.append_attribute("type") = "Float64";
   data_array_node.append_attribute("Name") = name.c_str();
   data_array_node.append_attribute("NumberOfComponents") = num_components;
 
@@ -559,6 +560,7 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  file.precision(16);
   if (!file.is_open())
   {
     dolfin_error("VTKFile.cpp",
@@ -600,6 +602,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  file.precision(16);
   if (!file.is_open())
   {
     dolfin_error("VTKFile.cpp",
@@ -670,8 +673,9 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   // Open file to write data
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+  fp.precision(16);
   fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">";
+  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">";
 
   // Write data
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
