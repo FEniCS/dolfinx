@@ -81,6 +81,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
+  fp.precision(16);
 
   // Write headers
   if (rank == 0)
@@ -152,6 +153,7 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
 {
   std::ostringstream ss;
   ss << std::scientific;
+  ss << std::setprecision(16);
   std::vector<uint>::const_iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -285,6 +287,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
+  file.precision(16);
   if ( !file.is_open() )
   {
     dolfin_error("VTKWriter.cpp",

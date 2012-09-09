@@ -302,6 +302,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   {
     std::ostringstream ss;
     ss << std::scientific;
+    ss << std::setprecision(16);
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
       if (rank == 1 && dim == 2)
