@@ -47,21 +47,49 @@ namespace dolfin
     AssemblerBase() : reset_sparsity(true), add_values(false),
         finalize_tensor(true), keep_diagonal(false) {}
 
-    // Check form
-    static void check(const Form& a);
+    /// reset_sparsity (bool)
+    ///     Default value is true.
+    ///     This controls whether the sparsity pattern of the
+    ///     given tensor is reset prior to assembly.
+    bool reset_sparsity;
+
+    /// add_values (bool)
+    ///     Default value is false.
+    ///     This controls whether values are added to the given
+    ///     tensor or if it is zeroed prior to assembly.
+    bool add_values;
+
+    /// finalize_tensor (bool)
+    ///     Default value is true.
+    ///     This controls whether the assembler finalizes the
+    ///     given tensor after assembly is completed by calling
+    ///     A.apply().
+    bool finalize_tensor;
+
+    /// keep_diagonal (bool)
+    ///     Default value is true.
+    ///     This controls whether the assembler enures that a diagonal
+    ///     entry exists in an assembled matrix. It may be removed
+    ///     if the matrix is finalised.
+    bool keep_diagonal;
 
     // Initialize global tensor
     static void init_global_tensor(GenericTensor& A, const Form& a,
          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
          bool reset_sparsity, bool add_values, bool keep_diagonal);
 
+  protected:
+
+    // Check for compatibility of reset_sparsity, add_values,
+    // finalize_tensor and keep_diagonal
+    void check_parameters() const;
+
+    // Check form
+    static void check(const Form& a);
+
     // Pretty-printing for progress bar
     static std::string progress_message(uint rank, std::string integral_type);
 
-    bool reset_sparsity;
-    bool add_values;
-    bool finalize_tensor;
-    bool keep_diagonal;
   };
 
 }

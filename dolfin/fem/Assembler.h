@@ -77,19 +77,6 @@ namespace dolfin
     ///         The tensor to assemble.
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
     void assemble(GenericTensor& A, const Form& a);
 
     /// Assemble tensor from given form on subdomain
@@ -101,19 +88,6 @@ namespace dolfin
     ///         The form to assemble the tensor from.
     ///     sub_domain (_SubDomain_)
     ///         The subdomain to assemble on.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
     void assemble(GenericTensor& A, const Form& a,
                   const SubDomain& sub_domain);
 
@@ -130,19 +104,6 @@ namespace dolfin
     ///         The exterior facet domains.
     ///     interior_facet_domains (_MeshFunction_ <uint>)
     ///         The interior facet domains.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
     void assemble(GenericTensor& A, const Form& a,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,

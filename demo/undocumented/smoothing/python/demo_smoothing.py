@@ -52,7 +52,7 @@ mesh = SubMesh(mesh, sub_domains, 0)
 mesh.snap_boundary(hole)
 
 # Refine and snap mesh
-#plot(mesh, title="Mesh 0")
+plot(mesh, title="Mesh 0")
 num_refinements = 3
 for i in range(num_refinements):
 
@@ -70,6 +70,6 @@ for i in range(num_refinements):
     mesh.snap_boundary(hole)
 
     # Plot mesh
-    #plot(mesh, title=("Mesh %d" % (i + 1)))
+    plot(mesh, title=("Mesh %d" % (i + 1)))
 
-#interactive()
+interactive()

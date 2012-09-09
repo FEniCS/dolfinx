@@ -402,10 +402,10 @@ void Mesh::intersected_cells(const MeshEntity & entity,
   else
   {
     // Num cells == 1
-    const Cell cell(*this, 0); 
+    const Cell cell(*this, 0);
     if (cell.intersects(entity))
       cells.push_back(0);
-  }    
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
@@ -417,14 +417,14 @@ void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
   else
   {
     // Num cells == 1
-    const Cell cell(*this, 0); 
-    for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); 
+    const Cell cell(*this, 0);
+    for (std::vector<MeshEntity>::const_iterator entity = entities.begin();
 	 entity != entities.end(); ++entity)
     {
       if (cell.intersects(*entity))
 	cells.insert(0);
     }
-  }    
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const Mesh& another_mesh,
@@ -434,7 +434,7 @@ void Mesh::intersected_cells(const Mesh& another_mesh,
 }
 //-----------------------------------------------------------------------------
 int Mesh::intersected_cell(const Point& point) const
-{   
+{
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
     return  _intersection_operator.any_intersected_entity(point);

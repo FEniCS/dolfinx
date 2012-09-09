@@ -47,6 +47,158 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
+          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
+          bool reset_sparsity, bool add_values, bool keep_diagonal)
+{
+  dolfin_assert(a.ufc_form());
+
+  // Check that we should not add values
+  if (reset_sparsity && add_values)
+  {
+    dolfin_error("AssemblerBase.cpp",
+                 "assemble form",
+                 "Can not add values when the sparsity pattern is reset");
+  }
+
+  // Get dof maps
+  std::vector<const GenericDofMap*> dofmaps;
+  for (uint i = 0; i < a.rank(); ++i)
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  if (reset_sparsity)
+  {
+    Timer t0("Build sparsity");
+
+    // Create layout for initialising tensor
+    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
+    dolfin_assert(tensor_layout);
+
+    std::vector<uint> global_dimensions(a.rank());
+    std::vector<std::pair<uint, uint> > local_range(a.rank());
+    for (uint i = 0; i < a.rank(); i++)
+    {
+      dolfin_assert(dofmaps[i]);
+      global_dimensions[i] = dofmaps[i]->global_dimension();
+      local_range[i]       = dofmaps[i]->ownership_range();
+    }
+    tensor_layout->init(global_dimensions, local_range);
+
+    // Build sparsity pattern if required
+    if (tensor_layout->sparsity_pattern())
+    {
+      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPatternBuilder::build(pattern,
+                                a.mesh(), dofmaps, periodic_master_slave_dofs,
+                                a.ufc_form()->num_cell_domains(),
+                                a.ufc_form()->num_interior_facet_domains(),
+                                a.ufc_form()->num_exterior_facet_domains(),
+                                keep_diagonal);
+    }
+    t0.stop();
+
+    // Initialize tensor
+    Timer t1("Init tensor");
+    A.init(*tensor_layout);
+    t1.stop();
+
+    // Insert zeros on the diagonal as diagonal entries may be prematurely
+    // optimised away by the linear algebra backend when calling
+    // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
+    // have no diagonal entry inserted.
+    if (A.rank() == 2 && keep_diagonal)
+    {
+      // Down cast to GenericMatrix
+      GenericMatrix& _A = A.down_cast<GenericMatrix>();
+
+      // Loop over rows and insert 0.0 on the diagonal
+      const double block = 0.0;
+      const std::pair<uint, uint> row_range = A.local_range(0);
+      for (uint i = row_range.first; i < row_range.second; i++)
+        _A.set(&block, (uint) 1, &i, (uint) 1, &i);
+      A.apply("flush");
+    }
+
+    // Insert zeros in positions required for periodic boundary
+    // conditions. These are applied post-assembly, and may be prematurely
+    // optimised away by the linear algebra backend when calling
+    // GenericMatrix::apply, e.g. PETSc does this
+    if (A.rank() == 2)
+    {
+      if (tensor_layout->sparsity_pattern())
+      {
+        const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+        if (pattern.primary_dim() != 0)
+        {
+          dolfin_error("AssemblerBase.cpp",
+                       "insert zero values in periodic boundary condition positions",
+                       "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
+        }
+
+        const std::pair<uint, uint> local_range = pattern.local_range(0);
+
+        GenericMatrix& _A = A.down_cast<GenericMatrix>();
+        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
+        for (dof_pair = periodic_master_slave_dofs.begin();
+                    dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
+        {
+          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
+
+          std::vector<uint> edges;
+          for (uint i = 0; i < 2; ++i)
+          {
+            if (dofs[i] >= local_range.first && dofs[i] < local_range.second)
+            {
+              pattern.get_edges(dofs[i], edges);
+              const std::vector<double> block(edges.size(), 0.0);
+              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+            }
+          }
+        }
+        A.apply("flush");
+      }
+    }
+
+    // Delete sparsity pattern
+    Timer t2("Delete sparsity");
+    t2.stop();
+  }
+  else
+  {
+    // If tensor is not reset, check that dimensions are correct
+    for (uint i = 0; i < a.rank(); ++i)
+    {
+      if (A.size(i) != dofmaps[i]->global_dimension())
+      {
+        dolfin_error("AssemblerBase.cpp",
+                     "assemble form",
+                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
+      }
+    }
+  }
+
+  if (!add_values)
+    A.zero();
+}
+//-----------------------------------------------------------------------------
+void AssemblerBase::check_parameters() const
+{
+  if (finalize_tensor && keep_diagonal)
+  {
+    dolfin_error("AssemblerBase.cpp",
+                 "check parameters",
+                 "Finalizing the tensor and keeping diagonal entries are incompatible.\
+Finalizing tensor will remove any zeroes ");
+  }
+
+  if (!reset_sparsity && keep_diagonal)
+  {
+    dolfin_error("AssemblerBase.cpp",
+                 "check parameters",
+                 "Not resetting tensor and keeping diagonal entries are incompatible");
+  }
+}
+//-----------------------------------------------------------------------------
 void AssemblerBase::check(const Form& a)
 {
   dolfin_assert(a.ufc_form());
@@ -141,143 +293,8 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   }
 }
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
-          bool reset_sparsity, bool add_values, bool keep_diagonal)
-{
-  dolfin_assert(a.ufc_form());
-
-  // Check that we should not add values
-  if (reset_sparsity && add_values)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
-                 "Can not add values when the sparsity pattern is reset");
-  }
-
-  // Get dof maps
-  std::vector<const GenericDofMap*> dofmaps;
-  for (uint i = 0; i < a.rank(); ++i)
-    dofmaps.push_back(a.function_space(i)->dofmap().get());
-
-  if (reset_sparsity)
-  {
-    Timer t0("Build sparsity");
-
-    // Create layout for intialising tensor
-    boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
-    dolfin_assert(tensor_layout);
-
-    std::vector<uint> global_dimensions(a.rank());
-    std::vector<std::pair<uint, uint> > local_range(a.rank());
-    for (uint i = 0; i < a.rank(); i++)
-    {
-      dolfin_assert(dofmaps[i]);
-      global_dimensions[i] = dofmaps[i]->global_dimension();
-      local_range[i]       = dofmaps[i]->ownership_range();
-    }
-    tensor_layout->init(global_dimensions, local_range);
-
-    // Build sparsity pattern if required
-    if (tensor_layout->sparsity_pattern())
-    {
-      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-      SparsityPatternBuilder::build(pattern,
-                                a.mesh(), dofmaps, periodic_master_slave_dofs,
-                                a.ufc_form()->num_cell_domains(),
-                                a.ufc_form()->num_interior_facet_domains(),
-                                a.ufc_form()->num_exterior_facet_domains(),
-                                keep_diagonal);
-    }
-    t0.stop();
-
-    // Initialize tensor
-    Timer t1("Init tensor");
-    A.init(*tensor_layout);
-    t1.stop();
-
-    // Insert zeros in the diagonal as diagonal entries may be prematurely
-    // optimised away by the linear algebra backend when calling
-    // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
-    // have no diagonal entry.
-    if (A.rank() == 2 && keep_diagonal)
-    {
-      GenericMatrix& _A = A.down_cast<GenericMatrix>();
-
-      const double block = 0.0;
-
-      const std::pair<uint, uint> row_range = A.local_range(0);
-      // Loop over rows
-      for (uint i = row_range.first; i < row_range.second; i++)
-      {
-        // Get global row number
-        _A.set(&block, (uint) 1, &i, (uint) 1, &i);
-
-      }
-      A.apply("flush");
-    }
-
-    // Insert zeros in positions required for periodic boundary
-    // conditions. These are applied post-assembly, and may be prematurely
-    // optimised away by the linear algebra backend when calling
-    // GenericMatrix::apply, e.g. PETSc does this
-    if (A.rank() == 2)
-    {
-      if (tensor_layout->sparsity_pattern())
-      {
-        const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-        if (pattern.primary_dim() != 0)
-        {
-          dolfin_error("AssemblerBase.cpp",
-                       "insert zero values in periodic boundary condition positions",
-                       "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
-        }
-
-        GenericMatrix& _A = A.down_cast<GenericMatrix>();
-        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
-        for (dof_pair = periodic_master_slave_dofs.begin(); dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
-        {
-          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
-
-          std::vector<uint> edges;
-          for (uint i = 0; i < 2; ++i)
-          {
-            if (dofs[i] >= pattern.local_range(0).first && dofs[i] < pattern.local_range(0).second)
-            {
-              pattern.get_edges(dofs[i], edges);
-              const std::vector<double> block(edges.size(), 0.0);
-              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
-            }
-          }
-        }
-        A.apply("flush");
-      }
-    }
-
-    // Delete sparsity pattern
-    Timer t2("Delete sparsity");
-    t2.stop();
-  }
-  else
-  {
-    // If tensor is not reset, check that dimensions are correct
-    for (uint i = 0; i < a.rank(); ++i)
-    {
-      if (A.size(i) != dofmaps[i]->global_dimension())
-      {
-        dolfin_error("AssemblerBase.cpp",
-                     "assemble form",
-                     "Reset of tensor in assembly not requested, but dim %d of tensor does not match form", i);
-      }
-    }
-  }
-
-  if (!add_values)
-    A.zero();
-}
-//-----------------------------------------------------------------------------
 std::string AssemblerBase::progress_message(uint rank,
-                                             std::string integral_type)
+                                            std::string integral_type)
 {
   std::stringstream s;
   s << "Assembling ";
