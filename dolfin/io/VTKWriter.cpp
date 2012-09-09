@@ -86,7 +86,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
@@ -97,7 +97,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle vector function with dimension other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
@@ -108,7 +108,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle tensor function with dimension other than 4 or 9");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -205,7 +205,7 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
   const uint num_total_data_points = num_cells*num_data_per_point;
 
   std::vector<uint>::const_iterator cell_offset = offset.begin();
-  std::vector<float> data(num_total_data_points, 0);
+  std::vector<double> data(num_total_data_points, 0);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const uint index = cell->index();
@@ -228,6 +228,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
+  file.precision(16);
   if (!file.is_open())
   {
     dolfin_error("VTKWriter.cpp",
@@ -237,7 +238,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -293,9 +294,9 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "binary" << "\">" << std::endl;
-  std::vector<float> vertex_data(3*mesh.num_vertices());
-  std::vector<float>::iterator vertex_entry = vertex_data.begin();
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "binary" << "\">" << std::endl;
+  std::vector<double> vertex_data(3*mesh.num_vertices());
+  std::vector<double>::iterator vertex_entry = vertex_data.begin();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
