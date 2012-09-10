@@ -393,6 +393,11 @@ bool VTKPlotter::keypressCallback()
       return true;
     }
 
+  case 'r':
+    vtk_pipeline->reset_camera();
+    vtk_pipeline->render();
+    return true;
+
   case CONTROL + 'w':
     vtk_pipeline->close_window();
     active_plotters->remove(this);
