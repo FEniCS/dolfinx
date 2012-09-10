@@ -98,8 +98,10 @@ double bench(std::string form, boost::shared_ptr<const Form> a)
 
   // Assemble
   Timer timer("Total time");
+  Assembler assembler;
+  assembler.reset_sparsity = false;
   for (dolfin::uint i = 0; i < NUM_REPS; ++i)
-    assemble(A, *a, false);
+    assemble(A, *a);
   const double t = timer.stop();
 
   // Write summary

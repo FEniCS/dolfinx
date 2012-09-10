@@ -91,8 +91,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
 
   // Initialize global tensor
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerBase::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
+  init_global_tensor(A, a, periodic_master_slave_dofs);
 
   // FIXME: The below selections should be made robust
 

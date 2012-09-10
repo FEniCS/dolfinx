@@ -48,8 +48,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
-          bool reset_sparsity, bool add_values, bool keep_diagonal)
+          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs)
 {
   dolfin_assert(a.ufc_form());
 

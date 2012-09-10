@@ -36,8 +36,8 @@ namespace dolfin
   class GenericTensor;
   class Form;
 
-  /// This class provides some common functions used in the
-  /// Assembler and SystemAssembler classes.
+  /// This class provides some common functions used in
+  /// assembler classes.
 
   class AssemblerBase
   {
@@ -74,9 +74,8 @@ namespace dolfin
     bool keep_diagonal;
 
     // Initialize global tensor
-    static void init_global_tensor(GenericTensor& A, const Form& a,
-         const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs,
-         bool reset_sparsity, bool add_values, bool keep_diagonal);
+    void init_global_tensor(GenericTensor& A, const Form& a,
+         const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs);
 
   protected:
 

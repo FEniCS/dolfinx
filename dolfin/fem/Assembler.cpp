@@ -156,8 +156,7 @@ void Assembler::assemble(GenericTensor& A,
 
   // Initialize global tensor
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerBase::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                    reset_sparsity, add_values, keep_diagonal);
+  init_global_tensor(A, a, periodic_master_slave_dofs);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
