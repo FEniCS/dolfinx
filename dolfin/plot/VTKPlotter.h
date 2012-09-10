@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-06
+// Last changed: 2012-09-10
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -46,8 +46,7 @@ namespace dolfin
   class Function;
   class GenericVTKPlottable;
   class Mesh;
-  class PrivateVTKPipeline;
-  class PrivateVTKInteractorStyle;
+  class VTKWindowOutputStage;
   template<typename T> class Array;
   template<typename T> class MeshFunction;
 
@@ -233,6 +232,10 @@ namespace dolfin
     // mode is entered even if 'Q' has been pressed.
     static void all_interactive(bool really=false);
 
+    // Keypress callback; return true if handled. Public, but intended for
+    // internal (library) use.
+    bool keypressCallback();
+
   private:
 
     void update_pipeline(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
@@ -243,9 +246,6 @@ namespace dolfin
     // Used when calling interactive() (which should have effect on
     // all plot windows)
     static boost::shared_ptr<std::list<VTKPlotter*> > active_plotters;
-
-    // Allow the interactor style full access to the plotter
-    friend class PrivateVTKInteractorStyle;
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
@@ -260,13 +260,11 @@ namespace dolfin
     // Return the hover-over help text
     std::string get_helptext();
 
-    // Keypress callback; return true if handled
-    bool keypressCallback();
-
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
 
-    boost::scoped_ptr<PrivateVTKPipeline> vtk_pipeline;
+    // The output stage
+    boost::scoped_ptr<VTKWindowOutputStage> vtk_pipeline;
 
     // The number of plotted frames
     uint _frame_counter;
