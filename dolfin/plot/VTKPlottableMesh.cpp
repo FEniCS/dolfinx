@@ -18,27 +18,35 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-31
+// Last changed: 2012-09-10
 
 #ifdef HAS_VTK
 
-#include <vtkStringArray.h>
 #include <vtkCellArray.h>
-#include <vtkPointData.h>
-#include <vtkPointSetToLabelHierarchy.h>
-#include <vtkTextProperty.h>
+#include <vtkCellCenters.h>
+#include <vtkCellData.h>
+#include <vtkFloatArray.h>
+#include <vtkGeometryFilter.h>
+#include <vtkIdFilter.h>
 #include <vtkLabelPlacementMapper.h>
+#include <vtkLabeledDataMapper.h>
+#include <vtkPointData.h>
+#include <vtkPointSetAlgorithm.h>
+#include <vtkPointSetToLabelHierarchy.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
-#include <vtkIdFilter.h>
-#include <vtkLabeledDataMapper.h>
-#include <vtkCellCenters.h>
-#include <vtkSelectVisiblePoints.h>
 #include <vtkRenderer.h>
+#include <vtkSelectVisiblePoints.h>
+#include <vtkStringArray.h>
+#include <vtkTextProperty.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkVectorNorm.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/CellType.h>
+
+#include "VTKWindowOutputStage.h"
 #include "VTKPlottableMesh.h"
 
 using namespace dolfin;
@@ -72,12 +80,9 @@ void VTKPlottableMesh::init_pipeline(const Parameters &parameters)
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
-bool VTKPlottableMesh::requires_depthsort() const
+void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
 {
-  if (_entity_dim < 2 || dim() < 3)
-  {
-    return false;
-  }
+  bool has_nans = false;
 
   vtkFloatArray *pointdata = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
   if (pointdata && pointdata->GetNumberOfComponents() == 1)
@@ -85,7 +90,10 @@ bool VTKPlottableMesh::requires_depthsort() const
     for (uint i = 0; i < pointdata->GetNumberOfTuples(); i++)
     {
       if (isnan(pointdata->GetValue(i)))
-        return true;
+      {
+        has_nans = true;
+        break;
+      }
     }
   }
 
@@ -95,11 +103,20 @@ bool VTKPlottableMesh::requires_depthsort() const
     for (uint i = 0; i < celldata->GetNumberOfTuples(); i++)
     {
       if (isnan(celldata->GetValue(i)))
-        return true;
+      {
+        has_nans = true;
+        break;
+      }
     }
   }
 
-  return false;
+  output.set_translucent(has_nans, _entity_dim, dim());
+  output.set_input(get_output());
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
+{
+  return _geometryFilter->GetOutputPort();
 }
 //----------------------------------------------------------------------------
 bool VTKPlottableMesh::is_compatible(const Variable &var) const
@@ -225,11 +242,6 @@ dolfin::uint VTKPlottableMesh::dim() const
   return _mesh->topology().dim();
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
-{
-  return _geometryFilter->GetOutputPort();
-}
-//----------------------------------------------------------------------------
 void VTKPlottableMesh::build_id_filter()
 {
   if (!_idFilter)
@@ -350,5 +362,113 @@ VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
 {
   return new VTKPlottableMesh(mesh);
 }
+//---------------------------------------------------------------------------
+template <class T>
+void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
+{
+  const uint num_vertices = _mesh->num_vertices();
+  const uint num_components = size / num_vertices;
+
+  dolfin_assert(num_components > 0 && num_components <= 3);
+  dolfin_assert(num_vertices*num_components == size);
+
+  vtkSmartPointer<vtkFloatArray> values =
+    vtkSmartPointer<vtkFloatArray>::New();
+  if (num_components == 1)
+  {
+    values->SetNumberOfValues(num_vertices);
+    for (uint i = 0; i < num_vertices; ++i)
+    {
+      values->SetValue(i, (double)indata[i]);
+    }
+    _grid->GetPointData()->SetScalars(values);
+  }
+  else
+  {
+    // NOTE: Allocation must be done in this order!
+    // Note also that the number of VTK vector components must always be 3
+    // regardless of the function vector value dimension
+    values->SetNumberOfComponents(3);
+    values->SetNumberOfTuples(num_vertices);
+    for (uint i = 0; i < num_vertices; ++i)
+    {
+      // The entries in "vertex_values" must be copied to "vectors". Viewing
+      // these arrays as matrices, the transpose of vertex values should be copied,
+      // since DOLFIN and VTK store vector function values differently
+      for (uint d = 0; d < num_components; d++)
+      {
+        values->SetValue(3*i+d, indata[i+num_vertices*d]);
+      }
+      for (uint d = num_components; d < 3; d++)
+      {
+        values->SetValue(3*i+d, 0.0);
+      }
+    }
+    _grid->GetPointData()->SetVectors(values);
+
+    // Compute norms of vector data
+    vtkSmartPointer<vtkVectorNorm> norms =
+      vtkSmartPointer<vtkVectorNorm>::New();
+    norms->SetInput(_grid);
+    norms->SetAttributeModeToUsePointData();
+    //NOTE: This update is necessary to actually compute the norms
+    norms->Update();
+
+    // Attach vector norms as scalar point data in the VTK grid
+    _grid->GetPointData()->SetScalars(norms->GetOutput()->GetPointData()->GetScalars());
+  }
+}
+//----------------------------------------------------------------------------
+template <class T>
+void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameters &parameters)
+{
+  const uint num_entities = _mesh->num_entities(_entity_dim);
+  dolfin_assert(num_entities == size);
+
+  vtkSmartPointer<vtkFloatArray> values =
+    vtkSmartPointer<vtkFloatArray>::New();
+  values->SetNumberOfValues(num_entities);
+
+  for (uint i = 0; i < num_entities; ++i)
+  {
+    values->SetValue(i, (float)indata[i]);
+  }
+
+  const Parameter &param_hide_below = parameters["hide_below"];
+  const Parameter &param_hide_above = parameters["hide_above"];
+  if (param_hide_below.is_set() || param_hide_above.is_set())
+  {
+    float hide_above =  std::numeric_limits<float>::infinity();
+    float hide_below = -std::numeric_limits<float>::infinity();
+    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
+    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
+
+    for (uint i = 0; i < num_entities; i++)
+    {
+      float val = values->GetValue(i);
+
+      if (val < hide_below || val > hide_above)
+      {
+        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+
+  _grid->GetCellData()->SetScalars(values);
+}
+
+//----------------------------------------------------------------------------
+// Instantiate function templates for valid types
+//----------------------------------------------------------------------------
+
+#define INSTANTIATE(T)                                                  \
+  template void dolfin::VTKPlottableMesh::setPointValues(dolfin::uint, const T*, const Parameters&); \
+  template void dolfin::VTKPlottableMesh::setCellValues(dolfin::uint, const T*, const Parameters&);
+
+INSTANTIATE(bool)
+INSTANTIATE(double)
+INSTANTIATE(float)
+INSTANTIATE(int)
+INSTANTIATE(dolfin::uint)
 
 #endif

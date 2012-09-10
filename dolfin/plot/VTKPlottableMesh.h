@@ -18,32 +18,36 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-31
+// Last changed: 2012-09-10
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
 
 #ifdef HAS_VTK
 
-#include <vtkUnstructuredGrid.h>
-#include <vtkGeometryFilter.h>
-#include <vtkFloatArray.h>
-#include <vtkCellArray.h>
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-#include <vtkVectorNorm.h>
-#include <vtkPointSetAlgorithm.h>
+#include <vtkSmartPointer.h>
 
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
 
 #include "GenericVTKPlottable.h"
 
+class vtkActor2D;
+class vtkActor3D;
+class vtkAlgorithmOutput;
+class vtkGeometryFilter;
 class vtkIdFilter;
+class vtkPointSet;
+class vtkPointSetAlgorithm;
+class vtkUnstructuredGrid;
 
 namespace dolfin
 {
 
   class Mesh;
+  class Parameters;
+  class Variable;
+  class VTKWindowOutputStage;
 
   /// Data wrapper class for plotting meshes. It also acts as a superclass
   /// for the other data wrapper classes, as all kinds of plottable data
@@ -60,25 +64,22 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline(const Parameters &parameters);
+    virtual void init_pipeline(const Parameters &parameters);
+
+    /// Connect or reconnect to the output stage.
+    virtual void connect_to_output(VTKWindowOutputStage& output);
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
-
-    /// Return true if depth sort is required
-    virtual bool requires_depthsort() const;
+    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
 
     /// Return whether this plottable is compatible with the variable
-    bool is_compatible(const Variable &var) const;
+    virtual bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
-    void update_range(double range[2]);
+    virtual void update_range(double range[2]);
 
     /// Return geometric dimension
     virtual uint dim() const;
-
-    /// Return data to visualize
-    vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
     /// Get an actor for showing vertex labels
     vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);
@@ -90,6 +91,9 @@ namespace dolfin
     vtkSmartPointer<vtkActor> get_mesh_actor();
 
   protected:
+
+    /// Get the output port
+    virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
     // Create label filter
     void build_id_filter();
@@ -139,105 +143,6 @@ namespace dolfin
   };
 
   VTKPlottableMesh *CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh);
-
-  //---------------------------------------------------------------------------
-  // Implementation of VTKPlottableMeshFunction
-  //---------------------------------------------------------------------------
-  template <class T>
-  void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
-  {
-    const uint num_vertices = _mesh->num_vertices();
-    const uint num_components = size / num_vertices;
-
-    dolfin_assert(num_components > 0 && num_components <= 3);
-    dolfin_assert(num_vertices*num_components == size);
-
-    vtkSmartPointer<vtkFloatArray> values =
-      vtkSmartPointer<vtkFloatArray>::New();
-    if (num_components == 1)
-    {
-      values->SetNumberOfValues(num_vertices);
-      for (uint i = 0; i < num_vertices; ++i)
-      {
-        values->SetValue(i, (double)indata[i]);
-      }
-      _grid->GetPointData()->SetScalars(values);
-    }
-    else
-    {
-      // NOTE: Allocation must be done in this order!
-      // Note also that the number of VTK vector components must always be 3
-      // regardless of the function vector value dimension
-      values->SetNumberOfComponents(3);
-      values->SetNumberOfTuples(num_vertices);
-      for (uint i = 0; i < num_vertices; ++i)
-      {
-        // The entries in "vertex_values" must be copied to "vectors". Viewing
-        // these arrays as matrices, the transpose of vertex values should be copied,
-        // since DOLFIN and VTK store vector function values differently
-        for (uint d = 0; d < num_components; d++)
-        {
-          values->SetValue(3*i+d, indata[i+num_vertices*d]);
-        }
-        for (uint d = num_components; d < 3; d++)
-        {
-          values->SetValue(3*i+d, 0.0);
-        }
-      }
-      _grid->GetPointData()->SetVectors(values);
-
-      // Compute norms of vector data
-      vtkSmartPointer<vtkVectorNorm> norms =
-        vtkSmartPointer<vtkVectorNorm>::New();
-      norms->SetInput(_grid);
-      norms->SetAttributeModeToUsePointData();
-      //NOTE: This update is necessary to actually compute the norms
-      norms->Update();
-
-      // Attach vector norms as scalar point data in the VTK grid
-      _grid->GetPointData()->SetScalars(
-          norms->GetOutput()->GetPointData()->GetScalars());
-    }
-  }
-  //----------------------------------------------------------------------------
-  template <class T>
-  void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameters &parameters)
-  {
-    const uint num_entities = _mesh->num_entities(_entity_dim);
-    dolfin_assert(num_entities == size);
-
-    vtkSmartPointer<vtkFloatArray> values =
-      vtkSmartPointer<vtkFloatArray>::New();
-    values->SetNumberOfValues(num_entities);
-
-    for (uint i = 0; i < num_entities; ++i)
-    {
-      values->SetValue(i, (float)indata[i]);
-    }
-
-    const Parameter &param_hide_below = parameters["hide_below"];
-    const Parameter &param_hide_above = parameters["hide_above"];
-    if (param_hide_below.is_set() || param_hide_above.is_set())
-    {
-      float hide_above =  std::numeric_limits<float>::infinity();
-      float hide_below = -std::numeric_limits<float>::infinity();
-      if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
-      if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
-
-      for (uint i = 0; i < num_entities; i++)
-      {
-        float val = values->GetValue(i);
-
-        if (val < hide_below || val > hide_above)
-        {
-          values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
-        }
-      }
-    }
-
-    _grid->GetCellData()->SetScalars(values);
-  }
-  //----------------------------------------------------------------------------
 }
 
 #endif

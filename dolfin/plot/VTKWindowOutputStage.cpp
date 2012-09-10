@@ -56,17 +56,11 @@
 #include <vtkCaptionActor2D.h>
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 
 #include <dolfin/common/Timer.h>
 #include "VTKWindowOutputStage.h"
 #include "VTKPlotter.h"
 #include "GenericVTKPlottable.h"
-
-#ifdef foreach
-#undef foreach
-#endif
-#define foreach BOOST_FOREACH
 
 using namespace dolfin;
 
@@ -138,6 +132,26 @@ VTKWindowOutputStage::VTKWindowOutputStage()
   _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 
   _axesActor = vtkSmartPointer<vtkAxesActor>::New();
+}
+//----------------------------------------------------------------------------
+VTKWindowOutputStage::~VTKWindowOutputStage()
+{
+  // Note: VTK (current 5.6.1) seems to very picky about the order of
+  // destruction. This destructor tries to impose an order on the most
+  // important stuff.
+
+  std::cout << "Pipeline destroyed\n";
+
+#ifdef HAS_QT4
+  widget.reset(NULL);
+#endif
+
+  helptextActor = NULL;
+  balloonRep = NULL;
+  balloonwidget = NULL;
+
+  _renderer = NULL;
+  _renderWindow = NULL;
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters)
@@ -327,6 +341,14 @@ vtkCamera* VTKWindowOutputStage::get_camera()
   return _renderer->GetActiveCamera();
 }
 //----------------------------------------------------------------------------
+void VTKWindowOutputStage::reset_camera()
+{
+  // vtkAxesActor messes up the bounding box, disable it while setting camera
+  _axesActor->SetVisibility(false);
+  _renderer->ResetCamera();
+  _axesActor->SetVisibility(true);
+}
+//----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_scalar_range(double *range)
 {
   _mapper->SetScalarRange(range);
@@ -414,53 +436,29 @@ bool VTKWindowOutputStage::add_actor(vtkSmartPointer<vtkActor2D> actor)
   return false;
 }
 //----------------------------------------------------------------------------
-void VTKWindowOutputStage::set_input(const GenericVTKPlottable &plottable, bool reset_camera)
+void VTKWindowOutputStage::set_input(vtkSmartPointer<vtkAlgorithmOutput> output)
 {
-  const bool depthsort = plottable.requires_depthsort();
-  if (plottable.dim() < 3 || depthsort)
+  _input->SetInputConnection(output);
+}
+//----------------------------------------------------------------------------
+void VTKWindowOutputStage::set_translucent(bool onoff, uint topo_dim, uint geom_dim)
+{
+  // In 3D, any translucency in the lut makes the visibility test
+  // for cell/vertex labels ineffective.
+  // The depth sorting is slow, particularly for glyphs.
+  // Hence, set these only when required.
+
+  if (onoff)
   {
-    // In 3D, only set this when necessary. It makes the visibility test
-    // for cell/vertex labels ineffective.
     _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
-  }
-  if (depthsort)
-  {
-    std::cout << "Depth sort\n";
-    _depthSort->SetInputConnection(plottable.get_output());
     _mapper->SetInputConnection(_depthSort->GetOutputPort());
+    _input = _depthSort;
   }
   else
   {
-    _mapper->SetInputConnection(plottable.get_output());
+    _lut->SetNanColor(0.0, 0.0, 0.0, 1.0);
+    _input = _mapper;
   }
-
-  if (reset_camera)
-  {
-    // vtkAxesActor messes up the bounding box, disable it while setting camera
-    _axesActor->SetVisibility(false);
-    _renderer->ResetCamera();
-    _axesActor->SetVisibility(true);
-  }
-}
-//----------------------------------------------------------------------------
-VTKWindowOutputStage::~VTKWindowOutputStage()
-{
-  // Note: VTK (current 5.6.1) seems to very picky about the order of
-  // destruction. This destructor tries to impose an order on the most
-  // important stuff.
-
-  std::cout << "Pipeline destroyed\n";
-
-#ifdef HAS_QT4
-  widget.reset(NULL);
-#endif
-
-  helptextActor = NULL;
-  balloonRep = NULL;
-  balloonwidget = NULL;
-
-  _renderer = NULL;
-  _renderWindow = NULL;
 }
 //----------------------------------------------------------------------------
 

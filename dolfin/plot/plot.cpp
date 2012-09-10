@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-09-06
+// Last changed: 2012-09-10
 
 #include <cstdlib>
 #include <sstream>
@@ -157,7 +157,8 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
   return plot(expression, mesh, default_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression, const Mesh& mesh,
+boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
+                                           const Mesh& mesh,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(expression),
@@ -175,7 +176,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
 }
 
 //---------------------------------------------------------------------------
-// Instantiate function instances for valid types
+// Instantiate function templates for valid types
 //---------------------------------------------------------------------------
 
 #define INSTANTIATE(T)                                                  \

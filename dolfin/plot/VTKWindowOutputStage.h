@@ -28,6 +28,8 @@
 class QVTKWidget;
 class vtkActor2D;
 class vtkActor;
+class vtkAlgorithm;
+class vtkAlgorithmOutput;
 class vtkAxesActor;
 class vtkBalloonRepresentation;
 class vtkBalloonWidget;
@@ -40,14 +42,14 @@ class vtkRenderWindowInteractor;
 class vtkRenderer;
 class vtkScalarBarActor;
 class vtkTextActor;
-namespace dolfin {
-  class GenericVTKPlottable;
-  class Parameters;
-  class VTKPlotter;
-}
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class GenericVTKPlottable;
+  class Parameters;
+  class VTKPlotter;
 
   /// This class enables visualization of various DOLFIN entities.
   class VTKWindowOutputStage
@@ -60,6 +62,9 @@ namespace dolfin
 
     // The poly data mapper
     vtkSmartPointer<vtkPolyDataMapper> _mapper;
+
+    // The input port (either the mapper or depth sorter)
+    vtkSmartPointer<vtkAlgorithm> _input;
 
     // The lookup table
     vtkSmartPointer<vtkLookupTable> _lut;
@@ -114,6 +119,8 @@ namespace dolfin
 
     vtkCamera* get_camera();
 
+    void reset_camera();
+
     void set_scalar_range(double *range);
 
     void cycle_representation(int new_rep=0);
@@ -130,7 +137,9 @@ namespace dolfin
 
     bool add_actor(vtkSmartPointer<vtkActor2D> actor);
 
-    void set_input(const GenericVTKPlottable &plottable, bool reset_camera);
+    void set_input(vtkSmartPointer<vtkAlgorithmOutput> output);
+
+    void set_translucent(bool onoff, uint topo_dim=3, uint geom_dim=3);
 
     ~VTKWindowOutputStage();
 

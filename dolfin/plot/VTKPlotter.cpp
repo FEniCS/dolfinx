@@ -55,6 +55,8 @@
 #include <vtkPolyLine.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkGeometryFilter.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -579,7 +581,9 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
   // Set the mapper's connection on each plot. This must be done since the
   // visualization parameters may have changed since the last frame, and
   // the input may hence also have changed
-  vtk_pipeline->set_input(*_plottable, _frame_counter==0);
+  _plottable->connect_to_output(*vtk_pipeline);
+  if (_frame_counter == 0)
+    vtk_pipeline->reset_camera();
 }
 //----------------------------------------------------------------------------
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const

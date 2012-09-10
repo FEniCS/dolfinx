@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-30
+// Last changed: 2012-09-10
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -36,6 +36,7 @@ namespace dolfin
 {
 
   class Parameters;
+  class VTKWindowOutputStage;
 
   /// This class defines a common interface for objects that can be plotted by
   /// the VTKPlotter class
@@ -47,24 +48,21 @@ namespace dolfin
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline(const Parameters& parameters) = 0;
 
+    /// Connect or reconnect to the output stage.
+    virtual void connect_to_output(VTKWindowOutputStage& output) = 0;
+
     /// Update the plottable data. The variable may be empty, or it may be a
     /// new variable to plot. is_compatible(var) must be true.
     virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter) = 0;
 
     /// Return whether this plottable is compatible with the variable
-    virtual bool is_compatible(const Variable &var) const =0;
+    virtual bool is_compatible(const Variable &var) const = 0;
 
     /// Update the scalar range of the plottable data
     virtual void update_range(double range[2]) = 0;
 
     /// Return geometric dimension
     virtual uint dim() const = 0;
-
-    /// Return true if depth sorting is required
-    virtual bool requires_depthsort() const = 0;
-
-    /// Return data to visualize
-    virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
 
     /// Get an actor for showing vertex labels
     virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>)
