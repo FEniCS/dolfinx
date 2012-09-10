@@ -151,7 +151,15 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
   _frame_counter++;
 
   if (parameters["interactive"])
+  {
     interactive();
+  }
+#ifdef HAS_QT4
+  else
+  {
+    qApp->processEvents();
+  }
+#endif
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive(bool enter_eventloop)
