@@ -98,7 +98,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   }
 
   vtkFloatArray *celldata = dynamic_cast<vtkFloatArray*>(_grid->GetCellData()->GetScalars());
-  if (celldata && celldata->GetNumberOfComponents() == 1)
+  if (celldata && celldata->GetNumberOfComponents() == 1 && !has_nans)
   {
     for (uint i = 0; i < celldata->GetNumberOfTuples(); i++)
     {

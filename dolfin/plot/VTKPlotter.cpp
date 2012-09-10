@@ -46,8 +46,7 @@
 
 #ifdef HAS_QT4
 #include <QApplication>
-#include <QDesktopWidget>
-#include <QVTKWidget.h>
+#include <QtGlobal>
 #endif
 
 #include <vtkSmartPointer.h>
@@ -57,6 +56,8 @@
 #include <vtkProperty.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkGeometryFilter.h>
+#include <vtkToolkits.h>
+#include <vtkRenderWindowInteractor.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -181,10 +182,20 @@ void VTKPlotter::init()
 
   // Check if environment variable DOLFIN_NOPLOT is set to a nonzero value
   {
-    char *noplot_env;
+    const char *noplot_env;
     noplot_env = getenv("DOLFIN_NOPLOT");
     no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
   }
+
+  // Check if we have a (potential) connection to the X server. In the future,
+  // we may instead use a non-gui output stage in this case.
+#if defined(Q_WS_X11) || defined(VTK_USE_X) // <QtGlobal>, <vtkToolkits.h>
+  if (!getenv("DISPLAY") || strcmp(getenv("DISPLAY"), "") == 0)
+  {
+    warning("DISPLAY not set, disabling plotting");
+    no_plot = true;
+  }
+#endif
 
   // Add plotter to pool
   active_plotters->push_back(this);
@@ -192,6 +203,13 @@ void VTKPlotter::init()
   // Add a local shared_ptr to the pool. See comment in VTKPlotter.h
   active_plotters_local_copy = active_plotters;
   log(TRACE, "Size of plotter pool is %d.", active_plotters->size());
+
+  // Don't initialize pipeline if no_plot is set, since the pipeline requires a
+  // connection to the X server.
+  if (no_plot)
+  {
+    return;
+  }
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -272,6 +290,7 @@ std::string VTKPlotter::get_helptext()
   text << "   h: Save plot to file\n";
   text << "   q: Continue\n";
   text << "   Q: Continue to end\n";
+  text << " C-Q: Abort execution\n";
   text << "\n";
 #ifdef HAS_QT4
   text << "Window control:\n";
@@ -326,7 +345,7 @@ bool VTKPlotter::keypressCallback()
   case 'm': // Toggle (secondary) mesh
     {
       vtkSmartPointer<vtkActor> mesh_actor = _plottable->get_mesh_actor();
-      bool added = vtk_pipeline->add_actor(mesh_actor);
+      bool added = vtk_pipeline->add_viewprop(mesh_actor);
       if (!added)
       {
         mesh_actor->SetVisibility(!mesh_actor->GetVisibility());
@@ -340,7 +359,7 @@ bool VTKPlotter::keypressCallback()
       // Check if label actor is present. If not get from plottable.
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
-      bool added = vtk_pipeline->add_actor(labels);
+      bool added = vtk_pipeline->add_viewprop(labels);
       if (!added)
       {
         // Turn on or off dependent on present state
@@ -357,7 +376,7 @@ bool VTKPlotter::keypressCallback()
       // is, toggle off
       vtkSmartPointer<vtkActor2D> labels = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());
 
-      bool added = vtk_pipeline->add_actor(labels);
+      bool added = vtk_pipeline->add_viewprop(labels);
       if (!added)
       {
         // Turn on or off dependent on present state
@@ -431,6 +450,9 @@ bool VTKPlotter::keypressCallback()
 //----------------------------------------------------------------------------
 void VTKPlotter::write_png(std::string filename)
 {
+  if (no_plot)
+    return;
+
   if (filename.empty()) {
     // We construct a filename from the given prefix and static counter.
     // If a file with that filename exists, the counter is incremented
@@ -482,6 +504,9 @@ void VTKPlotter::set_min_max(double min, double max)
 //----------------------------------------------------------------------------
 void VTKPlotter::add_polygon(const Array<double>& points)
 {
+  if (no_plot)
+    return;
+
   const dolfin::uint dim = _plottable->dim();
 
   if (points.size() % dim != 0)
@@ -529,7 +554,7 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   polygon_actor->GetProperty()->SetColor(0, 0, 1);
   polygon_actor->GetProperty()->SetLineWidth(1);
 
-  vtk_pipeline->add_actor(polygon_actor);
+  vtk_pipeline->add_viewprop(polygon_actor);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
