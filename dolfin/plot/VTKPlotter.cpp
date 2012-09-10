@@ -295,7 +295,10 @@ std::string VTKPlotter::get_helptext()
   text << "   v: Toggle vertex indices\n";
   text << "   w: Toggle wireframe/point/surface view\n";
   text << "  +-: Resize points and lines\n";
-  text << "   h: Save plot to file\n";
+  text << "   h: Save plot to png (raster) file\n";
+#ifdef VTK_USE_GL2PS
+  text << "   H: Save plot to pdf (vector) file\n";
+#endif
   text << "   q: Continue\n";
   text << "   Q: Continue to end\n";
   text << " C-Q: Abort execution\n";
@@ -348,6 +351,10 @@ bool VTKPlotter::keypressCallback()
 
   case 'h': // Save plot to file
     write_png();
+    return true;
+
+  case SHIFT + 'h': // Save plot to PDF
+    write_pdf();
     return true;
 
   case 'm': // Toggle (secondary) mesh
@@ -465,22 +472,43 @@ void VTKPlotter::write_png(std::string filename)
     // We construct a filename from the given prefix and static counter.
     // If a file with that filename exists, the counter is incremented
     // until a unique filename is found.
-    std::stringstream filenamebuilder;
-    filenamebuilder << std::string(parameters["prefix"]);
-    filenamebuilder << hardcopy_counter;
-    while (boost::filesystem::exists(filenamebuilder.str() + ".png")) {
-      hardcopy_counter++;
-      filenamebuilder.str("");
+    do {
+      std::stringstream filenamebuilder;
       filenamebuilder << std::string(parameters["prefix"]);
-      filenamebuilder << hardcopy_counter;
+      filenamebuilder << hardcopy_counter++;
+      filename = filenamebuilder.str();
     }
-    filename = filenamebuilder.str();
+    while (boost::filesystem::exists(filename + ".png"));
   }
 
   info("Saving plot to file: %s.png", filename.c_str());
 
   update_pipeline();
   vtk_pipeline->write_png(filename);
+}
+//----------------------------------------------------------------------------
+void VTKPlotter::write_pdf(std::string filename)
+{
+  if (no_plot)
+    return;
+
+  if (filename.empty()) {
+    // We construct a filename from the given prefix and static counter.
+    // If a file with that filename exists, the counter is incremented
+    // until a unique filename is found.
+    do {
+      std::stringstream filenamebuilder;
+      filenamebuilder << std::string(parameters["prefix"]);
+      filenamebuilder << hardcopy_counter++;
+      filename = filenamebuilder.str();
+    }
+    while (boost::filesystem::exists(filename + ".pdf"));
+  }
+
+  info("Saving plot to file: %s.pdf", filename.c_str());
+
+  update_pipeline();
+  vtk_pipeline->write_pdf(filename);
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::azimuth(double angle)

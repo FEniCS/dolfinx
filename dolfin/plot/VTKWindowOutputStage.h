@@ -117,6 +117,8 @@ namespace dolfin
 
     void write_png(std::string filename);
 
+    void write_pdf(std::string filename);
+
     vtkCamera* get_camera();
 
     void reset_camera();

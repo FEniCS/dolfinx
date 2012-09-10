@@ -208,6 +208,10 @@ namespace dolfin
     /// optionally built from prefix)
     void write_png(std::string filename="");
 
+    /// Save plot to PDF file (file suffix appended automatically, filename
+    /// optionally built from prefix)
+    void write_pdf(std::string filename="");
+
     /// Return key (i.e., plotter id) of the object to plot
     const std::string& key() const;
 

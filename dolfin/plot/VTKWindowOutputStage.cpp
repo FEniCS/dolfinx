@@ -55,6 +55,10 @@
 #include <vtkAxesActor.h>
 #include <vtkCaptionActor2D.h>
 
+#ifdef VTK_USE_GL2PS
+#include <vtkGL2PSExporter.h>
+#endif
+
 #include <boost/filesystem.hpp>
 
 #include <dolfin/common/Timer.h>
@@ -334,6 +338,25 @@ void VTKWindowOutputStage::write_png(std::string filename)
   render();
   writer->Modified();
   writer->Write();
+}
+//----------------------------------------------------------------------------
+void VTKWindowOutputStage::write_pdf(std::string filename)
+{
+#ifdef VTK_USE_GL2PS
+  vtkSmartPointer<vtkGL2PSExporter> exporter =
+    vtkSmartPointer<vtkGL2PSExporter>::New();
+  exporter->SetFilePrefix(filename.c_str());
+  //exporter->SetTitle("title");
+  exporter->SetFileFormatToPDF();
+  exporter->SetSortToBSP();
+  exporter->DrawBackgroundOff();
+  exporter->LandscapeOn();
+  //exporter->SilentOn();
+  exporter->SetInput(_renderWindow);
+  exporter->Write();
+#else
+  warning("VTK not configured for PDF output");
+#endif
 }
 //----------------------------------------------------------------------------
 vtkCamera* VTKWindowOutputStage::get_camera()
