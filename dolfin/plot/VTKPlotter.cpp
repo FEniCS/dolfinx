@@ -519,7 +519,8 @@ namespace dolfin
 //----------------------------------------------------------------------------
 } // namespace dolfin
 //----------------------------------------------------------------------------
-namespace {
+namespace // anonymous
+{
   void round_significant_digits(double &x, double (*rounding)(double), int num_significant_digits)
   {
     if (x != 0.0)
@@ -529,28 +530,34 @@ namespace {
       x = rounding(x/reduction_factor)*reduction_factor;
     }
   }
+  //----------------------------------------------------------------------------
+  template <class T>
+  Parameters appropriate_default_parameters()
+  {
+    return VTKPlotter::default_parameters();
+  }
+  template<>
+  Parameters appropriate_default_parameters<Mesh>()
+  {
+    return VTKPlotter::default_mesh_parameters();
+  }
+  template<>
+  Parameters appropriate_default_parameters<CSGGeometry>()
+  {
+    return VTKPlotter::default_mesh_parameters();
+  }
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) :
-  _plottable(CreateVTKPlottable(mesh)),
+template <class T>
+VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) :
+  _plottable(CreateVTKPlottable(t)),
   vtk_pipeline(new PrivateVTKPipeline()),
   _frame_counter(0),
-  _key(to_key(*mesh)),
+  _key(to_key(*t)),
   _initialized(false)
 {
-  parameters = default_mesh_parameters();
-  set_title_from(*mesh);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) :
-  _plottable(CreateVTKPlottable(function)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*function)),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*function);
+  parameters = appropriate_default_parameters<T>();
+  set_title_from(*t);
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
@@ -561,86 +568,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
   _key(to_key(*expression)),
   _initialized(false)
 {
-  parameters = default_parameters();
+  parameters = appropriate_default_parameters<Expression>();
   set_title_from(*expression);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> wrapper) :
-  _plottable(CreateVTKPlottable(wrapper)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*wrapper->expression())),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*wrapper->expression());
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
-  _plottable(CreateVTKPlottable(bc)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*bc)),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*bc);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
-  _plottable(CreateVTKPlottable(mesh_function)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _initialized(false)
-{
-  // FIXME: A different lookuptable should be set when plotting MeshFunctions
-  parameters = default_parameters();
-  set_title_from(*mesh_function);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
-  _plottable(CreateVTKPlottable(mesh_function)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*mesh_function);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) :
-  _plottable(CreateVTKPlottable(mesh_function)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*mesh_function);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) :
-  _plottable(CreateVTKPlottable(mesh_function)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*mesh_function)),
-  _initialized(false)
-{
-  parameters = default_parameters();
-  set_title_from(*mesh_function);
-}
-//----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const CSGGeometry> geometry) :
-  _plottable(CreateVTKPlottable(geometry)),
-  vtk_pipeline(new PrivateVTKPipeline()),
-  _frame_counter(0),
-  _key(to_key(*geometry)),
-  _initialized(false)
-{
-  parameters = default_mesh_parameters();
-  set_title_from(*geometry);
 }
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
@@ -1144,16 +1073,11 @@ namespace dolfin { class PrivateVTKPipeline{}; }
 
 using namespace dolfin;
 
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Mesh> mesh) : _key(to_key(*mesh))                                    { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Function> function) : _key(to_key(*function))                        { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-		       boost::shared_ptr<const Mesh> mesh) : _key(to_key(*expression))                              { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _key(to_key(*bc))                                 { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _key(to_key(*mesh_function))   { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _key(to_key(*mesh_function))    { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _key(to_key(*mesh_function)) { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _key(to_key(*mesh_function))   { init(); }
-VTKPlotter::~VTKPlotter(){}
+template <class T>
+VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) : { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> e,
+		       boost::shared_ptr<const Mesh> mesh)  { init(); }
+VTKPlotter::~VTKPlotter() {}
 
 // (Ab)use init() to issue a warning.
 // We also need to initialize the parameter set to avoid tons of warning
@@ -1166,6 +1090,7 @@ void VTKPlotter::init()
 }
 
 void VTKPlotter::plot               (boost::shared_ptr<const Variable>) {}
+void VTKPlotter::update             (boost::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive        (bool ){}
 void VTKPlotter::write_png          (std::string){}
 void VTKPlotter::azimuth            (double) {}
@@ -1183,3 +1108,18 @@ void VTKPlotter::all_interactive() {}
 boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;
+
+//---------------------------------------------------------------------------
+// Instantiate constructors for valid types
+//---------------------------------------------------------------------------
+
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::CSGGeometry>);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::DirichletBC>);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::ExpressionWrapper>);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::Function>);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::Mesh>);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<bool> >);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<double> >);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<float> >);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<int> >);
+template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<dolfin::uint> >);

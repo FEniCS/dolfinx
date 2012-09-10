@@ -30,6 +30,7 @@
 namespace dolfin
 {
 
+  // Forward declarations
   class CSGGeometry;
   class DirichletBC;
   class Function;
@@ -39,29 +40,39 @@ namespace dolfin
   class Parameters;
   class VTKPlotter;
 
-  /// Simple built-in plot commands for plotting functions and meshes.
-
   /// Make the current plots interactive. If really is set, the interactive
   /// mode is entered even if 'Q' has been pressed.
   void interactive(bool really=false);
 
-  /// Plot function
-  boost::shared_ptr<VTKPlotter> plot(const Function& function,
-				     std::string title="Function",
+  //---------------------------------------------------------------------------
+  /// Simple built-in plot commands for plotting functions and meshes.
+  //---------------------------------------------------------------------------
+
+  // Plot variable of any supported type
+  template <class T>
+  boost::shared_ptr<VTKPlotter> plot(const T& t,
+				     std::string title,
 				     std::string mode="auto");
 
-  /// Plot function (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Function> function,
-				     std::string title="Function",
+  /// Plot variable (shared_ptr version)
+  template <class T>
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const T> t,
+				     std::string title,
 				     std::string mode="auto");
 
-  /// Plot function (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const Function& function,
+  /// Plot variable (parameter version)
+  template <class T>
+  boost::shared_ptr<VTKPlotter> plot(const T& t,
 				     const Parameters& parameters);
 
-  /// Plot function (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Function> function,
+  /// Plot variable (parameter, shared_ptr version)
+  template <class T>
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const T> t,
 				     boost::shared_ptr<const Parameters> parameters);
+
+  //---------------------------------------------------------------------------
+  // Specialised versions for Expression together with Mesh
+  //---------------------------------------------------------------------------
 
   /// Plot expression
   boost::shared_ptr<VTKPlotter> plot(const Expression& expression,
@@ -71,7 +82,7 @@ namespace dolfin
 
   /// Plot expression (shared_ptr version)
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Expression> expression,
-		   boost::shared_ptr<const Mesh> mesh,
+                                     boost::shared_ptr<const Mesh> mesh,
 				     std::string title="Expression",
 				     std::string mode="auto");
 
@@ -85,118 +96,19 @@ namespace dolfin
 				     boost::shared_ptr<const Mesh> mesh,
 				     boost::shared_ptr<const Parameters> parameters);
 
-  /// Plot mesh
-  boost::shared_ptr<VTKPlotter> plot(const Mesh& mesh,
-				     std::string title="Mesh");
-
-  /// Plot mesh (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Mesh> mesh,
-				     std::string title="Mesh");
-
-  /// Plot mesh (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const Mesh& mesh,
-				     const Parameters& parameters);
-
-  /// Plot mesh (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Mesh> mesh,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot Dirichlet BC
-  boost::shared_ptr<VTKPlotter> plot(const DirichletBC& bc,
-				     std::string title="Dirichlet B.C.");
-
-  /// Plot Dirichlet BC (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const DirichletBC> bc,
-				     std::string title="Dirichlet B.C.");
-
-  /// Plot Dirichlet BC (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const DirichletBC& bc,
-				     const Parameters& parameters);
-
-  /// Plot Dirichlet BC (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const DirichletBC> bc,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot uint-valued mesh function
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<unsigned int>& mesh_function,
-				     std::string title="DOLFIN MeshFunction<unsigned int>");
-
-  /// Plot uint-valued mesh function (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function,
-				     std::string title="DOLFIN MeshFunction<unsigned int>");
-
-  /// Plot uint-valued mesh function (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<unsigned int>& mesh_function,
-				     const Parameters& parameters);
-
-  /// Plot uint-valued mesh function (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot int-valued mesh function
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<int>& mesh_function,
-				     std::string title="DOLFIN MeshFunction<int>");
-
-  /// Plot int-valued mesh function (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
-				     std::string title="DOLFIN MeshFunction<int>");
-
-  /// Plot int-valued mesh function (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<int>& mesh_function,
-				     const Parameters& parameters);
-
-  /// Plot int-valued mesh function (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<int> > mesh_function,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot double-valued mesh function
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<double>& mesh_function,
-				     std::string title="MeshFunction<double>");
-
-  /// Plot double-valued mesh function  (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
-				     std::string title="MeshFunction<double>");
-
-  /// Plot double-valued mesh function  (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<double>& mesh_function,
-				     const Parameters& parameters);
-
-  /// Plot double-valued mesh function  (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<double> > mesh_function,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot boolean-valued mesh function
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<bool>& mesh_function,
-				     std::string title="MeshFunction<bool>");
-
-  /// Plot boolean-valued mesh function (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
-				     std::string title="MeshFunction<bool>");
-
-  /// Plot boolean-valued mesh function (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<bool>& mesh_function,
-				     const Parameters& parameters);
-
-  /// Plot boolean-valued mesh function (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
-				     boost::shared_ptr<const Parameters> parameters);
-
-  /// Plot CSG geometry
-  boost::shared_ptr<VTKPlotter> plot(const CSGGeometry& geometry,
-				     std::string title="CSG Geometry");
-
-  /// Plot CSG geometry (shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const CSGGeometry> geometry,
-				     std::string title="CSG Geometry");
-
-  /// Plot CSG geometry (parameter version)
-  boost::shared_ptr<VTKPlotter> plot(const CSGGeometry& geometry,
-				     const Parameters& parameters);
-
-  /// Plot CSG geometry (parameter, shared_ptr version)
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const CSGGeometry> geometry,
-				     boost::shared_ptr<const Parameters> parameters);
-
 }
+
+#ifdef SWIG
+// Make template instantiations (in plot.cpp) available to SWIG
+%template(plot) dolfin::plot<dolfin::CSGGeometry>;
+%template(plot) dolfin::plot<dolfin::DirichletBC>;
+%template(plot) dolfin::plot<dolfin::Function>;
+%template(plot) dolfin::plot<dolfin::Mesh>;
+%template(plot) dolfin::plot<dolfin::MeshFunction<bool> >;
+%template(plot) dolfin::plot<dolfin::MeshFunction<double> >;
+//%template(plot) dolfin::plot<dolfin::MeshFunction<float> >;
+%template(plot) dolfin::plot<dolfin::MeshFunction<int> >;
+%template(plot) dolfin::plot<dolfin::MeshFunction<uint> >;
+#endif
 
 #endif

@@ -18,24 +18,20 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-08-31
+// Last changed: 2012-09-06
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
 
 #ifdef HAS_VTK
 
-#include <vtkFloatArray.h>
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-
-#include <dolfin/mesh/MeshFunction.h>
+#include "VTKPlottableMesh.h"
 
 namespace dolfin
 {
 
   // Forward declarations
-  class VTKPlottableMesh;
+  template<typename T> class MeshFunction;
 
   template <typename T> class VTKPlottableMeshFunction : public VTKPlottableMesh
   {
@@ -59,38 +55,12 @@ namespace dolfin
   };
 
   //----------------------------------------------------------------------------
+
   template <typename T>
   VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<const MeshFunction<T> > meshfunc)
   {
     return new VTKPlottableMeshFunction<T>(meshfunc);
   }
-  //---------------------------------------------------------------------------
-  // Implementation of VTKPlottableMeshFunction
-  //---------------------------------------------------------------------------
-  template <typename T>
-  VTKPlottableMeshFunction<T>::VTKPlottableMeshFunction(
-      boost::shared_ptr<const MeshFunction<T> > mesh_function) :
-    VTKPlottableMesh(reference_to_no_delete_pointer(mesh_function->mesh()),
-                     mesh_function->dim()),
-    _mesh_function(mesh_function)
-  {
-    // Do nothing
-  }
-  //----------------------------------------------------------------------------
-  template <typename T>
-  void VTKPlottableMeshFunction<T>::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
-  {
-    if (var)
-    {
-      _mesh_function = boost::dynamic_pointer_cast<const MeshFunction<T> >(var);
-    }
-    dolfin_assert(_mesh_function);
-
-    VTKPlottableMesh::update(reference_to_no_delete_pointer(_mesh_function->mesh()), parameters, frame_counter);
-
-    setCellValues(_mesh_function->size(), _mesh_function->values(), parameters);
-  }
-  //----------------------------------------------------------------------------
 
 }
 

@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-04
+// Last changed: 2012-09-06
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -39,6 +39,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  class CSGGeometry;
   class DirichletBC;
   class Expression;
   class ExpressionWrapper;
@@ -139,36 +140,13 @@ namespace dolfin
   {
   public:
 
-    /// Create plotter for a mesh
-    explicit VTKPlotter(boost::shared_ptr<const Mesh> mesh);
+    /// Create plotter for a variable
+    template <class T>
+    explicit VTKPlotter(boost::shared_ptr<const T>);
 
-    /// Create plotter for a function
-    explicit VTKPlotter(boost::shared_ptr<const Function> function);
-
-    /// Create plotter for an expression
-    explicit VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression);
-
-    /// Create plotter for an expression
+    /// Create plotter for an Expression with associated Mesh
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
                         boost::shared_ptr<const Mesh> mesh);
-
-    /// Create plotter for Dirichlet B.C.
-    explicit VTKPlotter(boost::shared_ptr<const DirichletBC> bc);
-
-    /// Create plotter for an uint valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-
-    /// Create plotter for an intr valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
-
-    /// Create plotter for a double valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function);
-
-    /// Create plotter for a boolean valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
-
-    /// Create plotter for a CSG object (unmeshed).
-    explicit VTKPlotter(boost::shared_ptr<const CSGGeometry> geom);
 
     /// Destructor
     ~VTKPlotter();
@@ -203,7 +181,7 @@ namespace dolfin
       return p;
     }
 
-    /// Default parameter values for mesh plotting
+    /// Default parameter values for mesh and geometry plotting
     static Parameters default_mesh_parameters()
     {
       Parameters p = default_parameters();
@@ -311,5 +289,21 @@ namespace dolfin
   };
 
 }
+
+#ifdef SWIG
+// Make template instantiations (in VTKPlotter.cpp) available to SWIG
+%extend dolfin::VTKPlotter {
+  //%template(VTKPlotter) VTKPlotter<dolfin::CSGGeometry>;
+  %template(VTKPlotter) VTKPlotter<dolfin::DirichletBC>;
+  %template(VTKPlotter) VTKPlotter<dolfin::ExpressionWrapper>;
+  %template(VTKPlotter) VTKPlotter<dolfin::Function>;
+  %template(VTKPlotter) VTKPlotter<dolfin::Mesh>;
+  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<bool> >;
+  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<double> >;
+  //%template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<float> >;
+  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<int> >;
+  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<dolfin::uint> >;
+};
+#endif
 
 #endif
