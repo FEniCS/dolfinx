@@ -346,15 +346,22 @@ boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
   return _mesh;
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkPointSet> VTKPlottableMesh::grid() const
+vtkSmartPointer<vtkUnstructuredGrid> VTKPlottableMesh::grid() const
 {
   return _grid;
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filter)
 {
-  filter->SetInput(_grid);
-  _geometryFilter->SetInput(filter->GetOutput());
+  if (filter)
+  {
+    filter->SetInput(_grid);
+    _geometryFilter->SetInput(filter->GetOutput());
+  }
+  else
+  {
+    _geometryFilter->SetInput(_grid);
+  }
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------

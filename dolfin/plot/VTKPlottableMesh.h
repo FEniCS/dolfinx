@@ -37,7 +37,6 @@ class vtkActor3D;
 class vtkAlgorithmOutput;
 class vtkGeometryFilter;
 class vtkIdFilter;
-class vtkPointSet;
 class vtkPointSetAlgorithm;
 class vtkUnstructuredGrid;
 
@@ -111,7 +110,7 @@ namespace dolfin
 
     boost::shared_ptr<const Mesh> mesh() const;
 
-    vtkSmartPointer<vtkPointSet> grid() const;
+    vtkSmartPointer<vtkUnstructuredGrid> grid() const;
 
     void insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filter);
 

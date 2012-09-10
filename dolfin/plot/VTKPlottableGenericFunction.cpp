@@ -18,16 +18,18 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-06
+// Last changed: 2012-09-10
 
 #ifdef HAS_VTK
 
 #include <vtkArrowSource.h>
+#include <vtkUnstructuredGrid.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Vertex.h>
 
 #include "VTKPlottableMesh.h"
@@ -167,9 +169,25 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
   VTKPlottableMesh::update(mesh, parameters, frame_counter);
 
   // Update the values on the mesh
-  std::vector<double> vertex_values;
-  _function->compute_vertex_values(vertex_values, *mesh);
-  setPointValues(vertex_values.size(), &vertex_values[0], parameters);
+  const Function *func = dynamic_cast<const Function *>(_function.get());
+  if (func && func->vector()->local_size() == grid()->GetNumberOfCells())
+  {
+    // Hack to display DG0 functions. Should really be implemented using
+    // duplicate points (one point per vertex per cell), so that warping
+    // and DG1 work as expected.
+    // Also: How do we find out if a FunctionSpace is discontinuous?
+    insert_filter(NULL); // expel the warpscalar filter
+    std::vector<double> cell_values;
+    func->vector()->get_local(cell_values);
+    std::cout << cell_values[3] << std::endl;
+    setCellValues(cell_values.size(), &cell_values[0], parameters);
+  }
+  else
+  {
+    std::vector<double> vertex_values;
+    _function->compute_vertex_values(vertex_values, *mesh);
+    setPointValues(vertex_values.size(), &vertex_values[0], parameters);
+  }
 
   // If this is the first render of this plot and/or the rescale parameter is
   // set, we read get the min/max values of the data and process them
