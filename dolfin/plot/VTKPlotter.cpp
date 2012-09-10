@@ -33,23 +33,22 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/generation/CSGGeometry.h>
 #include "ExpressionWrapper.h"
+#include "VTKPlotter.h"
+
+#ifdef HAS_VTK
+
+#include "VTKWindowOutputStage.h"
 #include "VTKPlottableGenericFunction.h"
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
 #include "VTKPlottableCSGGeometry.h"
-#include "VTKPlotter.h"
-#include "VTKWindowOutputStage.h"
 
 #ifdef HAS_QT4
-
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QVTKWidget.h>
-
 #endif
-
-#ifdef HAS_VTK
 
 #include <vtkSmartPointer.h>
 #include <vtkCamera.h>
@@ -618,11 +617,15 @@ void VTKPlotter::all_interactive(bool really)
 // Implement dummy version of class VTKPlotter even if VTK is not present.
 //----------------------------------------------------------------------------
 
-#include "VTKPlotter.h"
 using namespace dolfin;
 
+namespace dolfin
+{
+  class VTKWindowOutputStage {}; // dummy class
+}
+
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) : { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> e,
 		       boost::shared_ptr<const Mesh> mesh)  { init(); }
 VTKPlotter::~VTKPlotter() {}
@@ -636,21 +639,26 @@ void VTKPlotter::init()
   parameters = default_parameters();
   warning("Plotting not available. DOLFIN has been compiled without VTK support.");
 }
+void VTKPlotter::plot         (boost::shared_ptr<const Variable>) {}
+void VTKPlotter::interactive  (bool)                              {}
+void VTKPlotter::write_png    (std::string)                       {}
+void VTKPlotter::azimuth      (double)                            {}
+void VTKPlotter::elevate      (double)                            {}
+void VTKPlotter::dolly        (double)                            {}
+void VTKPlotter::set_viewangle(double)                            {}
+void VTKPlotter::set_min_max  (double, double)                    {}
+void VTKPlotter::add_polygon  (const Array<double>&)              {}
 
-void VTKPlotter::plot               (boost::shared_ptr<const Variable>) {}
-void VTKPlotter::update             (boost::shared_ptr<const Variable>) {}
-void VTKPlotter::interactive        (bool){}
-void VTKPlotter::write_png          (std::string){}
-void VTKPlotter::azimuth            (double) {}
-void VTKPlotter::elevate            (double){}
-void VTKPlotter::dolly              (double){}
-void VTKPlotter::set_viewangle      (double){}
-void VTKPlotter::set_min_max        (double, double){}
-void VTKPlotter::add_polygon        (const Array<double>&){}
+void VTKPlotter::all_interactive(bool)                            {}
+void VTKPlotter::set_key(std::string key)                         {}
 
-void VTKPlotter::all_interactive(bool) {}
+bool VTKPlotter::keypressCallback()                                     { return false; }
+bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable>) const { return false; }
 
-#endif
+std::string        VTKPlotter::to_key(const Variable &) { return ""; }
+const std::string& VTKPlotter::key() const              { return _key; }
+
+#endif // HAS_VTK
 
 // Define the static members
 boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::list<VTKPlotter*>());

@@ -18,7 +18,9 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-06
+// Last changed: 2012-09-10
+
+#ifdef HAS_VTK
 
 #include <vtkFloatArray.h>
 #include <vtkPointData.h>
@@ -64,3 +66,5 @@ template class dolfin::VTKPlottableMeshFunction<double>;
 template class dolfin::VTKPlottableMeshFunction<float>;
 template class dolfin::VTKPlottableMeshFunction<int>;
 template class dolfin::VTKPlottableMeshFunction<dolfin::uint>;
+
+#endif
