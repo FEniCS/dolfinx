@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-31
+// Last changed: 2012-09-06
 
 #ifdef HAS_VTK
 
@@ -145,7 +145,7 @@ bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
 {
-  boost::shared_ptr<const Mesh> mesh;
+  boost::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
   if (var)
   {
     boost::shared_ptr<const Function> function(boost::dynamic_pointer_cast<const Function>(var));
