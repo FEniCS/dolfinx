@@ -26,7 +26,6 @@
 
 // Forward declarations
 class QVTKWidget;
-class vtkActor2D;
 class vtkActor;
 class vtkAlgorithm;
 class vtkAlgorithmOutput;
@@ -42,6 +41,7 @@ class vtkRenderWindowInteractor;
 class vtkRenderer;
 class vtkScalarBarActor;
 class vtkTextActor;
+class vtkProp;
 
 namespace dolfin
 {
@@ -107,6 +107,8 @@ namespace dolfin
 
     void set_window_title(std::string title);
 
+    std::string get_window_title();
+
     void close_window();
 
     bool resurrect_window();
@@ -135,9 +137,7 @@ namespace dolfin
 
     void place_window(int x, int y);
 
-    bool add_actor(vtkSmartPointer<vtkActor> actor);
-
-    bool add_actor(vtkSmartPointer<vtkActor2D> actor);
+    bool add_viewprop(vtkSmartPointer<vtkProp> prop);
 
     void set_input(vtkSmartPointer<vtkAlgorithmOutput> output);
 

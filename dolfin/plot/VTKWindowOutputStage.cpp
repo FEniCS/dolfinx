@@ -278,6 +278,15 @@ void VTKWindowOutputStage::set_window_title(std::string title)
 #endif
 }
 //----------------------------------------------------------------------------
+std::string VTKWindowOutputStage::get_window_title()
+{
+#ifdef HAS_QT4
+  return widget->windowTitle().toStdString();
+#else
+  return _renderWindow->GetWindowName();
+#endif
+}
+//----------------------------------------------------------------------------
 void VTKWindowOutputStage::close_window()
 {
 #ifdef HAS_QT4
@@ -346,7 +355,13 @@ void VTKWindowOutputStage::write_pdf(std::string filename)
   vtkSmartPointer<vtkGL2PSExporter> exporter =
     vtkSmartPointer<vtkGL2PSExporter>::New();
   exporter->SetFilePrefix(filename.c_str());
-  //exporter->SetTitle("title");
+  //exporter->SetTitle(get_window_title().c_str());
+  if (_input == _depthSort)
+  {
+    // Handle translucency by rasterisation. Commented out because it fails
+    // (for me) with GLXBadContextTag error.
+    //exporter->Write3DPropsAsRasterImageOn();
+  }
   exporter->SetFileFormatToPDF();
   exporter->SetSortToBSP();
   exporter->DrawBackgroundOff();
@@ -439,21 +454,11 @@ void VTKWindowOutputStage::place_window(int x, int y)
 #endif
 }
 //----------------------------------------------------------------------------
-bool VTKWindowOutputStage::add_actor(vtkSmartPointer<vtkActor> actor)
+bool VTKWindowOutputStage::add_viewprop(vtkSmartPointer<vtkProp> prop)
 {
-  if (!_renderer->HasViewProp(actor))
+  if (!_renderer->HasViewProp(prop))
   {
-    _renderer->AddActor(actor);
-    return true;
-  }
-  return false;
-}
-//----------------------------------------------------------------------------
-bool VTKWindowOutputStage::add_actor(vtkSmartPointer<vtkActor2D> actor)
-{
-  if (!_renderer->HasViewProp(actor))
-  {
-    _renderer->AddActor2D(actor);
+    _renderer->AddViewProp(prop);
     return true;
   }
   return false;
@@ -471,15 +476,15 @@ void VTKWindowOutputStage::set_translucent(bool onoff, uint topo_dim, uint geom_
   // The depth sorting is slow, particularly for glyphs.
   // Hence, set these only when required.
 
-  if (onoff)
+  _lut->SetNanColor(0.0, 0.0, 0.0, (onoff ? 0.05 : 1.0));
+
+  if (onoff && topo_dim >= 2 && geom_dim == 3)
   {
-    _lut->SetNanColor(0.0, 0.0, 0.0, 0.05);
     _mapper->SetInputConnection(_depthSort->GetOutputPort());
     _input = _depthSort;
   }
   else
   {
-    _lut->SetNanColor(0.0, 0.0, 0.0, 1.0);
     _input = _mapper;
   }
 }
