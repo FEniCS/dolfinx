@@ -350,7 +350,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     const uint num_data_per_point = dim + padding_per_point;
     const uint num_total_data_points = num_vertices*num_data_per_point;
 
-    std::vector<float> data(num_total_data_points, 0);
+    std::vector<double> data(num_total_data_points, 0);
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
       const uint index = vertex->index();
