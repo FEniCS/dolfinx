@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #ifdef HAS_VTK
 
@@ -333,7 +333,8 @@ void VTKWindowOutputStage::stop_interaction()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::write_png(std::string filename)
 {
-  // FIXME: Remove help-text-actor before hardcopying.
+  const bool help_visible = helptextActor->GetVisibility();
+  helptextActor->VisibilityOff();
 
   // Create window to image filter and PNG writer
   vtkSmartPointer<vtkWindowToImageFilter> w2i =
@@ -347,6 +348,12 @@ void VTKWindowOutputStage::write_png(std::string filename)
   render();
   writer->Modified();
   writer->Write();
+
+  if (help_visible)
+  {
+    helptextActor->VisibilityOn();
+    render();
+  }
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::write_pdf(std::string filename)
@@ -367,7 +374,7 @@ void VTKWindowOutputStage::write_pdf(std::string filename)
   exporter->DrawBackgroundOff();
   exporter->LandscapeOn();
   //exporter->SilentOn();
-  exporter->SetInput(_renderWindow);
+  exporter->SetRenderWindow(_renderWindow);
   exporter->Write();
 #else
   warning("VTK not configured for PDF output");
