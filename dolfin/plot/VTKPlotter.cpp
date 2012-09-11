@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -301,7 +301,7 @@ std::string VTKPlotter::get_helptext()
 #endif
   text << "   q: Continue\n";
   text << "   Q: Continue to end\n";
-  text << " C-Q: Abort execution\n";
+  text << " C-C: Abort execution\n";
   text << "\n";
 #ifdef HAS_QT4
   text << "Window control:\n";
@@ -406,6 +406,7 @@ bool VTKPlotter::keypressCallback()
     {
       vtk_pipeline->cycle_representation();
       vtk_pipeline->render();
+      parameters["wireframe"].reset(); // Don't override in plot()
       return true;
     }
 
@@ -451,7 +452,7 @@ bool VTKPlotter::keypressCallback()
     vtk_pipeline->stop_interaction();
     return true;
 
-  case SHIFT + CONTROL + 'q':
+  case CONTROL + 'c':
     dolfin_error("VTKPlotter", "continue execution", "Aborted by user");
 
   case 'q':
@@ -605,8 +606,11 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
   Timer timer("VTK update");
 
   // Process some parameters
-  if (parameters["wireframe"])
-    vtk_pipeline->cycle_representation(VTK_WIREFRAME);
+  Parameter &wireframe = parameters["wireframe"];
+  if (wireframe.is_set())
+  {
+    vtk_pipeline->cycle_representation(wireframe ? VTK_WIREFRAME : VTK_SURFACE);
+  }
 
   vtk_pipeline->set_window_title(parameters["title"]);
 
@@ -675,7 +679,7 @@ void VTKPlotter::all_interactive(bool really)
         plotter->interactive(false);
     }
 
-    // Start the vtk eventloop on the first plotter
+    // Start the (global) event loop on the first plotter
     (*active_plotters->begin())->interactive(true);
   }
 }

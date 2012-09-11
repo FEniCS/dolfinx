@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2009-05-08
-// Last changed: 2011-07-06
+// Last changed: 2012-09-11
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -49,6 +51,9 @@ namespace dolfin
 
     /// Return true if parameter is set, return false otherwise
     bool is_set() const;
+
+    /// Reset the parameter to empty, so that is_set() returns false.
+    void reset();
 
     /// Return access count (number of times parameter has been accessed)
     uint access_count() const;
