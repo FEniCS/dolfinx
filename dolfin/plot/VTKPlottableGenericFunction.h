@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-31
+// Last changed: 2012-09-11
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -63,6 +63,12 @@ namespace dolfin
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
+    /// Additional parameters for VTKPlottableGenericFunction
+    virtual Parameters default_parameters()
+    {
+      return Parameters();
+    }
+
     /// Initialize the parts of the pipeline that this class controls
     void init_pipeline(const Parameters &parameters);
 
@@ -75,6 +81,9 @@ namespace dolfin
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
+
+    /// Inform the plottable about the range.
+    virtual void rescale(double range[2], const Parameters& parameters);
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;

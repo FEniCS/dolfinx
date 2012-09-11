@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -177,15 +177,6 @@ namespace dolfin
       p.add<std::string>("key");
       p.add<double>("hide_below");
       p.add<double>("hide_above");
-      return p;
-    }
-
-    /// Default parameter values for mesh and geometry plotting
-    static Parameters default_mesh_parameters()
-    {
-      Parameters p = default_parameters();
-      p["wireframe"] = true;
-      p["scalarbar"] = false;
       return p;
     }
 

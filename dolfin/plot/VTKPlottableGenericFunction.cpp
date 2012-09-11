@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #ifdef HAS_VTK
 
@@ -34,6 +34,7 @@
 
 #include "VTKPlottableMesh.h"
 #include "VTKPlottableGenericFunction.h"
+#include "VTKPlottableGenericFunction1D.h"
 #include "ExpressionWrapper.h"
 
 using namespace dolfin;
@@ -188,25 +189,21 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
     _function->compute_vertex_values(vertex_values, *mesh);
     setPointValues(vertex_values.size(), &vertex_values[0], parameters);
   }
+}
+//----------------------------------------------------------------------------
+void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &parameters)
+{
+  const double scale = parameters["scale"];
+  _warpvector->SetScaleFactor(scale);
+  _glyphs->SetScaleFactor(scale);
 
-  // If this is the first render of this plot and/or the rescale parameter is
-  // set, we read get the min/max values of the data and process them
-  if (frame_counter == 0 || parameters["rescale"])
-  {
-    const double scale = parameters["scale"];
-    _warpvector->SetScaleFactor(scale);
-    _glyphs->SetScaleFactor(scale);
+  // Compute the scale factor for scalar warping
+  double* bounds = grid()->GetBounds();
+  double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
 
-    // Compute the scale factor for scalar warping
-    double range[2];
-    update_range(range);
-    double* bounds = grid()->GetBounds();
-    double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
-
-    // Set the default warp such that the max warp is one fourth of the longest
-    // axis of the mesh.
-    _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
-  }
+  // Set the default warp such that the max warp is one fourth of the longest
+  // axis of the mesh.
+  _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])
@@ -230,6 +227,10 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() co
 //----------------------------------------------------------------------------
 VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Function> function)
 {
+  if (function->function_space()->mesh()->topology().dim() == 1)
+  {
+    return new VTKPlottableGenericFunction1D(function);
+  }
   return new VTKPlottableGenericFunction(function);
 }
 //----------------------------------------------------------------------------
@@ -241,6 +242,10 @@ VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const 
 VTKPlottableGenericFunction *dolfin::CreateVTKPlottable(boost::shared_ptr<const Expression> expr,
                                                         boost::shared_ptr<const Mesh> mesh)
 {
+  if (mesh->topology().dim() == 1)
+  {
+    return new VTKPlottableGenericFunction1D(expr, mesh);
+  }
   return new VTKPlottableGenericFunction(expr, mesh);
 }
 

@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-06
+// Last changed: 2012-09-11
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -41,6 +41,12 @@ namespace dolfin
     VTKPlottableMeshFunction(boost::shared_ptr<const MeshFunction<T> > mesh_function);
 
     //--- Implementation of the GenericVTKPlottable interface ---
+
+    /// Additional parameters for VTKPlottableMeshFunction
+    virtual Parameters default_parameters()
+    {
+      return Parameters();
+    }
 
     /// Update the plottable data
     void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);

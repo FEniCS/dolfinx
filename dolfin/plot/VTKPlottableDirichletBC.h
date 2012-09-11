@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-27
-// Last changed: 2012-08-31
+// Last changed: 2012-09-11
 
 #ifndef __VTK_PLOTTABLE_DIRICHLETBC_H
 #define __VTK_PLOTTABLE_DIRICHLETBC_H
@@ -39,6 +39,12 @@ namespace dolfin
 
     explicit
     VTKPlottableDirichletBC(boost::shared_ptr<const DirichletBC> bc);
+
+    /// Additional parameters for VTKPlottableDirichletBC
+    virtual Parameters default_parameters()
+    {
+      return Parameters();
+    }
 
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline(const Parameters& parameters);

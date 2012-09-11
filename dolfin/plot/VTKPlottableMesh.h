@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -62,6 +62,15 @@ namespace dolfin
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
+    /// Additional parameters for VTKPlottableMesh
+    virtual Parameters default_parameters()
+    {
+      Parameters p;
+      p.add("wireframe", true);
+      p.add("scalarbar", false);
+      return p;
+    }
+
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline(const Parameters &parameters);
 
@@ -81,17 +90,17 @@ namespace dolfin
     virtual uint dim() const;
 
     /// Get an actor for showing vertex labels
-    vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);
+    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);
 
     /// Get an actor for showing cell labels
-    vtkSmartPointer<vtkActor2D> get_cell_label_actor(vtkSmartPointer<vtkRenderer>);
+    virtual vtkSmartPointer<vtkActor2D> get_cell_label_actor(vtkSmartPointer<vtkRenderer>);
 
     /// Get an actor for showing the mesh
-    vtkSmartPointer<vtkActor> get_mesh_actor();
+    virtual vtkSmartPointer<vtkActor> get_mesh_actor();
 
   protected:
 
-    /// Get the output port
+    /// Get the output port. Called from connect_to_output.
     virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
     // Create label filter

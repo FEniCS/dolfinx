@@ -81,22 +81,6 @@ namespace // anonymous
       x = rounding(x/reduction_factor)*reduction_factor;
     }
   }
-  //----------------------------------------------------------------------------
-  template <class T>
-  Parameters appropriate_default_parameters()
-  {
-    return VTKPlotter::default_parameters();
-  }
-  template<>
-  Parameters appropriate_default_parameters<Mesh>()
-  {
-    return VTKPlotter::default_mesh_parameters();
-  }
-  template<>
-  Parameters appropriate_default_parameters<CSGGeometry>()
-  {
-    return VTKPlotter::default_mesh_parameters();
-  }
 }
 //----------------------------------------------------------------------------
 template <class T>
@@ -107,7 +91,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) :
   _key(to_key(*t)),
   _initialized(false)
 {
-  parameters = appropriate_default_parameters<T>();
+  parameters = default_parameters();
+  parameters.update(_plottable->default_parameters());
   set_title_from(*t);
 }
 //----------------------------------------------------------------------------
@@ -119,7 +104,8 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
   _key(to_key(*expression)),
   _initialized(false)
 {
-  parameters = appropriate_default_parameters<Expression>();
+  parameters = default_parameters();
+  parameters.update(_plottable->default_parameters());
   set_title_from(*expression);
 }
 //----------------------------------------------------------------------------
@@ -645,6 +631,7 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
     if (range_min.is_set()) range[0] = range_min;
     if (range_max.is_set()) range[1] = range_max;
 
+    _plottable->rescale(range, parameters);
     vtk_pipeline->set_scalar_range(range);
   }
 

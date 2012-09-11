@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-10
+// Last changed: 2012-09-11
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -45,6 +45,9 @@ namespace dolfin
   {
   public:
 
+    /// To be redefined in classes that require special parameters
+    virtual Parameters default_parameters() = 0;
+
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline(const Parameters& parameters) = 0;
 
@@ -60,6 +63,12 @@ namespace dolfin
 
     /// Update the scalar range of the plottable data
     virtual void update_range(double range[2]) = 0;
+
+    /// Inform the plottable about the range. Most plottables don't care, since
+    /// this is handled in the output stage.
+    virtual void rescale(double range[2], const Parameters& parameters)
+    {
+    }
 
     /// Return geometric dimension
     virtual uint dim() const = 0;
