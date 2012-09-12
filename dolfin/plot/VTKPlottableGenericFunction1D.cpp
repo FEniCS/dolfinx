@@ -64,10 +64,11 @@ void VTKPlottableGenericFunction1D::init_pipeline(const Parameters &parameters)
   _actor->GetProperty()->SetColor(0.0, 0.0, 0.8);
   _actor->GetProperty()->SetLineWidth(1.5);
   _actor->GetProperty()->SetPointSize(4);
+  _actor->PlotPointsOn();
+  _actor->SetPlotPoints(0, 1);
 
   _actor->SetXTitle("x");
   _actor->SetYTitle("u(x)");
-  _actor->SetBorder(30);
 
   _actor->GetAxisLabelTextProperty()->ShadowOff();
   _actor->GetAxisLabelTextProperty()->ItalicOff();
@@ -79,9 +80,10 @@ void VTKPlottableGenericFunction1D::init_pipeline(const Parameters &parameters)
 
   _actor->GetPositionCoordinate ()->SetValue(0, 0, 1);
   _actor->GetPosition2Coordinate()->SetValue(1, 1, 0);
+  _actor->SetBorder(30);
 
-  _actor->PlotPointsOn();
-  _actor->SetPlotPoints(0, 1);
+  _actor->SetReferenceYValue(0.0);
+  _actor->SetAdjustYLabels(false); // Use the ranges set in rescale()
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction1D::connect_to_output(VTKWindowOutputStage& output)
@@ -123,8 +125,15 @@ void VTKPlottableGenericFunction1D::update(boost::shared_ptr<const Variable> var
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction1D::rescale(double range[2], const Parameters &parameters)
 {
-  // FIXME: Doesn't seem to work?
   _actor->SetYRange(range);
+  if (range[0] < 0 && range[1] > 0)
+  {
+    _actor->ShowReferenceYLineOn();
+  }
+  else
+  {
+    _actor->ShowReferenceYLineOff();
+  }
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableGenericFunction1D::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
