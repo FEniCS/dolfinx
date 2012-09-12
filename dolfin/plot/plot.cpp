@@ -98,11 +98,13 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<T> t,
   return plotter;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Parameters> default_parameters(std::string title,
-                                                 std::string mode="auto")
+boost::shared_ptr<Parameters> default_parameters(std::string title, std::string mode)
 {
   boost::shared_ptr<Parameters> parameters(new Parameters());
-  parameters->add("title", title);
+  if (!title.empty())
+  {
+    parameters->add("title", title);
+  }
   parameters->add("mode", mode);
   return parameters;
 }

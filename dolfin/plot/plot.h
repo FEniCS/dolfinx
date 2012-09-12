@@ -51,13 +51,13 @@ namespace dolfin
   // Plot variable of any supported type
   template <class T>
   boost::shared_ptr<VTKPlotter> plot(const T& t,
-				     std::string title,
+				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (shared_ptr version)
   template <class T>
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<T> t,
-				     std::string title,
+				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (parameter version)
@@ -77,13 +77,13 @@ namespace dolfin
   /// Plot expression
   boost::shared_ptr<VTKPlotter> plot(const Expression& expression,
 				     const Mesh& mesh,
-				     std::string title="Expression",
+				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot expression (shared_ptr version)
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Expression> expression,
                                      boost::shared_ptr<const Mesh> mesh,
-				     std::string title="Expression",
+				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot expression (parameter version)
