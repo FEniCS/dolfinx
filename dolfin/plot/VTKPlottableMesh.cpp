@@ -28,10 +28,8 @@
 #include <vtkFloatArray.h>
 #include <vtkGeometryFilter.h>
 #include <vtkIdFilter.h>
-#include <vtkLabeledDataMapper.h>
 #include <vtkPointData.h>
 #include <vtkPointSetAlgorithm.h>
-#include <vtkPointSetToLabelHierarchy.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
@@ -40,6 +38,11 @@
 #include <vtkTextProperty.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkVectorNorm.h>
+
+#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
+#include <vtkLabeledDataMapper.h>
+#include <vtkPointSetToLabelHierarchy.h>
+#endif
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
@@ -263,6 +266,7 @@ void VTKPlottableMesh::build_id_filter()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
+#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
   // Return actor if already created
   if (!_vertexLabelActor)
   {
@@ -288,11 +292,16 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
     _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _vertexLabelActor->SetMapper(ldm);
   }
+#else
+  warning("Plotting of vertex labels requires VTK >= 5.4");
+#endif
+
   return _vertexLabelActor;
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
+#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
   if (!_cellLabelActor)
   {
     build_id_filter();
@@ -314,6 +323,9 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPoint
     _cellLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _cellLabelActor->SetMapper(ldm);
   }
+#else
+  warning("Plotting of cell labels requires VTK >= 5.4");
+#endif
 
   return _cellLabelActor;
 }
