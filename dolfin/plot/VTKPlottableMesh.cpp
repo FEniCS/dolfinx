@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-10
+// Last changed: 2012-09-12
 
 #ifdef HAS_VTK
 
@@ -87,7 +87,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   vtkFloatArray *pointdata = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
   if (pointdata && pointdata->GetNumberOfComponents() == 1)
   {
-    for (uint i = 0; i < pointdata->GetNumberOfTuples(); i++)
+    for (int i = 0; i < pointdata->GetNumberOfTuples(); i++)
     {
       if (isnan(pointdata->GetValue(i)))
       {
@@ -100,7 +100,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   vtkFloatArray *celldata = dynamic_cast<vtkFloatArray*>(_grid->GetCellData()->GetScalars());
   if (celldata && celldata->GetNumberOfComponents() == 1 && !has_nans)
   {
-    for (uint i = 0; i < celldata->GetNumberOfTuples(); i++)
+    for (int i = 0; i < celldata->GetNumberOfTuples(); i++)
     {
       if (isnan(celldata->GetValue(i)))
       {
