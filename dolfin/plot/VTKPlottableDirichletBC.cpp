@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-08-31
+// Last changed: 2012-09-12
 
 #ifdef HAS_VTK
 
@@ -32,9 +32,9 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableDirichletBC::VTKPlottableDirichletBC(boost::shared_ptr<const DirichletBC> bc) :
-  _bc(bc),
-  VTKPlottableGenericFunction(boost::shared_ptr<const Function>(new Function(bc->function_space())))
+VTKPlottableDirichletBC::VTKPlottableDirichletBC(boost::shared_ptr<const DirichletBC> bc)
+  : VTKPlottableGenericFunction(boost::shared_ptr<const Function>(new Function(bc->function_space()))),
+    _bc(bc)
 {
   // Do nothing
 }

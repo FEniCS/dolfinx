@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-11
+// Last changed: 2012-09-12
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -84,12 +84,12 @@ namespace // anonymous
 }
 //----------------------------------------------------------------------------
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) :
-  _plottable(CreateVTKPlottable(t)),
-  vtk_pipeline(new VTKWindowOutputStage()),
-  _frame_counter(0),
-  _key(to_key(*t)),
-  _initialized(false)
+VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t)
+  : _initialized(false),
+    _plottable(CreateVTKPlottable(t)),
+    vtk_pipeline(new VTKWindowOutputStage()),
+    _frame_counter(0),
+    _key(to_key(*t))
 {
   parameters = default_parameters();
   parameters.update(_plottable->default_parameters());
@@ -97,12 +97,12 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) :
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh) :
-  _plottable(CreateVTKPlottable(expression, mesh)),
-  vtk_pipeline(new VTKWindowOutputStage()),
-  _frame_counter(0),
-  _key(to_key(*expression)),
-  _initialized(false)
+    boost::shared_ptr<const Mesh> mesh)
+  : _initialized(false),
+    _plottable(CreateVTKPlottable(expression, mesh)),
+    vtk_pipeline(new VTKWindowOutputStage()),
+    _frame_counter(0),
+    _key(to_key(*expression))
 {
   parameters = default_parameters();
   parameters.update(_plottable->default_parameters());

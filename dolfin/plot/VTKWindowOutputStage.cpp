@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-11
+// Last changed: 2012-09-12
 
 #ifdef HAS_VTK
 
@@ -98,7 +98,7 @@ namespace // anonymous
     // A reference to the parent plotter
     VTKPlotter *_plotter;
   };
-  vtkStandardNewMacro(PrivateVTKInteractorStyle);
+  vtkStandardNewMacro(PrivateVTKInteractorStyle)
   //----------------------------------------------------------------------------
 #ifdef HAS_QT4
   void create_qApp()
