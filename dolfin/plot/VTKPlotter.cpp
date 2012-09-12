@@ -402,6 +402,7 @@ bool VTKPlotter::keypressCallback()
   case CONTROL + SHIFT + 's':
     // shift/control may be mouse-interaction modifiers
     {
+#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 6)
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *active_plotters)
       {
@@ -411,6 +412,9 @@ bool VTKPlotter::keypressCallback()
           other->vtk_pipeline->render();
         }
       }
+#else
+      warning("Camera sync requires VTK >= 5.6");
+#endif
       return true;
     }
 

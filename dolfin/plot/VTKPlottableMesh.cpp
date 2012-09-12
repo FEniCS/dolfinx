@@ -28,7 +28,6 @@
 #include <vtkFloatArray.h>
 #include <vtkGeometryFilter.h>
 #include <vtkIdFilter.h>
-#include <vtkLabelPlacementMapper.h>
 #include <vtkLabeledDataMapper.h>
 #include <vtkPointData.h>
 #include <vtkPointSetAlgorithm.h>
