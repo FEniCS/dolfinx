@@ -483,7 +483,9 @@ void VTKWindowOutputStage::set_translucent(bool onoff, uint topo_dim, uint geom_
   // The depth sorting is slow, particularly for glyphs.
   // Hence, set these only when required.
 
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
   _lut->SetNanColor(0.0, 0.0, 0.0, (onoff ? 0.05 : 1.0));
+#endif
 
   if (onoff && topo_dim >= 2 && geom_dim == 3)
   {
