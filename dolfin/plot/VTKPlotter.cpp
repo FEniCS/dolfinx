@@ -639,6 +639,8 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
 
     _plottable->rescale(range, parameters);
     vtk_pipeline->set_scalar_range(range);
+    // The rescale may have changed the scene (scalar/vector warping)
+    vtk_pipeline->reset_camera_clipping_range();
   }
 
   // Set the mapper's connection on each plot. This must be done since the

@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-29
-// Last changed: 2012-07-05
+// Last changed: 2012-09-12
 //
 // This demo illustrates basic plotting.
 
@@ -105,8 +105,7 @@ int main()
 
   ScalarExpression f_scalar;
 
-  // FIXME: VTK sets the center and zoom incorrectly if the loop starts at 0.0
-  for (double t = 0.01; t < 1.0; t += 0.01)
+  for (double t = 0.0; t < 1.0; t += 0.01)
   {
     f_scalar.t = t;
     plot(f_scalar, mesh, p);

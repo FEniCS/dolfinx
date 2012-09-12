@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-11
+// Last changed: 2012-09-12
 
 #ifdef HAS_VTK
 
@@ -180,7 +180,6 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
     insert_filter(NULL); // expel the warpscalar filter
     std::vector<double> cell_values;
     func->vector()->get_local(cell_values);
-    std::cout << cell_values[3] << std::endl;
     setCellValues(cell_values.size(), &cell_values[0], parameters);
   }
   else
@@ -198,12 +197,15 @@ void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &par
   _glyphs->SetScaleFactor(scale);
 
   // Compute the scale factor for scalar warping
-  double* bounds = grid()->GetBounds();
-  double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
+  if (range[1] > range[0])
+  {
+    double* bounds = grid()->GetBounds();
+    double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
 
-  // Set the default warp such that the max warp is one fourth of the longest
-  // axis of the mesh.
-  _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
+    // Set the default warp such that the max warp is one fourth of the longest
+    // axis of the mesh.
+    _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
+  }
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])
